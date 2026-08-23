@@ -1,15 +1,16 @@
 /**
- * Crea una sesión de Stripe Checkout para un plan de /planes — reemplazo
- * real del cobro simulado de app/signup/payment/page.tsx. NO está conectado
- * a esa página todavía a propósito (ver docs/12-guia-backend.md): esta ruta
- * ya funciona de punta a punta el día que exista STRIPE_SECRET_KEY, pero
- * mientras tanto app/signup/payment/page.tsx sigue con su flujo simulado
- * (nunca llama a este endpoint).
+ * Crea una sesión de Stripe Checkout para un plan de /planes. Conectada desde
+ * app/signup/payment/page.tsx (botón "Continuar al pago seguro"). Si
+ * STRIPE_SECRET_KEY todavía no está configurada en este entorno, devuelve 503
+ * y esa página lo explica sin romper el flujo — sigue disponible "empezar con
+ * el plan gratuito".
  *
- * Para conectarla: en app/signup/payment/page.tsx, el botón "Confirmar y
- * Comenzar" debe hacer un fetch("/api/checkout", { method: "POST", body:
- * JSON.stringify({ planSlug }) }) y redirigir a la `url` que devuelve, en
- * vez de simular el procesamiento con un setTimeout.
+ * success_url incluye session_id={CHECKOUT_SESSION_ID} (variable que Stripe
+ * reemplaza automáticamente) para que app/dashboard/page.tsx pueda pedir el
+ * customer id vía /api/checkout/session y habilitar el Portal de Cliente
+ * (/api/stripe/portal) más adelante, sin depender de un backend propio
+ * todavía (ver ese archivo para el detalle de por qué esto es seguro con
+ * solo localStorage).
  */
 
 import { NextResponse } from "next/server"
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${siteUrl}/dashboard?checkout=success`,
+      success_url: `${siteUrl}/dashboard?checkout=success&plan=${plan.slug}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/signup/payment?plan=${plan.slug}&checkout=cancelled`,
       metadata: { planSlug: plan.slug },
     })

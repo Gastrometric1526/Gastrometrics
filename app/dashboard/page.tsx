@@ -38,7 +38,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { AddBusinessDialog } from "@/components/add-business-dialog"
 import { OnboardingTour } from "@/components/onboarding-tour"
-import { useFeatureAccess, useTeamPreview } from "@/lib/plan-access"
+import { useFeatureAccess, useTeamPreview, setCurrentPlanSlug } from "@/lib/plan-access"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 
 export default function DashboardPage() {
@@ -155,6 +155,42 @@ export default function DashboardPage() {
     }, 1000)
 
     return () => clearInterval(timer)
+  }, [])
+
+  // Vuelta desde Stripe Checkout (ver app/api/checkout/route.ts, success_url) — se lee
+  // window.location.search directo en vez de useSearchParams() para no tener que envolver
+  // esta página entera en <Suspense> (mismo gotcha documentado en app/signup/payment/page.tsx
+  // y components/sidebar.tsx). Sin backend conectado todavía no hay una fuente de verdad del
+  // lado del servidor para el plan (ver TODO en app/api/webhooks/stripe/route.ts), así que
+  // esto sigue el mismo modelo de confianza que el resto de la app hoy: el cliente decide
+  // su propio plan (lib/plan-access.ts). Se limpia la URL después para que un refresh no
+  // vuelva a aplicar el plan ni muestre el toast de nuevo.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("checkout") !== "success") return
+    const planSlug = params.get("plan")
+    if (planSlug) {
+      setCurrentPlanSlug(planSlug)
+      toast({
+        title: t("dashboard_checkout_success_title"),
+        description: t("dashboard_checkout_success_desc"),
+      })
+    }
+    // Guarda el customer id de Stripe para habilitar "Gestionar mi suscripción"
+    // en /mi-plan (Portal de Cliente, ver app/api/stripe/portal/route.ts). No
+    // bloquea la limpieza de la URL de abajo si falla — el usuario ya pagó y
+    // ya tiene su plan activo, esto es solo para la conveniencia de después.
+    const sessionId = params.get("session_id")
+    if (sessionId) {
+      fetch(`/api/checkout/session?session_id=${sessionId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.customerId) localStorage.setItem("stripe_customer_id", data.customerId)
+        })
+        .catch(() => {})
+    }
+    router.replace("/dashboard")
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {

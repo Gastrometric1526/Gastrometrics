@@ -120,11 +120,16 @@ export default function ContactoPage() {
 
     setIsSubmitting(true)
     try {
+      const submittedType = type
+      const submittedMessage = message
+      const submittedUserName = isLoggedIn ? user?.name : name
+      const submittedUserEmail = isLoggedIn ? user?.email : email
+
       submitFeedback({
-        type,
-        message,
-        userName: isLoggedIn ? user?.name : name,
-        userEmail: isLoggedIn ? user?.email : email,
+        type: submittedType,
+        message: submittedMessage,
+        userName: submittedUserName,
+        userEmail: submittedUserEmail,
         page: pathname,
         imageDataUrl: imageDataUrl || undefined,
       })
@@ -134,6 +139,22 @@ export default function ContactoPage() {
         title: t("contacto_toast_thanks_title"),
         description: t("contacto_toast_thanks_desc"),
       })
+
+      // Best-effort: el mensaje YA quedó guardado arriba sin importar esto. Si el
+      // correo de notificación no está configurado (RESEND_API_KEY) o falla, la
+      // persona que escribió no ve ningún error — solo deja de llegar el aviso
+      // en tiempo real, el mensaje sigue disponible en /admin.
+      fetch("/api/notify-feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: submittedType,
+          message: submittedMessage,
+          userName: submittedUserName,
+          userEmail: submittedUserEmail,
+          page: pathname,
+        }),
+      }).catch(() => {})
     } finally {
       setIsSubmitting(false)
     }
