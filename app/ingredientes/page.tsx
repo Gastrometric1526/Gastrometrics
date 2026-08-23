@@ -1720,7 +1720,7 @@ export default function IngredientesPage() {
                       type="number"
                       min="0"
                       step="0.01"
-                      value={formData.pricing?.purchasePrice || 0}
+                      value={formData.pricing?.purchasePrice || ""}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
@@ -1746,7 +1746,7 @@ export default function IngredientesPage() {
                       type="number"
                       min="0.01"
                       step="0.01"
-                      value={formData.pricing?.netContent || 1}
+                      value={formData.pricing?.netContent || ""}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,

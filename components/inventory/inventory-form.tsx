@@ -144,7 +144,7 @@ export function InventoryForm({ onSubmit, onCancel, initialData }: InventoryForm
             type="number"
             min="0"
             step="0.01"
-            value={formData.minStock}
+            value={formData.minStock || ""}
             onChange={handleChange}
             required
           />
@@ -211,7 +211,7 @@ export function InventoryForm({ onSubmit, onCancel, initialData }: InventoryForm
             type="number"
             min="0"
             step="0.01"
-            value={formData.price}
+            value={formData.price || ""}
             onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) || 0 })}
             required
           />
