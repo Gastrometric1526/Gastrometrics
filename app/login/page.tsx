@@ -36,6 +36,17 @@ export default function LoginPage() {
       // esto no la toca — login no valida contra ella, así que sobrescribirla en cada
       // inicio de sesión volvería inútil el chequeo posterior.
       await bootstrapPasswordHashIfMissing(password)
+
+      // Cuenta de prueba del dueño del proyecto — pedido explícito: entrar con este
+      // correo debe verse como si tuviera el plan Chef Ejecutivo, sin pasar por Stripe.
+      // Se identifica SOLO por el correo (no por contraseña): el login de hoy no
+      // verifica contraseñas contra nada real para NINGUNA cuenta (ver login() en
+      // contexts/auth-context.tsx), así que comparar una contraseña aquí sería
+      // seguridad falsa — y además obligaría a dejar la contraseña real en texto
+      // plano en el código fuente, que ahora es público en GitHub.
+      if (email.trim().toLowerCase() === "josedanielromero.cr@outlook.com") {
+        setCurrentPlanSlug("chef-ejecutivo")
+      }
       router.push("/dashboard")
     } catch (error) {
       console.error("Login error:", error)
@@ -128,31 +139,6 @@ export default function LoginPage() {
                 )}
               </Button>
             </form>
-
-            {/* Acceso rápido de prueba, ver documento de continuidad. No reemplaza el
-                login real (arriba), es un atajo adicional para pruebas mientras no hay
-                backend/autenticación real. */}
-            <div className="mt-4 pt-4 border-t border-border">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full border-dashed"
-                onClick={async () => {
-                  setIsLoading(true)
-                  try {
-                    await login("demo", "demo")
-                    // Modo prueba: todo debe estar habilitado, sin las restricciones de
-                    // plan que sí aplican a una cuenta real (pedido explícito del dueño).
-                    setCurrentPlanSlug("chef-ejecutivo")
-                    router.push("/dashboard")
-                  } finally {
-                    setIsLoading(false)
-                  }
-                }}
-              >
-                {t("login_demo_button")}
-              </Button>
-            </div>
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-4">
