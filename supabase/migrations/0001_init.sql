@@ -213,10 +213,20 @@ alter table inventory_snapshots enable row level security;
 alter table menus enable row level security;
 alter table purchase_orders enable row level security;
 
+-- Todas las políticas van precedidas de `drop policy if exists` — Postgres no
+-- tiene `create policy if not exists`, así que sin este guard el script entero
+-- deja de ser re-corrible: una segunda ejecución (por ejemplo, después de que
+-- una ejecución anterior fallara a medias en otra sentencia) revienta en la
+-- primera política con "already exists" aunque las tablas de arriba, que sí
+-- usan `if not exists`, se salten sin problema. Con el guard, correr este
+-- archivo completo de nuevo en cualquier momento es seguro.
+
 -- businesses: el dueño ve/edita las suyas; cualquier miembro invitado las ve (no edita).
+drop policy if exists "businesses_owner_all" on businesses;
 create policy "businesses_owner_all" on businesses
   for all using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
 
+drop policy if exists "businesses_member_select" on businesses;
 create policy "businesses_member_select" on businesses
   for select using (
     exists (
@@ -227,6 +237,7 @@ create policy "businesses_member_select" on businesses
   );
 
 -- business_members: el dueño del negocio administra la lista de miembros.
+drop policy if exists "business_members_owner_manage" on business_members;
 create policy "business_members_owner_manage" on business_members
   for all using (
     exists (select 1 from businesses where businesses.id = business_members.business_id and businesses.owner_id = auth.uid())
@@ -234,12 +245,14 @@ create policy "business_members_owner_manage" on business_members
     exists (select 1 from businesses where businesses.id = business_members.business_id and businesses.owner_id = auth.uid())
   );
 
+drop policy if exists "business_members_self_select" on business_members;
 create policy "business_members_self_select" on business_members
   for select using (user_id = auth.uid());
 
 -- business_invites: solo el dueño del negocio las crea/borra; cualquier
 -- usuario autenticado puede leer una invitación puntual por su token (para
 -- poder aceptarla) — el token en sí (uuid random) ya funciona como el secreto.
+drop policy if exists "business_invites_owner_manage" on business_invites;
 create policy "business_invites_owner_manage" on business_invites
   for all using (
     exists (select 1 from businesses where businesses.id = business_invites.business_id and businesses.owner_id = auth.uid())
@@ -247,51 +260,65 @@ create policy "business_invites_owner_manage" on business_invites
     exists (select 1 from businesses where businesses.id = business_invites.business_id and businesses.owner_id = auth.uid())
   );
 
+drop policy if exists "business_invites_authenticated_select" on business_invites;
 create policy "business_invites_authenticated_select" on business_invites
   for select using (auth.role() = 'authenticated');
 
 -- El resto de las tablas comparten exactamente el mismo patrón: el dueño de
 -- la fila (owner_id), o cualquier miembro del negocio dueño de esa fila.
+drop policy if exists "ingredients_owner_all" on ingredients;
 create policy "ingredients_owner_all" on ingredients
   for all using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+drop policy if exists "ingredients_member_select" on ingredients;
 create policy "ingredients_member_select" on ingredients
   for select using (
     exists (select 1 from business_members where business_members.business_id = ingredients.business_id and business_members.user_id = auth.uid())
   );
 
+drop policy if exists "recipes_owner_all" on recipes;
 create policy "recipes_owner_all" on recipes
   for all using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+drop policy if exists "recipes_member_select" on recipes;
 create policy "recipes_member_select" on recipes
   for select using (
     exists (select 1 from business_members where business_members.business_id = recipes.business_id and business_members.user_id = auth.uid())
   );
 
+drop policy if exists "recipes_trash_owner_all" on recipes_trash;
 create policy "recipes_trash_owner_all" on recipes_trash
   for all using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
 
+drop policy if exists "inventory_items_owner_all" on inventory_items;
 create policy "inventory_items_owner_all" on inventory_items
   for all using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+drop policy if exists "inventory_items_member_select" on inventory_items;
 create policy "inventory_items_member_select" on inventory_items
   for select using (
     exists (select 1 from business_members where business_members.business_id = inventory_items.business_id and business_members.user_id = auth.uid())
   );
 
+drop policy if exists "inventory_snapshots_owner_all" on inventory_snapshots;
 create policy "inventory_snapshots_owner_all" on inventory_snapshots
   for all using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+drop policy if exists "inventory_snapshots_member_select" on inventory_snapshots;
 create policy "inventory_snapshots_member_select" on inventory_snapshots
   for select using (
     exists (select 1 from business_members where business_members.business_id = inventory_snapshots.business_id and business_members.user_id = auth.uid())
   );
 
+drop policy if exists "menus_owner_all" on menus;
 create policy "menus_owner_all" on menus
   for all using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+drop policy if exists "menus_member_select" on menus;
 create policy "menus_member_select" on menus
   for select using (
     exists (select 1 from business_members where business_members.business_id = menus.business_id and business_members.user_id = auth.uid())
   );
 
+drop policy if exists "purchase_orders_owner_all" on purchase_orders;
 create policy "purchase_orders_owner_all" on purchase_orders
   for all using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+drop policy if exists "purchase_orders_member_select" on purchase_orders;
 create policy "purchase_orders_member_select" on purchase_orders
   for select using (
     exists (select 1 from business_members where business_members.business_id = purchase_orders.business_id and business_members.user_id = auth.uid())
