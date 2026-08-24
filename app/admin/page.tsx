@@ -11,12 +11,22 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { getFeedback, updateFeedbackStatus, deleteFeedback } from "@/lib/storage/feedback"
+import { Textarea } from "@/components/ui/textarea"
 import { getAllBusinesses } from "@/lib/storage/businesses"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
 import type { Feedback, FeedbackStatus, FeedbackType } from "@/types/feedback"
-import { AlertTriangle, Bug, Lightbulb, MessageCircleWarning, Trash2, ArrowLeft, Lock } from "lucide-react"
+import { plans, getPlanBySlug } from "@/lib/plans"
+import { AlertTriangle, Bug, Lightbulb, MessageCircleWarning, Trash2, ArrowLeft, Lock, Search } from "lucide-react"
+
+interface AccountLookupResult {
+  userId: string
+  email: string
+  createdAt: string
+  emailConfirmed: boolean
+  planSlug: string
+  businessCount: number
+}
 
 // Candado de acceso — pedido explícito: agregar algún control de acceso a /admin,
 // que hoy cualquiera con el link puede ver. SIN backend no existe un sistema de roles
@@ -72,8 +82,16 @@ export default function AdminPage() {
     resuelto: t(statusLabelKeys.resuelto),
   }
   const [feedback, setFeedback] = useState<Feedback[]>([])
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({})
+  const [sendingReplyId, setSendingReplyId] = useState<string | null>(null)
   const [businessCount, setBusinessCount] = useState(0)
   const [filter, setFilter] = useState<"todos" | FeedbackType>("todos")
+  const [lookupEmail, setLookupEmail] = useState("")
+  const [lookingUp, setLookingUp] = useState(false)
+  const [lookupNotFound, setLookupNotFound] = useState(false)
+  const [accountResult, setAccountResult] = useState<AccountLookupResult | null>(null)
+  const [selectedPlanSlug, setSelectedPlanSlug] = useState("")
+  const [applyingPlan, setApplyingPlan] = useState(false)
   const [unlocked, setUnlocked] = useState(false)
   const [checkedSession, setCheckedSession] = useState(false)
   const [passcodeInput, setPasscodeInput] = useState("")
@@ -142,24 +160,122 @@ export default function AdminPage() {
     }
   }
 
-  const loadData = () => {
-    setFeedback(getFeedback())
+  function rowToFeedback(row: any): Feedback {
+    return {
+      id: row.id,
+      type: row.type,
+      message: row.message,
+      userName: row.user_name || undefined,
+      userEmail: row.user_email || undefined,
+      page: row.page || undefined,
+      imageDataUrl: row.image_data_url || undefined,
+      status: row.status,
+      createdAt: row.created_at,
+      adminReply: row.admin_reply || undefined,
+      repliedAt: row.replied_at || undefined,
+    }
+  }
+
+  const loadData = async () => {
     setBusinessCount(getAllBusinesses().length + 1) // +1 por "main", el workspace por defecto
+    try {
+      const res = await fetch("/api/admin/feedback")
+      const data = await res.json()
+      if (Array.isArray(data.feedback)) setFeedback(data.feedback.map(rowToFeedback))
+    } catch (error) {
+      console.error("Error loading feedback:", error)
+    }
   }
 
   useEffect(() => {
     if (unlocked) loadData()
   }, [unlocked])
 
-  const handleStatusChange = (id: string, status: FeedbackStatus) => {
-    updateFeedbackStatus(id, status)
+  const handleStatusChange = async (id: string, status: FeedbackStatus) => {
+    await fetch(`/api/admin/feedback/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    })
     loadData()
   }
 
-  const handleDelete = (id: string) => {
-    deleteFeedback(id)
+  const handleDelete = async (id: string) => {
+    await fetch(`/api/admin/feedback/${id}`, { method: "DELETE" })
     loadData()
     toast({ title: t("admin_delete_toast_title"), description: t("admin_delete_toast_desc") })
+  }
+
+  const handleSendReply = async (id: string) => {
+    const reply = (replyDrafts[id] || "").trim()
+    if (!reply) return
+    setSendingReplyId(id)
+    try {
+      const res = await fetch(`/api/admin/feedback/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reply }),
+      })
+      const data = await res.json()
+      setReplyDrafts((prev) => ({ ...prev, [id]: "" }))
+      await loadData()
+      toast({
+        title: t("admin_reply_sent_toast_title"),
+        description: data.emailSent ? t("admin_reply_sent_toast_desc_email") : t("admin_reply_sent_toast_desc_noemail"),
+      })
+    } catch (error) {
+      console.error("Error sending reply:", error)
+      toast({ title: t("admin_reply_error_toast_title"), variant: "destructive" })
+    } finally {
+      setSendingReplyId(null)
+    }
+  }
+
+  const handleLookupAccount = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!lookupEmail.trim()) return
+    setLookingUp(true)
+    setLookupNotFound(false)
+    setAccountResult(null)
+    try {
+      const res = await fetch(`/api/admin/account-plan?email=${encodeURIComponent(lookupEmail.trim())}`)
+      const data = await res.json()
+      if (data.found) {
+        setAccountResult(data)
+        setSelectedPlanSlug(data.planSlug)
+      } else {
+        setLookupNotFound(true)
+      }
+    } catch (error) {
+      console.error("Error buscando la cuenta:", error)
+      toast({ title: t("admin_accounts_error_toast"), variant: "destructive" })
+    } finally {
+      setLookingUp(false)
+    }
+  }
+
+  const handleApplyPlan = async () => {
+    if (!accountResult || !selectedPlanSlug) return
+    setApplyingPlan(true)
+    try {
+      const res = await fetch("/api/admin/account-plan", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: accountResult.email, planSlug: selectedPlanSlug }),
+      })
+      const data = await res.json()
+      if (res.ok && data.ok) {
+        setAccountResult((prev) => (prev ? { ...prev, planSlug: data.planSlug } : prev))
+        toast({ title: t("admin_accounts_plan_applied_toast") })
+      } else {
+        toast({ title: t("admin_accounts_error_toast"), variant: "destructive" })
+      }
+    } catch (error) {
+      console.error("Error cambiando el plan:", error)
+      toast({ title: t("admin_accounts_error_toast"), variant: "destructive" })
+    } finally {
+      setApplyingPlan(false)
+    }
   }
 
   const filtered = filter === "todos" ? feedback : feedback.filter((f) => f.type === filter)
@@ -291,6 +407,68 @@ export default function AdminPage() {
 
         <Card>
           <CardHeader>
+            <CardTitle>{t("admin_accounts_title")}</CardTitle>
+            <CardDescription>{t("admin_accounts_subtitle")}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <form onSubmit={handleLookupAccount} className="flex gap-2">
+              <Input
+                type="email"
+                placeholder={t("admin_accounts_email_placeholder")}
+                value={lookupEmail}
+                onChange={(e) => setLookupEmail(e.target.value)}
+              />
+              <Button type="submit" disabled={lookingUp || !lookupEmail.trim()} className="shrink-0 gap-2">
+                <Search className="h-4 w-4" />
+                {lookingUp ? t("admin_accounts_searching") : t("admin_accounts_search_button")}
+              </Button>
+            </form>
+
+            {lookupNotFound && <p className="text-sm text-muted-foreground">{t("admin_accounts_not_found")}</p>}
+
+            {accountResult && (
+              <div className="rounded-lg border border-border p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="font-medium text-foreground">{accountResult.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("admin_accounts_created")} {new Date(accountResult.createdAt).toLocaleDateString(getDateLocale(language))}
+                      {" · "}
+                      {accountResult.emailConfirmed ? t("admin_accounts_confirmed") : t("admin_accounts_unconfirmed")}
+                      {" · "}
+                      {t("admin_accounts_business_count").replace("{n}", String(accountResult.businessCount))}
+                    </p>
+                  </div>
+                  <Badge variant="secondary">{getPlanBySlug(accountResult.planSlug).name}</Badge>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select value={selectedPlanSlug} onValueChange={setSelectedPlanSlug}>
+                    <SelectTrigger className="w-56">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {plans.map((plan) => (
+                        <SelectItem key={plan.slug} value={plan.slug}>
+                          {plan.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    onClick={handleApplyPlan}
+                    disabled={applyingPlan || selectedPlanSlug === accountResult.planSlug}
+                  >
+                    {applyingPlan ? t("admin_accounts_applying") : t("admin_accounts_apply_button")}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>{t("admin_inbox_title")}</CardTitle>
             <CardDescription>{t("admin_inbox_subtitle")}</CardDescription>
           </CardHeader>
@@ -355,6 +533,33 @@ export default function AdminPage() {
                           </SelectContent>
                         </Select>
                       </div>
+
+                      {item.adminReply ? (
+                        <div className="rounded-lg bg-muted/50 p-3 space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground">
+                            {t("admin_reply_label")}
+                            {item.repliedAt ? ` · ${new Date(item.repliedAt).toLocaleString(getDateLocale(language))}` : ""}
+                          </p>
+                          <p className="text-sm text-foreground whitespace-pre-wrap">{item.adminReply}</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={replyDrafts[item.id] || ""}
+                            onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [item.id]: e.target.value }))}
+                            placeholder={item.userEmail ? t("admin_reply_placeholder") : t("admin_reply_placeholder_noemail")}
+                            className="text-sm min-h-16"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={!replyDrafts[item.id]?.trim() || sendingReplyId === item.id}
+                            onClick={() => handleSendReply(item.id)}
+                          >
+                            {sendingReplyId === item.id ? t("admin_reply_sending") : t("admin_reply_button")}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )
                 })}

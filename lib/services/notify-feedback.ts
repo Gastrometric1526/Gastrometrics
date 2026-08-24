@@ -25,6 +25,42 @@ const FEEDBACK_TYPE_LABELS: Record<string, string> = {
   bug: "Reporte de error",
 }
 
+/**
+ * Le avisa a la PERSONA que mandó el mensaje por /contacto que el dueño del
+ * proyecto ya respondió — llamado desde app/api/admin/feedback/[id]/route.ts al
+ * guardar una respuesta desde /admin. Solo se llama si esa persona dejó su correo
+ * (userEmail es opcional en /contacto); si no lo dejó, no hay a quién avisarle y la
+ * respuesta queda solo visible en /admin.
+ */
+export async function sendFeedbackReplyEmail(input: {
+  toEmail: string
+  toName?: string
+  originalMessage: string
+  reply: string
+}): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return
+
+  const resend = new Resend(process.env.RESEND_API_KEY)
+  const greetingName = input.toName || "Hola"
+
+  await resend.emails.send({
+    from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
+    to: [input.toEmail],
+    subject: "Respuesta a tu mensaje en GastroMetrics",
+    html: `
+      <p>${greetingName},</p>
+      <p>Gracias por escribirnos. Esta fue tu respuesta a tu mensaje:</p>
+      <blockquote style="margin:12px 0;padding:8px 16px;border-left:3px solid #e5601a;color:#444;background:#fafafa">
+        ${input.reply.replace(/\n/g, "<br/>")}
+      </blockquote>
+      <p style="color:#888;font-size:12px;margin-top:24px">Tu mensaje original:</p>
+      <p style="color:#888;font-size:12px">${input.originalMessage.replace(/\n/g, "<br/>")}</p>
+      <hr/>
+      <p style="color:#888;font-size:12px">¿Sigue sin resolverse? Responde este correo o escribe de nuevo desde /contacto.</p>
+    `,
+  })
+}
+
 export async function sendFeedbackNotification(input: {
   type: string
   message: string

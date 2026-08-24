@@ -15,7 +15,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
-import { submitFeedback } from "@/lib/storage/feedback"
 import { compressImageToDataUrl } from "@/lib/utils/image-compress"
 import type { FeedbackType } from "@/types/feedback"
 import { CheckCircle2, Lightbulb, MessageCircleWarning, Bug, ArrowLeft, Mail, Clock, ImagePlus, X } from "lucide-react"
@@ -125,26 +124,7 @@ export default function ContactoPage() {
       const submittedUserName = isLoggedIn ? user?.name : name
       const submittedUserEmail = isLoggedIn ? user?.email : email
 
-      submitFeedback({
-        type: submittedType,
-        message: submittedMessage,
-        userName: submittedUserName,
-        userEmail: submittedUserEmail,
-        page: pathname,
-        imageDataUrl: imageDataUrl || undefined,
-      })
-      setSubmitted(true)
-      setImageDataUrl(null)
-      toast({
-        title: t("contacto_toast_thanks_title"),
-        description: t("contacto_toast_thanks_desc"),
-      })
-
-      // Best-effort: el mensaje YA quedó guardado arriba sin importar esto. Si el
-      // correo de notificación no está configurado (RESEND_API_KEY) o falla, la
-      // persona que escribió no ve ningún error — solo deja de llegar el aviso
-      // en tiempo real, el mensaje sigue disponible en /admin.
-      fetch("/api/notify-feedback", {
+      const res = await fetch("/api/feedback/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -153,8 +133,24 @@ export default function ContactoPage() {
           userName: submittedUserName,
           userEmail: submittedUserEmail,
           page: pathname,
+          imageDataUrl: imageDataUrl || undefined,
         }),
-      }).catch(() => {})
+      })
+      if (!res.ok) throw new Error("submit failed")
+
+      setSubmitted(true)
+      setImageDataUrl(null)
+      toast({
+        title: t("contacto_toast_thanks_title"),
+        description: t("contacto_toast_thanks_desc"),
+      })
+    } catch (error) {
+      console.error("Error submitting feedback:", error)
+      toast({
+        title: t("contacto_toast_send_error_title"),
+        description: t("contacto_toast_send_error_desc"),
+        variant: "destructive",
+      })
     } finally {
       setIsSubmitting(false)
     }

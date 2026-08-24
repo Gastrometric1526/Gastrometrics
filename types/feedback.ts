@@ -15,4 +15,6 @@ export interface Feedback {
   imageDataUrl?: string
   status: FeedbackStatus
   createdAt: string
+  adminReply?: string
+  repliedAt?: string
 }

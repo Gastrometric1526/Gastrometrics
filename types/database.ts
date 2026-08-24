@@ -184,6 +184,32 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["purchase_orders"]["Row"]>
         Relationships: never[]
       }
+      feedback: {
+        Row: {
+          id: string
+          type: string
+          message: string
+          user_name: string | null
+          user_email: string | null
+          page: string | null
+          image_data_url: string | null
+          status: string
+          admin_reply: string | null
+          replied_at: string | null
+          created_at: string
+        }
+        Insert: Omit<
+          Database["public"]["Tables"]["feedback"]["Row"],
+          "status" | "created_at" | "admin_reply" | "replied_at"
+        > & {
+          status?: string
+          created_at?: string
+          admin_reply?: string | null
+          replied_at?: string | null
+        }
+        Update: Partial<Database["public"]["Tables"]["feedback"]["Row"]>
+        Relationships: never[]
+      }
       account_plans: {
         Row: {
           account_id: string

@@ -159,11 +159,11 @@ export default function LoginPage() {
 
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-center">
-              {/* BUG CORREGIDO: apuntaba a /forgot-password, una ruta que nunca existió (404).
-                  La app no tiene backend real de recuperación de contraseña por correo (ver
-                  docs/12-guia-backend.md) — /contacto es el único canal de ayuda real hoy. */}
-              <Link href="/contacto" className="text-sm text-primary hover:text-primary/80 transition-colors">
-                ¿Olvidaste tu contraseña?
+              {/* Antes apuntaba a /contacto — no había backend real de recuperación de
+                  contraseña (ver docs/12-guia-backend.md). Con Supabase Auth ya conectado
+                  (ver docs/51), /forgot-password es un flujo real de verdad. */}
+              <Link href="/forgot-password" className="text-sm text-primary hover:text-primary/80 transition-colors">
+                {t("login_forgot_password")}
               </Link>
             </div>
             <div className="text-center text-sm text-muted-foreground">
