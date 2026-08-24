@@ -20,15 +20,9 @@
 import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { isTesterEmail } from "@/lib/tester-allowlist"
 
 const TESTER_PLAN_SLUG = "chef-ejecutivo"
-
-function getAllowlist(): string[] {
-  return (process.env.TESTER_ALLOWLIST_EMAILS || "")
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean)
-}
 
 export async function POST() {
   const supabase = getSupabaseServerClient()
@@ -36,8 +30,7 @@ export async function POST() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const allowlist = getAllowlist()
-  if (!user || !user.email || !allowlist.includes(user.email.toLowerCase())) {
+  if (!user || !isTesterEmail(user.email)) {
     return NextResponse.json({ applied: false })
   }
 

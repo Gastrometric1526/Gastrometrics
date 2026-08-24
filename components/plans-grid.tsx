@@ -1,11 +1,20 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { plans } from "@/lib/plans"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { plans, getPlanBySlug } from "@/lib/plans"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useCurrentPlanSlug, setCurrentPlanSlug } from "@/lib/plan-access"
@@ -28,8 +37,27 @@ export function PlansGrid({ freeRedirectTo = "/dashboard" }: PlansGridProps) {
   // un visitante anonimo — es exactamente lo que el servidor ya mando, asi que no hay
   // salto de hidratacion. Recien despues de eso se revela el flujo real.
   const knowsLoginState = authChecked && currentPlanSlug !== null
+  const [isTester, setIsTester] = useState(false)
+  const [showTesterDialog, setShowTesterDialog] = useState(false)
+
+  // Testers (dueño del proyecto + hasta 10 invitados, ver TESTER_ALLOWLIST_EMAILS) ya
+  // tienen el plan más alto aplicado real (ver app/api/plan/dev-account/route.ts) —
+  // si intentan "cambiar" a otro plan desde acá, no tiene sentido mandarlos a Stripe
+  // ni reescribirles el plan a uno más bajo. Este chequeo es solo para decidir qué
+  // mostrar en la UI — no cambia nada por sí mismo.
+  useEffect(() => {
+    if (!isLoggedIn) return
+    fetch("/api/plan/is-tester")
+      .then((res) => res.json())
+      .then((data) => setIsTester(Boolean(data?.isTester)))
+      .catch(() => {})
+  }, [isLoggedIn])
 
   const handleSelectPlan = async (planSlug: string, isFree: boolean) => {
+    if (isTester) {
+      setShowTesterDialog(true)
+      return
+    }
     if (isFree) {
       const result = await fetch("/api/plan/set-free", {
         method: "POST",
@@ -115,6 +143,18 @@ export function PlansGrid({ freeRedirectTo = "/dashboard" }: PlansGridProps) {
           </CardContent>
         </Card>
       ))}
+
+      <AlertDialog open={showTesterDialog} onOpenChange={setShowTesterDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("planes_tester_dialog_title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("planes_tester_dialog_desc").replace("{plan}", getPlanBySlug(currentPlanSlug).name)}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogAction onClick={() => setShowTesterDialog(false)}>{t("planes_tester_dialog_ok")}</AlertDialogAction>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
