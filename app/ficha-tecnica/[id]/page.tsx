@@ -15,9 +15,9 @@ import { useFeatureAccess } from "@/lib/plan-access"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
-import { getIngredients } from "@/lib/storage/ingredients"
-import { getRecipes, getRecipeById } from "@/lib/storage/recipes"
-import { getBusinessById } from "@/lib/storage/businesses"
+import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
+import { getRecipes, getRecipeById, ensureRecipesLoaded } from "@/lib/storage/recipes"
+import { getBusinessById, refreshBusinesses } from "@/lib/storage/businesses"
 import type { Ingredient } from "@/types/ingredient"
 import type { Recipe } from "@/types/recipe"
 import type { Business } from "@/types/business"
@@ -49,6 +49,12 @@ export default function FichaTecnicaEditPage({
     const loadData = async () => {
       try {
         setIsLoading(true)
+
+        await Promise.all([
+          ensureIngredientsLoaded(businessId),
+          ensureRecipesLoaded(businessId),
+          refreshBusinesses(),
+        ])
 
         const savedIngredients = getIngredients(businessId)
         const savedRecipes = getRecipes(businessId)

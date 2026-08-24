@@ -1,7 +1,15 @@
-// Control de acceso por plan de suscripcion. Todo local (localStorage) porque no
-// hay backend de cobros conectado todavia (ver docs/12-guia-backend.md) — el dia
-// que se conecte Stripe de verdad, setCurrentPlanSlug debe llamarse desde el
-// webhook de Stripe (app/api/webhooks/stripe/route.ts) en vez de desde el cliente.
+// Control de acceso por plan de suscripcion. La fuente de verdad real es la tabla
+// account_plans en Supabase (ver supabase/migrations/0004_account_plans.sql) — el
+// cliente NO puede escribirla directo (RLS solo permite leer la propia fila), así
+// que el slug que devuelve getCurrentPlanSlug() de aquí abajo es un CACHÉ local
+// (localStorage) que contexts/auth-context.tsx sincroniza desde account_plans justo
+// después de resolver la sesión, para que las ~20 pantallas que ya llaman a
+// hasFeatureAccess()/getCurrentPlan() de forma síncrona durante el render (patrón
+// usado en toda la app, ver useFeatureAccess más abajo) no tuvieran que reescribirse
+// a async. setCurrentPlanSlug() sigue existiendo para actualizar ESE caché al
+// instante después de que el servidor ya confirmó el cambio real (ver
+// app/api/plan/set-free/route.ts, app/api/plan/dev-account/route.ts,
+// app/api/checkout/session/route.ts) — nunca es, por sí sola, lo que otorga el plan.
 //
 // Un solo plan por cuenta (no por negocio): la tabla de precios del dueno del
 // proyecto gatea "hasta N negocios" y "hasta N usuarios" a nivel de cuenta, no

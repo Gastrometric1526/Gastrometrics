@@ -61,6 +61,8 @@ import {
   restoreRecipeFromTrash,
   permanentlyDeleteRecipe,
   getTrashDaysRemaining,
+  ensureRecipesLoaded,
+  ensureTrashLoaded,
   type TrashedRecipe,
 } from "@/lib/storage/recipes"
 import { SUBRECIPE_CLASSIFICATION, classifications as recipeClassifications } from "@/types/recipe"
@@ -138,9 +140,10 @@ export default function MisRecetasPage() {
 
   // Cargar recetas
   useEffect(() => {
-    const loadRecipes = () => {
+    const loadRecipes = async () => {
       try {
         setIsLoading(true)
+        await ensureRecipesLoaded(businessId)
         const savedRecipes = getRecipes(businessId)
         setRecipes(savedRecipes)
 
@@ -295,14 +298,14 @@ export default function MisRecetasPage() {
     if (!recipeToDelete) return
 
     try {
-      const success = deleteRecipeFromStorage(recipeToDelete.id, businessId)
+      const success = await deleteRecipeFromStorage(recipeToDelete.id, businessId)
 
       if (!success) {
         throw new Error("No se pudo eliminar la receta")
       }
 
       if (recipeToDelete.classification === SUBRECIPE_CLASSIFICATION || recipeToDelete.isSubRecipe) {
-        deleteSubRecipeIngredient(recipeToDelete.id, businessId)
+        await deleteSubRecipeIngredient(recipeToDelete.id, businessId)
       }
 
       const updatedRecipes = getRecipes(businessId)
@@ -328,14 +331,15 @@ export default function MisRecetasPage() {
   }
 
   // Papelera de recetas (ver documento de continuidad)
-  const openTrash = () => {
+  const openTrash = async () => {
+    await ensureTrashLoaded(businessId)
     setTrashedRecipes(getTrashedRecipes(businessId))
     setShowTrashDialog(true)
   }
 
-  const handleRestore = (recipeId: string) => {
+  const handleRestore = async (recipeId: string) => {
     try {
-      const success = restoreRecipeFromTrash(recipeId, businessId)
+      const success = await restoreRecipeFromTrash(recipeId, businessId)
       if (!success) throw new Error("No se pudo restaurar la receta")
 
       setRecipes(getRecipes(businessId))
@@ -347,9 +351,9 @@ export default function MisRecetasPage() {
     }
   }
 
-  const handlePermanentDelete = (recipeId: string) => {
+  const handlePermanentDelete = async (recipeId: string) => {
     try {
-      const success = permanentlyDeleteRecipe(recipeId, businessId)
+      const success = await permanentlyDeleteRecipe(recipeId, businessId)
       if (!success) throw new Error("No se pudo eliminar la receta")
 
       setTrashedRecipes(getTrashedRecipes(businessId))

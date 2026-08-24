@@ -12,37 +12,26 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children, redirectTo = "/login" }: AuthGuardProps) {
-  const { isLoggedIn, authChecked, login } = useAuth()
+  const { isLoggedIn, authChecked } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    // Esperar a que AuthProvider termine de leer localStorage — si se revisa antes,
-    // isLoggedIn todavía está en su valor inicial (false) aunque el usuario sí tenga
-    // sesión guardada, y esto expulsaría a un usuario real a /login en cada recarga.
+    // Esperar a que AuthProvider termine de consultar la sesión de Supabase — si se
+    // revisa antes, isLoggedIn todavía está en su valor inicial (false) aunque el
+    // usuario sí tenga sesión real, y esto expulsaría a un usuario real a /login en
+    // cada recarga.
     if (!authChecked) return
 
     if (!isLoggedIn) {
-      // BUG CORREGIDO (ver logout() en contexts/auth-context.tsx): si el usuario acaba
-      // de cerrar sesión explícitamente, no auto-loguearlo de nuevo solo porque todavía
-      // tiene datos guardados — eso deshacía el logout en el acto.
-      if (localStorage.getItem("gm_explicit_logout") === "true") {
-        router.push(redirectTo)
-        return
-      }
-
-      // Check if user has existing data (legacy users)
-      const hasExistingData = localStorage.getItem("username") || localStorage.getItem("businesses")
-
-      if (hasExistingData) {
-        // Auto-authenticate existing users
-        const username = localStorage.getItem("username") || "Usuario"
-        login(username, "demo")
-      } else {
-        // Redirect new users to login
-        router.push(redirectTo)
-      }
+      // BUG CORREGIDO: antes de la migración a Supabase Auth (ver docs/51), cualquier
+      // localStorage con "username"/"businesses" de una cuenta legacy se auto-logueaba
+      // con login(username, "demo") porque login() nunca podía fallar. Ahora login()
+      // valida contraseña de verdad contra Supabase, así que ese atajo siempre fallaría
+      // y dejaría a la persona congelada en el spinner de "Verificando autenticación..."
+      // para siempre. Sin sesión real de Supabase, no hay más opción que ir a /login.
+      router.push(redirectTo)
     }
-  }, [isLoggedIn, authChecked, login, router, redirectTo])
+  }, [isLoggedIn, authChecked, router, redirectTo])
 
   if (!authChecked || !isLoggedIn) {
     return (

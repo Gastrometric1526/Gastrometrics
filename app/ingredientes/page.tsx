@@ -59,7 +59,7 @@ import { FileUpload } from "@/components/file-upload"
 import { MermaManagementDialog } from "@/components/merma-management-dialog"
 import type { Ingredient } from "@/types/ingredient"
 import { categories, units, presentations } from "@/types/ingredient"
-import { getIngredients, saveIngredients } from "@/lib/storage/ingredients"
+import { getIngredients, saveIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 import { parseExcelFile, createIngredientsExcelTemplate } from "@/lib/excel-utils"
 import { IngredientsTable } from "@/components/ingredients/ingredients-table"
 import { IngredientesTour } from "@/components/page-tours"
@@ -305,9 +305,10 @@ export default function IngredientesPage() {
 
   // Load ingredients
   useEffect(() => {
-    const loadIngredients = () => {
+    const loadIngredients = async () => {
       try {
         setIsLoading(true)
+        await ensureIngredientsLoaded(businessId)
         const savedIngredients = getIngredients(businessId)
         setIngredients(savedIngredients)
       } catch (error) {

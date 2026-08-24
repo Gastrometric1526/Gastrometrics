@@ -65,10 +65,11 @@ function SignupPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const selectedPlan = searchParams.get("plan")
-  const { login } = useAuth()
+  const { login, signUp } = useAuth()
   const { t } = useLanguage()
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
+  const [showCheckEmail, setShowCheckEmail] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
@@ -153,29 +154,34 @@ function SignupPageInner() {
     setIsLoading(true)
 
     try {
-      // Create user profile
-      const userProfile = {
-        id: `user_${Date.now()}`,
+      await signUp(formData.email!, formData.password!, {
         fullName: formData.fullName!,
-        email: formData.email!,
-        createdAt: new Date().toISOString(),
         nationality: formData.nationality!,
         currency: formData.currency!,
         businessType: formData.businessType!,
         businessSize: formData.businessSize!,
         industryExperience: formData.industryExperience!,
-        emailVerified: false,
-        onboardingCompleted: true,
-      }
+      })
 
-      // Save to localStorage (in production, this would be an API call)
-      localStorage.setItem("userProfile", JSON.stringify(userProfile))
+      // Contraseña local (ver lib/utils/password-hash.ts) para el chequeo de "confirma
+      // tu contraseña" al cambiar el correo en Configuración — independiente de la
+      // contraseña real que ahora vive en Supabase Auth.
       await storePasswordHash(formData.password!)
+      await sendWelcomeEmail({ email: formData.email!, fullName: formData.fullName! })
 
-      await sendWelcomeEmail(userProfile)
-
-      // Log in the user
-      await login(formData.email!, formData.password!)
+      // Intenta loguear de inmediato. Si el proyecto de Supabase exige confirmar el
+      // correo antes de poder iniciar sesión, esto falla con un error específico — en
+      // ese caso la cuenta sí se creó, solo falta que confirmen el correo primero.
+      try {
+        await login(formData.email!, formData.password!)
+      } catch (loginError: any) {
+        const message = typeof loginError?.message === "string" ? loginError.message.toLowerCase() : ""
+        if (message.includes("confirm")) {
+          setShowCheckEmail(true)
+          return
+        }
+        throw loginError
+      }
 
       // Los planes pagos pasan por un paso de método de pago antes del dashboard;
       // el plan gratuito (o sin plan elegido, ej. entrando por "Comenzar Gratis") va directo.
@@ -185,9 +191,14 @@ function SignupPageInner() {
         setCurrentPlanSlug("foodie")
         router.push("/dashboard")
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error:", error)
-      setErrors({ submit: t("signup_error_generic") })
+      const message = typeof error?.message === "string" ? error.message.toLowerCase() : ""
+      if (message.includes("already registered") || message.includes("already exists")) {
+        setErrors({ submit: t("signup_error_email_taken") })
+      } else {
+        setErrors({ submit: t("signup_error_generic") })
+      }
     } finally {
       setIsLoading(false)
     }
@@ -199,6 +210,30 @@ function SignupPageInner() {
       updateFormData("nationality", countryCode)
       updateFormData("currency", country.currency)
     }
+  }
+
+  if (showCheckEmail) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-6 text-center">
+          <div className="flex flex-col items-center justify-center gap-2">
+            <GastrometricsLogo className="h-16 w-16" variant="brand" />
+          </div>
+          <Card className="border-border shadow-2xl bg-card/95 backdrop-blur">
+            <CardContent className="pt-8 pb-8 space-y-4">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                <Mail className="h-8 w-8 text-primary" />
+              </div>
+              <h2 className="text-xl font-semibold text-foreground">{t("signup_check_email_title")}</h2>
+              <p className="text-muted-foreground">{t("signup_check_email_desc")}</p>
+              <Button onClick={() => router.push("/login")} className="w-full">
+                {t("signup_login_link")}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   return (

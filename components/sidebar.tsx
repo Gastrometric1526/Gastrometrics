@@ -45,6 +45,7 @@ import { SettingsDialog } from "@/components/settings-dialog"
 import { useTheme } from "next-themes"
 import { useToast } from "@/hooks/use-toast"
 import type { Business } from "@/types/business"
+import { useAllBusinesses } from "@/lib/storage/businesses"
 import { getCurrentPlan, useFeatureAccess, useTeamPreview } from "@/lib/plan-access"
 import type { FeatureKey } from "@/lib/plans"
 
@@ -164,7 +165,7 @@ function SidebarInner() {
   const { theme, setTheme } = useTheme()
   const [isCollapsed, setIsCollapsed] = useState(true) // Comienza colapsado por defecto
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const [businesses, setBusinesses] = useState<Business[]>([])
+  const businesses = useAllBusinesses()
   const [currentPlanName, setCurrentPlanName] = useState("Foodie")
 
   // Persistir estado del sidebar
@@ -219,11 +220,6 @@ function SidebarInner() {
     }
     window.addEventListener("gm:tour", handler)
     return () => window.removeEventListener("gm:tour", handler)
-  }, [])
-
-  useEffect(() => {
-    const storedBusinesses = JSON.parse(localStorage.getItem("businesses") || "[]")
-    setBusinesses(storedBusinesses)
   }, [])
 
   const { toast } = useToast()

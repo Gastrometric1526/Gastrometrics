@@ -1,20 +1,24 @@
 /**
- * Recupera el customer id de Stripe a partir de un checkout session_id — se
- * llama justo después de volver de Stripe Checkout (ver success_url en
- * app/api/checkout/route.ts), para que app/dashboard/page.tsx pueda guardar
- * el customer id en localStorage y habilitar el botón "Gestionar mi
- * suscripción" (Portal de Cliente, ver app/api/stripe/portal/route.ts).
+ * Recupera el customer id de Stripe a partir de un checkout session_id — se llama
+ * justo después de volver de Stripe Checkout (ver success_url en
+ * app/api/checkout/route.ts). Además de devolver el customer id (para habilitar el
+ * botón "Gestionar mi suscripción", ver app/api/stripe/portal/route.ts), esta ruta es
+ * la que de verdad aplica el plan comprado a la cuenta.
  *
- * Por qué esto es seguro sin un backend propio: session_id ya viene firmado
- * y generado por Stripe (no lo elige el usuario), así que devolver el
- * customer id asociado a ESE session_id específico no expone nada que el
- * usuario no acabe de crear él mismo pagando. Es el mismo modelo de
- * confianza que ya usa el resto de la app (ver lib/plan-access.ts): sin
- * Supabase conectado todavía, el cliente es la única fuente de verdad.
+ * Por qué se aplica el plan aquí y no confiando en un ?plan= de la URL (como se hacía
+ * antes de conectar Supabase, ver docs/50): la URL la puede editar cualquiera —
+ * bastaba con cambiar el query param para "comprar" el plan más caro gratis. Acá en
+ * cambio se lee el planSlug real desde session.metadata (lo puso el propio servidor al
+ * crear la sesión, Stripe no deja que el cliente lo toque) y la cuenta viene de la
+ * sesión real de Supabase (cookie httpOnly, tampoco falsificable) — ninguno de los dos
+ * datos pasa por el navegador de forma editable.
  */
 
 import { NextResponse } from "next/server"
 import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
+import { getSupabaseServerClient } from "@/lib/supabase/server"
+import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { getPlanBySlug } from "@/lib/plans"
 
 export async function GET(request: Request) {
   if (!isStripeConfigured()) {
@@ -26,6 +30,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Falta session_id." }, { status: 400 })
   }
 
+  const supabase = getSupabaseServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: "Debes iniciar sesión para continuar." }, { status: 401 })
+  }
+
   try {
     const stripe = getStripeClient()
     const session = await stripe.checkout.sessions.retrieve(sessionId)
@@ -35,7 +47,29 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "La sesión no tiene un cliente asociado." }, { status: 404 })
     }
 
-    return NextResponse.json({ customerId })
+    // Defensa extra: aunque el session_id lo genera Stripe (no lo elige el usuario), no
+    // aplica el plan a la cuenta si esta sesión de checkout se creó para otra cuenta —
+    // evita que alguien reutilice un session_id ajeno (por ejemplo, viejo en su
+    // historial de red) para heredar el plan de otra persona.
+    const accountIdFromSession = session.metadata?.accountId
+    const planSlug = session.metadata?.planSlug
+    if (accountIdFromSession && accountIdFromSession !== user.id) {
+      return NextResponse.json({ error: "Esta sesión de pago pertenece a otra cuenta." }, { status: 403 })
+    }
+
+    if (planSlug && getPlanBySlug(planSlug).slug === planSlug) {
+      const admin = getSupabaseAdminClient()
+      await admin.from("account_plans").upsert({
+        account_id: user.id,
+        plan_slug: planSlug,
+        stripe_customer_id: customerId,
+        stripe_subscription_id:
+          typeof session.subscription === "string" ? session.subscription : session.subscription?.id ?? null,
+        updated_at: new Date().toISOString(),
+      })
+    }
+
+    return NextResponse.json({ customerId, planSlug: planSlug ?? null })
   } catch (error) {
     console.error("[api/checkout/session] Error recuperando la sesión:", error)
     return NextResponse.json({ error: "No se pudo recuperar la sesión de pago." }, { status: 500 })

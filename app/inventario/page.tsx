@@ -7,7 +7,6 @@ import { v4 as uuidv4 } from "uuid"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { InventoryTable } from "@/components/inventory/inventory-table"
-import { useBusinessIngredients } from "@/hooks/use-business-ingredients"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import {
@@ -26,8 +25,8 @@ import { InventarioTour } from "@/components/page-tours"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
-import { getInventory, saveInventory, getInventoryHistory } from "@/lib/storage/inventory"
-import { getIngredients, saveIngredients } from "@/lib/storage/ingredients"
+import { getInventory, saveInventory, getInventoryHistory, ensureInventoryLoaded, ensureInventoryHistoryLoaded } from "@/lib/storage/inventory"
+import { getIngredients, saveIngredients, useIngredients } from "@/lib/storage/ingredients"
 import { Badge } from "@/components/ui/badge"
 import { InventoryForm } from "@/components/inventory/inventory-form"
 import { formatDate } from "@/lib/constants"
@@ -66,7 +65,7 @@ export default function InventoryPage() {
   const businessId = searchParams.get("business")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
-  const ingredients = useBusinessIngredients()
+  const ingredients = useIngredients(businessId)
   const [items, setItems] = useState<InventoryItem[]>([])
   const [searchTerm, setSearchQuery] = useState("")
   const { toast } = useToast()
@@ -163,6 +162,7 @@ export default function InventoryPage() {
 
   useEffect(() => {
     setIsLoading(true)
+    Promise.all([ensureInventoryLoaded(businessId), ensureInventoryHistoryLoaded(businessId)])
 
     const allIngredients = getIngredients(businessId)
 

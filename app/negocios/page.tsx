@@ -35,7 +35,8 @@ import {
 import type { Business } from "@/types/business"
 import { calculateExpensePercentages, calculateTotalMonthlyExpenses } from "@/types/business"
 import { formatCurrency as formatCurrencyShared } from "@/lib/currency"
-import { updateBusiness } from "@/lib/storage/businesses"
+import { updateBusiness, getAllBusinesses, refreshBusinesses } from "@/lib/storage/businesses"
+import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 
 export default function NegociosPage() {
   const router = useRouter()
@@ -80,10 +81,11 @@ export default function NegociosPage() {
     loadBusinesses()
   }, [isLoggedIn, authChecked, router])
 
-  const loadBusinesses = () => {
+  const loadBusinesses = async () => {
     try {
       setLoading(true)
-      const savedBusinesses = JSON.parse(localStorage.getItem("businesses") || "[]")
+      await refreshBusinesses()
+      const savedBusinesses = getAllBusinesses()
 
       // Normalizar los datos de negocios para evitar errores
       const normalizedBusinesses = savedBusinesses.map((business: any) => ({
@@ -107,12 +109,13 @@ export default function NegociosPage() {
 
       // Calculate stats
       const activeCount = normalizedBusinesses.filter((b: Business) => b.isActive !== false).length
+      await Promise.all(normalizedBusinesses.map((business: Business) => ensureRecipesLoaded(business.id)))
       const totalRevenue = normalizedBusinesses.reduce((sum: number, business: Business) => {
         try {
-          const businessRecipes = JSON.parse(localStorage.getItem(`recipes_${business.id}`) || "[]")
+          const businessRecipes = getRecipes(business.id)
           return (
             sum +
-            businessRecipes.reduce((recipeSum: number, recipe: any) => {
+            businessRecipes.reduce((recipeSum: number, recipe) => {
               return recipeSum + getSafeExpenseValue(recipe.totalPrice)
             }, 0)
           )

@@ -54,7 +54,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Sidebar } from "@/components/sidebar"
 import { useAuth } from "@/contexts/auth-context"
 import { getDashboardData } from "@/utils/dashboard"
-import { updateBusiness } from "@/lib/storage/businesses"
+import { updateBusiness, getBusinessById, refreshBusinesses } from "@/lib/storage/businesses"
 import { compressLogoToDataUrl } from "@/lib/utils/logo-compress"
 import { useTeamPreview } from "@/lib/plan-access"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
@@ -159,10 +159,10 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
       return
     }
 
-    const loadBusiness = () => {
+    const loadBusiness = async () => {
       try {
-        const businesses = JSON.parse(localStorage.getItem("businesses") || "[]")
-        const currentBusiness = businesses.find((b: Business) => b.id === params.id)
+        await refreshBusinesses()
+        const currentBusiness = getBusinessById(params.id)
 
         if (!currentBusiness) {
           toast({
@@ -451,9 +451,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
       }
 
       setBusiness(updatedBusiness)
-      const businesses = JSON.parse(localStorage.getItem("businesses") || "[]")
-      const updatedBusinesses = businesses.map((b: Business) => (b.id === updatedBusiness.id ? updatedBusiness : b))
-      localStorage.setItem("businesses", JSON.stringify(updatedBusinesses))
+      updateBusiness(updatedBusiness.id, updatedBusiness)
 
       // Track activity
       try {

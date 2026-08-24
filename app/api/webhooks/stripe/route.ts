@@ -1,21 +1,56 @@
 /**
- * Webhook de Stripe — recibe eventos de pago (checkout completado, pago
- * fallido, suscripción cancelada, etc.) y actualiza el plan del negocio.
- * NO conectado todavía: no hay endpoint registrado en el dashboard de
- * Stripe porque no hay cuenta de Stripe creada (ver docs/12-guia-backend.md).
+ * Webhook de Stripe — recibe eventos de pago (checkout completado, suscripción
+ * actualizada/cancelada) y actualiza account_plans de verdad (ver
+ * supabase/migrations/0004_account_plans.sql). Registrado en Stripe Developers >
+ * Webhooks apuntando a https://<dominio>/api/webhooks/stripe, escuchando
+ * "checkout.session.completed", "customer.subscription.updated" y
+ * "customer.subscription.deleted" — "Signing secret" en STRIPE_WEBHOOK_SECRET.
  *
- * Cuando se conecte: registrar este endpoint en Stripe Developers > Webhooks
- * apuntando a https://tu-dominio.com/api/webhooks/stripe, escuchando al
- * mínimo "checkout.session.completed" y "customer.subscription.deleted",
- * y copiar el "Signing secret" a STRIPE_WEBHOOK_SECRET (.env.local).
+ * La verificación de firma (stripe.webhooks.constructEvent) es la razón por la que
+ * este endpoint necesita el body crudo, no JSON parseado — por eso usa
+ * request.text() en vez de request.json().
  *
- * La verificación de firma (stripe.webhooks.constructEvent) es la razón por
- * la que este endpoint necesita el body crudo, no JSON parseado — por eso
- * usa request.text() en vez de request.json().
+ * Por qué esta ruta usa la service role key (lib/supabase/admin.ts) y no la sesión
+ * del usuario: Stripe llama a este endpoint servidor-a-servidor, sin cookies ni
+ * sesión de nadie — no hay "usuario actual" que autenticar. La cuenta a la que
+ * aplicar el cambio se identifica por datos que sí vienen firmados por Stripe
+ * (session.client_reference_id / subscription.metadata.accountId, puestos por este
+ * mismo backend al crear el checkout, ver app/api/checkout/route.ts) o, para eventos
+ * que no traen esa metadata (ej. baja de suscripción iniciada desde el Portal de
+ * Cliente), por el stripe_customer_id ya guardado en account_plans.
  */
 
 import { NextResponse } from "next/server"
 import { getStripeClient } from "@/lib/stripe/client"
+import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { getPlanBySlug } from "@/lib/plans"
+
+const FREE_PLAN_SLUG = "foodie"
+
+async function setPlanForAccount(accountId: string, planSlug: string, extra: Record<string, unknown> = {}) {
+  const admin = getSupabaseAdminClient()
+  const { error } = await admin.from("account_plans").upsert({
+    account_id: accountId,
+    plan_slug: planSlug,
+    updated_at: new Date().toISOString(),
+    ...extra,
+  })
+  if (error) console.error("[api/webhooks/stripe] Error guardando el plan:", error)
+}
+
+async function findAccountIdByStripeCustomer(customerId: string): Promise<string | null> {
+  const admin = getSupabaseAdminClient()
+  const { data, error } = await admin
+    .from("account_plans")
+    .select("account_id")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle()
+  if (error) {
+    console.error("[api/webhooks/stripe] Error buscando cuenta por stripe_customer_id:", error)
+    return null
+  }
+  return data?.account_id ?? null
+}
 
 export async function POST(request: Request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
@@ -41,16 +76,58 @@ export async function POST(request: Request) {
 
   switch (event.type) {
     case "checkout.session.completed": {
-      const session = event.data.object as { metadata?: { planSlug?: string }; customer?: string }
-      // TODO cuando Supabase esté conectado: actualizar la suscripción del
-      // negocio/usuario dueño de este checkout a session.metadata.planSlug,
-      // guardando session.customer (Stripe customer id) para futuros cobros.
-      console.log("[api/webhooks/stripe] Checkout completado:", session.metadata?.planSlug)
+      const session = event.data.object as {
+        client_reference_id?: string | null
+        metadata?: { planSlug?: string; accountId?: string }
+        customer?: string | { id: string }
+        subscription?: string | { id: string }
+      }
+      const accountId = session.metadata?.accountId || session.client_reference_id
+      const planSlug = session.metadata?.planSlug
+      const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id
+      const subscriptionId =
+        typeof session.subscription === "string" ? session.subscription : session.subscription?.id
+
+      if (accountId && planSlug && getPlanBySlug(planSlug).slug === planSlug) {
+        await setPlanForAccount(accountId, planSlug, {
+          stripe_customer_id: customerId ?? null,
+          stripe_subscription_id: subscriptionId ?? null,
+        })
+      } else {
+        console.error("[api/webhooks/stripe] checkout.session.completed sin accountId/planSlug válidos")
+      }
+      break
+    }
+    // Cubre upgrades/downgrades hechos desde el Portal de Cliente de Stripe
+    // (app/api/stripe/portal/route.ts) — esos cambios no pasan por /api/checkout, así
+    // que este es el único punto donde la app se entera de que el plan cambió.
+    case "customer.subscription.updated": {
+      const subscription = event.data.object as {
+        id: string
+        customer: string | { id: string }
+        metadata?: { planSlug?: string; accountId?: string }
+        status: string
+      }
+      const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id
+      const planSlug = subscription.metadata?.planSlug
+      const accountId = subscription.metadata?.accountId || (await findAccountIdByStripeCustomer(customerId))
+
+      if (accountId && planSlug && getPlanBySlug(planSlug).slug === planSlug) {
+        const activeStatuses = ["active", "trialing", "past_due"]
+        await setPlanForAccount(accountId, activeStatuses.includes(subscription.status) ? planSlug : FREE_PLAN_SLUG, {
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscription.id,
+        })
+      }
       break
     }
     case "customer.subscription.deleted": {
-      // TODO: bajar el negocio correspondiente de vuelta al plan "foodie" (gratis).
-      console.log("[api/webhooks/stripe] Suscripción cancelada")
+      const subscription = event.data.object as { customer: string | { id: string } }
+      const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id
+      const accountId = await findAccountIdByStripeCustomer(customerId)
+      if (accountId) {
+        await setPlanForAccount(accountId, FREE_PLAN_SLUG, { stripe_subscription_id: null })
+      }
       break
     }
     default:

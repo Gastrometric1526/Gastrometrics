@@ -245,9 +245,9 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
 
       let savedMenu: Menu
       if (menu) {
-        savedMenu = (updateMenu(businessId, menu.id, payload) as Menu) || menu
+        savedMenu = (await updateMenu(businessId, menu.id, payload)) || menu
       } else {
-        savedMenu = createMenu(businessId, payload)
+        savedMenu = await createMenu(businessId, payload)
       }
 
       onMenuSaved(savedMenu)

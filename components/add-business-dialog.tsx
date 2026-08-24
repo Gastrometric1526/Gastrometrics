@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 import { getMaxBusinesses, getCurrentPlan } from "@/lib/plan-access"
 import { getCurrentCurrencyOption } from "@/lib/currency"
+import { getAllBusinesses, addBusiness } from "@/lib/storage/businesses"
 import Link from "next/link"
 
 interface AddBusinessDialogProps {
@@ -54,15 +55,7 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
   // Limite de negocios por plan (ver docs, tabla de precios confirmada por el dueño
   // del proyecto): se revisa al abrir el dialogo, no en cada tecla, para no leer
   // localStorage de mas.
-  const existingBusinessCount = open
-    ? (() => {
-        try {
-          return JSON.parse(localStorage.getItem("businesses") || "[]").length
-        } catch {
-          return 0
-        }
-      })()
-    : 0
+  const existingBusinessCount = open ? getAllBusinesses().length : 0
   const maxBusinesses = getMaxBusinesses()
   const currentPlan = getCurrentPlan()
   const limitReached = existingBusinessCount >= maxBusinesses
@@ -133,15 +126,7 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
         targetFoodCostPercent: pricingMethod === "food_cost" ? targetFoodCostPercent : undefined,
       }
 
-      // Save to localStorage
-      const savedBusinesses = JSON.parse(localStorage.getItem("businesses") || "[]")
-      const updatedBusinesses = [...savedBusinesses, newBusiness]
-      localStorage.setItem("businesses", JSON.stringify(updatedBusinesses))
-
-      // Initialize business-specific storage
-      localStorage.setItem(`recipes_${newBusiness.id}`, JSON.stringify([]))
-      localStorage.setItem(`ingredients_${newBusiness.id}`, JSON.stringify([]))
-      localStorage.setItem(`purchaseOrders_${newBusiness.id}`, JSON.stringify([]))
+      await addBusiness(newBusiness)
 
       onBusinessAdded(newBusiness)
 

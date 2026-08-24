@@ -40,9 +40,12 @@ import { AddBusinessDialog } from "@/components/add-business-dialog"
 import { OnboardingTour } from "@/components/onboarding-tour"
 import { useFeatureAccess, useTeamPreview, setCurrentPlanSlug } from "@/lib/plan-access"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
+import { getAllBusinesses, refreshBusinesses } from "@/lib/storage/businesses"
+import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
+import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 
 export default function DashboardPage() {
-  const { isLoggedIn, authChecked, user, login } = useAuth()
+  const { isLoggedIn, authChecked, user } = useAuth()
   const { t } = useLanguage()
   const canAccessTeam = useFeatureAccess("team")
   const { active: previewActive, member: previewMember } = useTeamPreview()
@@ -67,15 +70,26 @@ export default function DashboardPage() {
   // cuánto hubiera crecido el negocio. Se quita el badge en vez de intentar arreglar
   // el tracking: la app no tiene noción de "sesión anterior" o "ayer" en ningún otro
   // lado, así que cualquier fix real sería una función nueva, no una corrección.
-  const calculateCurrentStats = useCallback(() => {
-    const allRecipes = JSON.parse(localStorage.getItem("recipes") || "[]")
-    const allIngredients = JSON.parse(localStorage.getItem("ingredients") || "[]")
-    const storedBusinesses = JSON.parse(localStorage.getItem("businesses") || "[]")
+  // Suma recetas/ingredientes de "main" + todos los negocios reales de la cuenta (ver
+  // docs/52) — antes leía las claves planas "recipes"/"ingredients" de localStorage,
+  // que ya no existen desde que estos módulos se movieron a Supabase (cada negocio
+  // tiene su propia caché, no hay una sola clave global).
+  const calculateCurrentStats = useCallback(async () => {
+    await refreshBusinesses()
+    const realBusinesses = getAllBusinesses()
+    const businessIds = [null, ...realBusinesses.map((b) => b.id)]
+
+    await Promise.all(
+      businessIds.flatMap((id) => [ensureRecipesLoaded(id), ensureIngredientsLoaded(id)]),
+    )
+
+    const allRecipes = businessIds.flatMap((id) => getRecipes(id))
+    const allIngredients = businessIds.flatMap((id) => getIngredients(id))
 
     let totalCost = 0
     let recipeCount = 0
 
-    allRecipes.forEach((recipe: any) => {
+    allRecipes.forEach((recipe) => {
       if (recipe.totalCost && recipe.totalCost > 0) {
         totalCost += recipe.totalCost
         recipeCount++
@@ -101,7 +115,7 @@ export default function DashboardPage() {
       },
       {
         title: t("stat_businesses"),
-        value: storedBusinesses.length.toString(),
+        value: realBusinesses.length.toString(),
         icon: Users,
         bgColor: "bg-chart-3/10",
         textColor: "text-chart-3",
@@ -116,38 +130,31 @@ export default function DashboardPage() {
     ]
   }, [t])
 
-  // Inicializa vacío (no ejecuta calculateCurrentStats, que lee localStorage) para que
-  // esta página se pueda prerenderizar en el servidor durante `next build` — localStorage
-  // no existe ahí. El useEffect de abajo recalcula con los datos reales apenas monta en
+  // Inicializa vacío para que esta página se pueda prerenderizar en el servidor durante
+  // `next build` — el useEffect de abajo recalcula con los datos reales apenas monta en
   // el navegador, así que el usuario nunca ve este estado vacío en la práctica.
-  const [stats, setStats] = useState<ReturnType<typeof calculateCurrentStats>>([])
+  const [stats, setStats] = useState<Awaited<ReturnType<typeof calculateCurrentStats>>>([])
 
   // Recalcula las tarjetas (incluye sus títulos traducidos) cuando cambia el idioma.
   useEffect(() => {
-    setStats(calculateCurrentStats())
+    let cancelled = false
+    calculateCurrentStats().then((result) => {
+      if (!cancelled) setStats(result)
+    })
+    return () => {
+      cancelled = true
+    }
   }, [calculateCurrentStats])
 
   useEffect(() => {
     if (!authChecked) return
     if (!isLoggedIn) {
-      // BUG CORREGIDO (ver logout() en contexts/auth-context.tsx): mismo caso que
-      // components/auth-guard.tsx — no auto-loguear de nuevo justo después de un
-      // cierre de sesión explícito, o el logout se deshace solo.
-      if (localStorage.getItem("gm_explicit_logout") === "true") {
-        router.push("/login")
-        return
-      }
-
-      const hasValidSession = localStorage.getItem("username") || localStorage.getItem("businesses")
-      if (hasValidSession) {
-        // Auto-login with stored data
-        const storedUsername = localStorage.getItem("username") || "Usuario"
-        login(storedUsername, "demo") // Use demo credentials for existing users
-      } else {
-        router.push("/login")
-      }
+      // BUG CORREGIDO (ver components/auth-guard.tsx y docs/51): con Supabase Auth real,
+      // login() valida contraseña de verdad y ya no puede usarse como auto-login de
+      // cuentas legacy — sin sesión real, la única opción es ir a /login.
+      router.push("/login")
     }
-  }, [isLoggedIn, authChecked, router, login])
+  }, [isLoggedIn, authChecked, router])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -160,32 +167,27 @@ export default function DashboardPage() {
   // Vuelta desde Stripe Checkout (ver app/api/checkout/route.ts, success_url) — se lee
   // window.location.search directo en vez de useSearchParams() para no tener que envolver
   // esta página entera en <Suspense> (mismo gotcha documentado en app/signup/payment/page.tsx
-  // y components/sidebar.tsx). Sin backend conectado todavía no hay una fuente de verdad del
-  // lado del servidor para el plan (ver TODO en app/api/webhooks/stripe/route.ts), así que
-  // esto sigue el mismo modelo de confianza que el resto de la app hoy: el cliente decide
-  // su propio plan (lib/plan-access.ts). Se limpia la URL después para que un refresh no
-  // vuelva a aplicar el plan ni muestre el toast de nuevo.
+  // y components/sidebar.tsx). El plan comprado YA quedó aplicado del lado del servidor
+  // dentro de /api/checkout/session (ver ese archivo) — acá solo se pide esa misma
+  // respuesta para reflejarlo al instante en el caché local (lib/plan-access.ts) y
+  // mostrar el toast; ya no se confía en un ?plan= de la URL (editable por cualquiera,
+  // ver docs/52). Se limpia la URL después para que un refresh no repita el toast.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get("checkout") !== "success") return
-    const planSlug = params.get("plan")
-    if (planSlug) {
-      setCurrentPlanSlug(planSlug)
-      toast({
-        title: t("dashboard_checkout_success_title"),
-        description: t("dashboard_checkout_success_desc"),
-      })
-    }
-    // Guarda el customer id de Stripe para habilitar "Gestionar mi suscripción"
-    // en /mi-plan (Portal de Cliente, ver app/api/stripe/portal/route.ts). No
-    // bloquea la limpieza de la URL de abajo si falla — el usuario ya pagó y
-    // ya tiene su plan activo, esto es solo para la conveniencia de después.
     const sessionId = params.get("session_id")
     if (sessionId) {
       fetch(`/api/checkout/session?session_id=${sessionId}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.customerId) localStorage.setItem("stripe_customer_id", data.customerId)
+          if (data.planSlug) {
+            setCurrentPlanSlug(data.planSlug)
+            toast({
+              title: t("dashboard_checkout_success_title"),
+              description: t("dashboard_checkout_success_desc"),
+            })
+          }
         })
         .catch(() => {})
     }
@@ -226,7 +228,7 @@ export default function DashboardPage() {
 
     const handleIngredientsUpdate = (event: CustomEvent) => {
       console.log("Ingredients updated:", event.detail)
-      setStats(calculateCurrentStats())
+      calculateCurrentStats().then(setStats)
       setTimeout(() => {
         loadUserActivity()
         loadSystemAlerts()
@@ -242,7 +244,7 @@ export default function DashboardPage() {
     const handleDataReset = () => {
       // Reload all data after reset
       setBusinesses([])
-      setStats(calculateCurrentStats())
+      calculateCurrentStats().then(setStats)
       loadUserActivity()
       loadSystemAlerts()
     }
@@ -337,7 +339,7 @@ export default function DashboardPage() {
 
       // Force reload of activity and alerts
       setTimeout(() => {
-        setStats(calculateCurrentStats())
+        calculateCurrentStats().then(setStats)
         loadUserActivity()
         loadSystemAlerts()
       }, 100)
@@ -378,7 +380,7 @@ export default function DashboardPage() {
 
       // Force reload of activity and alerts
       setTimeout(() => {
-        setStats(calculateCurrentStats())
+        calculateCurrentStats().then(setStats)
         loadUserActivity()
         loadSystemAlerts()
       }, 100)
@@ -512,7 +514,7 @@ export default function DashboardPage() {
 
   const handleRecipesUpdate = useCallback(
     (event: CustomEvent) => {
-      setStats(calculateCurrentStats())
+      calculateCurrentStats().then(setStats)
       setTimeout(() => {
         loadUserActivity()
         loadSystemAlerts()
@@ -525,7 +527,7 @@ export default function DashboardPage() {
     (event: CustomEvent) => {
       const storedBusinesses = JSON.parse(localStorage.getItem("businesses") || "[]")
       setBusinesses(storedBusinesses)
-      setStats(calculateCurrentStats())
+      calculateCurrentStats().then(setStats)
       setTimeout(() => {
         loadUserActivity()
         loadSystemAlerts()
@@ -536,7 +538,7 @@ export default function DashboardPage() {
 
   const handleIngredientsUpdate = useCallback(
     (event: CustomEvent) => {
-      setStats(calculateCurrentStats())
+      calculateCurrentStats().then(setStats)
       setTimeout(() => {
         loadUserActivity()
         loadSystemAlerts()
@@ -547,7 +549,7 @@ export default function DashboardPage() {
 
   const handleDataReset = useCallback(() => {
     setBusinesses([])
-    setStats(calculateCurrentStats())
+    calculateCurrentStats().then(setStats)
     loadUserActivity()
     loadSystemAlerts()
   }, [calculateCurrentStats])

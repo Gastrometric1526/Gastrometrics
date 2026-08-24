@@ -29,9 +29,16 @@ export function PlansGrid({ freeRedirectTo = "/dashboard" }: PlansGridProps) {
   // salto de hidratacion. Recien despues de eso se revela el flujo real.
   const knowsLoginState = authChecked && currentPlanSlug !== null
 
-  const handleSelectPlan = (planSlug: string, isFree: boolean) => {
+  const handleSelectPlan = async (planSlug: string, isFree: boolean) => {
     if (isFree) {
-      setCurrentPlanSlug(planSlug)
+      const result = await fetch("/api/plan/set-free", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planSlug }),
+      })
+        .then((res) => res.json())
+        .catch(() => null)
+      setCurrentPlanSlug(result?.planSlug || planSlug)
       router.push(freeRedirectTo)
     } else {
       // "from=account": distingue a alguien que ya tenía cuenta y solo quiere subir de

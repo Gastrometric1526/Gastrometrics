@@ -22,7 +22,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { getPurchaseOrders, savePurchaseOrders, duplicatePurchaseOrder } from "@/lib/storage/purchase-orders"
+import { getPurchaseOrders, savePurchaseOrders, duplicatePurchaseOrder, ensurePurchaseOrdersLoaded } from "@/lib/storage/purchase-orders"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
@@ -32,10 +32,10 @@ import { PackageSearch, ChefHat, Info } from "lucide-react"
 import { OrdenesCompraTour } from "@/components/page-tours"
 import { Sidebar } from "@/components/sidebar"
 import { Flame, DollarSign, Boxes } from "lucide-react"
-import { getIngredients, updateIngredient } from "@/lib/storage/ingredients"
-import { getInventory } from "@/lib/storage/inventory"
-import { getRecipes } from "@/lib/storage/recipes"
-import { getMenuById } from "@/lib/menus"
+import { getIngredients, updateIngredient, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
+import { getInventory, ensureInventoryLoaded } from "@/lib/storage/inventory"
+import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
+import { getMenuById, ensureMenusLoaded } from "@/lib/menus"
 import { generateMenuIngredientList } from "@/lib/menus"
 import { sortPurchaseOrderItemsBySupplier } from "@/lib/purchase-orders"
 import { computePresentationQuantity } from "@/lib/utils/presentation-quantity"
@@ -80,16 +80,27 @@ export function PurchaseOrderPage() {
   const [isAutoSuggestInfoOpen, setIsAutoSuggestInfoOpen] = useState(false)
 
   useEffect(() => {
-    setIngredients(getIngredients(businessId))
-    setInventoryItems(getInventory(businessId))
+    let cancelled = false
+    Promise.all([
+      ensureIngredientsLoaded(businessId),
+      ensureInventoryLoaded(businessId),
+      ensureRecipesLoaded(businessId),
+    ]).then(() => {
+      if (cancelled) return
+      setIngredients(getIngredients(businessId))
+      setInventoryItems(getInventory(businessId))
 
-    const recipes = getRecipes(businessId)
-    const counts = new Map<string, number>()
-    recipes.forEach((r) => {
-      const namesInRecipe = new Set((r.ingredients || []).map((ing) => ing.name).filter(Boolean))
-      namesInRecipe.forEach((name) => counts.set(name, (counts.get(name) || 0) + 1))
+      const recipes = getRecipes(businessId)
+      const counts = new Map<string, number>()
+      recipes.forEach((r) => {
+        const namesInRecipe = new Set((r.ingredients || []).map((ing) => ing.name).filter(Boolean))
+        namesInRecipe.forEach((name) => counts.set(name, (counts.get(name) || 0) + 1))
+      })
+      setRecipeIngredientCounts(Array.from(counts.entries()).sort((a, b) => b[1] - a[1]))
     })
-    setRecipeIngredientCounts(Array.from(counts.entries()).sort((a, b) => b[1] - a[1]))
+    return () => {
+      cancelled = true
+    }
   }, [businessId])
 
   const mostUsedIngredients = useMemo(() => recipeIngredientCounts.slice(0, 3), [recipeIngredientCounts])
@@ -133,6 +144,23 @@ export function PurchaseOrderPage() {
   }
 
   useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      await Promise.all([
+        businessId ? ensurePurchaseOrdersLoaded(businessId) : Promise.resolve(),
+        businessId ? ensureMenusLoaded(businessId) : Promise.resolve(),
+        businessId ? ensureIngredientsLoaded(businessId) : Promise.resolve(),
+        businessId ? ensureRecipesLoaded(businessId) : Promise.resolve(),
+      ])
+      if (cancelled) return
+      loadOrdersAndDeepLinks()
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [businessId, searchParams, toast, t])
+
+  function loadOrdersAndDeepLinks() {
     const loadedOrders = businessId ? getPurchaseOrders(businessId) : []
     setOrders(loadedOrders)
 
@@ -223,7 +251,7 @@ export function PurchaseOrderPage() {
         description: t("ordenes_toast_generated_from_menu_desc").replace("{count}", String(items.length)).replace("{menu}", menu.name),
       })
     }
-  }, [businessId, searchParams, toast, t])
+  }
 
   // Fija/cambia la presentación de un ingrediente directo desde la orden de compra (el
   // usuario la está viendo faltante justo ahí) y la persiste en su ficha, para que no
@@ -359,10 +387,10 @@ export function PurchaseOrderPage() {
     })
   }
 
-  const handleDuplicateOrder = (orderId: string) => {
+  const handleDuplicateOrder = async (orderId: string) => {
     if (!businessId) return
     try {
-      const newOrder = duplicatePurchaseOrder(businessId, orderId)
+      const newOrder = await duplicatePurchaseOrder(businessId, orderId)
       if (newOrder) {
         setOrders(businessId ? getPurchaseOrders(businessId) : [])
         toast({

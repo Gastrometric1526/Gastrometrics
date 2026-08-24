@@ -50,12 +50,12 @@ import {
   Tooltip,
   Legend,
 } from "recharts"
-import { getRecipes } from "@/lib/storage/recipes"
-import { getIngredients } from "@/lib/storage/ingredients"
-import { getInventory, getInventoryStats } from "@/lib/storage/inventory"
-import { getPurchaseOrders } from "@/lib/storage/purchase-orders"
+import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
+import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
+import { getInventory, getInventoryStats, ensureInventoryLoaded } from "@/lib/storage/inventory"
+import { getPurchaseOrders, ensurePurchaseOrdersLoaded } from "@/lib/storage/purchase-orders"
 import { getSalesImports } from "@/lib/storage/sales-imports"
-import { getMenus } from "@/lib/menus"
+import { getMenus, ensureMenusLoaded } from "@/lib/menus"
 import { getPriceChangeHistory, type PriceChangeNotification } from "@/lib/recalculate"
 import { formatCurrency } from "@/lib/currency"
 import type { Recipe } from "@/types/recipe"
@@ -200,7 +200,15 @@ function EstadisticasContent() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    const load = async () => {
     try {
+      await Promise.all([
+        ensureRecipesLoaded(businessId),
+        ensureIngredientsLoaded(businessId),
+        ensureMenusLoaded(businessId),
+        ensureInventoryLoaded(businessId),
+        ensurePurchaseOrdersLoaded(businessId),
+      ])
       setRecipes(getRecipes(businessId))
       setIngredients(getIngredients(businessId))
       setMenuCount(getMenus(businessId).length)
@@ -222,6 +230,8 @@ function EstadisticasContent() {
     } finally {
       setIsLoading(false)
     }
+    }
+    load()
   }, [businessId])
 
   const recipesWithPricing = useMemo(

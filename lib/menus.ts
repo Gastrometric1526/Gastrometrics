@@ -1,6 +1,9 @@
 import { getRecipes } from "./storage/recipes"
 import { getIngredients } from "./storage/ingredients"
 import { buildPurchaseOrderData, type PurchaseOrderComputationResult } from "./purchase-orders"
+import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { createBusinessScopedCache } from "./storage/supabase-cache"
+import type { Database } from "@/types/database"
 import type { Menu, MenuItem, MenuSection, MenuStep } from "@/lib/types/menus"
 
 export type { Menu, MenuItem, MenuSection, MenuStep }
@@ -137,21 +140,98 @@ function normalizeMenu(raw: any): Menu {
   }
 }
 
-/**
- * Get all menus for a business
- */
-export function getMenus(businessId: string): Menu[] {
-  const { getFromStorage, STORAGE_KEYS } = require("./storage/core")
-  const raw = getFromStorage<any[]>(STORAGE_KEYS.MENUS, businessId) || []
-  return raw.map(normalizeMenu)
+// Migrado a Supabase real (ver docs/52 y el comentario de cabecera de
+// lib/storage/businesses.ts para el patrón general de caché reactiva + escritura async).
+
+type MenuRow = Database["public"]["Tables"]["menus"]["Row"]
+
+const cache = createBusinessScopedCache<Menu>()
+
+function toDbBusinessId(businessId?: string | null): string | null {
+  return !businessId || businessId === "main" ? null : businessId
+}
+
+function rowToMenu(row: MenuRow): Menu {
+  return normalizeMenu({ ...(row.data as Record<string, unknown>), id: row.id, businessId: row.business_id ?? "main", name: row.name })
+}
+
+async function fetchMenus(businessId: string): Promise<Menu[]> {
+  const supabase = getSupabaseBrowserClient()
+  const dbBusinessId = toDbBusinessId(businessId)
+  let query = supabase.from("menus").select("*")
+  query = dbBusinessId === null ? query.is("business_id", null) : query.eq("business_id", dbBusinessId)
+  const { data, error } = await query
+  if (error) {
+    console.error("[Menus] Error cargando menús:", error)
+    return []
+  }
+  return (data ?? []).map(rowToMenu)
+}
+
+async function persistMenu(menu: Menu, businessId: string): Promise<void> {
+  const supabase = getSupabaseBrowserClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error("Debes iniciar sesión.")
+
+  const { id, name, businessId: _bid, ...rest } = menu
+  const { error } = await supabase
+    .from("menus")
+    .upsert({ id, business_id: toDbBusinessId(businessId), owner_id: user.id, name, data: rest })
+  if (error) throw error
+}
+
+/** Hook reactivo — usar en vez de getMenus(businessId) dentro de useMemo. */
+export function useMenus(businessId: string): Menu[] {
+  return cache.useCached(businessId, () => fetchMenus(businessId))
+}
+
+export function ensureMenusLoaded(businessId: string): Promise<void> {
+  return cache.ensureLoaded(businessId, () => fetchMenus(businessId))
 }
 
 /**
- * Save menus for a business
+ * Get all menus for a business (síncrono — lee la caché en memoria).
  */
-export function saveMenus(businessId: string, menus: Menu[]): void {
-  const { saveToStorage, STORAGE_KEYS } = require("./storage/core")
-  saveToStorage(STORAGE_KEYS.MENUS, menus, businessId)
+export function getMenus(businessId: string): Menu[] {
+  return cache.getSnapshot(businessId)
+}
+
+/**
+ * Save menus for a business — recibe el array completo, sincroniza contra Supabase
+ * (upsert + delete de lo removido).
+ */
+export async function saveMenus(businessId: string, menus: Menu[]): Promise<void> {
+  const previous = cache.getSnapshot(businessId)
+  const nextIds = new Set(menus.map((m) => m.id))
+  const removedIds = previous.filter((m) => !nextIds.has(m.id)).map((m) => m.id)
+
+  cache.setSnapshot(businessId, menus)
+
+  const supabase = getSupabaseBrowserClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    console.error("[Menus] No hay sesión — no se pudo guardar en Supabase.")
+    return
+  }
+
+  const dbBusinessId = toDbBusinessId(businessId)
+  const rows = menus.map((menu) => {
+    const { id, name, businessId: _bid, ...rest } = menu
+    return { id, business_id: dbBusinessId, owner_id: user.id, name, data: rest }
+  })
+
+  if (rows.length > 0) {
+    const { error } = await supabase.from("menus").upsert(rows)
+    if (error) console.error("[Menus] Error guardando menús:", error)
+  }
+  if (removedIds.length > 0) {
+    const { error } = await supabase.from("menus").delete().in("id", removedIds)
+    if (error) console.error("[Menus] Error eliminando menús:", error)
+  }
 }
 
 /**
@@ -165,9 +245,10 @@ export function getMenuById(businessId: string, menuId: string): Menu | null {
 /**
  * Create a new menu
  */
-export function createMenu(businessId: string, menuData: Omit<Menu, "id" | "createdAt" | "updatedAt">): Menu {
-  const menus = getMenus(businessId)
-
+export async function createMenu(
+  businessId: string,
+  menuData: Omit<Menu, "id" | "createdAt" | "updatedAt">,
+): Promise<Menu> {
   const now = new Date().toISOString()
   const newMenu: Menu = {
     ...menuData,
@@ -177,8 +258,8 @@ export function createMenu(businessId: string, menuData: Omit<Menu, "id" | "crea
     updatedAt: now,
   }
 
-  menus.push(newMenu)
-  saveMenus(businessId, menus)
+  cache.mutateSnapshot(businessId, (list) => [...list, newMenu])
+  await persistMenu(newMenu, businessId)
 
   return newMenu
 }
@@ -186,26 +267,26 @@ export function createMenu(businessId: string, menuData: Omit<Menu, "id" | "crea
 /**
  * Update an existing menu
  */
-export function updateMenu(businessId: string, menuId: string, updates: Partial<Menu>): Menu | null {
+export async function updateMenu(businessId: string, menuId: string, updates: Partial<Menu>): Promise<Menu | null> {
   const menus = getMenus(businessId)
-  const index = menus.findIndex((m) => m.id === menuId)
+  const current = menus.find((m) => m.id === menuId)
 
-  if (index === -1) {
+  if (!current) {
     console.error(`[Menus] Menu not found: ${menuId}`)
     return null
   }
 
   const updatedMenu: Menu = {
-    ...menus[index],
+    ...current,
     ...updates,
-    id: menus[index].id,
+    id: current.id,
     businessId,
-    createdAt: menus[index].createdAt,
+    createdAt: current.createdAt,
     updatedAt: new Date().toISOString(),
   }
 
-  menus[index] = updatedMenu
-  saveMenus(businessId, menus)
+  cache.mutateSnapshot(businessId, (list) => list.map((m) => (m.id === menuId ? updatedMenu : m)))
+  await persistMenu(updatedMenu, businessId)
 
   return updatedMenu
 }
@@ -213,22 +294,25 @@ export function updateMenu(businessId: string, menuId: string, updates: Partial<
 /**
  * Delete a menu
  */
-export function deleteMenu(businessId: string, menuId: string): boolean {
+export async function deleteMenu(businessId: string, menuId: string): Promise<boolean> {
   const menus = getMenus(businessId)
-  const filtered = menus.filter((m) => m.id !== menuId)
+  if (!menus.some((m) => m.id === menuId)) return false
 
-  if (filtered.length === menus.length) {
+  cache.mutateSnapshot(businessId, (list) => list.filter((m) => m.id !== menuId))
+
+  const supabase = getSupabaseBrowserClient()
+  const { error } = await supabase.from("menus").delete().eq("id", menuId)
+  if (error) {
+    console.error("[Menus] Error eliminando menú:", error)
     return false
   }
-
-  saveMenus(businessId, filtered)
   return true
 }
 
 /**
  * Duplicate an existing menu
  */
-export function duplicateMenu(businessId: string, menuId: string, newName?: string): Menu {
+export async function duplicateMenu(businessId: string, menuId: string, newName?: string): Promise<Menu> {
   const original = getMenuById(businessId, menuId)
   if (!original) {
     throw new Error(`Menu with id ${menuId} not found`)

@@ -19,6 +19,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [loginError, setLoginError] = useState("")
   const router = useRouter()
   const { login } = useAuth()
   const { t } = useLanguage()
@@ -26,6 +27,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setLoginError("")
 
     try {
       await login(email, password)
@@ -39,17 +41,25 @@ export default function LoginPage() {
 
       // Cuenta de prueba del dueño del proyecto — pedido explícito: entrar con este
       // correo debe verse como si tuviera el plan Chef Ejecutivo, sin pasar por Stripe.
-      // Se identifica SOLO por el correo (no por contraseña): el login de hoy no
-      // verifica contraseñas contra nada real para NINGUNA cuenta (ver login() en
-      // contexts/auth-context.tsx), así que comparar una contraseña aquí sería
-      // seguridad falsa — y además obligaría a dejar la contraseña real en texto
-      // plano en el código fuente, que ahora es público en GitHub.
-      if (email.trim().toLowerCase() === "josedanielromero.cr@outlook.com") {
-        setCurrentPlanSlug("chef-ejecutivo")
+      // Con account_plans ya no escribible directo desde el cliente (ver
+      // supabase/migrations/0004_account_plans.sql), esto ahora lo aplica una ruta de
+      // servidor que verifica el correo contra la sesión real — ver
+      // app/api/plan/dev-account/route.ts para el porqué.
+      const devAccountResult = await fetch("/api/plan/dev-account", { method: "POST" })
+        .then((res) => res.json())
+        .catch(() => null)
+      if (devAccountResult?.applied && devAccountResult.planSlug) {
+        setCurrentPlanSlug(devAccountResult.planSlug)
       }
       router.push("/dashboard")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error)
+      const message = typeof error?.message === "string" ? error.message.toLowerCase() : ""
+      if (message.includes("invalid") || message.includes("credentials")) {
+        setLoginError(t("login_error_invalid_credentials"))
+      } else {
+        setLoginError(t("login_error_generic"))
+      }
     } finally {
       setIsLoading(false)
     }
@@ -120,6 +130,12 @@ export default function LoginPage() {
                   />
                 </div>
               </div>
+
+              {loginError && (
+                <p className="text-sm text-destructive text-center" role="alert">
+                  {loginError}
+                </p>
+              )}
 
               <Button
                 type="submit"

@@ -135,8 +135,15 @@ function PaymentPageInner() {
 
               <button
                 type="button"
-                onClick={() => {
-                  setCurrentPlanSlug("foodie")
+                onClick={async () => {
+                  const result = await fetch("/api/plan/set-free", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ planSlug: "foodie" }),
+                  })
+                    .then((res) => res.json())
+                    .catch(() => null)
+                  setCurrentPlanSlug(result?.planSlug || "foodie")
                   router.push(fromAccount ? "/mi-plan" : "/dashboard")
                 }}
                 className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"

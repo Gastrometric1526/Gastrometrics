@@ -16,9 +16,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Check, ChevronsUpDown, Upload, Settings, RotateCcw, Calculator, Info } from "lucide-react"
 import { CalculationInfoDialog } from "./calculation-info-dialog"
 import { cn } from "@/lib/utils"
-import { getRecipeById, saveRecipe } from "@/lib/storage/recipes"
+import { getRecipeById, saveRecipe, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { ActivityTracker } from "@/lib/activity-tracker"
-import { getIngredients } from "@/lib/storage/ingredients"
+import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 import { getBusinessById, getEffectivePricingDefaults, setEffectivePricingDefaults } from "@/lib/storage/businesses"
 import {
   calculateTotalMonthlyExpenses,
@@ -117,6 +117,18 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
   const [targetFoodCostPercent, setTargetFoodCostPercent] = useState<number>(DEFAULT_TARGET_FOOD_COST_PERCENT)
 
   useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      await Promise.all([ensureIngredientsLoaded(businessId), ensureRecipesLoaded(businessId)])
+      if (cancelled) return
+      loadTechnicalSheetData()
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [recipeId, mode, businessId])
+
+  function loadTechnicalSheetData() {
     const ingredients = getIngredients(businessId)
     setAvailableIngredients(ingredients)
 
@@ -168,7 +180,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
       setPricingMethod(pricingDefaults.pricingMethod || DEFAULT_PRICING_METHOD)
       setTargetFoodCostPercent(pricingDefaults.targetFoodCostPercent || DEFAULT_TARGET_FOOD_COST_PERCENT)
     }
-  }, [recipeId, mode, businessId])
+  }
 
   // Elegir un método de costeo aquí lo vuelve el default del negocio de inmediato (no
   // solo al guardar esta receta) — pedido explícito: "al seleccionar un metodo ese se
@@ -714,7 +726,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
         },
       }
 
-      const savedRecipe = saveRecipe(recipeToSave, businessId)
+      const savedRecipe = await saveRecipe(recipeToSave, businessId)
 
       ActivityTracker.addActivity(
         mode === "edit" ? `Receta actualizada: ${savedRecipe.name}` : `Nueva receta: ${savedRecipe.name}`,

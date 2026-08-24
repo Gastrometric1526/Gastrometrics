@@ -19,6 +19,7 @@ export const STORAGE_KEYS = {
   POS_COLUMN_MAPPING: "posColumnMapping",
   DISH_NAME_MAPPINGS: "dishNameMappings",
   TEAM_MEMBERS: "teamMembers",
+  PRICING_DEFAULTS: "pricingDefaults",
 } as const
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS]

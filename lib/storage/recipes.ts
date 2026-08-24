@@ -1,11 +1,79 @@
 /**
- * RECIPE STORAGE MODULE
- * Centralized recipe management with type safety
+ * RECIPE STORAGE MODULE — migrado a Supabase real (ver docs/52 y el comentario de
+ * cabecera de lib/storage/businesses.ts para el patrón general). Toda la lógica de
+ * validación/sanitización/papelera se mantiene idéntica a como estaba en localStorage
+ * — lo único que cambia es a dónde se persiste al final de cada función.
  */
 
 import type { Recipe } from "@/types/recipe"
-import { getFromStorage, saveToStorage, STORAGE_KEYS } from "./core"
 import { SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
+import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { createBusinessScopedCache } from "./supabase-cache"
+import type { Database } from "@/types/database"
+
+type RecipeRow = Database["public"]["Tables"]["recipes"]["Row"]
+type RecipeTrashRow = Database["public"]["Tables"]["recipes_trash"]["Row"]
+
+const cache = createBusinessScopedCache<Recipe>()
+const trashCache = createBusinessScopedCache<TrashedRecipe>()
+
+function toDbBusinessId(businessId?: string | null): string | null {
+  return !businessId || businessId === "main" ? null : businessId
+}
+
+function rowToRecipe(row: RecipeRow): Recipe {
+  return {
+    ...(row.data as Partial<Recipe>),
+    id: row.id,
+    name: row.name,
+    classification: row.classification,
+    isSubRecipe: row.is_sub_recipe,
+    businessId: row.business_id ?? "main",
+  } as Recipe
+}
+
+async function fetchRecipes(businessId?: string | null): Promise<Recipe[]> {
+  const supabase = getSupabaseBrowserClient()
+  const dbBusinessId = toDbBusinessId(businessId)
+  let query = supabase.from("recipes").select("*")
+  query = dbBusinessId === null ? query.is("business_id", null) : query.eq("business_id", dbBusinessId)
+  const { data, error } = await query
+  if (error) {
+    console.error("[Recipes] Error cargando recetas:", error)
+    return []
+  }
+  return (data ?? []).map(rowToRecipe)
+}
+
+async function persistRecipe(recipe: Recipe, businessId?: string | null): Promise<void> {
+  const supabase = getSupabaseBrowserClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error("Debes iniciar sesión.")
+
+  const { id, name, classification, isSubRecipe, businessId: _bid, ...rest } = recipe
+  const { error } = await supabase.from("recipes").upsert({
+    id,
+    business_id: toDbBusinessId(businessId),
+    owner_id: user.id,
+    name,
+    classification,
+    is_sub_recipe: !!isSubRecipe,
+    data: rest,
+  })
+  if (error) throw error
+}
+
+/** Hook reactivo — usar en vez de getRecipes(businessId) dentro de useMemo. */
+export function useRecipes(businessId?: string | null): Recipe[] {
+  return cache.useCached(businessId, () => fetchRecipes(businessId))
+}
+
+/** Dispara (o espera) la carga real desde Supabase para este negocio. */
+export function ensureRecipesLoaded(businessId?: string | null): Promise<void> {
+  return cache.ensureLoaded(businessId, () => fetchRecipes(businessId))
+}
 
 /**
  * Validate recipe data before saving
@@ -13,7 +81,6 @@ import { SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
 export function validateRecipeData(recipe: Recipe): { valid: boolean; errors: string[] } {
   const errors: string[] = []
 
-  // Required fields validation
   if (!recipe.id || recipe.id.trim() === "") {
     errors.push("ID de receta es requerido")
   }
@@ -30,7 +97,6 @@ export function validateRecipeData(recipe: Recipe): { valid: boolean; errors: st
     errors.push("ID de negocio es requerido")
   }
 
-  // Numeric validations
   if (recipe.servings <= 0) {
     errors.push("Las porciones deben ser mayor a 0")
   }
@@ -39,7 +105,6 @@ export function validateRecipeData(recipe: Recipe): { valid: boolean; errors: st
     errors.push("El rendimiento debe ser mayor a 0")
   }
 
-  // Array validations
   if (!Array.isArray(recipe.ingredients)) {
     errors.push("Los ingredientes deben ser un array")
   } else if (recipe.ingredients.length === 0) {
@@ -50,7 +115,6 @@ export function validateRecipeData(recipe: Recipe): { valid: boolean; errors: st
     errors.push("El procedimiento debe ser un array")
   }
 
-  // Metadata validation
   if (!recipe.metadata) {
     errors.push("Metadata es requerida")
   } else {
@@ -105,26 +169,47 @@ export function sanitizeRecipeData(recipe: Recipe): Recipe {
 }
 
 /**
- * Get all recipes for a business
+ * Get all recipes for a business (síncrono — lee la caché en memoria).
  */
 export function getRecipes(businessId?: string | null): Recipe[] {
-  try {
-    const recipes = getFromStorage<Recipe[]>(STORAGE_KEYS.RECIPES, businessId) || []
-    console.log(`[Recipes] Loaded ${recipes.length} recipes for business ${businessId || "main"}`)
-    return recipes
-  } catch (error) {
-    console.error("[Recipes] Error loading recipes:", error)
-    return []
-  }
+  return cache.getSnapshot(businessId)
 }
 
 /**
- * Save recipes for a business
+ * Save recipes for a business — recibe el array completo y lo sincroniza contra
+ * Supabase: upsert de lo que sigue existiendo, delete de lo que ya no está.
  */
-export function saveRecipes(recipes: Recipe[], businessId?: string | null): void {
+export async function saveRecipes(recipes: Recipe[], businessId?: string | null): Promise<void> {
   try {
-    console.log(`[Recipes] Saving ${recipes.length} recipes for business ${businessId || "main"}`)
-    saveToStorage(STORAGE_KEYS.RECIPES, recipes, businessId)
+    const previous = cache.getSnapshot(businessId)
+    const nextIds = new Set(recipes.map((r) => r.id))
+    const removedIds = previous.filter((r) => !nextIds.has(r.id)).map((r) => r.id)
+
+    cache.setSnapshot(businessId, recipes)
+
+    const supabase = getSupabaseBrowserClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      console.error("[Recipes] No hay sesión — no se pudo guardar en Supabase.")
+      return
+    }
+
+    const dbBusinessId = toDbBusinessId(businessId)
+    const rows = recipes.map((recipe) => {
+      const { id, name, classification, isSubRecipe, businessId: _bid, ...rest } = recipe
+      return { id, business_id: dbBusinessId, owner_id: user.id, name, classification, is_sub_recipe: !!isSubRecipe, data: rest }
+    })
+
+    if (rows.length > 0) {
+      const { error } = await supabase.from("recipes").upsert(rows)
+      if (error) throw error
+    }
+    if (removedIds.length > 0) {
+      const { error } = await supabase.from("recipes").delete().in("id", removedIds)
+      if (error) throw error
+    }
   } catch (error) {
     console.error("[Recipes] Error saving recipes:", error)
     throw new Error("No se pudieron guardar las recetas")
@@ -153,7 +238,7 @@ export function getRecipeById(recipeId: string, businessId?: string | null): Rec
 /**
  * Save a single recipe (add or update) with validation
  */
-export function saveRecipe(recipe: Recipe, businessId?: string | null): Recipe {
+export async function saveRecipe(recipe: Recipe, businessId?: string | null): Promise<Recipe> {
   try {
     const validation = validateRecipeData(recipe)
     if (!validation.valid) {
@@ -163,9 +248,7 @@ export function saveRecipe(recipe: Recipe, businessId?: string | null): Recipe {
     }
 
     const sanitizedRecipe = sanitizeRecipeData(recipe)
-
-    const recipes = getRecipes(businessId)
-    const existingIndex = recipes.findIndex((r) => r.id === sanitizedRecipe.id)
+    const existing = getRecipeById(sanitizedRecipe.id, businessId)
 
     const savedRecipe: Recipe = {
       ...sanitizedRecipe,
@@ -173,25 +256,22 @@ export function saveRecipe(recipe: Recipe, businessId?: string | null): Recipe {
       metadata: {
         createdAt: sanitizedRecipe.metadata?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        version: existingIndex >= 0 ? (sanitizedRecipe.metadata?.version || 0) + 1 : 1,
+        version: existing ? (sanitizedRecipe.metadata?.version || 0) + 1 : 1,
       },
     }
 
-    if (existingIndex >= 0) {
-      recipes[existingIndex] = savedRecipe
-      console.log(`[Recipes] ✅ Updated recipe: ${savedRecipe.name} (ID: ${savedRecipe.id})`)
-    } else {
-      recipes.push(savedRecipe)
-      console.log(`[Recipes] ✅ Added new recipe: ${savedRecipe.name} (ID: ${savedRecipe.id})`)
-    }
+    cache.mutateSnapshot(businessId, (list) =>
+      existing ? list.map((r) => (r.id === savedRecipe.id ? savedRecipe : r)) : [...list, savedRecipe],
+    )
+    await persistRecipe(savedRecipe, businessId)
 
-    saveRecipes(recipes, businessId)
+    console.log(`[Recipes] ✅ ${existing ? "Updated" : "Added"} recipe: ${savedRecipe.name} (ID: ${savedRecipe.id})`)
 
     window.dispatchEvent(
       new CustomEvent("recipesUpdated", {
         detail: {
           businessId: businessId || "main",
-          action: existingIndex >= 0 ? "update" : "create",
+          action: existing ? "update" : "create",
           recipeId: savedRecipe.id,
           recipeName: savedRecipe.name,
         },
@@ -208,26 +288,29 @@ export function saveRecipe(recipe: Recipe, businessId?: string | null): Recipe {
 /**
  * Update an existing recipe
  */
-export function updateRecipe(recipeId: string, updates: Partial<Recipe>, businessId?: string | null): Recipe | null {
+export async function updateRecipe(
+  recipeId: string,
+  updates: Partial<Recipe>,
+  businessId?: string | null,
+): Promise<Recipe | null> {
   try {
-    const recipes = getRecipes(businessId)
-    const index = recipes.findIndex((r) => r.id === recipeId)
+    const current = getRecipeById(recipeId, businessId)
 
-    if (index === -1) {
+    if (!current) {
       console.error(`[Recipes] Cannot update - recipe not found: ${recipeId}`)
       throw new Error("Receta no encontrada")
     }
 
     const updatedRecipe: Recipe = {
-      ...recipes[index],
+      ...current,
       ...updates,
-      id: recipeId, // Ensure ID doesn't change
-      businessId: businessId || "main", // Ensure businessId doesn't change
+      id: recipeId,
+      businessId: businessId || "main",
       metadata: {
-        ...recipes[index].metadata,
+        ...current.metadata,
         ...updates.metadata,
         updatedAt: new Date().toISOString(),
-        version: (recipes[index].metadata?.version || 1) + 1,
+        version: (current.metadata?.version || 1) + 1,
       },
     }
 
@@ -237,8 +320,8 @@ export function updateRecipe(recipeId: string, updates: Partial<Recipe>, busines
     }
 
     const sanitizedRecipe = sanitizeRecipeData(updatedRecipe)
-    recipes[index] = sanitizedRecipe
-    saveRecipes(recipes, businessId)
+    cache.mutateSnapshot(businessId, (list) => list.map((r) => (r.id === recipeId ? sanitizedRecipe : r)))
+    await persistRecipe(sanitizedRecipe, businessId)
 
     console.log(`[Recipes] ✅ Updated recipe: ${sanitizedRecipe.name} (${sanitizedRecipe.id})`)
 
@@ -273,19 +356,50 @@ export interface TrashedRecipe {
 
 const TRASH_RETENTION_DAYS = 30
 
-function getTrash(businessId?: string | null): TrashedRecipe[] {
-  return getFromStorage<TrashedRecipe[]>(STORAGE_KEYS.RECIPES_TRASH, businessId) || []
+function rowToTrashedRecipe(row: RecipeTrashRow): TrashedRecipe {
+  return { recipe: row.data as unknown as Recipe, deletedAt: row.deleted_at }
 }
 
-function saveTrash(trash: TrashedRecipe[], businessId?: string | null): void {
-  saveToStorage(STORAGE_KEYS.RECIPES_TRASH, trash, businessId)
+async function fetchTrash(businessId?: string | null): Promise<TrashedRecipe[]> {
+  const supabase = getSupabaseBrowserClient()
+  const dbBusinessId = toDbBusinessId(businessId)
+  let query = supabase.from("recipes_trash").select("*")
+  query = dbBusinessId === null ? query.is("business_id", null) : query.eq("business_id", dbBusinessId)
+  const { data, error } = await query
+  if (error) {
+    console.error("[Recipes] Error cargando papelera:", error)
+    return []
+  }
+  return (data ?? []).map(rowToTrashedRecipe)
+}
+
+function getTrash(businessId?: string | null): TrashedRecipe[] {
+  return trashCache.getSnapshot(businessId)
+}
+
+async function persistTrashEntry(entry: TrashedRecipe, businessId?: string | null): Promise<void> {
+  const supabase = getSupabaseBrowserClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error("Debes iniciar sesión.")
+
+  const { error } = await supabase.from("recipes_trash").upsert({
+    id: entry.recipe.id,
+    recipe_id: entry.recipe.id,
+    business_id: toDbBusinessId(businessId),
+    owner_id: user.id,
+    deleted_at: entry.deletedAt,
+    data: entry.recipe as unknown as Record<string, unknown>,
+  })
+  if (error) throw error
 }
 
 /**
  * Mueve una receta a la papelera en vez de borrarla permanentemente.
  * Reemplaza el comportamiento anterior de deleteRecipe (borrado inmediato).
  */
-export function moveRecipeToTrash(recipeId: string, businessId?: string | null): boolean {
+export async function moveRecipeToTrash(recipeId: string, businessId?: string | null): Promise<boolean> {
   try {
     const recipes = getRecipes(businessId)
     const recipeToDelete = recipes.find((r) => r.id === recipeId)
@@ -295,12 +409,13 @@ export function moveRecipeToTrash(recipeId: string, businessId?: string | null):
       return false
     }
 
-    const filtered = recipes.filter((r) => r.id !== recipeId)
-    saveRecipes(filtered, businessId)
+    cache.mutateSnapshot(businessId, (list) => list.filter((r) => r.id !== recipeId))
+    const supabase = getSupabaseBrowserClient()
+    await supabase.from("recipes").delete().eq("id", recipeId)
 
-    const trash = getTrash(businessId)
-    trash.push({ recipe: recipeToDelete, deletedAt: new Date().toISOString() })
-    saveTrash(trash, businessId)
+    const entry: TrashedRecipe = { recipe: recipeToDelete, deletedAt: new Date().toISOString() }
+    trashCache.mutateSnapshot(businessId, (list) => [...list, entry])
+    await persistTrashEntry(entry, businessId)
 
     console.log(`[Recipes] Moved to trash: ${recipeId}`)
 
@@ -323,26 +438,27 @@ export function moveRecipeToTrash(recipeId: string, businessId?: string | null):
   }
 }
 
-/** Lista las recetas en papelera, purgando primero las que ya pasaron los 30 días. */
-export function getTrashedRecipes(businessId?: string | null): TrashedRecipe[] {
-  const trash = purgeExpiredTrash(businessId)
-  return trash.sort((a, b) => new Date(b.deletedAt).getTime() - new Date(a.deletedAt).getTime())
+/** Dispara (o espera) la carga real de la papelera desde Supabase. */
+export function ensureTrashLoaded(businessId?: string | null): Promise<void> {
+  return trashCache.ensureLoaded(businessId, () => fetchTrash(businessId))
 }
 
-/** Elimina de la papelera (sin posibilidad de recuperar) todo lo que ya pasó los 30 días. */
-export function purgeExpiredTrash(businessId?: string | null): TrashedRecipe[] {
+/** Hook reactivo para la papelera. */
+export function useTrashedRecipes(businessId?: string | null): TrashedRecipe[] {
+  const trash = trashCache.useCached(businessId, () => fetchTrash(businessId))
+  const now = Date.now()
+  return [...trash]
+    .filter((t) => now - new Date(t.deletedAt).getTime() < TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000)
+    .sort((a, b) => new Date(b.deletedAt).getTime() - new Date(a.deletedAt).getTime())
+}
+
+/** Lista las recetas en papelera (síncrono, desde la caché ya cargada). */
+export function getTrashedRecipes(businessId?: string | null): TrashedRecipe[] {
   const trash = getTrash(businessId)
   const now = Date.now()
-  const stillValid = trash.filter((t) => {
-    const ageMs = now - new Date(t.deletedAt).getTime()
-    return ageMs < TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000
-  })
-
-  if (stillValid.length !== trash.length) {
-    saveTrash(stillValid, businessId)
-  }
-
-  return stillValid
+  return trash
+    .filter((t) => now - new Date(t.deletedAt).getTime() < TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000)
+    .sort((a, b) => new Date(b.deletedAt).getTime() - new Date(a.deletedAt).getTime())
 }
 
 /** Cuántos días le quedan a una receta en papelera antes de purgarse automáticamente. */
@@ -353,7 +469,7 @@ export function getTrashDaysRemaining(deletedAt: string): number {
 }
 
 /** Restaura una receta de la papelera de vuelta a Mis Recetas. */
-export function restoreRecipeFromTrash(recipeId: string, businessId?: string | null): boolean {
+export async function restoreRecipeFromTrash(recipeId: string, businessId?: string | null): Promise<boolean> {
   try {
     const trash = getTrash(businessId)
     const entry = trash.find((t) => t.recipe.id === recipeId)
@@ -362,12 +478,12 @@ export function restoreRecipeFromTrash(recipeId: string, businessId?: string | n
       return false
     }
 
-    const remainingTrash = trash.filter((t) => t.recipe.id !== recipeId)
-    saveTrash(remainingTrash, businessId)
+    trashCache.mutateSnapshot(businessId, (list) => list.filter((t) => t.recipe.id !== recipeId))
+    const supabase = getSupabaseBrowserClient()
+    await supabase.from("recipes_trash").delete().eq("id", recipeId)
 
-    const recipes = getRecipes(businessId)
-    recipes.push(entry.recipe)
-    saveRecipes(recipes, businessId)
+    cache.mutateSnapshot(businessId, (list) => [...list, entry.recipe])
+    await persistRecipe(entry.recipe, businessId)
 
     window.dispatchEvent(
       new CustomEvent("recipesUpdated", {
@@ -384,11 +500,18 @@ export function restoreRecipeFromTrash(recipeId: string, businessId?: string | n
 }
 
 /** Borra una receta de la papelera permanentemente, sin esperar los 30 días. */
-export function permanentlyDeleteRecipe(recipeId: string, businessId?: string | null): boolean {
+export async function permanentlyDeleteRecipe(recipeId: string, businessId?: string | null): Promise<boolean> {
   const trash = getTrash(businessId)
-  const remaining = trash.filter((t) => t.recipe.id !== recipeId)
-  if (remaining.length === trash.length) return false
-  saveTrash(remaining, businessId)
+  const exists = trash.some((t) => t.recipe.id === recipeId)
+  if (!exists) return false
+
+  trashCache.mutateSnapshot(businessId, (list) => list.filter((t) => t.recipe.id !== recipeId))
+  const supabase = getSupabaseBrowserClient()
+  const { error } = await supabase.from("recipes_trash").delete().eq("id", recipeId)
+  if (error) {
+    console.error("[Recipes] Error borrando de la papelera:", error)
+    return false
+  }
   window.dispatchEvent(new CustomEvent("recipesTrashUpdated", { detail: { businessId: businessId || "main" } }))
   return true
 }
@@ -398,7 +521,7 @@ export function permanentlyDeleteRecipe(recipeId: string, businessId?: string | 
  * a quien ya importaba deleteRecipe, pero ahora mueve a papelera en vez de
  * borrar permanentemente (ver documento de continuidad).
  */
-export function deleteRecipe(recipeId: string, businessId?: string | null): boolean {
+export async function deleteRecipe(recipeId: string, businessId?: string | null): Promise<boolean> {
   return moveRecipeToTrash(recipeId, businessId)
 }
 

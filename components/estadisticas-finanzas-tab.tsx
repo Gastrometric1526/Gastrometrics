@@ -30,11 +30,11 @@ import {
   Calculator,
 } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
-import { getRecipes } from "@/lib/storage/recipes"
-import { getIngredients } from "@/lib/storage/ingredients"
-import { getInventoryHistory, getInventoryStats } from "@/lib/storage/inventory"
-import { getPurchaseOrders } from "@/lib/storage/purchase-orders"
-import { getBusinessById } from "@/lib/storage/businesses"
+import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
+import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
+import { getInventoryHistory, getInventoryStats, ensureInventoryLoaded, ensureInventoryHistoryLoaded } from "@/lib/storage/inventory"
+import { getPurchaseOrders, ensurePurchaseOrdersLoaded } from "@/lib/storage/purchase-orders"
+import { getBusinessById, refreshBusinesses } from "@/lib/storage/businesses"
 import { getSalesImports, deleteSalesImport } from "@/lib/storage/sales-imports"
 import {
   aggregateSalesByDish,
@@ -76,6 +76,27 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
   // se actualizaban correctamente.
   useEffect(() => {
     setSalesImports(getSalesImports(businessId))
+  }, [businessId])
+
+  // Carga real desde Supabase (ver docs/52) — los useMemo de abajo siguen leyendo la
+  // caché en memoria de forma síncrona, así que necesitan que la carga real ya haya
+  // resuelto al menos una vez; refreshKey ya existía para forzar recálculo, se
+  // reutiliza aquí para que los useMemo se vuelvan a evaluar una vez la carga termina.
+  useEffect(() => {
+    let cancelled = false
+    Promise.all([
+      ensureRecipesLoaded(businessId),
+      ensureIngredientsLoaded(businessId),
+      ensurePurchaseOrdersLoaded(businessId),
+      ensureInventoryLoaded(businessId),
+      ensureInventoryHistoryLoaded(businessId),
+      refreshBusinesses(),
+    ]).then(() => {
+      if (!cancelled) setRefreshKey((k) => k + 1)
+    })
+    return () => {
+      cancelled = true
+    }
   }, [businessId])
 
   const recipes = useMemo(() => getRecipes(businessId), [businessId, refreshKey])

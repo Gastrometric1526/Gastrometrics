@@ -42,8 +42,8 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { getMenus, deleteMenu, duplicateMenu, updateMenu } from "@/lib/menus"
-import { getRecipes } from "@/lib/storage/recipes"
+import { getMenus, deleteMenu, duplicateMenu, updateMenu, ensureMenusLoaded } from "@/lib/menus"
+import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { getBusinessById } from "@/lib/storage/businesses"
 import { generateMenuPDF, type MenuPDFType } from "@/lib/pdf/menu-pdf-generator"
 import { FileDown, Lock } from "lucide-react"
@@ -83,8 +83,9 @@ export default function MenusPage() {
     loadMenus()
   }, [businessId])
 
-  const loadMenus = () => {
+  const loadMenus = async () => {
     try {
+      await Promise.all([ensureMenusLoaded(businessId || "main"), ensureRecipesLoaded(businessId || "main")])
       const savedMenus = getMenus(businessId || "main")
       setMenus(savedMenus)
       setRecipes(getRecipes(businessId || "main"))
@@ -116,9 +117,9 @@ export default function MenusPage() {
     setShowPreview(true)
   }
 
-  const handleDeleteMenu = (menuId: string) => {
+  const handleDeleteMenu = async (menuId: string) => {
     try {
-      deleteMenu(businessId || "main", menuId)
+      await deleteMenu(businessId || "main", menuId)
       setMenus((prev) => prev.filter((menu) => menu.id !== menuId))
       toast({
         title: t("menus_toast_deleted_title"),
@@ -134,9 +135,9 @@ export default function MenusPage() {
     }
   }
 
-  const handleDuplicateMenu = (menuId: string) => {
+  const handleDuplicateMenu = async (menuId: string) => {
     try {
-      const duplicatedMenu = duplicateMenu(businessId || "main", menuId)
+      const duplicatedMenu = await duplicateMenu(businessId || "main", menuId)
       setMenus((prev) => [...prev, duplicatedMenu])
       toast({
         title: t("menus_toast_duplicated_title"),
@@ -200,9 +201,9 @@ export default function MenusPage() {
     setEditingMenu(null)
   }
 
-  const handleDateChange = (menu: Menu, newDate: string) => {
+  const handleDateChange = async (menu: Menu, newDate: string) => {
     try {
-      const updated = updateMenu(businessId || "main", menu.id, { serviceDate: newDate || null })
+      const updated = await updateMenu(businessId || "main", menu.id, { serviceDate: newDate || null })
       if (updated) {
         setMenus((prev) => prev.map((m) => (m.id === menu.id ? updated : m)))
       }

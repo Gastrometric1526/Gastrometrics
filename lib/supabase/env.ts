@@ -30,3 +30,16 @@ export function requireSupabaseEnv() {
   }
   return { url, anonKey }
 }
+
+// Solo para lib/supabase/admin.ts (rutas de servidor) — NUNCA importar esto desde
+// código que corre en el navegador, la service role key bypassa RLS por completo.
+export function requireSupabaseServiceRoleEnv() {
+  const { url } = getSupabaseEnv()
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !serviceRoleKey) {
+    throw new Error(
+      "Supabase admin no está configurado. Faltan NEXT_PUBLIC_SUPABASE_URL y/o SUPABASE_SERVICE_ROLE_KEY.",
+    )
+  }
+  return { url, serviceRoleKey }
+}

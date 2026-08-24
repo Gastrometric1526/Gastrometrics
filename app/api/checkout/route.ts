@@ -16,6 +16,7 @@
 import { NextResponse } from "next/server"
 import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
 import { getPlanBySlug } from "@/lib/plans"
+import { getSupabaseServerClient } from "@/lib/supabase/server"
 
 export async function POST(request: Request) {
   if (!isStripeConfigured()) {
@@ -23,6 +24,18 @@ export async function POST(request: Request) {
       { error: "Stripe no está configurado todavía en este entorno." },
       { status: 503 },
     )
+  }
+
+  // Requiere sesión real: client_reference_id (abajo) es lo que le permite al webhook
+  // (app/api/webhooks/stripe/route.ts) saber a qué cuenta aplicarle el plan cuando
+  // Stripe confirme el pago — sin esto, cualquiera podría iniciar un checkout sin
+  // que quedara ligado a ninguna cuenta real.
+  const supabase = getSupabaseServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: "Debes iniciar sesión para continuar." }, { status: 401 })
   }
 
   const body = await request.json().catch(() => null)
@@ -44,6 +57,8 @@ export async function POST(request: Request) {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
+      client_reference_id: user.id,
+      customer_email: user.email,
       line_items: [
         {
           price_data: {
@@ -55,9 +70,15 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${siteUrl}/dashboard?checkout=success&plan=${plan.slug}&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${siteUrl}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/signup/payment?plan=${plan.slug}&checkout=cancelled`,
-      metadata: { planSlug: plan.slug },
+      metadata: { planSlug: plan.slug, accountId: user.id },
+      // La sesión de checkout es efímera; la metadata NO se copia sola a la
+      // suscripción que crea. subscription_data.metadata sí queda en el objeto
+      // Subscription, así que eventos futuros (renovación, cambio de plan desde el
+      // Portal de Cliente) también pueden leer qué plan es sin depender de la sesión
+      // original — ver customer.subscription.updated en el webhook.
+      subscription_data: { metadata: { planSlug: plan.slug, accountId: user.id } },
     })
 
     return NextResponse.json({ url: session.url })
