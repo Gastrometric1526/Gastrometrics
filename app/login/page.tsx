@@ -39,12 +39,12 @@ export default function LoginPage() {
       // inicio de sesión volvería inútil el chequeo posterior.
       await bootstrapPasswordHashIfMissing(password)
 
-      // Cuenta de prueba del dueño del proyecto — pedido explícito: entrar con este
-      // correo debe verse como si tuviera el plan Chef Ejecutivo, sin pasar por Stripe.
-      // Con account_plans ya no escribible directo desde el cliente (ver
-      // supabase/migrations/0004_account_plans.sql), esto ahora lo aplica una ruta de
-      // servidor que verifica el correo contra la sesión real — ver
-      // app/api/plan/dev-account/route.ts para el porqué.
+      // Lista blanca de testers (dueño del proyecto + hasta 10 invitados, ver
+      // TESTER_ALLOWLIST_EMAILS): entrar con uno de esos correos debe verse como si
+      // tuviera el plan Chef Ejecutivo, sin pasar por Stripe. Con account_plans ya no
+      // escribible directo desde el cliente (ver supabase/migrations/0004_account_plans.sql),
+      // esto lo aplica una ruta de servidor que verifica el correo contra la sesión real
+      // y la lista guardada en variables de entorno — ver app/api/plan/dev-account/route.ts.
       const devAccountResult = await fetch("/api/plan/dev-account", { method: "POST" })
         .then((res) => res.json())
         .catch(() => null)

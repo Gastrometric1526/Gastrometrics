@@ -1,21 +1,34 @@
 /**
- * Atajo del dueño del proyecto: si la cuenta que inició sesión es la suya
- * (josedanielromero.cr@outlook.com), le aplica el plan Chef Ejecutivo sin pasar por
- * Stripe (ver app/login/page.tsx y docs/50 §5 para el contexto original).
+ * Lista blanca de cuentas con acceso Chef Ejecutivo gratis, sin pasar por Stripe —
+ * el dueño del proyecto (ver docs/50 §5) más hasta 10 testers invitados. Se llama
+ * después de cada login real (ver app/login/page.tsx); si el correo de la sesión
+ * está en TESTER_ALLOWLIST_EMAILS, aplica el plan.
  *
- * Por qué esto es una ruta de servidor y no un setCurrentPlanSlug() directo en el
- * cliente (como era antes de conectar Supabase): con account_plans ya no siendo
- * escribible por el cliente (ver RLS en 0004_account_plans.sql), el único lugar
- * donde puede vivir esta comparación de correo es el servidor — usa la sesión real
- * (cookie httpOnly) para saber quién es, no algo que el navegador pueda falsificar.
+ * Por qué esto es una ruta de servidor y no algo que el cliente decida: con
+ * account_plans ya no escribible por el cliente (ver RLS en 0004_account_plans.sql),
+ * el único lugar donde puede vivir esta comparación de correo es el servidor — usa
+ * la sesión real (cookie httpOnly) para saber quién es, no algo que el navegador
+ * pueda falsificar.
+ *
+ * Por qué una variable de entorno y no una lista fija en el código: los correos de
+ * los testers son datos de personas reales — no deben quedar committeados al
+ * repositorio (que es público en GitHub). TESTER_ALLOWLIST_EMAILS vive solo en
+ * .env.local y en las variables de entorno de Vercel, nunca en el código fuente.
+ * Formato: correos separados por coma, sin espacios extra ("a@x.com,b@y.com").
  */
 
 import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 
-const DEV_ACCOUNT_EMAIL = "josedanielromero.cr@outlook.com"
-const DEV_ACCOUNT_PLAN_SLUG = "chef-ejecutivo"
+const TESTER_PLAN_SLUG = "chef-ejecutivo"
+
+function getAllowlist(): string[] {
+  return (process.env.TESTER_ALLOWLIST_EMAILS || "")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean)
+}
 
 export async function POST() {
   const supabase = getSupabaseServerClient()
@@ -23,14 +36,15 @@ export async function POST() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user || user.email?.toLowerCase() !== DEV_ACCOUNT_EMAIL) {
+  const allowlist = getAllowlist()
+  if (!user || !user.email || !allowlist.includes(user.email.toLowerCase())) {
     return NextResponse.json({ applied: false })
   }
 
   const admin = getSupabaseAdminClient()
   const { error } = await admin.from("account_plans").upsert({
     account_id: user.id,
-    plan_slug: DEV_ACCOUNT_PLAN_SLUG,
+    plan_slug: TESTER_PLAN_SLUG,
     updated_at: new Date().toISOString(),
   })
 
@@ -39,5 +53,5 @@ export async function POST() {
     return NextResponse.json({ applied: false })
   }
 
-  return NextResponse.json({ applied: true, planSlug: DEV_ACCOUNT_PLAN_SLUG })
+  return NextResponse.json({ applied: true, planSlug: TESTER_PLAN_SLUG })
 }
