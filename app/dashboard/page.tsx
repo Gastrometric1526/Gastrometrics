@@ -208,8 +208,12 @@ export default function DashboardPage() {
       if (storedEmail) setEmail(storedEmail)
     }
 
-    const storedBusinesses = JSON.parse(localStorage.getItem("businesses") || "[]")
-    if (storedBusinesses.length > 0) setBusinesses(storedBusinesses)
+    // BUG CORREGIDO (ver docs/52): leer localStorage["businesses"] aquí Y volver a
+    // agregar la fila nueva a mano en handleBusinessCreated de abajo duplicaba el
+    // negocio recién creado — lib/storage/businesses.ts ya lo agrega a su caché
+    // (y refleja el espejo en localStorage) antes de que este callback se entere.
+    // getAllBusinesses() lee esa misma caché, ya sin duplicados.
+    refreshBusinesses().then(() => setBusinesses(getAllBusinesses()))
 
     // Load real user activity and alerts
     loadUserActivity()
@@ -310,14 +314,11 @@ export default function DashboardPage() {
 
   const handleBusinessCreated = useCallback(
     (newBusiness: Business) => {
-      setBusinesses((prev) => {
-        const updated = [...prev, newBusiness]
-        localStorage.setItem("businesses", JSON.stringify(updated))
-        window.dispatchEvent(
-          new CustomEvent("businessUpdated", { detail: { action: "created", business: newBusiness } }),
-        )
-        return updated
-      })
+      // add-business-dialog.tsx ya esperó a que addBusiness() terminara (Supabase +
+      // caché + espejo en localStorage) antes de llamar a este callback — getAllBusinesses()
+      // ya incluye el negocio nuevo, sin necesidad (ni riesgo de duplicar) de agregarlo
+      // a mano aquí.
+      setBusinesses(getAllBusinesses())
 
       // Track activity
       ActivityTracker.addActivity(`Negocio creado: ${newBusiness.name}`, "business", newBusiness.id, {
