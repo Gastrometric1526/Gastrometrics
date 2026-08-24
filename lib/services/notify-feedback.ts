@@ -43,7 +43,7 @@ export async function sendFeedbackReplyEmail(input: {
   const resend = new Resend(process.env.RESEND_API_KEY)
   const greetingName = input.toName || "Hola"
 
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
     to: [input.toEmail],
     subject: "Respuesta a tu mensaje en GastroMetrics",
@@ -59,6 +59,10 @@ export async function sendFeedbackReplyEmail(input: {
       <p style="color:#888;font-size:12px">¿Sigue sin resolverse? Responde este correo o escribe de nuevo desde /contacto.</p>
     `,
   })
+  // El SDK de Resend no lanza en errores de la API — los devuelve en `error` sin lanzar.
+  // Lanzar acá a propósito para que el caller (app/api/admin/feedback/[id]/route.ts) lo
+  // capture y reporte emailSent: false, en vez de asumir éxito silenciosamente.
+  if (error) throw error
 }
 
 export async function sendFeedbackNotification(input: {
@@ -74,10 +78,12 @@ export async function sendFeedbackNotification(input: {
   const typeLabel = FEEDBACK_TYPE_LABELS[input.type] || input.type
   const fromWho = input.userName || input.userEmail ? `${input.userName || "Anónimo"} (${input.userEmail || "sin correo"})` : "Anónimo"
 
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     // "from" debe ser un remitente en un dominio verificado en Resend — con la cuenta
     // gratis sin dominio propio verificado, Resend solo permite "onboarding@resend.dev"
     // como remitente (funciona igual para recibir, solo se ve distinto en el "De:").
+    // Con gastrometrics.org ya verificado (ver docs/53), FEEDBACK_NOTIFY_FROM usa un
+    // remitente propio.
     from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
     to: [process.env.FEEDBACK_NOTIFY_TO as string],
     subject: `[GastroMetrics] Nuevo mensaje: ${typeLabel}`,
@@ -91,4 +97,10 @@ export async function sendFeedbackNotification(input: {
       <p style="color:#888;font-size:12px">Revisa y responde desde el panel /admin.</p>
     `,
   })
+  // El SDK de Resend no lanza en errores de la API — los devuelve en `error` sin lanzar
+  // (bug real encontrado probando esta misma función, ver docs/53). Se loguea en vez de
+  // lanzar porque esta notificación es best-effort — no debe romper /api/feedback/submit.
+  if (error) {
+    console.error("[notify-feedback] Resend rechazó la notificación:", error)
+  }
 }

@@ -72,12 +72,20 @@ export async function POST(request: Request) {
 
   try {
     const resend = new Resend(process.env.RESEND_API_KEY)
-    await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
       to: [email],
       subject: "¡Bienvenido a GastroMetrics! 🎉",
       html: getWelcomeEmailHtml(fullName, email, `${siteUrl}/dashboard`),
     })
+    // El SDK de Resend no lanza en errores de la API (dominio no verificado, destinatario
+    // rechazado, etc.) — los devuelve en `error` sin lanzar. Sin este chequeo, un envío
+    // fallido se reportaba como `sent: true` igual (bug real encontrado probando esta
+    // misma ruta, ver docs/53).
+    if (error) {
+      console.error("[api/auth/welcome-email] Resend rechazó el envío:", error)
+      return NextResponse.json({ sent: false, error: error.message }, { status: 500 })
+    }
     return NextResponse.json({ sent: true })
   } catch (error) {
     console.error("[api/auth/welcome-email] Error mandando el correo:", error)
