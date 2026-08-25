@@ -184,6 +184,81 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["purchase_orders"]["Row"]>
         Relationships: never[]
       }
+      sales_imports: {
+        Row: {
+          id: string
+          business_id: string | null
+          owner_id: string
+          created_at: string
+          data: Record<string, unknown>
+        }
+        Insert: Omit<Database["public"]["Tables"]["sales_imports"]["Row"], "created_at" | "data"> & {
+          created_at?: string
+          data?: Record<string, unknown>
+        }
+        Update: Partial<Database["public"]["Tables"]["sales_imports"]["Row"]>
+        Relationships: never[]
+      }
+      pos_column_mappings: {
+        Row: {
+          id: string
+          business_id: string | null
+          owner_id: string
+          updated_at: string
+          data: Record<string, unknown>
+        }
+        Insert: Omit<Database["public"]["Tables"]["pos_column_mappings"]["Row"], "updated_at" | "data"> & {
+          updated_at?: string
+          data?: Record<string, unknown>
+        }
+        Update: Partial<Database["public"]["Tables"]["pos_column_mappings"]["Row"]>
+        Relationships: never[]
+      }
+      dish_name_mappings: {
+        Row: {
+          id: string
+          business_id: string | null
+          owner_id: string
+          updated_at: string
+          data: Record<string, unknown>
+        }
+        Insert: Omit<Database["public"]["Tables"]["dish_name_mappings"]["Row"], "updated_at" | "data"> & {
+          updated_at?: string
+          data?: Record<string, unknown>
+        }
+        Update: Partial<Database["public"]["Tables"]["dish_name_mappings"]["Row"]>
+        Relationships: never[]
+      }
+      team_members: {
+        Row: {
+          id: string
+          owner_id: string
+          email: string
+          name: string | null
+          status: string
+          scope: string
+          allowed_features: unknown
+          pdf_access: string
+          invited_user_id: string | null
+          activity: unknown
+          invited_at: string
+          updated_at: string
+        }
+        Insert: Omit<
+          Database["public"]["Tables"]["team_members"]["Row"],
+          "status" | "scope" | "allowed_features" | "pdf_access" | "activity" | "invited_at" | "updated_at"
+        > & {
+          status?: string
+          scope?: string
+          allowed_features?: unknown
+          pdf_access?: string
+          activity?: unknown
+          invited_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database["public"]["Tables"]["team_members"]["Row"]>
+        Relationships: never[]
+      }
       feedback: {
         Row: {
           id: string

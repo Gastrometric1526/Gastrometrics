@@ -9,6 +9,7 @@ import type { Database } from "@/types/database"
 import type { UserProfile } from "@/lib/types/user"
 import { setCurrentPlanSlug } from "@/lib/plan-access"
 import { refreshBusinesses } from "@/lib/storage/businesses"
+import { ensureTeamMembersLoaded } from "@/lib/storage/team"
 
 interface User {
   name: string
@@ -138,6 +139,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // necesitan ya toleran verla vacía por un instante mientras carga, mismo patrón
       // que el resto de esta migración.
       refreshBusinesses()
+      // Precalienta la caché del roster de equipo — lib/plan-access.ts la necesita
+      // síncrona para "Vista previa" (getActivePreviewMember), igual que businesses.
+      ensureTeamMembersLoaded()
     }
 
     // Antes de preguntar por la sesión, procesa un posible link de confirmación de

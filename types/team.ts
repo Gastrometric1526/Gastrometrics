@@ -32,6 +32,11 @@ export interface TeamMember {
   allowedFeatures: FeatureKey[]
   pdfAccess: TeamMemberPdfAccess
   activity: TeamMemberActivityEntry[]
+  // Cuenta real de Supabase Auth vinculada a esta invitación — conocida desde el
+  // momento en que se invita (admin.generateLink crea/enlaza la cuenta en el mismo
+  // momento, ver app/api/team/invite/route.ts). Se usa para otorgar/revocar el
+  // acceso real de lectura vía business_members (ver docs/60).
+  invitedUserId?: string | null
 }
 
 export const MAX_TEAM_MEMBERS = 3

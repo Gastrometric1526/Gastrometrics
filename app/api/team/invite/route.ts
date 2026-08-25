@@ -14,11 +14,13 @@
  * funciona contra una cuenta existente y la lleva directo a /dashboard sin pedirle
  * que ponga contraseña de nuevo.
  *
- * Límite real de alcance, documentado también en el aviso de /equipo: este correo y
- * la cuenta que crea son reales, pero GastroMetrics todavía no tiene la tabla de
- * membresías (business_members, Fase 4) que conecte esa cuenta nueva con el negocio/
- * alcance específico al que se le invitó — la persona invitada puede iniciar sesión
- * de verdad, pero no aterriza automáticamente dentro del negocio del dueño.
+ * Desde docs/60: además de crear la cuenta y mandar el correo, esta ruta otorga acceso
+ * real de LECTURA (tabla business_members, activa políticas RLS `_member_select` que
+ * ya existían desde 0001_init.sql) — se hace acá, con el service role, porque es el
+ * único lugar donde se conoce el user_id real de la cuenta recién creada/enlazada en
+ * el mismo momento de generar el link (admin.generateLink lo devuelve directo). Ver el
+ * comentario de cabecera de lib/storage/team.ts para los límites reales de este
+ * acceso (lectura, no filtrada por herramienta/PDF, sin escritura).
  */
 import { NextResponse } from "next/server"
 import { Resend } from "resend"
@@ -30,6 +32,7 @@ import { getEmailLabels, fillLabel, normalizeEmailLang } from "@/lib/i18n/email-
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
   const email = typeof body?.email === "string" ? body.email.trim() : ""
+  const scope = typeof body?.scope === "string" && body.scope ? body.scope : "dashboard"
   const scopeLabel = typeof body?.scopeLabel === "string" ? body.scopeLabel : ""
   const toolsLabel = typeof body?.toolsLabel === "string" ? body.toolsLabel : ""
   const pdfAccessLabel = typeof body?.pdfAccessLabel === "string" ? body.pdfAccessLabel : ""
@@ -58,6 +61,7 @@ export async function POST(request: Request) {
   const admin = getSupabaseAdminClient()
 
   let actionLink: string | null = null
+  let invitedUserId: string | null = null
 
   const inviteAttempt = await admin.auth.admin.generateLink({
     type: "invite",
@@ -70,6 +74,7 @@ export async function POST(request: Request) {
 
   if (inviteAttempt.data?.properties?.action_link) {
     actionLink = inviteAttempt.data.properties.action_link
+    invitedUserId = inviteAttempt.data.user?.id ?? null
   } else {
     const message = inviteAttempt.error?.message?.toLowerCase() || ""
     const alreadyHasAccount = message.includes("already") || message.includes("registrad")
@@ -89,6 +94,24 @@ export async function POST(request: Request) {
       )
     }
     actionLink = magicLinkAttempt.data.properties.action_link
+    invitedUserId = magicLinkAttempt.data.user?.id ?? null
+  }
+
+  // Otorga acceso real de lectura (business_members) — "dashboard" cubre todos los
+  // negocios que el dueño tenga HOY; uno agregado después no se retro-otorga solo,
+  // requeriría volver a invitar o un mecanismo de sincronización aparte (no
+  // construido en este pase, ver docs/60).
+  if (invitedUserId) {
+    const targetBusinessIds =
+      scope === "dashboard"
+        ? ((await admin.from("businesses").select("id").eq("owner_id", user.id)).data || []).map((b) => b.id)
+        : [scope]
+    if (targetBusinessIds.length > 0) {
+      const { error: memberError } = await admin
+        .from("business_members")
+        .upsert(targetBusinessIds.map((business_id) => ({ business_id, user_id: invitedUserId, role: "member" })))
+      if (memberError) console.error("[api/team/invite] Error otorgando acceso real al negocio:", memberError)
+    }
   }
 
   if (!process.env.RESEND_API_KEY) {
@@ -131,7 +154,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No se pudo enviar el correo de invitación." }, { status: 502 })
     }
 
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, invitedUserId })
   } catch (error) {
     console.error("[api/team/invite] Error inesperado:", error)
     return NextResponse.json({ error: "Error inesperado al mandar la invitación." }, { status: 500 })

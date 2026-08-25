@@ -19,6 +19,8 @@ import {
   getDishNameMappings,
   saveDishNameMapping,
   addSalesImport,
+  ensurePOSColumnMappingLoaded,
+  ensureDishNameMappingsLoaded,
 } from "@/lib/storage/sales-imports"
 import type { Recipe } from "@/types/recipe"
 import type { SalesImport, SalesImportLine } from "@/types/sales-import"
@@ -133,6 +135,9 @@ export function POSSalesImportDialog({ open, onOpenChange, businessId, recipes, 
       setRawRows(rows)
       setFileName(file.name)
 
+      // Carga real desde Supabase (ver docs/60) antes de leer la caché en memoria.
+      await Promise.all([ensurePOSColumnMappingLoaded(businessId), ensureDishNameMappingsLoaded(businessId)])
+
       // Intenta reusar el mapeo guardado de una importacion anterior; si los
       // encabezados coinciden, salta directo a la revision (casi de un solo clic).
       const savedMapping = getPOSColumnMapping(businessId)
@@ -233,10 +238,10 @@ export function POSSalesImportDialog({ open, onOpenChange, businessId, recipes, 
     setManualMatches((prev) => ({ ...prev, [normalized]: recipeId === NONE_VALUE ? "" : recipeId }))
   }
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (parsedLines.length === 0) return
 
-    savePOSColumnMapping(
+    await savePOSColumnMapping(
       {
         businessId,
         dateColumn: dateColumn !== NONE_VALUE ? dateColumn : null,
@@ -249,14 +254,16 @@ export function POSSalesImportDialog({ open, onOpenChange, businessId, recipes, 
     )
 
     // Aprende las vinculaciones nuevas (manuales o automaticas exactas) para la proxima vez
-    parsedLines.forEach((line) => {
-      if (line.recipeId && line.normalized) {
-        saveDishNameMapping(
-          { businessId, normalizedPosName: line.normalized, recipeId: line.recipeId, updatedAt: new Date().toISOString() },
-          businessId,
-        )
-      }
-    })
+    await Promise.all(
+      parsedLines
+        .filter((line) => line.recipeId && line.normalized)
+        .map((line) =>
+          saveDishNameMapping(
+            { businessId, normalizedPosName: line.normalized, recipeId: line.recipeId!, updatedAt: new Date().toISOString() },
+            businessId,
+          ),
+        ),
+    )
 
     const lines: SalesImportLine[] = parsedLines.map((l) => ({
       id: uuidv4(),
@@ -287,7 +294,7 @@ export function POSSalesImportDialog({ open, onOpenChange, businessId, recipes, 
       lines,
     }
 
-    addSalesImport(salesImport, businessId)
+    await addSalesImport(salesImport, businessId)
     onImported(salesImport)
 
     toast({

@@ -53,7 +53,7 @@ import { Eye } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
 import { getAllBusinesses } from "@/lib/storage/businesses"
-import { getTeamMembers, inviteTeamMember, updateTeamMember, removeTeamMember } from "@/lib/storage/team"
+import { getTeamMembers, inviteTeamMember, updateTeamMember, removeTeamMember, ensureTeamMembersLoaded } from "@/lib/storage/team"
 import { MAX_TEAM_MEMBERS, type TeamMember, type TeamMemberPdfAccess } from "@/types/team"
 import type { FeatureKey } from "@/lib/plans"
 import type { Business } from "@/types/business"
@@ -142,7 +142,8 @@ function EquipoContent() {
   const [inviteQueue, setInviteQueue] = useState<MemberFormState[]>([])
   const [isSending, setIsSending] = useState(false)
 
-  const load = () => {
+  const load = async () => {
+    await ensureTeamMembersLoaded()
     setMembers(getTeamMembers())
     setBusinesses(getAllBusinesses())
   }
@@ -226,7 +227,7 @@ function EquipoContent() {
 
   const handleSubmit = async () => {
     if (editingId) {
-      updateTeamMember(editingId, {
+      await updateTeamMember(editingId, {
         name: form.name.trim() || undefined,
         scope: form.scope,
         allowedFeatures: form.allowedFeatures,
@@ -234,7 +235,7 @@ function EquipoContent() {
       })
       toast({ title: t("equipo_toast_access_updated_title"), description: t("equipo_toast_access_updated_desc").replace("{email}", form.email) })
       setDialogOpen(false)
-      load()
+      await load()
       return
     }
 
@@ -262,42 +263,54 @@ function EquipoContent() {
 
     setIsSending(true)
     for (const entry of batch) {
-      try {
-        inviteTeamMember({
-          email: entry.email,
-          name: entry.name,
-          scope: entry.scope,
-          allowedFeatures: entry.allowedFeatures,
-          pdfAccess: entry.pdfAccess,
-        })
-        invited.push(entry.email)
-      } catch (error) {
-        failed.push({ email: entry.email, message: error instanceof Error ? error.message : t("equipo_error_generic") })
-        continue
-      }
-
-      // El correo real es best-effort: si falla, la persona sigue guardada localmente
-      // (Vista previa sigue funcionando) — no se revierte la invitación por esto, solo
-      // se avisa aparte para que el dueño le comparta el acceso él mismo mientras tanto.
+      // Manda primero la invitación real (crea/enlaza la cuenta real y otorga acceso
+      // real de lectura al negocio — ver app/api/team/invite/route.ts) para conocer el
+      // invitedUserId ANTES de guardar el roster, y así guardarlo junto con la fila —
+      // es lo que permite revocar el acceso real después si se edita/quita a la persona.
+      let invitedUserId: string | null = null
       try {
         const res = await fetch("/api/team/invite", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: entry.email,
+            scope: entry.scope,
             scopeLabel: scopeLabelFor(entry.scope),
             toolsLabel: toolsLabelFor(entry.allowedFeatures),
             pdfAccessLabel: PDF_ACCESS_LABELS[entry.pdfAccess],
           }),
         })
-        if (!res.ok) emailFailed.push(entry.email)
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          emailFailed.push(entry.email)
+        } else {
+          invitedUserId = data.invitedUserId || null
+        }
       } catch {
         emailFailed.push(entry.email)
+      }
+
+      // El correo/cuenta real es best-effort: si falla, la persona sigue guardada en
+      // el roster (Vista previa sigue funcionando) — no se revierte la invitación por
+      // esto, solo se avisa aparte para que el dueño le comparta el acceso él mismo
+      // mientras tanto.
+      try {
+        await inviteTeamMember({
+          email: entry.email,
+          name: entry.name,
+          scope: entry.scope,
+          allowedFeatures: entry.allowedFeatures,
+          pdfAccess: entry.pdfAccess,
+          invitedUserId,
+        })
+        invited.push(entry.email)
+      } catch (error) {
+        failed.push({ email: entry.email, message: error instanceof Error ? error.message : t("equipo_error_generic") })
       }
     }
     setIsSending(false)
 
-    load()
+    await load()
 
     if (invited.length > 0) {
       toast({
@@ -330,10 +343,10 @@ function EquipoContent() {
     }
   }
 
-  const handleRemove = (id: string, email: string) => {
-    removeTeamMember(id)
+  const handleRemove = async (id: string, email: string) => {
+    await removeTeamMember(id)
     toast({ title: t("equipo_toast_removed_title"), description: t("equipo_toast_removed_desc").replace("{email}", email) })
-    load()
+    await load()
   }
 
   // Sin backend real no hay forma de darle a esta persona su propia sesión (ver

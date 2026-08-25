@@ -54,7 +54,7 @@ import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 import { getInventory, getInventoryStats, ensureInventoryLoaded } from "@/lib/storage/inventory"
 import { getPurchaseOrders, ensurePurchaseOrdersLoaded } from "@/lib/storage/purchase-orders"
-import { getSalesImports } from "@/lib/storage/sales-imports"
+import { getSalesImports, ensureSalesImportsLoaded } from "@/lib/storage/sales-imports"
 import { getMenus, ensureMenusLoaded } from "@/lib/menus"
 import { getPriceChangeHistory, type PriceChangeNotification } from "@/lib/recalculate"
 import { formatCurrency } from "@/lib/currency"
@@ -208,6 +208,7 @@ function EstadisticasContent() {
         ensureMenusLoaded(businessId),
         ensureInventoryLoaded(businessId),
         ensurePurchaseOrdersLoaded(businessId),
+        ensureSalesImportsLoaded(businessId),
       ])
       setRecipes(getRecipes(businessId))
       setIngredients(getIngredients(businessId))

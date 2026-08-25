@@ -35,7 +35,7 @@ import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredien
 import { getInventoryHistory, getInventoryStats, ensureInventoryLoaded, ensureInventoryHistoryLoaded } from "@/lib/storage/inventory"
 import { getPurchaseOrders, ensurePurchaseOrdersLoaded } from "@/lib/storage/purchase-orders"
 import { getBusinessById, refreshBusinesses } from "@/lib/storage/businesses"
-import { getSalesImports, deleteSalesImport } from "@/lib/storage/sales-imports"
+import { getSalesImports, deleteSalesImport, ensureSalesImportsLoaded } from "@/lib/storage/sales-imports"
 import {
   aggregateSalesByDish,
   classifyMenuEngineering,
@@ -75,7 +75,13 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
   // de los datos (recipes, ingredients, etc., todos useMemo con [businessId]) sí
   // se actualizaban correctamente.
   useEffect(() => {
-    setSalesImports(getSalesImports(businessId))
+    let cancelled = false
+    ensureSalesImportsLoaded(businessId).then(() => {
+      if (!cancelled) setSalesImports(getSalesImports(businessId))
+    })
+    return () => {
+      cancelled = true
+    }
   }, [businessId])
 
   // Carga real desde Supabase (ver docs/52) — los useMemo de abajo siguen leyendo la
@@ -111,9 +117,9 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
     setRefreshKey((k) => k + 1)
   }
 
-  const handleDeleteImport = (id: string) => {
-    deleteSalesImport(id, businessId)
+  const handleDeleteImport = async (id: string) => {
     setSalesImports((prev) => prev.filter((i) => i.id !== id))
+    await deleteSalesImport(id, businessId)
   }
 
   // Periodo cubierto: la union de todas las importaciones cargadas (mas simple y
