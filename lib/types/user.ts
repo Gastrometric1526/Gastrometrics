@@ -50,6 +50,11 @@ export const COUNTRIES = [
   { code: "SV", name: "El Salvador", currency: "USD", symbol: "$" },
   { code: "NI", name: "Nicaragua", currency: "NIO", symbol: "C$" },
   { code: "DO", name: "República Dominicana", currency: "DOP", symbol: "RD$" },
+  // Dinamarca y China continental: la lista de países quedaba corta contra los 6
+  // idiomas soportados (lib/i18n/translations.ts incluye danés y chino, pero no
+  // había ningún país correspondiente para elegir en el registro).
+  { code: "DK", name: "Dinamarca", currency: "DKK", symbol: "kr" },
+  { code: "CN", name: "China", currency: "CNY", symbol: "¥" },
 ]
 
 // labelKey/descriptionKey son claves del diccionario de i18n (lib/i18n/translations.ts),

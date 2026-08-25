@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { GastrometricsLogo } from "@/components/gastrometrics-logo"
@@ -167,6 +168,15 @@ function SidebarInner() {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const businesses = useAllBusinesses()
   const [currentPlanName, setCurrentPlanName] = useState("Foodie")
+  const isMobile = useIsMobile()
+  // BUG CORREGIDO: "colapsado" (solo íconos, w-16) es una preferencia de escritorio —
+  // en móvil el sidebar es un drawer superpuesto que se abre/cierra completo, nunca un
+  // riel angosto. Como isCollapsed arranca en true por defecto, sin esto el drawer
+  // móvil se abría mostrando solo íconos sin texto (nombres de módulos invisibles),
+  // el mismo problema que el tour guiado ya tenía que evitar a mano (ver más abajo).
+  // effectiveCollapsed es lo que de verdad controla el render; isCollapsed/setIsCollapsed
+  // siguen siendo la preferencia real del usuario en escritorio, sin tocar.
+  const effectiveCollapsed = isCollapsed && !isMobile
 
   // Persistir estado del sidebar
   useEffect(() => {
@@ -280,13 +290,13 @@ function SidebarInner() {
         className={cn(
           "fixed left-0 z-40 bg-card border-r border-border transition-all duration-300 flex flex-col",
           previewActive ? "top-10 h-[calc(100%-2.5rem)]" : "top-0 h-full",
-          isCollapsed ? "w-16" : "w-64",
+          effectiveCollapsed ? "w-16" : "w-64",
           isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
       >
         {/* Header */}
-        <div className={cn("p-3 sm:p-4 border-b border-border", isCollapsed && "p-2")}>
-          {isCollapsed ? (
+        <div className={cn("p-3 sm:p-4 border-b border-border", effectiveCollapsed && "p-2")}>
+          {effectiveCollapsed ? (
             <div className="hidden md:flex flex-col items-center gap-2">
               <GastrometricsLogo className="h-7 w-7" />
               <Button variant="ghost" size="sm" onClick={toggleSidebar} className="h-8 w-8 p-0 hover:bg-accent">
@@ -315,7 +325,7 @@ function SidebarInner() {
         </div>
 
         {/* User Info */}
-        {!isCollapsed && (
+        {!effectiveCollapsed && (
           <div className="p-3 sm:p-4 border-b border-border">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
@@ -332,7 +342,7 @@ function SidebarInner() {
         )}
 
         {/* Navigation */}
-        <nav className={cn("flex-1 p-2 space-y-1 overflow-y-auto", isCollapsed ? "overflow-hidden" : "")}>
+        <nav className={cn("flex-1 p-2 space-y-1 overflow-y-auto", effectiveCollapsed ? "overflow-hidden" : "")}>
           {navigationItems.map((item) => {
             // BUG CORREGIDO: "Órdenes de Compra" apunta a /menu-y-compras, que es solo un
             // shell que hace router.replace() a /business/{id}/ordenes-compra (o
@@ -353,7 +363,7 @@ function SidebarInner() {
                     isActive
                       ? "bg-primary/10 text-primary border border-primary/20"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent",
-                    isCollapsed && "justify-center px-2",
+                    effectiveCollapsed && "justify-center px-2",
                   )}
                   onClick={() => setIsMobileOpen(false)}
                 >
@@ -364,14 +374,14 @@ function SidebarInner() {
                     )}
                   />
 
-                  {!isCollapsed && (
+                  {!effectiveCollapsed && (
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate text-sm">{item.title}</p>
                       <p className="text-xs opacity-75 truncate hidden sm:block">{item.description}</p>
                     </div>
                   )}
 
-                  {!isCollapsed && isActive && (
+                  {!effectiveCollapsed && isActive && (
                     <Badge
                       variant="secondary"
                       className="bg-primary/20 text-primary text-xs flex-shrink-0 hidden sm:inline-flex"
@@ -381,7 +391,7 @@ function SidebarInner() {
                   )}
 
                   {/* Tooltip para modo colapsado */}
-                  {isCollapsed && (
+                  {effectiveCollapsed && (
                     <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                       {item.title}
                     </div>
@@ -392,7 +402,7 @@ function SidebarInner() {
           })}
 
           {/* Dashboard Navigation */}
-          {pathname.startsWith("/business/") && !isCollapsed && (
+          {pathname.startsWith("/business/") && !effectiveCollapsed && (
             <>
               <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 Navegación
@@ -413,7 +423,7 @@ function SidebarInner() {
           )}
 
           {/* Businesses Section - Solo mostrar en dashboard principal */}
-          {businesses.length > 0 && !isCollapsed && !pathname.startsWith("/business/") && (
+          {businesses.length > 0 && !effectiveCollapsed && !pathname.startsWith("/business/") && (
             <>
               <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 Mis Negocios
@@ -464,7 +474,7 @@ function SidebarInner() {
         </nav>
 
         {/* Footer */}
-        <div className={cn("p-2 border-t border-border space-y-1", isCollapsed && "p-1")}>
+        <div className={cn("p-2 border-t border-border space-y-1", effectiveCollapsed && "p-1")}>
           {/* Reiniciar tutorial de la página actual */}
           <Button
             variant="ghost"
@@ -472,14 +482,14 @@ function SidebarInner() {
             onClick={handleRestartTour}
             className={cn(
               "w-full justify-start gap-2 hover:bg-accent relative group",
-              isCollapsed && "justify-center px-2",
+              effectiveCollapsed && "justify-center px-2",
             )}
           >
             <HelpCircle className="h-4 w-4 flex-shrink-0 text-foreground/70" />
-            {!isCollapsed && <span className="text-sm">{t("sidebar_restart_tour")}</span>}
+            {!effectiveCollapsed && <span className="text-sm">{t("sidebar_restart_tour")}</span>}
 
             {/* Tooltip para modo colapsado */}
-            {isCollapsed && (
+            {effectiveCollapsed && (
               <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                 {t("sidebar_restart_tour")}
               </div>
@@ -496,16 +506,16 @@ function SidebarInner() {
               size="sm"
               className={cn(
                 "w-full justify-start gap-2 hover:bg-accent relative group",
-                isCollapsed && "justify-center px-2",
+                effectiveCollapsed && "justify-center px-2",
               )}
             >
               <Sparkles className="h-4 w-4 flex-shrink-0 text-foreground/70" />
-              {!isCollapsed && (
+              {!effectiveCollapsed && (
                 <span className="text-sm truncate">
                   Plan: <span className="font-medium">{currentPlanName}</span>
                 </span>
               )}
-              {isCollapsed && (
+              {effectiveCollapsed && (
                 <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                   Plan: {currentPlanName}
                 </div>
@@ -521,14 +531,14 @@ function SidebarInner() {
                 size="sm"
                 className={cn(
                   "w-full justify-start gap-2 hover:bg-accent relative group",
-                  isCollapsed && "justify-center px-2",
+                  effectiveCollapsed && "justify-center px-2",
                 )}
               >
                 <Settings className="h-4 w-4 flex-shrink-0 text-foreground/70" />
-                {!isCollapsed && <span className="text-sm">{t("nav_ajustes")}</span>}
+                {!effectiveCollapsed && <span className="text-sm">{t("nav_ajustes")}</span>}
 
                 {/* Tooltip para modo colapsado */}
-                {isCollapsed && (
+                {effectiveCollapsed && (
                   <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                     {t("nav_ajustes")}
                   </div>
@@ -545,14 +555,14 @@ function SidebarInner() {
                 size="sm"
                 className={cn(
                   "w-full justify-start gap-2 hover:bg-destructive/10 hover:text-destructive relative group",
-                  isCollapsed && "justify-center px-2",
+                  effectiveCollapsed && "justify-center px-2",
                 )}
               >
                 <LogOut className="h-4 w-4 flex-shrink-0 text-foreground/70" />
-                {!isCollapsed && <span className="text-sm">Salir</span>}
+                {!effectiveCollapsed && <span className="text-sm">Salir</span>}
 
                 {/* Tooltip para modo colapsado */}
-                {isCollapsed && (
+                {effectiveCollapsed && (
                   <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                     Salir
                   </div>

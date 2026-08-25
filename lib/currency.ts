@@ -13,7 +13,8 @@ export interface CurrencyOption {
   locale: string
 }
 
-// Monedas centroamericanas + China, dólar y euro, según lo pedido.
+// Monedas centroamericanas + China + Dinamarca, dólar y euro — deben cubrir los 6
+// idiomas soportados (lib/i18n/translations.ts), no solo la región centroamericana.
 export const CURRENCY_OPTIONS: CurrencyOption[] = [
   { code: "HNL", name: "Lempira hondureña", symbol: "L", locale: "es-HN" },
   { code: "GTQ", name: "Quetzal guatemalteco", symbol: "Q", locale: "es-GT" },
@@ -24,6 +25,7 @@ export const CURRENCY_OPTIONS: CurrencyOption[] = [
   { code: "USD", name: "Dólar estadounidense", symbol: "$", locale: "en-US" },
   { code: "EUR", name: "Euro", symbol: "€", locale: "es-ES" },
   { code: "CNY", name: "Yuan chino", symbol: "¥", locale: "zh-CN" },
+  { code: "DKK", name: "Corona danesa", symbol: "kr", locale: "da-DK" },
 ]
 
 const CURRENCY_STORAGE_KEY = "currency_code"

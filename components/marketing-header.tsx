@@ -4,24 +4,19 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { GastrometricsLogo } from "@/components/gastrometrics-logo"
 import { Button } from "@/components/ui/button"
-import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { cn } from "@/lib/utils"
 
 // Header compartido por las páginas públicas (antes de iniciar sesión): "/", "/about" y
 // "/planes". Antes cada una vivía aislada sin ningún nav — /planes y /about no tenían forma
 // de volver a ninguna otra parte del sitio salvo el botón atrás del navegador.
+//
+// Pedido explícito del dueño del proyecto: este header SIEMPRE muestra "Iniciar sesión" /
+// "Registrarse", sin importar si el navegador ya tiene una sesión activa — antes, con
+// sesión activa, mostraba un atajo "Ir al Dashboard" en su lugar (patrón común de SaaS,
+// pero no lo que se pidió acá). Entrar a la app pasa siempre por /login.
 export function MarketingHeader() {
   const pathname = usePathname()
-  // isLoggedIn arranca en false tanto en SSR como en el primer render del cliente (ver
-  // contexts/auth-context.tsx) — no hay salto de hidratación, solo se revela una vez
-  // montado. BUG CORREGIDO: mientras tanto, esto SIEMPRE mostraba "Iniciar Sesión /
-  // Registrarse" (la rama de "no autenticado"), así que un usuario que YA tenía sesión
-  // veía ese botón un instante y luego un salto brusco a "Ir al Dashboard" en cuanto
-  // authChecked se resolvía — dos textos con significado opuesto, no un simple parpadeo.
-  // Ahora, mientras no se sabe con certeza (!authChecked), no se muestra ninguno de los
-  // dos — nada que después haya que corregir de golpe.
-  const { isLoggedIn, authChecked } = useAuth()
   const { t } = useLanguage()
 
   const navItems = [
@@ -56,22 +51,14 @@ export function MarketingHeader() {
         </div>
 
         <div className="flex items-center gap-3 min-h-10">
-          {!authChecked ? null : isLoggedIn ? (
-            <Link href="/dashboard">
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg">{t("marketing_go_to_dashboard")}</Button>
-            </Link>
-          ) : (
-            <>
-              <Link href="/login">
-                <Button variant="ghost" className="hover:bg-accent hover:text-accent-foreground">
-                  {t("marketing_login")}
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg">{t("marketing_signup")}</Button>
-              </Link>
-            </>
-          )}
+          <Link href="/login">
+            <Button variant="ghost" className="hover:bg-accent hover:text-accent-foreground">
+              {t("marketing_login")}
+            </Button>
+          </Link>
+          <Link href="/signup">
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg">{t("marketing_signup")}</Button>
+          </Link>
         </div>
       </nav>
     </header>

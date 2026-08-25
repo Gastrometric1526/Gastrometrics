@@ -302,9 +302,13 @@ export default function DashboardPage() {
       const businessIds = Array.from(new Set(["main", ...storedBusinesses.map((b) => b.id)]))
       const perBusiness = businessIds.flatMap((id) => ActivityTracker.getAlerts(id))
       const global = ActivityTracker.getAlerts(undefined)
+      // Se ordena más nueva primero para quedarse con las 5 más recientes, y recién
+      // después se invierte — así la más nueva queda al final de la lista (abajo),
+      // pedido explícito, en vez del orden más común de "más nueva arriba".
       const alerts = [...perBusiness, ...global]
         .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
         .slice(0, 5)
+        .reverse()
       setSystemAlerts(alerts)
       console.log("Loaded alerts:", alerts.length)
     } catch (error) {
@@ -321,15 +325,20 @@ export default function DashboardPage() {
       setBusinesses(getAllBusinesses())
 
       // Track activity
-      ActivityTracker.addActivity(`Negocio creado: ${newBusiness.name}`, "business", newBusiness.id, {
-        hasFinancialData: newBusiness.hasCustomizedCosts,
-        estimatedMonthlyPlates: newBusiness.estimatedMonthlyPlates,
-      })
+      ActivityTracker.addActivity(
+        t("dashboard_activity_business_created").replace("{name}", newBusiness.name),
+        "business",
+        newBusiness.id,
+        {
+          hasFinancialData: newBusiness.hasCustomizedCosts,
+          estimatedMonthlyPlates: newBusiness.estimatedMonthlyPlates,
+        },
+      )
 
       ActivityTracker.addAlert(
         "success",
-        "Negocio creado",
-        `El negocio "${newBusiness.name}" ha sido creado exitosamente.`,
+        t("dashboard_business_created_title"),
+        t("dashboard_alert_business_created_desc").replace("{name}", newBusiness.name),
         newBusiness.id,
       )
 
@@ -361,15 +370,20 @@ export default function DashboardPage() {
       // Track activity with more details
       const businessToDelete = prevBusinesses.find((b) => b.id === businessId)
       if (businessToDelete) {
-        ActivityTracker.addActivity(`Negocio eliminado: ${businessToDelete.name}`, "business", undefined, {
-          deletedBusinessId: businessToDelete.id,
-          hadFinancialData: businessToDelete.hasFinancialData,
-        })
+        ActivityTracker.addActivity(
+          t("dashboard_activity_business_deleted").replace("{name}", businessToDelete.name),
+          "business",
+          undefined,
+          {
+            deletedBusinessId: businessToDelete.id,
+            hadFinancialData: businessToDelete.hasFinancialData,
+          },
+        )
 
         ActivityTracker.addAlert(
           "warning",
-          "Negocio eliminado",
-          `El negocio "${businessToDelete.name}" ha sido eliminado.`,
+          t("dashboard_business_deleted_title"),
+          t("dashboard_alert_business_deleted_desc").replace("{name}", businessToDelete.name),
           undefined,
         )
       }

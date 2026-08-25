@@ -4,6 +4,7 @@ import Link from "next/link"
 import { MarketingHeader } from "@/components/marketing-header"
 import { MarketingFooter } from "@/components/marketing-footer"
 import { MarketingHeroIllustration } from "@/components/marketing-hero-illustration"
+import { InstallAppButton } from "@/components/install-app-button"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
@@ -292,6 +293,7 @@ export default function Home() {
       </main>
 
       <MarketingFooter />
+      <InstallAppButton />
     </div>
   )
 }

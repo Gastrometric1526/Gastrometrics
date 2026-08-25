@@ -53,6 +53,7 @@ import { calculateTotalMonthlyExpenses } from "@/types/business"
 import { useToast } from "@/hooks/use-toast"
 import { Sidebar } from "@/components/sidebar"
 import { useAuth } from "@/contexts/auth-context"
+import { useLanguage } from "@/contexts/language-context"
 import { getDashboardData } from "@/utils/dashboard"
 import { updateBusiness, getBusinessById, refreshBusinesses } from "@/lib/storage/businesses"
 import { compressLogoToDataUrl } from "@/lib/utils/logo-compress"
@@ -114,6 +115,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
 
   const router = useRouter()
   const { toast } = useToast()
+  const { t } = useLanguage()
   const { isLoggedIn, authChecked } = useAuth()
   const { active: previewActive, member: previewMember } = useTeamPreview()
   const { setTheme } = useTheme()
@@ -455,11 +457,11 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
 
       // Track activity
       try {
-        ActivityTracker.addActivity("Datos financieros actualizados", "business", params.id)
+        ActivityTracker.addActivity(t("business_activity_financial_updated"), "business", params.id)
         ActivityTracker.addAlert(
           "success",
-          "Configuración actualizada",
-          "Los datos financieros han sido actualizados exitosamente.",
+          t("business_alert_config_updated_title"),
+          t("business_alert_config_updated_desc"),
           params.id,
         )
       } catch (error) {
