@@ -35,11 +35,26 @@ export async function POST() {
   }
 
   const admin = getSupabaseAdminClient()
-  const { error } = await admin.from("account_plans").upsert({
+  // Un tester en la lista blanca siempre tiene acceso incondicional, nunca vence — se
+  // limpia explícitamente por si esta cuenta tuvo antes un plan_expires_at de un
+  // vencimiento asignado a mano desde /admin (ver docs/59), que si no se limpiara
+  // aquí podría hacer que la próxima carga de sesión lo tratara como vencido.
+  let { error } = await admin.from("account_plans").upsert({
     account_id: user.id,
     plan_slug: TESTER_PLAN_SLUG,
+    plan_expires_at: null,
     updated_at: new Date().toISOString(),
   })
+
+  // Tolera que supabase/migrations/0008_plan_expiry.sql todavía no se haya corrido
+  // (columna nueva) — sin esto, el plan gratis de testers dejaría de aplicarse por
+  // completo hasta que alguien la corra a mano.
+  if (error) {
+    const fallback = await admin
+      .from("account_plans")
+      .upsert({ account_id: user.id, plan_slug: TESTER_PLAN_SLUG, updated_at: new Date().toISOString() })
+    error = fallback.error
+  }
 
   if (error) {
     console.error("[api/plan/dev-account] Error guardando el plan:", error)

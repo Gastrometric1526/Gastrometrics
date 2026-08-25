@@ -36,12 +36,27 @@ async function getCurrentPlanSlug(accountId: string): Promise<string> {
 
 async function setPlanForAccount(accountId: string, planSlug: string, extra: Record<string, unknown> = {}) {
   const admin = getSupabaseAdminClient()
-  const { error } = await admin.from("account_plans").upsert({
+  // Un plan real, pagado por Stripe, nunca vence por sí solo (el propio webhook lo
+  // maneja vía customer.subscription.deleted) — se limpia por si esta cuenta tuvo
+  // antes un plan_expires_at de un vencimiento asignado a mano desde /admin (docs/59).
+  let { error } = await admin.from("account_plans").upsert({
     account_id: accountId,
     plan_slug: planSlug,
+    plan_expires_at: null,
     updated_at: new Date().toISOString(),
     ...extra,
   })
+
+  // Tolera que supabase/migrations/0008_plan_expiry.sql todavía no se haya corrido
+  // (columna nueva) — sin esto, aplicar un plan real pagado se rompería por completo
+  // (pagos ya cobrados sin que el plan real se active) hasta que alguien la corra.
+  if (error) {
+    const fallback = await admin
+      .from("account_plans")
+      .upsert({ account_id: accountId, plan_slug: planSlug, updated_at: new Date().toISOString(), ...extra })
+    error = fallback.error
+  }
+
   if (error) console.error("[api/webhooks/stripe] Error guardando el plan:", error)
 }
 

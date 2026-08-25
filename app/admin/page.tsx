@@ -25,7 +25,27 @@ interface AccountLookupResult {
   createdAt: string
   emailConfirmed: boolean
   planSlug: string
+  planExpiresAt: string | null
   businessCount: number
+}
+
+// Convierte un ISO datetime a "YYYY-MM-DD" para <input type="date">, en la zona
+// horaria LOCAL del navegador (no UTC) — así "vence el 25" se ve como el 25 sin
+// importar el huso horario de quien esté usando /admin.
+function toDateInputValue(iso: string | null): string {
+  if (!iso) return ""
+  const d = new Date(iso)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+// Al aplicar, "YYYY-MM-DD" se manda como fin del día LOCAL (23:59:59), no medianoche
+// UTC — para que "vence el 25" de verdad incluya todo el día 25 para quien lo asignó.
+function dateInputToIso(value: string): string {
+  const [year, month, day] = value.split("-").map(Number)
+  return new Date(year, month - 1, day, 23, 59, 59).toISOString()
 }
 
 // Candado de acceso — pedido explícito: agregar algún control de acceso a /admin,
@@ -91,6 +111,7 @@ export default function AdminPage() {
   const [lookupNotFound, setLookupNotFound] = useState(false)
   const [accountResult, setAccountResult] = useState<AccountLookupResult | null>(null)
   const [selectedPlanSlug, setSelectedPlanSlug] = useState("")
+  const [expiresAtInput, setExpiresAtInput] = useState("") // "" = sin vencimiento
   const [applyingPlan, setApplyingPlan] = useState(false)
   const [unlocked, setUnlocked] = useState(false)
   const [checkedSession, setCheckedSession] = useState(false)
@@ -243,6 +264,7 @@ export default function AdminPage() {
       if (data.found) {
         setAccountResult(data)
         setSelectedPlanSlug(data.planSlug)
+        setExpiresAtInput(toDateInputValue(data.planExpiresAt))
       } else {
         setLookupNotFound(true)
       }
@@ -261,11 +283,15 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/account-plan", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: accountResult.email, planSlug: selectedPlanSlug }),
+        body: JSON.stringify({
+          email: accountResult.email,
+          planSlug: selectedPlanSlug,
+          expiresAt: expiresAtInput ? dateInputToIso(expiresAtInput) : null,
+        }),
       })
       const data = await res.json()
       if (res.ok && data.ok) {
-        setAccountResult((prev) => (prev ? { ...prev, planSlug: data.planSlug } : prev))
+        setAccountResult((prev) => (prev ? { ...prev, planSlug: data.planSlug, planExpiresAt: data.planExpiresAt } : prev))
         toast({ title: t("admin_accounts_plan_applied_toast") })
       } else {
         toast({ title: t("admin_accounts_error_toast"), variant: "destructive" })
@@ -277,6 +303,20 @@ export default function AdminPage() {
       setApplyingPlan(false)
     }
   }
+
+  // Botones rápidos "+7/+30/+90 días" — a partir de HOY, no de un vencimiento previo
+  // (si ya estaba vencido, "+30 días" debe dar 30 días desde ahora, no seguir sumando
+  // sobre una fecha pasada).
+  const setExpiresInDays = (days: number) => {
+    const target = new Date()
+    target.setDate(target.getDate() + days)
+    setExpiresAtInput(toDateInputValue(target.toISOString()))
+  }
+
+  const planIsExpired = Boolean(accountResult?.planExpiresAt && new Date(accountResult.planExpiresAt).getTime() < Date.now())
+  const hasUnappliedChanges =
+    !!accountResult &&
+    (selectedPlanSlug !== accountResult.planSlug || expiresAtInput !== toDateInputValue(accountResult.planExpiresAt))
 
   const filtered = filter === "todos" ? feedback : feedback.filter((f) => f.type === filter)
   const counts = {
@@ -439,27 +479,72 @@ export default function AdminPage() {
                       {t("admin_accounts_business_count").replace("{n}", String(accountResult.businessCount))}
                     </p>
                   </div>
-                  <Badge variant="secondary">{getPlanBySlug(accountResult.planSlug).name}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{getPlanBySlug(accountResult.planSlug).name}</Badge>
+                    {accountResult.planExpiresAt && (
+                      <Badge variant={planIsExpired ? "destructive" : "outline"}>
+                        {planIsExpired
+                          ? t("admin_accounts_expired_badge")
+                          : t("admin_accounts_expires_badge").replace(
+                              "{date}",
+                              new Date(accountResult.planExpiresAt).toLocaleDateString(getDateLocale(language)),
+                            )}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Select value={selectedPlanSlug} onValueChange={setSelectedPlanSlug}>
-                    <SelectTrigger className="w-56">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {plans.map((plan) => (
-                        <SelectItem key={plan.slug} value={plan.slug}>
-                          {plan.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    size="sm"
-                    onClick={handleApplyPlan}
-                    disabled={applyingPlan || selectedPlanSlug === accountResult.planSlug}
-                  >
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">{t("admin_accounts_plan_label")}</Label>
+                    <Select value={selectedPlanSlug} onValueChange={setSelectedPlanSlug}>
+                      <SelectTrigger className="w-56">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {plans.map((plan) => (
+                          <SelectItem key={plan.slug} value={plan.slug}>
+                            {plan.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="plan-expires-at" className="text-xs text-muted-foreground">
+                      {t("admin_accounts_expires_label")}
+                    </Label>
+                    <Input
+                      id="plan-expires-at"
+                      type="date"
+                      className="w-44"
+                      value={expiresAtInput}
+                      onChange={(e) => setExpiresAtInput(e.target.value)}
+                    />
+                  </div>
+                  <Button size="sm" onClick={handleApplyPlan} disabled={applyingPlan || !hasUnappliedChanges}>
                     {applyingPlan ? t("admin_accounts_applying") : t("admin_accounts_apply_button")}
+                  </Button>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground mr-1">{t("admin_accounts_expires_quick_label")}</span>
+                  <Button type="button" size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setExpiresInDays(7)}>
+                    {t("admin_accounts_expires_7d")}
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setExpiresInDays(30)}>
+                    {t("admin_accounts_expires_30d")}
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setExpiresInDays(90)}>
+                    {t("admin_accounts_expires_90d")}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => setExpiresAtInput("")}
+                    disabled={!expiresAtInput}
+                  >
+                    {t("admin_accounts_expires_clear")}
                   </Button>
                 </div>
               </div>

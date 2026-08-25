@@ -218,15 +218,17 @@ export interface Database {
           plan_slug: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          plan_expires_at: string | null
           updated_at: string
         }
         Insert: Omit<
           Database["public"]["Tables"]["account_plans"]["Row"],
-          "updated_at" | "stripe_customer_id" | "stripe_subscription_id"
+          "updated_at" | "stripe_customer_id" | "stripe_subscription_id" | "plan_expires_at"
         > & {
           updated_at?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          plan_expires_at?: string | null
         }
         Update: Partial<Database["public"]["Tables"]["account_plans"]["Row"]>
         Relationships: never[]

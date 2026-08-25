@@ -96,10 +96,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return
       }
 
-      const [{ data: profileRow }, { data: planRow }] = await Promise.all([
+      const [{ data: profileRow }, planResult] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", sessionUser.id).maybeSingle(),
-        supabase.from("account_plans").select("plan_slug").eq("account_id", sessionUser.id).maybeSingle(),
+        supabase.from("account_plans").select("plan_slug, plan_expires_at").eq("account_id", sessionUser.id).maybeSingle(),
       ])
+      // Tolera que supabase/migrations/0008_plan_expiry.sql todavía no se haya corrido
+      // (columna nueva, ver docs/59) — sin esto, el sync de plan de CADA sesión se
+      // rompería por completo (nunca refrescaría el plan real) hasta que alguien corra
+      // esa migración a mano.
+      let planRow = planResult.data
+      if (planResult.error) {
+        const fallback = await supabase
+          .from("account_plans")
+          .select("plan_slug")
+          .eq("account_id", sessionUser.id)
+          .maybeSingle()
+        planRow = fallback.data ? { ...fallback.data, plan_expires_at: null } : null
+      }
 
       if (cancelled) return
 
@@ -111,7 +124,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // verdad real en Supabase — cubre el caso de "el plan cambió desde otro
       // dispositivo, o desde el Portal de Cliente de Stripe" en cada login/refresh de
       // sesión, no solo justo después de pagar.
-      if (planRow?.plan_slug) setCurrentPlanSlug(planRow.plan_slug)
+      //
+      // Un plan asignado a mano desde /admin ("Cuentas y planes") puede tener
+      // plan_expires_at — vencido, se trata como si la cuenta nunca hubiera tenido ese
+      // plan (cae a "foodie") sin que nadie tenga que acordarse de revertirlo a mano.
+      // No se reescribe la fila en Supabase acá (el cliente no puede, RLS bloquea
+      // escrituras directas a account_plans) — es solo un cálculo de lectura, la fila
+      // real se corrige la próxima vez que alguien la edite desde /admin.
+      const isExpired = planRow?.plan_expires_at ? new Date(planRow.plan_expires_at).getTime() < Date.now() : false
+      if (planRow?.plan_slug) setCurrentPlanSlug(isExpired ? "foodie" : planRow.plan_slug)
       // Dispara la carga real de la lista de negocios desde Supabase — ver
       // lib/storage/businesses.ts. No se espera (fire-and-forget): las pantallas que la
       // necesitan ya toleran verla vacía por un instante mientras carga, mismo patrón
