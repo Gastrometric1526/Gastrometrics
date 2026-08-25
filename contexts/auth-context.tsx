@@ -4,6 +4,7 @@ import type React from "react"
 import { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react"
 import type { Session } from "@supabase/supabase-js"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { consumeAuthHashFromUrl } from "@/lib/supabase/consume-auth-hash"
 import type { Database } from "@/types/database"
 import type { UserProfile } from "@/lib/types/user"
 import { setCurrentPlanSlug } from "@/lib/plan-access"
@@ -106,9 +107,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshBusinesses()
     }
 
-    supabase.auth.getSession().then(({ data }) => {
-      applySession(data.session).finally(() => {
-        if (!cancelled) setAuthChecked(true)
+    // Antes de preguntar por la sesión, procesa un posible link de confirmación de
+    // registro o recuperación de contraseña (ver lib/supabase/consume-auth-hash.ts) —
+    // si no se hace esto primero, getSession() nunca ve la sesión que ese link trae.
+    consumeAuthHashFromUrl().finally(() => {
+      if (cancelled) return
+      supabase.auth.getSession().then(({ data }) => {
+        applySession(data.session).finally(() => {
+          if (!cancelled) setAuthChecked(true)
+        })
       })
     })
 

@@ -14,6 +14,7 @@ import { useLanguage } from "@/contexts/language-context"
 // Modificar la interfaz InventoryTableProps para incluir una nueva prop para manejar cambios en el stock mínimo
 interface InventoryTableProps {
   items: InventoryItem[]
+  businessId?: string | null
   onEdit: (item: InventoryItem) => void
   onDelete: (id: string) => void
   onSave: (items: InventoryItem[]) => void
@@ -25,6 +26,7 @@ interface InventoryTableProps {
 // Actualizar la desestructuración de props para incluir onMinStockChange
 export function InventoryTable({
   items,
+  businessId,
   onEdit,
   onDelete,
   onSave,
@@ -37,11 +39,15 @@ export function InventoryTable({
   const [editedItems, setEditedItems] = useState([...items])
   const [ingredientsData, setIngredientsData] = useState<any[]>([])
 
-  // Cargar los datos de ingredientes directamente para asegurar que tenemos acceso a los precios correctos
+  // BUG CORREGIDO: llamaba a getIngredients() sin businessId, así que siempre caía al
+  // workspace "main" sin importar qué negocio se estuviera viendo — en un negocio
+  // distinto a "main", esta tabla mostraba precios/nombres de los ingredientes
+  // equivocados (los del negocio "main", no los del negocio real). app/inventario/page.tsx
+  // ya calculaba el businessId real desde la URL, solo no se lo pasaba a este componente.
   useEffect(() => {
-    const allIngredients = getIngredients()
+    const allIngredients = getIngredients(businessId)
     setIngredientsData(allIngredients)
-  }, [])
+  }, [businessId])
 
   // Re-sincronizar con la prop `items` cuando cambia desde afuera (búsqueda, alta, baja).
   // Sin esto, editedItems se congelaba en el primer render y los botones de

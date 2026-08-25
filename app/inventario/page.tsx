@@ -674,6 +674,7 @@ export default function InventoryPage() {
                     ) : (
                       <InventoryTable
                         items={filteredItems}
+                        businessId={businessId}
                         onEdit={handleEdit}
                         onDelete={handleDelete}
                         onSave={handleSave}

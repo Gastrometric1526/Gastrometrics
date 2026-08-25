@@ -12,6 +12,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { Lock, CheckCircle2 } from "lucide-react"
 import { GastrometricsLogo } from "@/components/gastrometrics-logo"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { consumeAuthHashFromUrl } from "@/lib/supabase/consume-auth-hash"
 import { storePasswordHash } from "@/lib/utils/password-hash"
 
 // Página a la que Supabase redirige desde el link del correo de recuperación (ver
@@ -36,9 +37,18 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient()
-    supabase.auth.getSession().then(({ data }) => {
-      setHasRecoverySession(!!data.session)
+    let cancelled = false
+    // Procesa el hash del link de recuperación (ver lib/supabase/consume-auth-hash.ts)
+    // antes de preguntar por la sesión — getSession() nunca lo detecta solo.
+    consumeAuthHashFromUrl().finally(() => {
+      if (cancelled) return
+      supabase.auth.getSession().then(({ data }) => {
+        if (!cancelled) setHasRecoverySession(!!data.session)
+      })
     })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
