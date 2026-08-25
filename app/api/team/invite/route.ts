@@ -25,6 +25,7 @@ import { Resend } from "resend"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { renderEmailTemplate, escapeHtml } from "@/lib/services/email-templates"
+import { getEmailLabels, fillLabel, normalizeEmailLang } from "@/lib/i18n/email-labels"
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
@@ -45,8 +46,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No autenticado." }, { status: 401 })
   }
 
-  const { data: profileRow } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle()
+  const { data: profileRow } = await supabase
+    .from("profiles")
+    .select("full_name, preferred_language")
+    .eq("id", user.id)
+    .maybeSingle()
   const ownerName = profileRow?.full_name || user.email || "Un usuario de GastroMetrics"
+  const labels = getEmailLabels(profileRow?.preferred_language)
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
   const admin = getSupabaseAdminClient()
@@ -92,9 +98,22 @@ export async function POST(request: Request) {
 
   try {
     const resend = new Resend(process.env.RESEND_API_KEY)
+    const safeOwnerName = escapeHtml(ownerName)
+    const safeBusinessName = escapeHtml(scopeLabel || "GastroMetrics")
     const html = renderEmailTemplate("04-invitacion-equipo.html", {
-      ownerName: escapeHtml(ownerName),
-      businessName: escapeHtml(scopeLabel || "GastroMetrics"),
+      htmlLang: normalizeEmailLang(profileRow?.preferred_language),
+      title: labels.e04_title,
+      preheader: fillLabel(labels.e04_preheader, { ownerName: safeOwnerName, businessName: safeBusinessName }),
+      heading: fillLabel(labels.e04_heading, { businessName: safeBusinessName }),
+      body: fillLabel(labels.e04_body, { ownerName: safeOwnerName }),
+      accessLabel: labels.e04_access_label,
+      labelScope: labels.e04_label_scope,
+      labelModules: labels.e04_label_modules,
+      labelPdfs: labels.e04_label_pdfs,
+      cta: labels.e04_cta,
+      footnote: fillLabel(labels.e04_footnote, { ownerName: safeOwnerName }),
+      footerAddress: labels.footer_address,
+      footer2: labels.e04_footer2,
       scope: escapeHtml(scopeLabel),
       tools: escapeHtml(toolsLabel || "—"),
       pdfAccess: escapeHtml(pdfAccessLabel || "—"),
@@ -104,7 +123,7 @@ export async function POST(request: Request) {
     const { error: sendError } = await resend.emails.send({
       from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
       to: [email],
-      subject: `${ownerName} te invitó a su equipo en GastroMetrics`,
+      subject: fillLabel(labels.e04_subject, { ownerName }),
       html,
     })
     if (sendError) {

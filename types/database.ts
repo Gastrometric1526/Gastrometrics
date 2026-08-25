@@ -197,15 +197,17 @@ export interface Database {
           admin_reply: string | null
           replied_at: string | null
           created_at: string
+          preferred_language: string
         }
         Insert: Omit<
           Database["public"]["Tables"]["feedback"]["Row"],
-          "status" | "created_at" | "admin_reply" | "replied_at"
+          "status" | "created_at" | "admin_reply" | "replied_at" | "preferred_language"
         > & {
           status?: string
           created_at?: string
           admin_reply?: string | null
           replied_at?: string | null
+          preferred_language?: string
         }
         Update: Partial<Database["public"]["Tables"]["feedback"]["Row"]>
         Relationships: never[]
@@ -240,12 +242,17 @@ export interface Database {
           industry_experience: string
           email_verified: boolean
           onboarding_completed: boolean
+          preferred_language: string
           created_at: string
           updated_at: string
         }
-        Insert: Omit<Database["public"]["Tables"]["profiles"]["Row"], "created_at" | "updated_at"> & {
+        Insert: Omit<
+          Database["public"]["Tables"]["profiles"]["Row"],
+          "created_at" | "updated_at" | "preferred_language"
+        > & {
           created_at?: string
           updated_at?: string
+          preferred_language?: string
         }
         Update: Partial<Database["public"]["Tables"]["profiles"]["Row"]>
         Relationships: never[]

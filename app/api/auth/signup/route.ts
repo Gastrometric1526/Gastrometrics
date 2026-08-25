@@ -19,12 +19,14 @@ import { Resend } from "resend"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getPlanBySlug } from "@/lib/plans"
 import { renderEmailTemplate, escapeHtml } from "@/lib/services/email-templates"
+import { getEmailLabels, fillLabel, normalizeEmailLang } from "@/lib/i18n/email-labels"
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
   const email = typeof body?.email === "string" ? body.email.trim() : ""
   const password = typeof body?.password === "string" ? body.password : ""
   const profile = body?.profile || {}
+  const preferredLanguage = normalizeEmailLang(profile.preferredLanguage)
 
   if (!email || !password) {
     return NextResponse.json({ error: "Falta el correo o la contraseña." }, { status: 400 })
@@ -46,6 +48,7 @@ export async function POST(request: Request) {
         business_type: profile.businessType || "",
         business_size: profile.businessSize || "",
         industry_experience: profile.industryExperience || "",
+        preferred_language: preferredLanguage,
       },
     },
   })
@@ -59,15 +62,24 @@ export async function POST(request: Request) {
   if (process.env.RESEND_API_KEY) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
+      const labels = getEmailLabels(preferredLanguage)
+      const fullName = escapeHtml(profile.fullName || "chef")
       const html = renderEmailTemplate("01-confirmacion-correo.html", {
-        fullName: escapeHtml(profile.fullName || "chef"),
-        planName: escapeHtml(getPlanBySlug("foodie").name),
+        htmlLang: preferredLanguage,
+        title: labels.e01_title,
+        preheader: labels.e01_preheader,
+        heading: fillLabel(labels.e01_heading, { fullName }),
+        body: fillLabel(labels.e01_body, { planName: escapeHtml(getPlanBySlug("foodie").name) }),
+        cta: labels.e01_cta,
+        footnote: labels.e01_footnote,
+        footerAddress: labels.footer_address,
+        footer2: labels.e01_footer2,
         confirmUrl: data.properties.action_link,
       })
       const { error: sendError } = await resend.emails.send({
         from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
         to: [email],
-        subject: "Confirma tu cuenta en GastroMetrics",
+        subject: labels.e01_subject,
         html,
       })
       if (sendError) console.error("[api/auth/signup] Resend rechazó el envío:", sendError)

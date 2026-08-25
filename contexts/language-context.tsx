@@ -3,6 +3,7 @@
 import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react"
 import { SUPPORTED_LANGUAGES, translate, type LanguageCode } from "@/lib/i18n/translations"
+import { useAuth } from "@/contexts/auth-context"
 
 interface LanguageContextType {
   language: LanguageCode
@@ -23,11 +24,13 @@ function getBrowserDefaultLanguage(): LanguageCode {
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<LanguageCode>("es")
+  const { syncPreferredLanguage } = useAuth()
 
   useEffect(() => {
     const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY) as LanguageCode | null
     if (saved && SUPPORTED_LANGUAGES.some((l) => l.code === saved)) {
       setLanguageState(saved)
+      document.documentElement.lang = saved
     } else {
       // BUG CORREGIDO: el idioma detectado del navegador nunca se guardaba en
       // localStorage hasta que el usuario abría Configuración y lo elegía a mano.
@@ -39,13 +42,26 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       const detected = getBrowserDefaultLanguage()
       setLanguageState(detected)
       localStorage.setItem(LANGUAGE_STORAGE_KEY, detected)
+      // `<html lang="es">` viene fijo del HTML estático/prerenderizado (ver docs/58) —
+      // se corrige acá en cuanto se conoce el idioma real, para lectores de pantalla
+      // y cualquier código que revise este atributo en vez del estado de React.
+      document.documentElement.lang = detected
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const setLanguage = useCallback((lang: LanguageCode) => {
-    setLanguageState(lang)
-    localStorage.setItem(LANGUAGE_STORAGE_KEY, lang)
-  }, [])
+  const setLanguage = useCallback(
+    (lang: LanguageCode) => {
+      setLanguageState(lang)
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, lang)
+      document.documentElement.lang = lang
+      // Best-effort: si hay sesión real, guarda el idioma en profiles.preferred_language
+      // para que los correos del servidor (registro, recuperación, facturación) salgan
+      // en este idioma incluso cuando no hay forma de leer localStorage (ver docs/58).
+      syncPreferredLanguage(lang)
+    },
+    [syncPreferredLanguage],
+  )
 
   const t = useCallback((key: Parameters<typeof translate>[1]) => translate(language, key), [language])
 

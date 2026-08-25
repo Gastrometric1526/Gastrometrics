@@ -65,7 +65,7 @@ function SignupPageInner() {
   const searchParams = useSearchParams()
   const selectedPlan = searchParams.get("plan")
   const { login, signUp } = useAuth()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [showCheckEmail, setShowCheckEmail] = useState(false)
@@ -153,14 +153,19 @@ function SignupPageInner() {
     setIsLoading(true)
 
     try {
-      await signUp(formData.email!, formData.password!, {
-        fullName: formData.fullName!,
-        nationality: formData.nationality!,
-        currency: formData.currency!,
-        businessType: formData.businessType!,
-        businessSize: formData.businessSize!,
-        industryExperience: formData.industryExperience!,
-      })
+      await signUp(
+        formData.email!,
+        formData.password!,
+        {
+          fullName: formData.fullName!,
+          nationality: formData.nationality!,
+          currency: formData.currency!,
+          businessType: formData.businessType!,
+          businessSize: formData.businessSize!,
+          industryExperience: formData.industryExperience!,
+        },
+        { preferredLanguage: language },
+      )
 
       // Contraseña local (ver lib/utils/password-hash.ts) para el chequeo de "confirma
       // tu contraseña" al cambiar el correo en Configuración — independiente de la

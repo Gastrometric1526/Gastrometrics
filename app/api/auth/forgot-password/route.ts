@@ -15,25 +15,51 @@
 import { NextResponse } from "next/server"
 import { Resend } from "resend"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { requireSupabaseServiceRoleEnv } from "@/lib/supabase/env"
 import { renderEmailTemplate, escapeHtml } from "@/lib/services/email-templates"
+import { getEmailLabels, fillLabel, normalizeEmailLang, EMAIL_DATE_LOCALES, type EmailLabelKeys } from "@/lib/i18n/email-labels"
 
-function describeDevice(userAgent: string | null): string {
-  if (!userAgent) return "Dispositivo desconocido"
+function describeDevice(userAgent: string | null, labels: Record<EmailLabelKeys, string>): string {
+  if (!userAgent) return labels.device_unknown
   const ua = userAgent.toLowerCase()
-  let os = "un dispositivo"
+  let os = labels.device_fallback_os
   if (ua.includes("windows")) os = "Windows"
   else if (ua.includes("mac os") || ua.includes("macintosh")) os = "Mac"
   else if (ua.includes("android")) os = "Android"
   else if (ua.includes("iphone") || ua.includes("ipad")) os = "iOS"
   else if (ua.includes("linux")) os = "Linux"
 
-  let browser = "un navegador"
+  let browser = labels.device_fallback_browser
   if (ua.includes("edg/")) browser = "Edge"
   else if (ua.includes("chrome/") && !ua.includes("edg/")) browser = "Chrome"
   else if (ua.includes("firefox/")) browser = "Firefox"
   else if (ua.includes("safari/") && !ua.includes("chrome/")) browser = "Safari"
 
-  return `${browser} en ${os}`
+  return `${browser} ${labels.device_connector} ${os}`
+}
+
+// La cuenta puede ya tener un idioma guardado (profiles.preferred_language, elegido en
+// la UI o al registrarse) — esta ruta no tiene sesión (nadie logueado pide su propia
+// recuperación), así que hay que buscarlo por correo contra la API admin de Supabase en
+// vez de leerlo de una cookie/sesión. Si algo falla, sigue en español (mismo criterio
+// anti-enumeración que el resto de la función: nunca revela si el correo existe).
+async function lookupPreferredLanguage(email: string): Promise<string> {
+  try {
+    const { url, serviceRoleKey } = requireSupabaseServiceRoleEnv()
+    const res = await fetch(`${url}/auth/v1/admin/users?email=${encodeURIComponent(email)}`, {
+      headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` },
+    })
+    if (!res.ok) return "es"
+    const data = await res.json()
+    const userId = data?.users?.[0]?.id
+    if (!userId) return "es"
+
+    const admin = getSupabaseAdminClient()
+    const { data: profileRow } = await admin.from("profiles").select("preferred_language").eq("id", userId).maybeSingle()
+    return profileRow?.preferred_language || "es"
+  } catch {
+    return "es"
+  }
 }
 
 export async function POST(request: Request) {
@@ -63,18 +89,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ sent: true })
     }
 
+    const preferredLanguage = await lookupPreferredLanguage(email)
+    const labels = getEmailLabels(preferredLanguage)
     const resend = new Resend(process.env.RESEND_API_KEY)
     const html = renderEmailTemplate("03-cambio-contrasena.html", {
-      email: escapeHtml(email),
+      htmlLang: preferredLanguage,
+      title: labels.e03_title,
+      preheader: labels.e03_preheader,
+      heading: labels.e03_heading,
+      body: fillLabel(labels.e03_body, { email: escapeHtml(email) }),
+      cta: labels.e03_cta,
+      labelRequest: labels.e03_label_request,
+      labelDevice: labels.e03_label_device,
+      labelExpires: labels.e03_label_expires,
+      valueExpires: labels.e03_value_expires,
+      footnote: labels.e03_footnote,
+      footerAddress: labels.footer_address,
+      footer2: labels.e03_footer2,
       resetUrl: data.properties.action_link,
-      requestedAt: new Date().toLocaleString("es-HN", { dateStyle: "long", timeStyle: "short" }),
-      device: escapeHtml(describeDevice(request.headers.get("user-agent"))),
+      requestedAt: new Date().toLocaleString(EMAIL_DATE_LOCALES[normalizeEmailLang(preferredLanguage)], {
+        dateStyle: "long",
+        timeStyle: "short",
+      }),
+      device: escapeHtml(describeDevice(request.headers.get("user-agent"), labels)),
     })
 
     const { error: sendError } = await resend.emails.send({
       from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
       to: [email],
-      subject: "Restablece tu contraseña de GastroMetrics",
+      subject: labels.e03_subject,
       html,
     })
     if (sendError) {

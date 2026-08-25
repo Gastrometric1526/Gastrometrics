@@ -69,6 +69,12 @@ interface UserSettings {
   }
 }
 
+// Debe cubrir, como mínimo, las 6 monedas de los 6 idiomas soportados (lib/i18n/
+// translations.ts) y ser un subconjunto válido de CURRENCY_OPTIONS (lib/currency.ts) —
+// ver la nota de deuda técnica ahí mismo y en referencia-arquitectura-tecnica.md
+// sección 13: esta lista, la de lib/types/user.ts (COUNTRIES) y CURRENCY_OPTIONS
+// divergieron una vez (faltaba Dinamarca acá, entre otros) y causaron un bug real de
+// moneda — cualquier país que se agregue a una de las tres debe agregarse a las otras.
 const countries = [
   { code: "HN", name: "Honduras", currency: "HNL", symbol: "L" },
   { code: "US", name: "Estados Unidos", currency: "USD", symbol: "$" },
@@ -84,6 +90,14 @@ const countries = [
   { code: "CO", name: "Colombia", currency: "COP", symbol: "$" },
   { code: "PE", name: "Perú", currency: "PEN", symbol: "S/" },
   { code: "CL", name: "Chile", currency: "CLP", symbol: "$" },
+  { code: "EC", name: "Ecuador", currency: "USD", symbol: "$" },
+  { code: "VE", name: "Venezuela", currency: "VES", symbol: "Bs" },
+  { code: "BR", name: "Brasil", currency: "BRL", symbol: "R$" },
+  { code: "UY", name: "Uruguay", currency: "UYU", symbol: "$" },
+  { code: "PY", name: "Paraguay", currency: "PYG", symbol: "₲" },
+  { code: "BO", name: "Bolivia", currency: "BOB", symbol: "Bs" },
+  { code: "DO", name: "República Dominicana", currency: "DOP", symbol: "RD$" },
+  { code: "DK", name: "Dinamarca", currency: "DKK", symbol: "kr" },
   { code: "CN", name: "China", currency: "CNY", symbol: "¥" },
 ]
 
@@ -191,6 +205,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
       createdAt: existingProfile.createdAt || new Date().toISOString(),
       emailVerified: existingProfile.emailVerified ?? false,
       onboardingCompleted: existingProfile.onboardingCompleted ?? true,
+      preferredLanguage: existingProfile.preferredLanguage || language,
       ...existingProfile,
       fullName,
       email,

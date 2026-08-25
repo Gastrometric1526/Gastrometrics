@@ -16,6 +16,11 @@ export interface UserProfile {
   industryExperience: string
   emailVerified: boolean
   onboardingCompleted: boolean
+  // Idioma de los correos transaccionales del lado del servidor (registro, recuperación
+  // de contraseña, facturación) — se sincroniza desde contexts/language-context.tsx cada
+  // vez que la persona cambia de idioma en la UI, ver docs/58. Independiente de
+  // localStorage("app_language"), que solo controla la UI en el navegador actual.
+  preferredLanguage: string
 }
 
 export interface UserRegistrationData {
@@ -50,6 +55,7 @@ export const COUNTRIES = [
   { code: "SV", name: "El Salvador", currency: "USD", symbol: "$" },
   { code: "NI", name: "Nicaragua", currency: "NIO", symbol: "C$" },
   { code: "DO", name: "República Dominicana", currency: "DOP", symbol: "RD$" },
+  { code: "BZ", name: "Belice", currency: "BZD", symbol: "BZ$" },
   // Dinamarca y China continental: la lista de países quedaba corta contra los 6
   // idiomas soportados (lib/i18n/translations.ts incluye danés y chino, pero no
   // había ningún país correspondiente para elegir en el registro).

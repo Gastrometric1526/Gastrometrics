@@ -54,6 +54,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
         createdAt: data.created_at,
         originalMessage: data.message,
         reply: data.admin_reply as string,
+        preferredLanguage: data.preferred_language,
       })
       emailSent = true
     } catch (emailError) {

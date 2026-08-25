@@ -46,7 +46,7 @@ const typeOptionDefs: { value: FeedbackType; labelKey: "contacto_type_sugerencia
 
 export default function ContactoPage() {
   const { isLoggedIn, authChecked, user } = useAuth()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const { toast } = useToast()
   const pathname = usePathname()
 
@@ -134,6 +134,7 @@ export default function ContactoPage() {
           userEmail: submittedUserEmail,
           page: pathname,
           imageDataUrl: imageDataUrl || undefined,
+          language,
         }),
       })
       if (!res.ok) throw new Error("submit failed")

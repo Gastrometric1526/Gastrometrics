@@ -15,22 +15,25 @@
 
 import { Resend } from "resend"
 import { renderEmailTemplate, escapeHtml, escapeHtmlWithLineBreaks } from "./email-templates"
+import { getEmailLabels, normalizeEmailLang, EMAIL_DATE_LOCALES, EMAIL_LABELS } from "@/lib/i18n/email-labels"
 
 export function isFeedbackNotifyConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY && process.env.FEEDBACK_NOTIFY_TO)
 }
 
-const FEEDBACK_TYPE_LABELS: Record<string, string> = {
-  sugerencia: "Sugerencia",
-  queja: "Queja",
-  bug: "Reporte de error",
-}
+// Tipo interno de feedback (sugerencia/queja/bug) — clave estable en la base de datos,
+// nunca traducida; su etiqueta visible sí sale del diccionario de docs/58.
+const FEEDBACK_TYPE_KEYS = {
+  sugerencia: "feedback_type_sugerencia",
+  queja: "feedback_type_queja",
+  bug: "feedback_type_bug",
+} as const
 
-const FEEDBACK_REPLY_TITLES: Record<string, string> = {
-  sugerencia: "Revisamos tu sugerencia",
-  queja: "Ya resolvimos tu reporte",
-  bug: "Ya corregimos el problema",
-}
+const FEEDBACK_REPLY_TITLE_KEYS = {
+  sugerencia: "feedback_reply_title_sugerencia",
+  queja: "feedback_reply_title_queja",
+  bug: "feedback_reply_title_bug",
+} as const
 
 /**
  * Le avisa a la PERSONA que mandó el mensaje por /contacto que el dueño del
@@ -47,20 +50,39 @@ export async function sendFeedbackReplyEmail(input: {
   createdAt: string
   originalMessage: string
   reply: string
+  preferredLanguage?: string
 }): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
 
   const resend = new Resend(process.env.RESEND_API_KEY)
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
-  const typeLabel = FEEDBACK_TYPE_LABELS[input.type] || input.type
+  const language = normalizeEmailLang(input.preferredLanguage)
+  const labels = getEmailLabels(language)
+  const typeKey = FEEDBACK_TYPE_KEYS[input.type as keyof typeof FEEDBACK_TYPE_KEYS]
+  const typeLabel = typeKey ? labels[typeKey] : input.type
+  const replyTitleKey = FEEDBACK_REPLY_TITLE_KEYS[input.type as keyof typeof FEEDBACK_REPLY_TITLE_KEYS]
 
   const html = renderEmailTemplate("02-respuesta-feedback.html", {
+    htmlLang: language,
+    title: labels.e02_title,
+    preheader: labels.e02_preheader,
+    receivedPrefix: labels.e02_received_prefix,
+    intro: labels.e02_intro,
+    originalLabel: labels.e02_original_label,
+    cta: labels.e02_cta,
+    footnote: labels.e02_footnote,
+    footerAddress: labels.footer_address,
+    footer2: labels.e02_footer2,
     typeLabel: escapeHtml(typeLabel),
     ticketId: escapeHtml(input.ticketId),
     receivedAt: escapeHtml(
-      new Date(input.createdAt).toLocaleDateString("es-HN", { day: "numeric", month: "long", year: "numeric" }),
+      new Date(input.createdAt).toLocaleDateString(EMAIL_DATE_LOCALES[language], {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
     ),
-    replyTitle: escapeHtml(FEEDBACK_REPLY_TITLES[input.type] || "Respuesta a tu mensaje"),
+    replyTitle: escapeHtml(replyTitleKey ? labels[replyTitleKey] : "—"),
     reply: escapeHtmlWithLineBreaks(input.reply),
     originalMessage: escapeHtmlWithLineBreaks(input.originalMessage),
     appUrl: siteUrl,
@@ -69,7 +91,7 @@ export async function sendFeedbackReplyEmail(input: {
   const { error } = await resend.emails.send({
     from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
     to: [input.toEmail],
-    subject: "Respuesta a tu mensaje en GastroMetrics",
+    subject: labels.e02_subject,
     html,
   })
   // El SDK de Resend no lanza en errores de la API — los devuelve en `error` sin lanzar.
@@ -88,7 +110,12 @@ export async function sendFeedbackNotification(input: {
   if (!isFeedbackNotifyConfigured()) return
 
   const resend = new Resend(process.env.RESEND_API_KEY)
-  const typeLabel = FEEDBACK_TYPE_LABELS[input.type] || input.type
+  // Este correo siempre va al dueño del proyecto (FEEDBACK_NOTIFY_TO, ver
+  // isFeedbackNotifyConfigured), nunca a quien mandó el feedback — a propósito siempre
+  // en español, sin importar el idioma de quien escribió el mensaje (docs/58 solo
+  // traduce lo que ve el usuario final, no las notificaciones internas del dueño).
+  const typeKey = FEEDBACK_TYPE_KEYS[input.type as keyof typeof FEEDBACK_TYPE_KEYS]
+  const typeLabel = typeKey ? EMAIL_LABELS.es[typeKey] : input.type
   const fromWho = input.userName || input.userEmail ? `${input.userName || "Anónimo"} (${input.userEmail || "sin correo"})` : "Anónimo"
 
   const { error } = await resend.emails.send({

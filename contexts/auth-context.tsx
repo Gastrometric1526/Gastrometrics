@@ -28,6 +28,13 @@ export interface SignUpProfileData {
   industryExperience: string
 }
 
+export interface SignUpOptions {
+  // Idioma activo en la UI al momento de registrarse (useLanguage().language) — se
+  // manda al trigger de creación de perfil (ver supabase/migrations/0007) para que el
+  // correo de confirmación de registro salga en ese idioma, no siempre en español.
+  preferredLanguage: string
+}
+
 interface AuthContextType {
   isLoggedIn: boolean
   // true una vez que ya se consultó la sesión de Supabase al menos una vez. Las páginas
@@ -38,9 +45,13 @@ interface AuthContextType {
   user: User | null
   userProfile: UserProfile | null
   login: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, profile: SignUpProfileData) => Promise<void>
+  signUp: (email: string, password: string, profile: SignUpProfileData, options: SignUpOptions) => Promise<void>
   logout: () => Promise<void>
   updateUserProfile: (profile: UserProfile) => Promise<void>
+  // Sincroniza el idioma elegido en la UI (contexts/language-context.tsx) hacia
+  // profiles.preferred_language — best-effort, sin bloquear el cambio de idioma si
+  // falla o si no hay sesión (usuario anónimo en la landing, por ejemplo).
+  syncPreferredLanguage: (language: string) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -60,6 +71,7 @@ function rowToProfile(row: ProfileRow, email: string): UserProfile {
     industryExperience: row.industry_experience,
     emailVerified: row.email_verified,
     onboardingCompleted: row.onboarding_completed,
+    preferredLanguage: row.preferred_language,
   }
 }
 
@@ -140,7 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error
   }, [])
 
-  const signUp = useCallback(async (email: string, password: string, profile: SignUpProfileData) => {
+  const signUp = useCallback(async (email: string, password: string, profile: SignUpProfileData, options: SignUpOptions) => {
     // Antes llamaba a supabase.auth.signUp() directo desde el cliente — eso dispara
     // automáticamente el correo GENÉRICO de confirmación de Supabase, sin forma de
     // evitarlo desde acá. La ruta de servidor usa admin.generateLink en su lugar:
@@ -159,6 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           businessType: profile.businessType,
           businessSize: profile.businessSize,
           industryExperience: profile.industryExperience,
+          preferredLanguage: options.preferredLanguage,
         },
       }),
     })
@@ -169,6 +182,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // fallaría por RLS mientras el correo no esté confirmado (sin sesión, auth.uid() es
     // null).
   }, [])
+
+  const syncPreferredLanguage = useCallback(
+    (language: string) => {
+      if (!user) return
+      const supabase = getSupabaseBrowserClient()
+      supabase
+        .from("profiles")
+        .update({ preferred_language: language })
+        .eq("id", user.id)
+        .then(({ error }) => {
+          if (error) console.error("No se pudo sincronizar el idioma preferido:", error)
+        })
+    },
+    [user],
+  )
 
   const logout = useCallback(async () => {
     const supabase = getSupabaseBrowserClient()
@@ -227,8 +255,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signUp,
       logout,
       updateUserProfile,
+      syncPreferredLanguage,
     }),
-    [isLoggedIn, authChecked, user, userProfile, login, signUp, logout, updateUserProfile],
+    [isLoggedIn, authChecked, user, userProfile, login, signUp, logout, updateUserProfile, syncPreferredLanguage],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
