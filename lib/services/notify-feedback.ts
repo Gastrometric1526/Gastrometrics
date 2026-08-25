@@ -14,6 +14,7 @@
  */
 
 import { Resend } from "resend"
+import { renderEmailTemplate, escapeHtml, escapeHtmlWithLineBreaks } from "./email-templates"
 
 export function isFeedbackNotifyConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY && process.env.FEEDBACK_NOTIFY_TO)
@@ -23,6 +24,12 @@ const FEEDBACK_TYPE_LABELS: Record<string, string> = {
   sugerencia: "Sugerencia",
   queja: "Queja",
   bug: "Reporte de error",
+}
+
+const FEEDBACK_REPLY_TITLES: Record<string, string> = {
+  sugerencia: "Revisamos tu sugerencia",
+  queja: "Ya resolvimos tu reporte",
+  bug: "Ya corregimos el problema",
 }
 
 /**
@@ -35,29 +42,35 @@ const FEEDBACK_TYPE_LABELS: Record<string, string> = {
 export async function sendFeedbackReplyEmail(input: {
   toEmail: string
   toName?: string
+  type: string
+  ticketId: string
+  createdAt: string
   originalMessage: string
   reply: string
 }): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
 
   const resend = new Resend(process.env.RESEND_API_KEY)
-  const greetingName = input.toName || "Hola"
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+  const typeLabel = FEEDBACK_TYPE_LABELS[input.type] || input.type
+
+  const html = renderEmailTemplate("02-respuesta-feedback.html", {
+    typeLabel: escapeHtml(typeLabel),
+    ticketId: escapeHtml(input.ticketId),
+    receivedAt: escapeHtml(
+      new Date(input.createdAt).toLocaleDateString("es-HN", { day: "numeric", month: "long", year: "numeric" }),
+    ),
+    replyTitle: escapeHtml(FEEDBACK_REPLY_TITLES[input.type] || "Respuesta a tu mensaje"),
+    reply: escapeHtmlWithLineBreaks(input.reply),
+    originalMessage: escapeHtmlWithLineBreaks(input.originalMessage),
+    appUrl: siteUrl,
+  })
 
   const { error } = await resend.emails.send({
     from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
     to: [input.toEmail],
     subject: "Respuesta a tu mensaje en GastroMetrics",
-    html: `
-      <p>${greetingName},</p>
-      <p>Gracias por escribirnos. Esta fue tu respuesta a tu mensaje:</p>
-      <blockquote style="margin:12px 0;padding:8px 16px;border-left:3px solid #e5601a;color:#444;background:#fafafa">
-        ${input.reply.replace(/\n/g, "<br/>")}
-      </blockquote>
-      <p style="color:#888;font-size:12px;margin-top:24px">Tu mensaje original:</p>
-      <p style="color:#888;font-size:12px">${input.originalMessage.replace(/\n/g, "<br/>")}</p>
-      <hr/>
-      <p style="color:#888;font-size:12px">¿Sigue sin resolverse? Responde este correo o escribe de nuevo desde /contacto.</p>
-    `,
+    html,
   })
   // El SDK de Resend no lanza en errores de la API — los devuelve en `error` sin lanzar.
   // Lanzar acá a propósito para que el caller (app/api/admin/feedback/[id]/route.ts) lo

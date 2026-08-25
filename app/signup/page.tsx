@@ -31,7 +31,6 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
-import { sendWelcomeEmail } from "@/lib/services/email.service"
 import { storePasswordHash } from "@/lib/utils/password-hash"
 import {
   COUNTRIES,
@@ -167,7 +166,10 @@ function SignupPageInner() {
       // tu contraseña" al cambiar el correo en Configuración — independiente de la
       // contraseña real que ahora vive en Supabase Auth.
       await storePasswordHash(formData.password!)
-      await sendWelcomeEmail({ email: formData.email!, fullName: formData.fullName! })
+      // El correo de "confirma tu cuenta" (plantilla de marca, no el genérico de
+      // Supabase) ya lo mandó app/api/auth/signup/route.ts, llamado dentro de
+      // signUp() de arriba — no hace falta un segundo correo de bienvenida acá
+      // encima, llegarían casi al mismo tiempo y uno pisaría al otro en la bandeja.
 
       // Intenta loguear de inmediato. Si el proyecto de Supabase exige confirmar el
       // correo antes de poder iniciar sesión, esto falla con un error específico — en

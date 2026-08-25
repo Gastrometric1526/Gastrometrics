@@ -24,8 +24,15 @@ import { NextResponse } from "next/server"
 import { getStripeClient } from "@/lib/stripe/client"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getPlanBySlug } from "@/lib/plans"
+import { sendPlanChangedEmail, sendSubscriptionCancelledEmail } from "@/lib/services/notify-billing"
 
 const FREE_PLAN_SLUG = "foodie"
+
+async function getCurrentPlanSlug(accountId: string): Promise<string> {
+  const admin = getSupabaseAdminClient()
+  const { data } = await admin.from("account_plans").select("plan_slug").eq("account_id", accountId).maybeSingle()
+  return data?.plan_slug || FREE_PLAN_SLUG
+}
 
 async function setPlanForAccount(accountId: string, planSlug: string, extra: Record<string, unknown> = {}) {
   const admin = getSupabaseAdminClient()
@@ -107,6 +114,8 @@ export async function POST(request: Request) {
         customer: string | { id: string }
         metadata?: { planSlug?: string; accountId?: string }
         status: string
+        current_period_end?: number
+        items?: { data?: Array<{ price?: { unit_amount?: number | null } }> }
       }
       const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id
       const planSlug = subscription.metadata?.planSlug
@@ -114,19 +123,48 @@ export async function POST(request: Request) {
 
       if (accountId && planSlug && getPlanBySlug(planSlug).slug === planSlug) {
         const activeStatuses = ["active", "trialing", "past_due"]
-        await setPlanForAccount(accountId, activeStatuses.includes(subscription.status) ? planSlug : FREE_PLAN_SLUG, {
+        const resolvedPlanSlug = activeStatuses.includes(subscription.status) ? planSlug : FREE_PLAN_SLUG
+        const previousPlanSlug = await getCurrentPlanSlug(accountId)
+        await setPlanForAccount(accountId, resolvedPlanSlug, {
           stripe_customer_id: customerId,
           stripe_subscription_id: subscription.id,
         })
+        // Correo best-effort — el plan ya quedó aplicado arriba sin importar si esto
+        // falla, así que un error de Resend no debe hacer que Stripe reintente el
+        // evento completo.
+        try {
+          await sendPlanChangedEmail({
+            accountId,
+            fromPlanSlug: previousPlanSlug,
+            toPlanSlug: resolvedPlanSlug,
+            nextChargeUnixSeconds: subscription.current_period_end ?? null,
+            nextChargeAmountCents: subscription.items?.data?.[0]?.price?.unit_amount ?? null,
+          })
+        } catch (emailError) {
+          console.error("[api/webhooks/stripe] Error mandando el correo de cambio de plan:", emailError)
+        }
       }
       break
     }
     case "customer.subscription.deleted": {
-      const subscription = event.data.object as { customer: string | { id: string } }
+      const subscription = event.data.object as {
+        customer: string | { id: string }
+        current_period_end?: number
+      }
       const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id
       const accountId = await findAccountIdByStripeCustomer(customerId)
       if (accountId) {
+        const previousPlanSlug = await getCurrentPlanSlug(accountId)
         await setPlanForAccount(accountId, FREE_PLAN_SLUG, { stripe_subscription_id: null })
+        try {
+          await sendSubscriptionCancelledEmail({
+            accountId,
+            planSlug: previousPlanSlug,
+            accessUntilUnixSeconds: subscription.current_period_end ?? null,
+          })
+        } catch (emailError) {
+          console.error("[api/webhooks/stripe] Error mandando el correo de cancelación:", emailError)
+        }
       }
       break
     }

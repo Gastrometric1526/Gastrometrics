@@ -49,6 +49,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       await sendFeedbackReplyEmail({
         toEmail: data.user_email,
         toName: data.user_name || undefined,
+        type: data.type,
+        ticketId: data.id,
+        createdAt: data.created_at,
         originalMessage: data.message,
         reply: data.admin_reply as string,
       })

@@ -10,12 +10,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useLanguage } from "@/contexts/language-context"
 import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react"
 import { GastrometricsLogo } from "@/components/gastrometrics-logo"
-import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 
 // Recuperación de contraseña real — antes de esto, "¿Olvidaste tu contraseña?" en
 // /login apuntaba a /contacto porque no había backend real de recuperación (ver
-// docs/50). Ahora sí: supabase.auth.resetPasswordForEmail manda un correo real con
-// un link a /reset-password (ver esa página para el resto del flujo).
+// docs/50). Ahora pega contra /api/auth/forgot-password, que genera el link con
+// admin.generateLink y manda el correo de marca por Resend — no
+// supabase.auth.resetPasswordForEmail directo, que dispararía el correo GENÉRICO
+// de Supabase (bloqueado detrás de configurar SMTP a mano, ver docs/53).
 //
 // A propósito no se distingue en la UI entre "correo no existe" y "correo enviado" —
 // siempre se muestra el mismo mensaje de éxito, para no confirmarle a quien sea que
@@ -34,9 +35,10 @@ export default function ForgotPasswordPage() {
     setErrorMessage("")
 
     try {
-      const supabase = getSupabaseBrowserClient()
-      await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
       })
       setSent(true)
     } catch (error) {

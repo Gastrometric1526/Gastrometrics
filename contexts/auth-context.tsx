@@ -134,22 +134,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signUp = useCallback(async (email: string, password: string, profile: SignUpProfileData) => {
-    const supabase = getSupabaseBrowserClient()
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: profile.fullName,
+    // Antes llamaba a supabase.auth.signUp() directo desde el cliente — eso dispara
+    // automáticamente el correo GENÉRICO de confirmación de Supabase, sin forma de
+    // evitarlo desde acá. La ruta de servidor usa admin.generateLink en su lugar:
+    // crea la cuenta igual (sin confirmar) pero sin mandar ningún correo por su
+    // cuenta, y esta función manda el correo de marca real con Resend. Ver docs/53.
+    const response = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        password,
+        profile: {
+          fullName: profile.fullName,
           nationality: profile.nationality,
           currency: profile.currency,
-          business_type: profile.businessType,
-          business_size: profile.businessSize,
-          industry_experience: profile.industryExperience,
+          businessType: profile.businessType,
+          businessSize: profile.businessSize,
+          industryExperience: profile.industryExperience,
         },
-      },
+      }),
     })
-    if (error) throw error
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data?.error || "No se pudo crear la cuenta.")
     // La fila en `profiles` la crea el trigger public.handle_new_user() del lado de
     // Supabase (ver 0003_profile_signup_trigger.sql), no este código — hacerlo aquí
     // fallaría por RLS mientras el correo no esté confirmado (sin sesión, auth.uid() es
