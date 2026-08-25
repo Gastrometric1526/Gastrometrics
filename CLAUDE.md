@@ -1,13 +1,13 @@
 # GastroMetrics
 
-Sistema de gestión gastronómica (fichas técnicas, costeo, inventario, menús, órdenes de compra) para restaurantes en Centroamérica. Next.js 14 + React 18 + TypeScript + Tailwind + shadcn/ui. Backend real (Supabase) para auth, planes y datos de negocio, verificado de punta a punta contra el proyecto real (ver `docs/52`) — sigue en localStorage solo lo de menor tráfico (equipo, feedback, importación de ventas, Fase 4 sin implementar).
+Sistema de gestión gastronómica (fichas técnicas, costeo, inventario, menús, órdenes de compra) para restaurantes en Centroamérica. Next.js 14 + React 18 + TypeScript + Tailwind + shadcn/ui. Backend real (Supabase + Stripe + Resend) para auth, planes, datos de negocio y correo transaccional, verificado de punta a punta contra el proyecto real (ver `docs/52`-`docs/57`) — sigue en `localStorage` puro solo el sistema de Equipo (aunque la invitación ya manda correo real, ver `docs/55`) y la importación de ventas del POS (Fase 4 sin implementar).
 
 ## Antes de tocar nada
 
 Lee, en este orden:
 1. `docs/00-README-EMPIEZA-AQUI.md`
 2. El documento de auditoría con el número más alto en `docs/` (a la fecha de este commit: `docs/57-investigacion-correos-no-se-envian.md`) — es la fuente de verdad sobre qué está hecho, qué falta, y dónde. **No confíes en él sin verificar contra el código real** — es la regla que se ha seguido en todo el proyecto.
-3. `docs/12-guia-backend.md` cuando toque conectar un backend real.
+3. `docs/12-guia-backend.md` es histórico (de antes de conectar el backend) — para su estado real, ver el punto 4.
 4. Para arquitectura/diseño técnico consolidado (no cronológico): `docs/mapa-de-documentacion.md` (índice por tema de todo `docs/`) y `docs/referencia-arquitectura-tecnica.md` (storage, recálculo de precios, sub-recetas, PDF, i18n, PWA, backend, admin, rutas). Se actualizan in-place cuando algo cambia — si tu cambio toca algo que describen, actualízalos ahí además del documento de sesión numerado.
 
 ## Primer comando a correr
