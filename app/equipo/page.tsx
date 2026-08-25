@@ -140,6 +140,7 @@ function EquipoContent() {
   // hasta MAX_TEAM_MEMBERS invitaciones, cada una con su propio acceso/herramientas/
   // PDFs, y enviarlas todas juntas en vez de abrir y cerrar el diálogo por persona.
   const [inviteQueue, setInviteQueue] = useState<MemberFormState[]>([])
+  const [isSending, setIsSending] = useState(false)
 
   const load = () => {
     setMembers(getTeamMembers())
@@ -211,7 +212,19 @@ function EquipoContent() {
     }))
   }
 
-  const handleSubmit = () => {
+  // Etiquetas legibles para el correo de invitación real (ver app/api/team/invite/route.ts)
+  // — se calculan acá porque ya están traducidas al idioma de quien invita, evitando
+  // tener que volver a traducir del lado del servidor.
+  const scopeLabelFor = (scope: string) =>
+    scope === "dashboard"
+      ? t("equipo_scope_dashboard_badge")
+      : `${t("equipo_scope_business_prefix")} ${businessNameById.get(scope) || scope}`
+  const toolsLabelFor = (features: FeatureKey[]) =>
+    features.length > 0
+      ? features.map((key) => ASSIGNABLE_FEATURES.find((f) => f.key === key)?.label || key).join(", ")
+      : "—"
+
+  const handleSubmit = async () => {
     if (editingId) {
       updateTeamMember(editingId, {
         name: form.name.trim() || undefined,
@@ -244,9 +257,11 @@ function EquipoContent() {
 
     const batch = formHasEmail ? [...inviteQueue, form] : inviteQueue
     const invited: string[] = []
+    const emailFailed: string[] = []
     const failed: { email: string; message: string }[] = []
 
-    batch.forEach((entry) => {
+    setIsSending(true)
+    for (const entry of batch) {
       try {
         inviteTeamMember({
           email: entry.email,
@@ -258,8 +273,29 @@ function EquipoContent() {
         invited.push(entry.email)
       } catch (error) {
         failed.push({ email: entry.email, message: error instanceof Error ? error.message : t("equipo_error_generic") })
+        continue
       }
-    })
+
+      // El correo real es best-effort: si falla, la persona sigue guardada localmente
+      // (Vista previa sigue funcionando) — no se revierte la invitación por esto, solo
+      // se avisa aparte para que el dueño le comparta el acceso él mismo mientras tanto.
+      try {
+        const res = await fetch("/api/team/invite", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: entry.email,
+            scopeLabel: scopeLabelFor(entry.scope),
+            toolsLabel: toolsLabelFor(entry.allowedFeatures),
+            pdfAccessLabel: PDF_ACCESS_LABELS[entry.pdfAccess],
+          }),
+        })
+        if (!res.ok) emailFailed.push(entry.email)
+      } catch {
+        emailFailed.push(entry.email)
+      }
+    }
+    setIsSending(false)
 
     load()
 
@@ -267,6 +303,13 @@ function EquipoContent() {
       toast({
         title: invited.length === 1 ? t("equipo_toast_invite_registered_title_singular") : t("equipo_toast_invite_registered_title_plural").replace("{count}", String(invited.length)),
         description: t("equipo_toast_invite_registered_desc").replace("{emails}", invited.join(", ")),
+      })
+    }
+    if (emailFailed.length > 0) {
+      toast({
+        title: t("equipo_toast_email_failed_title"),
+        description: t("equipo_toast_email_failed_desc").replace("{emails}", emailFailed.join(", ")),
+        variant: "destructive",
       })
     }
     if (failed.length > 0) {
@@ -486,12 +529,14 @@ function EquipoContent() {
                   <Button variant="outline" onClick={() => setDialogOpen(false)}>
                     {t("common_cancel")}
                   </Button>
-                  <Button onClick={handleSubmit}>
-                    {editingId
-                      ? t("equipo_save_changes_button")
-                      : inviteQueue.length > 0
-                        ? t("equipo_send_invitations_button").replace("{count}", String(inviteQueue.length + (form.email.trim() ? 1 : 0)))
-                        : t("equipo_send_invitation_button")}
+                  <Button onClick={handleSubmit} disabled={isSending}>
+                    {isSending
+                      ? t("equipo_sending_button")
+                      : editingId
+                        ? t("equipo_save_changes_button")
+                        : inviteQueue.length > 0
+                          ? t("equipo_send_invitations_button").replace("{count}", String(inviteQueue.length + (form.email.trim() ? 1 : 0)))
+                          : t("equipo_send_invitation_button")}
                   </Button>
                 </DialogFooter>
               </DialogContent>

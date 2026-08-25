@@ -48,6 +48,9 @@ export function OnboardingTour() {
       finishLabel={t("tour_finish_go_ingredients")}
       onStart={() => window.dispatchEvent(new CustomEvent("gm:tour", { detail: { active: true } }))}
       onClose={() => window.dispatchEvent(new CustomEvent("gm:tour", { detail: { active: false } }))}
+      onStepChange={(step) =>
+        window.dispatchEvent(new CustomEvent("gm:tour:step", { detail: { selector: step.selector } }))
+      }
       onFinish={() => router.push("/ingredientes")}
     />
   )

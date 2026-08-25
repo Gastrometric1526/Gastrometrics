@@ -1,11 +1,13 @@
 import type { FeatureKey } from "@/lib/plans"
 
 // Panel de Equipo — exclusivo del plan Chef Ejecutivo (ver lib/plans.ts, feature "team").
-// Nota de alcance importante: la app no tiene backend real ni sesiones separadas por
-// persona (ver docs/12-guia-backend.md) — esto guarda la CONFIGURACIÓN de a quién se
-// invitó y qué debería poder ver/hacer, lista para cuando se conecte un backend real que
-// pueda aplicarla de verdad en el login de cada persona invitada. Hoy es la fuente de
-// verdad de la intención del dueño de la cuenta, no una restricción en vivo.
+// Nota de alcance importante: desde docs/54, invitar acá SÍ manda un correo real y crea
+// una cuenta real de Supabase Auth para la persona invitada (ver app/api/team/invite/
+// route.ts) — pero todavía no existe la tabla de membresías (business_members, Fase 4)
+// que conecte esa cuenta con el negocio/alcance específico. Este módulo (TEAM_MEMBERS en
+// localStorage) sigue siendo la fuente de verdad de la INTENCIÓN del dueño de la cuenta
+// (a quién invitó, qué debería poder ver/hacer) — todavía no una restricción en vivo
+// aplicada del lado del servidor al login de esa persona.
 
 export type TeamMemberStatus = "invitado" | "activo"
 

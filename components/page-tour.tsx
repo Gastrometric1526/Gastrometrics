@@ -117,9 +117,13 @@ type PageTourProps = {
   onStart?: () => void
   /** Se dispara al cerrar el tour (por salto o por fin) — para deshacer lo que hizo onStart. */
   onClose?: () => void
+  /** Se dispara en cada cambio de paso mientras el tour está abierto — usado por Dashboard
+   *  para abrir el drawer del sidebar en móvil SOLO durante el paso "sidebar" y cerrarlo en
+   *  los demás pasos (si no, el drawer a pantalla completa tapa lo que se está resaltando). */
+  onStepChange?: (step: TourStep) => void
 }
 
-export function PageTour({ steps, storageKey, startDelay = 350, finishLabel, onFinish, onStart, onClose }: PageTourProps) {
+export function PageTour({ steps, storageKey, startDelay = 350, finishLabel, onFinish, onStart, onClose, onStepChange }: PageTourProps) {
   const { t } = useLanguage()
   const [isOpen, setIsOpen] = useState(false)
   const [stepIndex, setStepIndex] = useState(0)
@@ -184,6 +188,12 @@ export function PageTour({ steps, storageKey, startDelay = 350, finishLabel, onF
 
   const step = steps[stepIndex]
   const isLast = stepIndex === steps.length - 1
+
+  useEffect(() => {
+    if (!isOpen) return
+    onStepChange?.(step)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, stepIndex])
 
   useEffect(() => {
     if (!isOpen) return

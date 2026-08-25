@@ -861,6 +861,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             verticalAlign="bottom"
                             height={56}
                             wrapperStyle={{ paddingTop: "16px" }}
+                            iconSize={0}
                             formatter={(value, entry: any) => {
                               const percentage =
                                 totalExpenses > 0

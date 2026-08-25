@@ -214,7 +214,11 @@ function SidebarInner() {
         setIsCollapsed((current) => {
           setIsMobileOpen((currentMobile) => {
             stateBeforeTourRef.current = { collapsed: current, mobileOpen: currentMobile }
-            return window.innerWidth < 768 ? true : currentMobile
+            // No se fuerza abierto acá: en móvil el drawer es a pantalla completa y
+            // taparía el resto de los pasos del tour (que resaltan cosas de la página,
+            // no del sidebar). El listener de "gm:tour:step" de abajo lo abre solo
+            // durante el paso "sidebar" y lo cierra en todos los demás.
+            return currentMobile
           })
           forcedByTourRef.current = true
           return false
@@ -230,6 +234,19 @@ function SidebarInner() {
     }
     window.addEventListener("gm:tour", handler)
     return () => window.removeEventListener("gm:tour", handler)
+  }, [])
+
+  // Abre el drawer móvil SOLO mientras el paso resaltado es el del sidebar mismo — ver
+  // el comentario de arriba y components/onboarding-tour.tsx/page-tour.tsx (onStepChange).
+  useEffect(() => {
+    const handler = (e: Event) => {
+      if (!forcedByTourRef.current) return
+      if (window.innerWidth >= 768) return
+      const selector = (e as CustomEvent<{ selector: string | null }>).detail?.selector
+      setIsMobileOpen(selector === '[data-tour="sidebar"]')
+    }
+    window.addEventListener("gm:tour:step", handler)
+    return () => window.removeEventListener("gm:tour:step", handler)
   }, [])
 
   const { toast } = useToast()
