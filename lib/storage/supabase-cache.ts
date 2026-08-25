@@ -24,6 +24,19 @@ export function createBusinessScopedCache<T>() {
   const loaded = new Set<string>()
   const inFlight = new Map<string, Promise<void>>()
   const listeners = new Set<() => void>()
+  // BUG REAL CORREGIDO (ver docs/55): useCached() le pasaba a useSyncExternalStore un
+  // getSnapshot que, mientras la caché de ese businessId todavía estuviera fría, devolvía
+  // `?? []` — un array literal NUEVO en cada llamada. useSyncExternalStore compara
+  // snapshots por referencia (Object.is), así que cada render veía un snapshot
+  // "distinto" aunque los datos siguieran siendo "vacío", entraba en re-render
+  // inmediato, volvía a llamar a getSnapshot, veía OTRO array nuevo... bucle infinito
+  // real ("Maximum update depth exceeded") en cualquier pantalla que montara con un
+  // businessId que la caché nunca hubiera cargado — reproducido en vivo entrando
+  // directo a /business/[id] con la sesión recién iniciada, antes de que cualquier otra
+  // pantalla hubiera precalentado la caché de negocios. Una única referencia vacía
+  // estable por instancia de caché rompe el bucle: sigue siendo "[]" para quien lo lee,
+  // pero la MISMA referencia en cada llamada mientras no haya datos reales.
+  const EMPTY: T[] = []
 
   function keyFor(businessId?: string | null): string {
     return businessId || "main"
@@ -39,7 +52,7 @@ export function createBusinessScopedCache<T>() {
   }
 
   function getSnapshot(businessId?: string | null): T[] {
-    return cache.get(keyFor(businessId)) ?? []
+    return cache.get(keyFor(businessId)) ?? EMPTY
   }
 
   function isLoaded(businessId?: string | null): boolean {
@@ -97,7 +110,7 @@ export function createBusinessScopedCache<T>() {
     return useSyncExternalStore(
       subscribe,
       () => getSnapshot(businessId),
-      () => [],
+      () => EMPTY,
     )
   }
 
