@@ -20,8 +20,20 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getPlanBySlug } from "@/lib/plans"
 import { renderEmailTemplate, escapeHtml } from "@/lib/services/email-templates"
 import { getEmailLabels, fillLabel, normalizeEmailLang } from "@/lib/i18n/email-labels"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
+  // Límite por IP contra registro masivo (cuentas de spam, o correr Resend a cero
+  // mandando confirmaciones a direcciones inventadas — ver docs/61).
+  const rateLimit = checkRateLimit(`signup:${getClientIp(request)}`, {
+    maxAttempts: 8,
+    windowMs: 10 * 60 * 1000,
+    lockoutMs: 15 * 60 * 1000,
+  })
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: "Demasiados intentos de registro. Espera unos minutos e intenta de nuevo." }, { status: 429 })
+  }
+
   const body = await request.json().catch(() => null)
   const email = typeof body?.email === "string" ? body.email.trim() : ""
   const password = typeof body?.password === "string" ? body.password : ""
@@ -30,6 +42,12 @@ export async function POST(request: Request) {
 
   if (!email || !password) {
     return NextResponse.json({ error: "Falta el correo o la contraseña." }, { status: 400 })
+  }
+  // El mínimo de 8 caracteres antes solo se revisaba en el formulario (Zod, ver
+  // lib/validations/auth.ts) — alguien podía llamar esta ruta directo, sin pasar por
+  // el formulario, y crear una cuenta con una contraseña de un carácter (ver docs/61).
+  if (password.length < 8) {
+    return NextResponse.json({ error: "La contraseña debe tener al menos 8 caracteres." }, { status: 400 })
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"

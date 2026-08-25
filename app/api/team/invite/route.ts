@@ -28,6 +28,8 @@ import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { renderEmailTemplate, escapeHtml } from "@/lib/services/email-templates"
 import { getEmailLabels, fillLabel, normalizeEmailLang } from "@/lib/i18n/email-labels"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { MAX_TEAM_MEMBERS } from "@/types/team"
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
@@ -49,6 +51,32 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No autenticado." }, { status: 401 })
   }
 
+  // Límite de intentos (ver docs/61) — más allá del tope de MAX_TEAM_MEMBERS de abajo,
+  // protege contra alguien llamando esta ruta directo (sin pasar por /equipo) para
+  // hacer que se creen cuentas y se manden correos reales en bucle.
+  const rateLimit = checkRateLimit(`team-invite:${user.id}`, {
+    maxAttempts: 10,
+    windowMs: 10 * 60 * 1000,
+    lockoutMs: 15 * 60 * 1000,
+  })
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: "Demasiadas invitaciones seguidas. Espera unos minutos e intenta de nuevo." }, { status: 429 })
+  }
+
+  // MAX_TEAM_MEMBERS ya se revisaba en lib/storage/team.ts (inviteTeamMember), pero
+  // eso corre DESPUÉS de esta ruta en app/equipo/page.tsx y solo del lado del cliente
+  // — alguien llamando esta ruta directo podía saltárselo por completo y crear más
+  // cuentas/otorgar más accesos reales de los que el plan permite. Se revisa también
+  // aquí, contra el conteo real en Supabase, antes de crear nada.
+  const admin = getSupabaseAdminClient()
+  const { count: currentMemberCount } = await admin
+    .from("team_members")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_id", user.id)
+  if ((currentMemberCount || 0) >= MAX_TEAM_MEMBERS) {
+    return NextResponse.json({ error: `Ya invitaste al máximo de ${MAX_TEAM_MEMBERS} personas.` }, { status: 400 })
+  }
+
   const { data: profileRow } = await supabase
     .from("profiles")
     .select("full_name, preferred_language")
@@ -58,7 +86,6 @@ export async function POST(request: Request) {
   const labels = getEmailLabels(profileRow?.preferred_language)
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
-  const admin = getSupabaseAdminClient()
 
   let actionLink: string | null = null
   let invitedUserId: string | null = null

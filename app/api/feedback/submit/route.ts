@@ -11,8 +11,21 @@ import { NextResponse } from "next/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { isFeedbackNotifyConfigured, sendFeedbackNotification } from "@/lib/services/notify-feedback"
 import { normalizeEmailLang } from "@/lib/i18n/email-labels"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
+  // Límite por IP contra spam del formulario público de /contacto (ver docs/61) —
+  // manda correo real al dueño del proyecto por cada mensaje, así que también
+  // protege eso de un bombardeo.
+  const rateLimit = checkRateLimit(`feedback:${getClientIp(request)}`, {
+    maxAttempts: 10,
+    windowMs: 10 * 60 * 1000,
+    lockoutMs: 15 * 60 * 1000,
+  })
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: "Demasiados mensajes seguidos. Espera unos minutos e intenta de nuevo." }, { status: 429 })
+  }
+
   const body = await request.json().catch(() => null)
   const type = body?.type as string | undefined
   const message = (body?.message as string | undefined)?.trim()

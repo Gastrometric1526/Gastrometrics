@@ -59,14 +59,32 @@ export async function GET(request: Request) {
 
     if (planSlug && getPlanBySlug(planSlug).slug === planSlug) {
       const admin = getSupabaseAdminClient()
-      await admin.from("account_plans").upsert({
+      const stripeSubscriptionId =
+        typeof session.subscription === "string" ? session.subscription : session.subscription?.id ?? null
+      const { error: planError } = await admin.from("account_plans").upsert({
         account_id: user.id,
         plan_slug: planSlug,
         stripe_customer_id: customerId,
-        stripe_subscription_id:
-          typeof session.subscription === "string" ? session.subscription : session.subscription?.id ?? null,
+        stripe_subscription_id: stripeSubscriptionId,
+        // Un plan real, pagado, nunca vence por sí solo — se limpia por si esta
+        // cuenta tuvo antes un plan_expires_at de un vencimiento asignado a mano
+        // desde /admin (ver docs/59), mismo criterio que ya aplican el webhook de
+        // Stripe y el auto-aplicar de testers.
+        plan_expires_at: null,
         updated_at: new Date().toISOString(),
       })
+      // Tolera que supabase/migrations/0008_plan_expiry.sql todavía no se haya
+      // corrido (columna nueva) — sin esto, alguien que ACABA de pagar de verdad se
+      // quedaría sin su plan aplicado hasta que se corra esa migración.
+      if (planError) {
+        await admin.from("account_plans").upsert({
+          account_id: user.id,
+          plan_slug: planSlug,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: stripeSubscriptionId,
+          updated_at: new Date().toISOString(),
+        })
+      }
     }
 
     return NextResponse.json({ customerId, planSlug: planSlug ?? null })

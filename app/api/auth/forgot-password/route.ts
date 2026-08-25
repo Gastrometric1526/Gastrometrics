@@ -18,6 +18,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { requireSupabaseServiceRoleEnv } from "@/lib/supabase/env"
 import { renderEmailTemplate, escapeHtml } from "@/lib/services/email-templates"
 import { getEmailLabels, fillLabel, normalizeEmailLang, EMAIL_DATE_LOCALES, type EmailLabelKeys } from "@/lib/i18n/email-labels"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 function describeDevice(userAgent: string | null, labels: Record<EmailLabelKeys, string>): string {
   if (!userAgent) return labels.device_unknown
@@ -67,6 +68,19 @@ export async function POST(request: Request) {
   const email = typeof body?.email === "string" ? body.email.trim() : ""
   if (!email) {
     return NextResponse.json({ sent: true }) // no revela nada, igual que si el correo no existiera
+  }
+
+  // Límite por IP contra bombardeo de correos de recuperación (ver docs/61) — responde
+  // {sent:true} igual que siempre en vez de un error distinto, para no convertir el
+  // propio límite en una forma de adivinar si un correo existe por la diferencia de
+  // respuesta.
+  const rateLimit = checkRateLimit(`forgot-password:${getClientIp(request)}`, {
+    maxAttempts: 5,
+    windowMs: 10 * 60 * 1000,
+    lockoutMs: 15 * 60 * 1000,
+  })
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ sent: true })
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"

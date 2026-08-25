@@ -17,6 +17,16 @@ import { NextResponse } from "next/server"
 import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
 import { getPlanBySlug } from "@/lib/plans"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
+import { checkRateLimit } from "@/lib/rate-limit"
+
+// Cuántas veces puede una cuenta intentar iniciar un pago en poco tiempo — pedido
+// explícito del dueño del proyecto (ver docs/61). No hay forma legítima de necesitar
+// más de un puñado de intentos en 10 minutos (elegir plan, cancelar en Stripe,
+// reintentar) — un número mucho más alto que eso es un doble clic nervioso o un
+// script, no una persona comprando de verdad.
+const CHECKOUT_MAX_ATTEMPTS = 8
+const CHECKOUT_WINDOW_MS = 10 * 60 * 1000
+const CHECKOUT_LOCKOUT_MS = 15 * 60 * 1000
 
 export async function POST(request: Request) {
   if (!isStripeConfigured()) {
@@ -36,6 +46,21 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: "Debes iniciar sesión para continuar." }, { status: 401 })
+  }
+
+  const rateLimit = checkRateLimit(`checkout:${user.id}`, {
+    maxAttempts: CHECKOUT_MAX_ATTEMPTS,
+    windowMs: CHECKOUT_WINDOW_MS,
+    lockoutMs: CHECKOUT_LOCKOUT_MS,
+  })
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      {
+        error: "Demasiados intentos de pago seguidos. Espera unos minutos e intenta de nuevo.",
+        lockedForSeconds: rateLimit.lockedForSeconds,
+      },
+      { status: 429 },
+    )
   }
 
   const body = await request.json().catch(() => null)

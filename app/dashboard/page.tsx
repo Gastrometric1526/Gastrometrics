@@ -180,7 +180,11 @@ export default function DashboardPage() {
       fetch(`/api/checkout/session?session_id=${sessionId}`)
         .then((res) => res.json())
         .then((data) => {
-          if (data.customerId) localStorage.setItem("stripe_customer_id", data.customerId)
+          // Ya no se guarda customerId en localStorage (ver docs/61 — era un valor
+          // legible/editable por cualquiera y compartido entre cuentas en el mismo
+          // navegador). /api/checkout/session ya aplicó el plan y guardó el
+          // stripe_customer_id real en account_plans; /api/stripe/portal lo lee de
+          // ahí, con sesión real, cuando haga falta abrir el portal.
           if (data.planSlug) {
             setCurrentPlanSlug(data.planSlug)
             toast({
