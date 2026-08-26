@@ -16,7 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { FileDown, FileText, Users, File, CheckCircle, Lock, ShieldAlert } from "lucide-react"
 import type { Recipe, PDFExportType } from "@/types/recipe"
 import { downloadRecipePDF } from "@/lib/pdf/recipe-pdf-generator"
-import { useFeatureAccess, useTeamPreview } from "@/lib/plan-access"
+import { useFeatureAccess, useActiveMembership } from "@/lib/plan-access"
 
 interface RecipePDFExportDialogProps {
   recipe: Recipe
@@ -35,7 +35,7 @@ export function RecipePDFExportDialog({
 }: RecipePDFExportDialogProps) {
   const canExportAdministrative = useFeatureAccess("pdf_admin")
   const canExportAtAll = useFeatureAccess("pdf_export")
-  const { member: previewMember } = useTeamPreview()
+  const { member: previewMember } = useActiveMembership()
   const [selectedType, setSelectedType] = useState<PDFExportType>(canExportAdministrative ? "administrative" : "employee")
 
   // El plan puede confirmarse (de null a true) recien despues del primer render en el

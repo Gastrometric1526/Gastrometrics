@@ -57,7 +57,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { getDashboardData } from "@/utils/dashboard"
 import { updateBusiness, getBusinessById, refreshBusinesses } from "@/lib/storage/businesses"
 import { compressLogoToDataUrl } from "@/lib/utils/logo-compress"
-import { useTeamPreview } from "@/lib/plan-access"
+import { useActiveMembership } from "@/lib/plan-access"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts"
 import { ThemeSwitcher } from "@/components/theme-switcher"
@@ -117,7 +117,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
   const { toast } = useToast()
   const { t } = useLanguage()
   const { isLoggedIn, authChecked } = useAuth()
-  const { active: previewActive, member: previewMember } = useTeamPreview()
+  const { active: previewActive, member: previewMember } = useActiveMembership()
   const { setTheme } = useTheme()
 
   const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4"]

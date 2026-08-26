@@ -47,13 +47,13 @@ import { useTheme } from "next-themes"
 import { useToast } from "@/hooks/use-toast"
 import type { Business } from "@/types/business"
 import { useAllBusinesses } from "@/lib/storage/businesses"
-import { getCurrentPlan, useFeatureAccess, useTeamPreview } from "@/lib/plan-access"
+import { getCurrentPlan, useFeatureAccess, useActiveMembership, useTeamPreview } from "@/lib/plan-access"
 import type { FeatureKey } from "@/lib/plans"
 
 function useNavigationItems() {
   const { t } = useLanguage()
   const canAccessTeam = useFeatureAccess("team")
-  const { active: previewActive, member: previewMember } = useTeamPreview()
+  const { active: previewActive, member: previewMember } = useActiveMembership()
   const items = [
     { title: t("nav_dashboard"), href: "/dashboard", icon: Home, description: t("nav_dashboard_desc") },
     { title: t("nav_ficha_tecnica"), href: "/ficha-tecnica", icon: ChefHat, description: t("nav_ficha_tecnica_desc") },
@@ -81,12 +81,13 @@ function useNavigationItems() {
     { title: t("nav_negocios"), href: "/negocios", icon: Building2, description: t("nav_negocios_desc") },
   )
 
-  // Vista previa de Equipo activa (ver lib/storage/team-preview.ts): filtra la
-  // navegación a exactamente lo que esa persona tiene permitido, en vez de mostrar
-  // TODO lo que el plan real de la cuenta desbloquea. "Dashboard" y "Negocios" no
-  // corresponden a ningún FeatureKey — dependen del alcance (scope) asignado: solo
-  // ven el dashboard principal (y el listado de negocios) si su acceso es
-  // "Dashboard principal", nunca si su acceso es a un negocio específico.
+  // Vista previa de Equipo del dueño, o sesión real de un invitado (ver
+  // useActiveMembership en lib/plan-access.ts): filtra la navegación a exactamente lo
+  // que esa persona tiene permitido, en vez de mostrar TODO lo que el plan real de la
+  // cuenta desbloquea. "Dashboard" y "Negocios" no corresponden a ningún FeatureKey —
+  // dependen del alcance (scope) asignado: solo ven el dashboard principal (y el
+  // listado de negocios) si su acceso es "Dashboard principal", nunca si su acceso es
+  // a un negocio específico.
   if (previewActive && previewMember) {
     const hasScopeDashboard = previewMember.scope === "dashboard"
     const allowed = new Set(previewMember.allowedFeatures)

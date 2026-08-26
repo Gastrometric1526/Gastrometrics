@@ -18,6 +18,8 @@
 import { useEffect, useState } from "react"
 import { plans, getPlanBySlug, type Plan, type FeatureKey } from "./plans"
 import { getActivePreviewMember, TEAM_PREVIEW_EVENT } from "./storage/team-preview"
+import { getMyMemberships } from "./storage/team"
+import type { TeamMember } from "@/types/team"
 
 const PLAN_STORAGE_KEY = "current_plan_slug"
 const PLAN_CHANGE_EVENT = "planChanged"
@@ -44,28 +46,51 @@ export function setCurrentPlanSlug(slug: string): void {
   window.dispatchEvent(new CustomEvent(PLAN_CHANGE_EVENT, { detail: slug }))
 }
 
+// Resuelve qué TeamMember (si alguno) debe gobernar el acceso de la sesión ACTUAL,
+// en vez del plan real de la cuenta: primero la "Vista previa" que el propio dueño
+// puede activar para probar antes de invitar (ver lib/storage/team-preview.ts); si no
+// hay ninguna activa, la primera fila real de team_members donde YO soy el invitado
+// (getMyMemberships(), poblada al iniciar sesión — ver contexts/auth-context.tsx). Con
+// esto, la sesión real de una persona invitada queda tan restringida como ya lo
+// mostraba la Vista previa del dueño — antes de esto, solo la simulación del dueño
+// respetaba allowedFeatures/pdfAccess; la sesión real del invitado no pasaba por acá.
+//
+// Límite conocido y aceptado: si la misma persona es dueña de su propia cuenta Y
+// además fue invitada como miembro restringido en otra cuenta, esta función no
+// distingue en cuál de las dos está — usa la primera membresía real que tenga, igual
+// de global que la propia Vista previa (tampoco depende de qué negocio se esté
+// viendo). Caso real pero poco común; documentado, no una limitación silenciosa.
+function getActiveMembership(): TeamMember | null {
+  const preview = getActivePreviewMember()
+  if (preview) return preview
+  const mine = getMyMemberships()
+  return mine.length > 0 ? mine[0] : null
+}
+
+function isFeatureAllowedForMember(member: TeamMember, feature: FeatureKey): boolean {
+  // El acceso a PDF administrativo (costos y márgenes) de una persona invitada se
+  // configura aparte, en su propio control de 3 niveles (pdfAccess), no en la lista
+  // de herramientas — se traduce acá al mismo FeatureKey que ya usan los puntos
+  // reales de exportación (ver components/recipe-pdf-export-dialog.tsx, app/menus).
+  if (feature === "pdf_admin") return member.pdfAccess === "administrativo"
+  // "cliente" y "administrativo" pueden exportar algo (empleado/normal, o los tres
+  // tipos respectivamente); "ninguno" no puede exportar ningún PDF de receta.
+  if (feature === "pdf_export") return member.pdfAccess !== "ninguno"
+  return member.allowedFeatures.includes(feature)
+}
+
 // BUG CORREGIDO / feature nueva: el panel de Equipo (/equipo) guardaba a qué
 // herramientas tenía acceso cada persona invitada, pero nada en la app leía nunca ese
 // permiso — sin backend real no existe una sesión separada para cada invitado que
-// pudiera aplicarlo. Este chequeo central ahora consulta primero si hay una "vista
-// previa" activa (ver lib/storage/team-preview.ts, activada desde una tarjeta de
-// /equipo) y, si la hay, la respuesta depende ÚNICAMENTE de lo que esa persona tiene
-// permitido — ignora el plan real de la cuenta. Sin vista previa activa (el caso de
-// todos los días, el dueño de la cuenta usando su propia sesión), el comportamiento es
-// exactamente el de antes: byte a byte el mismo resultado que ya devolvía esta función.
+// pudiera aplicarlo. Este chequeo central ahora consulta primero si hay una membresía
+// activa (Vista previa del dueño, o la sesión real de un invitado — ver
+// getActiveMembership arriba) y, si la hay, la respuesta depende ÚNICAMENTE de lo que
+// esa persona tiene permitido — ignora el plan real de la cuenta. Sin ninguna
+// membresía activa (el caso de todos los días, el dueño de la cuenta usando su propia
+// sesión), el comportamiento es exactamente el de antes.
 export function hasFeatureAccess(feature: FeatureKey): boolean {
-  const preview = getActivePreviewMember()
-  if (preview) {
-    // El acceso a PDF administrativo (costos y márgenes) de una persona invitada se
-    // configura aparte, en su propio control de 3 niveles (pdfAccess), no en la lista
-    // de herramientas — se traduce acá al mismo FeatureKey que ya usan los puntos
-    // reales de exportación (ver components/recipe-pdf-export-dialog.tsx, app/menus).
-    if (feature === "pdf_admin") return preview.pdfAccess === "administrativo"
-    // "cliente" y "administrativo" pueden exportar algo (empleado/normal, o los tres
-    // tipos respectivamente); "ninguno" no puede exportar ningún PDF de receta.
-    if (feature === "pdf_export") return preview.pdfAccess !== "ninguno"
-    return preview.allowedFeatures.includes(feature)
-  }
+  const member = getActiveMembership()
+  if (member) return isFeatureAllowedForMember(member, feature)
   if (DEFAULT_ALWAYS_ON_FEATURES.includes(feature)) return true
   return getCurrentPlan().unlockedFeatures.includes(feature)
 }
@@ -76,16 +101,8 @@ export function hasFeatureAccess(feature: FeatureKey): boolean {
 // causas distintas y confundirlas sería un mensaje falso en cualquiera de los dos
 // casos. Devuelve null cuando sí hay acceso (nada que explicar).
 export function getAccessBlockReason(feature: FeatureKey): "plan" | "admin" | null {
-  const preview = getActivePreviewMember()
-  if (preview) {
-    const allowed =
-      feature === "pdf_admin"
-        ? preview.pdfAccess === "administrativo"
-        : feature === "pdf_export"
-          ? preview.pdfAccess !== "ninguno"
-          : preview.allowedFeatures.includes(feature)
-    return allowed ? null : "admin"
-  }
+  const member = getActiveMembership()
+  if (member) return isFeatureAllowedForMember(member, feature) ? null : "admin"
   if (DEFAULT_ALWAYS_ON_FEATURES.includes(feature)) return null
   return getCurrentPlan().unlockedFeatures.includes(feature) ? null : "plan"
 }
@@ -139,6 +156,28 @@ export function useCurrentPlanSlug(): string | null {
   useEffect(() => setMounted(true), [])
   if (!mounted) return null
   return getCurrentPlanSlug()
+}
+
+// Mismo patrón de hidratación e igual forma que useTeamPreview() de abajo, pero
+// cubriendo también la sesión REAL de un invitado (no solo la simulación del dueño) —
+// ver getActiveMembership más arriba. Úsalo en vez de useTeamPreview() en cualquier
+// lugar que hoy filtre navegación/pantallas según allowedFeatures/scope, para que un
+// invitado real quede tan restringido como ya lo estaba la Vista previa. Sigue
+// existiendo useTeamPreview() por separado para el banner de Vista previa
+// (components/team-preview-banner.tsx), que sí debe distinguir "estoy simulando"
+// de "soy realmente un invitado".
+export function useActiveMembership() {
+  const [mounted, setMounted] = useState(false)
+  const [, forceUpdate] = useState(0)
+  useEffect(() => {
+    setMounted(true)
+    const onPreviewChange = () => forceUpdate((n) => n + 1)
+    window.addEventListener(TEAM_PREVIEW_EVENT, onPreviewChange)
+    return () => window.removeEventListener(TEAM_PREVIEW_EVENT, onPreviewChange)
+  }, [])
+  if (!mounted) return { active: false, member: null } as const
+  const member = getActiveMembership()
+  return { active: !!member, member } as const
 }
 
 // Estado de la vista previa de Equipo, con el mismo patrón de hidratación — usado por

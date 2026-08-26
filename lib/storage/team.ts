@@ -30,6 +30,7 @@ const ACCOUNT_KEY = "__team_members__"
 function rowToTeamMember(row: TeamMemberRow): TeamMember {
   return {
     id: row.id,
+    ownerId: row.owner_id,
     email: row.email,
     name: row.name || undefined,
     status: row.status as TeamMember["status"],
@@ -95,6 +96,40 @@ export function canInviteMoreMembers(): boolean {
   return getTeamMembers().length < MAX_TEAM_MEMBERS
 }
 
+const MY_MEMBERSHIPS_KEY = "__my_team_memberships__"
+
+async function fetchMyMemberships(): Promise<TeamMember[]> {
+  const supabase = getSupabaseBrowserClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return []
+  // Permitido por la política team_members_self_select (invited_user_id = auth.uid()),
+  // sin importar quién sea el dueño que invitó — puede haber más de una fila si a este
+  // correo lo invitó más de una cuenta distinta.
+  const { data, error } = await supabase.from("team_members").select("*").eq("invited_user_id", user.id)
+  if (error) {
+    console.error("[Team] Error cargando membresías propias:", error)
+    return []
+  }
+  return (data ?? []).map(rowToTeamMember)
+}
+
+export function ensureMyMembershipsLoaded(): Promise<void> {
+  return cache.ensureLoaded(MY_MEMBERSHIPS_KEY, fetchMyMemberships)
+}
+
+/**
+ * Síncrona — filas de team_members donde YO soy el invitado, no el dueño. A
+ * diferencia de getTeamMembers() (el roster de a quién invité yo), esto es "en qué
+ * negocios ajenos me invitaron a mí, y con qué permisos" — lo usa lib/plan-access.ts
+ * para aplicar el filtro real de allowedFeatures/pdfAccess en la sesión real de un
+ * miembro invitado (no solo en la Vista previa que corre el dueño).
+ */
+export function getMyMemberships(): TeamMember[] {
+  return cache.getSnapshot(MY_MEMBERSHIPS_KEY)
+}
+
 /**
  * Guarda la fila de equipo (roster/configuración) — el otorgamiento real de
  * business_members para esta persona ya se hizo del lado del servidor (ver cabecera
@@ -125,6 +160,7 @@ export async function inviteTeamMember(input: {
 
   const member: TeamMember = {
     id: `team-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    ownerId: user.id,
     email: input.email.trim(),
     name: input.name?.trim() || undefined,
     status: "invitado",

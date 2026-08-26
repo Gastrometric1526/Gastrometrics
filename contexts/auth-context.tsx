@@ -9,7 +9,7 @@ import type { Database } from "@/types/database"
 import type { UserProfile } from "@/lib/types/user"
 import { setCurrentPlanSlug } from "@/lib/plan-access"
 import { refreshBusinesses } from "@/lib/storage/businesses"
-import { ensureTeamMembersLoaded } from "@/lib/storage/team"
+import { ensureTeamMembersLoaded, ensureMyMembershipsLoaded } from "@/lib/storage/team"
 
 interface User {
   name: string
@@ -142,6 +142,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Precalienta la caché del roster de equipo — lib/plan-access.ts la necesita
       // síncrona para "Vista previa" (getActivePreviewMember), igual que businesses.
       ensureTeamMembersLoaded()
+      // Precalienta "en qué negocios ajenos me invitaron a mí" — lib/plan-access.ts la
+      // necesita síncrona para aplicar el filtro real de allowedFeatures/pdfAccess en
+      // la sesión real de un miembro invitado (no la Vista previa del dueño).
+      ensureMyMembershipsLoaded()
     }
 
     // Antes de preguntar por la sesión, procesa un posible link de confirmación de

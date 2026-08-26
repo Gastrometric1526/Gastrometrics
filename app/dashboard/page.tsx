@@ -38,7 +38,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { AddBusinessDialog } from "@/components/add-business-dialog"
 import { OnboardingTour } from "@/components/onboarding-tour"
-import { useFeatureAccess, useTeamPreview, setCurrentPlanSlug } from "@/lib/plan-access"
+import { useFeatureAccess, useActiveMembership, setCurrentPlanSlug } from "@/lib/plan-access"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { getAllBusinesses, refreshBusinesses } from "@/lib/storage/businesses"
 import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
@@ -48,7 +48,7 @@ export default function DashboardPage() {
   const { isLoggedIn, authChecked, user } = useAuth()
   const { t } = useLanguage()
   const canAccessTeam = useFeatureAccess("team")
-  const { active: previewActive, member: previewMember } = useTeamPreview()
+  const { active: previewActive, member: previewMember } = useActiveMembership()
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [username, setUsername] = useState("Usuario")
   const [email, setEmail] = useState("usuario@example.com")

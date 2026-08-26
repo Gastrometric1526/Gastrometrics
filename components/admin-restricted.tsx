@@ -3,7 +3,7 @@
 import { ShieldAlert } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Sidebar } from "@/components/sidebar"
-import { useTeamPreview } from "@/lib/plan-access"
+import { useActiveMembership } from "@/lib/plan-access"
 
 // Pantalla de bloqueo cuando el dueño de la cuenta desactivó una sección para esta
 // persona invitada (ver /equipo) — distinta de FeatureLockedPage (components/
@@ -12,7 +12,7 @@ import { useTeamPreview } from "@/lib/plan-access"
 // no es un límite de plan, es una restricción explícita que solo el administrador de
 // la cuenta puede levantar (editando el acceso de esta persona en /equipo).
 export function AdminRestrictedPage({ sectionName }: { sectionName?: string }) {
-  const { member } = useTeamPreview()
+  const { member } = useActiveMembership()
 
   return (
     <div className="flex min-h-screen bg-background">

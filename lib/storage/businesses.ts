@@ -33,6 +33,7 @@ function rowToBusiness(row: BusinessRow): Business {
     id: row.id,
     name: row.name,
     createdAt: row.created_at,
+    ownerId: row.owner_id,
   } as Business
 }
 
@@ -94,7 +95,7 @@ export async function addBusiness(business: Business): Promise<Business> {
   } = await supabase.auth.getUser()
   if (!user) throw new Error("Debes iniciar sesión para crear un negocio.")
 
-  const { id, name, createdAt, ...rest } = business
+  const { id, name, createdAt, ownerId: _ownerId, ...rest } = business
   const { error } = await supabase.from("businesses").insert({
     id,
     owner_id: user.id,
@@ -104,12 +105,13 @@ export async function addBusiness(business: Business): Promise<Business> {
   })
   if (error) throw error
 
+  const created: Business = { ...business, ownerId: user.id }
   cache.mutateSnapshot(CACHE_KEY, (list) => {
-    const next = [...list, business]
+    const next = [...list, created]
     mirrorToLocalStorage(next)
     return next
   })
-  return business
+  return created
 }
 
 /**
@@ -121,7 +123,7 @@ export async function updateBusiness(businessId: string, updates: Partial<Busine
 
   const merged: Business = { ...current, ...updates }
   const supabase = getSupabaseBrowserClient()
-  const { id, name, createdAt, ...rest } = merged
+  const { id, name, createdAt, ownerId: _ownerId, ...rest } = merged
   const { error } = await supabase.from("businesses").update({ name, data: rest }).eq("id", businessId)
   if (error) {
     console.error("[Businesses] Error actualizando negocio:", error)

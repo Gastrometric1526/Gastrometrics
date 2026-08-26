@@ -20,6 +20,12 @@ export const DEFAULT_TARGET_FOOD_COST_PERCENT = 30
 
 export interface Business {
   id: string
+  // uid real del dueño de este negocio (columna owner_id de la tabla businesses,
+  // ver rowToBusiness en lib/storage/businesses.ts). Opcional porque objetos Business
+  // construidos localmente antes de guardarse (ver add-business-dialog.tsx) no lo
+  // traen todavía — solo está garantizado en lo que devuelve Supabase. Se usa para
+  // distinguir "este negocio es mío" de "me lo compartió su dueño" (ver lib/plan-access.ts).
+  ownerId?: string
   name: string
   description?: string
   type?: string

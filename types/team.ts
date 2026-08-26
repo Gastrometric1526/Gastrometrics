@@ -24,6 +24,11 @@ export interface TeamMemberActivityEntry {
 
 export interface TeamMember {
   id: string
+  // uid real de la cuenta que invitó (columna owner_id de team_members). Se usa para
+  // saber, desde la sesión de la propia persona invitada, a qué dueño/negocio
+  // corresponde esta fila — ver lib/storage/team.ts (getMyMemberships) y
+  // lib/plan-access.ts.
+  ownerId: string
   email: string
   name?: string
   status: TeamMemberStatus
