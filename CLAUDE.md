@@ -6,7 +6,7 @@ Sistema de gestión gastronómica (fichas técnicas, costeo, inventario, menús,
 
 Lee, en este orden:
 1. `docs/00-README-EMPIEZA-AQUI.md`
-2. El documento de auditoría con el número más alto en `docs/` (a la fecha de este commit: `docs/62-equipo-escritura-real-y-permisos-por-funcion.md`) — es la fuente de verdad sobre qué está hecho, qué falta, y dónde. **No confíes en él sin verificar contra el código real** — es la regla que se ha seguido en todo el proyecto.
+2. El documento de auditoría con el número más alto en `docs/` (a la fecha de este commit: `docs/63-panel-de-administracion-completo.md`) — es la fuente de verdad sobre qué está hecho, qué falta, y dónde. **No confíes en él sin verificar contra el código real** — es la regla que se ha seguido en todo el proyecto.
 3. `docs/12-guia-backend.md` es histórico (de antes de conectar el backend) — para su estado real, ver el punto 4.
 4. Para arquitectura/diseño técnico consolidado (no cronológico): `docs/mapa-de-documentacion.md` (índice por tema de todo `docs/`) y `docs/referencia-arquitectura-tecnica.md` (storage, recálculo de precios, sub-recetas, PDF, i18n, PWA, backend, admin, rutas). Se actualizan in-place cuando algo cambia — si tu cambio toca algo que describen, actualízalos ahí además del documento de sesión numerado.
 
