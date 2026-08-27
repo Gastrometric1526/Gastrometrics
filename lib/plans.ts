@@ -3,6 +3,16 @@
 // (lib/plan-access.ts). Ver docs para el detalle de la conversacion que definio
 // esta tabla — no cambiar los limites/features sin confirmar con el dueno del
 // proyecto, es una decision de negocio, no un detalle tecnico.
+//
+// Los campos price/tagline/description/features/locked de abajo son el CONTENIDO EN
+// ESPAÑOL por default — cualquier pantalla que muestre estos campos a un usuario real
+// debe usar getLocalizedPlan()/getLocalizedPlans() (más abajo) en vez de leerlos
+// directo de este array, para que se traduzcan según el idioma activo (ver
+// lib/i18n/plans-content.ts). El nombre del plan (`name`) nunca se traduce — es una
+// decisión explícita, son nombres propios de la marca.
+
+import type { LanguageCode } from "@/lib/i18n/translations"
+import { planContentByLanguage } from "@/lib/i18n/plans-content"
 
 export type FeatureKey =
   | "merma"
@@ -158,4 +168,17 @@ export const plans: Plan[] = [
 
 export function getPlanBySlug(slug: string | null | undefined): Plan {
   return plans.find((plan) => plan.slug === slug) ?? plans[0]
+}
+
+// Combina un Plan (lógica de negocio, nunca traducida — unlockedFeatures/maxBusinesses/
+// etc.) con su contenido traducible (precio, tagline, descripción, features/locked) del
+// idioma activo — ver lib/i18n/plans-content.ts. El nombre del plan ("Foodie", "Chef
+// Ejecutivo") nunca se traduce, a propósito — son nombres propios de la marca.
+export function getLocalizedPlan(plan: Plan, language: LanguageCode): Plan {
+  const localized = planContentByLanguage[language]?.[plan.slug]
+  return localized ? { ...plan, ...localized } : plan
+}
+
+export function getLocalizedPlans(language: LanguageCode): Plan[] {
+  return plans.map((plan) => getLocalizedPlan(plan, language))
 }

@@ -8,7 +8,7 @@ import { InstallAppButton } from "@/components/install-app-button"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { plans } from "@/lib/plans"
+import { getLocalizedPlans } from "@/lib/plans"
 import { useLanguage } from "@/contexts/language-context"
 import {
   ChefHat,
@@ -22,7 +22,8 @@ import {
 } from "lucide-react"
 
 export default function Home() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+  const plans = getLocalizedPlans(language)
 
   // Copy en tono profesional/neutro, sin exageraciones ni prueba social inventada —
   // pedido explícito del dueño del proyecto ("eliminemos el marketing emocional

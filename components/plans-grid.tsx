@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { plans, getPlanBySlug } from "@/lib/plans"
+import { getPlanBySlug, getLocalizedPlans } from "@/lib/plans"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useCurrentPlanSlug, setCurrentPlanSlug } from "@/lib/plan-access"
@@ -30,7 +30,8 @@ interface PlansGridProps {
 export function PlansGrid({ freeRedirectTo = "/dashboard" }: PlansGridProps) {
   const router = useRouter()
   const { isLoggedIn, authChecked } = useAuth()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+  const plans = getLocalizedPlans(language)
   const currentPlanSlug = useCurrentPlanSlug()
   // Mientras no se sabe con certeza que el visitante ya tiene sesion (authChecked +
   // currentPlanSlug ya montado), se muestra el mismo CTA de "no autenticado" que ve

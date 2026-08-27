@@ -6,8 +6,9 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, CreditCard, Lock, ShieldCheck, CheckCircle2, XCircle } from "lucide-react"
-import { plans } from "@/lib/plans"
+import { plans, getLocalizedPlan } from "@/lib/plans"
 import { setCurrentPlanSlug } from "@/lib/plan-access"
+import { useLanguage } from "@/contexts/language-context"
 
 // Paso de pago después de crear la cuenta, solo para planes pagos (el plan Foodie/gratis
 // va directo al dashboard desde signup). Conectado a Stripe Checkout real vía
@@ -31,8 +32,9 @@ export default function PaymentPage() {
 function PaymentPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { language } = useLanguage()
   const planSlug = searchParams.get("plan")
-  const plan = plans.find((p) => p.slug === planSlug) ?? plans[1]
+  const plan = getLocalizedPlan(plans.find((p) => p.slug === planSlug) ?? plans[1], language)
   // BUG CORREGIDO: "Volver" y "Cambiar de plan" mandaban siempre a /signup o /planes
   // (las páginas públicas), aunque quien estuviera acá viniera de /mi-plan (dentro del
   // dashboard, ya con sesión) — un usuario ya logueado que le daba "Volver" caía en el
