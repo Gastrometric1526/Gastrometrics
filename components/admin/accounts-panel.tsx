@@ -77,6 +77,7 @@ export function AccountsPanel() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
   const [search, setSearch] = useState("")
+  const [planFilter, setPlanFilter] = useState("todos")
   const [loadingList, setLoadingList] = useState(false)
 
   const [selected, setSelected] = useState<AccountRow | null>(null)
@@ -88,10 +89,11 @@ export function AccountsPanel() {
   const [expiresAtInput, setExpiresAtInput] = useState("")
   const [applyingPlan, setApplyingPlan] = useState(false)
 
-  const loadList = async (targetPage: number, targetSearch: string) => {
+  const loadList = async (targetPage: number, targetSearch: string, targetPlan: string) => {
     setLoadingList(true)
     try {
-      const res = await fetch(`/api/admin/accounts?page=${targetPage}&search=${encodeURIComponent(targetSearch)}`)
+      const planParam = targetPlan && targetPlan !== "todos" ? `&plan=${encodeURIComponent(targetPlan)}` : ""
+      const res = await fetch(`/api/admin/accounts?page=${targetPage}&search=${encodeURIComponent(targetSearch)}${planParam}`)
       const data = await res.json()
       if (Array.isArray(data.accounts)) {
         setAccounts(data.accounts)
@@ -107,14 +109,20 @@ export function AccountsPanel() {
   }
 
   useEffect(() => {
-    loadList(page, search)
+    loadList(page, search, planFilter)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page])
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setPage(1)
-    loadList(1, search)
+    loadList(1, search, planFilter)
+  }
+
+  const handlePlanFilterChange = (value: string) => {
+    setPlanFilter(value)
+    setPage(1)
+    loadList(1, search, value)
   }
 
   const loadDetail = async (account: AccountRow) => {
@@ -382,13 +390,27 @@ export function AccountsPanel() {
         <CardDescription>{t("admin_accounts_subtitle")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <form onSubmit={handleSearchSubmit} className="flex gap-2">
+        <form onSubmit={handleSearchSubmit} className="flex flex-wrap gap-2">
           <Input
             type="email"
             placeholder={t("admin_accounts_email_placeholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 min-w-[200px]"
           />
+          <Select value={planFilter} onValueChange={handlePlanFilterChange}>
+            <SelectTrigger className="w-48 shrink-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">{t("admin_accounts_filter_plan_all")}</SelectItem>
+              {plans.map((plan) => (
+                <SelectItem key={plan.slug} value={plan.slug}>
+                  {plan.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button type="submit" disabled={loadingList} className="shrink-0 gap-2">
             <Search className="h-4 w-4" />
             {loadingList ? t("admin_accounts_searching") : t("admin_accounts_search_button")}

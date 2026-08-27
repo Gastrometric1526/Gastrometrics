@@ -3,6 +3,11 @@
  * /api/admin/account-plan) — pedido explícito del dueño del proyecto: "ahi debo poder
  * manejar TODO". Mismo patrón de paginación en memoria que ya usa account-plan/route.ts
  * (no hay endpoint de "listar con filtro" en esta versión del SDK de Supabase Auth).
+ *
+ * Filtro por plan (?plan=<slug>, ver docs/63): el plan de cada cuenta hace falta ANTES
+ * de paginar (para que "página 1 de Chef Ejecutivo" muestre de verdad 25 cuentas de ese
+ * plan, no 25 cuentas cualesquiera de las que ninguna sea ese plan) — por eso
+ * account_plans se trae completo, para TODAS las cuentas, no solo la página actual.
  */
 
 import { NextResponse } from "next/server"
@@ -18,6 +23,7 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url)
   const search = (url.searchParams.get("search") || "").trim().toLowerCase()
+  const planFilter = (url.searchParams.get("plan") || "").trim()
   const page = Math.max(1, Number(url.searchParams.get("page")) || 1)
 
   try {
@@ -42,22 +48,25 @@ export async function GET(request: Request) {
       listPage += 1
     }
 
-    const filtered = search ? allUsers.filter((u) => u.email.toLowerCase().includes(search)) : allUsers
+    const { data: allPlanRows } = await admin.from("account_plans").select("account_id, plan_slug, plan_expires_at")
+    const planByUser = new Map(allPlanRows?.map((r) => [r.account_id, r]) ?? [])
+
+    let filtered = search ? allUsers.filter((u) => u.email.toLowerCase().includes(search)) : allUsers
+    if (planFilter) {
+      // Cuentas sin fila en account_plans están en "foodie" por default en toda la app.
+      filtered = filtered.filter((u) => (planByUser.get(u.id)?.plan_slug || "foodie") === planFilter)
+    }
     filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
     const total = filtered.length
     const pageUsers = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
     const ids = pageUsers.map((u) => u.id)
 
-    const [planRows, businessRows, teamRows] = await Promise.all([
-      ids.length
-        ? admin.from("account_plans").select("account_id, plan_slug, plan_expires_at").in("account_id", ids)
-        : Promise.resolve({ data: [] as { account_id: string; plan_slug: string; plan_expires_at: string | null }[] }),
+    const [businessRows, teamRows] = await Promise.all([
       ids.length ? admin.from("businesses").select("owner_id").in("owner_id", ids) : Promise.resolve({ data: [] as { owner_id: string }[] }),
       ids.length ? admin.from("team_members").select("owner_id").in("owner_id", ids) : Promise.resolve({ data: [] as { owner_id: string }[] }),
     ])
 
-    const planByUser = new Map(planRows.data?.map((r) => [r.account_id, r]) ?? [])
     const businessCountByUser = new Map<string, number>()
     for (const row of businessRows.data ?? []) {
       businessCountByUser.set(row.owner_id, (businessCountByUser.get(row.owner_id) || 0) + 1)
