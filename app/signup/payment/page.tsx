@@ -32,7 +32,7 @@ export default function PaymentPage() {
 function PaymentPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { language } = useLanguage()
+  const { language, t } = useLanguage()
   const planSlug = searchParams.get("plan")
   const plan = getLocalizedPlan(plans.find((p) => p.slug === planSlug) ?? plans[1], language)
   // BUG CORREGIDO: "Volver" y "Cambiar de plan" mandaban siempre a /signup o /planes
@@ -52,7 +52,8 @@ function PaymentPageInner() {
   const [stripeUnavailable, setStripeUnavailable] = useState(false)
 
   useEffect(() => {
-    if (wasCancelled) setErrorMessage("El pago se canceló. Puedes intentarlo de nuevo cuando quieras.")
+    if (wasCancelled) setErrorMessage(t("signup_payment_cancelled"))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wasCancelled])
 
   const handleCheckout = async () => {
@@ -72,14 +73,14 @@ function PaymentPageInner() {
         return
       }
       if (!res.ok || !data.url) {
-        setErrorMessage(data.error || "No se pudo iniciar el pago. Intenta de nuevo.")
+        setErrorMessage(data.error || t("signup_payment_generic_error"))
         setIsProcessing(false)
         return
       }
 
       window.location.href = data.url
     } catch {
-      setErrorMessage("No se pudo iniciar el pago. Intenta de nuevo.")
+      setErrorMessage(t("signup_payment_generic_error"))
       setIsProcessing(false)
     }
   }
@@ -92,7 +93,7 @@ function PaymentPageInner() {
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
-          Volver
+          {t("common_back")}
         </Link>
 
         <div className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr] gap-6">
@@ -100,10 +101,10 @@ function PaymentPageInner() {
             <CardHeader>
               <CardTitle className="text-2xl font-bold text-foreground flex items-center gap-2">
                 <CreditCard className="h-6 w-6 text-primary" />
-                Método de Pago
+                {t("signup_payment_method_title")}
               </CardTitle>
               <CardDescription>
-                Se te redirigirá a la página segura de Stripe para completar el pago del plan {plan.name}.
+                {t("signup_payment_redirect_desc").replace("{plan}", plan.name)}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -117,19 +118,19 @@ function PaymentPageInner() {
               {stripeUnavailable ? (
                 <div className="flex items-start gap-2 text-sm text-muted-foreground bg-muted/40 rounded-lg p-3">
                   <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5" />
-                  <p>Los pagos todavía no están conectados en este entorno. Puedes empezar con el plan gratuito mientras tanto.</p>
+                  <p>{t("signup_payment_stripe_unavailable")}</p>
                 </div>
               ) : (
                 <Button type="button" className="w-full" disabled={isProcessing} onClick={handleCheckout}>
                   {isProcessing ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2" />
-                      Redirigiendo a Stripe...
+                      {t("signup_payment_redirecting")}
                     </>
                   ) : (
                     <>
                       <Lock className="h-4 w-4 mr-2" />
-                      Continuar al pago seguro
+                      {t("signup_payment_continue")}
                     </>
                   )}
                 </Button>
@@ -150,22 +151,19 @@ function PaymentPageInner() {
                 }}
                 className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Omitir por ahora y empezar con el plan gratuito
+                {t("signup_payment_skip_free")}
               </button>
 
               <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/40 rounded-lg p-3">
                 <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5" />
-                <p>
-                  Tu tarjeta se maneja directamente por Stripe — Gastrometrics nunca la recibe ni la almacena en sus
-                  propios servidores.
-                </p>
+                <p>{t("signup_payment_card_notice")}</p>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-border shadow-lg bg-card/95 backdrop-blur h-fit">
             <CardHeader>
-              <CardTitle className="text-lg">Resumen del Plan</CardTitle>
+              <CardTitle className="text-lg">{t("signup_payment_summary_title")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -182,7 +180,7 @@ function PaymentPageInner() {
                 ))}
               </ul>
               <Link href={backHref} className="text-xs text-primary hover:underline block">
-                Cambiar de plan
+                {t("signup_payment_change_plan")}
               </Link>
             </CardContent>
           </Card>
