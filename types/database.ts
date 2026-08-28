@@ -334,6 +334,21 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["profiles"]["Row"]>
         Relationships: never[]
       }
+      page_views: {
+        Row: {
+          id: number
+          path: string
+          created_at: string
+          language: string | null
+          referrer: string | null
+        }
+        Insert: Omit<Database["public"]["Tables"]["page_views"]["Row"], "id" | "created_at"> & {
+          id?: number
+          created_at?: string
+        }
+        Update: Partial<Database["public"]["Tables"]["page_views"]["Row"]>
+        Relationships: never[]
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

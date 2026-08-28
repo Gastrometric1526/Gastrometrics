@@ -13,6 +13,7 @@ import { ArrowLeft, Lock } from "lucide-react"
 import { StatsPanel } from "@/components/admin/stats-panel"
 import { AccountsPanel } from "@/components/admin/accounts-panel"
 import { FeedbackPanel } from "@/components/admin/feedback-panel"
+import { AnalyticsPanel } from "@/components/admin/analytics-panel"
 
 // Candado de acceso — pedido explícito: agregar algún control de acceso a /admin,
 // que hoy cualquiera con el link puede ver. SIN backend no existe un sistema de roles
@@ -195,6 +196,7 @@ export default function AdminPage() {
             <TabsTrigger value="feedback">
               {t("admin_tab_feedback")} ({feedbackCounts.total})
             </TabsTrigger>
+            <TabsTrigger value="analiticas">{t("admin_tab_analytics")}</TabsTrigger>
           </TabsList>
           <TabsContent value="resumen" className="mt-6">
             <StatsPanel feedbackCounts={feedbackCounts} />
@@ -204,6 +206,9 @@ export default function AdminPage() {
           </TabsContent>
           <TabsContent value="feedback" className="mt-6">
             <FeedbackPanel onCountsChange={setFeedbackCounts} />
+          </TabsContent>
+          <TabsContent value="analiticas" className="mt-6">
+            <AnalyticsPanel />
           </TabsContent>
         </Tabs>
       </div>

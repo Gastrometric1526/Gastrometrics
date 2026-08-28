@@ -13,6 +13,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration"
 import { TeamPreviewBanner } from "@/components/team-preview-banner"
 import { ThemeInitializer } from "@/components/theme-initializer"
+import { AnalyticsTracker } from "@/components/analytics-tracker"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
@@ -81,6 +82,7 @@ export default function RootLayout({
                   </Suspense>
                   <ServiceWorkerRegistration />
                   <TeamPreviewBanner />
+                  <AnalyticsTracker />
                   <main className="flex min-h-screen flex-col">
                     {" "}
                     {/* Ensure main takes full height and allows scrolling */}
