@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next"
 import { Suspense } from "react"
 import { Inter } from "next/font/google"
 import "./globals.css" // Ensure this path is correct, usually it's `app/globals.css` or `./globals.css`
+import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/auth-context"
 import { LanguageProvider } from "@/contexts/language-context"
@@ -84,18 +85,32 @@ export default function RootLayout({
                     {" "}
                     {/* Ensure main takes full height and allows scrolling */}
                     <div
-                      className="flex-1 p-2 sm:p-4 md:p-6 lg:p-8 overflow-y-auto"
+                      // Padding inferior en dos capas, a propósito: el inline style cubre el
+                      // área segura del dispositivo (igual en todas las pantallas), y la clase
+                      // pb-[...] de abajo reserva ADEMÁS la altura real de MobileBottomNav
+                      // (56px, ver components/mobile-bottom-nav.tsx) — sin esto, el final de
+                      // cualquier pantalla que haga scroll queda tapado detrás de esa barra fija
+                      // en móvil. En md: hacia arriba MobileBottomNav no existe (md:hidden), así
+                      // que vuelve a ser solo el área segura.
+                      // "!pb-[...]" (con important) es a propósito: "p-2 sm:p-4 md:p-6 lg:p-8"
+                      // también define padding-bottom, y Tailwind ordena las reglas por
+                      // breakpoint, no por el orden en que aparecen en className — sin el
+                      // important, "sm:p-4" gana en el rango 640-767px (donde MobileBottomNav
+                      // sigue visible, md:hidden recién oculta desde 768px) y el contenido
+                      // vuelve a quedar tapado. Confirmado con getComputedStyle antes de este
+                      // fix: paddingBottom daba 16px (de sm:p-4) en vez de 56px en ese rango.
+                      className="flex-1 p-2 sm:p-4 md:p-6 lg:p-8 overflow-y-auto !pb-[calc(env(safe-area-inset-bottom)+3.5rem)] md:!pb-[max(env(safe-area-inset-bottom),0.5rem)]"
                       style={{
                         paddingLeft: "max(env(safe-area-inset-left), 0.5rem)",
                         paddingRight: "max(env(safe-area-inset-right), 0.5rem)",
                         paddingTop: "max(env(safe-area-inset-top), 0.5rem)",
-                        paddingBottom: "max(env(safe-area-inset-bottom), 0.5rem)",
                       }}
                     >
                       {children}
                     </div>
                   </main>
                   <Toaster />
+                  <Analytics />
                 </NotificationProvider>
               </DashboardProvider>
             </LanguageProvider>
