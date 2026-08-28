@@ -58,7 +58,9 @@ export async function processPdfOrder(file: File, ingredients: Ingredient[]): Pr
   // Limit cache size to prevent memory leaks
   if (processedPdfCache.size > 50) {
     const oldestKey = processedPdfCache.keys().next().value
-    processedPdfCache.delete(oldestKey)
+    if (oldestKey !== undefined) {
+      processedPdfCache.delete(oldestKey)
+    }
   }
 
   return result

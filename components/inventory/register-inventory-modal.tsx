@@ -13,7 +13,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import type { Ingredient } from "@/types/ingredient"
+import type { Ingredient, Presentation } from "@/types/ingredient"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
@@ -34,6 +34,7 @@ import { setDashboardData } from "@/utils/dashboard"
 import { saveInventory, getInventory, addInventorySnapshot, getInventoryHistory } from "@/lib/storage/inventory"
 import { getIngredients, saveIngredients } from "@/lib/storage/ingredients"
 import { presentations } from "@/types/ingredient"
+import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
 import { updateIngredientPriceAndRecalculate } from "@/lib/recalculate"
 import { computeWeightedAverageCost } from "@/lib/utils/weighted-average-cost"
 import { useLanguage } from "@/contexts/language-context"
@@ -48,10 +49,38 @@ interface RegisterInventoryModalProps {
 interface IngredientWithQuantity extends Ingredient {
   quantity: number
   calculatedQuantity?: number
-  supplier?: string
+  // Copia plana de ing.pricing.purchasePrice — este modal la mantiene aparte porque la
+  // calcula y la muestra/edita directamente (ver el useEffect que inicializa este estado),
+  // sin pasar siempre por el objeto pricing anidado.
+  price: number
+  // Nunca se asigna en este archivo — se lee de forma defensiva (item.previousPrice ||
+  // item.price) al armar el snapshot de inventario, así que en la práctica siempre
+  // termina usando item.price. Se deja opcional para no alterar ese comportamiento.
+  previousPrice?: number
 }
 
+// Algunos ingredientes guardados antes de que el precio/contenido neto vivieran bajo
+// `pricing` pudieron quedar con esos campos "planos" en la fila real — por eso el código
+// de abajo revisa ambas formas. Este tipo solo documenta esa forma heredada para el
+// type-checker; `Ingredient` (types/ingredient.ts) ya no la declara.
+type LegacyIngredient = Ingredient & { purchasePrice?: number; netContent?: number | string }
+
 const classifications = ["Bebidas", "Comida", "Limpieza"]
+
+// BUG CORREGIDO: este modal maneja el tipo de conteo en español ("inicial"/"final"/
+// "nueva compra" — mismos valores usados en su propio <Select>, en la comparación de
+// costo promedio ponderado más abajo, y en el label mostrado al usuario), pero
+// InventorySnapshot.type está en inglés ("initial"/"final"/"purchase") — es lo que leen
+// tanto app/inventario/history-view.tsx (para elegir el badge "Inicial"/"Final") como
+// lib/pdf/inventory-pdf-generator.ts (para el título del PDF). Sin este mapeo, todo
+// snapshot guardado por este modal tenía type="inicial"/"final"/"nueva compra", que
+// nunca coincidía con esas comparaciones — el badge de historial siempre caía en su rama
+// "Final" y el PDF siempre mostraba "Compra", sin importar el tipo real elegido.
+const inventoryTypeToSnapshotType: Record<"inicial" | "final" | "nueva compra", InventorySnapshot["type"]> = {
+  inicial: "initial",
+  final: "final",
+  "nueva compra": "purchase",
+}
 
 export function RegisterInventoryModal({ open, onOpenChange, ingredients, businessId }: RegisterInventoryModalProps) {
   const { t } = useLanguage()
@@ -73,7 +102,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
   const [contentHeight, setContentHeight] = useState(0)
   const { toast } = useToast()
   const [ingredientsWithQuantity, setIngredientsWithQuantity] = useState<IngredientWithQuantity[]>([])
-  const [availablePresentations, setAvailablePresentations] = useState<string[]>(presentations || [])
+  const [availablePresentations, setAvailablePresentations] = useState<string[]>([...(presentations || [])])
 
   // Primero, agregar el estado para el modo de inventario
   // Añadir después de la declaración de otros estados, cerca de la línea 70
@@ -99,12 +128,15 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
       // Guardar el estado actual de ingredientsWithQuantity para preservar valores importantes
       const currentIngredients = [...ingredientsWithQuantity]
 
-      const newIngredientsWithQuantity = ingredients.map((ing) => {
+      const newIngredientsWithQuantity = ingredients.map((ingredient): IngredientWithQuantity => {
+        const ing = ingredient as LegacyIngredient
         // Buscar el ingrediente en el estado actual para preservar valores importantes
         const currentIngredient = currentIngredients.find((curr) => curr.id === ing.id)
 
         // Buscar el ingrediente en la base de datos para obtener la información más actualizada
-        const matchingIngredient = allIngredients.find((dbIng: any) => dbIng.id === ing.id)
+        const matchingIngredient = allIngredients.find((dbIng: any) => dbIng.id === ing.id) as
+          | LegacyIngredient
+          | undefined
 
         // Buscar el ingrediente en el inventario actual para obtener el stock existente
         const inventoryItem = currentInventory.find((item: any) => item.id === ing.id || item.name === ing.name)
@@ -130,7 +162,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
         // Determinar la presentación correcta
         // Prioridad: 1) Valor actual, 2) BD ingrediente, 3) Ingrediente original
         const presentation =
-          currentIngredient?.presentation || matchingIngredient?.presentation || ing.presentation || null
+          currentIngredient?.presentation || matchingIngredient?.presentation || ing.presentation || undefined
 
         // Determinar el stock actual
         // Prioridad: 1) Valor actual, 2) Inventario, 3) Valor por defecto
@@ -164,7 +196,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
 
       // También actualizar las presentaciones disponibles desde la base de datos
       const dbPresentations = [
-        ...new Set(allIngredients.filter((ing) => ing.presentation).map((ing) => ing.presentation)),
+        ...new Set(allIngredients.map((ing) => ing.presentation).filter((p): p is NonNullable<typeof p> => Boolean(p))),
       ]
 
       if (dbPresentations.length > 0) {
@@ -232,10 +264,10 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
     }
 
     // Create a new inventory snapshot for history
-    const newInventorySnapshot = {
+    const newInventorySnapshot: InventorySnapshot = {
       id: uuidv4(),
       date: date ? date.toISOString() : new Date().toISOString(),
-      type: inventoryType,
+      type: inventoryTypeToSnapshotType[inventoryType],
       periodicity: period,
       division: division,
       notes: notes,
@@ -271,7 +303,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
     const currentInventory = getInventory(businessId)
 
     // En la función handleSave, asegurarse de que se actualicen todos los campos necesarios
-    const updatedInventory = currentInventory.map((item) => {
+    const updatedInventory = currentInventory.map((item): InventoryItem => {
       const matchingItem = ingredientsWithValues.find((ing) => ing.id === item.id)
       if (matchingItem) {
         return {
@@ -358,13 +390,13 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
     toast({
       title: t("inventario_toast_registered_title"),
       description: t("inventario_toast_registered_desc").replace("{count}", String(ingredientsWithValues.length)),
-      variant: "success",
+      variant: "default",
     })
 
     ActivityTracker.addActivity(
       `Inventario registrado: ${ingredientsWithValues.length} producto${ingredientsWithValues.length !== 1 ? "s" : ""} (${inventoryType})`,
       "inventory",
-      businessId,
+      businessId ?? undefined,
       { snapshotId: newInventorySnapshot.id, itemCount: ingredientsWithValues.length },
     )
 
@@ -472,7 +504,9 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
 
     const currentInventory = getInventory(businessId)
 
-    const matchingIngredient = allIngredients.find((dbIng: any) => dbIng.id === ingredientId)
+    const matchingIngredient = allIngredients.find((dbIng: any) => dbIng.id === ingredientId) as
+      | LegacyIngredient
+      | undefined
     const inventoryItem = currentInventory.find((item: any) => item.id === ingredientId)
 
     // Obtener el ingrediente actual del estado para preservar valores importantes
@@ -515,7 +549,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
 
     // Actualizar el estado local con la información de la base de datos
     setIngredientsWithQuantity((prev) =>
-      prev.map((ing) => {
+      prev.map((ing): IngredientWithQuantity => {
         if (ing.id === ingredientId) {
           // Recalcular la cantidad según el modo y el contenido neto
           const currentQuantity = ing.quantity || 0
@@ -524,7 +558,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
 
           return {
             ...ing,
-            presentation,
+            presentation: presentation as Presentation,
             // Preservar valores existentes
             quantity: ing.quantity,
             price: purchasePrice || ing.price,
@@ -581,7 +615,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
     toast({
       title: t("inventario_toast_presentation_updated_title"),
       description: t("inventario_toast_presentation_updated_desc_register"),
-      variant: "success",
+      variant: "default",
     })
   }
 
@@ -720,7 +754,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                                 width: "auto",
                               }}
                             >
-                              <Calendar initialFocus mode="single" selected={date} onSelect={setDate} locale={es} />
+                              <Calendar autoFocus mode="single" selected={date} onSelect={setDate} locale={es} />
                             </PopoverContent>
                           </Popover>
                         </div>

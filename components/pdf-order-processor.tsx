@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { processPdfOrder } from "@/utils/pdf-order-processor"
 import type { ProcessedOrder, ValidationResult } from "@/types/purchase-order"
+import type { Ingredient } from "@/types/ingredient"
 import { formatCurrency } from "@/lib/currency"
 
 interface PdfOrderProcessorProps {
@@ -101,7 +102,7 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
 
   // Memoize the ingredients to avoid repeated fetches
   const ingredients = useMemo(() => {
-    return getDashboardData("ingredients", businessId) || []
+    return getDashboardData<Ingredient[]>("ingredients", businessId) || []
   }, [businessId])
 
   const handleFileUpload = useCallback(
@@ -162,7 +163,7 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
 
     try {
       // Get existing purchase orders
-      const existingOrders = getDashboardData("purchaseOrders", businessId) || []
+      const existingOrders = getDashboardData<any[]>("purchaseOrders", businessId) || []
 
       // Convert processed orders in a memory-efficient way
       const newOrders = processedOrders.map((order) => ({

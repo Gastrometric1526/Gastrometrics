@@ -34,7 +34,10 @@ export interface InventorySnapshot {
   id: string
   date: string
   type: "initial" | "final" | "purchase"
-  periodicity?: "daily" | "weekly" | "monthly"
+  // En español porque así los escriben y comparan register-inventory-modal.tsx (al
+  // guardar) y history-view.tsx (al filtrar) — a diferencia de `type` arriba, acá
+  // escritor y lectores ya coincidían entre sí, solo el tipo declarado estaba desfasado.
+  periodicity?: "diario" | "semanal" | "mensual"
   period?: "daily" | "weekly" | "monthly" // alias legado, ver register-inventory-modal.tsx
   division?: string
   notes?: string
@@ -42,6 +45,9 @@ export interface InventorySnapshot {
   modifiedItems: number
   totalValue: number
   items?: InventorySnapshotItem[]
+  dateRange?: { start: string; end: string }
+  createdBy?: string
+  createdAt?: string
 }
 
 export interface InventorySession {

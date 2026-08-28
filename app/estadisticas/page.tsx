@@ -107,7 +107,7 @@ function CategoryPieChart({
           ))}
         </Pie>
         <Tooltip
-          formatter={valueFormatter ? (value: number) => valueFormatter(value) : undefined}
+          formatter={valueFormatter ? (value) => valueFormatter(typeof value === "number" ? value : Number(value)) : undefined}
           contentStyle={{
             backgroundColor: "hsl(var(--popover))",
             borderColor: "hsl(var(--border))",

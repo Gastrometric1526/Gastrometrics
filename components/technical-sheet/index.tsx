@@ -1194,7 +1194,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
                       {ingredient.unitCost > 0 ? formatCurrency(ingredient.unitCost) : ""}
                     </TableCell>
                     <TableCell className="text-center font-mono">
-                      {ingredient.extension > 0 ? formatCurrency(ingredient.extension) : ""}
+                      {(ingredient.extension ?? 0) > 0 ? formatCurrency(ingredient.extension ?? 0) : ""}
                     </TableCell>
                   </TableRow>
                 ))}

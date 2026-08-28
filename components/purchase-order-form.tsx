@@ -394,10 +394,10 @@ export function PurchaseOrderForm({
             </Button>
           </div>
 
-          {newItem.totalPrice > 0 && (
+          {(newItem.totalPrice ?? 0) > 0 && (
             <div className="mt-4 p-3 bg-muted rounded-lg">
               <p className="text-sm">
-                {t("pof_item_total_prefix")} <span className="font-semibold">{formatCurrency(newItem.totalPrice)}</span>
+                {t("pof_item_total_prefix")} <span className="font-semibold">{formatCurrency(newItem.totalPrice ?? 0)}</span>
               </p>
             </div>
           )}

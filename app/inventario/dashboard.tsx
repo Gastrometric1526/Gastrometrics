@@ -27,7 +27,12 @@ export function InventoryDashboard({ inventoryItems, inventoryHistory, isLoading
   const [categoryView, setCategoryView] = useState<"all" | "critical" | "low">("all")
 
   // Datos para gráficos
-  const [chartData, setChartData] = useState({
+  const [chartData, setChartData] = useState<{
+    valueHistory: { date: string; value: number }[]
+    categoryDistribution: { name: string; value: number }[]
+    stockLevels: { name: string; value: number }[]
+    locationDistribution: { name: string; value: number }[]
+  }>({
     valueHistory: [],
     categoryDistribution: [],
     stockLevels: [],
@@ -43,12 +48,12 @@ export function InventoryDashboard({ inventoryItems, inventoryHistory, isLoading
         .slice(0, 10)
         .map((snapshot) => ({
           date: new Date(snapshot.date).toLocaleDateString(getDateLocale(language), { month: "short", day: "numeric" }),
-          value: snapshot.items.reduce((sum, item) => sum + item.quantity * item.priceAtDate, 0),
+          value: (snapshot.items ?? []).reduce((sum, item) => sum + item.quantity * (item.priceAtDate ?? 0), 0),
         }))
         .reverse()
 
       // Distribución por categoría
-      const categories = {}
+      const categories: Record<string, number> = {}
       inventoryItems.forEach((item) => {
         categories[item.category] = (categories[item.category] || 0) + (item.currentStock || 0) * item.price
       })
@@ -90,7 +95,7 @@ export function InventoryDashboard({ inventoryItems, inventoryHistory, isLoading
   // Calcular cambio porcentual comparado con el snapshot anterior
   const previousTotal =
     inventoryHistory.length > 1
-      ? inventoryHistory[1].items.reduce((sum, item) => sum + item.quantity * item.priceAtDate, 0)
+      ? (inventoryHistory[1]?.items ?? []).reduce((sum, item) => sum + item.quantity * (item.priceAtDate ?? 0), 0)
       : totalValue
 
   const valueChange = previousTotal ? ((totalValue - previousTotal) / previousTotal) * 100 : 0

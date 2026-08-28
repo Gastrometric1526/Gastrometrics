@@ -47,7 +47,7 @@ export function IngredientsTable({
   const wacInfoIngredient = wacInfoIngredientId ? allItems.find((i) => i.id === wacInfoIngredientId) || null : null
   const persist = useCallback(
     (updated: Ingredient[]) => {
-      setDashboardData("ingredients", updated, businessId)
+      setDashboardData("ingredients", updated, businessId ?? undefined)
       // Notify other views
       if (typeof window !== "undefined") {
         window.dispatchEvent(
@@ -243,7 +243,7 @@ export function IngredientsTable({
                       <Badge
                         variant="outline"
                         className={`text-xs font-medium ${
-                          ingredient.category === "SUB RECETA"
+                          ingredient.category === "Sub Receta / produccion (Mise en place)"
                             ? "border-green-200 dark:border-green-900 text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/40"
                             : "border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40"
                         }`}
@@ -431,7 +431,7 @@ export function IngredientsTable({
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>{t("ingredientes_tooltip_delete_ingredient")}</p>
-                          {ingredient.category === "SUB RECETA" && (
+                          {ingredient.category === "Sub Receta / produccion (Mise en place)" && (
                             <p className="text-xs text-amber-600 dark:text-amber-300">⚠️ {t("ingredientes_tooltip_delete_subrecipe_warning")}</p>
                           )}
                         </TooltipContent>

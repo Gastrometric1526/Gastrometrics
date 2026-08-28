@@ -58,7 +58,7 @@ export async function parseExcelFile(file: File): Promise<any[]> {
         resolve(rows)
       } catch (error) {
         console.error("Error parsing Excel file:", error)
-        reject(new Error(`Error al procesar el archivo Excel: ${error.message}`))
+        reject(new Error(`Error al procesar el archivo Excel: ${error instanceof Error ? error.message : String(error)}`))
       }
     }
 
@@ -143,7 +143,7 @@ export function exportToExcel(data: any[], filename: string, sheetName = "Datos"
     console.log(`Exported ${data.length} rows to ${filename}.xlsx`)
   } catch (error) {
     console.error("Error exporting to Excel:", error)
-    throw new Error(`Error al exportar a Excel: ${error.message}`)
+    throw new Error(`Error al exportar a Excel: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 
@@ -255,6 +255,6 @@ export function createExcelTemplate(headers: string[], sampleData: any[] = []): 
     return new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
   } catch (error) {
     console.error("Error creating Excel template:", error)
-    throw new Error(`Error al crear plantilla Excel: ${error.message}`)
+    throw new Error(`Error al crear plantilla Excel: ${error instanceof Error ? error.message : String(error)}`)
   }
 }

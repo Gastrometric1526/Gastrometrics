@@ -223,8 +223,6 @@ export default function FichaTecnicaEditPage({
             mode={mode}
             businessId={businessId}
             recipeId={recipeId}
-            ingredients={ingredients}
-            recipes={recipes}
           />
           <FichaTecnicaTour hasIngredients={ingredients.length > 0} />
         </div>

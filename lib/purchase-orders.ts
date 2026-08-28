@@ -139,8 +139,11 @@ export function buildPurchaseOrderData({
           warnings.push(`Sub-recipe not found: ${subRecipeId}`)
         }
       } else {
-        // Normal ingredient - add to accumulator
-        const key = item.ingredientId
+        // Normal ingredient - add to accumulator. Se usa ingredient.id (no
+        // item.ingredientId) porque ya sabemos que coinciden — ingredient salió de
+        // buscar por item.ingredientId arriba — y a diferencia de item.ingredientId,
+        // ingredient.id nunca es null.
+        const key = ingredient.id
         if (!ingredientAccumulator[key]) {
           ingredientAccumulator[key] = {
             quantity: 0,
@@ -259,8 +262,9 @@ function expandSubRecipe(
         warnings.push(`Nested sub-recipe not found: ${nestedSubRecipeId}`)
       }
     } else {
-      // Base ingredient - add to accumulator
-      const key = item.ingredientId
+      // Base ingredient - add to accumulator. Se usa ingredient.id (no item.ingredientId)
+      // por la misma razón que en buildPurchaseOrderData: ingredient.id nunca es null.
+      const key = ingredient.id
       if (!accumulator[key]) {
         accumulator[key] = {
           quantity: 0,

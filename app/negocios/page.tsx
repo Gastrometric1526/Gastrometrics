@@ -98,7 +98,6 @@ export default function NegociosPage() {
               marketing: getSafeExpenseValue(business.expenses.marketing),
               laborCosts: getSafeExpenseValue(business.expenses.laborCosts),
               otherExpenses: getSafeExpenseValue(business.expenses.otherExpenses),
-              totalMonthly: getSafeExpenseValue(business.expenses.totalMonthly),
             }
           : null,
         estimatedMonthlyPlates: getSafeExpenseValue(business.estimatedMonthlyPlates),
@@ -153,9 +152,8 @@ export default function NegociosPage() {
             marketing: getSafeExpenseValue(newBusiness.expenses.marketing),
             laborCosts: getSafeExpenseValue(newBusiness.expenses.laborCosts),
             otherExpenses: getSafeExpenseValue(newBusiness.expenses.otherExpenses),
-            totalMonthly: getSafeExpenseValue(newBusiness.expenses.totalMonthly),
           }
-        : null,
+        : undefined,
     }
 
     setBusinesses((prev) => [...prev, normalizedBusiness])

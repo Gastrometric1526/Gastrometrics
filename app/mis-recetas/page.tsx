@@ -240,7 +240,7 @@ export default function MisRecetasPage() {
       // Usar la función mejorada de migración completa
       const migrationResult = await migrateCompleteRecipe(recipeToMigrate, businessId, selectedTargetBusiness)
 
-      if (!migrationResult.success) {
+      if (!migrationResult.success || !migrationResult.migratedRecipe) {
         throw new Error(migrationResult.error || "Error en migración")
       }
 

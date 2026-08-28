@@ -28,7 +28,7 @@ export function BarChart({
     if (data.length > 0) {
       const formattedData = data.map((item) => ({
         label: item[index],
-        values: categories.reduce((acc, cat) => {
+        values: categories.reduce<Record<string, number>>((acc, cat) => {
           acc[cat] = item[cat] || 0
           return acc
         }, {}),
@@ -39,7 +39,7 @@ export function BarChart({
 
   const maxValue = Math.max(...data.map((item) => Math.max(...categories.map((cat) => item[cat] || 0))), 0)
 
-  const colorMap = categories.reduce((acc, cat, idx) => {
+  const colorMap = categories.reduce<Record<string, string>>((acc, cat, idx) => {
     acc[cat] = colors[idx % colors.length]
     return acc
   }, {})

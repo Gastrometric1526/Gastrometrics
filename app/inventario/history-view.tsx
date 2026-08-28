@@ -392,9 +392,9 @@ export function HistoryView({ inventoryHistory, exportInventory, isLoading }: Hi
             <div className="py-4">
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-medium">{t("inventario_detail_created_by").replace("{name}", selectedInventory.createdBy)}</h3>
+                  <h3 className="text-sm font-medium">{t("inventario_detail_created_by").replace("{name}", selectedInventory.createdBy || "")}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {new Date(selectedInventory.createdAt).toLocaleString(getDateLocale(language))}
+                    {new Date(selectedInventory.createdAt || selectedInventory.date).toLocaleString(getDateLocale(language))}
                   </p>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => exportInventory(selectedInventory)}>
@@ -426,6 +426,7 @@ export function HistoryView({ inventoryHistory, exportInventory, isLoading }: Hi
                               {item.quantity} {item.unit}
                               {selectedSnapshot.inventoryMode === "presentation" &&
                                 item.presentation &&
+                                item.netContent &&
                                 item.netContent > 0 && (
                                   <span className="text-xs text-muted-foreground ml-1">
                                     ({Math.round(item.quantity / item.netContent)} {item.presentation})

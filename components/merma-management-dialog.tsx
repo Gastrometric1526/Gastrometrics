@@ -128,11 +128,19 @@ export function MermaManagementDialog({
       } else {
         // Desactivar sistema de mermas - restaurar valores originales
         const originalPricePerUnit = originalValues[ing.id]?.pricePerUnit || ing.pricing.purchasePrice / originalContent
+        const mermaData = ing.merma || {
+          enabled: false,
+          useGlobal: true,
+          globalPercentage: getCategoryMermaPercentage(ing.category),
+          customType: "percentage" as const,
+          customPercentage: 0,
+          customValue: 0,
+        }
 
         return {
           ...ing,
           merma: {
-            ...ing.merma,
+            ...mermaData,
             enabled: false,
           },
           originalNetContent: originalContent,
@@ -171,10 +179,19 @@ export function MermaManagementDialog({
             adjustedContent = calculateCategoryMerma(originalContent, ing.category)
           }
 
+          const mermaData = ing.merma || {
+            enabled: false,
+            useGlobal: true,
+            globalPercentage: getCategoryMermaPercentage(ing.category),
+            customType: "percentage" as const,
+            customPercentage: 0,
+            customValue: 0,
+          }
+
           return {
             ...ing,
             merma: {
-              ...ing.merma,
+              ...mermaData,
               useGlobal: newUseGlobal,
               globalPercentage: getCategoryMermaPercentage(ing.category),
             },
@@ -247,7 +264,7 @@ export function MermaManagementDialog({
     setIsApplying(true)
 
     try {
-      setDashboardData("ingredients", ingredients, businessId)
+      setDashboardData("ingredients", ingredients, businessId ?? undefined)
       onSave?.(ingredients)
 
       if (typeof window !== "undefined") {

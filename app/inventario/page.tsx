@@ -55,6 +55,13 @@ import { FeatureLockedPage } from "@/components/feature-locked"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { getAccessBlockReason } from "@/lib/plan-access"
 import { formatCurrency } from "@/lib/currency"
+import type { Ingredient } from "@/types/ingredient"
+
+// Algunos ingredientes guardados antes de que el precio/contenido neto vivieran bajo
+// `pricing` pudieron quedar con esos campos "planos" en la fila real — por eso el código
+// de abajo revisa ambas formas. Este tipo solo documenta esa forma heredada para el
+// type-checker; `Ingredient` (types/ingredient.ts) ya no la declara.
+type LegacyIngredient = Ingredient & { purchasePrice?: number; netContent?: number | string }
 
 export default function InventoryPage() {
   const { isLoggedIn } = useAuth()
@@ -86,7 +93,7 @@ export default function InventoryPage() {
       [itemId]: minStock,
     }))
 
-    const updatedItems = items.map((item) => {
+    const updatedItems = items.map((item): InventoryItem => {
       if (item.id === itemId) {
         return {
           ...item,
@@ -110,7 +117,7 @@ export default function InventoryPage() {
     ingredientsList: any[],
     updatePricesFromDB = false,
   ) => {
-    return inventoryItems.map((item) => {
+    return inventoryItems.map((item): InventoryItem => {
       const matchingIngredient = ingredientsList.find((ing) => ing.name === item.name)
 
       const hasCustomMinStock = customMinStocks[item.id] !== undefined
@@ -199,8 +206,11 @@ export default function InventoryPage() {
           setItems(preservedInventory)
           saveInventory(preservedInventory, businessId)
         } else {
-          const newInventoryItems = ingredients.map((ing) => {
-            const matchingIngredient = allIngredients.find((dbIng: any) => dbIng.name === ing.name)
+          const newInventoryItems = ingredients.map((ingredient): InventoryItem => {
+            const ing = ingredient as LegacyIngredient
+            const matchingIngredient = allIngredients.find((dbIng: any) => dbIng.name === ing.name) as
+              | LegacyIngredient
+              | undefined
 
             let purchasePrice = 0
 
@@ -220,7 +230,7 @@ export default function InventoryPage() {
             const minStockValue = hasCustomMinStock
               ? customMinStocks[ing.id]
               : ing.netContent
-                ? Number.parseFloat(ing.netContent)
+                ? Number.parseFloat(String(ing.netContent))
                 : 5
 
             return {
@@ -235,7 +245,7 @@ export default function InventoryPage() {
               supplier: ing.supplier || "Proveedor General",
               lastUpdated: new Date().toLocaleDateString(),
               status: "normal",
-              presentation: matchingIngredient?.presentation || null,
+              presentation: matchingIngredient?.presentation || undefined,
             }
           })
           setItems(newInventoryItems)
@@ -298,7 +308,7 @@ export default function InventoryPage() {
     // El sync automático con el catálogo de Ingredientes ya existe aparte
     // (syncInventoryWithDatabase, más abajo) — este formulario es donde el usuario
     // edita el ítem a mano, sus valores deben ganar.
-    const newItem = {
+    const newItem: InventoryItem = {
       id: selectedItem?.id || uuidv4(),
       name: data.name,
       category: data.category,
@@ -322,7 +332,7 @@ export default function InventoryPage() {
             : data.currentStock <= data.minStock * 2
               ? "low"
               : "normal",
-      presentation: matchingIngredient?.presentation || existingItem?.presentation || null,
+      presentation: matchingIngredient?.presentation || existingItem?.presentation || undefined,
     }
 
     let updatedItems
@@ -820,7 +830,7 @@ export default function InventoryPage() {
                           {item.currentStock} {item.unit}
                         </TableCell>
                         <TableCell>
-                          {(item.minStock - item.currentStock).toFixed(2)} {item.unit}
+                          {(item.minStock - (item.currentStock ?? 0)).toFixed(2)} {item.unit}
                         </TableCell>
                       </TableRow>
                     ))}

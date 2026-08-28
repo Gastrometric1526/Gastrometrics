@@ -670,7 +670,8 @@ export default function IngredientesPage() {
       setImportPreview([])
     } catch (error) {
       console.error("Error importing:", error)
-      showError(t("ingredientes_toast_import_error_title"), t("ingredientes_toast_import_error_desc").replace("{message}", error.message))
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      showError(t("ingredientes_toast_import_error_title"), t("ingredientes_toast_import_error_desc").replace("{message}", errorMessage))
 
       // Track error activity
       if (typeof window !== "undefined") {
@@ -678,7 +679,7 @@ export default function IngredientesPage() {
           t("ingredientes_activity_import_error").replace("{fileName}", importFile?.name || ""),
           "ingredient",
           businessId || undefined,
-          { error: error.message },
+          { error: errorMessage },
         )
 
         ActivityTracker.addAlert(
@@ -1022,8 +1023,6 @@ export default function IngredientesPage() {
       }
     }
   }, [businessId])
-
-  const { addNotification } = useNotification()
 
   const convertToMetric = useCallback(() => {
     try {

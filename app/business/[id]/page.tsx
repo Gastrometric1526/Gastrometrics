@@ -583,7 +583,9 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
     return <AdminRestrictedPage sectionName={`El negocio "${business.name}"`} />
   }
 
-  const totalExpenses = calculateTotalMonthlyExpenses(business.expenses || {})
+  const totalExpenses = calculateTotalMonthlyExpenses(
+    business.expenses || { rent: 0, utilities: 0, operationalCosts: 0, marketing: 0, laborCosts: 0, otherExpenses: 0 },
+  )
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -750,7 +752,8 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                     <div className="space-y-3">
                       {business?.expenses &&
                         expenseCategories.map((category) => {
-                          const value = business.expenses[category.key as keyof typeof business.expenses]
+                          const expenses = business.expenses!
+                          const value = expenses[category.key as keyof typeof expenses]
                           if (!value || value === 0) return null
 
                           const percentage = totalExpenses > 0 ? ((value / totalExpenses) * 100).toFixed(1) : "0.0"
@@ -841,9 +844,10 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             ))}
                           </Pie>
                           <Tooltip
-                            formatter={(value: number) => {
-                              const percentage = totalExpenses > 0 ? ((value / totalExpenses) * 100).toFixed(1) : "0.0"
-                              return [`${formatCurrency(value)} (${percentage}%)`, "Monto"]
+                            formatter={(value) => {
+                              const numericValue = typeof value === "number" ? value : Number(value)
+                              const percentage = totalExpenses > 0 ? ((numericValue / totalExpenses) * 100).toFixed(1) : "0.0"
+                              return [`${formatCurrency(numericValue)} (${percentage}%)`, "Monto"]
                             }}
                             contentStyle={{
                               backgroundColor: "hsl(var(--popover))",
@@ -1429,6 +1433,12 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                                 ? {
                                     ...prev,
                                     expenses: {
+                                      rent: 0,
+                                      utilities: 0,
+                                      operationalCosts: 0,
+                                      marketing: 0,
+                                      laborCosts: 0,
+                                      otherExpenses: 0,
                                       ...prev.expenses,
                                       [category.key]: getSafeExpenseValue(e.target.value),
                                     },

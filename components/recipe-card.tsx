@@ -26,7 +26,7 @@ import {
   ArrowRightLeft,
 } from "lucide-react"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
-import type { Recipe } from "@/types/recipe"
+import type { Recipe, Classification } from "@/types/recipe"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
 import { getClassificationLabel } from "@/lib/classification-labels"
@@ -126,7 +126,7 @@ export function RecipeCard({
                       variant="outline"
                       className={`text-xs ${getClassificationColor(recipe.classification || "Otros")}`}
                     >
-                      {recipe.classification ? getClassificationLabel(recipe.classification, language) : "Sin clasificar"}
+                      {recipe.classification ? getClassificationLabel(recipe.classification as Classification, language) : "Sin clasificar"}
                     </Badge>
                     {recipe.plate && (
                       <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">
@@ -242,7 +242,7 @@ export function RecipeCard({
                 variant="outline"
                 className={`text-xs ${getClassificationColor(recipe.classification || "Otros")}`}
               >
-                {recipe.classification ? getClassificationLabel(recipe.classification, language) : "Sin clasificar"}
+                {recipe.classification ? getClassificationLabel(recipe.classification as Classification, language) : "Sin clasificar"}
               </Badge>
               {recipe.plate && (
                 <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">

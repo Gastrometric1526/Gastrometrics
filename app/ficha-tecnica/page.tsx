@@ -168,7 +168,7 @@ export default function FichaTecnicaPage() {
             </Alert>
           )}
           <div data-tour="ficha-form">
-            <TechnicalSheet mode="new" businessId={businessId} ingredients={ingredients} recipes={recipes} />
+            <TechnicalSheet mode="new" businessId={businessId} />
           </div>
           <FichaTecnicaTour hasIngredients={ingredients.length > 0} />
         </div>
