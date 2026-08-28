@@ -21,6 +21,7 @@ import { getPlanBySlug } from "@/lib/plans"
 import { renderEmailTemplate, escapeHtml } from "@/lib/services/email-templates"
 import { getEmailLabels, fillLabel, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { sendAccountCreatedNotification } from "@/lib/services/notify-signup"
 
 export async function POST(request: Request) {
   // Límite por IP contra registro masivo (cuentas de spam, o correr Resend a cero
@@ -105,6 +106,16 @@ export async function POST(request: Request) {
       console.error("[api/auth/signup] Error inesperado mandando el correo:", emailError)
     }
   }
+
+  // Best-effort, igual que el correo de arriba: si falla no debe afectar el registro.
+  sendAccountCreatedNotification({
+    email,
+    fullName: profile.fullName || undefined,
+    businessType: profile.businessType || undefined,
+    nationality: profile.nationality || undefined,
+  }).catch((notifyError) => {
+    console.error("[api/auth/signup] Error inesperado notificando la nueva cuenta:", notifyError)
+  })
 
   return NextResponse.json({ ok: true })
 }
