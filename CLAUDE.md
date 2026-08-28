@@ -1,12 +1,12 @@
 # GastroMetrics
 
-Sistema de gestión gastronómica (fichas técnicas, costeo, inventario, menús, órdenes de compra) para restaurantes en Centroamérica. Next.js 14 + React 18 + TypeScript + Tailwind + shadcn/ui. Backend real (Supabase + Stripe + Resend) para auth, planes, datos de negocio, equipo (con acceso real de lectura Y escritura por función asignada, ver `docs/62`), importación de ventas del POS, y correo transaccional — ya no queda nada en `localStorage` puro (ver `docs/60`). Pendiente real, no de este código: correr `supabase/migrations/0012_fix_owner_write_scope.sql` en el SQL Editor de Supabase (corrige un hueco de seguridad real encontrado verificando `0011` en vivo — ver `docs/62` — cualquier cuenta autenticada podía escribir en cualquier negocio ajeno mandando su propio uid como `owner_id`), llaves live de Stripe, y textos legales con datos reales del negocio (`docs/59`).
+Sistema de gestión gastronómica (fichas técnicas, costeo, inventario, menús, órdenes de compra) para restaurantes en Centroamérica. Next.js 14 + React 18 + TypeScript + Tailwind + shadcn/ui. Backend real (Supabase + Stripe + Resend) para auth, planes, datos de negocio, equipo (con acceso real de lectura Y escritura por función asignada, ver `docs/62`), importación de ventas del POS, y correo transaccional — ya no queda nada en `localStorage` puro (ver `docs/60`). Todas las migraciones SQL (`0007`-`0012`) ya están corridas en producción, y **Stripe ya está en modo Live real** (llaves y webhook verificados de punta a punta en producción, ver `docs/65`) — la app ya puede cobrar con tarjetas reales. Pendiente real, no de este código: textos legales con datos reales del negocio (`docs/59`).
 
 ## Antes de tocar nada
 
 Lee, en este orden:
 1. `docs/00-README-EMPIEZA-AQUI.md`
-2. El documento de auditoría con el número más alto en `docs/` (a la fecha de este commit: `docs/64-traduccion-real-de-los-planes-de-pago.md`) — es la fuente de verdad sobre qué está hecho, qué falta, y dónde. **No confíes en él sin verificar contra el código real** — es la regla que se ha seguido en todo el proyecto.
+2. El documento de auditoría con el número más alto en `docs/` (a la fecha de este commit: `docs/65-stripe-en-vivo-activado-y-verificado.md`) — es la fuente de verdad sobre qué está hecho, qué falta, y dónde. **No confíes en él sin verificar contra el código real** — es la regla que se ha seguido en todo el proyecto.
 3. `docs/12-guia-backend.md` es histórico (de antes de conectar el backend) — para su estado real, ver el punto 4.
 4. Para arquitectura/diseño técnico consolidado (no cronológico): `docs/mapa-de-documentacion.md` (índice por tema de todo `docs/`) y `docs/referencia-arquitectura-tecnica.md` (storage, recálculo de precios, sub-recetas, PDF, i18n, PWA, backend, admin, rutas). Se actualizan in-place cuando algo cambia — si tu cambio toca algo que describen, actualízalos ahí además del documento de sesión numerado.
 
