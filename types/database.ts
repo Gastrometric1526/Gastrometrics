@@ -349,6 +349,17 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["page_views"]["Row"]>
         Relationships: never[]
       }
+      user_presence: {
+        Row: {
+          user_id: string
+          last_seen_at: string
+        }
+        Insert: Omit<Database["public"]["Tables"]["user_presence"]["Row"], "last_seen_at"> & {
+          last_seen_at?: string
+        }
+        Update: Partial<Database["public"]["Tables"]["user_presence"]["Row"]>
+        Relationships: never[]
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

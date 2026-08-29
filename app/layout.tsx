@@ -14,6 +14,7 @@ import { ServiceWorkerRegistration } from "@/components/service-worker-registrat
 import { TeamPreviewBanner } from "@/components/team-preview-banner"
 import { ThemeInitializer } from "@/components/theme-initializer"
 import { AnalyticsTracker } from "@/components/analytics-tracker"
+import { PresenceTracker } from "@/components/presence-tracker"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
@@ -83,6 +84,7 @@ export default function RootLayout({
                   <ServiceWorkerRegistration />
                   <TeamPreviewBanner />
                   <AnalyticsTracker />
+                  <PresenceTracker />
                   <main className="flex min-h-screen flex-col">
                     {" "}
                     {/* Ensure main takes full height and allows scrolling */}

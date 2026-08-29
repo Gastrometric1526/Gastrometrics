@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
 import { plans, getPlanBySlug } from "@/lib/plans"
-import { ArrowLeft, Search, Users, Building2 } from "lucide-react"
+import { ArrowLeft, Search, Users, Building2, FileText, Package } from "lucide-react"
 
 interface AccountRow {
   userId: string
@@ -22,6 +22,10 @@ interface AccountRow {
   planExpiresAt: string | null
   businessCount: number
   teamMemberCount: number
+  recipeCount: number
+  ingredientCount: number
+  salesImportCount: number
+  lastSalesImportAt: string | null
 }
 
 interface AccountDetail {
@@ -89,6 +93,10 @@ export function AccountsPanel() {
   const [expiresAtInput, setExpiresAtInput] = useState("")
   const [applyingPlan, setApplyingPlan] = useState(false)
 
+  const [presenceByUserId, setPresenceByUserId] = useState<
+    Record<string, { online: boolean; lastSeenAt: string | null }>
+  >({})
+
   const loadList = async (targetPage: number, targetSearch: string, targetPlan: string) => {
     setLoadingList(true)
     try {
@@ -112,6 +120,32 @@ export function AccountsPanel() {
     loadList(page, search, planFilter)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page])
+
+  // Presencia: se sondea aparte de la lista completa (cada ~25s), solo para las
+  // cuentas ya cargadas en la página actual — así el punto de "en línea" se mantiene
+  // al día sin re-pedir plan/negocios/equipo/recetas/ingredientes en cada ciclo, y sin
+  // tocar el estado de búsqueda/paginación/detalle expandido.
+  useEffect(() => {
+    if (accounts.length === 0) return
+    const ids = accounts.map((a) => a.userId)
+
+    const poll = () => {
+      fetch("/api/admin/presence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userIds: ids }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.presence) setPresenceByUserId((prev) => ({ ...prev, ...data.presence }))
+        })
+        .catch(() => {})
+    }
+
+    poll()
+    const interval = setInterval(poll, 25_000)
+    return () => clearInterval(interval)
+  }, [accounts])
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -431,6 +465,15 @@ export function AccountsPanel() {
                   <Users className="h-3.5 w-3.5 inline mr-1" />
                   {t("admin_accounts_table_team")}
                 </th>
+                <th className="py-2 pr-2 font-medium">
+                  <FileText className="h-3.5 w-3.5 inline mr-1" />
+                  {t("admin_accounts_table_recipes")}
+                </th>
+                <th className="py-2 pr-2 font-medium">
+                  <Package className="h-3.5 w-3.5 inline mr-1" />
+                  {t("admin_accounts_table_ingredients")}
+                </th>
+                <th className="py-2 pr-2 font-medium">{t("admin_accounts_table_pos_import")}</th>
                 <th className="py-2 pr-2 font-medium">{t("admin_accounts_table_created")}</th>
                 <th className="py-2 pr-2 font-medium" />
               </tr>
@@ -438,10 +481,49 @@ export function AccountsPanel() {
             <tbody>
               {accounts.map((a) => (
                 <tr key={a.userId} className="border-b border-border/50">
-                  <td className="py-2 pr-2 text-foreground">{a.email}</td>
+                  <td className="py-2 pr-2 text-foreground">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        className={`h-2 w-2 shrink-0 rounded-full ${
+                          presenceByUserId[a.userId]?.online ? "bg-green-500" : "bg-muted-foreground/30"
+                        }`}
+                        title={
+                          presenceByUserId[a.userId]?.online
+                            ? t("admin_accounts_online")
+                            : presenceByUserId[a.userId]?.lastSeenAt
+                              ? t("admin_accounts_last_seen").replace(
+                                  "{date}",
+                                  new Date(presenceByUserId[a.userId]!.lastSeenAt as string).toLocaleString(
+                                    getDateLocale(language),
+                                  ),
+                                )
+                              : t("admin_accounts_never_seen")
+                        }
+                      />
+                      {a.email}
+                    </span>
+                  </td>
                   <td className="py-2 pr-2 text-muted-foreground">{getPlanBySlug(a.planSlug).name}</td>
                   <td className="py-2 pr-2 text-muted-foreground">{a.businessCount}</td>
                   <td className="py-2 pr-2 text-muted-foreground">{a.teamMemberCount}</td>
+                  <td className="py-2 pr-2 text-muted-foreground">{a.recipeCount}</td>
+                  <td className="py-2 pr-2 text-muted-foreground">{a.ingredientCount}</td>
+                  <td className="py-2 pr-2 text-muted-foreground">
+                    {a.salesImportCount > 0 ? (
+                      <Badge
+                        variant="secondary"
+                        title={
+                          a.lastSalesImportAt
+                            ? new Date(a.lastSalesImportAt).toLocaleDateString(getDateLocale(language))
+                            : undefined
+                        }
+                      >
+                        {t("admin_accounts_pos_imported").replace("{count}", String(a.salesImportCount))}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs">{t("admin_accounts_pos_none")}</span>
+                    )}
+                  </td>
                   <td className="py-2 pr-2 text-muted-foreground">
                     {new Date(a.createdAt).toLocaleDateString(getDateLocale(language))}
                   </td>

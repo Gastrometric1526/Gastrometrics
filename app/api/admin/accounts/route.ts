@@ -62,9 +62,14 @@ export async function GET(request: Request) {
     const pageUsers = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
     const ids = pageUsers.map((u) => u.id)
 
-    const [businessRows, teamRows] = await Promise.all([
+    const [businessRows, teamRows, recipeRows, ingredientRows, salesImportRows] = await Promise.all([
       ids.length ? admin.from("businesses").select("owner_id").in("owner_id", ids) : Promise.resolve({ data: [] as { owner_id: string }[] }),
       ids.length ? admin.from("team_members").select("owner_id").in("owner_id", ids) : Promise.resolve({ data: [] as { owner_id: string }[] }),
+      ids.length ? admin.from("recipes").select("owner_id").in("owner_id", ids) : Promise.resolve({ data: [] as { owner_id: string }[] }),
+      ids.length ? admin.from("ingredients").select("owner_id").in("owner_id", ids) : Promise.resolve({ data: [] as { owner_id: string }[] }),
+      ids.length
+        ? admin.from("sales_imports").select("owner_id, data").in("owner_id", ids)
+        : Promise.resolve({ data: [] as { owner_id: string; data: Record<string, unknown> }[] }),
     ])
 
     const businessCountByUser = new Map<string, number>()
@@ -74,6 +79,24 @@ export async function GET(request: Request) {
     const teamCountByUser = new Map<string, number>()
     for (const row of teamRows.data ?? []) {
       teamCountByUser.set(row.owner_id, (teamCountByUser.get(row.owner_id) || 0) + 1)
+    }
+    const recipeCountByUser = new Map<string, number>()
+    for (const row of recipeRows.data ?? []) {
+      recipeCountByUser.set(row.owner_id, (recipeCountByUser.get(row.owner_id) || 0) + 1)
+    }
+    const ingredientCountByUser = new Map<string, number>()
+    for (const row of ingredientRows.data ?? []) {
+      ingredientCountByUser.set(row.owner_id, (ingredientCountByUser.get(row.owner_id) || 0) + 1)
+    }
+    const importSummaryByUser = new Map<string, { count: number; lastImportedAt: string | null }>()
+    for (const row of salesImportRows.data ?? []) {
+      const info = row.data as { importedAt?: string }
+      const prev = importSummaryByUser.get(row.owner_id) || { count: 0, lastImportedAt: null }
+      prev.count += 1
+      if (info.importedAt && (!prev.lastImportedAt || info.importedAt > prev.lastImportedAt)) {
+        prev.lastImportedAt = info.importedAt
+      }
+      importSummaryByUser.set(row.owner_id, prev)
     }
 
     const accounts = pageUsers.map((u) => ({
@@ -85,6 +108,10 @@ export async function GET(request: Request) {
       planExpiresAt: planByUser.get(u.id)?.plan_expires_at || null,
       businessCount: businessCountByUser.get(u.id) || 0,
       teamMemberCount: teamCountByUser.get(u.id) || 0,
+      recipeCount: recipeCountByUser.get(u.id) || 0,
+      ingredientCount: ingredientCountByUser.get(u.id) || 0,
+      salesImportCount: importSummaryByUser.get(u.id)?.count || 0,
+      lastSalesImportAt: importSummaryByUser.get(u.id)?.lastImportedAt || null,
     }))
 
     return NextResponse.json({ accounts, total, page, pageSize: PAGE_SIZE })
