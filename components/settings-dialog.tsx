@@ -94,7 +94,7 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
   const router = useRouter()
-  const { updateUserProfile } = useAuth()
+  const { user, userProfile: realUserProfile, updateUserProfile } = useAuth()
   const { language, setLanguage, t } = useLanguage()
   const [open, setOpen] = useState(false)
   const [notificationPrefs, setNotificationPrefs] = useState({ email: true, push: true, sms: false })
@@ -136,22 +136,29 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
   // si el perfil cambiaba en otro lado (ej. al importar datos), reabrir el diálogo
   // seguía mostrando los valores viejos. Ahora se re-lee cada vez que `open` pasa a
   // true, no solo al montar el componente.
+  // BUG CORREGIDO: leía localStorage["userProfile"], una clave de antes de la
+  // migración a Supabase que el AuthProvider real (contexts/auth-context.tsx) nunca
+  // vuelve a escribir — la pestaña "Perfil" siempre mostraba los campos vacíos/por
+  // defecto sin importar los datos reales que la persona puso al registrarse, aunque
+  // esos datos sí estuvieran bien guardados en la tabla `profiles` de Supabase. Ahora
+  // lee directo de `realUserProfile` (useAuth()), la fuente real.
   useEffect(() => {
     if (!open) return
     setShowEmailConfirm(false)
     setEmailConfirmPassword("")
     setEmailConfirmError("")
-    const userProfile = localStorage.getItem("userProfile")
-    if (userProfile) {
-      const profile: UserProfile = JSON.parse(userProfile)
-      setFullName(profile.fullName || "")
-      setEmail(profile.email || "")
-      setOriginalEmail(profile.email || "")
-      setCountry(profile.nationality || "HN")
-      setCurrency(profile.currency || "HNL")
-      setBusinessType(profile.businessType || "Restaurante")
-      setBusinessSize(profile.businessSize || "")
-      setExperience(profile.industryExperience || "")
+    if (realUserProfile) {
+      setFullName(realUserProfile.fullName || "")
+      setEmail(realUserProfile.email || user?.email || "")
+      setOriginalEmail(realUserProfile.email || user?.email || "")
+      setCountry(realUserProfile.nationality || "HN")
+      setCurrency(realUserProfile.currency || "HNL")
+      setBusinessType(realUserProfile.businessType || "Restaurante")
+      setBusinessSize(realUserProfile.businessSize || "")
+      setExperience(realUserProfile.industryExperience || "")
+    } else if (user) {
+      setEmail(user.email || "")
+      setOriginalEmail(user.email || "")
     }
     const savedNotifPrefs = localStorage.getItem("notification_prefs")
     if (savedNotifPrefs) {
@@ -161,21 +168,21 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
         // valores por defecto si el JSON guardado está corrupto
       }
     }
-  }, [open])
+  }, [open, realUserProfile, user])
 
-  // BUG CORREGIDO: antes solo se guardaba el perfil `if (userProfile)` ya existía
-  // en localStorage — un usuario que entró en "modo demo" (login("demo","demo") en
-  // app/login/page.tsx) nunca tiene un userProfile real, así que editar Nombre/
-  // Correo aquí se descartaba en silencio, mientras el toast de abajo seguía
-  // diciendo "guardado correctamente" sin importar el resultado. Ahora siempre se
-  // construye un perfil completo (creando uno nuevo la primera vez si hace falta)
-  // y se guarda de verdad — updateUserProfile no exige que ya exista uno previo.
+  // BUG CORREGIDO: la base para fusionar los cambios (id, createdAt, etc.) se leía de
+  // localStorage["userProfile"], una clave que el AuthProvider real nunca escribe —
+  // sin un id real, updateUserProfile() intentaba actualizar una fila de Supabase con
+  // un id inventado (`user_${Date.now()}`) que no coincide con nadie: la escritura no
+  // fallaba (0 filas afectadas, sin error), así que el toast decía "guardado
+  // correctamente" mientras el cambio se perdía en silencio. Ahora usa
+  // `realUserProfile`/`user` (useAuth()), la fuente real — siempre con el id de
+  // Supabase Auth de la sesión activa.
   const performSave = (emailChanged: boolean) => {
-    const existingProfileRaw = localStorage.getItem("userProfile")
-    const existingProfile: Partial<UserProfile> = existingProfileRaw ? JSON.parse(existingProfileRaw) : {}
+    const existingProfile: Partial<UserProfile> = realUserProfile || {}
 
     const updatedProfile: UserProfile = {
-      id: existingProfile.id || `user_${Date.now()}`,
+      id: existingProfile.id || user?.id || `user_${Date.now()}`,
       createdAt: existingProfile.createdAt || new Date().toISOString(),
       emailVerified: existingProfile.emailVerified ?? false,
       onboardingCompleted: existingProfile.onboardingCompleted ?? true,
