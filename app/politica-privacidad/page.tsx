@@ -32,6 +32,7 @@ import { PoliticaPrivacidadContent } from "@/components/politica-privacidad-cont
 
 export const metadata = {
   title: "Política de Privacidad — Gastrometrics",
+  description: "Cómo Gastrometrics recopila, usa y protege tus datos — alineado a GDPR, CCPA, LGPD, PIPEDA y las leyes de protección de datos de Centroamérica.",
 }
 
 export default function PoliticaPrivacidadPage() {

@@ -38,6 +38,7 @@ import { TerminosDeUsoContent } from "@/components/terminos-de-uso-content"
 
 export const metadata = {
   title: "Términos de Uso — Gastrometrics",
+  description: "Términos de Uso de Gastrometrics: alcance del servicio, responsabilidades, limitación de responsabilidad y ley aplicable.",
 }
 
 export default function TerminosDeUsoPage() {

@@ -7,8 +7,9 @@ import { MarketingFooter } from "@/components/marketing-footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import type { FeaturePageDef } from "@/lib/feature-pages"
+import { resourceArticles } from "@/lib/resource-articles"
 import { useLanguage } from "@/contexts/language-context"
-import { ChefHat, Calculator, Package, UtensilsCrossed, ShoppingCart, BarChart3, ArrowRight, ArrowLeft, CheckCircle } from "lucide-react"
+import { ChefHat, Calculator, Package, UtensilsCrossed, ShoppingCart, BarChart3, ArrowRight, ArrowLeft, CheckCircle, BookOpen } from "lucide-react"
 
 const icons: Record<string, typeof ChefHat> = {
   "fichas-tecnicas": ChefHat,
@@ -23,6 +24,7 @@ export function CaracteristicasDetailContent({ feature }: { feature: FeaturePage
   const { t } = useLanguage()
 
   const Icon = icons[feature.slug] ?? ChefHat
+  const relatedArticle = resourceArticles.find((a) => a.relatedFeatureSlug === feature.slug)
 
   return (
     <div className="min-h-screen bg-background">
@@ -100,6 +102,21 @@ export function CaracteristicasDetailContent({ feature }: { feature: FeaturePage
             </CardContent>
           </Card>
         </section>
+
+        {relatedArticle && (
+          <div className="rounded-lg border border-border bg-muted/30 p-5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+            <p className="text-sm text-foreground flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-primary shrink-0" />
+              {t("resource_related_article_prefix")} <span className="font-semibold">{t(relatedArticle.titleKey)}</span>
+            </p>
+            <Link href={`/recursos/${relatedArticle.slug}`}>
+              <Button variant="outline" size="sm" className="gap-2 shrink-0 bg-transparent">
+                {t("resource_read_article")}
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
 
         <section className="text-center space-y-6 py-8 border-t border-border/50">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">{t("feat_ready_title")}</h2>

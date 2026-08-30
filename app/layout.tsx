@@ -71,7 +71,7 @@ export default function RootLayout({
               components/theme-initializer.tsx — mantener ambas en sync. */}
           <script
             dangerouslySetInnerHTML={{
-              __html: `(function(){try{var p=window.location.pathname;var isMarketing=/^\\/$/.test(p)||/^\\/about$/.test(p)||/^\\/planes$/.test(p)||/^\\/contacto$/.test(p)||/^\\/terminos-de-uso$/.test(p)||/^\\/politica-privacidad$/.test(p)||/^\\/caracteristicas(\\/|$)/.test(p);if(isMarketing){document.documentElement.classList.remove("dark");document.documentElement.setAttribute("data-theme","naranja-brasa");}}catch(e){}})();`,
+              __html: `(function(){try{var p=window.location.pathname;var isMarketing=/^\\/$/.test(p)||/^\\/about$/.test(p)||/^\\/planes$/.test(p)||/^\\/contacto$/.test(p)||/^\\/terminos-de-uso$/.test(p)||/^\\/politica-privacidad$/.test(p)||/^\\/caracteristicas(\\/|$)/.test(p)||/^\\/recursos(\\/|$)/.test(p);if(isMarketing){document.documentElement.classList.remove("dark");document.documentElement.setAttribute("data-theme","naranja-brasa");}}catch(e){}})();`,
             }}
           />
           <AuthProvider>

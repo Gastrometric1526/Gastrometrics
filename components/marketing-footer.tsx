@@ -23,6 +23,9 @@ export function MarketingFooter() {
           <Link href="/contacto" className="hover:text-foreground transition-colors">
             {t("marketing_footer_suggestions")}
           </Link>
+          <Link href="/recursos" className="hover:text-foreground transition-colors">
+            {t("marketing_footer_resources")}
+          </Link>
           <a href="mailto:GastroMetrics@outlook.com" className="hover:text-foreground transition-colors">
             GastroMetrics@outlook.com
           </a>

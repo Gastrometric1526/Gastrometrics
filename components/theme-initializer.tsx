@@ -17,6 +17,7 @@ const MARKETING_ROUTE_PATTERNS = [
   /^\/terminos-de-uso$/,
   /^\/politica-privacidad$/,
   /^\/caracteristicas(\/|$)/,
+  /^\/recursos(\/|$)/,
 ]
 
 function isMarketingRoute(pathname: string | null): boolean {
