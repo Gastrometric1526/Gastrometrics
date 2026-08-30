@@ -369,6 +369,32 @@ export function MiPlanTour({ hasManageButton }: { hasManageButton: boolean }) {
   return <PageTour steps={steps} storageKey="tour_completed_mi-plan" />
 }
 
+export function ProcesarOrdenesTour() {
+  const { t } = useLanguage()
+  const steps: TourStep[] = [
+    {
+      id: "header",
+      title: t("tour_procesar_header_title"),
+      description: t("tour_procesar_header_desc"),
+      selector: '[data-tour="procesar-header"]',
+    },
+    {
+      id: "upload",
+      title: t("tour_procesar_upload_title"),
+      description: t("tour_procesar_upload_desc"),
+      selector: '[data-tour="procesar-upload"]',
+    },
+    {
+      id: "info",
+      title: t("tour_procesar_info_title"),
+      description: t("tour_procesar_info_desc"),
+      selector: '[data-tour="procesar-info"]',
+    },
+  ]
+
+  return <PageTour steps={steps} storageKey="tour_completed_procesar-ordenes" />
+}
+
 export function NegociosTour() {
   const { t } = useLanguage()
   const steps: TourStep[] = [

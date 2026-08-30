@@ -18,17 +18,18 @@ import { processPdfOrder } from "@/utils/pdf-order-processor"
 import type { ProcessedOrder, ValidationResult } from "@/types/purchase-order"
 import type { Ingredient } from "@/types/ingredient"
 import { formatCurrency } from "@/lib/currency"
+import { useLanguage } from "@/contexts/language-context"
 
 interface PdfOrderProcessorProps {
   businessId?: string
 }
 
 // Create a memoized validation status component
-const ValidationStatus = memo(({ validation }: { validation: ValidationResult }) => {
+const ValidationStatus = memo(({ validation, validatedLabel }: { validation: ValidationResult; validatedLabel: string }) => {
   if (validation.isValid) {
     return (
       <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-900">
-        <CheckCircle className="h-3 w-3 mr-1" /> Validado
+        <CheckCircle className="h-3 w-3 mr-1" /> {validatedLabel}
       </Badge>
     )
   } else {
@@ -41,7 +42,7 @@ const ValidationStatus = memo(({ validation }: { validation: ValidationResult })
 })
 
 // Create a memoized order item component
-const OrderItem = memo(({ item, index }: { item: any; index: number }) => (
+const OrderItem = memo(({ item, index, t }: { item: any; index: number; t: (key: any) => string }) => (
   <div key={index} className="border-t pt-2 flex justify-between items-center">
     <div className="flex-1">
       <p className="font-medium">{item.name}</p>
@@ -50,50 +51,61 @@ const OrderItem = memo(({ item, index }: { item: any; index: number }) => (
           {item.quantity} {item.unit}
         </span>
         <span>•</span>
-        <span>{formatCurrency(item.unitPrice || 0)}/unidad</span>
+        <span>
+          {formatCurrency(item.unitPrice || 0)}
+          {t("procesar_per_unit_suffix")}
+        </span>
         <span>•</span>
-        <span>Total: {formatCurrency(item.totalPrice || 0)}</span>
+        <span>
+          {t("procesar_total_label")} {formatCurrency(item.totalPrice || 0)}
+        </span>
       </div>
       <div className="text-sm">
-        <span className="text-muted-foreground">Proveedor: </span>
-        <span>{item.supplier || "No especificado"}</span>
+        <span className="text-muted-foreground">{t("procesar_supplier_label")} </span>
+        <span>{item.supplier || t("procesar_supplier_unspecified")}</span>
       </div>
     </div>
     <div>
-      <ValidationStatus validation={item.validation} />
+      <ValidationStatus validation={item.validation} validatedLabel={t("procesar_validated_badge")} />
     </div>
   </div>
 ))
 
 // Create a memoized order component
-const OrderCard = memo(({ order, orderIndex }: { order: ProcessedOrder; orderIndex: number }) => (
+const OrderCard = memo(({ order, orderIndex, t }: { order: ProcessedOrder; orderIndex: number; t: (key: any) => string }) => (
   <div key={orderIndex} className="border rounded-lg p-4">
     <div className="flex justify-between items-start mb-4">
       <div>
-        <h4 className="text-base font-semibold">{order.orderName || `Orden #${order.orderNumber}`}</h4>
+        <h4 className="text-base font-semibold">
+          {order.orderName || t("procesar_order_fallback_name").replace("{number}", String(order.orderNumber))}
+        </h4>
         <p className="text-sm text-muted-foreground">
-          Número: {order.orderNumber} • Fecha: {new Date(order.date || Date.now()).toLocaleDateString()}
+          {t("procesar_order_number_label")} {order.orderNumber} • {t("procesar_order_date_label")}{" "}
+          {new Date(order.date || Date.now()).toLocaleDateString()}
         </p>
       </div>
-      <Badge variant="outline">{order.items.length} items</Badge>
+      <Badge variant="outline">
+        {order.items.length} {t("procesar_items_suffix")}
+      </Badge>
     </div>
 
     <div className="space-y-2">
       {order.items.map((item, itemIndex) => (
-        <OrderItem key={itemIndex} item={item} index={itemIndex} />
+        <OrderItem key={itemIndex} item={item} index={itemIndex} t={t} />
       ))}
     </div>
 
     <div className="mt-4 pt-2 border-t flex justify-between items-center">
-      <span className="font-medium">Total:</span>
+      <span className="font-medium">{t("procesar_total_label")}</span>
       <span className="font-bold">
-        L{order.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0).toFixed(2)}
+        {formatCurrency(order.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0))}
       </span>
     </div>
   </div>
 ))
 
 export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
+  const { t } = useLanguage()
   const [isProcessing, setIsProcessing] = useState(false)
   const [processedOrders, setProcessedOrders] = useState<ProcessedOrder[]>([])
   const [activeTab, setActiveTab] = useState("upload")
@@ -125,8 +137,10 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
             } catch (error) {
               console.error(`Error processing file ${file.name}:`, error)
               toast({
-                title: "Error al procesar archivo",
-                description: `No se pudo procesar ${file.name}: ${error instanceof Error ? error.message : "Error desconocido"}`,
+                title: t("procesar_toast_file_error_title"),
+                description: t("procesar_toast_file_error_desc")
+                  .replace("{file}", file.name)
+                  .replace("{error}", error instanceof Error ? error.message : t("procesar_unknown_error")),
                 variant: "destructive",
               })
             }
@@ -137,14 +151,14 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
         setActiveTab("results")
 
         toast({
-          title: "Procesamiento completado",
-          description: `Se procesaron ${results.length} órdenes de compra.`,
+          title: t("procesar_toast_done_title"),
+          description: t("procesar_toast_done_desc").replace("{count}", String(results.length)),
         })
       } catch (error) {
         console.error("Error processing files:", error)
         toast({
-          title: "Error",
-          description: "Ocurrió un error al procesar los archivos PDF.",
+          title: t("procesar_toast_generic_error_title"),
+          description: t("procesar_toast_process_error_desc"),
           variant: "destructive",
         })
       } finally {
@@ -155,7 +169,7 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
         }
       }
     },
-    [ingredients, toast],
+    [ingredients, toast, t],
   )
 
   const handleSaveOrders = useCallback(() => {
@@ -196,8 +210,8 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
       setDashboardData("purchaseOrders", updatedOrders, businessId)
 
       toast({
-        title: "Órdenes guardadas",
-        description: `Se guardaron ${newOrders.length} órdenes de compra.`,
+        title: t("procesar_toast_saved_title"),
+        description: t("procesar_toast_saved_desc").replace("{count}", String(newOrders.length)),
       })
 
       // Reset state
@@ -206,19 +220,19 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
     } catch (error) {
       console.error("Error saving orders:", error)
       toast({
-        title: "Error",
-        description: "Ocurrió un error al guardar las órdenes de compra.",
+        title: t("procesar_toast_generic_error_title"),
+        description: t("procesar_toast_save_error_desc"),
         variant: "destructive",
       })
     }
-  }, [processedOrders, businessId, toast])
+  }, [processedOrders, businessId, toast, t])
 
   // Memoize the results content to prevent re-renders when nothing changes
   const resultsContent = useMemo(() => {
     if (processedOrders.length === 0) {
       return (
         <div className="text-center py-8">
-          <p className="text-muted-foreground">No hay resultados para mostrar</p>
+          <p className="text-muted-foreground">{t("procesar_no_results")}</p>
         </div>
       )
     }
@@ -226,44 +240,42 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium">Órdenes Procesadas</h3>
-          <Button onClick={handleSaveOrders}>Guardar Órdenes</Button>
+          <h3 className="text-lg font-medium">{t("procesar_results_title")}</h3>
+          <Button onClick={handleSaveOrders}>{t("procesar_save_orders")}</Button>
         </div>
 
         <ScrollArea className="h-[400px] rounded-md border p-4">
           <div className="space-y-6">
             {processedOrders.map((order, orderIndex) => (
-              <OrderCard key={orderIndex} order={order} orderIndex={orderIndex} />
+              <OrderCard key={orderIndex} order={order} orderIndex={orderIndex} t={t} />
             ))}
           </div>
         </ScrollArea>
       </div>
     )
-  }, [processedOrders, handleSaveOrders])
+  }, [processedOrders, handleSaveOrders, t])
 
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Procesador de Órdenes de Compra PDF</CardTitle>
-        <CardDescription>Sube archivos PDF de órdenes de compra para procesarlos automáticamente</CardDescription>
+        <CardTitle>{t("procesar_card_title")}</CardTitle>
+        <CardDescription>{t("procesar_card_desc")}</CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="upload">Subir PDFs</TabsTrigger>
+            <TabsTrigger value="upload">{t("procesar_tab_upload")}</TabsTrigger>
             <TabsTrigger value="results" disabled={processedOrders.length === 0}>
-              Resultados {processedOrders.length > 0 && `(${processedOrders.length})`}
+              {t("procesar_tab_results")} {processedOrders.length > 0 && `(${processedOrders.length})`}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="upload" className="py-4">
             <div className="space-y-4">
-              <div className="border-2 border-dashed rounded-lg p-6 text-center">
+              <div className="border-2 border-dashed rounded-lg p-6 text-center" data-tour="procesar-upload">
                 <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">Arrastra o selecciona archivos PDF</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Sube PDFs de órdenes de compra para extraer automáticamente la información
-                </p>
+                <h3 className="text-lg font-medium mb-2">{t("procesar_upload_heading")}</h3>
+                <p className="text-sm text-muted-foreground mb-4">{t("procesar_upload_desc")}</p>
                 <Input
                   ref={fileInputRef}
                   type="file"
@@ -278,25 +290,22 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
                     {isProcessing ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Procesando...
+                        {t("procesar_processing")}
                       </>
                     ) : (
                       <>
                         <FileText className="mr-2 h-4 w-4" />
-                        Seleccionar PDFs
+                        {t("procesar_select_pdfs")}
                       </>
                     )}
                   </Button>
                 </Label>
               </div>
 
-              <Alert>
+              <Alert data-tour="procesar-info">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Información</AlertTitle>
-                <AlertDescription>
-                  El sistema extraerá información de proveedores y la validará contra tu base de datos de ingredientes.
-                  Asegúrate de que tus ingredientes tengan información de proveedores actualizada.
-                </AlertDescription>
+                <AlertTitle>{t("procesar_info_title")}</AlertTitle>
+                <AlertDescription>{t("procesar_info_desc")}</AlertDescription>
               </Alert>
             </div>
           </TabsContent>
