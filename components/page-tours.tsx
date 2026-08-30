@@ -309,6 +309,66 @@ export function SettingsTour() {
   return <PageTour steps={steps} storageKey="tour_completed_settings-dialog" />
 }
 
+export function EquipoTour({ hasMembers }: { hasMembers: boolean }) {
+  const { t } = useLanguage()
+  const steps: TourStep[] = [
+    {
+      id: "header",
+      title: t("tour_equipo_header_title"),
+      description: t("tour_equipo_header_desc"),
+      selector: '[data-tour="equipo-header"]',
+    },
+    {
+      id: "invite",
+      title: t("tour_equipo_invite_title"),
+      description: t("tour_equipo_invite_desc"),
+      selector: '[data-tour="equipo-invite"]',
+    },
+    ...(hasMembers
+      ? [
+          {
+            id: "members",
+            title: t("tour_equipo_members_title"),
+            description: t("tour_equipo_members_desc"),
+            selector: '[data-tour="equipo-members"]',
+          } as TourStep,
+        ]
+      : []),
+  ]
+
+  return <PageTour steps={steps} storageKey="tour_completed_equipo" />
+}
+
+export function MiPlanTour({ hasManageButton }: { hasManageButton: boolean }) {
+  const { t } = useLanguage()
+  const steps: TourStep[] = [
+    {
+      id: "header",
+      title: t("tour_miplan_header_title"),
+      description: t("tour_miplan_header_desc"),
+      selector: '[data-tour="miplan-header"]',
+    },
+    ...(hasManageButton
+      ? [
+          {
+            id: "manage",
+            title: t("tour_miplan_manage_title"),
+            description: t("tour_miplan_manage_desc"),
+            selector: '[data-tour="miplan-manage"]',
+          } as TourStep,
+        ]
+      : []),
+    {
+      id: "grid",
+      title: t("tour_miplan_grid_title"),
+      description: t("tour_miplan_grid_desc"),
+      selector: '[data-tour="miplan-grid"]',
+    },
+  ]
+
+  return <PageTour steps={steps} storageKey="tour_completed_mi-plan" />
+}
+
 export function NegociosTour() {
   const { t } = useLanguage()
   const steps: TourStep[] = [

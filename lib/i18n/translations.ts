@@ -246,7 +246,7 @@ const translations = {
       "Sale porque todavía no tienes ingredientes cargados. Podés seguir explorando, pero no vas a poder elegir ninguno hasta que crees al menos uno en la base de datos.",
     tour_ficha_name_title: "Nombre y Clasificación",
     tour_ficha_name_desc:
-      "Escribe el nombre de la receta en el primer campo. \"Clasificación\" es obligatoria, indica si es un plato normal o una sub-receta (algo que usarás como ingrediente de otras recetas, como una salsa base).",
+      "Escribe el nombre de la receta en el primer campo. \"Clasificación\" es obligatoria: elige \"Sub Receta / producción (Mise en place)\" si esta preparación (una salsa base, una masa, etc.) la vas a usar como ingrediente dentro de otras recetas. Al guardarla, aparece sola en el buscador de ingredientes de cualquier otra ficha técnica — y si más adelante cambia el precio de alguno de sus ingredientes, el costo de la sub-receta y el de todas las recetas que la usan se recalculan solos, sin que tengas que tocar nada.",
     tour_ficha_paso_title: "Paso y Rendimiento",
     tour_ficha_paso_desc:
       "\"Paso\" es el momento del menú en que se sirve (Entrada, Plato Fuerte, Postre, etc.). \"Rendimiento\" es cuántas porciones produce la receta tal como está escrita, este número es la base sobre la que se calcula todo lo demás, incluido el Modificador de PAX.",
@@ -340,6 +340,24 @@ const translations = {
     tour_negocios_new_desc: "Crea un negocio con sus propios gastos fijos mensuales.",
     tour_negocios_stats_title: "Resumen de todos tus negocios",
     tour_negocios_stats_desc: "Cuántos tienes, cuántos están activos, y tus ingresos estimados combinados.",
+    tour_equipo_header_title: "Equipo",
+    tour_equipo_header_desc:
+      "Aquí invitas a otras personas a ayudarte con tu negocio en GastroMetrics, cada una con su propia cuenta y acceso solo a lo que tú decidas — hasta el máximo de miembros que permite tu plan.",
+    tour_equipo_invite_title: "Invitar a alguien",
+    tour_equipo_invite_desc:
+      "Escribe el correo de la persona, elige si va a ver todo el panel principal o solo un negocio específico, y marca qué herramientas puede usar (ficha técnica, inventario, órdenes de compra, etc.). Le llega un correo real con un link para crear su cuenta.",
+    tour_equipo_members_title: "Tu equipo",
+    tour_equipo_members_desc:
+      "Cada tarjeta muestra si la persona ya aceptó la invitación o sigue pendiente, a qué tiene acceso, y sus herramientas asignadas. Los tres botones te dejan ver cómo se ve la app desde su cuenta, editar sus permisos, o quitarle el acceso por completo.",
+    tour_miplan_header_title: "Tu plan",
+    tour_miplan_header_desc:
+      "Aquí ves tu plan actual y puedes cambiarlo en cualquier momento — cada plan desbloquea más herramientas y más negocios/usuarios.",
+    tour_miplan_manage_title: "Gestionar suscripción",
+    tour_miplan_manage_desc:
+      "Te lleva al portal seguro de Stripe, donde puedes cambiar tu método de pago, ver tus facturas o cancelar tu suscripción — solo aparece si ya tienes un plan pago activo.",
+    tour_miplan_grid_title: "Planes disponibles",
+    tour_miplan_grid_desc:
+      "Cada tarjeta muestra qué incluye ese plan. Al elegir uno distinto al tuyo, te lleva directo al pago seguro (o lo aplica de inmediato si es gratis).",
     tour_settings_tabs_title: "Secciones de Configuración",
     tour_settings_tabs_desc: "Cambia entre Perfil, Apariencia, Regional, Notificaciones y Developer desde aquí.",
     tour_settings_profile_title: "Tu perfil",
@@ -420,6 +438,7 @@ const translations = {
     signup_error_email_taken: "Ya existe una cuenta con ese correo. Intenta iniciar sesión.",
     signup_check_email_title: "Confirma tu correo",
     signup_check_email_desc: "Te enviamos un enlace de confirmación. Ábrelo y luego inicia sesión con tu correo y contraseña.",
+    signup_check_email_spam_note: "¿No lo ves? Revisa también tu carpeta de spam o correo no deseado.",
     signup_creating_account: "Creando cuenta...",
     signup_need_help: "¿Necesitas ayuda?",
     signup_contact_support: "Contacta con soporte",
@@ -2371,7 +2390,7 @@ const translations = {
       "It shows up because you don't have any ingredients loaded yet. You can keep exploring, but you won't be able to pick any until you create at least one in the database.",
     tour_ficha_name_title: "Name and Classification",
     tour_ficha_name_desc:
-      "Type the recipe's name in the first field. \"Classification\" is required, it says whether this is a regular dish or a sub-recipe (something you'll use as an ingredient in other recipes, like a base sauce).",
+      "Type the recipe's name in the first field. \"Classification\" is required: choose \"Sub-recipe / production (Mise en place)\" if this preparation (a base sauce, a dough, etc.) is something you'll use as an ingredient inside other recipes. Once saved, it shows up on its own in the ingredient search of any other technical sheet — and if the price of any of its ingredients changes later, the sub-recipe's cost and every recipe that uses it recalculate automatically, with nothing for you to touch.",
     tour_ficha_paso_title: "Course and Yield",
     tour_ficha_paso_desc:
       "\"Paso\" is when it's served in the menu (Starter, Main Course, Dessert, etc.). \"Rendimiento\" (yield) is how many portions the recipe produces as written, this number is the base everything else is calculated from, including the PAX modifier.",
@@ -2458,6 +2477,24 @@ const translations = {
     tour_negocios_new_desc: "Create a business with its own fixed monthly expenses.",
     tour_negocios_stats_title: "Overview of all your businesses",
     tour_negocios_stats_desc: "How many you have, how many are active, and your combined estimated revenue.",
+    tour_equipo_header_title: "Team",
+    tour_equipo_header_desc:
+      "This is where you invite other people to help run your business in GastroMetrics, each with their own account and access to only what you decide — up to the maximum number of members your plan allows.",
+    tour_equipo_invite_title: "Invite someone",
+    tour_equipo_invite_desc:
+      "Type the person's email, choose whether they'll see the whole main dashboard or just one specific business, and check which tools they can use (technical sheet, inventory, purchase orders, etc.). They receive a real email with a link to create their account.",
+    tour_equipo_members_title: "Your team",
+    tour_equipo_members_desc:
+      "Each card shows whether the person already accepted the invite or is still pending, what they have access to, and their assigned tools. The three buttons let you preview the app as they'd see it, edit their permissions, or remove their access entirely.",
+    tour_miplan_header_title: "Your plan",
+    tour_miplan_header_desc:
+      "This shows your current plan, and you can change it anytime — each plan unlocks more tools and more businesses/users.",
+    tour_miplan_manage_title: "Manage subscription",
+    tour_miplan_manage_desc:
+      "Takes you to Stripe's secure portal, where you can update your payment method, see your invoices, or cancel your subscription — only shows up if you already have an active paid plan.",
+    tour_miplan_grid_title: "Available plans",
+    tour_miplan_grid_desc:
+      "Each card shows what that plan includes. Picking a different one from yours takes you straight to secure checkout (or applies it right away if it's free).",
     tour_settings_tabs_title: "Settings sections",
     tour_settings_tabs_desc: "Switch between Profile, Appearance, Regional, Notifications and Developer from here.",
     tour_settings_profile_title: "Your profile",
@@ -2537,6 +2574,7 @@ const translations = {
     signup_error_email_taken: "An account with that email already exists. Try logging in instead.",
     signup_check_email_title: "Confirm your email",
     signup_check_email_desc: "We sent you a confirmation link. Open it, then log in with your email and password.",
+    signup_check_email_spam_note: "Don't see it? Check your spam or junk folder too.",
     signup_creating_account: "Creating account...",
     signup_need_help: "Need help?",
     signup_contact_support: "Contact support",
@@ -4480,7 +4518,8 @@ const translations = {
     tour_ficha_warning_title: "Denne besked er normal",
     tour_ficha_warning_desc: "Den vises, fordi du endnu ikke har indlæst ingredienser. Du kan fortsætte med at udforske, men du kan ikke vælge nogen, før du opretter mindst én i databasen.",
     tour_ficha_name_title: "Navn og klassifikation",
-    tour_ficha_name_desc: "Skriv opskriftens navn i det første felt. \"Klassifikation\" er obligatorisk, den angiver om det er en almindelig ret eller en underopskrift (noget du bruger som ingrediens i andre opskrifter, som en grundsauce).",
+    tour_ficha_name_desc:
+      "Skriv opskriftens navn i det første felt. \"Klassifikation\" er obligatorisk: vælg \"Underopskrift / produktion (Mise en place)\", hvis denne tilberedning (en grundsauce, en dej osv.) skal bruges som ingrediens i andre opskrifter. Når den er gemt, dukker den automatisk op i ingredienssøgningen i enhver anden opskrift — og hvis prisen på en af dens ingredienser ændrer sig senere, genberegnes underopskriftens omkostning og alle opskrifter, der bruger den, automatisk, uden at du skal røre ved noget.",
     tour_ficha_paso_title: "Trin og udbytte",
     tour_ficha_paso_desc: "\"Trin\" er det tidspunkt i menuen, hvor retten serveres (forret, hovedret, dessert osv.). \"Udbytte\" er hvor mange portioner opskriften giver, som den er skrevet, dette tal er grundlaget for alle andre beregninger, inklusive PAX-modifikatoren.",
     tour_ficha_pax_title: "PAX-modifikator",
@@ -4553,6 +4592,24 @@ const translations = {
     tour_negocios_new_desc: "Opret en virksomhed med sine egne faste månedlige udgifter.",
     tour_negocios_stats_title: "Oversigt over alle dine virksomheder",
     tour_negocios_stats_desc: "Hvor mange du har, hvor mange der er aktive, og din samlede estimerede indtægt.",
+    tour_equipo_header_title: "Team",
+    tour_equipo_header_desc:
+      "Her inviterer du andre personer til at hjælpe med din virksomhed i GastroMetrics, hver med deres egen konto og adgang kun til det, du bestemmer — op til det maksimale antal medlemmer, din plan tillader.",
+    tour_equipo_invite_title: "Inviter nogen",
+    tour_equipo_invite_desc:
+      "Skriv personens e-mail, vælg om de skal se hele hovedpanelet eller kun én bestemt virksomhed, og markér hvilke værktøjer de kan bruge (opskrift, lager, indkøbsordrer osv.). De modtager en rigtig e-mail med et link til at oprette deres konto.",
+    tour_equipo_members_title: "Dit team",
+    tour_equipo_members_desc:
+      "Hvert kort viser, om personen allerede har accepteret invitationen eller stadig venter, hvad de har adgang til, og deres tildelte værktøjer. De tre knapper lader dig se, hvordan appen ser ud fra deres konto, redigere deres tilladelser eller fjerne deres adgang helt.",
+    tour_miplan_header_title: "Din plan",
+    tour_miplan_header_desc:
+      "Her ser du din nuværende plan, og du kan skifte den når som helst — hver plan låser flere værktøjer og flere virksomheder/brugere op.",
+    tour_miplan_manage_title: "Administrer abonnement",
+    tour_miplan_manage_desc:
+      "Fører dig til Stripes sikre portal, hvor du kan opdatere din betalingsmetode, se dine fakturaer eller opsige dit abonnement — vises kun, hvis du allerede har en aktiv betalt plan.",
+    tour_miplan_grid_title: "Tilgængelige planer",
+    tour_miplan_grid_desc:
+      "Hvert kort viser, hvad den plan inkluderer. Vælger du en anden end din egen, tager det dig direkte til sikker betaling (eller aktiverer den med det samme, hvis den er gratis).",
     tour_settings_tabs_title: "Indstillingssektioner",
     tour_settings_tabs_desc: "Skift mellem Profil, Udseende, Regional, Notifikationer og Udvikler herfra.",
     tour_settings_profile_title: "Din profil",
@@ -4632,6 +4689,7 @@ const translations = {
     signup_error_email_taken: "Der findes allerede en konto med den e-mail. Prøv at logge ind i stedet.",
     signup_check_email_title: "Bekræft din e-mail",
     signup_check_email_desc: "Vi sendte dig et bekræftelseslink. Åbn det, og log derefter ind med din e-mail og adgangskode.",
+    signup_check_email_spam_note: "Kan du ikke se den? Tjek også din spam- eller uønsket mail-mappe.",
     signup_creating_account: "Opretter konto...",
     signup_need_help: "Har du brug for hjælp?",
     signup_contact_support: "Kontakt support",
@@ -6575,7 +6633,8 @@ const translations = {
     tour_ficha_warning_title: "Cet avertissement est normal",
     tour_ficha_warning_desc: "Il apparaît parce que vous n'avez pas encore chargé d'ingrédients. Vous pouvez continuer à explorer, mais vous ne pourrez en choisir aucun tant que vous n'en aurez pas créé au moins un dans la base de données.",
     tour_ficha_name_title: "Nom et classification",
-    tour_ficha_name_desc: "Écrivez le nom de la recette dans le premier champ. « Classification » est obligatoire, elle indique s'il s'agit d'un plat normal ou d'une sous-recette (quelque chose que vous utiliserez comme ingrédient d'autres recettes, comme une sauce de base).",
+    tour_ficha_name_desc:
+      "Écrivez le nom de la recette dans le premier champ. « Classification » est obligatoire : choisissez « Sous-recette / production (Mise en place) » si cette préparation (une sauce de base, une pâte, etc.) sera utilisée comme ingrédient dans d'autres recettes. Une fois enregistrée, elle apparaît automatiquement dans la recherche d'ingrédients de n'importe quelle autre fiche technique — et si le prix de l'un de ses ingrédients change plus tard, le coût de la sous-recette et de toutes les recettes qui l'utilisent se recalculent automatiquement, sans rien à faire de votre part.",
     tour_ficha_paso_title: "Étape et rendement",
     tour_ficha_paso_desc: "« Étape » est le moment du menu où le plat est servi (Entrée, Plat principal, Dessert, etc.). « Rendement » correspond au nombre de portions produites par la recette telle qu'écrite, ce nombre est la base de tous les autres calculs, y compris le modificateur de PAX.",
     tour_ficha_pax_title: "Modificateur de PAX",
@@ -6650,6 +6709,24 @@ const translations = {
     tour_negocios_new_desc: "Créez une entreprise avec ses propres dépenses fixes mensuelles.",
     tour_negocios_stats_title: "Résumé de toutes vos entreprises",
     tour_negocios_stats_desc: "Combien vous en avez, combien sont actives, et vos revenus estimés combinés.",
+    tour_equipo_header_title: "Équipe",
+    tour_equipo_header_desc:
+      "C'est ici que vous invitez d'autres personnes à vous aider à gérer votre établissement sur GastroMetrics, chacune avec son propre compte et un accès uniquement à ce que vous décidez — jusqu'au nombre maximum de membres autorisé par votre forfait.",
+    tour_equipo_invite_title: "Inviter quelqu'un",
+    tour_equipo_invite_desc:
+      "Saisissez l'e-mail de la personne, choisissez si elle verra tout le tableau de bord principal ou un seul établissement en particulier, et cochez les outils qu'elle pourra utiliser (fiche technique, inventaire, commandes, etc.). Elle reçoit un e-mail réel avec un lien pour créer son compte.",
+    tour_equipo_members_title: "Votre équipe",
+    tour_equipo_members_desc:
+      "Chaque carte indique si la personne a déjà accepté l'invitation ou si elle est encore en attente, à quoi elle a accès, et les outils qui lui sont attribués. Les trois boutons vous permettent de voir l'application telle qu'elle la verrait, de modifier ses autorisations, ou de lui retirer complètement l'accès.",
+    tour_miplan_header_title: "Votre forfait",
+    tour_miplan_header_desc:
+      "Vous voyez ici votre forfait actuel, et vous pouvez le changer à tout moment — chaque forfait débloque plus d'outils et plus d'établissements/utilisateurs.",
+    tour_miplan_manage_title: "Gérer l'abonnement",
+    tour_miplan_manage_desc:
+      "Vous emmène vers le portail sécurisé de Stripe, où vous pouvez mettre à jour votre moyen de paiement, consulter vos factures ou annuler votre abonnement — n'apparaît que si vous avez déjà un forfait payant actif.",
+    tour_miplan_grid_title: "Forfaits disponibles",
+    tour_miplan_grid_desc:
+      "Chaque carte indique ce que ce forfait inclut. Choisir un forfait différent du vôtre vous amène directement au paiement sécurisé (ou l'applique immédiatement s'il est gratuit).",
     tour_settings_tabs_title: "Sections des paramètres",
     tour_settings_tabs_desc: "Passez entre Profil, Apparence, Régional, Notifications et Développeur ici.",
     tour_settings_profile_title: "Votre profil",
@@ -6729,6 +6806,7 @@ const translations = {
     signup_error_email_taken: "Un compte avec cet e-mail existe déjà. Essayez de vous connecter.",
     signup_check_email_title: "Confirmez votre e-mail",
     signup_check_email_desc: "Nous vous avons envoyé un lien de confirmation. Ouvrez-le, puis connectez-vous avec votre e-mail et mot de passe.",
+    signup_check_email_spam_note: "Vous ne le voyez pas ? Vérifiez aussi votre dossier spam ou courrier indésirable.",
     signup_creating_account: "Création du compte...",
     signup_need_help: "Besoin d'aide ?",
     signup_contact_support: "Contacter le support",
@@ -8672,7 +8750,8 @@ const translations = {
     tour_ficha_warning_title: "Este aviso é normal",
     tour_ficha_warning_desc: "Ele aparece porque você ainda não tem ingredientes cadastrados. Você pode continuar explorando, mas não vai conseguir escolher nenhum até criar pelo menos um no banco de dados.",
     tour_ficha_name_title: "Nome e Classificação",
-    tour_ficha_name_desc: "Escreva o nome da receita no primeiro campo. \"Classificação\" é obrigatória, indica se é um prato normal ou uma subreceita (algo que você usará como ingrediente de outras receitas, como um molho base).",
+    tour_ficha_name_desc:
+      "Escreva o nome da receita no primeiro campo. \"Classificação\" é obrigatória: escolha \"Subreceita / produção (Mise en place)\" se este preparo (um molho base, uma massa etc.) for algo que você vai usar como ingrediente em outras receitas. Depois de salva, ela aparece sozinha na busca de ingredientes de qualquer outra ficha técnica — e se o preço de algum dos seus ingredientes mudar depois, o custo da subreceita e de todas as receitas que a usam são recalculados sozinhos, sem você precisar tocar em nada.",
     tour_ficha_paso_title: "Etapa e Rendimento",
     tour_ficha_paso_desc: "\"Etapa\" é o momento do cardápio em que é servida (Entrada, Prato Principal, Sobremesa, etc.). \"Rendimento\" é quantas porções a receita produz do jeito que está escrita, esse número é a base sobre a qual tudo o mais é calculado, incluindo o Modificador de PAX.",
     tour_ficha_pax_title: "Modificador de PAX",
@@ -8747,6 +8826,24 @@ const translations = {
     tour_negocios_new_desc: "Crie um negócio com suas próprias despesas fixas mensais.",
     tour_negocios_stats_title: "Resumo de todos os seus negócios",
     tour_negocios_stats_desc: "Quantos você tem, quantos estão ativos, e sua receita estimada combinada.",
+    tour_equipo_header_title: "Equipe",
+    tour_equipo_header_desc:
+      "Aqui você convida outras pessoas para ajudar a administrar seu negócio no GastroMetrics, cada uma com sua própria conta e acesso apenas ao que você decidir — até o número máximo de membros permitido pelo seu plano.",
+    tour_equipo_invite_title: "Convidar alguém",
+    tour_equipo_invite_desc:
+      "Digite o e-mail da pessoa, escolha se ela vai ver todo o painel principal ou apenas um negócio específico, e marque quais ferramentas ela pode usar (ficha técnica, estoque, ordens de compra etc.). Ela recebe um e-mail real com um link para criar a conta.",
+    tour_equipo_members_title: "Sua equipe",
+    tour_equipo_members_desc:
+      "Cada cartão mostra se a pessoa já aceitou o convite ou ainda está pendente, o que ela pode acessar e suas ferramentas atribuídas. Os três botões permitem ver como o app fica na conta dela, editar as permissões ou remover o acesso por completo.",
+    tour_miplan_header_title: "Seu plano",
+    tour_miplan_header_desc:
+      "Aqui você vê seu plano atual e pode trocá-lo a qualquer momento — cada plano libera mais ferramentas e mais negócios/usuários.",
+    tour_miplan_manage_title: "Gerenciar assinatura",
+    tour_miplan_manage_desc:
+      "Leva você ao portal seguro da Stripe, onde pode atualizar sua forma de pagamento, ver suas faturas ou cancelar sua assinatura — só aparece se você já tiver um plano pago ativo.",
+    tour_miplan_grid_title: "Planos disponíveis",
+    tour_miplan_grid_desc:
+      "Cada cartão mostra o que aquele plano inclui. Escolher um diferente do seu leva direto ao pagamento seguro (ou aplica na hora, se for gratuito).",
     tour_settings_tabs_title: "Seções de Configurações",
     tour_settings_tabs_desc: "Alterne entre Perfil, Aparência, Regional, Notificações e Desenvolvedor aqui.",
     tour_settings_profile_title: "Seu perfil",
@@ -8826,6 +8923,7 @@ const translations = {
     signup_error_email_taken: "Já existe uma conta com esse e-mail. Tente fazer login.",
     signup_check_email_title: "Confirme seu e-mail",
     signup_check_email_desc: "Enviamos um link de confirmação. Abra-o e depois faça login com seu e-mail e senha.",
+    signup_check_email_spam_note: "Não encontrou? Verifique também sua caixa de spam ou lixo eletrônico.",
     signup_creating_account: "Criando conta...",
     signup_need_help: "Precisa de ajuda?",
     signup_contact_support: "Fale com o suporte",
@@ -10768,7 +10866,8 @@ const translations = {
     tour_ficha_warning_title: "此提示属于正常情况",
     tour_ficha_warning_desc: "出现此提示是因为您尚未录入任何食材。您可以继续浏览，但在数据库中至少创建一种食材之前，将无法选择任何食材。",
     tour_ficha_name_title: "名称与分类",
-    tour_ficha_name_desc: "在第一个字段中填写配方名称。“分类”为必填项，用于说明这是普通菜品还是子配方（将作为其他配方食材使用的部分，例如基础酱汁）。",
+    tour_ficha_name_desc:
+      "在第一个字段中填写配方名称。\"分类\"为必填项：如果这道菜（例如基础酱汁、面团等）将来要作为食材用于其他配方中，请选择\"子配方/生产（Mise en place）\"。保存后，它会自动出现在任何其他技术单的食材搜索中——以后如果它所用食材的价格发生变化，子配方的成本以及所有使用它的配方都会自动重新计算，无需您手动操作。",
     tour_ficha_paso_title: "阶段与产量",
     tour_ficha_paso_desc: "“阶段”指该菜品在菜单中上桌的时机（前菜、主菜、甜点等）。“产量”指按当前配方制作出的份数，此数字是所有其他计算（包括人数调整器）的基础。",
     tour_ficha_pax_title: "人数调整器",
@@ -10843,6 +10942,23 @@ const translations = {
     tour_negocios_new_desc: "创建一个拥有自己每月固定支出的商家。",
     tour_negocios_stats_title: "所有商家的汇总概览",
     tour_negocios_stats_desc: "您拥有多少商家、其中多少处于营业状态，以及合计的预估收入。",
+    tour_equipo_header_title: "团队",
+    tour_equipo_header_desc:
+      "在这里邀请其他人协助管理您在 GastroMetrics 上的业务，每个人都有自己的账户，只能访问您决定授权的内容——最多可达您当前套餐允许的成员数量。",
+    tour_equipo_invite_title: "邀请成员",
+    tour_equipo_invite_desc:
+      "输入对方的邮箱，选择让其查看整个主面板还是仅限某个具体门店，并勾选可使用的工具（技术单、库存、采购订单等）。系统会向其发送一封真实的邮件，附带创建账户的链接。",
+    tour_equipo_members_title: "您的团队",
+    tour_equipo_members_desc:
+      "每张卡片显示该成员是否已接受邀请或仍在等待中、拥有的访问权限以及分配的工具。三个按钮可让您预览该账户看到的界面、编辑权限，或彻底移除其访问权限。",
+    tour_miplan_header_title: "您的套餐",
+    tour_miplan_header_desc: "在这里查看您当前的套餐，随时都可以更改——每个套餐都会解锁更多工具以及更多门店/用户数量。",
+    tour_miplan_manage_title: "管理订阅",
+    tour_miplan_manage_desc:
+      "跳转到 Stripe 的安全门户，您可以在那里更新付款方式、查看账单或取消订阅——仅在您已有有效付费套餐时才会显示。",
+    tour_miplan_grid_title: "可选套餐",
+    tour_miplan_grid_desc:
+      "每张卡片显示该套餐包含的内容。选择与当前不同的套餐会直接跳转到安全结账页面（如果是免费套餐则立即生效）。",
     tour_settings_tabs_title: "设置分区",
     tour_settings_tabs_desc: "在这里切换个人资料、外观、区域、通知和开发者选项。",
     tour_settings_profile_title: "你的个人资料",
@@ -10922,6 +11038,7 @@ const translations = {
     signup_error_email_taken: "该邮箱已注册，请尝试登录。",
     signup_check_email_title: "请确认您的邮箱",
     signup_check_email_desc: "我们已发送确认链接，请打开后使用邮箱和密码登录。",
+    signup_check_email_spam_note: "没看到邮件？也请检查一下垃圾邮件文件夹。",
     signup_creating_account: "正在创建账户……",
     signup_need_help: "需要帮助？",
     signup_contact_support: "联系支持",

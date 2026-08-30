@@ -233,6 +233,7 @@ function SignupPageInner() {
               </div>
               <h2 className="text-xl font-semibold text-foreground">{t("signup_check_email_title")}</h2>
               <p className="text-muted-foreground">{t("signup_check_email_desc")}</p>
+              <p className="text-sm text-muted-foreground">{t("signup_check_email_spam_note")}</p>
               <Button onClick={() => router.push("/login")} className="w-full">
                 {t("signup_login_link")}
               </Button>

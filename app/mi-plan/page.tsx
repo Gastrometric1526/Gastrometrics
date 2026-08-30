@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Sidebar } from "@/components/sidebar"
 import { AuthGuard } from "@/components/auth-guard"
 import { PlansGrid } from "@/components/plans-grid"
+import { MiPlanTour } from "@/components/page-tours"
 import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
 
@@ -67,6 +68,7 @@ export default function MiPlanPage() {
         <Sidebar />
         <div className="flex-1 p-4 md:p-8">
           <div className="max-w-7xl mx-auto space-y-8">
+            <MiPlanTour hasManageButton={hasStripeCustomer} />
             <div className="flex items-center justify-between gap-2 md:gap-4 flex-wrap">
               <div className="flex items-center gap-2 md:gap-4">
                 <Link href="/dashboard">
@@ -76,20 +78,29 @@ export default function MiPlanPage() {
                     <span className="sm:hidden">{t("common_back")}</span>
                   </Button>
                 </Link>
-                <div>
+                <div data-tour="miplan-header">
                   <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("mi_plan_title")}</h1>
                   <p className="text-sm md:text-base text-muted-foreground">{t("mi_plan_subtitle")}</p>
                 </div>
               </div>
               {hasStripeCustomer && (
-                <Button variant="outline" size="sm" className="gap-2" onClick={handleManageSubscription} disabled={isOpeningPortal}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={handleManageSubscription}
+                  disabled={isOpeningPortal}
+                  data-tour="miplan-manage"
+                >
                   <Settings2 className="h-4 w-4" />
                   {isOpeningPortal ? t("mi_plan_portal_opening") : t("mi_plan_manage_subscription")}
                 </Button>
               )}
             </div>
 
-            <PlansGrid freeRedirectTo="/mi-plan" />
+            <div data-tour="miplan-grid">
+              <PlansGrid freeRedirectTo="/mi-plan" />
+            </div>
           </div>
         </div>
       </div>

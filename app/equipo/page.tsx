@@ -15,6 +15,7 @@ import {
   Info,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { EquipoTour } from "@/components/page-tours"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -365,6 +366,7 @@ function EquipoContent() {
       <Sidebar />
       <div className="flex-1 p-4 md:p-8">
         <div className="max-w-5xl mx-auto space-y-6">
+          <EquipoTour hasMembers={members.length > 0} />
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-2 md:gap-4">
               <Link href="/dashboard">
@@ -572,7 +574,7 @@ function EquipoContent() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-4" data-tour="equipo-members">
               {members.map((member) => (
                 <Card key={member.id} className="border border-border shadow-sm bg-card">
                   <CardHeader className="pb-3">
