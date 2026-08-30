@@ -52,6 +52,7 @@ import type { Business } from "@/types/business"
 import { calculateTotalMonthlyExpenses } from "@/types/business"
 import { useToast } from "@/hooks/use-toast"
 import { Sidebar } from "@/components/sidebar"
+import { BusinessDetailTour } from "@/components/page-tours"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { getDashboardData } from "@/utils/dashboard"
@@ -124,15 +125,25 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
 
   const expenseCategories = useMemo(
     () => [
-      { key: "rent", label: "Renta", color: "#FF6B6B", icon: "🏢" },
-      { key: "utilities", label: "Servicios", color: "#4ECDC4", icon: "⚡" },
-      { key: "operationalCosts", label: "Operación", color: "#45B7D1", icon: "⚙️" },
-      { key: "marketing", label: "Marketing", color: "#96CEB4", icon: "📢" },
-      { key: "laborCosts", label: "Personal", color: "#FFEAA7", icon: "👥" },
-      { key: "otherExpenses", label: "Otros", color: "#DDA0DD", icon: "📦" },
+      { key: "rent", label: t("business_expense_category_rent"), color: "#FF6B6B", icon: "🏢" },
+      { key: "utilities", label: t("business_expense_category_utilities"), color: "#4ECDC4", icon: "⚡" },
+      { key: "operationalCosts", label: t("business_expense_category_operational"), color: "#45B7D1", icon: "⚙️" },
+      { key: "marketing", label: t("business_expense_category_marketing"), color: "#96CEB4", icon: "📢" },
+      { key: "laborCosts", label: t("business_expense_category_labor"), color: "#FFEAA7", icon: "👥" },
+      { key: "otherExpenses", label: t("business_expense_category_other"), color: "#DDA0DD", icon: "📦" },
     ],
-    [],
+    [t],
   )
+
+  // Etiquetas para las secciones de menú (entrada/fuerte/postre/bebida) del simulador de
+  // escenarios más abajo — definidas aquí (no memoizadas) para que se recalculen si el
+  // usuario cambia de idioma, igual que expenseCategories.
+  const sectionLabels: Record<MenuSection, string> = {
+    entrada: t("business_scenario_section_entrada"),
+    fuerte: t("business_scenario_section_fuerte"),
+    postre: t("business_scenario_section_postre"),
+    bebida: t("business_scenario_section_bebida"),
+  }
 
   const [chartData, setChartData] = useState<{ name: string; value: number; color: string }[]>([])
 
@@ -168,8 +179,8 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
 
         if (!currentBusiness) {
           toast({
-            title: "Negocio no encontrado",
-            description: "El negocio que buscas no existe o ha sido eliminado.",
+            title: t("business_not_found_title"),
+            description: t("business_toast_not_found_desc"),
             variant: "destructive",
           })
           router.push("/dashboard")
@@ -230,8 +241,8 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
       } catch (error) {
         console.error("Error loading business:", error)
         toast({
-          title: "Error",
-          description: "Hubo un problema al cargar el negocio.",
+          title: t("business_toast_load_error_title"),
+          description: t("business_toast_load_error_desc"),
           variant: "destructive",
         })
         router.push("/dashboard")
@@ -279,8 +290,8 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
   const calculateCurrentScenario = () => {
     if (!selectedMenuId || !business?.expenses) {
       toast({
-        title: "Datos incompletos",
-        description: "Selecciona un menú y asegúrate de que los datos financieros estén configurados.",
+        title: t("business_toast_incomplete_data_title"),
+        description: t("business_toast_incomplete_data_desc"),
         variant: "destructive",
       })
       return
@@ -300,21 +311,21 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
       if (result) {
         setCurrentScenario(result)
         toast({
-          title: "Escenario calculado",
-          description: "Los KPIs han sido calculados exitosamente.",
+          title: t("business_toast_scenario_calculated_title"),
+          description: t("business_toast_scenario_calculated_desc"),
         })
       } else {
         toast({
-          title: "Error en el cálculo",
-          description: "No se pudo calcular el escenario. Verifica los datos del menú.",
+          title: t("business_toast_calc_error_title"),
+          description: t("business_toast_calc_error_desc"),
           variant: "destructive",
         })
       }
     } catch (error) {
       console.error("Error calculating scenario:", error)
       toast({
-        title: "Error",
-        description: "Ocurrió un error al calcular el escenario.",
+        title: t("business_toast_generic_calc_error_title"),
+        description: t("business_toast_generic_calc_error_desc"),
         variant: "destructive",
       })
     } finally {
@@ -328,14 +339,14 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
     try {
       addScenarioResult(business!.id, currentScenario)
       toast({
-        title: "Escenario guardado",
-        description: "El escenario ha sido guardado en las estadísticas.",
+        title: t("business_toast_scenario_saved_title"),
+        description: t("business_toast_scenario_saved_desc"),
       })
     } catch (error) {
       console.error("Error saving scenario:", error)
       toast({
-        title: "Error al guardar",
-        description: "No se pudo guardar el escenario.",
+        title: t("business_toast_save_error_title"),
+        description: t("business_toast_save_error_desc"),
         variant: "destructive",
       })
     }
@@ -359,62 +370,62 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
     () => [
       {
         href: `/ficha-tecnica?business=${params.id}`,
-        text: "Ficha Técnica",
+        text: t("business_module_ficha_tecnica_title"),
         icon: FileText,
-        description: "Crear y gestionar fichas técnicas de recetas",
+        description: t("business_module_ficha_tecnica_desc"),
         bgColor: "bg-chart-1/10 group-hover:bg-chart-1/20",
         textColor: "text-chart-1",
       },
       {
         href: `/ingredientes?business=${params.id}`,
-        text: "Base de Datos de Ingredientes",
+        text: t("business_module_ingredientes_title"),
         icon: Database,
-        description: "Gestionar ingredientes y precios del negocio",
+        description: t("business_module_ingredientes_desc"),
         bgColor: "bg-chart-2/10 group-hover:bg-chart-2/20",
         textColor: "text-chart-2",
       },
       {
         href: `/menus?business=${params.id}`,
-        text: "Menús",
+        text: t("business_module_menus_title"),
         icon: UtensilsCrossed,
-        description: "Crear y gestionar menús del negocio",
+        description: t("business_module_menus_desc"),
         bgColor: "bg-chart-3/10 group-hover:bg-chart-3/20",
         textColor: "text-chart-3",
       },
       {
         href: `/menu-y-compras?business=${params.id}`,
-        text: "Órdenes de Compra",
+        text: t("business_module_ordenes_title"),
         icon: ShoppingCart,
-        description: "Generar órdenes de compra",
+        description: t("business_module_ordenes_desc"),
         bgColor: "bg-chart-4/10 group-hover:bg-chart-4/20",
         textColor: "text-chart-4",
       },
       {
         href: `/mis-recetas?business=${params.id}`,
-        text: "Mis Recetas",
+        text: t("business_module_mis_recetas_title"),
         icon: UtensilsCrossed,
-        description: "Explorar y organizar recetas guardadas",
+        description: t("business_module_mis_recetas_desc"),
         bgColor: "bg-chart-5/10 group-hover:bg-chart-5/20",
         textColor: "text-chart-5",
       },
       {
         href: `/inventario?business=${params.id}`,
-        text: "Inventario",
+        text: t("business_module_inventario_title"),
         icon: Store,
-        description: "Control de stock y gestión de almacén",
+        description: t("business_module_inventario_desc"),
         bgColor: "bg-chart-6/10 group-hover:bg-chart-6/20",
         textColor: "text-chart-6",
       },
       {
         href: `/estadisticas?business=${params.id}`,
-        text: "Estadísticas",
+        text: t("business_module_estadisticas_title"),
         icon: BarChart3,
-        description: "Análisis y reportes detallados del negocio",
+        description: t("business_module_estadisticas_desc"),
         bgColor: "bg-chart-7/10 group-hover:bg-chart-7/20",
         textColor: "text-chart-7",
       },
     ],
-    [params.id],
+    [params.id, t],
   ).filter((item) => {
     // BUG CORREGIDO: mismo problema que la grilla de Acciones Rápidas del dashboard
     // principal (ver app/dashboard/page.tsx) — sin esto, el dashboard de un negocio
@@ -470,8 +481,8 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
 
       setIsConfigOpen(false)
       toast({
-        title: "Configuración actualizada",
-        description: "Los datos financieros del negocio han sido actualizados exitosamente.",
+        title: t("business_alert_config_updated_title"),
+        description: t("business_alert_config_updated_desc"),
       })
 
       // Reload activity
@@ -497,7 +508,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
   const handleLogoFileChange = async (file: File | undefined) => {
     if (!file) return
     if (!file.type.startsWith("image/")) {
-      toast({ title: "Archivo inválido", description: "Elige un archivo de imagen (PNG, JPG, etc).", variant: "destructive" })
+      toast({ title: t("business_toast_invalid_file_title"), description: t("business_toast_invalid_file_desc"), variant: "destructive" })
       return
     }
     setIsCompressingLogo(true)
@@ -506,7 +517,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
       setLogoPreview(dataUrl)
     } catch (error) {
       console.error("Error compressing logo:", error)
-      toast({ title: "No se pudo procesar la imagen", description: "Intenta con otro archivo.", variant: "destructive" })
+      toast({ title: t("business_toast_logo_process_error_title"), description: t("business_toast_logo_process_error_desc"), variant: "destructive" })
     } finally {
       setIsCompressingLogo(false)
     }
@@ -518,10 +529,10 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
     setBusiness({ ...business, logo: logoPreview || undefined })
     setIsLogoDialogOpen(false)
     toast({
-      title: logoPreview ? "Logo actualizado" : "Logo quitado",
+      title: logoPreview ? t("business_toast_logo_updated_title") : t("business_toast_logo_removed_title"),
       description: logoPreview
-        ? "Se usará en los PDFs que ya soportan logo (Ficha Técnica, Orden de Compra)."
-        : "Ya no se mostrará ningún logo en los PDFs de este negocio.",
+        ? t("business_toast_logo_updated_desc")
+        : t("business_toast_logo_removed_desc"),
     })
   }
 
@@ -551,7 +562,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <h2 className="text-xl font-semibold text-foreground">Cargando negocio...</h2>
+            <h2 className="text-xl font-semibold text-foreground">{t("business_loading_title")}</h2>
           </div>
         </div>
       </div>
@@ -564,10 +575,10 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
         <Sidebar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-foreground mb-4">Negocio no encontrado</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-4">{t("business_not_found_title")}</h2>
             <Button onClick={() => router.push("/dashboard")}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver al Dashboard
+              {t("business_not_found_back_button")}
             </Button>
           </div>
         </div>
@@ -580,7 +591,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
   // (igual que hoy el dueño de la cuenta); si es a un negocio ESPECÍFICO, solo puede
   // ver ese, nunca otro.
   if (previewActive && previewMember && previewMember.scope !== "dashboard" && previewMember.scope !== params.id) {
-    return <AdminRestrictedPage sectionName={`El negocio "${business.name}"`} />
+    return <AdminRestrictedPage sectionName={t("business_restricted_section_name").replace("{name}", business.name)} />
   }
 
   const totalExpenses = calculateTotalMonthlyExpenses(
@@ -593,8 +604,9 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
       <div className="flex-1 overflow-hidden">
         <div className="h-full overflow-y-auto">
           <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
+            <BusinessDetailTour hasScenarioSection={!!(business?.hasFinancialData && menus.length > 0)} />
             {/* Header Section */}
-            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6" data-tour="business-header">
               <div className="flex items-center gap-4 flex-1 min-w-0">
                 <Button
                   variant="outline"
@@ -614,7 +626,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                   </div>
                   <div className="min-w-0">
                     <h1 className="text-2xl md:text-3xl font-bold text-foreground truncate">{business?.name}</h1>
-                    <p className="text-base text-foreground/80 font-medium">Dashboard del negocio</p>
+                    <p className="text-base text-foreground/80 font-medium">{t("business_header_subtitle")}</p>
                   </div>
                 </div>
               </div>
@@ -622,7 +634,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                 <Link href={`/ficha-tecnica?business=${business?.id}`}>
                   <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg px-6 py-3 h-auto font-semibold text-base">
                     <FileText className="h-5 w-5 mr-2" />
-                    Nueva Receta
+                    {t("business_header_new_recipe_button")}
                   </Button>
                 </Link>
                 <DropdownMenu>
@@ -638,29 +650,29 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuItem onClick={() => setIsConfigOpen(true)} className="cursor-pointer">
                       <Settings className="mr-2 h-4 w-4" />
-                      {business?.hasFinancialData ? "Editar datos financieros" : "Agregar datos financieros"}
+                      {business?.hasFinancialData ? t("business_menu_edit_financial") : t("business_menu_add_financial")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={openLogoDialog} className="cursor-pointer">
                       <ImageIcon className="mr-2 h-4 w-4" />
-                      {business?.logo ? "Cambiar logo del negocio" : "Agregar logo del negocio"}
+                      {business?.logo ? t("business_menu_change_logo") : t("business_menu_add_logo")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem disabled className="font-semibold">
                       <Palette className="mr-2 h-4 w-4" />
-                      Tema de la aplicación
+                      {t("business_menu_theme_label")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setTheme("light")}>
                       <SunIcon className="mr-2 h-4 w-4" />
-                      Claro
+                      {t("business_menu_theme_light")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setTheme("dark")}>
                       <MoonIcon className="mr-2 h-4 w-4" />
-                      Oscuro
+                      {t("business_menu_theme_dark")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setTheme("system")}>
                       <Monitor className="mr-2 h-4 w-4" />
-                      Sistema
+                      {t("business_menu_theme_system")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <div className="p-2">
@@ -672,7 +684,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
             </div>
 
             {/* Stats Grid - Tarjetas de módulos optimizadas */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6" data-tour="business-modules">
               {menuItems.map((action, index) => (
                 <Link key={index} href={action.href}>
                   <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all duration-300 bg-card group cursor-pointer h-56 overflow-hidden">
@@ -691,7 +703,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                         </div>
                       </div>
                       <div className="flex items-center text-primary group-hover:translate-x-1 transition-transform mt-4 pt-4 border-t border-border/50">
-                        <span className="text-sm font-bold">Acceder ahora</span>
+                        <span className="text-sm font-bold">{t("business_module_access_now")}</span>
                         <ArrowLeft className="h-4 w-4 ml-2 flex-shrink-0 rotate-180" />
                       </div>
                     </CardContent>
@@ -701,15 +713,15 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
             </div>
 
             {/* Business Summary */}
-            <Card className="border-2 border-border shadow-lg bg-card">
+            <Card className="border-2 border-border shadow-lg bg-card" data-tour="business-summary">
               <CardHeader className="bg-muted/20 border-b-2 border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
                     <BarChart3 className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl font-bold">Resumen del Negocio</CardTitle>
-                    <CardDescription>Distribución de gastos operacionales y valores predeterminados</CardDescription>
+                    <CardTitle className="text-xl font-bold">{t("business_summary_title")}</CardTitle>
+                    <CardDescription>{t("business_summary_desc")}</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -717,27 +729,27 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                 {/* Datos ingresados al crear el negocio, siempre visibles, con o sin gastos configurados */}
                 <div>
                   <h3 className="text-sm font-bold text-foreground uppercase tracking-wide mb-4">
-                    Datos del Negocio
+                    {t("business_summary_business_data_heading")}
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="rounded-lg border border-border bg-muted/20 p-3">
-                      <p className="text-xs text-muted-foreground">Tipo de negocio</p>
-                      <p className="text-sm font-semibold text-foreground truncate">{business?.type || "Restaurante"}</p>
+                      <p className="text-xs text-muted-foreground">{t("business_summary_type_label")}</p>
+                      <p className="text-sm font-semibold text-foreground truncate">{business?.type || t("business_summary_type_default")}</p>
                     </div>
                     <div className="rounded-lg border border-border bg-muted/20 p-3">
-                      <p className="text-xs text-muted-foreground">Platos mensuales estimados</p>
+                      <p className="text-xs text-muted-foreground">{t("business_summary_plates_label")}</p>
                       <p className="text-sm font-semibold text-foreground tabular-nums">
-                        {business?.estimatedMonthlyPlates ? business.estimatedMonthlyPlates.toLocaleString() : "Sin configurar"}
+                        {business?.estimatedMonthlyPlates ? business.estimatedMonthlyPlates.toLocaleString() : t("business_summary_not_set")}
                       </p>
                     </div>
                     <div className="rounded-lg border border-border bg-muted/20 p-3">
-                      <p className="text-xs text-muted-foreground">Margen de ganancia neta</p>
+                      <p className="text-xs text-muted-foreground">{t("business_summary_margin_label")}</p>
                       <p className="text-sm font-semibold text-foreground tabular-nums">
                         {business?.netProfitPercentage || 0}%
                       </p>
                     </div>
                     <div className="rounded-lg border border-border bg-muted/20 p-3 col-span-2 md:col-span-1">
-                      <p className="text-xs text-muted-foreground">Descripción</p>
+                      <p className="text-xs text-muted-foreground">{t("business_summary_description_label")}</p>
                       <p className="text-sm font-semibold text-foreground truncate">{business?.description || ""}</p>
                     </div>
                   </div>
@@ -747,7 +759,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                   {/* Left Column - Default Values Table */}
                   <div className="space-y-4">
                     <h3 className="text-sm font-bold text-foreground uppercase tracking-wide">
-                      Valores Predeterminados
+                      {t("business_summary_defaults_heading")}
                     </h3>
                     <div className="space-y-3">
                       {business?.expenses &&
@@ -777,7 +789,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                                   </div>
                                   <div>
                                     <p className="text-sm font-semibold text-foreground">{category.label}</p>
-                                    <p className="text-xs text-muted-foreground">{percentage}% del total</p>
+                                    <p className="text-xs text-muted-foreground">{t("business_expense_percent_of_total").replace("{percent}", percentage)}</p>
                                   </div>
                                 </div>
                                 <div className="text-right">
@@ -795,7 +807,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                         })}
                       <div className="mt-6 p-4 bg-muted/30 rounded-xl border border-border">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-bold text-foreground">Total Mensual</span>
+                          <span className="text-sm font-bold text-foreground">{t("business_summary_total_monthly_label")}</span>
                           <span className="text-xl font-bold text-foreground tabular-nums">
                             {formatCurrency(totalExpenses)}
                           </span>
@@ -809,14 +821,13 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                     {chartData.length === 0 ? (
                       <div className="w-full max-w-2xl flex flex-col items-center justify-center text-center py-16 border-2 border-dashed border-border rounded-xl">
                         <PieChartIcon className="h-10 w-10 text-muted-foreground mb-3" />
-                        <p className="font-semibold text-foreground mb-1">Todavía no hay gastos configurados</p>
+                        <p className="font-semibold text-foreground mb-1">{t("business_chart_empty_title")}</p>
                         <p className="text-sm text-muted-foreground max-w-sm">
-                          Agrega renta, servicios, marketing y demás gastos mensuales para ver aquí la distribución
-                          de tu negocio.
+                          {t("business_chart_empty_desc")}
                         </p>
                         <Button size="sm" className="mt-4 gap-2" onClick={() => setIsConfigOpen(true)}>
                           <Settings className="h-4 w-4" />
-                          Configurar gastos
+                          {t("business_chart_empty_button")}
                         </Button>
                       </div>
                     ) : (
@@ -847,7 +858,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             formatter={(value) => {
                               const numericValue = typeof value === "number" ? value : Number(value)
                               const percentage = totalExpenses > 0 ? ((numericValue / totalExpenses) * 100).toFixed(1) : "0.0"
-                              return [`${formatCurrency(numericValue)} (${percentage}%)`, "Monto"]
+                              return [`${formatCurrency(numericValue)} (${percentage}%)`, t("business_chart_tooltip_amount_label")]
                             }}
                             contentStyle={{
                               backgroundColor: "hsl(var(--popover))",
@@ -895,12 +906,10 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="text-sm font-bold text-foreground mb-1">
-                              Aplicación automática en Fichas Técnicas
+                              {t("business_chart_info_title")}
                             </h4>
                             <p className="text-sm text-muted-foreground leading-relaxed">
-                              Los porcentajes de esta gráfica se aplican automáticamente en las fichas técnicas para
-                              el cálculo del precio de venta. Los valores representan tus gastos mensuales reales y
-                              son la base de todos los cálculos financieros del negocio.
+                              {t("business_chart_info_desc")}
                             </p>
                           </div>
                         </div>
@@ -915,14 +924,14 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
 
             {/* Scenario Analysis Section */}
             {business?.hasFinancialData && menus.length > 0 && (
-              <Card className="border-2 border-border shadow-lg bg-card">
+              <Card className="border-2 border-border shadow-lg bg-card" data-tour="business-scenario">
                 <CardHeader className="bg-muted/20 border-b-2 border-border">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Calculator className="h-6 w-6 text-primary" />
                       <div>
-                        <CardTitle className="text-xl font-bold">Análisis de Escenarios</CardTitle>
-                        <CardDescription>Simula KPIs financieros basados en tus menús</CardDescription>
+                        <CardTitle className="text-xl font-bold">{t("business_scenario_title")}</CardTitle>
+                        <CardDescription>{t("business_scenario_subtitle")}</CardDescription>
                       </div>
                     </div>
                     {currentScenario && (
@@ -934,7 +943,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                           className="gap-2"
                         >
                           <Eye className="h-4 w-4" />
-                          Ver Cálculo
+                          {t("business_scenario_view_calc_button")}
                         </Button>
                         <Button
                           variant="outline"
@@ -943,7 +952,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                           className="gap-2 bg-transparent"
                         >
                           <Save className="h-4 w-4" />
-                          Guardar Escenario
+                          {t("business_scenario_save_button")}
                         </Button>
                       </div>
                     )}
@@ -954,7 +963,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       <div>
-                        <Label className="text-sm font-semibold mb-2 block">Menú</Label>
+                        <Label className="text-sm font-semibold mb-2 block">{t("business_scenario_menu_label")}</Label>
                         <Select
                           value={selectedMenuId}
                           onValueChange={(value) => {
@@ -963,7 +972,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                           }}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un menú" />
+                            <SelectValue placeholder={t("business_scenario_menu_placeholder")} />
                           </SelectTrigger>
                           <SelectContent>
                             {menus.map((menu) => (
@@ -971,7 +980,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                                 {menu.name}
                                 {menu.items.some((item) => item.priceOverride !== null) && (
                                   <Badge variant="outline" className="ml-2 text-xs">
-                                    Precios personalizados
+                                    {t("business_scenario_custom_prices_badge")}
                                   </Badge>
                                 )}
                               </SelectItem>
@@ -982,7 +991,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label className="text-sm font-semibold mb-2 block">Asientos</Label>
+                          <Label className="text-sm font-semibold mb-2 block">{t("business_scenario_seats_label")}</Label>
                           <Input
                             type="number"
                             min="1"
@@ -996,7 +1005,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                           />
                         </div>
                         <div>
-                          <Label className="text-sm font-semibold mb-2 block">Servicios/día</Label>
+                          <Label className="text-sm font-semibold mb-2 block">{t("business_scenario_services_per_day_label")}</Label>
                           <Input
                             type="number"
                             min="1"
@@ -1010,7 +1019,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                           />
                         </div>
                         <div>
-                          <Label className="text-sm font-semibold mb-2 block">Días abiertos/mes</Label>
+                          <Label className="text-sm font-semibold mb-2 block">{t("business_scenario_days_open_label")}</Label>
                           <Input
                             type="number"
                             min="1"
@@ -1026,7 +1035,10 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                         </div>
                         <div>
                           <Label className="text-sm font-semibold mb-2 block">
-                            Ocupación ({Math.round(scenarioParams.capacity.occupancy * 100)}%)
+                            {t("business_scenario_occupancy_label").replace(
+                              "{percent}",
+                              String(Math.round(scenarioParams.capacity.occupancy * 100)),
+                            )}
                           </Label>
                           <Slider
                             value={[scenarioParams.capacity.occupancy * 100]}
@@ -1047,7 +1059,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
 
                     <div className="space-y-4">
                       <div>
-                        <Label className="text-sm font-semibold mb-2 block">Método de Mezcla</Label>
+                        <Label className="text-sm font-semibold mb-2 block">{t("business_scenario_mix_method_label")}</Label>
                         <Select
                           value={scenarioParams.mixMethod}
                           onValueChange={(value: any) => setScenarioParams((prev) => ({ ...prev, mixMethod: value }))}
@@ -1056,13 +1068,13 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="heuristica">Heurística (por categoría)</SelectItem>
-                            <SelectItem value="capacidad">Capacidad estimada</SelectItem>
+                            <SelectItem value="heuristica">{t("business_scenario_mix_heuristic")}</SelectItem>
+                            <SelectItem value="capacidad">{t("business_scenario_mix_capacity")}</SelectItem>
                             <SelectItem value="ventas" disabled>
-                              Ventas históricas (próximamente)
+                              {t("business_scenario_mix_sales_soon")}
                             </SelectItem>
                             <SelectItem value="inventario" disabled>
-                              Inventario (próximamente)
+                              {t("business_scenario_mix_inventory_soon")}
                             </SelectItem>
                           </SelectContent>
                         </Select>
@@ -1070,10 +1082,10 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
 
                       {(scenarioParams.mixMethod === "heuristica" || scenarioParams.mixMethod === "capacidad") && (
                         <div className="space-y-3">
-                          <Label className="text-sm font-semibold">Pesos por Sección (%)</Label>
+                          <Label className="text-sm font-semibold">{t("business_scenario_section_weights_label")}</Label>
                           {(["entrada", "fuerte", "postre", "bebida"] as MenuSection[]).map((section) => (
                             <div key={section} className="flex items-center justify-between">
-                              <span className="text-sm capitalize">{section}s:</span>
+                              <span className="text-sm capitalize">{sectionLabels[section]}:</span>
                               <div className="flex items-center gap-2 w-32">
                                 <Slider
                                   value={[scenarioParams.categoryWeights?.[section] || 0]}
@@ -1099,7 +1111,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             setScenarioParams((prev) => ({ ...prev, upsellBebidas: checked }))
                           }
                         />
-                        <Label className="text-sm">Upsell bebidas (+10%)</Label>
+                        <Label className="text-sm">{t("business_scenario_upsell_label")}</Label>
                       </div>
                     </div>
                   </div>
@@ -1110,7 +1122,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                       disabled={isCalculating || !selectedMenuId}
                       className="px-8 py-3 text-base font-semibold"
                     >
-                      {isCalculating ? "Calculando..." : "Calcular KPIs"}
+                      {isCalculating ? t("business_scenario_calculating_button") : t("business_scenario_calculate_button")}
                     </Button>
                   </div>
 
@@ -1120,7 +1132,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                       <Separator />
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-semibold">Resultados del Escenario</h3>
+                          <h3 className="text-lg font-semibold">{t("business_scenario_results_heading")}</h3>
                           <div className="flex items-center gap-2">
                             <Badge
                               variant={
@@ -1131,9 +1143,9 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                                     : "outline"
                               }
                             >
-                              Confianza: {currentScenario.confidence}
+                              {t("business_scenario_confidence_label")}: {currentScenario.confidence}
                             </Badge>
-                            {currentScenario.hasOverrides && <Badge variant="outline">Precios personalizados</Badge>}
+                            {currentScenario.hasOverrides && <Badge variant="outline">{t("business_scenario_custom_prices_badge")}</Badge>}
                           </div>
                         </div>
 
@@ -1142,7 +1154,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             <CardContent className="p-4 text-center">
                               <div className="flex items-center justify-center gap-2 mb-2">
                                 <DollarSign className="h-5 w-5 text-blue-600 dark:text-blue-300" />
-                                <span className="text-sm font-semibold text-blue-600 dark:text-blue-300">Ticket Promedio</span>
+                                <span className="text-sm font-semibold text-blue-600 dark:text-blue-300">{t("business_scenario_kpi_ticket_label")}</span>
                               </div>
                               <div className="text-2xl font-bold text-blue-800 dark:text-blue-300">{formatCurrency(currentScenario.TP)}</div>
                             </CardContent>
@@ -1152,7 +1164,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             <CardContent className="p-4 text-center">
                               <div className="flex items-center justify-center gap-2 mb-2">
                                 <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-300" />
-                                <span className="text-sm font-semibold text-green-600 dark:text-green-300">Costo Promedio</span>
+                                <span className="text-sm font-semibold text-green-600 dark:text-green-300">{t("business_scenario_kpi_cost_label")}</span>
                               </div>
                               <div className="text-2xl font-bold text-green-800 dark:text-green-300">{formatCurrency(currentScenario.CVp)}</div>
                             </CardContent>
@@ -1162,7 +1174,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             <CardContent className="p-4 text-center">
                               <div className="flex items-center justify-center gap-2 mb-2">
                                 <Target className="h-5 w-5 text-purple-600 dark:text-purple-300" />
-                                <span className="text-sm font-semibold text-purple-600 dark:text-purple-300">Margen Medio</span>
+                                <span className="text-sm font-semibold text-purple-600 dark:text-purple-300">{t("business_scenario_kpi_margin_label")}</span>
                               </div>
                               <div className="text-2xl font-bold text-purple-800 dark:text-purple-300">{formatCurrency(currentScenario.MC)}</div>
                             </CardContent>
@@ -1172,13 +1184,13 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             <CardContent className="p-4 text-center">
                               <div className="flex items-center justify-center gap-2 mb-2">
                                 <BarChart3 className="h-5 w-5 text-orange-600 dark:text-orange-300" />
-                                <span className="text-sm font-semibold text-orange-600 dark:text-orange-300">Punto Equilibrio</span>
+                                <span className="text-sm font-semibold text-orange-600 dark:text-orange-300">{t("business_scenario_kpi_breakeven_label")}</span>
                               </div>
                               <div className="text-lg font-bold text-orange-800 dark:text-orange-300">
-                                {currentScenario.PE_plates.toLocaleString()} platos/mes
+                                {currentScenario.PE_plates.toLocaleString()} {t("business_scenario_plates_suffix")}
                               </div>
                               <div className="text-sm text-orange-700 dark:text-orange-300">
-                                {formatCurrency(currentScenario.PE_revenue)}/mes
+                                {formatCurrency(currentScenario.PE_revenue)}{t("business_scenario_per_month_suffix")}
                               </div>
                             </CardContent>
                           </Card>
@@ -1190,7 +1202,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             <div className="flex items-start gap-3">
                               <Info className="h-5 w-5 text-amber-600 dark:text-amber-300 mt-0.5 flex-shrink-0" />
                               <div>
-                                <h4 className="font-semibold text-amber-800 dark:text-amber-300 mb-2">Recomendación</h4>
+                                <h4 className="font-semibold text-amber-800 dark:text-amber-300 mb-2">{t("business_scenario_recommendation_heading")}</h4>
                                 <p className="text-amber-700 dark:text-amber-300 text-sm leading-relaxed">
                                   {generateRecommendation(currentScenario)}
                                 </p>
@@ -1210,12 +1222,12 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
               <Card className="border-2 border-border shadow-lg bg-card">
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <Calculator className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Análisis de Escenarios</h3>
+                  <h3 className="text-lg font-semibold mb-2">{t("business_scenario_title")}</h3>
                   <p className="text-muted-foreground mb-4 text-center">
-                    Crea al menos un menú para simular KPIs financieros
+                    {t("business_scenario_empty_desc")}
                   </p>
                   <Link href={`/menus?business=${params.id}`}>
-                    <Button>Crear Primer Menú</Button>
+                    <Button>{t("business_scenario_empty_button")}</Button>
                   </Link>
                 </CardContent>
               </Card>
@@ -1225,22 +1237,22 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
               <Card className="border-2 border-border shadow-lg bg-card">
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Completa los datos financieros</h3>
+                  <h3 className="text-lg font-semibold mb-2">{t("business_financial_empty_heading")}</h3>
                   <p className="text-muted-foreground mb-4 text-center">
-                    Agrega los gastos mensuales de tu negocio para calcular el punto de equilibrio
+                    {t("business_financial_empty_desc")}
                   </p>
-                  <Button onClick={() => setIsConfigOpen(true)}>Agregar Datos Financieros</Button>
+                  <Button onClick={() => setIsConfigOpen(true)}>{t("business_financial_empty_button")}</Button>
                 </CardContent>
               </Card>
             )}
 
             {/* Actividad Reciente y Notificaciones, propias de este negocio, separadas del dashboard principal */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="border-2 border-border shadow-lg bg-card h-80 overflow-hidden">
+              <Card className="border-2 border-border shadow-lg bg-card h-80 overflow-hidden" data-tour="business-activity">
                 <CardHeader className="border-b-2 border-border p-4">
                   <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
                     <Activity className="h-5 w-5 flex-shrink-0" />
-                    <span className="truncate">Actividad Reciente</span>
+                    <span className="truncate">{t("business_activity_heading")}</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 h-full overflow-y-auto">
@@ -1269,20 +1281,20 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                   ) : (
                     <div className="text-center py-8">
                       <Activity className="h-12 w-12 text-foreground/30 mx-auto mb-4" />
-                      <p className="text-foreground/70 font-medium">Sin actividad reciente</p>
+                      <p className="text-foreground/70 font-medium">{t("business_activity_empty_title")}</p>
                       <p className="text-xs text-foreground/50 mt-1">
-                        Empieza a crear recetas o ingredientes para ver tu actividad aquí
+                        {t("business_activity_empty_desc")}
                       </p>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
-              <Card className="border-2 border-border shadow-lg bg-card h-80 overflow-hidden">
+              <Card className="border-2 border-border shadow-lg bg-card h-80 overflow-hidden" data-tour="business-notifications">
                 <CardHeader className="border-b-2 border-border p-4">
                   <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
                     <Bell className="h-5 w-5 flex-shrink-0" />
-                    <span className="truncate">Notificaciones</span>
+                    <span className="truncate">{t("business_notifications_heading")}</span>
                     {systemAlerts.filter((alert) => !alert.read).length > 0 && (
                       <Badge variant="destructive" className="text-xs">
                         {systemAlerts.filter((alert) => !alert.read).length}
@@ -1346,8 +1358,8 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                   ) : (
                     <div className="text-center py-8">
                       <Bell className="h-12 w-12 text-foreground/30 mx-auto mb-4" />
-                      <p className="text-foreground/70 font-medium">Sin notificaciones</p>
-                      <p className="text-xs text-foreground/50 mt-1">Las notificaciones del sistema aparecerán aquí</p>
+                      <p className="text-foreground/70 font-medium">{t("business_notifications_empty_title")}</p>
+                      <p className="text-xs text-foreground/50 mt-1">{t("business_notifications_empty_desc")}</p>
                     </div>
                   )}
                 </CardContent>
@@ -1358,20 +1370,19 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
             <Dialog open={isLogoDialogOpen} onOpenChange={setIsLogoDialogOpen}>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                  <DialogTitle>Logo del negocio</DialogTitle>
+                  <DialogTitle>{t("business_logo_dialog_title")}</DialogTitle>
                   <DialogDescription>
-                    Se usa en el encabezado de los PDFs que ya soportan logo (Ficha Técnica y Orden de Compra). Los
-                    demás PDFs todavía no lo dibujan — está pendiente para una próxima actualización.
+                    {t("business_logo_dialog_desc")}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-2">
                   <div className="flex items-center justify-center h-32 bg-muted/30 rounded-lg border-2 border-dashed border-border overflow-hidden">
                     {logoPreview ? (
-                      <img src={logoPreview} alt="Vista previa del logo" className="max-h-full max-w-full object-contain" />
+                      <img src={logoPreview} alt={t("business_logo_preview_alt")} className="max-h-full max-w-full object-contain" />
                     ) : (
                       <div className="flex flex-col items-center gap-2 text-muted-foreground">
                         <ImageIcon className="h-8 w-8" />
-                        <span className="text-xs">Sin logo</span>
+                        <span className="text-xs">{t("business_logo_none_label")}</span>
                       </div>
                     )}
                   </div>
@@ -1379,7 +1390,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                     <Label htmlFor="business-logo-input" className="flex-1">
                       <div className="flex items-center justify-center gap-2 border border-border rounded-md px-3 py-2 text-sm cursor-pointer hover:bg-accent transition-colors">
                         <Upload className="h-4 w-4" />
-                        {isCompressingLogo ? "Procesando..." : "Elegir imagen"}
+                        {isCompressingLogo ? t("business_logo_processing_label") : t("business_logo_choose_button")}
                       </div>
                       <input
                         id="business-logo-input"
@@ -1391,7 +1402,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                       />
                     </Label>
                     {logoPreview && (
-                      <Button variant="outline" size="icon" onClick={() => setLogoPreview(null)} title="Quitar logo">
+                      <Button variant="outline" size="icon" onClick={() => setLogoPreview(null)} title={t("business_logo_remove_title")}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     )}
@@ -1399,10 +1410,10 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsLogoDialogOpen(false)}>
-                    Cancelar
+                    {t("business_action_cancel")}
                   </Button>
                   <Button onClick={handleSaveLogo} disabled={isCompressingLogo}>
-                    Guardar
+                    {t("business_action_save")}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -1412,9 +1423,9 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
             <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                  <DialogTitle>Datos Financieros del Negocio</DialogTitle>
+                  <DialogTitle>{t("business_config_dialog_title")}</DialogTitle>
                   <DialogDescription>
-                    Actualiza los gastos mensuales para obtener un análisis más preciso.
+                    {t("business_config_dialog_desc")}
                   </DialogDescription>
                 </DialogHeader>
                 {editedBusiness && (
@@ -1455,7 +1466,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                     ))}
                     <div className="grid grid-cols-3 items-center gap-4">
                       <Label htmlFor="estimatedMonthlyPlates" className="text-right">
-                        Platos/Mes Estimados
+                        {t("business_config_plates_label")}
                       </Label>
                       <Input
                         id="estimatedMonthlyPlates"
@@ -1468,16 +1479,16 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                         type="number"
                         min="0"
                         className="col-span-2"
-                        placeholder="Ej: 1000"
+                        placeholder={t("business_config_plates_placeholder")}
                       />
                     </div>
                   </div>
                 )}
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsConfigOpen(false)}>
-                    Cancelar
+                    {t("business_action_cancel")}
                   </Button>
-                  <Button onClick={handleConfigSave}>Guardar Cambios</Button>
+                  <Button onClick={handleConfigSave}>{t("business_config_save_button")}</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -1485,44 +1496,44 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
             <Dialog open={showScenarioDetails} onOpenChange={setShowScenarioDetails}>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Detalles del Cálculo</DialogTitle>
+                  <DialogTitle>{t("business_scenario_details_title")}</DialogTitle>
                   <DialogDescription>
-                    Actualiza los gastos mensuales para obtener un análisis más preciso.
+                    {t("business_config_dialog_desc")}
                   </DialogDescription>
                 </DialogHeader>
                 {currentScenario && (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <strong>Costos Fijos (CF):</strong>{" "}
+                        <strong>{t("business_scenario_details_fixed_costs_label")}:</strong>{" "}
                         {formatCurrency(business?.expenses ? calculateTotalMonthlyExpenses(business.expenses) : 0)}
                       </div>
                       <div>
-                        <strong>Método de mezcla:</strong> {currentScenario.params.mixMethod}
+                        <strong>{t("business_scenario_details_mix_method_label")}:</strong> {currentScenario.params.mixMethod}
                       </div>
                       <div>
-                        <strong>Capacidad estimada:</strong> {currentScenario.PVm_est?.toLocaleString()} platos/mes
+                        <strong>{t("business_scenario_mix_capacity")}:</strong> {currentScenario.PVm_est?.toLocaleString()} {t("business_scenario_plates_suffix")}
                       </div>
                       <div>
-                        <strong>Confianza:</strong> {currentScenario.confidence}
+                        <strong>{t("business_scenario_confidence_label")}:</strong> {currentScenario.confidence}
                       </div>
                     </div>
 
                     <Separator />
 
                     <div>
-                      <h4 className="font-semibold mb-2">Fórmulas utilizadas:</h4>
+                      <h4 className="font-semibold mb-2">{t("business_scenario_formulas_heading")}</h4>
                       <div className="space-y-1 text-sm font-mono bg-muted p-3 rounded">
-                        <div>TP = Σ(w_i × precio_i) = {formatCurrency(currentScenario.TP)}</div>
-                        <div>CVp = Σ(w_i × costo_i) = {formatCurrency(currentScenario.CVp)}</div>
+                        <div>{t("business_scenario_formula_tp").replace("{value}", formatCurrency(currentScenario.TP))}</div>
+                        <div>{t("business_scenario_formula_cvp").replace("{value}", formatCurrency(currentScenario.CVp))}</div>
                         <div>MC = TP - CVp = {formatCurrency(currentScenario.MC)}</div>
-                        <div>PE_platos = CF / MC = {currentScenario.PE_plates.toLocaleString()}</div>
-                        <div>PE_ingresos = PE_platos × TP = {formatCurrency(currentScenario.PE_revenue)}</div>
+                        <div>{t("business_scenario_formula_pe_plates").replace("{value}", currentScenario.PE_plates.toLocaleString())}</div>
+                        <div>{t("business_scenario_formula_pe_revenue").replace("{value}", formatCurrency(currentScenario.PE_revenue))}</div>
                       </div>
                     </div>
 
                     <div>
-                      <h4 className="font-semibold mb-2">Notas y supuestos:</h4>
+                      <h4 className="font-semibold mb-2">{t("business_scenario_notes_heading")}</h4>
                       <ul className="text-sm space-y-1">
                         {currentScenario.notes.map((note, index) => (
                           <li key={index} className="flex items-start gap-2">
@@ -1536,7 +1547,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                 )}
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setShowScenarioDetails(false)}>
-                    Cerrar
+                    {t("business_action_close")}
                   </Button>
                 </DialogFooter>
               </DialogContent>

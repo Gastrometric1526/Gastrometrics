@@ -395,6 +395,54 @@ export function ProcesarOrdenesTour() {
   return <PageTour steps={steps} storageKey="tour_completed_procesar-ordenes" />
 }
 
+export function BusinessDetailTour({ hasScenarioSection }: { hasScenarioSection: boolean }) {
+  const { t } = useLanguage()
+  const steps: TourStep[] = [
+    {
+      id: "header",
+      title: t("tour_business_header_title"),
+      description: t("tour_business_header_desc"),
+      selector: '[data-tour="business-header"]',
+    },
+    {
+      id: "modules",
+      title: t("tour_business_modules_title"),
+      description: t("tour_business_modules_desc"),
+      selector: '[data-tour="business-modules"]',
+    },
+    {
+      id: "summary",
+      title: t("tour_business_summary_title"),
+      description: t("tour_business_summary_desc"),
+      selector: '[data-tour="business-summary"]',
+    },
+    ...(hasScenarioSection
+      ? [
+          {
+            id: "scenario",
+            title: t("tour_business_scenario_title"),
+            description: t("tour_business_scenario_desc"),
+            selector: '[data-tour="business-scenario"]',
+          } as TourStep,
+        ]
+      : []),
+    {
+      id: "activity",
+      title: t("tour_business_activity_title"),
+      description: t("tour_business_activity_desc"),
+      selector: '[data-tour="business-activity"]',
+    },
+    {
+      id: "notifications",
+      title: t("tour_business_notifications_title"),
+      description: t("tour_business_notifications_desc"),
+      selector: '[data-tour="business-notifications"]',
+    },
+  ]
+
+  return <PageTour steps={steps} storageKey="tour_completed_business-detail" />
+}
+
 export function NegociosTour() {
   const { t } = useLanguage()
   const steps: TourStep[] = [
