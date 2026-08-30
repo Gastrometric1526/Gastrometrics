@@ -577,26 +577,24 @@ function SidebarInner() {
                 )}
               >
                 <LogOut className="h-4 w-4 flex-shrink-0 text-foreground/70" />
-                {!effectiveCollapsed && <span className="text-sm">Salir</span>}
+                {!effectiveCollapsed && <span className="text-sm">{t("nav_cerrar_sesion")}</span>}
 
                 {/* Tooltip para modo colapsado */}
                 {effectiveCollapsed && (
                   <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                    Salir
+                    {t("nav_cerrar_sesion")}
                   </div>
                 )}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>¿Cerrar sesión?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Vas a salir de tu cuenta y volver a la página principal. Todo lo que ya guardaste queda intacto.
-                </AlertDialogDescription>
+                <AlertDialogTitle>{t("sidebar_logout_confirm_title")}</AlertDialogTitle>
+                <AlertDialogDescription>{t("sidebar_logout_confirm_description")}</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleLogout}>Cerrar sesión</AlertDialogAction>
+                <AlertDialogCancel>{t("common_cancel")}</AlertDialogCancel>
+                <AlertDialogAction onClick={handleLogout}>{t("nav_cerrar_sesion")}</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

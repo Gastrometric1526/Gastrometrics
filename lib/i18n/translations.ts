@@ -43,6 +43,9 @@ const translations = {
     nav_equipo: "Equipo",
     nav_equipo_desc: "Invita y administra a tu equipo",
     nav_cerrar_sesion: "Cerrar sesión",
+    sidebar_logout_confirm_title: "¿Cerrar sesión?",
+    sidebar_logout_confirm_description:
+      "Vas a salir de tu cuenta y volver a la página principal. Todo lo que ya guardaste queda intacto.",
     nav_ajustes: "Configuración",
     sidebar_restart_tour: "Reiniciar tutorial",
     sidebar_restart_tour_toast: "Tutorial reiniciado, recorre esta página de nuevo desde el paso 1.",
@@ -2172,6 +2175,9 @@ const translations = {
     nav_equipo: "Team",
     nav_equipo_desc: "Invite and manage your team",
     nav_cerrar_sesion: "Log out",
+    sidebar_logout_confirm_title: "Log out?",
+    sidebar_logout_confirm_description:
+      "You'll be signed out of your account and returned to the homepage. Everything you've already saved stays intact.",
     nav_ajustes: "Settings",
     sidebar_restart_tour: "Restart tutorial",
     sidebar_restart_tour_toast: "Tutorial restarted, this page's walkthrough begins again from step 1.",
@@ -4283,6 +4289,9 @@ const translations = {
     nav_equipo: "Team",
     nav_equipo_desc: "Inviter og administrer dit team",
     nav_cerrar_sesion: "Log ud",
+    sidebar_logout_confirm_title: "Log ud?",
+    sidebar_logout_confirm_description:
+      "Du bliver logget ud af din konto og sendt tilbage til forsiden. Alt, du allerede har gemt, forbliver intakt.",
     nav_ajustes: "Indstillinger",
     sidebar_restart_tour: "Genstart tutorial",
     sidebar_restart_tour_toast: "Tutorial genstartet, denne sides gennemgang begynder igen fra trin 1.",
@@ -6375,6 +6384,9 @@ const translations = {
     nav_equipo: "Équipe",
     nav_equipo_desc: "Invitez et gérez votre équipe",
     nav_cerrar_sesion: "Se déconnecter",
+    sidebar_logout_confirm_title: "Se déconnecter ?",
+    sidebar_logout_confirm_description:
+      "Vous serez déconnecté de votre compte et renvoyé à la page d'accueil. Tout ce que vous avez déjà enregistré reste intact.",
     nav_ajustes: "Paramètres",
     sidebar_restart_tour: "Redémarrer le tutoriel",
     sidebar_restart_tour_toast: "Tutoriel redémarré, la visite de cette page recommence à l'étape 1.",
@@ -8469,6 +8481,9 @@ const translations = {
     nav_equipo: "Equipe",
     nav_equipo_desc: "Convide e gerencie sua equipe",
     nav_cerrar_sesion: "Sair",
+    sidebar_logout_confirm_title: "Sair da conta?",
+    sidebar_logout_confirm_description:
+      "Você vai sair da sua conta e voltar à página inicial. Tudo o que você já salvou permanece intacto.",
     nav_ajustes: "Configurações",
     sidebar_restart_tour: "Reiniciar tutorial",
     sidebar_restart_tour_toast: "Tutorial reiniciado, o passo a passo desta página recomeça do passo 1.",
@@ -10563,6 +10578,8 @@ const translations = {
     nav_equipo: "团队",
     nav_equipo_desc: "邀请并管理你的团队",
     nav_cerrar_sesion: "退出登录",
+    sidebar_logout_confirm_title: "退出登录？",
+    sidebar_logout_confirm_description: "您将退出账户并返回主页。您已保存的所有内容都将保持不变。",
     nav_ajustes: "设置",
     sidebar_restart_tour: "重新开始教程",
     sidebar_restart_tour_toast: "教程已重置，本页引导将从第 1 步重新开始。",

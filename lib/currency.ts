@@ -6,6 +6,8 @@
 // Configuración → el selector de país/moneda guardaba la elección en localStorage,
 // pero nada la leía de vuelta. Ahora ambas delegan aquí.
 
+import { COUNTRIES } from "@/lib/types/user"
+
 export interface CurrencyOption {
   code: string
   name: string
@@ -53,6 +55,23 @@ export const CURRENCY_OPTIONS: CurrencyOption[] = [
   { code: "BOB", name: "Boliviano", symbol: "Bs", locale: "es-BO" },
   { code: "DOP", name: "Peso dominicano", symbol: "RD$", locale: "es-DO" },
 ]
+
+// Chequeo de consistencia, no un bloqueo: settings-dialog.tsx ya dejó de tener su
+// propia copia de países (ahora importa COUNTRIES directo de lib/types/user.ts), pero
+// COUNTRIES y CURRENCY_OPTIONS siguen siendo dos listas separadas por diseño (una es
+// país→moneda, la otra es moneda→formato de Intl) — si algún día se agrega un país
+// nuevo a COUNTRIES con una moneda que no está aquí, formatCurrency() volvería a caer
+// en silencio a HNL para esa moneda (el bug real de docs/56). Este aviso lo hace
+// ruidoso en vez de silencioso, sin cambiar ningún comportamiento cuando ambas listas
+// coinciden (que es el caso hoy).
+const missingCurrencyCodes = [...new Set(COUNTRIES.map((c) => c.currency))].filter(
+  (code) => !CURRENCY_OPTIONS.some((option) => option.code === code),
+)
+if (missingCurrencyCodes.length > 0) {
+  console.warn(
+    `[lib/currency] Faltan estas monedas en CURRENCY_OPTIONS, usadas por países en COUNTRIES (lib/types/user.ts): ${missingCurrencyCodes.join(", ")}. formatCurrency() caerá a HNL en silencio para esas cuentas hasta que se agreguen aquí.`,
+  )
+}
 
 const CURRENCY_STORAGE_KEY = "currency_code"
 const CURRENCY_CHANGE_EVENT = "currencyChanged"

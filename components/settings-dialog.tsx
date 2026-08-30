@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { SUPPORTED_LANGUAGES, type LanguageCode } from "@/lib/i18n/translations"
-import type { UserProfile } from "@/lib/types/user"
+import { COUNTRIES, type UserProfile } from "@/lib/types/user"
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -69,37 +69,11 @@ interface UserSettings {
   }
 }
 
-// Debe cubrir, como mínimo, las 6 monedas de los 6 idiomas soportados (lib/i18n/
-// translations.ts) y ser un subconjunto válido de CURRENCY_OPTIONS (lib/currency.ts) —
-// ver la nota de deuda técnica ahí mismo y en referencia-arquitectura-tecnica.md
-// sección 13: esta lista, la de lib/types/user.ts (COUNTRIES) y CURRENCY_OPTIONS
-// divergieron una vez (faltaba Dinamarca acá, entre otros) y causaron un bug real de
-// moneda — cualquier país que se agregue a una de las tres debe agregarse a las otras.
-const countries = [
-  { code: "HN", name: "Honduras", currency: "HNL", symbol: "L" },
-  { code: "US", name: "Estados Unidos", currency: "USD", symbol: "$" },
-  { code: "MX", name: "México", currency: "MXN", symbol: "$" },
-  { code: "GT", name: "Guatemala", currency: "GTQ", symbol: "Q" },
-  { code: "CR", name: "Costa Rica", currency: "CRC", symbol: "₡" },
-  { code: "PA", name: "Panamá", currency: "PAB", symbol: "B/." },
-  { code: "NI", name: "Nicaragua", currency: "NIO", symbol: "C$" },
-  { code: "SV", name: "El Salvador", currency: "USD", symbol: "$" },
-  { code: "BZ", name: "Belice", currency: "BZD", symbol: "BZ$" },
-  { code: "ES", name: "España", currency: "EUR", symbol: "€" },
-  { code: "AR", name: "Argentina", currency: "ARS", symbol: "$" },
-  { code: "CO", name: "Colombia", currency: "COP", symbol: "$" },
-  { code: "PE", name: "Perú", currency: "PEN", symbol: "S/" },
-  { code: "CL", name: "Chile", currency: "CLP", symbol: "$" },
-  { code: "EC", name: "Ecuador", currency: "USD", symbol: "$" },
-  { code: "VE", name: "Venezuela", currency: "VES", symbol: "Bs" },
-  { code: "BR", name: "Brasil", currency: "BRL", symbol: "R$" },
-  { code: "UY", name: "Uruguay", currency: "UYU", symbol: "$" },
-  { code: "PY", name: "Paraguay", currency: "PYG", symbol: "₲" },
-  { code: "BO", name: "Bolivia", currency: "BOB", symbol: "Bs" },
-  { code: "DO", name: "República Dominicana", currency: "DOP", symbol: "RD$" },
-  { code: "DK", name: "Dinamarca", currency: "DKK", symbol: "kr" },
-  { code: "CN", name: "China", currency: "CNY", symbol: "¥" },
-]
+// Antes había una tercera copia de esta lista, local a este archivo, que podía
+// desincronizarse de las otras dos y causar un bug real de moneda (ver docs/56 y la
+// nota de deuda técnica en lib/currency.ts) — ahora usa directamente COUNTRIES de
+// lib/types/user.ts (misma fuente que ya usa el registro), no una copia propia.
+const countries = COUNTRIES
 
 const businessTypes = [
   "Restaurante",
