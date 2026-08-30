@@ -12,6 +12,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
@@ -31,12 +42,14 @@ import {
   MoreVertical,
   PauseCircle,
   PlayCircle,
+  Trash2,
 } from "lucide-react"
 import type { Business } from "@/types/business"
 import { calculateExpensePercentages, calculateTotalMonthlyExpenses } from "@/types/business"
 import { formatCurrency as formatCurrencyShared } from "@/lib/currency"
-import { updateBusiness, getAllBusinesses, refreshBusinesses } from "@/lib/storage/businesses"
+import { updateBusiness, deleteBusiness, getAllBusinesses, refreshBusinesses } from "@/lib/storage/businesses"
 import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
+import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 
 export default function NegociosPage() {
   const router = useRouter()
@@ -47,6 +60,10 @@ export default function NegociosPage() {
   const [businesses, setBusinesses] = useState<Business[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddDialog, setShowAddDialog] = useState(false)
+  const [businessToDelete, setBusinessToDelete] = useState<Business | null>(null)
+  const [deleteSummary, setDeleteSummary] = useState({ recipes: 0, ingredients: 0 })
+  const [deleteConfirmName, setDeleteConfirmName] = useState("")
+  const [isDeleting, setIsDeleting] = useState(false)
   const [stats, setStats] = useState({
     totalBusinesses: 0,
     activeBusinesses: 0,
@@ -193,6 +210,51 @@ export default function NegociosPage() {
         : t("negocios_toast_deactivated_desc").replace("{name}", business.name),
     })
   }
+
+  // Pedido explícito del dueño del proyecto: hasta ahora deleteBusiness() (lib/storage/
+  // businesses.ts) existía en la capa de storage pero ningún botón lo llamaba —
+  // borrar un negocio no era posible desde la interfaz. Todas las tablas de negocio
+  // tienen "business_id ... on delete cascade" (ver supabase/migrations), así que
+  // borrar la fila de businesses ya limpia solo recetas, ingredientes, inventario,
+  // menús y órdenes de compra — no hace falta borrar cada uno a mano acá.
+  const openDeleteDialog = async (business: Business) => {
+    await ensureIngredientsLoaded(business.id)
+    setDeleteSummary({
+      recipes: getRecipes(business.id).length,
+      ingredients: getIngredients(business.id).length,
+    })
+    setBusinessToDelete(business)
+  }
+
+  const handleDeleteBusiness = async () => {
+    if (!businessToDelete) return
+    setIsDeleting(true)
+    const ok = await deleteBusiness(businessToDelete.id)
+    setIsDeleting(false)
+    if (!ok) {
+      toast({
+        title: t("negocios_toast_delete_error_title"),
+        description: t("negocios_toast_delete_error_desc"),
+        variant: "destructive",
+      })
+      return
+    }
+    setBusinesses((prev) => prev.filter((b) => b.id !== businessToDelete.id))
+    setStats((prev) => ({
+      ...prev,
+      totalBusinesses: prev.totalBusinesses - 1,
+      activeBusinesses: businessToDelete.isActive !== false ? prev.activeBusinesses - 1 : prev.activeBusinesses,
+    }))
+    toast({
+      title: t("negocios_toast_deleted_title"),
+      description: t("negocios_toast_deleted_desc").replace("{name}", businessToDelete.name),
+    })
+    setBusinessToDelete(null)
+    setDeleteConfirmName("")
+  }
+
+  const deleteConfirmMatches =
+    !!businessToDelete && deleteConfirmName.trim().toLowerCase() === businessToDelete.name.trim().toLowerCase()
 
   // BUG CORREGIDO: new Date(undefined) no lanza una excepción, produce una fecha
   // inválida en silencio — el try/catch nunca se activaba y el resultado terminaba
@@ -397,6 +459,13 @@ export default function NegociosPage() {
                                     </>
                                   )}
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => openDeleteDialog(business)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  {t("negocios_delete")}
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -534,6 +603,53 @@ export default function NegociosPage() {
         onOpenChange={setShowAddDialog}
         onBusinessAdded={handleBusinessCreated}
       />
+
+      {/* Borrar negocio — irreversible, requiere escribir el nombre exacto (mismo
+          patrón que el borrado de cuentas en /admin, ver docs/71) */}
+      <AlertDialog
+        open={!!businessToDelete}
+        onOpenChange={(open) => {
+          if (!open) {
+            setBusinessToDelete(null)
+            setDeleteConfirmName("")
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("negocios_delete_confirm_title")}</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-left">
+                <p>
+                  {t("negocios_delete_confirm_summary")
+                    .replace("{name}", businessToDelete?.name || "")
+                    .replace("{recipes}", String(deleteSummary.recipes))
+                    .replace("{ingredients}", String(deleteSummary.ingredients))}
+                </p>
+                <p className="font-semibold text-foreground">{t("negocios_delete_confirm_irreversible")}</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-1.5">
+            <Label htmlFor="delete-business-confirm" className="text-xs text-muted-foreground">
+              {t("negocios_delete_confirm_input_label").replace("{name}", businessToDelete?.name || "")}
+            </Label>
+            <Input
+              id="delete-business-confirm"
+              value={deleteConfirmName}
+              onChange={(e) => setDeleteConfirmName(e.target.value)}
+              placeholder={businessToDelete?.name}
+              autoComplete="off"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>{t("common_cancel")}</AlertDialogCancel>
+            <Button variant="destructive" onClick={handleDeleteBusiness} disabled={!deleteConfirmMatches || isDeleting}>
+              {isDeleting ? t("negocios_deleting") : t("negocios_delete_button")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

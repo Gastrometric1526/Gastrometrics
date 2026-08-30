@@ -50,8 +50,6 @@ export default function DashboardPage() {
   const canAccessTeam = useFeatureAccess("team")
   const { active: previewActive, member: previewMember } = useActiveMembership()
   const [showAddDialog, setShowAddDialog] = useState(false)
-  const [username, setUsername] = useState("Usuario")
-  const [email, setEmail] = useState("usuario@example.com")
   const [businesses, setBusinesses] = useState<Business[]>([])
   const [currentTime, setCurrentTime] = useState(new Date())
   const [recentActivity, setRecentActivity] = useState<UserActivity[]>([])
@@ -199,19 +197,13 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // BUG CORREGIDO: el saludo ("Buenos días, {nombre}") leía localStorage["userProfile"]/
+  // ["username"], claves de antes de la migración a Supabase que el AuthProvider real
+  // (contexts/auth-context.tsx) nunca vuelve a escribir — por eso siempre caía al
+  // literal "Usuario". El nombre real ya vive en `user.name` (useAuth()), sincronizado
+  // desde `profiles.full_name` en cada login y en cada cambio de perfil — se usa
+  // directo más abajo, sin este estado local duplicado.
   useEffect(() => {
-    const userProfile = localStorage.getItem("userProfile")
-    if (userProfile) {
-      const profile = JSON.parse(userProfile)
-      setUsername(profile.fullName || profile.name || "Usuario")
-      setEmail(profile.email || "usuario@example.com")
-    } else {
-      const storedUsername = localStorage.getItem("username")
-      const storedEmail = localStorage.getItem("email")
-      if (storedUsername) setUsername(storedUsername)
-      if (storedEmail) setEmail(storedEmail)
-    }
-
     // BUG CORREGIDO (ver docs/52): leer localStorage["businesses"] aquí Y volver a
     // agregar la fila nueva a mano en handleBusinessCreated de abajo duplicaba el
     // negocio recién creado — lib/storage/businesses.ts ya lo agrega a su caché
@@ -243,12 +235,6 @@ export default function DashboardPage() {
       }, 100)
     }
 
-    const handleProfileUpdate = (event: CustomEvent) => {
-      const profile = event.detail
-      setUsername(profile.fullName || "Usuario")
-      setEmail(profile.email || "usuario@example.com")
-    }
-
     const handleDataReset = () => {
       // Reload all data after reset
       setBusinesses([])
@@ -262,7 +248,6 @@ export default function DashboardPage() {
     window.addEventListener("activityUpdated", handleActivityUpdate as EventListener)
     window.addEventListener("alertsUpdated", handleAlertsUpdate as EventListener)
     window.addEventListener("ingredientsUpdated", handleIngredientsUpdate as EventListener)
-    window.addEventListener("userProfileUpdated", handleProfileUpdate as EventListener)
     window.addEventListener("dataReset", handleDataReset as EventListener)
 
     return () => {
@@ -271,7 +256,6 @@ export default function DashboardPage() {
       window.removeEventListener("activityUpdated", handleActivityUpdate as EventListener)
       window.removeEventListener("alertsUpdated", handleAlertsUpdate as EventListener)
       window.removeEventListener("ingredientsUpdated", handleIngredientsUpdate as EventListener)
-      window.removeEventListener("userProfileUpdated", handleProfileUpdate as EventListener)
       window.removeEventListener("dataReset", handleDataReset as EventListener)
     }
   }, [])
@@ -596,7 +580,7 @@ export default function DashboardPage() {
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
               <div className="space-y-2 flex-1 min-w-0" data-tour="dash-header">
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground truncate flex items-center gap-2">
-                  {getGreeting()}, {username}
+                  {getGreeting()}, {user?.name}
                   {/* BUG CORREGIDO: este lápiz abría un diálogo de edición de perfil
                       propio y separado (isProfileOpen), que guardaba en las claves
                       sueltas "username"/"email" en vez de en userProfile — un
