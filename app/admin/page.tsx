@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLanguage } from "@/contexts/language-context"
-import { ArrowLeft, Lock } from "lucide-react"
+import { ArrowLeft, Lock, LayoutDashboard, Users, Inbox, LineChart } from "lucide-react"
 import { StatsPanel } from "@/components/admin/stats-panel"
 import { AccountsPanel } from "@/components/admin/accounts-panel"
 import { FeedbackPanel } from "@/components/admin/feedback-panel"
@@ -164,7 +164,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-5xl space-y-8">
+      <div className="container mx-auto px-4 py-8 max-w-7xl space-y-8">
         <div className="flex items-start justify-between gap-4">
           <div>
             <Link href="/dashboard">
@@ -191,12 +191,22 @@ export default function AdminPage() {
 
         <Tabs defaultValue="resumen">
           <TabsList>
-            <TabsTrigger value="resumen">{t("admin_tab_resumen")}</TabsTrigger>
-            <TabsTrigger value="cuentas">{t("admin_tab_accounts")}</TabsTrigger>
-            <TabsTrigger value="feedback">
+            <TabsTrigger value="resumen" className="gap-1.5">
+              <LayoutDashboard className="h-4 w-4" />
+              {t("admin_tab_resumen")}
+            </TabsTrigger>
+            <TabsTrigger value="cuentas" className="gap-1.5">
+              <Users className="h-4 w-4" />
+              {t("admin_tab_accounts")}
+            </TabsTrigger>
+            <TabsTrigger value="feedback" className="gap-1.5">
+              <Inbox className="h-4 w-4" />
               {t("admin_tab_feedback")} ({feedbackCounts.total})
             </TabsTrigger>
-            <TabsTrigger value="analiticas">{t("admin_tab_analytics")}</TabsTrigger>
+            <TabsTrigger value="analiticas" className="gap-1.5">
+              <LineChart className="h-4 w-4" />
+              {t("admin_tab_analytics")}
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="resumen" className="mt-6">
             <StatsPanel feedbackCounts={feedbackCounts} />

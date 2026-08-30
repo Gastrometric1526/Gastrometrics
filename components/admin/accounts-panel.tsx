@@ -7,11 +7,22 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
 import { plans, getPlanBySlug } from "@/lib/plans"
-import { ArrowLeft, Search, Users, Building2, FileText, Package } from "lucide-react"
+import { ArrowLeft, Search, Users, Building2, FileText, Package, AlertTriangle, Trash2 } from "lucide-react"
 
 interface AccountRow {
   userId: string
@@ -26,6 +37,7 @@ interface AccountRow {
   ingredientCount: number
   salesImportCount: number
   lastSalesImportAt: string | null
+  hasActiveSubscription: boolean
 }
 
 interface AccountDetail {
@@ -71,7 +83,7 @@ function dateInputToIso(value: string): string {
   return new Date(year, month - 1, day, 23, 59, 59).toISOString()
 }
 
-/** Lista completa de cuentas + detalle (plan/negocios/equipo) de cualquiera de ellas — pedido explícito del dueño del proyecto ("ahi debo poder manejar TODO"), ver docs/63. */
+/** Lista completa de cuentas + detalle (plan/negocios/equipo) de cualquiera de ellas — pedido explícito del dueño del proyecto ("ahi debo poder manejar TODO"), ver docs/63. Rediseñado y con borrado de cuentas en docs/71. */
 export function AccountsPanel() {
   const { toast } = useToast()
   const { t, language } = useLanguage()
@@ -96,6 +108,17 @@ export function AccountsPanel() {
   const [presenceByUserId, setPresenceByUserId] = useState<
     Record<string, { online: boolean; lastSeenAt: string | null }>
   >({})
+
+  // Reemplaza el window.confirm() nativo que usaba esta acción — mismo AlertDialog que
+  // ya usa components/sidebar.tsx para confirmar el cierre de sesión.
+  const [revokeTarget, setRevokeTarget] = useState<AccountTeamMember | null>(null)
+  const [revokingMember, setRevokingMember] = useState(false)
+
+  // Borrado de cuenta (nuevo, ver docs/71) — confirma escribiendo el correo exacto de
+  // la cuenta, mismo patrón que usan GitHub/Vercel para borrados irreversibles.
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("")
+  const [deletingAccount, setDeletingAccount] = useState(false)
 
   const loadList = async (targetPage: number, targetSearch: string, targetPlan: string) => {
     setLoadingList(true)
@@ -192,6 +215,8 @@ export function AccountsPanel() {
     setDetail(null)
     setBusinesses([])
     setTeam([])
+    setDeleteDialogOpen(false)
+    setDeleteConfirmEmail("")
   }
 
   const handleApplyPlan = async () => {
@@ -245,19 +270,47 @@ export function AccountsPanel() {
     }
   }
 
-  const handleRevokeMember = async (member: AccountTeamMember) => {
-    if (!selected) return
-    const confirmed = window.confirm(t("admin_accounts_team_revoke_confirm").replace("{email}", member.email))
-    if (!confirmed) return
+  const confirmRevokeMember = async () => {
+    if (!selected || !revokeTarget) return
+    setRevokingMember(true)
     try {
-      const res = await fetch(`/api/admin/account-team?id=${encodeURIComponent(member.id)}&userId=${encodeURIComponent(selected.userId)}`, {
-        method: "DELETE",
-      })
+      const res = await fetch(
+        `/api/admin/account-team?id=${encodeURIComponent(revokeTarget.id)}&userId=${encodeURIComponent(selected.userId)}`,
+        { method: "DELETE" },
+      )
       if (!res.ok) throw new Error("failed")
-      setTeam((prev) => prev.filter((m) => m.id !== member.id))
+      setTeam((prev) => prev.filter((m) => m.id !== revokeTarget.id))
+      setRevokeTarget(null)
     } catch (error) {
       console.error("Error revocando miembro:", error)
       toast({ title: t("admin_accounts_error_toast"), variant: "destructive" })
+    } finally {
+      setRevokingMember(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!selected) return
+    setDeletingAccount(true)
+    try {
+      const res = await fetch(`/api/admin/accounts?userId=${encodeURIComponent(selected.userId)}`, { method: "DELETE" })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) {
+        toast({
+          title: t("admin_accounts_delete_error_toast"),
+          description: data.error || undefined,
+          variant: "destructive",
+        })
+        return
+      }
+      toast({ title: t("admin_accounts_delete_success_toast") })
+      closeDetail()
+      loadList(page, search, planFilter)
+    } catch (error) {
+      console.error("Error eliminando la cuenta:", error)
+      toast({ title: t("admin_accounts_delete_error_toast"), variant: "destructive" })
+    } finally {
+      setDeletingAccount(false)
     }
   }
 
@@ -265,6 +318,8 @@ export function AccountsPanel() {
   const hasUnappliedChanges =
     !!detail && (selectedPlanSlug !== detail.planSlug || expiresAtInput !== toDateInputValue(detail.planExpiresAt))
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const deleteConfirmMatches =
+    !!selected && deleteConfirmEmail.trim().toLowerCase() === selected.email.trim().toLowerCase()
 
   if (selected) {
     return (
@@ -285,7 +340,11 @@ export function AccountsPanel() {
         </CardHeader>
         <CardContent className="space-y-6">
           {loadingDetail ? (
-            <p className="text-sm text-muted-foreground">{t("admin_accounts_searching")}</p>
+            <div className="space-y-3">
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
           ) : (
             <>
               {detail && (
@@ -402,7 +461,7 @@ export function AccountsPanel() {
                             {m.email} · {m.scope === "dashboard" ? t("admin_accounts_team_scope_dashboard") : m.scope}
                           </p>
                         </div>
-                        <Button size="sm" variant="outline" onClick={() => handleRevokeMember(m)}>
+                        <Button size="sm" variant="outline" onClick={() => setRevokeTarget(m)}>
                           {t("admin_accounts_team_revoke")}
                         </Button>
                       </div>
@@ -410,9 +469,91 @@ export function AccountsPanel() {
                   </div>
                 )}
               </div>
+
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                  <h3 className="text-sm font-semibold text-destructive">{t("admin_accounts_danger_zone_title")}</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">{t("admin_accounts_danger_zone_desc")}</p>
+                <Button variant="destructive" size="sm" className="gap-2" onClick={() => setDeleteDialogOpen(true)}>
+                  <Trash2 className="h-4 w-4" />
+                  {t("admin_accounts_delete_button")}
+                </Button>
+              </div>
             </>
           )}
         </CardContent>
+
+        {/* Revocar miembro de equipo — confirmación real (antes window.confirm) */}
+        <AlertDialog open={!!revokeTarget} onOpenChange={(open) => !open && setRevokeTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("admin_accounts_team_revoke_title")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {revokeTarget ? t("admin_accounts_team_revoke_confirm").replace("{email}", revokeTarget.email) : ""}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={revokingMember}>{t("common_cancel")}</AlertDialogCancel>
+              <Button variant="destructive" onClick={confirmRevokeMember} disabled={revokingMember}>
+                {revokingMember ? t("admin_accounts_applying") : t("admin_accounts_team_revoke")}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Borrar cuenta — irreversible, requiere escribir el correo exacto */}
+        <AlertDialog
+          open={deleteDialogOpen}
+          onOpenChange={(open) => {
+            setDeleteDialogOpen(open)
+            if (!open) setDeleteConfirmEmail("")
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("admin_accounts_delete_dialog_title")}</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-2 text-left">
+                  <p>
+                    {t("admin_accounts_delete_dialog_summary")
+                      .replace("{businesses}", String(selected.businessCount))
+                      .replace("{recipes}", String(selected.recipeCount))
+                      .replace("{ingredients}", String(selected.ingredientCount))}
+                  </p>
+                  {selected.hasActiveSubscription && (
+                    <p className="text-destructive font-medium">{t("admin_accounts_delete_dialog_subscription")}</p>
+                  )}
+                  <p>{t("admin_accounts_delete_dialog_cross_business")}</p>
+                  <p className="font-semibold text-foreground">{t("admin_accounts_delete_dialog_irreversible")}</p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="space-y-1.5">
+              <Label htmlFor="delete-confirm-email" className="text-xs text-muted-foreground">
+                {t("admin_accounts_delete_confirm_label").replace("{email}", selected.email)}
+              </Label>
+              <Input
+                id="delete-confirm-email"
+                value={deleteConfirmEmail}
+                onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+                placeholder={selected.email}
+                autoComplete="off"
+              />
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deletingAccount}>{t("common_cancel")}</AlertDialogCancel>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteAccount}
+                disabled={!deleteConfirmMatches || deletingAccount}
+              >
+                {deletingAccount ? t("admin_accounts_deleting") : t("admin_accounts_delete_button")}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </Card>
     )
   }
@@ -451,91 +592,101 @@ export function AccountsPanel() {
           </Button>
         </form>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-muted-foreground border-b border-border">
-                <th className="py-2 pr-2 font-medium">{t("admin_accounts_table_email")}</th>
-                <th className="py-2 pr-2 font-medium">{t("admin_accounts_table_plan")}</th>
-                <th className="py-2 pr-2 font-medium">
+        <div className="rounded-lg border border-border overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("admin_accounts_table_email")}</TableHead>
+                <TableHead>{t("admin_accounts_table_plan")}</TableHead>
+                <TableHead>
                   <Building2 className="h-3.5 w-3.5 inline mr-1" />
                   {t("admin_accounts_table_businesses")}
-                </th>
-                <th className="py-2 pr-2 font-medium">
+                </TableHead>
+                <TableHead>
                   <Users className="h-3.5 w-3.5 inline mr-1" />
                   {t("admin_accounts_table_team")}
-                </th>
-                <th className="py-2 pr-2 font-medium">
+                </TableHead>
+                <TableHead>
                   <FileText className="h-3.5 w-3.5 inline mr-1" />
                   {t("admin_accounts_table_recipes")}
-                </th>
-                <th className="py-2 pr-2 font-medium">
+                </TableHead>
+                <TableHead>
                   <Package className="h-3.5 w-3.5 inline mr-1" />
                   {t("admin_accounts_table_ingredients")}
-                </th>
-                <th className="py-2 pr-2 font-medium">{t("admin_accounts_table_pos_import")}</th>
-                <th className="py-2 pr-2 font-medium">{t("admin_accounts_table_created")}</th>
-                <th className="py-2 pr-2 font-medium" />
-              </tr>
-            </thead>
-            <tbody>
-              {accounts.map((a) => (
-                <tr key={a.userId} className="border-b border-border/50">
-                  <td className="py-2 pr-2 text-foreground">
-                    <span className="inline-flex items-center gap-1.5">
-                      <span
-                        className={`h-2 w-2 shrink-0 rounded-full ${
-                          presenceByUserId[a.userId]?.online ? "bg-green-500" : "bg-muted-foreground/30"
-                        }`}
-                        title={
-                          presenceByUserId[a.userId]?.online
-                            ? t("admin_accounts_online")
-                            : presenceByUserId[a.userId]?.lastSeenAt
-                              ? t("admin_accounts_last_seen").replace(
-                                  "{date}",
-                                  new Date(presenceByUserId[a.userId]!.lastSeenAt as string).toLocaleString(
-                                    getDateLocale(language),
-                                  ),
-                                )
-                              : t("admin_accounts_never_seen")
-                        }
-                      />
-                      {a.email}
-                    </span>
-                  </td>
-                  <td className="py-2 pr-2 text-muted-foreground">{getPlanBySlug(a.planSlug).name}</td>
-                  <td className="py-2 pr-2 text-muted-foreground">{a.businessCount}</td>
-                  <td className="py-2 pr-2 text-muted-foreground">{a.teamMemberCount}</td>
-                  <td className="py-2 pr-2 text-muted-foreground">{a.recipeCount}</td>
-                  <td className="py-2 pr-2 text-muted-foreground">{a.ingredientCount}</td>
-                  <td className="py-2 pr-2 text-muted-foreground">
-                    {a.salesImportCount > 0 ? (
-                      <Badge
-                        variant="secondary"
-                        title={
-                          a.lastSalesImportAt
-                            ? new Date(a.lastSalesImportAt).toLocaleDateString(getDateLocale(language))
-                            : undefined
-                        }
-                      >
-                        {t("admin_accounts_pos_imported").replace("{count}", String(a.salesImportCount))}
-                      </Badge>
-                    ) : (
-                      <span className="text-xs">{t("admin_accounts_pos_none")}</span>
-                    )}
-                  </td>
-                  <td className="py-2 pr-2 text-muted-foreground">
-                    {new Date(a.createdAt).toLocaleDateString(getDateLocale(language))}
-                  </td>
-                  <td className="py-2 pr-2">
-                    <Button size="sm" variant="ghost" onClick={() => loadDetail(a)}>
-                      {t("admin_accounts_view_detail")}
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                </TableHead>
+                <TableHead>{t("admin_accounts_table_pos_import")}</TableHead>
+                <TableHead>{t("admin_accounts_table_created")}</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loadingList && accounts.length === 0
+                ? Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={`skeleton-${i}`}>
+                      {Array.from({ length: 9 }).map((__, j) => (
+                        <TableCell key={j}>
+                          <Skeleton className="h-4 w-full" />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                : accounts.map((a) => (
+                    <TableRow key={a.userId}>
+                      <TableCell className="text-foreground">
+                        <span className="inline-flex items-center gap-1.5">
+                          <span
+                            className={`h-2 w-2 shrink-0 rounded-full ${
+                              presenceByUserId[a.userId]?.online ? "bg-green-500" : "bg-muted-foreground/30"
+                            }`}
+                            title={
+                              presenceByUserId[a.userId]?.online
+                                ? t("admin_accounts_online")
+                                : presenceByUserId[a.userId]?.lastSeenAt
+                                  ? t("admin_accounts_last_seen").replace(
+                                      "{date}",
+                                      new Date(presenceByUserId[a.userId]!.lastSeenAt as string).toLocaleString(
+                                        getDateLocale(language),
+                                      ),
+                                    )
+                                  : t("admin_accounts_never_seen")
+                            }
+                          />
+                          {a.email}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{getPlanBySlug(a.planSlug).name}</TableCell>
+                      <TableCell className="text-muted-foreground">{a.businessCount}</TableCell>
+                      <TableCell className="text-muted-foreground">{a.teamMemberCount}</TableCell>
+                      <TableCell className="text-muted-foreground">{a.recipeCount}</TableCell>
+                      <TableCell className="text-muted-foreground">{a.ingredientCount}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {a.salesImportCount > 0 ? (
+                          <Badge
+                            variant="secondary"
+                            title={
+                              a.lastSalesImportAt
+                                ? new Date(a.lastSalesImportAt).toLocaleDateString(getDateLocale(language))
+                                : undefined
+                            }
+                          >
+                            {t("admin_accounts_pos_imported").replace("{count}", String(a.salesImportCount))}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs">{t("admin_accounts_pos_none")}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(a.createdAt).toLocaleDateString(getDateLocale(language))}
+                      </TableCell>
+                      <TableCell>
+                        <Button size="sm" variant="ghost" onClick={() => loadDetail(a)}>
+                          {t("admin_accounts_view_detail")}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+            </TableBody>
+          </Table>
         </div>
 
         {total > pageSize && (

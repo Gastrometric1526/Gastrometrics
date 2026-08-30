@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useLanguage } from "@/contexts/language-context"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts"
+import { Eye, CalendarDays, CalendarRange } from "lucide-react"
 
 interface AnalyticsData {
   totalAllTime: number
@@ -14,7 +17,13 @@ interface AnalyticsData {
   viewsByDay: { day: string; count: number }[]
 }
 
-/** Analíticas propias de tráfico (ver docs/67) — no depende de Vercel Web Analytics. */
+const STAT_CARDS = [
+  { key: "totalAllTime" as const, labelKey: "admin_analytics_total_alltime" as const, icon: Eye, bg: "bg-chart-1/10", text: "text-chart-1" },
+  { key: "total30d" as const, labelKey: "admin_analytics_total_30d" as const, icon: CalendarRange, bg: "bg-chart-2/10", text: "text-chart-2" },
+  { key: "total7d" as const, labelKey: "admin_analytics_total_7d" as const, icon: CalendarDays, bg: "bg-chart-3/10", text: "text-chart-3" },
+]
+
+/** Analíticas propias de tráfico (ver docs/67) — no depende de Vercel Web Analytics. Rediseñado en docs/71. */
 export function AnalyticsPanel() {
   const { t } = useLanguage()
   const [data, setData] = useState<AnalyticsData | null>(null)
@@ -33,29 +42,30 @@ export function AnalyticsPanel() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>{t("admin_analytics_total_alltime")}</CardDescription>
-            <CardTitle className="text-3xl">{data ? data.totalAllTime : "—"}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>{t("admin_analytics_total_30d")}</CardDescription>
-            <CardTitle className="text-3xl">{data ? data.total30d : "—"}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>{t("admin_analytics_total_7d")}</CardDescription>
-            <CardTitle className="text-3xl">{data ? data.total7d : "—"}</CardTitle>
-          </CardHeader>
-        </Card>
+        {STAT_CARDS.map((card) => (
+          <Card key={card.key}>
+            <CardContent className="p-4 space-y-3">
+              <div className={`inline-flex p-2 rounded-lg ${card.bg}`}>
+                <card.icon className={`h-5 w-5 ${card.text}`} />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t(card.labelKey)}</p>
+                {data ? (
+                  <p className="text-2xl font-bold text-foreground">{data[card.key]}</p>
+                ) : (
+                  <Skeleton className="h-8 w-12 mt-1" />
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {!hasData ? (
         <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">{t("admin_analytics_empty")}</CardContent>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            {data ? t("admin_analytics_empty") : <Skeleton className="h-4 w-48 mx-auto" />}
+          </CardContent>
         </Card>
       ) : (
         <>
@@ -82,22 +92,24 @@ export function AnalyticsPanel() {
                 <CardTitle>{t("admin_analytics_top_paths_title")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-xs text-muted-foreground border-b border-border">
-                      <th className="py-2 pr-2 font-medium">{t("admin_analytics_table_path")}</th>
-                      <th className="py-2 pr-2 font-medium text-right">{t("admin_analytics_table_views")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data!.topPaths.map((p) => (
-                      <tr key={p.path} className="border-b border-border/50">
-                        <td className="py-2 pr-2 text-foreground">{p.path}</td>
-                        <td className="py-2 pr-2 text-muted-foreground text-right">{p.count}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="rounded-lg border border-border overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t("admin_analytics_table_path")}</TableHead>
+                        <TableHead className="text-right">{t("admin_analytics_table_views")}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {data!.topPaths.map((p) => (
+                        <TableRow key={p.path}>
+                          <TableCell className="text-foreground">{p.path}</TableCell>
+                          <TableCell className="text-muted-foreground text-right">{p.count}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
 

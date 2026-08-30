@@ -13,6 +13,7 @@
 import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
 
 const PAGE_SIZE = 25
 
@@ -48,7 +49,9 @@ export async function GET(request: Request) {
       listPage += 1
     }
 
-    const { data: allPlanRows } = await admin.from("account_plans").select("account_id, plan_slug, plan_expires_at")
+    const { data: allPlanRows } = await admin
+      .from("account_plans")
+      .select("account_id, plan_slug, plan_expires_at, stripe_subscription_id")
     const planByUser = new Map(allPlanRows?.map((r) => [r.account_id, r]) ?? [])
 
     let filtered = search ? allUsers.filter((u) => u.email.toLowerCase().includes(search)) : allUsers
@@ -112,11 +115,95 @@ export async function GET(request: Request) {
       ingredientCount: ingredientCountByUser.get(u.id) || 0,
       salesImportCount: importSummaryByUser.get(u.id)?.count || 0,
       lastSalesImportAt: importSummaryByUser.get(u.id)?.lastImportedAt || null,
+      hasActiveSubscription: Boolean(planByUser.get(u.id)?.stripe_subscription_id),
     }))
 
     return NextResponse.json({ accounts, total, page, pageSize: PAGE_SIZE })
   } catch (error) {
     console.error("[api/admin/accounts] Error listando cuentas:", error)
     return NextResponse.json({ error: "No se pudieron listar las cuentas." }, { status: 500 })
+  }
+}
+
+/**
+ * Borrar una cuenta por completo — pedido explícito del dueño del proyecto. Orden
+ * obligatorio, investigado tabla por tabla antes de escribir esto (ver docs/71):
+ *
+ * 1. Cancelar la suscripción real de Stripe si la hay. Esto NUNCA pasa solo — borrar
+ *    la cuenta de Supabase no cancela nada en Stripe (no hay sincronización inversa en
+ *    este proyecto, solo Stripe -> Supabase vía el webhook), así que sin este paso
+ *    Stripe seguiría cobrándole la tarjeta a una cuenta que ya no existe. Si la
+ *    cancelación falla por cualquier motivo que no sea "ya no existía", se aborta todo
+ *    y la cuenta NO se borra.
+ * 2. Limpiar team_members.invited_user_id — el único FK de todo el esquema hacia
+ *    auth.users que no tiene "on delete cascade" (confirmado leyendo cada migración).
+ *    Sin este paso, el paso 3 fallaría con una violación de llave foránea si esta
+ *    cuenta alguna vez fue invitada a un equipo ajeno.
+ * 3. admin.auth.admin.deleteUser() — cascada automática de todo lo demás (negocios,
+ *    recetas, ingredientes, inventario, menús, órdenes de compra, importaciones de
+ *    POS, equipos que esta cuenta creó, profiles, user_presence, account_plans).
+ */
+export async function DELETE(request: Request) {
+  if (!(await hasAdminSession())) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 401 })
+  }
+
+  const userId = new URL(request.url).searchParams.get("userId")
+  if (!userId) {
+    return NextResponse.json({ error: "Falta el userId de la cuenta a eliminar." }, { status: 400 })
+  }
+
+  try {
+    const admin = getSupabaseAdminClient()
+
+    const { data: planRow } = await admin
+      .from("account_plans")
+      .select("stripe_customer_id, stripe_subscription_id")
+      .eq("account_id", userId)
+      .maybeSingle()
+
+    if (planRow?.stripe_subscription_id) {
+      if (!isStripeConfigured()) {
+        return NextResponse.json(
+          { error: "Esta cuenta tiene una suscripción de Stripe activa, pero Stripe no está configurado en este entorno. No se eliminó." },
+          { status: 409 },
+        )
+      }
+      const stripe = getStripeClient()
+      try {
+        await stripe.subscriptions.cancel(planRow.stripe_subscription_id)
+      } catch (stripeError: any) {
+        if (stripeError?.code !== "resource_missing") {
+          console.error("[api/admin/accounts DELETE] Error cancelando la suscripción de Stripe:", stripeError)
+          return NextResponse.json(
+            { error: "No se pudo cancelar la suscripción de Stripe. La cuenta no se eliminó." },
+            { status: 500 },
+          )
+        }
+      }
+      if (planRow.stripe_customer_id) {
+        try {
+          await stripe.customers.del(planRow.stripe_customer_id)
+        } catch (stripeError) {
+          // Best-effort: el customer es secundario a la suscripción ya cancelada arriba,
+          // no bloquea el borrado de la cuenta si esto falla.
+          console.error("[api/admin/accounts DELETE] Error borrando el customer de Stripe:", stripeError)
+        }
+      }
+    }
+
+    const { error: teamCleanupError } = await admin.from("team_members").delete().eq("invited_user_id", userId)
+    if (teamCleanupError) {
+      console.error("[api/admin/accounts DELETE] Error limpiando team_members.invited_user_id:", teamCleanupError)
+      return NextResponse.json({ error: "No se pudo limpiar las invitaciones de equipo. La cuenta no se eliminó." }, { status: 500 })
+    }
+
+    const { error: deleteError } = await admin.auth.admin.deleteUser(userId)
+    if (deleteError) throw deleteError
+
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error("[api/admin/accounts DELETE] Error eliminando la cuenta:", error)
+    return NextResponse.json({ error: "No se pudo eliminar la cuenta." }, { status: 500 })
   }
 }

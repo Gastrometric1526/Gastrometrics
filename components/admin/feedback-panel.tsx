@@ -6,6 +6,16 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { Textarea } from "@/components/ui/textarea"
 import { useLanguage } from "@/contexts/language-context"
@@ -62,6 +72,7 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({})
   const [sendingReplyId, setSendingReplyId] = useState<string | null>(null)
   const [filter, setFilter] = useState<"todos" | FeedbackType>("todos")
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   const loadData = async () => {
     try {
@@ -104,6 +115,12 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
     await fetch(`/api/admin/feedback/${id}`, { method: "DELETE" })
     loadData()
     toast({ title: t("admin_delete_toast_title"), description: t("admin_delete_toast_desc") })
+  }
+
+  const confirmDelete = () => {
+    if (!deleteTargetId) return
+    handleDelete(deleteTargetId)
+    setDeleteTargetId(null)
   }
 
   const handleSendReply = async (id: string) => {
@@ -167,7 +184,7 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
                         {new Date(item.createdAt).toLocaleString(getDateLocale(language))}
                       </span>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)}>
+                    <Button variant="ghost" size="sm" onClick={() => setDeleteTargetId(item.id)}>
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   </div>
@@ -233,6 +250,19 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
           </div>
         )}
       </CardContent>
+
+      <AlertDialog open={!!deleteTargetId} onOpenChange={(open) => !open && setDeleteTargetId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("admin_feedback_delete_title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("admin_feedback_delete_desc")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common_cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>{t("admin_feedback_delete_confirm")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 }
