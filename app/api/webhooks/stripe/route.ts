@@ -115,6 +115,32 @@ export async function POST(request: Request) {
           stripe_customer_id: customerId ?? null,
           stripe_subscription_id: subscriptionId ?? null,
         })
+
+        // Correo de confirmación del primer pago (ver docs/77) — no existía ninguno:
+        // el webhook solo aplicaba el plan, nadie recibía nada con la marca de
+        // GastroMetrics más allá del recibo genérico de Stripe (si esa opción está
+        // prendida en el dashboard de Stripe). Reusa la misma plantilla de "cambio de
+        // plan" (06-cambio-plan.html) — desde docs/76, este evento SOLO se dispara
+        // para una suscripción nueva de verdad (cambiar entre planes pagos ya no pasa
+        // por Checkout, actualiza la existente en el lugar), así que "vino de Foodie"
+        // es una base real, no una suposición. Best-effort: un correo perdido no debe
+        // hacer que Stripe reintente el evento completo, el plan ya quedó aplicado.
+        if (subscriptionId) {
+          try {
+            const subscription = await getStripeClient().subscriptions.retrieve(subscriptionId)
+            const subscriptionItem = subscription.items.data[0]
+            await sendPlanChangedEmail({
+              accountId,
+              fromPlanSlug: FREE_PLAN_SLUG,
+              toPlanSlug: planSlug,
+              nextChargeUnixSeconds: subscriptionItem?.current_period_end ?? null,
+              nextChargeAmountCents:
+                typeof subscriptionItem?.price.unit_amount === "number" ? subscriptionItem.price.unit_amount : null,
+            })
+          } catch (emailError) {
+            console.error("[api/webhooks/stripe] Error mandando el correo de confirmación de pago:", emailError)
+          }
+        }
       } else {
         console.error("[api/webhooks/stripe] checkout.session.completed sin accountId/planSlug válidos")
       }
@@ -124,13 +150,19 @@ export async function POST(request: Request) {
     // (app/api/stripe/portal/route.ts) — esos cambios no pasan por /api/checkout, así
     // que este es el único punto donde la app se entera de que el plan cambió.
     case "customer.subscription.updated": {
+      // BUG CORREGIDO (ver docs/77): current_period_end vivía en la raíz de la
+      // suscripción en versiones viejas de la API de Stripe — esta cuenta ya usa una
+      // versión donde ese campo se movió a cada ítem de la suscripción
+      // (subscription.items.data[].current_period_end). El tipo suelto de acá abajo
+      // seguía declarando el campo viejo, así que TypeScript nunca marcó el error —
+      // en la práctica, "próximo cobro" en el correo de cambio de plan venía saliendo
+      // "—" siempre, nunca la fecha real.
       const subscription = event.data.object as {
         id: string
         customer: string | { id: string }
         metadata?: { planSlug?: string; accountId?: string }
         status: string
-        current_period_end?: number
-        items?: { data?: Array<{ price?: { unit_amount?: number | null } }> }
+        items?: { data?: Array<{ current_period_end?: number; price?: { unit_amount?: number | null } }> }
       }
       const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id
       const planSlug = subscription.metadata?.planSlug
@@ -152,7 +184,7 @@ export async function POST(request: Request) {
             accountId,
             fromPlanSlug: previousPlanSlug,
             toPlanSlug: resolvedPlanSlug,
-            nextChargeUnixSeconds: subscription.current_period_end ?? null,
+            nextChargeUnixSeconds: subscription.items?.data?.[0]?.current_period_end ?? null,
             nextChargeAmountCents: subscription.items?.data?.[0]?.price?.unit_amount ?? null,
           })
         } catch (emailError) {
