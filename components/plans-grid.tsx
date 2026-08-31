@@ -18,6 +18,7 @@ import { getPlanBySlug, getLocalizedPlans } from "@/lib/plans"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useCurrentPlanSlug, setCurrentPlanSlug } from "@/lib/plan-access"
+import { useToast } from "@/hooks/use-toast"
 import { Check, X } from "lucide-react"
 
 // Grilla de planes compartida entre /planes (pública, para visitantes sin sesión) y
@@ -31,6 +32,7 @@ export function PlansGrid({ freeRedirectTo = "/dashboard" }: PlansGridProps) {
   const router = useRouter()
   const { isLoggedIn, authChecked } = useAuth()
   const { t, language } = useLanguage()
+  const { toast } = useToast()
   const plans = getLocalizedPlans(language)
   const currentPlanSlug = useCurrentPlanSlug()
   // Mientras no se sabe con certeza que el visitante ya tiene sesion (authChecked +
@@ -60,14 +62,26 @@ export function PlansGrid({ freeRedirectTo = "/dashboard" }: PlansGridProps) {
       return
     }
     if (isFree) {
-      const result = await fetch("/api/plan/set-free", {
+      // BUG CORREGIDO (ver docs/76): antes avanzaba a "gratis" en el navegador sin
+      // importar si /api/plan/set-free respondía con un error — si el servidor
+      // rechazaba el downgrade (ej. no pudo cancelar la suscripción real de Stripe),
+      // la persona igual veía "Foodie" localmente mientras seguía pagando el plan
+      // viejo de verdad, sin ningún aviso.
+      const res = await fetch("/api/plan/set-free", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planSlug }),
-      })
-        .then((res) => res.json())
-        .catch(() => null)
-      setCurrentPlanSlug(result?.planSlug || planSlug)
+      }).catch(() => null)
+      const result = await res?.json().catch(() => null)
+      if (!res?.ok || !result?.planSlug) {
+        toast({
+          title: t("planes_downgrade_error_title"),
+          description: result?.error || t("planes_downgrade_error_desc"),
+          variant: "destructive",
+        })
+        return
+      }
+      setCurrentPlanSlug(result.planSlug)
       router.push(freeRedirectTo)
     } else {
       // "from=account": distingue a alguien que ya tenía cuenta y solo quiere subir de

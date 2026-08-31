@@ -14,9 +14,10 @@
  */
 
 import { NextResponse } from "next/server"
-import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
+import { getStripeClient, isStripeConfigured, getOrCreateSubscriptionProductId } from "@/lib/stripe/client"
 import { getPlanBySlug } from "@/lib/plans"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
+import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { checkRateLimit } from "@/lib/rate-limit"
 
 // Cuántas veces puede una cuenta intentar iniciar un pago en poco tiempo — pedido
@@ -79,6 +80,61 @@ export async function POST(request: Request) {
 
   try {
     const stripe = getStripeClient()
+
+    // BUG CORREGIDO (ver docs/76): si la cuenta ya tiene una suscripción real activa
+    // (está cambiando de un plan pago a otro), esto antes creaba una sesión de
+    // Checkout nueva sin importar la existente — el resultado era una SEGUNDA
+    // suscripción cobrando en paralelo a la primera, invisible en la app (que solo
+    // recuerda el id de la más reciente), hasta que la persona notara el cargo
+    // duplicado en su banco o en el propio Stripe. Ahora, si hay una suscripción
+    // activa real, se actualiza esa MISMA suscripción en el lugar (mismo patrón
+    // price_data que el checkout de siempre, ya que no hay Price fijo por plan) en
+    // vez de crear una nueva — Stripe factura la diferencia prorrateada en la
+    // siguiente factura, sin pedir la tarjeta de nuevo. El webhook
+    // customer.subscription.updated ya sabe leer el planSlug de la metadata que se
+    // manda acá, así que account_plans queda al día solo, igual que un cambio hecho
+    // desde el Portal de Cliente.
+    const { data: accountPlan } = await getSupabaseAdminClient()
+      .from("account_plans")
+      .select("stripe_subscription_id")
+      .eq("account_id", user.id)
+      .maybeSingle()
+
+    if (accountPlan?.stripe_subscription_id) {
+      try {
+        const existingSubscription = await stripe.subscriptions.retrieve(accountPlan.stripe_subscription_id)
+        const activeStatuses = ["active", "trialing", "past_due"]
+        const existingItemId = existingSubscription.items.data[0]?.id
+        if (activeStatuses.includes(existingSubscription.status) && existingItemId) {
+          const productId = await getOrCreateSubscriptionProductId()
+          await stripe.subscriptions.update(accountPlan.stripe_subscription_id, {
+            items: [
+              {
+                id: existingItemId,
+                price_data: {
+                  currency: "usd",
+                  product: productId,
+                  unit_amount: plan.priceUsdCents,
+                  recurring: { interval: "month" },
+                },
+              },
+            ],
+            metadata: { planSlug: plan.slug, accountId: user.id },
+          })
+          return NextResponse.json({ updatedInPlace: true })
+        }
+      } catch (updateError) {
+        // No aborta el flujo — si la suscripción "activa" en account_plans en
+        // realidad ya no existe en Stripe (canceló, o algo quedó desincronizado),
+        // sigue abajo con un checkout nuevo en vez de dejar a la persona sin poder
+        // pagar nada.
+        console.error(
+          "[api/checkout] No se pudo actualizar la suscripción existente, se intentará un checkout nuevo:",
+          updateError,
+        )
+      }
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],

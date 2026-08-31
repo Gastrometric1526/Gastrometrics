@@ -9,6 +9,7 @@ import { ArrowLeft, CreditCard, Lock, ShieldCheck, CheckCircle2, XCircle } from 
 import { plans, getLocalizedPlan } from "@/lib/plans"
 import { setCurrentPlanSlug } from "@/lib/plan-access"
 import { useLanguage } from "@/contexts/language-context"
+import { useToast } from "@/hooks/use-toast"
 
 // Paso de pago después de crear la cuenta, solo para planes pagos (el plan Foodie/gratis
 // va directo al dashboard desde signup). Conectado a Stripe Checkout real vía
@@ -33,6 +34,7 @@ function PaymentPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { language, t } = useLanguage()
+  const { toast } = useToast()
   const planSlug = searchParams.get("plan")
   const plan = getLocalizedPlan(plans.find((p) => p.slug === planSlug) ?? plans[1], language)
   // BUG CORREGIDO: "Volver" y "Cambiar de plan" mandaban siempre a /signup o /planes
@@ -70,6 +72,15 @@ function PaymentPageInner() {
       if (res.status === 503) {
         setStripeUnavailable(true)
         setIsProcessing(false)
+        return
+      }
+      // Ya tenía una suscripción paga activa (cambio de plan, no alta nueva) — el
+      // servidor la actualizó directo en Stripe, sin crear una segunda en paralelo
+      // (ver docs/76). No hay a dónde redirigir en Stripe; el webhook ya se encarga
+      // de que account_plans quede al día en cuanto procese el evento.
+      if (data.updatedInPlace) {
+        setCurrentPlanSlug(plan.slug)
+        router.push(fromAccount ? "/mi-plan?checkout=success" : "/dashboard?checkout=success")
         return
       }
       if (!res.ok || !data.url) {
@@ -139,14 +150,26 @@ function PaymentPageInner() {
               <button
                 type="button"
                 onClick={async () => {
-                  const result = await fetch("/api/plan/set-free", {
+                  // BUG CORREGIDO (ver docs/76): mismo caso que components/plans-grid.tsx
+                  // — relevante acá específicamente cuando fromAccount=true (alguien que
+                  // YA tenía un plan pago activo, vino a subir de plan, y en vez de eso le
+                  // da "Omitir por ahora"): si el servidor no pudo cancelar su suscripción
+                  // real, no hay que avanzar como si ya estuviera en el plan gratis.
+                  const res = await fetch("/api/plan/set-free", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ planSlug: "foodie" }),
-                  })
-                    .then((res) => res.json())
-                    .catch(() => null)
-                  setCurrentPlanSlug(result?.planSlug || "foodie")
+                  }).catch(() => null)
+                  const result = await res?.json().catch(() => null)
+                  if (!res?.ok || !result?.planSlug) {
+                    toast({
+                      title: t("planes_downgrade_error_title"),
+                      description: result?.error || t("planes_downgrade_error_desc"),
+                      variant: "destructive",
+                    })
+                    return
+                  }
+                  setCurrentPlanSlug(result.planSlug)
                   router.push(fromAccount ? "/mi-plan" : "/dashboard")
                 }}
                 className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
