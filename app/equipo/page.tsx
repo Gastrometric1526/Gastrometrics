@@ -275,6 +275,7 @@ function EquipoContent() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: entry.email,
+            name: entry.name,
             scope: entry.scope,
             scopeLabel: scopeLabelFor(entry.scope),
             toolsLabel: toolsLabelFor(entry.allowedFeatures),

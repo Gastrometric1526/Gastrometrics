@@ -200,8 +200,17 @@ function SignupPageInner() {
       }
     } catch (error: any) {
       console.error("Registration error:", error)
-      const message = typeof error?.message === "string" ? error.message.toLowerCase() : ""
-      if (message.includes("already registered") || message.includes("already exists")) {
+      const rawMessage = typeof error?.message === "string" ? error.message : ""
+      const message = rawMessage.toLowerCase()
+      // "EMAIL_ALREADY_REGISTERED" es el código exacto que devuelve nuestra propia ruta
+      // (app/api/auth/signup/route.ts) cuando YA verificó, contra la base real, que el
+      // correo existe — ver docs/75. Las otras dos frases quedan como respaldo por si
+      // Supabase llega a rechazar el alta con su propio mensaje en algún otro caso.
+      if (
+        rawMessage === "EMAIL_ALREADY_REGISTERED" ||
+        message.includes("already registered") ||
+        message.includes("already exists")
+      ) {
         setErrors({ submit: t("signup_error_email_taken") })
       } else {
         setErrors({ submit: t("signup_error_generic") })

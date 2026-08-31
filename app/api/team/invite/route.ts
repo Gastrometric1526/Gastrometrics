@@ -34,6 +34,7 @@ import { MAX_TEAM_MEMBERS } from "@/types/team"
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
   const email = typeof body?.email === "string" ? body.email.trim() : ""
+  const invitedName = typeof body?.name === "string" ? body.name.trim() : ""
   const scope = typeof body?.scope === "string" && body.scope ? body.scope : "dashboard"
   const scopeLabel = typeof body?.scopeLabel === "string" ? body.scopeLabel : ""
   const toolsLabel = typeof body?.toolsLabel === "string" ? body.toolsLabel : ""
@@ -90,12 +91,18 @@ export async function POST(request: Request) {
   let actionLink: string | null = null
   let invitedUserId: string | null = null
 
+  // full_name solo se manda en la invitación de cuenta NUEVA (type:"invite") — el
+  // trigger handle_new_user() (0003_profile_signup_trigger.sql) lo copia a profiles al
+  // crear la fila, así que el dashboard de esa persona la saluda por su nombre real
+  // desde el primer login, no por su correo (ver docs/75). Nunca se manda en el
+  // fallback de magiclink de abajo: ese correo YA tiene cuenta y perfil propios: pisar
+  // su nombre real con lo que el dueño haya escrito acá sería el bug al revés.
   const inviteAttempt = await admin.auth.admin.generateLink({
     type: "invite",
     email,
     options: {
       redirectTo: `${siteUrl}/reset-password`,
-      data: { invited_by: user.id, invited_by_name: ownerName },
+      data: { invited_by: user.id, invited_by_name: ownerName, full_name: invitedName },
     },
   })
 

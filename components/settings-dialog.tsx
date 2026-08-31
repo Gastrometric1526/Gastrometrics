@@ -511,13 +511,12 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                         <p className="text-muted-foreground">{t("settings_created_at")}</p>
                         <p className="font-medium">
                           {(() => {
-                            if (typeof window === "undefined") return t("settings_not_available")
-                            const profile = JSON.parse(localStorage.getItem("userProfile") || "{}")
-                            // BUG CORREGIDO: hardcodeaba locale "es-HN" sin importar el
-                            // idioma elegido en esta misma pestaña — un usuario en inglés/
-                            // francés/etc. seguía viendo nombres de mes en español.
-                            return profile.createdAt
-                              ? new Date(profile.createdAt).toLocaleDateString(language, {
+                            // BUG CORREGIDO: leía localStorage["userProfile"], la misma clave
+                            // muerta corregida en el resto de este diálogo — ahora usa
+                            // realUserProfile (useAuth()), la fuente real. De paso ya no
+                            // hardcodea locale "es-HN": usa el idioma elegido en esta pestaña.
+                            return realUserProfile?.createdAt
+                              ? new Date(realUserProfile.createdAt).toLocaleDateString(language, {
                                   day: "2-digit",
                                   month: "long",
                                   year: "numeric",
@@ -537,11 +536,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                       <div>
                         <p className="text-muted-foreground">{t("settings_email_verified")}</p>
                         <p className="font-medium">
-                          {(() => {
-                            if (typeof window === "undefined") return t("settings_pending")
-                            const profile = JSON.parse(localStorage.getItem("userProfile") || "{}")
-                            return profile.emailVerified ? t("settings_yes") : t("settings_pending")
-                          })()}
+                          {realUserProfile?.emailVerified ? t("settings_yes") : t("settings_pending")}
                         </p>
                       </div>
                     </div>

@@ -54,6 +54,26 @@ export async function POST(request: Request) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
   const admin = getSupabaseAdminClient()
 
+  // BUG CORREGIDO: admin.generateLink({type:"signup"}) NO rechaza de forma confiable un
+  // correo que ya tiene cuenta — contra una cuenta sin confirmar (ej. alguien invitado a
+  // un equipo que nunca completó su propio registro) devuelve éxito ({ok:true}) en vez
+  // de error, sin tocar la contraseña real de esa cuenta. app/signup/page.tsx entonces
+  // intenta iniciar sesión de inmediato con la contraseña nueva recién escrita, que no
+  // coincide con la real — falla con "Invalid login credentials", un mensaje que no se
+  // parece a "already registered"/"already exists" (lo único que ese formulario sabía
+  // reconocer), así que la persona terminaba viendo el error genérico "hubo un error,
+  // intenta de nuevo" sin ninguna pista de que el correo ya era suyo. Se verifica acá,
+  // explícitamente, ANTES de intentar crear nada — ver docs/75.
+  const { data: existingUsersPage, error: listUsersError } = await admin.auth.admin.listUsers({
+    page: 1,
+    perPage: 1000,
+  })
+  if (listUsersError) {
+    console.error("[api/auth/signup] Error verificando correos existentes:", listUsersError)
+  } else if (existingUsersPage.users.some((u) => u.email?.toLowerCase() === email.toLowerCase())) {
+    return NextResponse.json({ error: "EMAIL_ALREADY_REGISTERED" }, { status: 409 })
+  }
+
   const { data, error } = await admin.auth.admin.generateLink({
     type: "signup",
     email,
