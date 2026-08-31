@@ -99,10 +99,14 @@ function useNavigationItems() {
       "/menus": ["menus"],
       "/menu-y-compras": ["purchase_orders_manual", "purchase_orders_auto"],
       "/estadisticas": ["stats_panorama", "stats_finance"],
+      // Delegable desde docs/75 — un miembro con la función 'team' habilitada
+      // también puede gestionar el equipo (ver supabase/migrations/
+      // 0015_team_delegate_management.sql para el porqué hacía falta una migración,
+      // no solo esto).
+      "/equipo": ["team"],
     }
     return items.filter((item) => {
       if (item.href === "/dashboard" || item.href === "/negocios") return hasScopeDashboard
-      if (item.href === "/equipo") return false
       const required = hrefFeatureMap[item.href]
       if (!required) return true
       return required.some((f) => allowed.has(f))

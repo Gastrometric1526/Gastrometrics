@@ -65,7 +65,7 @@ import type { Business } from "@/types/business"
 // (Ficha Técnica/Mis Recetas/Ingredientes están en todos los planes, incluido Foodie)
 // — existen como FeatureKey solo para poder restringirlas por persona acá mismo (ver
 // lib/plan-access.ts, DEFAULT_ALWAYS_ON_FEATURES).
-const ASSIGNABLE_FEATURE_DEFS: { key: FeatureKey; labelKey: "equipo_feature_recipes" | "equipo_feature_ingredients" | "equipo_feature_merma" | "equipo_feature_purchase_orders_manual" | "equipo_feature_purchase_orders_auto" | "equipo_feature_inventory" | "equipo_feature_menus" | "equipo_feature_stats_panorama" | "equipo_feature_stats_finance" }[] = [
+const ASSIGNABLE_FEATURE_DEFS: { key: FeatureKey; labelKey: "equipo_feature_recipes" | "equipo_feature_ingredients" | "equipo_feature_merma" | "equipo_feature_purchase_orders_manual" | "equipo_feature_purchase_orders_auto" | "equipo_feature_inventory" | "equipo_feature_menus" | "equipo_feature_stats_panorama" | "equipo_feature_stats_finance" | "equipo_feature_team" }[] = [
   { key: "recipes", labelKey: "equipo_feature_recipes" },
   { key: "ingredients", labelKey: "equipo_feature_ingredients" },
   { key: "merma", labelKey: "equipo_feature_merma" },
@@ -75,6 +75,11 @@ const ASSIGNABLE_FEATURE_DEFS: { key: FeatureKey; labelKey: "equipo_feature_reci
   { key: "menus", labelKey: "equipo_feature_menus" },
   { key: "stats_panorama", labelKey: "equipo_feature_stats_panorama" },
   { key: "stats_finance", labelKey: "equipo_feature_stats_finance" },
+  // Delegable desde docs/75: quien reciba esta función puede invitar/editar/quitar
+  // gente del equipo, igual que el dueño — ver supabase/migrations/
+  // 0015_team_delegate_management.sql para cómo queda atribuido correctamente a la
+  // cuenta real (no a la del delegado).
+  { key: "team", labelKey: "equipo_feature_team" },
 ]
 
 interface MemberFormState {

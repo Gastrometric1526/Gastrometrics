@@ -27,6 +27,20 @@ type TeamMemberRow = Database["public"]["Tables"]["team_members"]["Row"]
 const cache = createBusinessScopedCache<TeamMember>()
 const ACCOUNT_KEY = "__team_members__"
 
+/**
+ * Resuelve a nombre de qué cuenta escribir: la propia (caso normal, el dueño en su
+ * propia sesión) o la de la cuenta que delegó a este usuario la función 'team' (ver
+ * docs/75 y supabase/migrations/0015_team_delegate_management.sql). getMyMemberships()
+ * ya está precargada al iniciar sesión (contexts/auth-context.tsx), así que esto es
+ * síncrono — sin esta resolución, un delegado invitando a alguien grabaría
+ * owner_id = su propio id, creando una cuenta de equipo separada y equivocada en vez
+ * de extender la de quien lo delegó.
+ */
+function resolveEffectiveOwnerId(callerId: string): string {
+  const delegated = getMyMemberships().find((m) => m.allowedFeatures.includes("team"))
+  return delegated?.ownerId || callerId
+}
+
 function rowToTeamMember(row: TeamMemberRow): TeamMember {
   return {
     id: row.id,
@@ -157,10 +171,11 @@ export async function inviteTeamMember(input: {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) throw new Error("Debes iniciar sesión para invitar a alguien.")
+  const ownerAccountId = resolveEffectiveOwnerId(user.id)
 
   const member: TeamMember = {
     id: `team-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    ownerId: user.id,
+    ownerId: ownerAccountId,
     email: input.email.trim(),
     name: input.name?.trim() || undefined,
     status: "invitado",
@@ -176,7 +191,7 @@ export async function inviteTeamMember(input: {
 
   const { error } = await supabase.from("team_members").insert({
     id: member.id,
-    owner_id: user.id,
+    owner_id: ownerAccountId,
     email: member.email,
     name: member.name || null,
     status: member.status,

@@ -30,6 +30,7 @@ import { renderEmailTemplate, escapeHtml } from "@/lib/services/email-templates"
 import { getEmailLabels, fillLabel, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { MAX_TEAM_MEMBERS } from "@/types/team"
+import { resolveTeamOwnerId } from "@/lib/team/resolve-owner"
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
@@ -64,16 +65,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Demasiadas invitaciones seguidas. Espera unos minutos e intenta de nuevo." }, { status: 429 })
   }
 
+  const admin = getSupabaseAdminClient()
+
+  // Quien llama puede ser el dueño real de la cuenta, o un miembro delegado con la
+  // función 'team' habilitada (ver docs/75 y supabase/migrations/
+  // 0015_team_delegate_management.sql) — de acá en adelante, "el dueño" siempre es
+  // este id resuelto, nunca user.id a secas, o las invitaciones de un delegado
+  // quedarían mal atribuidas a su propia cuenta en vez de a la que lo delegó.
+  const ownerAccountId = await resolveTeamOwnerId(admin, user.id)
+
   // MAX_TEAM_MEMBERS ya se revisaba en lib/storage/team.ts (inviteTeamMember), pero
   // eso corre DESPUÉS de esta ruta en app/equipo/page.tsx y solo del lado del cliente
   // — alguien llamando esta ruta directo podía saltárselo por completo y crear más
   // cuentas/otorgar más accesos reales de los que el plan permite. Se revisa también
   // aquí, contra el conteo real en Supabase, antes de crear nada.
-  const admin = getSupabaseAdminClient()
   const { count: currentMemberCount } = await admin
     .from("team_members")
     .select("id", { count: "exact", head: true })
-    .eq("owner_id", user.id)
+    .eq("owner_id", ownerAccountId)
   if ((currentMemberCount || 0) >= MAX_TEAM_MEMBERS) {
     return NextResponse.json({ error: `Ya invitaste al máximo de ${MAX_TEAM_MEMBERS} personas.` }, { status: 400 })
   }
@@ -138,7 +147,7 @@ export async function POST(request: Request) {
   if (invitedUserId) {
     const targetBusinessIds =
       scope === "dashboard"
-        ? ((await admin.from("businesses").select("id").eq("owner_id", user.id)).data || []).map((b) => b.id)
+        ? ((await admin.from("businesses").select("id").eq("owner_id", ownerAccountId)).data || []).map((b) => b.id)
         : [scope]
     if (targetBusinessIds.length > 0) {
       const { error: memberError } = await admin

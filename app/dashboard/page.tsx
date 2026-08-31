@@ -484,11 +484,11 @@ export default function DashboardPage() {
       "/menus": ["menus"],
       "/ordenes-compra": ["purchase_orders_manual", "purchase_orders_auto"],
       "/estadisticas": ["stats_panorama", "stats_finance"],
-      "/equipo": [],
+      // Delegable desde docs/75 — ver components/sidebar.tsx para el mismo mapeo.
+      "/equipo": ["team"],
     }
     const required = hrefFeatureMap[item.href]
     if (!required) return true
-    if (required.length === 0) return false
     return required.some((f) => previewMember.allowedFeatures.includes(f as any))
   })
 
