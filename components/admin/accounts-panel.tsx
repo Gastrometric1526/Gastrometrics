@@ -17,13 +17,31 @@ import {
   AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogCancel,
+  AlertDialogAction,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
 import { plans, getPlanBySlug } from "@/lib/plans"
 import { formatActiveTime, countryName } from "@/lib/admin-format"
-import { ArrowLeft, Search, Users, Building2, FileText, Package, AlertTriangle, Trash2, Globe, Clock, CircleAlert } from "lucide-react"
+import {
+  ArrowLeft,
+  Search,
+  Users,
+  Building2,
+  FileText,
+  Package,
+  AlertTriangle,
+  Trash2,
+  Globe,
+  Clock,
+  CircleAlert,
+  Mail,
+  KeyRound,
+  Copy,
+  Check,
+  LifeBuoy,
+} from "lucide-react"
 
 // Umbral de "inactivo" en la lista de Cuentas: sin actividad registrada en los últimos
 // 14 días (y no en línea ahora mismo) — pedido implícito al agregar "tiempo en la app":
@@ -128,6 +146,16 @@ export function AccountsPanel() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("")
   const [deletingAccount, setDeletingAccount] = useState(false)
+
+  // Asistencia real a la cuenta (correo/contraseña) — pedido explícito del dueño del
+  // proyecto: "debo poder dar full asistencia a cualquier usuario". Ver docs/86.
+  const [newEmailInput, setNewEmailInput] = useState("")
+  const [emailConfirmOpen, setEmailConfirmOpen] = useState(false)
+  const [changingEmail, setChangingEmail] = useState(false)
+  const [sendingReset, setSendingReset] = useState(false)
+  const [generatingTempPassword, setGeneratingTempPassword] = useState(false)
+  const [tempPasswordResult, setTempPasswordResult] = useState<string | null>(null)
+  const [copiedTempPassword, setCopiedTempPassword] = useState(false)
 
   const loadList = async (targetPage: number, targetSearch: string, targetPlan: string, targetSort: string) => {
     setLoadingList(true)
@@ -235,6 +263,9 @@ export function AccountsPanel() {
     setTeam([])
     setDeleteDialogOpen(false)
     setDeleteConfirmEmail("")
+    setNewEmailInput("")
+    setEmailConfirmOpen(false)
+    setTempPasswordResult(null)
   }
 
   const handleApplyPlan = async () => {
@@ -329,6 +360,91 @@ export function AccountsPanel() {
       toast({ title: t("admin_accounts_delete_error_toast"), variant: "destructive" })
     } finally {
       setDeletingAccount(false)
+    }
+  }
+
+  const handleChangeEmail = async () => {
+    if (!selected || !newEmailInput.trim()) return
+    setChangingEmail(true)
+    try {
+      const res = await fetch("/api/admin/account-credentials", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: selected.userId, email: newEmailInput.trim() }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) {
+        toast({ title: t("admin_accounts_credentials_error_toast"), description: data.error || undefined, variant: "destructive" })
+        return
+      }
+      toast({ title: t("admin_accounts_change_email_success_toast") })
+      setSelected((prev) => (prev ? { ...prev, email: data.email } : prev))
+      setDetail((prev) => (prev ? { ...prev, email: data.email } : prev))
+      setNewEmailInput("")
+      setEmailConfirmOpen(false)
+      loadList(page, search, planFilter, sortBy)
+    } catch (error) {
+      console.error("Error cambiando el correo:", error)
+      toast({ title: t("admin_accounts_credentials_error_toast"), variant: "destructive" })
+    } finally {
+      setChangingEmail(false)
+    }
+  }
+
+  const handleSendResetEmail = async () => {
+    if (!selected) return
+    setSendingReset(true)
+    try {
+      const res = await fetch("/api/admin/account-credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: selected.userId, email: selected.email, action: "send-reset-email" }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) {
+        toast({ title: t("admin_accounts_credentials_error_toast"), description: data.error || undefined, variant: "destructive" })
+        return
+      }
+      toast({ title: t("admin_accounts_send_reset_success_toast").replace("{email}", selected.email) })
+    } catch (error) {
+      console.error("Error mandando el enlace de recuperación:", error)
+      toast({ title: t("admin_accounts_credentials_error_toast"), variant: "destructive" })
+    } finally {
+      setSendingReset(false)
+    }
+  }
+
+  const handleGenerateTempPassword = async () => {
+    if (!selected) return
+    setGeneratingTempPassword(true)
+    try {
+      const res = await fetch("/api/admin/account-credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: selected.userId, action: "set-temp-password" }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) {
+        toast({ title: t("admin_accounts_credentials_error_toast"), description: data.error || undefined, variant: "destructive" })
+        return
+      }
+      setTempPasswordResult(data.tempPassword)
+      setCopiedTempPassword(false)
+    } catch (error) {
+      console.error("Error generando la contraseña temporal:", error)
+      toast({ title: t("admin_accounts_credentials_error_toast"), variant: "destructive" })
+    } finally {
+      setGeneratingTempPassword(false)
+    }
+  }
+
+  const handleCopyTempPassword = async () => {
+    if (!tempPasswordResult) return
+    try {
+      await navigator.clipboard.writeText(tempPasswordResult)
+      setCopiedTempPassword(true)
+    } catch (error) {
+      console.error("Error copiando la contraseña temporal:", error)
     }
   }
 
@@ -441,6 +557,57 @@ export function AccountsPanel() {
                 </div>
               )}
 
+              {/* Asistencia real a la cuenta — correo y contraseña (docs/86). */}
+              <div className="rounded-lg border border-border p-4 space-y-4">
+                <div className="flex items-center gap-2">
+                  <LifeBuoy className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">{t("admin_accounts_credentials_title")}</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">{t("admin_accounts_credentials_desc")}</p>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="new-email-input" className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5" />
+                    {t("admin_accounts_new_email_label")}
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    <Input
+                      id="new-email-input"
+                      type="email"
+                      value={newEmailInput}
+                      onChange={(e) => setNewEmailInput(e.target.value)}
+                      placeholder={selected.email}
+                      className="max-w-xs"
+                      autoComplete="off"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={!newEmailInput.trim() || newEmailInput.trim().toLowerCase() === selected.email.toLowerCase()}
+                      onClick={() => setEmailConfirmOpen(true)}
+                    >
+                      {t("admin_accounts_change_email_button")}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <KeyRound className="h-3.5 w-3.5" />
+                    {t("admin_accounts_password_label")}
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline" onClick={handleSendResetEmail} disabled={sendingReset}>
+                      {sendingReset ? t("admin_accounts_applying") : t("admin_accounts_send_reset_button")}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleGenerateTempPassword} disabled={generatingTempPassword}>
+                      {generatingTempPassword ? t("admin_accounts_applying") : t("admin_accounts_set_temp_password_button")}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{t("admin_accounts_password_hint")}</p>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">{t("admin_accounts_businesses_title")}</h3>
                 {businesses.length === 0 ? (
@@ -506,6 +673,49 @@ export function AccountsPanel() {
             </>
           )}
         </CardContent>
+
+        {/* Cambiar correo — confirmación simple, no de tipo "escribe el nombre exacto"
+            como el borrado (esto es reversible: se puede volver a cambiar), pero sí
+            merece una pausa antes de aplicar, es la forma en la que la persona entra. */}
+        <AlertDialog open={emailConfirmOpen} onOpenChange={(open) => !open && setEmailConfirmOpen(false)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("admin_accounts_change_email_confirm_title")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {selected &&
+                  t("admin_accounts_change_email_confirm_desc")
+                    .replace("{oldEmail}", selected.email)
+                    .replace("{newEmail}", newEmailInput.trim())}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={changingEmail}>{t("common_cancel")}</AlertDialogCancel>
+              <Button onClick={handleChangeEmail} disabled={changingEmail}>
+                {changingEmail ? t("admin_accounts_applying") : t("admin_accounts_change_email_button")}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Contraseña temporal generada — se muestra una sola vez, con botón de copiar */}
+        <AlertDialog open={!!tempPasswordResult} onOpenChange={(open) => !open && setTempPasswordResult(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("admin_accounts_temp_password_dialog_title")}</AlertDialogTitle>
+              <AlertDialogDescription>{t("admin_accounts_temp_password_dialog_desc")}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 p-3">
+              <code className="flex-1 text-base font-mono tracking-wide text-foreground">{tempPasswordResult}</code>
+              <Button type="button" size="sm" variant="outline" onClick={handleCopyTempPassword} className="gap-1.5 shrink-0">
+                {copiedTempPassword ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                {copiedTempPassword ? t("admin_accounts_copied") : t("admin_accounts_copy_button")}
+              </Button>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogAction onClick={() => setTempPasswordResult(null)}>{t("common_close")}</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Revocar miembro de equipo — confirmación real (antes window.confirm) */}
         <AlertDialog open={!!revokeTarget} onOpenChange={(open) => !open && setRevokeTarget(null)}>
