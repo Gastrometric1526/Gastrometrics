@@ -64,12 +64,15 @@ export function HomeContent() {
     { slug: "estadisticas", icon: BarChart3, titleKey: "landing_module6_title", descKey: "landing_module6_desc", badge: "Sous Chef" },
   ] as const
 
-  const leakBars = [
-    { name: "Queso duro", pct: "+18.4%", theoretical: 22.3, real: 26.4 },
-    { name: "Machaca de res", pct: "+11.2%", theoretical: 31.0, real: 34.5 },
-    { name: "Mantequilla crema", pct: "+26.0%", theoretical: 9.6, real: 12.1 },
-    { name: "Frijoles rojos", pct: "+3.1%", theoretical: 40.2, real: 41.4 },
-  ]
+  // Mismas tres cifras que la tarjeta real de Estadísticas → Finanzas
+  // (components/estadisticas-finanzas-tab.tsx: realCostPercent, theoreticalCostPercent,
+  // variance) — antes esta tarjeta mostraba barras de kg por ingrediente comparando
+  // "teórico" contra "real" por semana, una funcionalidad que no existe en ningún lado
+  // de la app real (la única comparación teórico-vs-real real es esta, agregada en
+  // dinero/porcentaje, no por ingrediente ni en kilogramos).
+  const realCostPercent = 34.8
+  const theoreticalCostPercent = 30.6
+  const costVariance = realCostPercent - theoreticalCostPercent
 
   // Estados reales de Inventario — mismas tres palabras que usa la pantalla de
   // verdad (inventario_status_critical/low/normal en lib/i18n/translations.ts), no
@@ -146,7 +149,17 @@ export function HomeContent() {
           </div>
 
           {/* Ficha técnica real como demo de producto — nombres/cifras ilustrativos,
-              fijos en todos los idiomas (misma lógica que una captura de pantalla). */}
+              pero la estructura (columnas, etiquetas) copia exactamente la pantalla
+              real de Ficha Técnica (components/technical-sheet/index.tsx): cada fila
+              es "ingrediente · cantidad · costo de esa línea", no un porcentaje del
+              total (esa columna no existe en la pantalla real). Los dos totales usan
+              las mismas etiquetas reales de esa pantalla: "Costo unitario"
+              (ficha_tecnica_col_unit_cost) y "Costo %" (ficha_tecnica_food_cost_
+              percent_label) — antes decía "Costo por porción"/"Food cost", que no son
+              las etiquetas reales. Sin caja de alerta: la pantalla real de Ficha
+              Técnica no muestra ningún aviso junto al costo (antes había una inventada
+              sobre "1.2 kg más de carne esta semana", una comparación que no existe en
+              ningún lado de la app). */}
           <Card className="border-hairline bg-card overflow-hidden">
             <CardContent className="p-6 space-y-5">
               <div className="flex items-center justify-between">
@@ -155,16 +168,16 @@ export function HomeContent() {
               <p className="text-base font-semibold text-foreground">Hamburguesa clásica · 1 porción</p>
               <div className="divide-y divide-hairline border-t border-b border-hairline">
                 {[
-                  ["Pan de hamburguesa", "8%", "L 6.50"],
-                  ["Carne de res 150g", "45%", "L 32.00"],
-                  ["Queso cheddar", "12%", "L 10.80"],
-                  ["Vegetales frescos", "9%", "L 7.20"],
-                  ["Salsa de la casa", "4%", "L 3.60"],
-                ].map(([name, pct, cost]) => (
+                  ["Pan de hamburguesa", "1 und", "L 6.50"],
+                  ["Carne de res", "150 g", "L 32.00"],
+                  ["Queso cheddar", "30 g", "L 10.80"],
+                  ["Vegetales frescos", "80 g", "L 7.20"],
+                  ["Salsa de la casa", "20 g", "L 3.60"],
+                ].map(([name, qty, cost]) => (
                   <div key={name} className="flex items-center justify-between py-2.5 text-sm">
                     <span className="text-foreground">{name}</span>
                     <span className="flex items-center gap-4 tabular-nums text-text-3">
-                      <span className="text-text-4">{pct}</span>
+                      <span className="text-text-4">{qty}</span>
                       <span>{cost}</span>
                     </span>
                   </div>
@@ -172,16 +185,13 @@ export function HomeContent() {
               </div>
               <div className="grid grid-cols-2 gap-4 pt-1">
                 <div>
-                  <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("landing_hero_card_cost_label")}</p>
+                  <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("ficha_tecnica_col_unit_cost")}</p>
                   <p className="text-2xl font-semibold text-foreground tabular-nums">L 60.10</p>
                 </div>
                 <div>
-                  <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("landing_hero_card_foodcost_label")}</p>
+                  <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("ficha_tecnica_food_cost_percent_label")}</p>
                   <p className="text-2xl font-semibold text-foreground tabular-nums">32.5%</p>
                 </div>
-              </div>
-              <div className="rounded-xl bg-warning-soft text-warning text-xs font-medium px-3.5 py-2.5">
-                {t("landing_hero_card_alert")}
               </div>
             </CardContent>
           </Card>
@@ -223,37 +233,35 @@ export function HomeContent() {
             </ol>
           </div>
 
+          {/* Mismas tres cifras y misma etiqueta que la tarjeta real de Estadísticas
+              → Finanzas (finanzas_card_real_food_cost/theoretical_food_cost/variance,
+              components/estadisticas-finanzas-tab.tsx) — antes esta tarjeta mostraba
+              barras de kilogramos por ingrediente ("Teórico 22.3 kg" / "Real 26.4 kg"
+              para "Queso duro", etc.), una comparación que no existe en ningún lado de
+              la app real. La única comparación teórico-vs-real real es esta, agregada
+              en porcentaje de food cost, no por ingrediente ni en peso. */}
           <Card className="border-hairline bg-card">
             <CardContent className="p-6 space-y-5">
               <div>
                 <p className="text-sm font-semibold text-foreground">{t("landing_leak_compare_title")}</p>
                 <p className="text-xs text-text-4">{t("landing_leak_compare_subtitle")}</p>
               </div>
-              <div className="space-y-4">
-                {leakBars.map((bar) => {
-                  const max = 40
-                  const theoreticalPct = Math.min(100, (bar.theoretical / max) * 100)
-                  const realPct = Math.min(100, (bar.real / max) * 100)
-                  return (
-                    <div key={bar.name} className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-foreground font-medium">{bar.name}</span>
-                        <span className="text-primary font-medium tabular-nums">{bar.pct}</span>
-                      </div>
-                      <div className="relative h-2 rounded-full bg-secondary overflow-hidden">
-                        <div className="absolute inset-y-0 left-0 rounded-full bg-text-4/50" style={{ width: `${theoreticalPct}%` }} />
-                        <div
-                          className="absolute inset-y-0 bg-primary rounded-r-full"
-                          style={{ left: `${theoreticalPct}%`, width: `${Math.max(0, realPct - theoreticalPct)}%` }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between text-[11px] text-text-4 tabular-nums">
-                        <span>Teórico {bar.theoretical.toFixed(1)} kg</span>
-                        <span>Real {bar.real.toFixed(1)} kg</span>
-                      </div>
-                    </div>
-                  )
-                })}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("finanzas_card_real_food_cost")}</p>
+                  <p className="text-xl font-semibold text-foreground tabular-nums mt-1">{realCostPercent.toFixed(1)}%</p>
+                </div>
+                <div>
+                  <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("finanzas_card_theoretical_food_cost")}</p>
+                  <p className="text-xl font-semibold text-foreground tabular-nums mt-1">{theoreticalCostPercent.toFixed(1)}%</p>
+                </div>
+                <div>
+                  <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("finanzas_card_variance")}</p>
+                  <p className="text-xl font-semibold text-warning tabular-nums mt-1">
+                    +{costVariance.toFixed(1)}%
+                  </p>
+                  <p className="text-[11px] text-warning mt-0.5">{t("finanzas_variance_acceptable")}</p>
+                </div>
               </div>
               <p className="text-xs text-text-4 pt-1 border-t border-hairline">{t("landing_leak_compare_caption")}</p>
             </CardContent>

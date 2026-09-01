@@ -66,6 +66,7 @@ import { IngredientesTour } from "@/components/page-tours"
 import { convertAllIngredientsToSystem } from "@/lib/utils/calculations"
 import { updateIngredientPriceAndRecalculate } from "@/lib/recalculate"
 import { ActivityTracker } from "@/lib/activity-tracker"
+import { logActivity } from "@/lib/services/activity-log"
 
 // Helper function for generating unique IDs
 const generateUniqueId = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 9)
@@ -198,7 +199,7 @@ export default function IngredientesPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const businessId = searchParams.get("business")
-  const { isLoggedIn, authChecked } = useAuth()
+  const { isLoggedIn, authChecked, user } = useAuth()
   const canAccessMerma = useFeatureAccess("merma")
   const canAccessIngredients = useFeatureAccess("ingredients")
   const { showSuccess, showError, showInfo } = useNotification()
@@ -828,6 +829,16 @@ export default function IngredientesPage() {
           )
         }
 
+        if (user) {
+          logActivity({
+            user,
+            businessId: businessId && businessId !== "main" ? businessId : null,
+            module: "ingredientes",
+            action: "updated",
+            entityLabel: ingredientData.name,
+          })
+        }
+
         showSuccess(t("ingredientes_toast_updated_title"), t("ingredientes_toast_updated_desc"))
         setShowEditDialog(false)
         setIngredientToEdit(null)
@@ -864,6 +875,16 @@ export default function IngredientesPage() {
             businessId || undefined,
             { action: "create", ingredientId: newIngredient.id },
           )
+        }
+
+        if (user) {
+          logActivity({
+            user,
+            businessId: businessId && businessId !== "main" ? businessId : null,
+            module: "ingredientes",
+            action: "created",
+            entityLabel: newIngredient.name,
+          })
         }
 
         showSuccess(t("ingredientes_toast_created_title"), t("ingredientes_toast_created_desc"))
@@ -943,6 +964,16 @@ export default function IngredientesPage() {
           businessId || undefined,
           { action: "delete", ingredientId: ingredientToDelete.id },
         )
+      }
+
+      if (user) {
+        logActivity({
+          user,
+          businessId: businessId && businessId !== "main" ? businessId : null,
+          module: "ingredientes",
+          action: "deleted",
+          entityLabel: ingredientToDelete.name,
+        })
       }
 
       showSuccess(t("ingredientes_toast_deleted_title"), t("ingredientes_toast_deleted_desc"))

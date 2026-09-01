@@ -53,6 +53,8 @@ import { useRouter } from "next/navigation"
 import { Eye } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
+import { useAuth } from "@/contexts/auth-context"
+import { logActivity } from "@/lib/services/activity-log"
 import { getAllBusinesses } from "@/lib/storage/businesses"
 import { getTeamMembers, inviteTeamMember, updateTeamMember, removeTeamMember, ensureTeamMembersLoaded } from "@/lib/storage/team"
 import { MAX_TEAM_MEMBERS, type TeamMember, type TeamMemberPdfAccess } from "@/types/team"
@@ -121,6 +123,7 @@ export default function EquipoPage() {
 
 function EquipoContent() {
   const { toast } = useToast()
+  const { user } = useAuth()
   const { t } = useLanguage()
   const router = useRouter()
 
@@ -239,6 +242,9 @@ function EquipoContent() {
         allowedFeatures: form.allowedFeatures,
         pdfAccess: form.pdfAccess,
       })
+      if (user) {
+        logActivity({ user, businessId: null, module: "equipo", action: "access_updated", entityLabel: form.email })
+      }
       toast({ title: t("equipo_toast_access_updated_title"), description: t("equipo_toast_access_updated_desc").replace("{email}", form.email) })
       setDialogOpen(false)
       await load()
@@ -320,6 +326,9 @@ function EquipoContent() {
     await load()
 
     if (invited.length > 0) {
+      if (user) {
+        logActivity({ user, businessId: null, module: "equipo", action: "invited", entityLabel: invited.join(", ") })
+      }
       toast({
         title: invited.length === 1 ? t("equipo_toast_invite_registered_title_singular") : t("equipo_toast_invite_registered_title_plural").replace("{count}", String(invited.length)),
         description: t("equipo_toast_invite_registered_desc").replace("{emails}", invited.join(", ")),
@@ -352,6 +361,9 @@ function EquipoContent() {
 
   const handleRemove = async (id: string, email: string) => {
     await removeTeamMember(id)
+    if (user) {
+      logActivity({ user, businessId: null, module: "equipo", action: "removed", entityLabel: email })
+    }
     toast({ title: t("equipo_toast_removed_title"), description: t("equipo_toast_removed_desc").replace("{email}", email) })
     await load()
   }

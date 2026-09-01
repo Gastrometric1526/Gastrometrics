@@ -17,6 +17,8 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { UploadCloud, FileSpreadsheet, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/auth-context"
+import { logActivity } from "@/lib/services/activity-log"
 import { parseExcelFile } from "@/lib/excel-utils"
 import { formatCurrency } from "@/lib/currency"
 import { findBestNameMatch, normalizeName } from "@/lib/utils/name-match"
@@ -96,6 +98,7 @@ export function POSSalesImportDialog({
   onImported,
 }: POSSalesImportDialogProps) {
   const { toast } = useToast()
+  const { user } = useAuth()
   const { t } = useLanguage()
   const [step, setStep] = useState<Step>("upload")
   const [isDragOver, setIsDragOver] = useState(false)
@@ -334,6 +337,16 @@ export function POSSalesImportDialog({
 
     await addSalesImport(salesImport, businessId)
     onImported(salesImport)
+
+    if (user) {
+      logActivity({
+        user,
+        businessId: businessId && businessId !== "main" ? businessId : null,
+        module: "estadisticas",
+        action: "imported",
+        metadata: { count: lines.length },
+      })
+    }
 
     toast({
       title: t("posi_toast_imported_title"),

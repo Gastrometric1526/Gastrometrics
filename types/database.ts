@@ -362,6 +362,32 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["user_presence"]["Row"]>
         Relationships: never[]
       }
+      activity_log: {
+        Row: {
+          id: number
+          business_id: string | null
+          user_id: string
+          user_name: string
+          module: string
+          action: string
+          entity_label: string | null
+          metadata: unknown
+          is_notification: boolean
+          created_at: string
+        }
+        Insert: Omit<
+          Database["public"]["Tables"]["activity_log"]["Row"],
+          "id" | "business_id" | "entity_label" | "metadata" | "is_notification" | "created_at"
+        > & {
+          business_id?: string | null
+          entity_label?: string | null
+          metadata?: unknown
+          is_notification?: boolean
+          created_at?: string
+        }
+        Update: Partial<Database["public"]["Tables"]["activity_log"]["Row"]>
+        Relationships: never[]
+      }
     }
     Views: Record<string, never>
     Functions: {

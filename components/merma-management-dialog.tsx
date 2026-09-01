@@ -16,6 +16,8 @@ import { setDashboardData } from "@/utils/dashboard-data"
 import { MermaInfoDialog } from "./merma-info-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
+import { useAuth } from "@/contexts/auth-context"
+import { logActivity } from "@/lib/services/activity-log"
 import type { Ingredient } from "@/types/ingredient"
 
 interface MermaManagementDialogProps {
@@ -42,6 +44,7 @@ export function MermaManagementDialog({
   )
   const { toast } = useToast()
   const { t } = useLanguage()
+  const { user } = useAuth()
 
   useEffect(() => {
     if (open && initialIngredients.length > 0) {
@@ -277,6 +280,15 @@ export function MermaManagementDialog({
             },
           }),
         )
+      }
+
+      if (user) {
+        logActivity({
+          user,
+          businessId: businessId && businessId !== "main" ? businessId : null,
+          module: "merma",
+          action: mermaSystemActive ? "activated" : "deactivated",
+        })
       }
 
       toast({

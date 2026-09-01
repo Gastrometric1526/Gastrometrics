@@ -25,6 +25,8 @@ import { Label } from "@/components/ui/label"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/auth-context"
+import { logActivity } from "@/lib/services/activity-log"
 import { ActivityTracker } from "@/lib/activity-tracker"
 import { v4 as uuidv4 } from "uuid"
 import { Badge } from "@/components/ui/badge"
@@ -101,6 +103,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
   const contentRef = useRef<HTMLDivElement>(null)
   const [contentHeight, setContentHeight] = useState(0)
   const { toast } = useToast()
+  const { user } = useAuth()
   const [ingredientsWithQuantity, setIngredientsWithQuantity] = useState<IngredientWithQuantity[]>([])
   const [availablePresentations, setAvailablePresentations] = useState<string[]>([...(presentations || [])])
 
@@ -398,6 +401,16 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
       businessId ?? undefined,
       { snapshotId: newInventorySnapshot.id, itemCount: ingredientsWithValues.length },
     )
+
+    if (user) {
+      logActivity({
+        user,
+        businessId: businessId && businessId !== "main" ? businessId : null,
+        module: "inventario",
+        action: "created",
+        metadata: { count: ingredientsWithValues.length },
+      })
+    }
 
     onOpenChange(false)
 

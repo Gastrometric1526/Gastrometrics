@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/auth-context"
+import { logActivity } from "@/lib/services/activity-log"
 import { ArrowLeft, ArrowRight, Calendar, ChefHat, Plus, Trash2, UtensilsCrossed, Check } from "lucide-react"
 import { getRecipes } from "@/lib/storage/recipes"
 import { createMenu, updateMenu, getRecipeSection } from "@/lib/menus"
@@ -55,6 +57,7 @@ function defaultSteps(): MenuStep[] {
 
 export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }: MenuWizardProps) {
   const { toast } = useToast()
+  const { user } = useAuth()
   const { t, language } = useLanguage()
   const stages = stageDefs.map((s) => ({ id: s.id, label: t(s.labelKey) }))
   const [stage, setStage] = useState<Stage>("details")
@@ -257,6 +260,15 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
         businessId,
         { menuId: savedMenu.id },
       )
+      if (user) {
+        logActivity({
+          user,
+          businessId: businessId && businessId !== "main" ? businessId : null,
+          module: "menus",
+          action: menu ? "updated" : "created",
+          entityLabel: savedMenu.name,
+        })
+      }
       toast({
         title: menu ? t("mw_toast_updated_title") : t("mw_toast_created_title"),
         description: t("mw_toast_saved_desc")

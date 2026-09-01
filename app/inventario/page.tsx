@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
+import { logActivity } from "@/lib/services/activity-log"
 import { Sidebar } from "@/components/sidebar"
 import { GastrometricsLogo } from "@/components/gastrometrics-logo"
 import { InventarioTour } from "@/components/page-tours"
@@ -70,7 +71,7 @@ import type { Ingredient } from "@/types/ingredient"
 type LegacyIngredient = Ingredient & { purchasePrice?: number; netContent?: number | string }
 
 export default function InventoryPage() {
-  const { isLoggedIn } = useAuth()
+  const { isLoggedIn, user } = useAuth()
   const canAccessInventory = useFeatureAccess("inventory")
   const { t, language } = useLanguage()
   const router = useRouter()
@@ -283,6 +284,16 @@ export default function InventoryPage() {
     const updatedItems = items.filter((item) => item.id !== id)
     setItems(updatedItems)
     saveInventory(updatedItems, businessId)
+    const deletedItem = items.find((item) => item.id === id)
+    if (user) {
+      logActivity({
+        user,
+        businessId: businessId && businessId !== "main" ? businessId : null,
+        module: "inventario",
+        action: "deleted",
+        entityLabel: deletedItem?.name,
+      })
+    }
     toast({
       title: t("inventario_toast_success_title"),
       description: t("inventario_toast_item_deleted_desc"),
@@ -351,6 +362,15 @@ export default function InventoryPage() {
     saveInventory(updatedItems, businessId)
     setIsDialogOpen(false)
     setSelectedItem(null)
+    if (user) {
+      logActivity({
+        user,
+        businessId: businessId && businessId !== "main" ? businessId : null,
+        module: "inventario",
+        action: selectedItem ? "updated" : "created",
+        entityLabel: newItem.name,
+      })
+    }
     toast({
       title: t("inventario_toast_success_title"),
       description: selectedItem ? t("inventario_toast_item_updated_desc") : t("inventario_toast_item_added_desc"),

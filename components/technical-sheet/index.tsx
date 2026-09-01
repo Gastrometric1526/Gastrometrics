@@ -35,6 +35,8 @@ import { NumericInput } from "@/components/ui/numeric-input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { formatCurrency } from "@/lib/currency"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/auth-context"
+import { logActivity } from "@/lib/services/activity-log"
 import { useLanguage } from "@/contexts/language-context"
 import { getClassificationLabel } from "@/lib/classification-labels"
 
@@ -55,6 +57,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
   const router = useRouter()
   const { toast } = useToast()
   const { language, t } = useLanguage()
+  const { user } = useAuth()
   const [isEditMode, setIsEditMode] = useState(mode === "new" || mode === "edit")
 
   // El botón "Editar" en la página de ver receta navega a la misma ruta con
@@ -737,6 +740,16 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
 
       if (savedRecipe.classification === SUBRECIPE_CLASSIFICATION) {
         await syncSubRecipeToIngredient(savedRecipe, businessId)
+      }
+
+      if (user) {
+        logActivity({
+          user,
+          businessId: businessId !== "main" ? businessId : null,
+          module: "recetas",
+          action: mode === "edit" ? "updated" : "created",
+          entityLabel: savedRecipe.name,
+        })
       }
 
       router.push("/mis-recetas")

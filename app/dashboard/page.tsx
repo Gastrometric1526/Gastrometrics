@@ -32,7 +32,8 @@ import {
 import { SettingsDialog } from "@/components/settings-dialog"
 import { Sidebar } from "@/components/sidebar"
 import { useTheme } from "next-themes"
-import { ActivityTracker, type UserActivity, type SystemAlert } from "@/lib/activity-tracker"
+import { ActivityTracker } from "@/lib/activity-tracker"
+import { logActivity, getActivityLog, formatActivityEntry, type ActivityLogEntry } from "@/lib/services/activity-log"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { AddBusinessDialog } from "@/components/add-business-dialog"
@@ -51,8 +52,9 @@ export default function DashboardPage() {
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [businesses, setBusinesses] = useState<Business[]>([])
   const [currentTime, setCurrentTime] = useState(new Date())
-  const [recentActivity, setRecentActivity] = useState<UserActivity[]>([])
-  const [systemAlerts, setSystemAlerts] = useState<SystemAlert[]>([])
+  const [recentActivity, setRecentActivity] = useState<ActivityLogEntry[]>([])
+  const [systemAlerts, setSystemAlerts] = useState<ActivityLogEntry[]>([])
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
 
   const router = useRouter()
   const { toast } = useToast()
@@ -259,45 +261,55 @@ export default function DashboardPage() {
     }
   }, [])
 
-  // BUG CORREGIDO: leía siempre ActivityTracker con businessId=undefined, es decir
-  // solo el balde "global" (perfil actualizado, negocio creado/eliminado). Pero cada
-  // acción real del día a día (crear receta, ingrediente, orden de compra, menú,
-  // registrar inventario) se guarda bajo la llave de SU propio negocio — por eso
-  // "Actividad reciente" casi nunca reflejaba el uso real. Ahora agrega la actividad
-  // de todos los negocios del usuario (mas el balde global) antes de ordenar por fecha.
-  const loadUserActivity = () => {
+  // loadUserActivity/loadSystemAlerts (más abajo) necesitan user.id, que todavía puede
+  // ser null en el primer render (useAuth resuelve la sesión async) — el efecto de
+  // arriba ya corrió loadUserActivity()/loadSystemAlerts() una vez con deps [], así que
+  // sin este segundo efecto esa carga inicial se quedaría vacía en silencio cuando el
+  // usuario tarda en resolverse.
+  useEffect(() => {
+    loadUserActivity()
+    loadSystemAlerts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
+
+  // Reemplaza lib/activity-tracker.ts (localStorage, aislado por navegador) por el log
+  // real de supabase/migrations/0017_activity_log.sql (ver docs/87) — ahora "Actividad
+  // reciente" y "Notificaciones" muestran lo que hizo cualquier persona con acceso al
+  // negocio (dueño o invitado de equipo), no solo lo que hizo esta sesión.
+  const loadUserActivity = async () => {
+    if (!user) return
     try {
       const storedBusinesses = JSON.parse(localStorage.getItem("businesses") || "[]") as Business[]
-      const businessIds = Array.from(new Set(["main", ...storedBusinesses.map((b) => b.id)]))
-      const perBusiness = businessIds.flatMap((id) => ActivityTracker.getActivities(id))
-      const global = ActivityTracker.getActivities(undefined)
-      const activities = [...perBusiness, ...global]
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-        .slice(0, 10)
+      const businessIds = storedBusinesses.map((b) => b.id)
+      const activities = await getActivityLog({ businessIds, includeGlobalForUserId: user.id, limit: 10 })
       setRecentActivity(activities)
-      console.log("Loaded activities:", activities.length)
     } catch (error) {
       console.error("Error loading user activity:", error)
     }
   }
 
-  // Mismo bug y misma corrección que loadUserActivity: las alertas reales (stock
-  // bajo, orden creada, etc.) se guardan por negocio, no en el balde global.
-  const loadSystemAlerts = () => {
+  // Mismos eventos que loadUserActivity, filtrados a is_notification=true (creado/
+  // guardado/activado-desactivado merma/importado, etc.) — no "entró a un módulo".
+  const loadSystemAlerts = async () => {
+    if (!user) return
     try {
       const storedBusinesses = JSON.parse(localStorage.getItem("businesses") || "[]") as Business[]
-      const businessIds = Array.from(new Set(["main", ...storedBusinesses.map((b) => b.id)]))
-      const perBusiness = businessIds.flatMap((id) => ActivityTracker.getAlerts(id))
-      const global = ActivityTracker.getAlerts(undefined)
+      const businessIds = storedBusinesses.map((b) => b.id)
       // Se ordena más nueva primero para quedarse con las 5 más recientes, y recién
       // después se invierte — así la más nueva queda al final de la lista (abajo),
       // pedido explícito, en vez del orden más común de "más nueva arriba".
-      const alerts = [...perBusiness, ...global]
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-        .slice(0, 5)
-        .reverse()
-      setSystemAlerts(alerts)
-      console.log("Loaded alerts:", alerts.length)
+      const alerts = await getActivityLog({ businessIds, includeGlobalForUserId: user.id, notificationsOnly: true, limit: 5 })
+      const reversed = alerts.reverse()
+      setSystemAlerts(reversed)
+
+      // Sin estado de "leído" cruzado entre usuarios (requeriría una tabla de unión
+      // aparte, ver docs/87) — el badge de "no leídas" usa una marca de agua simple
+      // por dispositivo: cuántas notificaciones son más nuevas que la última vez que
+      // este navegador cargó el dashboard.
+      const watermarkKey = `activity_notifications_seen_${user.id}`
+      const lastSeenAt = localStorage.getItem(watermarkKey)
+      setUnreadNotifications(lastSeenAt ? reversed.filter((a) => a.createdAt > lastSeenAt).length : reversed.length)
+      localStorage.setItem(watermarkKey, new Date().toISOString())
     } catch (error) {
       console.error("Error loading system alerts:", error)
     }
@@ -328,6 +340,10 @@ export default function DashboardPage() {
         t("dashboard_alert_business_created_desc").replace("{name}", newBusiness.name),
         newBusiness.id,
       )
+
+      if (user) {
+        logActivity({ user, businessId: newBusiness.id, module: "negocios", action: "created", entityLabel: newBusiness.name })
+      }
 
       toast({
         title: t("dashboard_business_created_title"),
@@ -373,6 +389,13 @@ export default function DashboardPage() {
           t("dashboard_alert_business_deleted_desc").replace("{name}", businessToDelete.name),
           undefined,
         )
+
+        // business_id null a propósito: el negocio ya se está borrando, y activity_log
+        // tiene "on delete cascade" en esa columna — si se guardara con el id del
+        // negocio que se acaba de eliminar, este mismo registro se autoborraría.
+        if (user) {
+          logActivity({ user, businessId: null, module: "negocios", action: "deleted", entityLabel: businessToDelete.name })
+        }
       }
 
       toast({
@@ -507,11 +530,6 @@ export default function DashboardPage() {
     if (hour < 12) return t("greeting_morning")
     if (hour < 18) return t("greeting_afternoon")
     return t("greeting_evening")
-  }
-
-  const handleMarkAlertAsRead = (alertId: string, businessId?: string) => {
-    ActivityTracker.markAlertAsRead(alertId, businessId)
-    loadSystemAlerts()
   }
 
   const handleRecipesUpdate = useCallback(
@@ -752,16 +770,14 @@ export default function DashboardPage() {
                     <div className="divide-y divide-hairline">
                       {recentActivity.map((activity) => (
                         <div key={activity.id} className="flex items-start gap-3 py-3">
-                          <div className="text-lg flex-shrink-0 mt-0.5">
-                            {ActivityTracker.getActivityIcon(activity.type)}
-                          </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground line-clamp-2">{activity.action}</p>
+                            <p className="text-sm font-medium text-foreground line-clamp-2">
+                              {formatActivityEntry(activity, t)}
+                            </p>
                             <p className="text-xs text-text-4 mt-0.5">
-                              {ActivityTracker.formatTimeAgo(activity.timestamp)}
+                              {ActivityTracker.formatTimeAgo(activity.createdAt)}
                             </p>
                           </div>
-                          <span className="text-[11px] text-text-4 capitalize shrink-0">{activity.type}</span>
                         </div>
                       ))}
                     </div>
@@ -783,9 +799,9 @@ export default function DashboardPage() {
                   <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
                     <Bell className="h-4 w-4 flex-shrink-0 text-text-4" />
                     <span className="truncate">{t("dashboard_notifications")}</span>
-                    {systemAlerts.filter((alert) => !alert.read).length > 0 && (
+                    {unreadNotifications > 0 && (
                       <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-danger-soft text-destructive">
-                        {systemAlerts.filter((alert) => !alert.read).length}
+                        {unreadNotifications}
                       </span>
                     )}
                   </CardTitle>
@@ -793,30 +809,15 @@ export default function DashboardPage() {
                 <CardContent className="p-4 h-full overflow-y-auto">
                   {systemAlerts.length > 0 ? (
                     <div className="divide-y divide-hairline">
-                      {systemAlerts.map((alert) => {
-                        const dotColor =
-                          alert.type === "success"
-                            ? "bg-success"
-                            : alert.type === "warning"
-                              ? "bg-warning"
-                              : alert.type === "error"
-                                ? "bg-destructive"
-                                : "bg-primary"
-                        return (
-                          <div
-                            key={alert.id}
-                            className={`flex items-start gap-3 py-3 cursor-pointer ${alert.read ? "opacity-55" : ""}`}
-                            onClick={() => handleMarkAlertAsRead(alert.id, alert.businessId)}
-                          >
-                            <span className={`h-1.5 w-1.5 rounded-full shrink-0 mt-1.5 ${dotColor}`} />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground">{alert.title}</p>
-                              <p className="text-xs text-text-3 mt-0.5">{alert.message}</p>
-                              <p className="text-xs text-text-4 mt-0.5">{ActivityTracker.formatTimeAgo(alert.timestamp)}</p>
-                            </div>
+                      {systemAlerts.map((alert) => (
+                        <div key={alert.id} className="flex items-start gap-3 py-3">
+                          <span className="h-1.5 w-1.5 rounded-full shrink-0 mt-1.5 bg-primary" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground">{formatActivityEntry(alert, t)}</p>
+                            <p className="text-xs text-text-4 mt-0.5">{ActivityTracker.formatTimeAgo(alert.createdAt)}</p>
                           </div>
-                        )
-                      })}
+                        </div>
+                      ))}
                     </div>
                   ) : (
                     <div className="text-center py-8">

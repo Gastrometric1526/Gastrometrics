@@ -24,6 +24,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { getPurchaseOrders, savePurchaseOrders, duplicatePurchaseOrder, ensurePurchaseOrdersLoaded } from "@/lib/storage/purchase-orders"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/auth-context"
+import { logActivity } from "@/lib/services/activity-log"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
 import { formatCurrency, formatDate } from "@/lib/utils"
@@ -55,6 +57,7 @@ export function PurchaseOrderPage() {
   const params = useParams()
   const searchParams = useSearchParams()
   const { toast } = useToast()
+  const { user } = useAuth()
   const { t, language } = useLanguage()
   const businessId = params?.id as string | undefined
 
@@ -467,6 +470,15 @@ export function PurchaseOrderPage() {
       businessId,
       { orderId: order.id, total: order.total },
     )
+    if (user && businessId) {
+      logActivity({
+        user,
+        businessId: businessId !== "main" ? businessId : null,
+        module: "ordenes_compra",
+        action: editingOrder ? "updated" : "created",
+        entityLabel: order.name,
+      })
+    }
     toast({
       title: editingOrder ? t("ordenes_toast_updated_title") : t("ordenes_toast_created_title"),
       description: t("ordenes_toast_saved_desc").replace("{name}", order.name),

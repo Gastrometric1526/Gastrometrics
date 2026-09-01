@@ -21,6 +21,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
 import { useToast } from "@/hooks/use-toast"
+import { logActivity } from "@/lib/services/activity-log"
 import { Sidebar } from "@/components/sidebar"
 import { NegociosTour } from "@/components/page-tours"
 import { AddBusinessDialog } from "@/components/add-business-dialog"
@@ -47,7 +48,7 @@ import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredien
 
 export default function NegociosPage() {
   const router = useRouter()
-  const { isLoggedIn, authChecked } = useAuth()
+  const { isLoggedIn, authChecked, user } = useAuth()
   const { t, language } = useLanguage()
   const { toast } = useToast()
 
@@ -174,6 +175,9 @@ export default function NegociosPage() {
       activeBusinesses: prev.activeBusinesses + 1,
     }))
     setShowAddDialog(false)
+    if (user) {
+      logActivity({ user, businessId: newBusiness.id, module: "negocios", action: "created", entityLabel: newBusiness.name })
+    }
     toast({
       title: t("negocios_toast_created_title"),
       description: t("negocios_toast_created_desc").replace("{name}", newBusiness.name),

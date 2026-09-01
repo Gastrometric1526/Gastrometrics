@@ -70,7 +70,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { ActivityTracker, type UserActivity, type SystemAlert } from "@/lib/activity-tracker"
+import { ActivityTracker } from "@/lib/activity-tracker"
+import { logActivity, getActivityLog, formatActivityEntry, type ActivityLogEntry } from "@/lib/services/activity-log"
 import { getMenus } from "@/lib/menus"
 import { addScenarioResult } from "@/lib/storage/menus.store"
 import { calculateScenario, generateRecommendation } from "@/lib/analytics/menuScenario"
@@ -95,8 +96,9 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
   const [isConfigOpen, setIsConfigOpen] = useState(false)
   const [editedBusiness, setEditedBusiness] = useState<Business | null>(null)
   const [loading, setLoading] = useState(true)
-  const [recentActivity, setRecentActivity] = useState<UserActivity[]>([])
-  const [systemAlerts, setSystemAlerts] = useState<SystemAlert[]>([])
+  const [recentActivity, setRecentActivity] = useState<ActivityLogEntry[]>([])
+  const [systemAlerts, setSystemAlerts] = useState<ActivityLogEntry[]>([])
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
   const [menus, setMenus] = useState<Menu[]>([])
   const [selectedMenuId, setSelectedMenuId] = useState<string>("")
   const [scenarioParams, setScenarioParams] = useState<ScenarioParams>({
@@ -117,7 +119,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
   const router = useRouter()
   const { toast } = useToast()
   const { t } = useLanguage()
-  const { isLoggedIn, authChecked } = useAuth()
+  const { isLoggedIn, authChecked, user } = useAuth()
   const { active: previewActive, member: previewMember } = useActiveMembership()
   const { setTheme } = useTheme()
 
@@ -267,9 +269,13 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
     }
   }
 
-  const loadBusinessActivity = () => {
+  // Reemplaza lib/activity-tracker.ts (localStorage) por el log real de supabase/
+  // migrations/0017_activity_log.sql (ver docs/87) — sin includeGlobalForUserId a
+  // propósito: esta es la vista de UN solo negocio, no debe mezclar eventos de cuenta
+  // (equipo, lista de negocios) de otros negocios del usuario.
+  const loadBusinessActivity = async () => {
     try {
-      const activities = ActivityTracker.getRecentActivities(params.id, 10)
+      const activities = await getActivityLog({ businessIds: [params.id], limit: 10 })
       setRecentActivity(activities)
     } catch (error) {
       console.error("Error loading business activity:", error)
@@ -277,10 +283,16 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
     }
   }
 
-  const loadBusinessAlerts = () => {
+  const loadBusinessAlerts = async () => {
     try {
-      const alerts = ActivityTracker.getAlerts(params.id).slice(0, 5)
+      const alerts = await getActivityLog({ businessIds: [params.id], notificationsOnly: true, limit: 5 })
       setSystemAlerts(alerts)
+      if (user) {
+        const watermarkKey = `activity_notifications_seen_${user.id}_${params.id}`
+        const lastSeenAt = localStorage.getItem(watermarkKey)
+        setUnreadNotifications(lastSeenAt ? alerts.filter((a) => a.createdAt > lastSeenAt).length : alerts.length)
+        localStorage.setItem(watermarkKey, new Date().toISOString())
+      }
     } catch (error) {
       console.error("Error loading business alerts:", error)
       setSystemAlerts([])
@@ -479,6 +491,10 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
         console.error("Error tracking activity:", error)
       }
 
+      if (user) {
+        logActivity({ user, businessId: params.id, module: "negocios", action: "updated", entityLabel: updatedBusiness.name })
+      }
+
       setIsConfigOpen(false)
       toast({
         title: t("business_alert_config_updated_title"),
@@ -488,15 +504,6 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
       // Reload activity
       loadBusinessActivity()
       loadBusinessAlerts()
-    }
-  }
-
-  const handleMarkAlertAsRead = (alertId: string) => {
-    try {
-      ActivityTracker.markAlertAsRead(alertId, params.id)
-      loadBusinessAlerts()
-    } catch (error) {
-      console.error("Error marking alert as read:", error)
     }
   }
 
@@ -1318,18 +1325,14 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                           key={activity.id}
                           className="flex items-start gap-3 p-3 rounded-lg bg-muted/20 border border-border"
                         >
-                          <div className="text-lg flex-shrink-0 mt-0.5">
-                            {ActivityTracker.getActivityIcon(activity.type)}
-                          </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-foreground line-clamp-2">{activity.action}</p>
+                            <p className="text-sm font-semibold text-foreground line-clamp-2">
+                              {formatActivityEntry(activity, t)}
+                            </p>
                             <p className="text-xs text-foreground/70 font-medium mt-1">
-                              {ActivityTracker.formatTimeAgo(activity.timestamp)}
+                              {ActivityTracker.formatTimeAgo(activity.createdAt)}
                             </p>
                           </div>
-                          <Badge variant="outline" className="text-xs font-semibold border-2 flex-shrink-0 capitalize">
-                            {activity.type}
-                          </Badge>
                         </div>
                       ))}
                     </div>
@@ -1348,9 +1351,9 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                   <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
                     <Bell className="h-5 w-5 flex-shrink-0" />
                     <span className="truncate">{t("business_notifications_heading")}</span>
-                    {systemAlerts.filter((alert) => !alert.read).length > 0 && (
+                    {unreadNotifications > 0 && (
                       <Badge variant="destructive" className="text-xs">
-                        {systemAlerts.filter((alert) => !alert.read).length}
+                        {unreadNotifications}
                       </Badge>
                     )}
                   </CardTitle>
@@ -1359,52 +1362,15 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                   {systemAlerts.length > 0 ? (
                     <div className="space-y-3">
                       {systemAlerts.map((alert) => (
-                        <div
-                          key={alert.id}
-                          className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
-                            alert.type === "success"
-                              ? "bg-success-soft hover:bg-success-soft"
-                              : alert.type === "warning"
-                                ? "bg-warning-soft hover:bg-warning-soft dark:bg-amber-950/40"
-                                : alert.type === "error"
-                                  ? "bg-danger-soft hover:bg-danger-soft"
-                                  : "bg-info-soft hover:bg-info-soft/70"
-                          } ${alert.read ? "opacity-60" : ""}`}
-                          onClick={() => handleMarkAlertAsRead(alert.id)}
-                        >
-                          <div className="text-lg flex-shrink-0 mt-0.5">{ActivityTracker.getAlertIcon(alert.type)}</div>
+                        <div key={alert.id} className="flex items-start gap-3 p-3 rounded-lg border-2 bg-info-soft">
                           <div className="flex-1 min-w-0">
-                            <p
-                              className={`text-sm font-bold ${
-                                alert.type === "success"
-                                  ? "text-success"
-                                  : alert.type === "warning"
-                                    ? "text-warning"
-                                    : alert.type === "error"
-                                      ? "text-destructive"
-                                      : "text-blue-900 dark:text-blue-300"
-                              }`}
-                            >
-                              {alert.title}
-                            </p>
-                            <p
-                              className={`text-xs font-medium mt-1 ${
-                                alert.type === "success"
-                                  ? "text-success"
-                                  : alert.type === "warning"
-                                    ? "text-warning"
-                                    : alert.type === "error"
-                                      ? "text-destructive"
-                                      : "text-info"
-                              }`}
-                            >
-                              {alert.message}
+                            <p className="text-sm font-bold text-blue-900 dark:text-blue-300">
+                              {formatActivityEntry(alert, t)}
                             </p>
                             <p className="text-xs text-foreground/50 mt-1">
-                              {ActivityTracker.formatTimeAgo(alert.timestamp)}
+                              {ActivityTracker.formatTimeAgo(alert.createdAt)}
                             </p>
                           </div>
-                          {!alert.read && <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2"></div>}
                         </div>
                       ))}
                     </div>
