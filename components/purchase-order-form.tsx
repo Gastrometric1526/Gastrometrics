@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Trash2, Plus, Package } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
+import { getCategoryLabel } from "@/lib/ingredient-labels"
 
 export interface PurchaseOrderFormItem {
   id: string
@@ -22,6 +23,7 @@ export interface PurchaseOrderFormItem {
   unitPrice: number
   totalPrice: number
   supplier?: string
+  category?: string
   // Presentación de compra (Saco, Caja, Botella...) — la orden debe pedirse así, no en
   // la unidad base de la receta. presentationQuantity es null cuando el ingrediente
   // todavía no tiene presentación configurada en su ficha; en ese caso se puede fijar
@@ -54,6 +56,12 @@ interface PurchaseOrderFormProps {
   // presentación de un ingrediente que todavía no la tenía, para que quede guardada en
   // la base de datos de ingredientes aunque la orden no se termine de crear.
   onPresentationChange?: (ingredientId: string, presentation: string) => void
+  // La orden generada desde un menú (ver ?fromMenu= en purchase-order-page.tsx) ya trae
+  // cada ingrediente con su propio proveedor real (mostrado por ítem, más abajo) — pedir
+  // un único proveedor para TODA la orden no aplica ahí, el proveedor varía por
+  // ingrediente. Oculta el campo y lo saca de la validación del formulario (al no estar
+  // montado, el atributo required del input ya no bloquea el envío).
+  hideSupplierField?: boolean
 }
 
 const validUnits = ["g", "kg", "ml", "L", "oz", "fl oz", "unidad", "docena"]
@@ -98,8 +106,9 @@ export function PurchaseOrderForm({
   initialData,
   availableIngredients = [],
   onPresentationChange,
+  hideSupplierField = false,
 }: PurchaseOrderFormProps) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const orderStatuses = orderStatusDefs.map((s) => ({ ...s, label: t(s.labelKey) }))
 
   const [formData, setFormData] = useState<PurchaseOrderFormData>({
@@ -274,7 +283,7 @@ export function PurchaseOrderForm({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className={`grid grid-cols-1 gap-4 ${hideSupplierField ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
             <div className="space-y-2">
               <Label htmlFor="orderNumber">{t("pof_order_number_label")}</Label>
               <Input
@@ -284,15 +293,17 @@ export function PurchaseOrderForm({
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="supplier">{t("pof_supplier_label")}</Label>
-              <Input
-                id="supplier"
-                value={formData.supplier}
-                onChange={(e) => handleInputChange("supplier", e.target.value)}
-                required
-              />
-            </div>
+            {!hideSupplierField && (
+              <div className="space-y-2">
+                <Label htmlFor="supplier">{t("pof_supplier_label")}</Label>
+                <Input
+                  id="supplier"
+                  value={formData.supplier}
+                  onChange={(e) => handleInputChange("supplier", e.target.value)}
+                  required
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="status">{t("pof_status_label")}</Label>
               <Select value={formData.status} onValueChange={(value) => handleInputChange("status", value)}>
@@ -447,10 +458,14 @@ export function PurchaseOrderForm({
                             {item.quantity} {item.unit} × {formatCurrency(item.unitPrice)}
                           </p>
                         )}
-                        {item.supplier && (
-                          <p className="text-xs text-muted-foreground">
-                            {t("pof_supplier_prefix")} {item.supplier}
-                          </p>
+                        {hideSupplierField && item.category ? (
+                          <p className="text-xs text-muted-foreground">{getCategoryLabel(item.category, language)}</p>
+                        ) : (
+                          item.supplier && (
+                            <p className="text-xs text-muted-foreground">
+                              {t("pof_supplier_prefix")} {item.supplier}
+                            </p>
+                          )
                         )}
                       </div>
                     </div>

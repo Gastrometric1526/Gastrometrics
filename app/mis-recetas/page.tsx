@@ -49,7 +49,8 @@ import { Sidebar } from "@/components/sidebar"
 import { MisRecetasTour } from "@/components/page-tours"
 import { RecipeCard } from "@/components/recipe-card"
 import { useAuth } from "@/contexts/auth-context"
-import { useFeatureAccess } from "@/lib/plan-access"
+import { useFeatureAccess, useActiveMembership } from "@/lib/plan-access"
+import { logActivity } from "@/lib/services/activity-log"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { useNotification } from "@/hooks/use-notification"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
@@ -95,10 +96,19 @@ export default function MisRecetasPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const businessId = searchParams.get("business") || "main"
-  const { isLoggedIn, authChecked } = useAuth()
+  const { isLoggedIn, authChecked, user } = useAuth()
   const { language } = useLanguage()
   const { showSuccess, showError, showInfo } = useNotification()
   const canAccessRecipes = useFeatureAccess("recipes")
+  // Un invitado de equipo (sesión real, o la "Vista previa" que corre el propio dueño)
+  // puede migrar HACIA el negocio/dashboard al que fue invitado, nunca hacia su propia
+  // cuenta — "Dashboard Principal" (business_id null) es, por diseño de RLS
+  // (0012_fix_owner_write_scope.sql: business_id is null and owner_id = auth.uid()),
+  // inalcanzable para el dueño real de todos modos si quien migra no es él: la receta
+  // terminaría en el espacio personal de quien migra, no en el del dueño, sin ningún
+  // error visible. Se oculta esa opción para cualquier sesión que no sea el dueño real.
+  const { active: previewActive, member: previewMember } = useActiveMembership()
+  const isTeamPreview = previewActive && !!previewMember
 
   // Estados principales
   const [recipes, setRecipes] = useState<Recipe[]>([])
@@ -120,6 +130,9 @@ export default function MisRecetasPage() {
   const [availableBusinesses, setAvailableBusinesses] = useState<Business[]>([])
   const [selectedTargetBusiness, setSelectedTargetBusiness] = useState<string>("")
   const [isMigrating, setIsMigrating] = useState(false)
+  // Hay algún destino válido si hay otros negocios visibles, o si el destino sería
+  // "Dashboard Principal" y quien mira es de verdad el dueño (ver nota sobre isTeamPreview).
+  const canMigrateAnywhere = availableBusinesses.length > 0 || (businessId !== "main" && !isTeamPreview)
 
   // Estado móvil
   const [isMobile, setIsMobile] = useState(false)
@@ -276,6 +289,20 @@ export default function MisRecetasPage() {
       }
       if (recipeToMigrate.classification === SUBRECIPE_CLASSIFICATION || recipeToMigrate.isSubRecipe) {
         message += `\n• Ingrediente de sub-receta creado automáticamente`
+      }
+
+      if (user) {
+        const targetLabel =
+          selectedTargetBusiness === "main"
+            ? "Dashboard Principal"
+            : availableBusinesses.find((b) => b.id === selectedTargetBusiness)?.name || selectedTargetBusiness
+        logActivity({
+          user,
+          businessId: selectedTargetBusiness !== "main" ? selectedTargetBusiness : null,
+          module: "recetas",
+          action: "migrated",
+          entityLabel: `"${recipeToMigrate.name}" → ${targetLabel}`,
+        })
       }
 
       showSuccess("Migración completada", message)
@@ -749,9 +776,7 @@ export default function MisRecetasPage() {
                   onDelete={handleDelete}
                   onDuplicate={handleDuplicate}
                   onView={handleView}
-                  onMigrate={
-                    availableBusinesses.length > 0 || businessId !== "main" ? handleMigrateFromCard : undefined
-                  }
+                  onMigrate={canMigrateAnywhere ? handleMigrateFromCard : undefined}
                   onOpenDetails={setDetailsRecipe}
                 />
               ))}
@@ -850,7 +875,7 @@ export default function MisRecetasPage() {
                   <SelectValue placeholder="Selecciona un negocio" />
                 </SelectTrigger>
                 <SelectContent>
-                  {businessId !== "main" && <SelectItem value="main">Dashboard Principal</SelectItem>}
+                  {businessId !== "main" && !isTeamPreview && <SelectItem value="main">Dashboard Principal</SelectItem>}
                   {availableBusinesses.map((business) => (
                     <SelectItem key={business.id} value={business.id}>
                       {business.name}
@@ -1026,7 +1051,7 @@ export default function MisRecetasPage() {
                   <Copy className="h-4 w-4" />
                   Duplicar receta
                 </Button>
-                {(availableBusinesses.length > 0 || businessId !== "main") && (
+                {canMigrateAnywhere && (
                   <Button
                     variant="outline"
                     className="w-full justify-start gap-2"

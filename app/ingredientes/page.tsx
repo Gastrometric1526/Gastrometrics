@@ -59,6 +59,7 @@ import { FileUpload } from "@/components/file-upload"
 import { MermaManagementDialog } from "@/components/merma-management-dialog"
 import type { Ingredient } from "@/types/ingredient"
 import { categories, units, presentations } from "@/types/ingredient"
+import { getCategoryLabel, getUnitLabel, getPresentationLabel } from "@/lib/ingredient-labels"
 import { getIngredients, saveIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 import { parseExcelFile, createIngredientsExcelTemplate } from "@/lib/excel-utils"
 import { IngredientsTable } from "@/components/ingredients/ingredients-table"
@@ -203,7 +204,7 @@ export default function IngredientesPage() {
   const canAccessMerma = useFeatureAccess("merma")
   const canAccessIngredients = useFeatureAccess("ingredients")
   const { showSuccess, showError, showInfo } = useNotification()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
 
   const sortOptions = useMemo(() => getSortOptions(t), [t])
   const FORM_STEPS = useMemo(() => getFormSteps(t), [t])
@@ -1391,7 +1392,7 @@ export default function IngredientesPage() {
                         <SelectItem value="Todas">{t("ingredientes_all_categories")}</SelectItem>
                         {categories.map((category) => (
                           <SelectItem key={category} value={category}>
-                            {category}
+                            {getCategoryLabel(category, language)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1698,7 +1699,7 @@ export default function IngredientesPage() {
                       <SelectContent>
                         {categories.map((category) => (
                           <SelectItem key={category} value={category}>
-                            {category}
+                            {getCategoryLabel(category, language)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1727,7 +1728,7 @@ export default function IngredientesPage() {
                       <SelectContent>
                         {units.map((unit) => (
                           <SelectItem key={unit} value={unit}>
-                            {unit}
+                            {getUnitLabel(unit, language)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1753,7 +1754,7 @@ export default function IngredientesPage() {
                       <SelectContent>
                         {presentations.map((presentation) => (
                           <SelectItem key={presentation} value={presentation}>
-                            {presentation}
+                            {getPresentationLabel(presentation, language)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1898,7 +1899,7 @@ export default function IngredientesPage() {
                     </div>
                     <div className="flex justify-between">
                       <span>{t("ingredientes_summary_category_label")}</span>
-                      <span className="font-medium">{formData.category}</span>
+                      <span className="font-medium">{formData.category ? getCategoryLabel(formData.category, language) : ""}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>{t("ingredientes_summary_purchase_price_label")}</span>

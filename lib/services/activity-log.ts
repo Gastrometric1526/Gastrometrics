@@ -37,6 +37,7 @@ export type ActivityAction =
   | "invited"
   | "removed"
   | "access_updated"
+  | "migrated"
 
 export interface ActivityLogEntry {
   id: number
@@ -81,6 +82,7 @@ const NOTIFICATION_ACTIONS: ReadonlySet<ActivityAction> = new Set([
   "invited",
   "removed",
   "access_updated",
+  "migrated",
 ])
 
 /**
@@ -209,6 +211,8 @@ export function formatActivityEntry(entry: ActivityLogEntry, t: (key: any) => st
       return t("activity_tpl_removed").replace("{user}", entry.userName).replace("{entity}", entity)
     case "access_updated":
       return t("activity_tpl_access_updated").replace("{user}", entry.userName).replace("{entity}", entity)
+    case "migrated":
+      return t("activity_tpl_migrated").replace("{user}", entry.userName).replace("{entity}", entity)
     default:
       return entry.userName
   }

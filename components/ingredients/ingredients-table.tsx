@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { getCategoryMermaPercentage } from "@/lib/merma-categories"
 import { getPriceChangeHistory } from "@/lib/recalculate"
 import { useLanguage } from "@/contexts/language-context"
+import { getCategoryLabel, getUnitLabel, getPresentationLabel } from "@/lib/ingredient-labels"
 
 // Tendencia de precio a 90 días (docs/04 del paquete de diseño: "el cambio de precio
 // a 90 días se muestra como barra fina, no como número suelto"). Usa el historial real
@@ -60,7 +61,7 @@ export function IngredientsTable({
   onUnitChange,
   mermaSystemEnabled,
 }: Props) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const [wacInfoIngredientId, setWacInfoIngredientId] = useState<string | null>(null)
   const wacInfoIngredient = wacInfoIngredientId ? allItems.find((i) => i.id === wacInfoIngredientId) || null : null
   const persist = useCallback(
@@ -283,7 +284,7 @@ export function IngredientsTable({
                             : "border-blue-200 dark:border-blue-900 text-info bg-blue-50"
                         }`}
                       >
-                        {ingredient.category}
+                        {getCategoryLabel(ingredient.category, language)}
                       </Badge>
                       {renderMermaIndicator(ingredient)}
                     </div>
@@ -300,7 +301,9 @@ export function IngredientsTable({
                         <TooltipTrigger asChild>
                           <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-md border border-muted-foreground/20 w-[120px] justify-center mx-auto cursor-help">
                             <Lock className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-sm font-medium text-foreground">{ingredient.presentation}</span>
+                            <span className="text-sm font-medium text-foreground">
+                              {getPresentationLabel(ingredient.presentation || "", language)}
+                            </span>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -321,7 +324,7 @@ export function IngredientsTable({
                         <SelectContent>
                           {presentations.map((p) => (
                             <SelectItem key={p} value={p}>
-                              {p}
+                              {getPresentationLabel(p, language)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -336,7 +339,7 @@ export function IngredientsTable({
                         <TooltipTrigger asChild>
                           <div className="flex items-center gap-2 px-3 py-2 bg-danger-soft rounded-md border w-[100px] justify-center mx-auto cursor-help">
                             <Lock className="h-3 w-3 text-destructive dark:text-red-300" />
-                            <span className="text-sm font-medium text-destructive">{ingredient.unit}</span>
+                            <span className="text-sm font-medium text-destructive">{getUnitLabel(ingredient.unit, language)}</span>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -360,7 +363,7 @@ export function IngredientsTable({
                         <SelectContent>
                           {units.map((u) => (
                             <SelectItem key={u} value={u}>
-                              {u}
+                              {getUnitLabel(u, language)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -374,7 +377,9 @@ export function IngredientsTable({
                         {formatCurrency(Number(purchasePrice.toFixed(2)))}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {ingredient.presentation || t("ingredientes_no_presentation_label")}
+                        {ingredient.presentation
+                          ? getPresentationLabel(ingredient.presentation, language)
+                          : t("ingredientes_no_presentation_label")}
                       </span>
                     </div>
                   </td>
@@ -384,7 +389,7 @@ export function IngredientsTable({
                       <span className="font-medium text-sm text-foreground">
                         {ingredient.unit === "unidad" ? Math.round(netContent) : Number(netContent.toFixed(2))}
                       </span>
-                      <span className="text-xs text-muted-foreground">{ingredient.unit}</span>
+                      <span className="text-xs text-muted-foreground">{getUnitLabel(ingredient.unit, language)}</span>
                     </div>
                   </td>
 

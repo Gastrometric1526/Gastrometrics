@@ -39,7 +39,7 @@ import { getInventory, ensureInventoryLoaded } from "@/lib/storage/inventory"
 import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { getMenuById, ensureMenusLoaded } from "@/lib/menus"
 import { generateMenuIngredientList } from "@/lib/menus"
-import { sortPurchaseOrderItemsBySupplier } from "@/lib/purchase-orders"
+import { sortPurchaseOrderItemsBySupplier, sortPurchaseOrderItemsByCategory } from "@/lib/purchase-orders"
 import { computePresentationQuantity } from "@/lib/utils/presentation-quantity"
 import { ActivityTracker } from "@/lib/activity-tracker"
 import { getBusinessById } from "@/lib/storage/businesses"
@@ -76,6 +76,10 @@ export function PurchaseOrderPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null)
   const [suggestedFormData, setSuggestedFormData] = useState<PurchaseOrderFormData | null>(null)
+  // La orden generada desde un menú ya trae el proveedor real por ingrediente — el
+  // campo único de "Proveedor" para toda la orden no aplica ahí (ver
+  // components/purchase-order-form.tsx, prop hideSupplierField).
+  const [isSuggestedFromMenu, setIsSuggestedFromMenu] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [inventoryItems, setInventoryItems] = useState<ReturnType<typeof getInventory>>([])
@@ -219,7 +223,7 @@ export function PurchaseOrderPage() {
       }
 
       const currentIngredients = getIngredients(businessId)
-      const items: PurchaseOrderFormItem[] = sortPurchaseOrderItemsBySupplier(
+      const items: PurchaseOrderFormItem[] = sortPurchaseOrderItemsByCategory(
         result.items.map((item, index) => ({
           id: `menu-${fromMenuId}-${item.ingredientId}-${index}`,
           ingredientId: item.ingredientId,
@@ -229,6 +233,7 @@ export function PurchaseOrderPage() {
           unitPrice: Math.round(item.unitPrice * 100) / 100,
           totalPrice: Math.round(item.totalPrice * 100) / 100,
           supplier: item.supplier || "",
+          category: item.category,
           presentation: item.presentation,
           presentationQuantity: item.presentationQuantity,
         })),
@@ -236,6 +241,7 @@ export function PurchaseOrderPage() {
       const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0)
 
       setEditingOrder(null)
+      setIsSuggestedFromMenu(true)
       setSuggestedFormData({
         orderNumber: `OC-${menu.name}-${Date.now()}`,
         supplier: "",
@@ -281,6 +287,7 @@ export function PurchaseOrderPage() {
   const handleCreateOrder = () => {
     setEditingOrder(null)
     setSuggestedFormData(null)
+    setIsSuggestedFromMenu(false)
     setIsCreateDialogOpen(true)
   }
 
@@ -342,6 +349,7 @@ export function PurchaseOrderPage() {
     const headerSupplier = distinctSuppliers.size === 1 ? Array.from(distinctSuppliers)[0]! : t("ordenes_multiple_suppliers")
 
     setEditingOrder(null)
+    setIsSuggestedFromMenu(false)
     setSuggestedFormData({
       orderNumber: `OC-Sugerida-${Date.now()}`,
       supplier: headerSupplier,
@@ -415,6 +423,7 @@ export function PurchaseOrderPage() {
     setIsCreateDialogOpen(false)
     setEditingOrder(null)
     setSuggestedFormData(null)
+    setIsSuggestedFromMenu(false)
 
     const updatedOrders = businessId ? getPurchaseOrders(businessId) : []
     setOrders(updatedOrders)
@@ -464,6 +473,7 @@ export function PurchaseOrderPage() {
     setIsCreateDialogOpen(false)
     setEditingOrder(null)
     setSuggestedFormData(null)
+    setIsSuggestedFromMenu(false)
     ActivityTracker.addActivity(
       (editingOrder ? t("ordenes_activity_updated") : t("ordenes_activity_created")).replace("{name}", order.name),
       "purchase-order",
@@ -754,6 +764,7 @@ export function PurchaseOrderPage() {
               onSubmit={handleFormSubmit}
               onCancel={handleCloseDialog}
               onPresentationChange={handlePresentationPersist}
+              hideSupplierField={!editingOrder && isSuggestedFromMenu}
             />
           </DialogContent>
         </Dialog>

@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { getLocalizedPlans } from "@/lib/plans"
 import { useLanguage } from "@/contexts/language-context"
+import { AnimatedNumber } from "@/components/animated-number"
+import { LandingAdminPdfPreview } from "@/components/landing-admin-pdf-preview"
 import {
   ChefHat,
   Package,
@@ -39,10 +41,10 @@ export function HomeContent() {
   const sousChef = plans.find((p) => p.slug === "sous-chef")
 
   const stats = [
-    { value: "42%", descKey: "landing_stat1_desc", sourceKey: "landing_stat1_source" },
-    { value: "+35%", descKey: "landing_stat2_desc", sourceKey: "landing_stat2_source" },
-    { value: "$7", descKey: "landing_stat3_desc", sourceKey: "landing_stat3_source" },
-    { value: "26%", descKey: "landing_stat4_desc", sourceKey: "landing_stat4_source" },
+    { value: 42, prefix: "", suffix: "%", descKey: "landing_stat1_desc", sourceKey: "landing_stat1_source" },
+    { value: 35, prefix: "+", suffix: "%", descKey: "landing_stat2_desc", sourceKey: "landing_stat2_source" },
+    { value: 7, prefix: "$", suffix: "", descKey: "landing_stat3_desc", sourceKey: "landing_stat3_source" },
+    { value: 26, prefix: "", suffix: "%", descKey: "landing_stat4_desc", sourceKey: "landing_stat4_source" },
   ] as const
 
   const leakItems = ["landing_leak_item1", "landing_leak_item2", "landing_leak_item3", "landing_leak_item4"] as const
@@ -117,16 +119,19 @@ export function HomeContent() {
       <MarketingHeader />
 
       <main>
-        {/* Hero — producto real, no ilustración (docs/03: "Producto, no ilustración") */}
-        <section className="max-w-[1200px] mx-auto px-6 md:px-10 pt-16 md:pt-24 pb-16 md:pb-24 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6 text-center lg:text-left">
+        {/* Hero — producto real, no ilustración (docs/03: "Producto, no ilustración").
+            Texto arriba, tarjeta ancha abajo (en vez de las 2 columnas lado a lado de
+            antes) — la réplica del PDF administrativo es más alta/densa que la tarjeta
+            simple que reemplaza, y no cabía bien al lado del texto sin verse apretada. */}
+        <section className="max-w-[1200px] mx-auto px-6 md:px-10 pt-16 md:pt-24 pb-16 md:pb-24 space-y-12">
+          <div className="space-y-6 text-center max-w-2xl mx-auto">
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-primary">{t("landing_hero_kicker")}</p>
             <h1 className="text-4xl md:text-5xl xl:text-[64px] font-semibold tracking-[-0.045em] leading-[1.04] text-balance">
               <span className="text-foreground">{t("landing_hero_title_line1")}</span>{" "}
               <span className="text-primary">{t("landing_hero_title_line2")}</span>
             </h1>
-            <p className="text-lg text-text-3 max-w-xl mx-auto lg:mx-0">{t("landing_hero_desc")}</p>
-            <div className="flex flex-wrap justify-center lg:justify-start gap-3">
+            <p className="text-lg text-text-3 max-w-xl mx-auto">{t("landing_hero_desc")}</p>
+            <div className="flex flex-wrap justify-center gap-3">
               <Link href="/signup">
                 <Button size="lg" className="text-base px-6 py-3 bg-primary text-primary-foreground hover:bg-primary/90">
                   {t("landing_hero_cta_primary")}
@@ -139,7 +144,7 @@ export function HomeContent() {
                 </Button>
               </Link>
             </div>
-            <p className="text-sm text-text-4 flex flex-wrap justify-center lg:justify-start gap-x-2">
+            <p className="text-sm text-text-4 flex flex-wrap justify-center gap-x-2">
               <span>{t("landing_hero_micro_free")}</span>
               <span aria-hidden="true">·</span>
               <span>{t("landing_hero_micro_nocard")}</span>
@@ -148,53 +153,13 @@ export function HomeContent() {
             </p>
           </div>
 
-          {/* Ficha técnica real como demo de producto — nombres/cifras ilustrativos,
-              pero la estructura (columnas, etiquetas) copia exactamente la pantalla
-              real de Ficha Técnica (components/technical-sheet/index.tsx): cada fila
-              es "ingrediente · cantidad · costo de esa línea", no un porcentaje del
-              total (esa columna no existe en la pantalla real). Los dos totales usan
-              las mismas etiquetas reales de esa pantalla: "Costo unitario"
-              (ficha_tecnica_col_unit_cost) y "Costo %" (ficha_tecnica_food_cost_
-              percent_label) — antes decía "Costo por porción"/"Food cost", que no son
-              las etiquetas reales. Sin caja de alerta: la pantalla real de Ficha
-              Técnica no muestra ningún aviso junto al costo (antes había una inventada
-              sobre "1.2 kg más de carne esta semana", una comparación que no existe en
-              ningún lado de la app). */}
-          <Card className="border-hairline bg-card overflow-hidden">
-            <CardContent className="p-6 space-y-5">
-              <div className="flex items-center justify-between">
-                <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("landing_hero_card_kicker")} · FT-0087</p>
-              </div>
-              <p className="text-base font-semibold text-foreground">Hamburguesa clásica · 1 porción</p>
-              <div className="divide-y divide-hairline border-t border-b border-hairline">
-                {[
-                  ["Pan de hamburguesa", "1 und", "L 6.50"],
-                  ["Carne de res", "150 g", "L 32.00"],
-                  ["Queso cheddar", "30 g", "L 10.80"],
-                  ["Vegetales frescos", "80 g", "L 7.20"],
-                  ["Salsa de la casa", "20 g", "L 3.60"],
-                ].map(([name, qty, cost]) => (
-                  <div key={name} className="flex items-center justify-between py-2.5 text-sm">
-                    <span className="text-foreground">{name}</span>
-                    <span className="flex items-center gap-4 tabular-nums text-text-3">
-                      <span className="text-text-4">{qty}</span>
-                      <span>{cost}</span>
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-2 gap-4 pt-1">
-                <div>
-                  <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("ficha_tecnica_col_unit_cost")}</p>
-                  <p className="text-2xl font-semibold text-foreground tabular-nums">L 60.10</p>
-                </div>
-                <div>
-                  <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("ficha_tecnica_food_cost_percent_label")}</p>
-                  <p className="text-2xl font-semibold text-foreground tabular-nums">32.5%</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Réplica del PDF Administrativo real — ver components/landing-admin-pdf-
+              preview.tsx para el porqué del cambio (antes esta tarjeta imitaba solo la
+              pantalla de Ficha Técnica; el dueño del proyecto pidió que muestre lo mismo
+              que trae el PDF administrativo, ya que ahí están todos los datos juntos). */}
+          <div className="max-w-3xl mx-auto">
+            <LandingAdminPdfPreview />
+          </div>
         </section>
 
         {/* Investigación — cuatro cifras con fuente citada (docs/03: prueba de que el
@@ -207,8 +172,13 @@ export function HomeContent() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-hairline border border-hairline rounded-2xl overflow-hidden">
               {stats.map((stat) => (
-                <div key={stat.value} className="bg-card p-6 space-y-3">
-                  <p className="text-4xl font-semibold text-primary tabular-nums">{stat.value}</p>
+                <div key={stat.descKey} className="bg-card p-6 space-y-3">
+                  <AnimatedNumber
+                    value={stat.value}
+                    prefix={stat.prefix}
+                    suffix={stat.suffix}
+                    className="block text-4xl font-semibold text-primary tabular-nums"
+                  />
                   <p className="text-sm text-foreground leading-snug">{t(stat.descKey)}</p>
                   <p className="text-xs text-text-4 leading-snug">{t(stat.sourceKey)}</p>
                 </div>
@@ -249,17 +219,31 @@ export function HomeContent() {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("finanzas_card_real_food_cost")}</p>
-                  <p className="text-xl font-semibold text-foreground tabular-nums mt-1">{realCostPercent.toFixed(1)}%</p>
+                  <AnimatedNumber
+                    value={realCostPercent}
+                    decimals={1}
+                    suffix="%"
+                    className="block text-xl font-semibold text-foreground tabular-nums mt-1"
+                  />
                 </div>
                 <div>
                   <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("finanzas_card_theoretical_food_cost")}</p>
-                  <p className="text-xl font-semibold text-foreground tabular-nums mt-1">{theoreticalCostPercent.toFixed(1)}%</p>
+                  <AnimatedNumber
+                    value={theoreticalCostPercent}
+                    decimals={1}
+                    suffix="%"
+                    className="block text-xl font-semibold text-foreground tabular-nums mt-1"
+                  />
                 </div>
                 <div>
                   <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("finanzas_card_variance")}</p>
-                  <p className="text-xl font-semibold text-warning tabular-nums mt-1">
-                    +{costVariance.toFixed(1)}%
-                  </p>
+                  <AnimatedNumber
+                    value={costVariance}
+                    decimals={1}
+                    prefix="+"
+                    suffix="%"
+                    className="block text-xl font-semibold text-warning tabular-nums mt-1"
+                  />
                   <p className="text-[11px] text-warning mt-0.5">{t("finanzas_variance_acceptable")}</p>
                 </div>
               </div>

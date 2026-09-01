@@ -156,14 +156,14 @@ export function InventoryForm({ onSubmit, onCancel, initialData }: InventoryForm
               <SelectValue placeholder={t("inventario_select_unit_placeholder")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="kg">Kilogramo (kg)</SelectItem>
-              <SelectItem value="g">Gramo (g)</SelectItem>
-              <SelectItem value="L">Litro (L)</SelectItem>
-              <SelectItem value="ml">Mililitro (ml)</SelectItem>
-              <SelectItem value="oz">Onza (oz)</SelectItem>
-              <SelectItem value="fl oz">Onza líquida (fl oz)</SelectItem>
-              <SelectItem value="lb">Libra (lb)</SelectItem>
-              <SelectItem value="gal">Galón (gal)</SelectItem>
+              <SelectItem value="kg">{t("inventario_unit_kg")}</SelectItem>
+              <SelectItem value="g">{t("inventario_unit_g")}</SelectItem>
+              <SelectItem value="L">{t("inventario_unit_l")}</SelectItem>
+              <SelectItem value="ml">{t("inventario_unit_ml")}</SelectItem>
+              <SelectItem value="oz">{t("inventario_unit_oz")}</SelectItem>
+              <SelectItem value="fl oz">{t("inventario_unit_floz")}</SelectItem>
+              <SelectItem value="lb">{t("inventario_unit_lb")}</SelectItem>
+              <SelectItem value="gal">{t("inventario_unit_gal")}</SelectItem>
             </SelectContent>
           </Select>
         </div>

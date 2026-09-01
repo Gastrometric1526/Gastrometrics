@@ -52,6 +52,7 @@ import { useRouter } from "next/navigation"
 import { setCurrentCurrencyCode } from "@/lib/currency"
 import { SettingsTour } from "@/components/page-tours"
 import { hasStoredPassword, verifyPassword } from "@/lib/utils/password-hash"
+import { useActiveMembership } from "@/lib/plan-access"
 
 interface UserSettings {
   name: string
@@ -96,6 +97,13 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
   const router = useRouter()
   const { user, userProfile: realUserProfile, updateUserProfile } = useAuth()
   const { language, setLanguage, t } = useLanguage()
+  // Herramientas de desarrollo (Respaldo y Restauración + Reset) tocan TODO el
+  // localStorage del navegador sin distinguir de quién es cada dato — quedan fuera de
+  // alcance para cualquier sesión que no sea la del dueño real de la cuenta, ya sea un
+  // invitado de equipo real o la "Vista previa" que corre el propio dueño simulando a
+  // alguien más (mismo patrón que app/dashboard/page.tsx y app/business/[id]/page.tsx).
+  const { active: previewActive, member: previewMember } = useActiveMembership()
+  const isTeamPreview = previewActive && !!previewMember
   const [open, setOpen] = useState(false)
   const [notificationPrefs, setNotificationPrefs] = useState({ email: true, push: true, sms: false })
   const [fullName, setFullName] = useState("")
@@ -468,7 +476,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
         ) : (
           <>
         <Tabs defaultValue="profile" className="w-full flex-1 flex flex-col overflow-hidden">
-          <TabsList data-tour="settings-tabs" className="grid w-full grid-cols-5 shrink-0">
+          <TabsList data-tour="settings-tabs" className={`grid w-full shrink-0 ${isTeamPreview ? "grid-cols-4" : "grid-cols-5"}`}>
             <TabsTrigger id="settings-tab-profile" value="profile" className="flex items-center gap-2" title={t("settings_profile")}>
               <User className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline truncate">{t("settings_profile")}</span>
@@ -485,10 +493,12 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
               <Bell className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline truncate">{t("settings_notifications")}</span>
             </TabsTrigger>
-            <TabsTrigger id="settings-tab-developer" value="developer" className="flex items-center gap-2" title={t("settings_tab_developer")}>
-              <Code2 className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline truncate">{t("settings_tab_developer")}</span>
-            </TabsTrigger>
+            {!isTeamPreview && (
+              <TabsTrigger id="settings-tab-developer" value="developer" className="flex items-center gap-2" title={t("settings_tab_developer")}>
+                <Code2 className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline truncate">{t("settings_tab_developer")}</span>
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <div className="flex-1 overflow-y-auto mt-4 pr-2">
@@ -789,6 +799,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
               </Card>
             </TabsContent>
 
+            {!isTeamPreview && (
             <TabsContent value="developer" className="space-y-4 mt-0">
               <Card>
                 <CardHeader>
@@ -943,6 +954,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                 </CardContent>
               </Card>
             </TabsContent>
+            )}
           </div>
         </Tabs>
 

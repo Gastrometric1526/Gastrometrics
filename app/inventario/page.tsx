@@ -56,7 +56,8 @@ import { RegisterInventoryModal } from "@/components/inventory/register-inventor
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { getBusinessById } from "@/lib/storage/businesses"
 import { downloadInventorySnapshotPDF, downloadCurrentInventoryPDF } from "@/lib/pdf/inventory-pdf-generator"
-import { Download } from "lucide-react"
+import { Download, Info } from "lucide-react"
+import { InventarioInfoDialog } from "@/components/inventory/inventario-info-dialog"
 import { useFeatureAccess } from "@/lib/plan-access"
 import { FeatureLockedPage } from "@/components/feature-locked"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
@@ -78,6 +79,7 @@ export default function InventoryPage() {
   const searchParams = useSearchParams()
   const businessId = searchParams.get("business")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
   const ingredients = useIngredients(businessId)
   const [items, setItems] = useState<InventoryItem[]>([])
@@ -552,7 +554,18 @@ export default function InventoryPage() {
                   </Button>
                 </Link>
                 <div data-tour="inv-header">
-                  <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("inventario_page_title")}</h1>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("inventario_page_title")}</h1>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                      onClick={() => setIsInfoDialogOpen(true)}
+                      title={t("inventario_info_title")}
+                    >
+                      <Info className="h-4 w-4" />
+                    </Button>
+                  </div>
                   <p className="text-muted-foreground mt-1">{t("inventario_page_subtitle")}</p>
                 </div>
               </div>
@@ -883,6 +896,8 @@ export default function InventoryPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <InventarioInfoDialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen} />
     </div>
   )
 }

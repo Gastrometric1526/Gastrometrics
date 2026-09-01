@@ -49,6 +49,26 @@ export function sortPurchaseOrderItemsBySupplier<T extends { supplier?: string; 
   })
 }
 
+// Orden alterna para la orden generada directo desde un menú (ver
+// components/purchase-order-page.tsx, handler de ?fromMenu=): ahí el pedido explícito
+// del dueño del proyecto fue agrupar por categoría, no por proveedor — la pantalla ya
+// llega con todos los ingredientes de los platos y sus sub-recetas, y agrupar por
+// categoría es como se recorre físicamente una bodega. No reemplaza
+// sortPurchaseOrderItemsBySupplier (decisión de negocio ya documentada arriba, usada
+// en el flujo manual y en el auto-sugerido) — es una función aparte, para un flujo aparte.
+export function sortPurchaseOrderItemsByCategory<T extends { category?: string; ingredientName: string }>(
+  items: T[],
+): T[] {
+  return [...items].sort((a, b) => {
+    const categoryA = a.category?.trim() || ""
+    const categoryB = b.category?.trim() || ""
+    if (!categoryA && categoryB) return 1
+    if (categoryA && !categoryB) return -1
+    if (categoryA !== categoryB) return categoryA.localeCompare(categoryB)
+    return a.ingredientName.localeCompare(b.ingredientName)
+  })
+}
+
 export interface InventorySnapshot {
   [ingredientId: string]: number // Available quantity
 }

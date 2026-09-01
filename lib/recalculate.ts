@@ -2,6 +2,7 @@ import { getRecipes, saveRecipes } from "./storage/recipes"
 import { getIngredients, updateIngredient } from "./storage/ingredients"
 import { syncSubRecipeToIngredient } from "./subrecipe/core"
 import { getFromStorage, saveToStorage, STORAGE_KEYS } from "./storage/core"
+import { SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
 
 export interface RecalculationResult {
   ingredientId: string
@@ -135,7 +136,10 @@ export async function updateIngredientPriceAndRecalculate(
     })
 
     // If this recipe is a sub-recipe, update its linked ingredient
-    if (recipe.classification === "SUB RECETA" || recipe.isSubRecipe) {
+    // BUG CORREGIDO: comparaba contra el literal viejo "SUB RECETA", que ya no existe en
+    // ningún lado (types/recipe.ts usa SUBRECIPE_CLASSIFICATION desde hace tiempo) — esta
+    // rama nunca se activaba por esta vía, solo por el fallback recipe.isSubRecipe.
+    if (recipe.classification === SUBRECIPE_CLASSIFICATION || recipe.isSubRecipe) {
       console.log(`[Recalculate] Updating linked ingredient for sub-recipe: ${recipe.name}`)
       const linkedIngredient = syncSubRecipeToIngredient(recipe, businessId)
 

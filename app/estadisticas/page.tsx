@@ -34,7 +34,9 @@ import {
   Boxes,
   Wallet,
   History,
+  Info,
 } from "lucide-react"
+import { EstadisticasPanoramaInfoDialog } from "@/components/estadisticas-panorama-info-dialog"
 import {
   PieChart,
   Pie,
@@ -197,6 +199,7 @@ function EstadisticasContent() {
   const [salesImportsCount, setSalesImportsCount] = useState(0)
   const [priceHistory, setPriceHistory] = useState<PriceChangeNotification[]>([])
   const [selectedPriceIngredientId, setSelectedPriceIngredientId] = useState<string>("")
+  const [isPanoramaInfoOpen, setIsPanoramaInfoOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -449,6 +452,12 @@ function EstadisticasContent() {
                   </TabsList>
 
                   <TabsContent value="panorama" className="space-y-6 mt-4">
+                  <div className="flex justify-end">
+                    <Button variant="outline" size="sm" onClick={() => setIsPanoramaInfoOpen(true)} className="gap-2">
+                      <Info className="h-4 w-4" />
+                      {t("estadisticas_panorama_info_button")}
+                    </Button>
+                  </div>
                   {/* Overview */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-tour="stats-overview-cards">
                     <StatCard icon={ChefHat} label={t("estadisticas_stat_recipes")} value={String(recipes.length)} token="chart-1" />
@@ -855,6 +864,7 @@ function EstadisticasContent() {
           </div>
         </div>
       </div>
+      <EstadisticasPanoramaInfoDialog open={isPanoramaInfoOpen} onOpenChange={setIsPanoramaInfoOpen} />
     </AuthGuard>
   )
 }

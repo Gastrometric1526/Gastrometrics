@@ -36,6 +36,7 @@ import { setDashboardData } from "@/utils/dashboard"
 import { saveInventory, getInventory, addInventorySnapshot, getInventoryHistory } from "@/lib/storage/inventory"
 import { getIngredients, saveIngredients } from "@/lib/storage/ingredients"
 import { presentations } from "@/types/ingredient"
+import { getCategoryLabel, getPresentationLabel, getUnitLabel } from "@/lib/ingredient-labels"
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
 import { updateIngredientPriceAndRecalculate } from "@/lib/recalculate"
 import { computeWeightedAverageCost } from "@/lib/utils/weighted-average-cost"
@@ -85,7 +86,7 @@ const inventoryTypeToSnapshotType: Record<"inicial" | "final" | "nueva compra", 
 }
 
 export function RegisterInventoryModal({ open, onOpenChange, ingredients, businessId }: RegisterInventoryModalProps) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const classificationLabels: Record<string, string> = {
     "Inventario Global": t("inventario_register_division_global"),
     Bebidas: t("inventario_division_beverages"),
@@ -953,16 +954,17 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                                   {ingredient.name}
                                 </TableCell>
                                 <TableCell className="max-w-[120px] truncate py-2 text-center">
-                                  {ingredient.category}
+                                  {getCategoryLabel(ingredient.category, language)}
                                 </TableCell>
                                 <TableCell className="whitespace-nowrap py-2 text-center">
                                   {inventoryMode === "presentation" ? (
                                     hasPresentation ? (
                                       // Mostrar la presentación con el contenido neto correctamente formateado desde la base de datos
                                       <span className="text-sm font-medium">
-                                        {ingredient.presentation} ({ingredient.pricing?.netContent || 0}
+                                        {getPresentationLabel(ingredient.presentation || "", language)} (
+                                        {ingredient.pricing?.netContent || 0}
                                         {""}
-                                        {ingredient.unit})
+                                        {getUnitLabel(ingredient.unit, language)})
                                       </span>
                                     ) : (
                                       // Solo mostrar el selector de presentación si NO tiene una presentación existente
@@ -976,7 +978,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                                         <SelectContent>
                                           {availablePresentations.map((p) => (
                                             <SelectItem key={p} value={p}>
-                                              {p}
+                                              {getPresentationLabel(p, language)}
                                             </SelectItem>
                                           ))}
                                         </SelectContent>
@@ -984,7 +986,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                                     )
                                   ) : (
                                     // En modo métrico, simplemente mostrar la unidad
-                                    <span className="text-center">{ingredient.unit}</span>
+                                    <span className="text-center">{getUnitLabel(ingredient.unit, language)}</span>
                                   )}
                                 </TableCell>
                                 <TableCell className="py-2 text-center">
@@ -1002,7 +1004,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                                         placeholder="0"
                                       />
                                       <span className="text-xs text-muted-foreground">
-                                        = {ingredient.calculatedQuantity || 0} {ingredient.unit}
+                                        = {ingredient.calculatedQuantity || 0} {getUnitLabel(ingredient.unit, language)}
                                       </span>
                                     </div>
                                   ) : (
@@ -1141,16 +1143,18 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                           {ingredientsWithValues.map((ingredient) => (
                             <TableRow key={ingredient.id}>
                               <TableCell className="max-w-[200px] truncate py-1.5">{ingredient.name}</TableCell>
-                              <TableCell className="max-w-[120px] truncate py-1.5">{ingredient.category}</TableCell>
+                              <TableCell className="max-w-[120px] truncate py-1.5">
+                                {getCategoryLabel(ingredient.category, language)}
+                              </TableCell>
                               <TableCell className="py-1.5 text-right">
-                                <span className="font-medium">{ingredient.quantity}</span> {ingredient.unit}
+                                <span className="font-medium">{ingredient.quantity}</span> {getUnitLabel(ingredient.unit, language)}
                                 {inventoryMode === "presentation" &&
                                   ingredient.presentation &&
                                   ingredient.pricing?.netContent > 0 && (
                                     <span className="text-xs text-muted-foreground ml-1">
                                       ({Math.round(ingredient.quantity / ingredient.pricing.netContent)}
                                       {""}
-                                      {ingredient.presentation})
+                                      {getPresentationLabel(ingredient.presentation, language)})
                                     </span>
                                   )}
                               </TableCell>

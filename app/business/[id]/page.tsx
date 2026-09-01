@@ -538,9 +538,21 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
     }
   }
 
-  const handleSaveLogo = () => {
+  const handleSaveLogo = async () => {
     if (!business) return
-    updateBusiness(business.id, { logo: logoPreview || undefined })
+    // BUG CORREGIDO: esta llamada no se esperaba (sin await, la función ni siquiera era
+    // async) — el diálogo se cerraba y el toast de éxito aparecía ANTES de confirmar que
+    // el logo de verdad se guardó en Supabase, y si la escritura fallaba, el error
+    // quedaba en silencio (nadie se enteraba, el negocio se quedaba sin el logo nuevo).
+    const saved = await updateBusiness(business.id, { logo: logoPreview || undefined })
+    if (!saved) {
+      toast({
+        title: t("business_toast_logo_process_error_title"),
+        description: t("business_toast_logo_process_error_desc"),
+        variant: "destructive",
+      })
+      return
+    }
     setBusiness({ ...business, logo: logoPreview || undefined })
     setIsLogoDialogOpen(false)
     toast({
