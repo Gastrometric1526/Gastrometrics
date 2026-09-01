@@ -212,7 +212,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
         // BUG CORREGIDO: al navegar de un negocio a otro sin recargar la página (misma
         // ruta, Next.js no remonta el componente), selectedMenuId/scenarioParams.menuId
         // seguían apuntando al menú del negocio ANTERIOR — loadMenus() solo auto-selecciona
-        // un menú nuevo "si no hay uno ya elegido", y como el ID viejo seguía ahí (aunque
+        // un menú nuevo"si no hay uno ya elegido", y como el ID viejo seguía ahí (aunque
         // perteneciera a otro negocio), nunca se actualizaba. El simulador de escenarios
         // podía quedar mostrando resultados calculados para el negocio anterior bajo el
         // encabezado del nuevo. Se resetea explícitamente antes de volver a cargar menús.
@@ -508,7 +508,11 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
   const handleLogoFileChange = async (file: File | undefined) => {
     if (!file) return
     if (!file.type.startsWith("image/")) {
-      toast({ title: t("business_toast_invalid_file_title"), description: t("business_toast_invalid_file_desc"), variant: "destructive" })
+      toast({
+        title: t("business_toast_invalid_file_title"),
+        description: t("business_toast_invalid_file_desc"),
+        variant: "destructive",
+      })
       return
     }
     setIsCompressingLogo(true)
@@ -517,7 +521,11 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
       setLogoPreview(dataUrl)
     } catch (error) {
       console.error("Error compressing logo:", error)
-      toast({ title: t("business_toast_logo_process_error_title"), description: t("business_toast_logo_process_error_desc"), variant: "destructive" })
+      toast({
+        title: t("business_toast_logo_process_error_title"),
+        description: t("business_toast_logo_process_error_desc"),
+        variant: "destructive",
+      })
     } finally {
       setIsCompressingLogo(false)
     }
@@ -530,9 +538,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
     setIsLogoDialogOpen(false)
     toast({
       title: logoPreview ? t("business_toast_logo_updated_title") : t("business_toast_logo_removed_title"),
-      description: logoPreview
-        ? t("business_toast_logo_updated_desc")
-        : t("business_toast_logo_removed_desc"),
+      description: logoPreview ? t("business_toast_logo_updated_desc") : t("business_toast_logo_removed_desc"),
     })
   }
 
@@ -540,13 +546,13 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
   // enredadas entre sí:
   // 1. `renderFinancialMetrics` nunca se llamaba en ningún lado (código muerto).
   // 2. Declaraba su propio `formatCurrency` local hardcodeado a Lempira, que TAPABA
-  //    (shadowing) el `formatCurrency` correcto ya importado de @/lib/currency arriba
-  //    (línea 69) para el resto del componente — todas las cifras reales que sí se
-  //    muestran (Scenario Analysis, gastos, tooltip del pastel) usaban esta versión
-  //    hardcodeada en vez de la moneda elegida en Configuración.
+  // (shadowing) el `formatCurrency` correcto ya importado de @/lib/currency arriba
+  // (línea 69) para el resto del componente — todas las cifras reales que sí se
+  // muestran (Scenario Analysis, gastos, tooltip del pastel) usaban esta versión
+  // hardcodeada en vez de la moneda elegida en Configuración.
   // 3. `expenseChartData`/`translateExpenseKey` eran una segunda implementación de
-  //    agregación de gastos, paralela y muerta — el gráfico real usa `chartData`
-  //    (el useEffect de arriba), no `expenseChartData`.
+  // agregación de gastos, paralela y muerta — el gráfico real usa `chartData`
+  // (el useEffect de arriba), no `expenseChartData`.
   const getSafeExpenseValue = (value: any): number => {
     return Number(value) || 0
   }
@@ -586,8 +592,8 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
     )
   }
 
-  // Vista previa de Equipo (ver /equipo, botón "Vista previa"): si el acceso
-  // configurado de esta persona es "Dashboard principal" puede ver cualquier negocio
+  // Vista previa de Equipo (ver /equipo, botón"Vista previa"): si el acceso
+  // configurado de esta persona es"Dashboard principal"puede ver cualquier negocio
   // (igual que hoy el dueño de la cuenta); si es a un negocio ESPECÍFICO, solo puede
   // ver ese, nunca otro.
   if (previewActive && previewMember && previewMember.scope !== "dashboard" && previewMember.scope !== params.id) {
@@ -606,7 +612,10 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
           <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
             <BusinessDetailTour hasScenarioSection={!!(business?.hasFinancialData && menus.length > 0)} />
             {/* Header Section */}
-            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6" data-tour="business-header">
+            <div
+              className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6"
+              data-tour="business-header"
+            >
               <div className="flex items-center gap-4 flex-1 min-w-0">
                 <Button
                   variant="outline"
@@ -632,7 +641,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
                 <Link href={`/ficha-tecnica?business=${business?.id}`}>
-                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg px-6 py-3 h-auto font-semibold text-base">
+                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 h-auto font-semibold text-base">
                     <FileText className="h-5 w-5 mr-2" />
                     {t("business_header_new_recipe_button")}
                   </Button>
@@ -642,7 +651,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                     <Button
                       variant="outline"
                       size="icon"
-                      className="border-2 border-border hover:bg-accent bg-transparent h-12 w-12 flex-shrink-0"
+                      className="hover:bg-accent bg-transparent h-12 w-12 flex-shrink-0"
                     >
                       <Settings className="h-5 w-5" />
                     </Button>
@@ -650,7 +659,9 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuItem onClick={() => setIsConfigOpen(true)} className="cursor-pointer">
                       <Settings className="mr-2 h-4 w-4" />
-                      {business?.hasFinancialData ? t("business_menu_edit_financial") : t("business_menu_add_financial")}
+                      {business?.hasFinancialData
+                        ? t("business_menu_edit_financial")
+                        : t("business_menu_add_financial")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={openLogoDialog} className="cursor-pointer">
                       <ImageIcon className="mr-2 h-4 w-4" />
@@ -687,7 +698,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6" data-tour="business-modules">
               {menuItems.map((action, index) => (
                 <Link key={index} href={action.href}>
-                  <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all duration-300 bg-card group cursor-pointer h-56 overflow-hidden">
+                  <Card className="border-border transition-all duration-300 bg-card group cursor-pointer h-56 overflow-hidden">
                     <CardContent className="p-6 h-full flex flex-col justify-between">
                       <div className="space-y-4">
                         <div className={`p-4 rounded-lg ${action.bgColor} w-fit transition-all duration-300`}>
@@ -713,7 +724,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
             </div>
 
             {/* Business Summary */}
-            <Card className="border-2 border-border shadow-lg bg-card" data-tour="business-summary">
+            <Card className="border-border bg-card" data-tour="business-summary">
               <CardHeader className="bg-muted/20 border-b-2 border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
@@ -734,12 +745,16 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="rounded-lg border border-border bg-muted/20 p-3">
                       <p className="text-xs text-muted-foreground">{t("business_summary_type_label")}</p>
-                      <p className="text-sm font-semibold text-foreground truncate">{business?.type || t("business_summary_type_default")}</p>
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {business?.type || t("business_summary_type_default")}
+                      </p>
                     </div>
                     <div className="rounded-lg border border-border bg-muted/20 p-3">
                       <p className="text-xs text-muted-foreground">{t("business_summary_plates_label")}</p>
                       <p className="text-sm font-semibold text-foreground tabular-nums">
-                        {business?.estimatedMonthlyPlates ? business.estimatedMonthlyPlates.toLocaleString() : t("business_summary_not_set")}
+                        {business?.estimatedMonthlyPlates
+                          ? business.estimatedMonthlyPlates.toLocaleString()
+                          : t("business_summary_not_set")}
                       </p>
                     </div>
                     <div className="rounded-lg border border-border bg-muted/20 p-3">
@@ -789,7 +804,9 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                                   </div>
                                   <div>
                                     <p className="text-sm font-semibold text-foreground">{category.label}</p>
-                                    <p className="text-xs text-muted-foreground">{t("business_expense_percent_of_total").replace("{percent}", percentage)}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {t("business_expense_percent_of_total").replace("{percent}", percentage)}
+                                    </p>
                                   </div>
                                 </div>
                                 <div className="text-right">
@@ -807,7 +824,9 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                         })}
                       <div className="mt-6 p-4 bg-muted/30 rounded-xl border border-border">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-bold text-foreground">{t("business_summary_total_monthly_label")}</span>
+                          <span className="text-sm font-bold text-foreground">
+                            {t("business_summary_total_monthly_label")}
+                          </span>
                           <span className="text-xl font-bold text-foreground tabular-nums">
                             {formatCurrency(totalExpenses)}
                           </span>
@@ -822,100 +841,102 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                       <div className="w-full max-w-2xl flex flex-col items-center justify-center text-center py-16 border-2 border-dashed border-border rounded-xl">
                         <PieChartIcon className="h-10 w-10 text-muted-foreground mb-3" />
                         <p className="font-semibold text-foreground mb-1">{t("business_chart_empty_title")}</p>
-                        <p className="text-sm text-muted-foreground max-w-sm">
-                          {t("business_chart_empty_desc")}
-                        </p>
+                        <p className="text-sm text-muted-foreground max-w-sm">{t("business_chart_empty_desc")}</p>
                         <Button size="sm" className="mt-4 gap-2" onClick={() => setIsConfigOpen(true)}>
                           <Settings className="h-4 w-4" />
                           {t("business_chart_empty_button")}
                         </Button>
                       </div>
                     ) : (
-                    <>
-                    <div className="w-full max-w-2xl">
-                      <ResponsiveContainer width="100%" height={360}>
-                        <PieChart>
-                          <Pie
-                            data={chartData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={0}
-                            outerRadius={130}
-                            paddingAngle={3}
-                            dataKey="value"
-                          >
-                            {chartData.map((entry, index) => (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={entry.color}
-                                stroke="hsl(var(--card))"
-                                strokeWidth={3}
-                                className="hover:opacity-80 transition-opacity cursor-pointer"
-                              />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            formatter={(value) => {
-                              const numericValue = typeof value === "number" ? value : Number(value)
-                              const percentage = totalExpenses > 0 ? ((numericValue / totalExpenses) * 100).toFixed(1) : "0.0"
-                              return [`${formatCurrency(numericValue)} (${percentage}%)`, t("business_chart_tooltip_amount_label")]
-                            }}
-                            contentStyle={{
-                              backgroundColor: "hsl(var(--popover))",
-                              color: "hsl(var(--popover-foreground))",
-                              border: "1px solid hsl(var(--border))",
-                              borderRadius: "12px",
-                              boxShadow: "0 12px 24px -8px rgba(0, 0, 0, 0.25)",
-                              fontSize: "13px",
-                              fontWeight: 600,
-                              padding: "10px 14px",
-                            }}
-                            itemStyle={{ color: "hsl(var(--popover-foreground))" }}
-                          />
-                          <Legend
-                            verticalAlign="bottom"
-                            height={56}
-                            wrapperStyle={{ paddingTop: "16px" }}
-                            iconSize={0}
-                            formatter={(value, entry: any) => {
-                              const percentage =
-                                totalExpenses > 0
-                                  ? (((entry.payload?.value || 0) / totalExpenses) * 100).toFixed(1)
-                                  : "0.0"
-                              return (
-                                <span className="text-xs font-semibold text-foreground inline-flex items-center gap-1.5 mx-2">
-                                  <span
-                                    className="inline-block w-3 h-3 rounded-sm border border-border"
-                                    style={{ backgroundColor: entry.color }}
+                      <>
+                        <div className="w-full max-w-2xl">
+                          <ResponsiveContainer width="100%" height={360}>
+                            <PieChart>
+                              <Pie
+                                data={chartData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={0}
+                                outerRadius={130}
+                                paddingAngle={3}
+                                dataKey="value"
+                              >
+                                {chartData.map((entry, index) => (
+                                  <Cell
+                                    key={`cell-${index}`}
+                                    fill={entry.color}
+                                    stroke="hsl(var(--card))"
+                                    strokeWidth={3}
+                                    className="hover:opacity-80 transition-opacity cursor-pointer"
                                   />
-                                  {value} ({percentage}%)
-                                </span>
-                              )
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
+                                ))}
+                              </Pie>
+                              <Tooltip
+                                formatter={(value) => {
+                                  const numericValue = typeof value === "number" ? value : Number(value)
+                                  const percentage =
+                                    totalExpenses > 0 ? ((numericValue / totalExpenses) * 100).toFixed(1) : "0.0"
+                                  return [
+                                    `${formatCurrency(numericValue)} (${percentage}%)`,
+                                    t("business_chart_tooltip_amount_label"),
+                                  ]
+                                }}
+                                contentStyle={{
+                                  backgroundColor: "hsl(var(--popover))",
+                                  color: "hsl(var(--popover-foreground))",
+                                  border: "1px solid hsl(var(--border))",
+                                  borderRadius: "12px",
+                                  boxShadow: "0 12px 24px -8px rgba(0, 0, 0, 0.25)",
+                                  fontSize: "13px",
+                                  fontWeight: 600,
+                                  padding: "10px 14px",
+                                }}
+                                itemStyle={{ color: "hsl(var(--popover-foreground))" }}
+                              />
+                              <Legend
+                                verticalAlign="bottom"
+                                height={56}
+                                wrapperStyle={{ paddingTop: "16px" }}
+                                iconSize={0}
+                                formatter={(value, entry: any) => {
+                                  const percentage =
+                                    totalExpenses > 0
+                                      ? (((entry.payload?.value || 0) / totalExpenses) * 100).toFixed(1)
+                                      : "0.0"
+                                  return (
+                                    <span className="text-xs font-semibold text-foreground inline-flex items-center gap-1.5 mx-2">
+                                      <span
+                                        className="inline-block w-3 h-3 rounded-sm border border-border"
+                                        style={{ backgroundColor: entry.color }}
+                                      />
+                                      {value} ({percentage}%)
+                                    </span>
+                                  )
+                                }}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
 
-                    {/* Info Box */}
-                    <div className="mt-6 w-full max-w-2xl">
-                      <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
-                        <div className="flex items-start gap-3">
-                          <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
-                            <Info className="h-4.5 w-4.5 text-primary" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-bold text-foreground mb-1">
-                              {t("business_chart_info_title")}
-                            </h4>
-                            <p className="text-sm text-muted-foreground leading-relaxed">
-                              {t("business_chart_info_desc")}
-                            </p>
+                        {/* Info Box */}
+                        <div className="mt-6 w-full max-w-2xl">
+                          <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
+                            <div className="flex items-start gap-3">
+                              <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                                <Info className="h-4.5 w-4.5 text-primary" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-bold text-foreground mb-1">
+                                  {t("business_chart_info_title")}
+                                </h4>
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                  {t("business_chart_info_desc")}
+                                </p>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                    </>
+                      </>
                     )}
                   </div>
                 </div>
@@ -924,7 +945,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
 
             {/* Scenario Analysis Section */}
             {business?.hasFinancialData && menus.length > 0 && (
-              <Card className="border-2 border-border shadow-lg bg-card" data-tour="business-scenario">
+              <Card className="border-border bg-card" data-tour="business-scenario">
                 <CardHeader className="bg-muted/20 border-b-2 border-border">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -991,7 +1012,9 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label className="text-sm font-semibold mb-2 block">{t("business_scenario_seats_label")}</Label>
+                          <Label className="text-sm font-semibold mb-2 block">
+                            {t("business_scenario_seats_label")}
+                          </Label>
                           <Input
                             type="number"
                             min="1"
@@ -999,13 +1022,18 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             onChange={(e) =>
                               setScenarioParams((prev) => ({
                                 ...prev,
-                                capacity: { ...prev.capacity, seats: Math.max(1, Number.parseInt(e.target.value) || 1) },
+                                capacity: {
+                                  ...prev.capacity,
+                                  seats: Math.max(1, Number.parseInt(e.target.value) || 1),
+                                },
                               }))
                             }
                           />
                         </div>
                         <div>
-                          <Label className="text-sm font-semibold mb-2 block">{t("business_scenario_services_per_day_label")}</Label>
+                          <Label className="text-sm font-semibold mb-2 block">
+                            {t("business_scenario_services_per_day_label")}
+                          </Label>
                           <Input
                             type="number"
                             min="1"
@@ -1013,13 +1041,18 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             onChange={(e) =>
                               setScenarioParams((prev) => ({
                                 ...prev,
-                                capacity: { ...prev.capacity, servicesPerDay: Math.max(1, Number.parseInt(e.target.value) || 1) },
+                                capacity: {
+                                  ...prev.capacity,
+                                  servicesPerDay: Math.max(1, Number.parseInt(e.target.value) || 1),
+                                },
                               }))
                             }
                           />
                         </div>
                         <div>
-                          <Label className="text-sm font-semibold mb-2 block">{t("business_scenario_days_open_label")}</Label>
+                          <Label className="text-sm font-semibold mb-2 block">
+                            {t("business_scenario_days_open_label")}
+                          </Label>
                           <Input
                             type="number"
                             min="1"
@@ -1028,7 +1061,10 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             onChange={(e) =>
                               setScenarioParams((prev) => ({
                                 ...prev,
-                                capacity: { ...prev.capacity, daysOpen: Math.max(1, Number.parseInt(e.target.value) || 1) },
+                                capacity: {
+                                  ...prev.capacity,
+                                  daysOpen: Math.max(1, Number.parseInt(e.target.value) || 1),
+                                },
                               }))
                             }
                           />
@@ -1059,7 +1095,9 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
 
                     <div className="space-y-4">
                       <div>
-                        <Label className="text-sm font-semibold mb-2 block">{t("business_scenario_mix_method_label")}</Label>
+                        <Label className="text-sm font-semibold mb-2 block">
+                          {t("business_scenario_mix_method_label")}
+                        </Label>
                         <Select
                           value={scenarioParams.mixMethod}
                           onValueChange={(value: any) => setScenarioParams((prev) => ({ ...prev, mixMethod: value }))}
@@ -1082,7 +1120,9 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
 
                       {(scenarioParams.mixMethod === "heuristica" || scenarioParams.mixMethod === "capacidad") && (
                         <div className="space-y-3">
-                          <Label className="text-sm font-semibold">{t("business_scenario_section_weights_label")}</Label>
+                          <Label className="text-sm font-semibold">
+                            {t("business_scenario_section_weights_label")}
+                          </Label>
                           {(["entrada", "fuerte", "postre", "bebida"] as MenuSection[]).map((section) => (
                             <div key={section} className="flex items-center justify-between">
                               <span className="text-sm capitalize">{sectionLabels[section]}:</span>
@@ -1122,7 +1162,9 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                       disabled={isCalculating || !selectedMenuId}
                       className="px-8 py-3 text-base font-semibold"
                     >
-                      {isCalculating ? t("business_scenario_calculating_button") : t("business_scenario_calculate_button")}
+                      {isCalculating
+                        ? t("business_scenario_calculating_button")
+                        : t("business_scenario_calculate_button")}
                     </Button>
                   </div>
 
@@ -1145,28 +1187,36 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             >
                               {t("business_scenario_confidence_label")}: {currentScenario.confidence}
                             </Badge>
-                            {currentScenario.hasOverrides && <Badge variant="outline">{t("business_scenario_custom_prices_badge")}</Badge>}
+                            {currentScenario.hasOverrides && (
+                              <Badge variant="outline">{t("business_scenario_custom_prices_badge")}</Badge>
+                            )}
                           </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                          <Card className="border-2 border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/40">
+                          <Card className="border-2 border-blue-200 dark:border-blue-900 bg-blue-50">
                             <CardContent className="p-4 text-center">
                               <div className="flex items-center justify-center gap-2 mb-2">
                                 <DollarSign className="h-5 w-5 text-blue-600 dark:text-blue-300" />
-                                <span className="text-sm font-semibold text-blue-600 dark:text-blue-300">{t("business_scenario_kpi_ticket_label")}</span>
+                                <span className="text-sm font-semibold text-blue-600 dark:text-blue-300">
+                                  {t("business_scenario_kpi_ticket_label")}
+                                </span>
                               </div>
-                              <div className="text-2xl font-bold text-blue-800 dark:text-blue-300">{formatCurrency(currentScenario.TP)}</div>
+                              <div className="text-2xl font-bold text-info">{formatCurrency(currentScenario.TP)}</div>
                             </CardContent>
                           </Card>
 
-                          <Card className="border-2 border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/40">
+                          <Card className="border border-hairline bg-success-soft">
                             <CardContent className="p-4 text-center">
                               <div className="flex items-center justify-center gap-2 mb-2">
                                 <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-300" />
-                                <span className="text-sm font-semibold text-green-600 dark:text-green-300">{t("business_scenario_kpi_cost_label")}</span>
+                                <span className="text-sm font-semibold text-green-600 dark:text-green-300">
+                                  {t("business_scenario_kpi_cost_label")}
+                                </span>
                               </div>
-                              <div className="text-2xl font-bold text-green-800 dark:text-green-300">{formatCurrency(currentScenario.CVp)}</div>
+                              <div className="text-2xl font-bold text-success">
+                                {formatCurrency(currentScenario.CVp)}
+                              </div>
                             </CardContent>
                           </Card>
 
@@ -1174,9 +1224,13 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             <CardContent className="p-4 text-center">
                               <div className="flex items-center justify-center gap-2 mb-2">
                                 <Target className="h-5 w-5 text-purple-600 dark:text-purple-300" />
-                                <span className="text-sm font-semibold text-purple-600 dark:text-purple-300">{t("business_scenario_kpi_margin_label")}</span>
+                                <span className="text-sm font-semibold text-purple-600 dark:text-purple-300">
+                                  {t("business_scenario_kpi_margin_label")}
+                                </span>
                               </div>
-                              <div className="text-2xl font-bold text-purple-800 dark:text-purple-300">{formatCurrency(currentScenario.MC)}</div>
+                              <div className="text-2xl font-bold text-purple-800 dark:text-purple-300">
+                                {formatCurrency(currentScenario.MC)}
+                              </div>
                             </CardContent>
                           </Card>
 
@@ -1184,26 +1238,31 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             <CardContent className="p-4 text-center">
                               <div className="flex items-center justify-center gap-2 mb-2">
                                 <BarChart3 className="h-5 w-5 text-orange-600 dark:text-orange-300" />
-                                <span className="text-sm font-semibold text-orange-600 dark:text-orange-300">{t("business_scenario_kpi_breakeven_label")}</span>
+                                <span className="text-sm font-semibold text-orange-600 dark:text-orange-300">
+                                  {t("business_scenario_kpi_breakeven_label")}
+                                </span>
                               </div>
                               <div className="text-lg font-bold text-orange-800 dark:text-orange-300">
                                 {currentScenario.PE_plates.toLocaleString()} {t("business_scenario_plates_suffix")}
                               </div>
                               <div className="text-sm text-orange-700 dark:text-orange-300">
-                                {formatCurrency(currentScenario.PE_revenue)}{t("business_scenario_per_month_suffix")}
+                                {formatCurrency(currentScenario.PE_revenue)}
+                                {t("business_scenario_per_month_suffix")}
                               </div>
                             </CardContent>
                           </Card>
                         </div>
 
                         {/* Recommendation */}
-                        <Card className="border-2 border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40">
+                        <Card className="border-2 border-amber-200 dark:border-amber-900 bg-warning-soft dark:bg-amber-950/40">
                           <CardContent className="p-4">
                             <div className="flex items-start gap-3">
                               <Info className="h-5 w-5 text-amber-600 dark:text-amber-300 mt-0.5 flex-shrink-0" />
                               <div>
-                                <h4 className="font-semibold text-amber-800 dark:text-amber-300 mb-2">{t("business_scenario_recommendation_heading")}</h4>
-                                <p className="text-amber-700 dark:text-amber-300 text-sm leading-relaxed">
+                                <h4 className="font-semibold text-warning mb-2">
+                                  {t("business_scenario_recommendation_heading")}
+                                </h4>
+                                <p className="text-warning text-sm leading-relaxed">
                                   {generateRecommendation(currentScenario)}
                                 </p>
                               </div>
@@ -1219,13 +1278,11 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
 
             {/* Empty state for scenario analysis */}
             {business?.hasFinancialData && menus.length === 0 && (
-              <Card className="border-2 border-border shadow-lg bg-card">
+              <Card className="border-border bg-card">
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <Calculator className="h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-semibold mb-2">{t("business_scenario_title")}</h3>
-                  <p className="text-muted-foreground mb-4 text-center">
-                    {t("business_scenario_empty_desc")}
-                  </p>
+                  <p className="text-muted-foreground mb-4 text-center">{t("business_scenario_empty_desc")}</p>
                   <Link href={`/menus?business=${params.id}`}>
                     <Button>{t("business_scenario_empty_button")}</Button>
                   </Link>
@@ -1234,13 +1291,11 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
             )}
 
             {!business?.hasFinancialData && (
-              <Card className="border-2 border-border shadow-lg bg-card">
+              <Card className="border-border bg-card">
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-semibold mb-2">{t("business_financial_empty_heading")}</h3>
-                  <p className="text-muted-foreground mb-4 text-center">
-                    {t("business_financial_empty_desc")}
-                  </p>
+                  <p className="text-muted-foreground mb-4 text-center">{t("business_financial_empty_desc")}</p>
                   <Button onClick={() => setIsConfigOpen(true)}>{t("business_financial_empty_button")}</Button>
                 </CardContent>
               </Card>
@@ -1248,7 +1303,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
 
             {/* Actividad Reciente y Notificaciones, propias de este negocio, separadas del dashboard principal */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="border-2 border-border shadow-lg bg-card h-80 overflow-hidden" data-tour="business-activity">
+              <Card className="border-border bg-card h-80 overflow-hidden" data-tour="business-activity">
                 <CardHeader className="border-b-2 border-border p-4">
                   <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
                     <Activity className="h-5 w-5 flex-shrink-0" />
@@ -1282,15 +1337,13 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                     <div className="text-center py-8">
                       <Activity className="h-12 w-12 text-foreground/30 mx-auto mb-4" />
                       <p className="text-foreground/70 font-medium">{t("business_activity_empty_title")}</p>
-                      <p className="text-xs text-foreground/50 mt-1">
-                        {t("business_activity_empty_desc")}
-                      </p>
+                      <p className="text-xs text-foreground/50 mt-1">{t("business_activity_empty_desc")}</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
-              <Card className="border-2 border-border shadow-lg bg-card h-80 overflow-hidden" data-tour="business-notifications">
+              <Card className="border-border bg-card h-80 overflow-hidden" data-tour="business-notifications">
                 <CardHeader className="border-b-2 border-border p-4">
                   <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
                     <Bell className="h-5 w-5 flex-shrink-0" />
@@ -1310,12 +1363,12 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                           key={alert.id}
                           className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
                             alert.type === "success"
-                              ? "bg-green-100 border-green-300 hover:bg-green-50 dark:bg-green-950/40"
+                              ? "bg-success-soft hover:bg-success-soft"
                               : alert.type === "warning"
-                                ? "bg-amber-100 border-amber-300 hover:bg-amber-50 dark:bg-amber-950/40"
+                                ? "bg-warning-soft hover:bg-warning-soft dark:bg-amber-950/40"
                                 : alert.type === "error"
-                                  ? "bg-red-100 border-red-300 hover:bg-red-50 dark:bg-red-950/40"
-                                  : "bg-blue-100 border-blue-300 hover:bg-blue-50 dark:bg-blue-950/40"
+                                  ? "bg-danger-soft hover:bg-danger-soft"
+                                  : "bg-info-soft hover:bg-info-soft/70"
                           } ${alert.read ? "opacity-60" : ""}`}
                           onClick={() => handleMarkAlertAsRead(alert.id)}
                         >
@@ -1324,11 +1377,11 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             <p
                               className={`text-sm font-bold ${
                                 alert.type === "success"
-                                  ? "text-green-900 dark:text-green-300"
+                                  ? "text-success"
                                   : alert.type === "warning"
-                                    ? "text-amber-900 dark:text-amber-300"
+                                    ? "text-warning"
                                     : alert.type === "error"
-                                      ? "text-red-900 dark:text-red-300"
+                                      ? "text-destructive"
                                       : "text-blue-900 dark:text-blue-300"
                               }`}
                             >
@@ -1337,12 +1390,12 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             <p
                               className={`text-xs font-medium mt-1 ${
                                 alert.type === "success"
-                                  ? "text-green-800 dark:text-green-300"
+                                  ? "text-success"
                                   : alert.type === "warning"
-                                    ? "text-amber-800 dark:text-amber-300"
+                                    ? "text-warning"
                                     : alert.type === "error"
-                                      ? "text-red-800 dark:text-red-300"
-                                      : "text-blue-800 dark:text-blue-300"
+                                      ? "text-destructive"
+                                      : "text-info"
                               }`}
                             >
                               {alert.message}
@@ -1371,14 +1424,16 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                   <DialogTitle>{t("business_logo_dialog_title")}</DialogTitle>
-                  <DialogDescription>
-                    {t("business_logo_dialog_desc")}
-                  </DialogDescription>
+                  <DialogDescription>{t("business_logo_dialog_desc")}</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-2">
                   <div className="flex items-center justify-center h-32 bg-muted/30 rounded-lg border-2 border-dashed border-border overflow-hidden">
                     {logoPreview ? (
-                      <img src={logoPreview} alt={t("business_logo_preview_alt")} className="max-h-full max-w-full object-contain" />
+                      <img
+                        src={logoPreview}
+                        alt={t("business_logo_preview_alt")}
+                        className="max-h-full max-w-full object-contain"
+                      />
                     ) : (
                       <div className="flex flex-col items-center gap-2 text-muted-foreground">
                         <ImageIcon className="h-8 w-8" />
@@ -1402,7 +1457,12 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                       />
                     </Label>
                     {logoPreview && (
-                      <Button variant="outline" size="icon" onClick={() => setLogoPreview(null)} title={t("business_logo_remove_title")}>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setLogoPreview(null)}
+                        title={t("business_logo_remove_title")}
+                      >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     )}
@@ -1424,9 +1484,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                   <DialogTitle>{t("business_config_dialog_title")}</DialogTitle>
-                  <DialogDescription>
-                    {t("business_config_dialog_desc")}
-                  </DialogDescription>
+                  <DialogDescription>{t("business_config_dialog_desc")}</DialogDescription>
                 </DialogHeader>
                 {editedBusiness && (
                   <div className="grid gap-4 py-4">
@@ -1497,22 +1555,23 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>{t("business_scenario_details_title")}</DialogTitle>
-                  <DialogDescription>
-                    {t("business_config_dialog_desc")}
-                  </DialogDescription>
+                  <DialogDescription>{t("business_config_dialog_desc")}</DialogDescription>
                 </DialogHeader>
                 {currentScenario && (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <strong>{t("business_scenario_details_fixed_costs_label")}:</strong>{" "}
+                        <strong>{t("business_scenario_details_fixed_costs_label")}:</strong>
+                        {""}
                         {formatCurrency(business?.expenses ? calculateTotalMonthlyExpenses(business.expenses) : 0)}
                       </div>
                       <div>
-                        <strong>{t("business_scenario_details_mix_method_label")}:</strong> {currentScenario.params.mixMethod}
+                        <strong>{t("business_scenario_details_mix_method_label")}:</strong>{" "}
+                        {currentScenario.params.mixMethod}
                       </div>
                       <div>
-                        <strong>{t("business_scenario_mix_capacity")}:</strong> {currentScenario.PVm_est?.toLocaleString()} {t("business_scenario_plates_suffix")}
+                        <strong>{t("business_scenario_mix_capacity")}:</strong>{" "}
+                        {currentScenario.PVm_est?.toLocaleString()} {t("business_scenario_plates_suffix")}
                       </div>
                       <div>
                         <strong>{t("business_scenario_confidence_label")}:</strong> {currentScenario.confidence}
@@ -1524,11 +1583,25 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                     <div>
                       <h4 className="font-semibold mb-2">{t("business_scenario_formulas_heading")}</h4>
                       <div className="space-y-1 text-sm font-mono bg-muted p-3 rounded">
-                        <div>{t("business_scenario_formula_tp").replace("{value}", formatCurrency(currentScenario.TP))}</div>
-                        <div>{t("business_scenario_formula_cvp").replace("{value}", formatCurrency(currentScenario.CVp))}</div>
+                        <div>
+                          {t("business_scenario_formula_tp").replace("{value}", formatCurrency(currentScenario.TP))}
+                        </div>
+                        <div>
+                          {t("business_scenario_formula_cvp").replace("{value}", formatCurrency(currentScenario.CVp))}
+                        </div>
                         <div>MC = TP - CVp = {formatCurrency(currentScenario.MC)}</div>
-                        <div>{t("business_scenario_formula_pe_plates").replace("{value}", currentScenario.PE_plates.toLocaleString())}</div>
-                        <div>{t("business_scenario_formula_pe_revenue").replace("{value}", formatCurrency(currentScenario.PE_revenue))}</div>
+                        <div>
+                          {t("business_scenario_formula_pe_plates").replace(
+                            "{value}",
+                            currentScenario.PE_plates.toLocaleString(),
+                          )}
+                        </div>
+                        <div>
+                          {t("business_scenario_formula_pe_revenue").replace(
+                            "{value}",
+                            formatCurrency(currentScenario.PE_revenue),
+                          )}
+                        </div>
                       </div>
                     </div>
 

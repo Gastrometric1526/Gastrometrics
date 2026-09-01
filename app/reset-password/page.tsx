@@ -91,7 +91,7 @@ export default function ResetPasswordPage() {
           </div>
         </div>
 
-        <Card className="border-border shadow-xl bg-card">
+        <Card className="border-border bg-card">
           {success ? (
             <CardContent className="pt-8 pb-8 text-center space-y-4">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
@@ -158,7 +158,7 @@ export default function ResetPasswordPage() {
 
                   <Button
                     type="submit"
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                     disabled={isLoading}
                   >
                     {isLoading ? t("reset_password_saving") : t("reset_password_submit")}

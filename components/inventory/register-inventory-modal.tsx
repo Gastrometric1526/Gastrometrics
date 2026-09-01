@@ -60,7 +60,7 @@ interface IngredientWithQuantity extends Ingredient {
 }
 
 // Algunos ingredientes guardados antes de que el precio/contenido neto vivieran bajo
-// `pricing` pudieron quedar con esos campos "planos" en la fila real — por eso el código
+// `pricing` pudieron quedar con esos campos"planos"en la fila real — por eso el código
 // de abajo revisa ambas formas. Este tipo solo documenta esa forma heredada para el
 // type-checker; `Ingredient` (types/ingredient.ts) ya no la declara.
 type LegacyIngredient = Ingredient & { purchasePrice?: number; netContent?: number | string }
@@ -68,14 +68,14 @@ type LegacyIngredient = Ingredient & { purchasePrice?: number; netContent?: numb
 const classifications = ["Bebidas", "Comida", "Limpieza"]
 
 // BUG CORREGIDO: este modal maneja el tipo de conteo en español ("inicial"/"final"/
-// "nueva compra" — mismos valores usados en su propio <Select>, en la comparación de
+//"nueva compra"— mismos valores usados en su propio <Select>, en la comparación de
 // costo promedio ponderado más abajo, y en el label mostrado al usuario), pero
 // InventorySnapshot.type está en inglés ("initial"/"final"/"purchase") — es lo que leen
-// tanto app/inventario/history-view.tsx (para elegir el badge "Inicial"/"Final") como
+// tanto app/inventario/history-view.tsx (para elegir el badge"Inicial"/"Final") como
 // lib/pdf/inventory-pdf-generator.ts (para el título del PDF). Sin este mapeo, todo
 // snapshot guardado por este modal tenía type="inicial"/"final"/"nueva compra", que
 // nunca coincidía con esas comparaciones — el badge de historial siempre caía en su rama
-// "Final" y el PDF siempre mostraba "Compra", sin importar el tipo real elegido.
+//"Final"y el PDF siempre mostraba"Compra", sin importar el tipo real elegido.
 const inventoryTypeToSnapshotType: Record<"inicial" | "final" | "nueva compra", InventorySnapshot["type"]> = {
   inicial: "initial",
   final: "final",
@@ -135,8 +135,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
 
         // Buscar el ingrediente en la base de datos para obtener la información más actualizada
         const matchingIngredient = allIngredients.find((dbIng: any) => dbIng.id === ing.id) as
-          | LegacyIngredient
-          | undefined
+          LegacyIngredient | undefined
 
         // Buscar el ingrediente en el inventario actual para obtener el stock existente
         const inventoryItem = currentInventory.find((item: any) => item.id === ing.id || item.name === ing.name)
@@ -331,7 +330,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
     // Also update ingredients with the new data from the database
     const allIngredients = getIngredients(businessId)
 
-    // Costo promedio ponderado: solo tiene sentido en "nueva compra" (las otras
+    // Costo promedio ponderado: solo tiene sentido en"nueva compra"(las otras
     // modalidades son conteos de inventario, no compras). La cantidad comprada se infiere
     // como el incremento sobre el stock previo. Se usa ing.currentStock (el registro de
     // ingredientes, ya confiable) en vez de currentInventory[].currentStock: esa colección
@@ -418,7 +417,11 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
       .filter((change): change is { id: string; name: string; oldPrice: number; newPrice: number } => change !== null)
 
     if (priceChanges.length > 0) {
-      Promise.all(priceChanges.map((change) => updateIngredientPriceAndRecalculate(businessId || "main", change.id, change.newPrice)))
+      Promise.all(
+        priceChanges.map((change) =>
+          updateIngredientPriceAndRecalculate(businessId || "main", change.id, change.newPrice),
+        ),
+      )
         .then((results) => {
           const totalRecipes = results.reduce((sum, r) => sum + r.affectedRecipes.length, 0)
           const totalSubRecipes = results.reduce((sum, r) => sum + r.affectedSubRecipes.length, 0)
@@ -452,12 +455,12 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
   // Buscar la función handleQuantityChange (alrededor de la línea 170) y reemplazar:
 
   // BUG CORREGIDO (ver docs/33): en modo presentación, esta función guardaba el
-  // número crudo tipeado (ej. "3" cajas) directo en `ing.quantity` — pero
+  // número crudo tipeado (ej."3"cajas) directo en `ing.quantity` — pero
   // `presentationCount` en el render se calcula como `Math.round(ing.quantity /
   // netContent)`, asumiendo que `quantity` ya está en unidad base (así arranca:
-  // `quantity: currentStock` al inicializar, ver arriba). Resultado: al escribir "3",
+  // `quantity: currentStock` al inicializar, ver arriba). Resultado: al escribir"3",
   // en el siguiente render se recalculaba `Math.round(3 / netContent)` — con
-  // netContent=5 eso es "1", el campo "saltaba" a un número distinto al que se
+  // netContent=5 eso es"1", el campo"saltaba"a un número distinto al que se
   // escribió, mientras el texto de ayuda de al lado sí mostraba el valor correcto.
   // Ahora `quantity` se mantiene siempre en unidad base (mismo significado en los
   // dos modos), multiplicando por netContent aquí en vez de en el render.
@@ -505,8 +508,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
     const currentInventory = getInventory(businessId)
 
     const matchingIngredient = allIngredients.find((dbIng: any) => dbIng.id === ingredientId) as
-      | LegacyIngredient
-      | undefined
+      LegacyIngredient | undefined
     const inventoryItem = currentInventory.find((item: any) => item.id === ingredientId)
 
     // Obtener el ingrediente actual del estado para preservar valores importantes
@@ -725,7 +727,11 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField id="date" label={t("inventario_date_label")} tooltip={t("inventario_register_date_tooltip")}>
+                      <FormField
+                        id="date"
+                        label={t("inventario_date_label")}
+                        tooltip={t("inventario_register_date_tooltip")}
+                      >
                         <div className="relative w-full">
                           <Input
                             id="date"
@@ -775,7 +781,9 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                             style={{ maxWidth: "min(calc(95vw - 2rem), 400px)" }}
                           >
                             <div className="max-h-[200px] overflow-y-auto">
-                              <SelectItem value="Inventario Global">{t("inventario_register_division_global")}</SelectItem>
+                              <SelectItem value="Inventario Global">
+                                {t("inventario_register_division_global")}
+                              </SelectItem>
                               {classifications.map((classification) => (
                                 <SelectItem key={classification} value={classification}>
                                   {classificationLabels[classification] || classification}
@@ -802,7 +810,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                     </FormField>
                   </div>
                   {/* Modificar el Step 1 para incluir la selección de modo de inventario
-                  Buscar la sección donde está el Step 1 (alrededor de la línea 200) y agregar después del último FormField: */}
+ Buscar la sección donde está el Step 1 (alrededor de la línea 200) y agregar después del último FormField: */}
                   <div className="space-y-2 mt-4">
                     <Label className="text-xs font-medium">{t("inventario_mode_label")}</Label>
                     <div className="flex flex-col space-y-2">
@@ -847,7 +855,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
           )}
 
           {step === 2 && (
-            <Card className="border shadow-sm mt-2">
+            <Card className="border mt-2">
               <CardHeader className="p-3 pb-0">
                 <div className="relative">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -868,7 +876,10 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                   </span>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                      {t("inventario_register_with_values_badge").replace("{count}", String(ingredientsWithValues.length))}
+                      {t("inventario_register_with_values_badge").replace(
+                        "{count}",
+                        String(ingredientsWithValues.length),
+                      )}
                     </Badge>
                     <span className="italic">{t("inventario_register_scroll_hint")}</span>
                   </div>
@@ -884,7 +895,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                   {filteredIngredients.length > 0 ? (
                     <div className="overflow-x-auto max-w-full" style={{ WebkitOverflowScrolling: "touch" }}>
                       {/* Modificar el Step 2 (tabla de ingredientes) para adaptar la visualización según el modo seleccionado
-                      Buscar la sección de TableHeader en el Step 2 (alrededor de la línea 300) y reemplazar: */}
+ Buscar la sección de TableHeader en el Step 2 (alrededor de la línea 300) y reemplazar: */}
                       <Table className="min-w-[500px]">
                         <TableHeader>
                           <TableRow>
@@ -895,10 +906,14 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                               {t("inventario_table_category")}
                             </TableHead>
                             <TableHead className="whitespace-nowrap w-[10%] sticky top-0 bg-background z-10 border-b text-center">
-                              {inventoryMode === "presentation" ? t("inventario_table_presentation") : t("inventario_table_unit")}
+                              {inventoryMode === "presentation"
+                                ? t("inventario_table_presentation")
+                                : t("inventario_table_unit")}
                             </TableHead>
                             <TableHead className="whitespace-nowrap w-[10%] sticky top-0 bg-background z-10 border-b text-center">
-                              {inventoryMode === "presentation" ? t("inventario_table_quantity") : t("inventario_table_stock")}
+                              {inventoryMode === "presentation"
+                                ? t("inventario_table_quantity")
+                                : t("inventario_table_stock")}
                             </TableHead>
                             {inventoryType === "nueva compra" && (
                               <TableHead className="whitespace-nowrap w-[15%] sticky top-0 bg-background z-10 border-b text-center">
@@ -908,7 +923,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                           </TableRow>
                         </TableHeader>
                         {/* Modificar el TableBody para mostrar la presentación y manejar el cálculo automático
-                        Buscar la sección de TableBody en el Step 2 (alrededor de la línea 320) y reemplazar: */}
+ Buscar la sección de TableBody en el Step 2 (alrededor de la línea 320) y reemplazar: */}
                         <TableBody>
                           {filteredIngredients.map((ingredient) => {
                             // Verificar si el ingrediente tiene presentación y contenido neto
@@ -932,7 +947,8 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                                     hasPresentation ? (
                                       // Mostrar la presentación con el contenido neto correctamente formateado desde la base de datos
                                       <span className="text-sm font-medium">
-                                        {ingredient.presentation} ({ingredient.pricing?.netContent || 0}{" "}
+                                        {ingredient.presentation} ({ingredient.pricing?.netContent || 0}
+                                        {""}
                                         {ingredient.unit})
                                       </span>
                                     ) : (
@@ -1025,9 +1041,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                   ) : (
                     <div className="text-center py-8">
                       <p className="text-muted-foreground">
-                        {searchTerm
-                          ? t("inventario_register_empty_search")
-                          : t("inventario_register_empty_no_data")}
+                        {searchTerm ? t("inventario_register_empty_search") : t("inventario_register_empty_no_data")}
                       </p>
                     </div>
                   )}
@@ -1047,7 +1061,9 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                   <div className="space-y-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       <div className="p-2 bg-muted rounded-md">
-                        <p className="text-xs font-medium text-muted-foreground">{t("inventario_register_type_label")}</p>
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {t("inventario_register_type_label")}
+                        </p>
                         <p className="font-medium text-sm capitalize text-foreground">{inventoryType}</p>
                       </div>
                       <div className="p-2 bg-muted rounded-md">
@@ -1064,32 +1080,42 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                         </p>
                       </div>
                       <div className="p-2 bg-muted rounded-md">
-                        <p className="text-xs font-medium text-muted-foreground">{t("inventario_register_division_label")}</p>
-                        <p className="font-medium text-sm text-foreground">{classificationLabels[division] || division}</p>
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {t("inventario_register_division_label")}
+                        </p>
+                        <p className="font-medium text-sm text-foreground">
+                          {classificationLabels[division] || division}
+                        </p>
                       </div>
                     </div>
                     {/* Modificar la sección de confirmación (Step 3) para mostrar información sobre el modo de inventario
-                    Buscar la sección donde se muestra el resumen del inventario en el Step 3 y agregar después de la división de inventario: */}
+ Buscar la sección donde se muestra el resumen del inventario en el Step 3 y agregar después de la división de inventario: */}
                     <div className="p-2 bg-muted rounded-md">
                       <p className="text-xs font-medium text-muted-foreground">{t("inventario_mode_label")}</p>
                       <p className="font-medium text-sm text-foreground">
-                        {inventoryMode === "presentation" ? t("inventario_mode_by_presentation") : t("inventario_mode_metric_imperial")}
+                        {inventoryMode === "presentation"
+                          ? t("inventario_mode_by_presentation")
+                          : t("inventario_mode_metric_imperial")}
                       </p>
                     </div>
 
                     {notes && (
                       <div className="p-2 bg-muted rounded-md">
-                        <p className="text-xs font-medium text-muted-foreground">{t("inventario_register_notes_label")}</p>
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {t("inventario_register_notes_label")}
+                        </p>
                         <p className="font-medium text-sm text-foreground">{notes}</p>
                       </div>
                     )}
                   </div>
 
-                  <h4 className="text-sm font-semibold mt-4 mb-2">{t("inventario_register_registered_ingredients_label")}</h4>
+                  <h4 className="text-sm font-semibold mt-4 mb-2">
+                    {t("inventario_register_registered_ingredients_label")}
+                  </h4>
                   {ingredientsWithValues.length > 0 ? (
                     <div className="border rounded-md overflow-hidden">
                       {/* Modificar la tabla de ingredientes en el Step 3 para mostrar información sobre presentaciones
-                      Buscar la sección de la tabla en el Step 3 y reemplazar: */}
+ Buscar la sección de la tabla en el Step 3 y reemplazar: */}
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -1109,7 +1135,8 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                                   ingredient.presentation &&
                                   ingredient.pricing?.netContent > 0 && (
                                     <span className="text-xs text-muted-foreground ml-1">
-                                      ({Math.round(ingredient.quantity / ingredient.pricing.netContent)}{" "}
+                                      ({Math.round(ingredient.quantity / ingredient.pricing.netContent)}
+                                      {""}
                                       {ingredient.presentation})
                                     </span>
                                   )}
@@ -1120,21 +1147,24 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                       </Table>
                       {ingredientsWithValues.length > 10 && (
                         <div className="p-1.5 text-center text-xs text-muted-foreground border-t">
-                          {t("inventario_register_more_ingredients").replace("{count}", String(ingredientsWithValues.length - 10))}
+                          {t("inventario_register_more_ingredients").replace(
+                            "{count}",
+                            String(ingredientsWithValues.length - 10),
+                          )}
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-6 border rounded-md bg-amber-50 dark:bg-amber-950/40">
+                    <div className="flex flex-col items-center justify-center p-6 border rounded-md bg-warning-soft dark:bg-amber-950/40">
                       <AlertCircle className="h-8 w-8 text-amber-500 mb-2" />
-                      <p className="text-amber-800 dark:text-amber-300 font-medium">{t("inventario_register_no_values_title")}</p>
+                      <p className="text-warning font-medium">{t("inventario_register_no_values_title")}</p>
                       <p className="text-muted-foreground text-sm text-center mt-1">
                         {t("inventario_register_no_values_desc")}
                       </p>
                       <Button
                         variant="outline"
                         onClick={() => setStep(2)}
-                        className="mt-4 border-amber-500 text-amber-700 dark:text-amber-300 hover:bg-amber-100"
+                        className="mt-4 border-warning text-warning hover:bg-warning-soft"
                       >
                         <ChevronLeft className="h-4 w-4 mr-1" />
                         {t("inventario_register_back_to_ingredients_button")}
@@ -1248,9 +1278,9 @@ function StepIndicator({ active, completed, label }: StepIndicatorProps) {
       <div
         className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-colors duration-300 ${
           completed
-            ? "bg-green-600 text-white shadow-sm"
+            ? "bg-green-600 text-white"
             : active
-              ? "bg-primary text-primary-foreground shadow-sm"
+              ? "bg-primary text-primary-foreground"
               : "bg-muted text-muted-foreground border border-border"
         }`}
       >

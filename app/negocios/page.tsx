@@ -4,14 +4,8 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -78,7 +72,7 @@ export default function NegociosPage() {
     return Number(value)
   }
 
-  // BUG CORREGIDO: formateaba con "L" (Lempira) fijo sin importar la moneda elegida
+  // BUG CORREGIDO: formateaba con"L"(Lempira) fijo sin importar la moneda elegida
   // en Configuración. Ahora delega en el formateador compartido (@/lib/currency),
   // conservando solo la parte útil de esta función local: blindar contra
   // valores null/NaN antes de formatear.
@@ -194,7 +188,7 @@ export default function NegociosPage() {
   // de poner un negocio en Inactivo — isActive se escribía en true al crear el negocio
   // y nunca se volvía a tocar. Esto le da una acción real: desactivar/reactivar no borra
   // nada (recetas, inventario, etc. quedan intactos), solo saca al negocio del conteo de
-  // "Negocios Activos" y lo marca como archivado.
+  //"Negocios Activos"y lo marca como archivado.
   const handleToggleActive = (business: Business) => {
     const nextIsActive = business.isActive === false
     updateBusiness(business.id, { isActive: nextIsActive })
@@ -214,7 +208,7 @@ export default function NegociosPage() {
   // Pedido explícito del dueño del proyecto: hasta ahora deleteBusiness() (lib/storage/
   // businesses.ts) existía en la capa de storage pero ningún botón lo llamaba —
   // borrar un negocio no era posible desde la interfaz. Todas las tablas de negocio
-  // tienen "business_id ... on delete cascade" (ver supabase/migrations), así que
+  // tienen"business_id ... on delete cascade"(ver supabase/migrations), así que
   // borrar la fila de businesses ya limpia solo recetas, ingredientes, inventario,
   // menús y órdenes de compra — no hace falta borrar cada uno a mano acá.
   const openDeleteDialog = async (business: Business) => {
@@ -258,7 +252,7 @@ export default function NegociosPage() {
 
   // BUG CORREGIDO: new Date(undefined) no lanza una excepción, produce una fecha
   // inválida en silencio — el try/catch nunca se activaba y el resultado terminaba
-  // siendo NaN, mostrando "NaN días activo" si createdAt llegaba vacío.
+  // siendo NaN, mostrando"NaN días activo"si createdAt llegaba vacío.
   const getDaysActive = (createdAt: string) => {
     const created = new Date(createdAt)
     if (Number.isNaN(created.getTime())) return 0
@@ -291,73 +285,61 @@ export default function NegociosPage() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div data-tour="negocios-header">
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("negocios_title")}</h1>
-              <p className="text-sm md:text-base text-muted-foreground">{t("negocios_subtitle")}</p>
+              <h1 className="text-2xl md:text-3xl font-semibold tracking-[-0.03em] text-foreground">{t("negocios_title")}</h1>
+              <p className="text-sm md:text-base text-text-3">{t("negocios_subtitle")}</p>
             </div>
-            <Button
-              data-tour="negocios-new"
-              onClick={() => setShowAddDialog(true)}
-              className="w-full sm:w-auto gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-            >
+            <Button data-tour="negocios-new" onClick={() => setShowAddDialog(true)} className="w-full sm:w-auto gap-2">
               <Plus className="h-4 w-4" />
               {t("negocios_new_button")}
             </Button>
           </div>
 
-          {/* Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-tour="negocios-stats">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">{t("negocios_stat_total")}</p>
-                    <p className="text-2xl font-bold text-foreground">{stats.totalBusinesses}</p>
-                  </div>
-                  <Building2 className="h-8 w-8 text-blue-600 dark:text-blue-300" />
-                </div>
-              </CardContent>
-            </Card>
+          {/* Statistics — sin cajas, mismo patrón que el Dashboard (docs/83). */}
+          <div
+            className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-hairline border-y border-hairline"
+            data-tour="negocios-stats"
+          >
+            <div className="p-5 space-y-2">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-text-4" />
+                <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("negocios_stat_total")}</p>
+              </div>
+              <p className="text-3xl font-semibold text-foreground tabular-nums">{stats.totalBusinesses}</p>
+            </div>
 
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">{t("negocios_stat_active")}</p>
-                    <p className="text-2xl font-bold text-foreground">{stats.activeBusinesses}</p>
-                  </div>
-                  <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-300" />
-                </div>
-              </CardContent>
-            </Card>
+            <div className="p-5 space-y-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-success" />
+                <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("negocios_stat_active")}</p>
+              </div>
+              <p className="text-3xl font-semibold text-foreground tabular-nums">{stats.activeBusinesses}</p>
+            </div>
 
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">{t("negocios_stat_revenue")}</p>
-                    <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.totalRevenue)}</p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-purple-600 dark:text-purple-300" />
-                </div>
-              </CardContent>
-            </Card>
+            <div className="p-5 space-y-2">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("negocios_stat_revenue")}</p>
+              </div>
+              <p className="text-3xl font-semibold text-foreground tabular-nums">{formatCurrency(stats.totalRevenue)}</p>
+            </div>
           </div>
 
           {/* Businesses List */}
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-foreground">{t("negocios_list_title")}</h2>
-              <Badge variant="outline" className="text-xs">
-                {businesses.length} {businesses.length === 1 ? t("negocios_count_singular") : t("negocios_count_plural")}
-              </Badge>
+              <h2 className="text-xl font-semibold tracking-[-0.02em] text-foreground">{t("negocios_list_title")}</h2>
+              <span className="text-[11.5px] font-medium px-2.5 py-1 rounded-full bg-secondary text-muted-foreground">
+                {businesses.length}{" "}
+                {businesses.length === 1 ? t("negocios_count_singular") : t("negocios_count_plural")}
+              </span>
             </div>
 
             {businesses.length === 0 ? (
-              <Card className="border-dashed border-2">
+              <Card className="border-dashed">
                 <CardContent className="flex flex-col items-center justify-center py-16">
-                  <Building2 className="h-16 w-16 text-muted-foreground mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">{t("negocios_empty_title")}</h3>
-                  <p className="text-muted-foreground text-center mb-6 max-w-md">{t("negocios_empty_desc")}</p>
+                  <Building2 className="h-12 w-12 text-text-4/50 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">{t("negocios_empty_title")}</h3>
+                  <p className="text-text-3 text-center mb-6 max-w-md text-sm">{t("negocios_empty_desc")}</p>
                   <Button onClick={() => setShowAddDialog(true)} className="gap-2">
                     <Plus className="h-4 w-4" />
                     {t("negocios_empty_cta")}
@@ -373,35 +355,41 @@ export default function NegociosPage() {
                   return (
                     <Card
                       key={business.id}
-                      className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-2 hover:border-primary/20 w-full"
+                      className="group transition-colors duration-150 cursor-pointer border-hairline hover:bg-[#F9F9F8] w-full"
                       onClick={() => handleBusinessClick(business.id)}
                     >
                       <CardContent className="p-6">
                         {/* Header */}
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                           <div className="flex items-center gap-4 flex-1">
-                            <div className="p-3 bg-primary/10 rounded-lg">
+                            <div className="p-3 bg-primary-soft rounded-xl">
                               <Building2 className="h-8 w-8 text-primary" />
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
-                                <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+                                <h3 className="text-xl font-semibold tracking-[-0.02em] text-foreground group-hover:text-primary transition-colors">
                                   {business.name}
                                 </h3>
-                                <Badge
-                                  variant={business.isActive !== false ? "default" : "secondary"}
-                                  className={business.isActive !== false ? "bg-green-600" : ""}
+                                <span
+                                  className={`inline-flex items-center gap-1.5 text-[11.5px] font-medium px-2.5 py-1 rounded-full ${
+                                    business.isActive !== false
+                                      ? "bg-success-soft text-success"
+                                      : "bg-secondary text-muted-foreground"
+                                  }`}
                                 >
-                                  <div
-                                    className={`w-2 h-2 rounded-full mr-2 ${business.isActive !== false ? "bg-green-200" : "bg-gray-400"}`}
+                                  <span
+                                    className={`w-1.5 h-1.5 rounded-full ${business.isActive !== false ? "bg-success" : "bg-text-4"}`}
                                   />
-                                  {business.isActive !== false ? t("negocios_badge_active") : t("negocios_badge_inactive")}
-                                </Badge>
+                                  {business.isActive !== false
+                                    ? t("negocios_badge_active")
+                                    : t("negocios_badge_inactive")}
+                                </span>
                               </div>
-                              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                              <div className="flex flex-wrap items-center gap-4 text-sm text-text-4">
                                 <div className="flex items-center gap-1">
                                   <Calendar className="h-4 w-4" />
-                                  {t("negocios_created_label")}{" "}
+                                  {t("negocios_created_label")}
+                                  {""}
                                   {new Date(business.createdAt).toLocaleDateString(getDateLocale(language), {
                                     year: "numeric",
                                     month: "long",
@@ -410,10 +398,12 @@ export default function NegociosPage() {
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <Clock className="h-4 w-4" />
-                                  {daysActive} {daysActive === 1 ? t("negocios_days_singular") : t("negocios_days_plural")} {t("negocios_days_active_suffix")}
+                                  {daysActive}{" "}
+                                  {daysActive === 1 ? t("negocios_days_singular") : t("negocios_days_plural")}{" "}
+                                  {t("negocios_days_active_suffix")}
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  <span className="text-xs bg-blue-100 text-blue-800 dark:text-blue-300 px-2 py-1 rounded">
+                                  <span className="text-xs bg-secondary text-text-4 px-2 py-1 rounded-full">
                                     ID: {business.id}
                                   </span>
                                 </div>
@@ -478,33 +468,43 @@ export default function NegociosPage() {
                           {/* Business Info */}
                           <div className="space-y-4">
                             <div className="flex items-center gap-2 mb-3">
-                              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-300" />
-                              <h4 className="font-semibold text-foreground">{t("negocios_config_status_title")}</h4>
+                              <CheckCircle className="h-4 w-4 text-text-4" />
+                              <h4 className="text-sm font-semibold text-foreground">{t("negocios_config_status_title")}</h4>
                             </div>
 
                             <div className="space-y-3">
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">{t("negocios_financial_data_label")}</span>
+                                <span className="text-sm text-text-3">
+                                  {t("negocios_financial_data_label")}
+                                </span>
                                 <div className="flex items-center gap-2">
                                   {business.hasFinancialData ? (
                                     <>
-                                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-300" />
-                                      <span className="text-sm font-medium text-green-700 dark:text-green-300">{t("negocios_status_configured")}</span>
+                                      <CheckCircle className="h-4 w-4 text-success" />
+                                      <span className="text-sm font-medium text-success">
+                                        {t("negocios_status_configured")}
+                                      </span>
                                     </>
                                   ) : (
                                     <>
-                                      <AlertTriangle className="h-4 w-4 text-amber-500" />
-                                      <span className="text-sm font-medium text-amber-700 dark:text-amber-300">{t("negocios_status_pending")}</span>
+                                      <AlertTriangle className="h-4 w-4 text-warning" />
+                                      <span className="text-sm font-medium text-warning">
+                                        {t("negocios_status_pending")}
+                                      </span>
                                     </>
                                   )}
                                 </div>
                               </div>
 
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">{t("negocios_initial_config_label")}</span>
+                                <span className="text-sm text-text-3">
+                                  {t("negocios_initial_config_label")}
+                                </span>
                                 <div className="flex items-center gap-2">
-                                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-300" />
-                                  <span className="text-sm font-medium text-green-700 dark:text-green-300">{t("negocios_status_complete")}</span>
+                                  <CheckCircle className="h-4 w-4 text-success" />
+                                  <span className="text-sm font-medium text-success">
+                                    {t("negocios_status_complete")}
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -512,71 +512,75 @@ export default function NegociosPage() {
 
                           {/* Financial Summary */}
                           {business.hasFinancialData && business.expenses ? (
-                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200 dark:border-blue-900">
+                            <div className="bg-info-soft p-4 rounded-xl">
                               <div className="flex items-center gap-2 mb-3">
-                                <h4 className="font-semibold text-blue-800 dark:text-blue-300">{t("negocios_financial_summary_title")}</h4>
+                                <h4 className="text-sm font-semibold text-info">{t("negocios_financial_summary_title")}</h4>
                               </div>
 
                               <div className="space-y-2">
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm text-blue-700 dark:text-blue-300">{t("negocios_expense_rent")}</span>
-                                  <span className="font-medium text-blue-900 dark:text-blue-300">
+                                  <span className="text-sm text-text-3">{t("negocios_expense_rent")}</span>
+                                  <span className="font-medium text-foreground tabular-nums">
                                     {formatCurrency(business.expenses.rent)}
                                   </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm text-blue-700 dark:text-blue-300">{t("negocios_expense_utilities")}</span>
-                                  <span className="font-medium text-blue-900 dark:text-blue-300">
+                                  <span className="text-sm text-text-3">{t("negocios_expense_utilities")}</span>
+                                  <span className="font-medium text-foreground tabular-nums">
                                     {formatCurrency(business.expenses.utilities)}
                                   </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm text-blue-700 dark:text-blue-300">{t("negocios_expense_marketing")}</span>
-                                  <span className="font-medium text-blue-900 dark:text-blue-300">
+                                  <span className="text-sm text-text-3">{t("negocios_expense_marketing")}</span>
+                                  <span className="font-medium text-foreground tabular-nums">
                                     {formatCurrency(business.expenses.marketing)}
                                   </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm text-blue-700 dark:text-blue-300">{t("negocios_expense_operational")}</span>
-                                  <span className="font-medium text-blue-900 dark:text-blue-300">
+                                  <span className="text-sm text-text-3">{t("negocios_expense_operational")}</span>
+                                  <span className="font-medium text-foreground tabular-nums">
                                     {formatCurrency(business.expenses.operationalCosts)}
                                   </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-sm text-blue-700 dark:text-blue-300">{t("negocios_expense_labor")}</span>
-                                  <span className="font-medium text-blue-900 dark:text-blue-300">
+                                  <span className="text-sm text-text-3">{t("negocios_expense_labor")}</span>
+                                  <span className="font-medium text-foreground tabular-nums">
                                     {formatCurrency(business.expenses.laborCosts)}
                                   </span>
                                 </div>
-                                {business.expenses.otherExpenses &&
-                                  getSafeExpenseValue(business.expenses.otherExpenses) > 0 && (
+                                {/* BUG CORREGIDO: "0 && <div>" renderiza el número 0 suelto en
+                                    pantalla, no nada — 0 es falsy pero React igual lo pinta como
+                                    texto en un && (a diferencia de false/null/undefined). Con
+                                    "Otros gastos" en 0 (el default de cualquier negocio nuevo),
+                                    esto dejaba un "0" flotando debajo de Costos Laborales. */}
+                                {getSafeExpenseValue(business.expenses.otherExpenses) > 0 && (
                                     <div className="flex justify-between items-center">
-                                      <span className="text-sm text-blue-700 dark:text-blue-300">{t("negocios_expense_other")}</span>
-                                      <span className="font-medium text-blue-900 dark:text-blue-300">
+                                      <span className="text-sm text-text-3">{t("negocios_expense_other")}</span>
+                                      <span className="font-medium text-foreground tabular-nums">
                                         {formatCurrency(business.expenses.otherExpenses)}
                                       </span>
                                     </div>
                                   )}
-                                <Separator className="my-2" />
-                                <div className="flex justify-between items-center font-bold">
-                                  <span className="text-blue-800 dark:text-blue-300">{t("negocios_expense_total_monthly")}</span>
-                                  <span className="text-lg text-blue-900 dark:text-blue-300">
+                                <Separator className="my-2 bg-hairline" />
+                                <div className="flex justify-between items-center font-semibold">
+                                  <span className="text-info">{t("negocios_expense_total_monthly")}</span>
+                                  <span className="text-lg text-foreground tabular-nums">
                                     {formatCurrency(calculateTotalMonthlyExpenses(business.expenses))}
                                   </span>
                                 </div>
                               </div>
                             </div>
                           ) : (
-                            <div className="bg-amber-50 dark:bg-amber-950/40 p-4 rounded-lg border border-amber-200 dark:border-amber-900">
+                            <div className="bg-warning-soft p-4 rounded-xl">
                               <div className="flex items-center gap-2 mb-2">
-                                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-300" />
-                                <h4 className="font-semibold text-amber-800 dark:text-amber-300">{t("negocios_config_pending_title")}</h4>
+                                <AlertTriangle className="h-5 w-5 text-warning" />
+                                <h4 className="text-sm font-semibold text-warning">{t("negocios_config_pending_title")}</h4>
                               </div>
-                              <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">{t("negocios_config_pending_desc")}</p>
+                              <p className="text-sm text-warning mb-3">{t("negocios_config_pending_desc")}</p>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="border-amber-300 text-amber-800 dark:text-amber-300 hover:bg-amber-100 bg-transparent"
+                                className="text-warning hover:bg-warning-soft bg-transparent"
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   // Navigate to business setup or edit
@@ -598,14 +602,10 @@ export default function NegociosPage() {
         </div>
       </div>
 
-      <AddBusinessDialog
-        open={showAddDialog}
-        onOpenChange={setShowAddDialog}
-        onBusinessAdded={handleBusinessCreated}
-      />
+      <AddBusinessDialog open={showAddDialog} onOpenChange={setShowAddDialog} onBusinessAdded={handleBusinessCreated} />
 
       {/* Borrar negocio — irreversible, requiere escribir el nombre exacto (mismo
-          patrón que el borrado de cuentas en /admin, ver docs/71) */}
+ patrón que el borrado de cuentas en /admin, ver docs/71) */}
       <AlertDialog
         open={!!businessToDelete}
         onOpenChange={(open) => {

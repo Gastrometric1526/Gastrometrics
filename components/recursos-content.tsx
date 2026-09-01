@@ -24,7 +24,7 @@ export function RecursosContent() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {resourceArticles.map((article) => (
             <Link key={article.slug} href={`/recursos/${article.slug}`} className="block h-full">
-              <Card className="h-full border-border shadow-lg hover:shadow-xl hover:border-primary/40 transition-all duration-300 bg-card cursor-pointer">
+              <Card className="h-full border-border hover:border-primary/40 transition-all duration-300 bg-card cursor-pointer">
                 <CardHeader className="text-center">
                   <div className="mx-auto w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
                     <BookOpen className="h-6 w-6 text-primary" />

@@ -1,13 +1,7 @@
 import type React from "react"
 import { cn } from "@/lib/utils"
 
-export function Metric({
-  children,
-  className,
-}: {
-  children: React.ReactNode
-  className?: string
-}) {
+export function Metric({ children, className }: { children: React.ReactNode; className?: string }) {
   return <p className={cn("text-3xl font-bold tracking-tight", className)}>{children}</p>
 }
 
@@ -26,9 +20,9 @@ export function ProgressBar({
 }) {
   const colorClasses = {
     blue: "bg-blue-500",
-    green: "bg-green-500",
-    red: "bg-red-500",
-    amber: "bg-amber-500",
+    green: "bg-success-soft0",
+    red: "bg-danger-soft0",
+    amber: "bg-warning-soft0",
   }
 
   return (
@@ -55,8 +49,8 @@ export function BadgeDelta({
   className?: string
 }) {
   const colors = {
-    increase: "bg-green-100 text-green-800",
-    decrease: "bg-red-100 text-red-800",
+    increase: "bg-success-soft text-success",
+    decrease: "bg-danger-soft text-destructive",
     neutral: "bg-gray-100 text-gray-800",
   }
 

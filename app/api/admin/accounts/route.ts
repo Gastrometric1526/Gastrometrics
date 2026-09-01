@@ -8,6 +8,12 @@
  * de paginar (para que "página 1 de Chef Ejecutivo" muestre de verdad 25 cuentas de ese
  * plan, no 25 cuentas cualesquiera de las que ninguna sea ese plan) — por eso
  * account_plans se trae completo, para TODAS las cuentas, no solo la página actual.
+ *
+ * País y tiempo en la app (?sort=time, ver docs/78): mismo criterio — total_active_seconds
+ * (supabase/migrations/0016_presence_time_tracking.sql) y nationality (profiles) se
+ * traen completos para TODAS las cuentas antes de ordenar/paginar, porque "página 1
+ * ordenada por tiempo" tiene que ser de verdad el top 25 de toda la base, no de los 25
+ * que hubieran salido primero por fecha de registro.
  */
 
 import { NextResponse } from "next/server"
@@ -25,6 +31,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url)
   const search = (url.searchParams.get("search") || "").trim().toLowerCase()
   const planFilter = (url.searchParams.get("plan") || "").trim()
+  const sort = (url.searchParams.get("sort") || "recent").trim()
   const page = Math.max(1, Number(url.searchParams.get("page")) || 1)
 
   try {
@@ -49,17 +56,25 @@ export async function GET(request: Request) {
       listPage += 1
     }
 
-    const { data: allPlanRows } = await admin
-      .from("account_plans")
-      .select("account_id, plan_slug, plan_expires_at, stripe_subscription_id")
+    const [{ data: allPlanRows }, { data: allProfileRows }, { data: allPresenceRows }] = await Promise.all([
+      admin.from("account_plans").select("account_id, plan_slug, plan_expires_at, stripe_subscription_id"),
+      admin.from("profiles").select("id, nationality"),
+      admin.from("user_presence").select("user_id, total_active_seconds"),
+    ])
     const planByUser = new Map(allPlanRows?.map((r) => [r.account_id, r]) ?? [])
+    const countryByUser = new Map(allProfileRows?.map((r) => [r.id, r.nationality || null]) ?? [])
+    const activeSecondsByUser = new Map(allPresenceRows?.map((r) => [r.user_id, r.total_active_seconds || 0]) ?? [])
 
     let filtered = search ? allUsers.filter((u) => u.email.toLowerCase().includes(search)) : allUsers
     if (planFilter) {
       // Cuentas sin fila en account_plans están en "foodie" por default en toda la app.
       filtered = filtered.filter((u) => (planByUser.get(u.id)?.plan_slug || "foodie") === planFilter)
     }
-    filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    if (sort === "time") {
+      filtered.sort((a, b) => (activeSecondsByUser.get(b.id) || 0) - (activeSecondsByUser.get(a.id) || 0))
+    } else {
+      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    }
 
     const total = filtered.length
     const pageUsers = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -116,6 +131,8 @@ export async function GET(request: Request) {
       salesImportCount: importSummaryByUser.get(u.id)?.count || 0,
       lastSalesImportAt: importSummaryByUser.get(u.id)?.lastImportedAt || null,
       hasActiveSubscription: Boolean(planByUser.get(u.id)?.stripe_subscription_id),
+      country: countryByUser.get(u.id) || null,
+      totalActiveSeconds: activeSecondsByUser.get(u.id) || 0,
     }))
 
     return NextResponse.json({ accounts, total, page, pageSize: PAGE_SIZE })

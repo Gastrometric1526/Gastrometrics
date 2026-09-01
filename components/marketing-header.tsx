@@ -27,11 +27,11 @@ export function MarketingHeader() {
   ]
 
   return (
-    <header className="container mx-auto p-4 border-b border-border/50">
+    <header className="container mx-auto p-4 border-b border-hairline">
       <nav className="flex justify-between items-center gap-4 flex-wrap">
         <Link href="/" className="flex items-center gap-3 shrink-0">
           <GastrometricsLogo className="h-10 w-10" variant="brand" />
-          <span className="text-2xl font-bold text-foreground">Gastrometrics</span>
+          <span className="text-2xl font-semibold tracking-[-0.025em] text-foreground">Gastrometrics</span>
         </Link>
 
         <div className="flex items-center gap-1 sm:gap-2">
@@ -57,7 +57,7 @@ export function MarketingHeader() {
             </Button>
           </Link>
           <Link href="/signup">
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg">{t("marketing_signup")}</Button>
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">{t("marketing_signup")}</Button>
           </Link>
         </div>
       </nav>

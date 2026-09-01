@@ -673,17 +673,31 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                   </div>
 
                   {getSelectedCountry() && (
-                    <div className="p-3 bg-muted rounded-lg">
+                    <div className="p-4 bg-secondary rounded-xl space-y-3">
                       <div className="flex items-center gap-2 text-sm">
-                        <DollarSign className="h-4 w-4" />
-                        <span className="font-medium">{t("settings_selected_currency")}</span>
-                        <Badge variant="outline">
+                        <DollarSign className="h-4 w-4 text-text-4" />
+                        <span className="font-medium text-foreground">{t("settings_selected_currency")}</span>
+                        <span className="text-[11.5px] font-medium px-2.5 py-1 rounded-full bg-card text-foreground">
                           {getSelectedCountry()?.currency} ({getSelectedCountry()?.symbol})
-                        </Badge>
+                        </span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Este símbolo se usará en toda la aplicación para mostrar precios
-                      </p>
+                      <p className="text-xs text-text-4">{t("settings_currency_symbol_note")}</p>
+
+                      {/* Aviso pedido explícitamente por el dueño del proyecto: cambiar de
+                          moneda acá SOLO cambia el símbolo con el que Intl.NumberFormat
+                          pinta el mismo número guardado (ver lib/currency.ts, formatCurrency)
+                          — no hay ninguna conversión real de tipo de cambio en ningún lado
+                          del código. Sin este aviso, alguien podría pensar que sus 500
+                          lempiras ya guardados "se convirtieron" a 500 dólares, cuando en
+                          realidad son el mismo número con otro símbolo — un precio falso, no
+                          una conversión. */}
+                      <div className="flex items-start gap-2.5 bg-warning-soft rounded-lg p-3">
+                        <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold text-warning">{t("settings_currency_warning_title")}</p>
+                          <p className="text-xs text-warning">{t("settings_currency_warning_body")}</p>
+                        </div>
+                      </div>
                     </div>
                   )}
 

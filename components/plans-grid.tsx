@@ -100,7 +100,7 @@ export function PlansGrid({ freeRedirectTo = "/dashboard" }: PlansGridProps) {
         <Card
           key={plan.slug}
           className={`flex flex-col relative ${
-            plan.highlighted ? "border-primary shadow-xl ring-1 ring-primary/30" : "border-border shadow-lg"
+            plan.highlighted ? "border-primary ring-1 ring-primary/30" : "border-border"
           }`}
         >
           {plan.highlighted && (

@@ -5,7 +5,6 @@ import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { GastrometricsLogo } from "@/components/gastrometrics-logo"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import {
@@ -310,18 +309,18 @@ function SidebarInner() {
       <div
         data-tour="sidebar"
         className={cn(
-          "fixed left-0 z-40 bg-card border-r border-border transition-all duration-300 flex flex-col",
+          "fixed left-0 z-40 bg-card border-r border-hairline transition-all duration-300 flex flex-col",
           previewActive ? "top-10 h-[calc(100%-2.5rem)]" : "top-0 h-full",
           effectiveCollapsed ? "w-16" : "w-64",
           isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
       >
         {/* Header */}
-        <div className={cn("p-3 sm:p-4 border-b border-border", effectiveCollapsed && "p-2")}>
+        <div className={cn("p-3 sm:p-4 border-b border-hairline", effectiveCollapsed && "p-2")}>
           {effectiveCollapsed ? (
             <div className="hidden md:flex flex-col items-center gap-2">
               <GastrometricsLogo className="h-7 w-7" />
-              <Button variant="ghost" size="sm" onClick={toggleSidebar} className="h-8 w-8 p-0 hover:bg-accent">
+              <Button variant="ghost" size="sm" onClick={toggleSidebar} className="h-8 w-8 p-0">
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -330,15 +329,15 @@ function SidebarInner() {
               <div className="flex items-center gap-2 min-w-0">
                 <GastrometricsLogo className="h-8 w-8 flex-shrink-0" />
                 <div className="min-w-0">
-                  <h2 className="font-bold text-foreground text-sm truncate">Gastrometrics</h2>
-                  <p className="text-xs text-muted-foreground truncate">Sistema gastronómico</p>
+                  <h2 className="font-semibold tracking-[-0.02em] text-foreground text-sm truncate">Gastrometrics</h2>
+                  <p className="text-xs text-text-4 truncate">Sistema gastronómico</p>
                 </div>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={toggleSidebar}
-                className="h-8 w-8 p-0 hover:bg-accent flex-shrink-0 hidden md:flex"
+                className="h-8 w-8 p-0 flex-shrink-0 hidden md:flex"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -348,16 +347,16 @@ function SidebarInner() {
 
         {/* User Info */}
         {!effectiveCollapsed && (
-          <div className="p-3 sm:p-4 border-b border-border">
+          <div className="p-3 sm:p-4 border-b border-hairline">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary-soft rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-xs sm:text-sm font-medium text-primary">
                   {user?.name?.charAt(0)?.toUpperCase() || "U"}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-foreground truncate text-sm">{user?.name || "Usuario"}</p>
-                <p className="text-xs text-muted-foreground truncate">{user?.email || "usuario@email.com"}</p>
+                <p className="text-xs text-text-4 truncate">{user?.email || "usuario@email.com"}</p>
               </div>
             </div>
           </div>
@@ -381,40 +380,31 @@ function SidebarInner() {
               <Link key={item.href} href={contextualHref}>
                 <div
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group relative",
+                    "flex items-center gap-3 py-2 rounded-r-lg transition-colors duration-150 group relative border-l-[3px]",
                     isActive
-                      ? "bg-primary/10 text-primary border border-primary/20"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent",
-                    effectiveCollapsed && "justify-center px-2",
+                      ? "bg-secondary border-primary pl-[9px] pr-3"
+                      : "border-transparent text-text-3 hover:text-foreground hover:bg-secondary pl-[9px] pr-3",
+                    effectiveCollapsed && "justify-center pl-2 pr-2",
                   )}
                   onClick={() => setIsMobileOpen(false)}
                 >
                   <item.icon
                     className={cn(
                       "h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0",
-                      isActive ? "text-primary" : "text-foreground/70 group-hover:text-foreground",
+                      isActive ? "text-primary" : "text-text-4 group-hover:text-foreground",
                     )}
                   />
 
                   {!effectiveCollapsed && (
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate text-sm">{item.title}</p>
-                      <p className="text-xs opacity-75 truncate hidden sm:block">{item.description}</p>
+                      <p className={cn("font-medium truncate text-sm", isActive ? "text-foreground" : "")}>{item.title}</p>
+                      <p className="text-xs text-text-4 truncate hidden sm:block">{item.description}</p>
                     </div>
-                  )}
-
-                  {!effectiveCollapsed && isActive && (
-                    <Badge
-                      variant="secondary"
-                      className="bg-primary/20 text-primary text-xs flex-shrink-0 hidden sm:inline-flex"
-                    >
-                      Activo
-                    </Badge>
                   )}
 
                   {/* Tooltip para modo colapsado */}
                   {effectiveCollapsed && (
-                    <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                    <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-foreground text-background text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                       {item.title}
                     </div>
                   )}
@@ -426,18 +416,18 @@ function SidebarInner() {
           {/* Dashboard Navigation */}
           {pathname.startsWith("/business/") && !effectiveCollapsed && (
             <>
-              <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <div className="px-3 py-2 text-[10.5px] font-medium text-text-4 uppercase tracking-[0.09em]">
                 Navegación
               </div>
               <Link href="/dashboard">
                 <div
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group relative text-muted-foreground hover:text-foreground hover:bg-accent"
+                  className="flex items-center gap-3 pl-[9px] pr-3 py-2 rounded-r-lg transition-colors duration-150 group relative border-l-[3px] border-transparent text-text-3 hover:text-foreground hover:bg-secondary"
                   onClick={() => setIsMobileOpen(false)}
                 >
-                  <Home className="h-4 w-4 flex-shrink-0 text-foreground/70 group-hover:text-foreground" />
+                  <Home className="h-4 w-4 flex-shrink-0 text-text-4 group-hover:text-foreground" />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate text-sm">Dashboard Principal</p>
-                    <p className="text-xs opacity-75 truncate hidden sm:block">Volver al panel principal</p>
+                    <p className="text-xs text-text-4 truncate hidden sm:block">Volver al panel principal</p>
                   </div>
                 </div>
               </Link>
@@ -447,7 +437,7 @@ function SidebarInner() {
           {/* Businesses Section - Solo mostrar en dashboard principal */}
           {businesses.length > 0 && !effectiveCollapsed && !pathname.startsWith("/business/") && (
             <>
-              <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <div className="px-3 py-2 text-[10.5px] font-medium text-text-4 uppercase tracking-[0.09em]">
                 Mis Negocios
               </div>
               <div className="space-y-1 max-h-40 overflow-y-auto">
@@ -459,33 +449,26 @@ function SidebarInner() {
                     <Link key={business.id} href={businessPath}>
                       <div
                         className={cn(
-                          "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group relative",
+                          "flex items-center gap-3 py-2 rounded-r-lg transition-colors duration-150 group relative border-l-[3px]",
                           isBusinessActive
-                            ? "bg-primary/10 text-primary border border-primary/20"
-                            : "text-muted-foreground hover:text-foreground hover:bg-accent",
+                            ? "bg-secondary border-primary pl-[9px] pr-3"
+                            : "border-transparent text-text-3 hover:text-foreground hover:bg-secondary pl-[9px] pr-3",
                         )}
                         onClick={() => setIsMobileOpen(false)}
                       >
                         <Building2
                           className={cn(
                             "h-4 w-4 flex-shrink-0",
-                            isBusinessActive ? "text-primary" : "text-foreground/70 group-hover:text-foreground",
+                            isBusinessActive ? "text-primary" : "text-text-4 group-hover:text-foreground",
                           )}
                         />
 
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate text-sm">{business.name}</p>
-                          <p className="text-xs opacity-75 truncate hidden sm:block">Dashboard del negocio</p>
+                          <p className={cn("font-medium truncate text-sm", isBusinessActive ? "text-foreground" : "")}>
+                            {business.name}
+                          </p>
+                          <p className="text-xs text-text-4 truncate hidden sm:block">Dashboard del negocio</p>
                         </div>
-
-                        {isBusinessActive && (
-                          <Badge
-                            variant="secondary"
-                            className="bg-primary/20 text-primary text-xs flex-shrink-0 hidden sm:inline-flex"
-                          >
-                            Activo
-                          </Badge>
-                        )}
                       </div>
                     </Link>
                   )
@@ -496,23 +479,23 @@ function SidebarInner() {
         </nav>
 
         {/* Footer */}
-        <div className={cn("p-2 border-t border-border space-y-1", effectiveCollapsed && "p-1")}>
+        <div className={cn("p-2 border-t border-hairline space-y-1", effectiveCollapsed && "p-1")}>
           {/* Reiniciar tutorial de la página actual */}
           <Button
             variant="ghost"
             size="sm"
             onClick={handleRestartTour}
             className={cn(
-              "w-full justify-start gap-2 hover:bg-accent relative group",
+              "w-full justify-start gap-2 relative group",
               effectiveCollapsed && "justify-center px-2",
             )}
           >
-            <HelpCircle className="h-4 w-4 flex-shrink-0 text-foreground/70" />
+            <HelpCircle className="h-4 w-4 flex-shrink-0 text-text-4" />
             {!effectiveCollapsed && <span className="text-sm">{t("sidebar_restart_tour")}</span>}
 
             {/* Tooltip para modo colapsado */}
             {effectiveCollapsed && (
-              <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-foreground text-background text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                 {t("sidebar_restart_tour")}
               </div>
             )}
@@ -527,18 +510,18 @@ function SidebarInner() {
               variant="ghost"
               size="sm"
               className={cn(
-                "w-full justify-start gap-2 hover:bg-accent relative group",
+                "w-full justify-start gap-2 relative group",
                 effectiveCollapsed && "justify-center px-2",
               )}
             >
-              <Sparkles className="h-4 w-4 flex-shrink-0 text-foreground/70" />
+              <Sparkles className="h-4 w-4 flex-shrink-0 text-text-4" />
               {!effectiveCollapsed && (
                 <span className="text-sm truncate">
                   Plan: <span className="font-medium">{currentPlanName}</span>
                 </span>
               )}
               {effectiveCollapsed && (
-                <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-foreground text-background text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                   Plan: {currentPlanName}
                 </div>
               )}
@@ -552,16 +535,16 @@ function SidebarInner() {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  "w-full justify-start gap-2 hover:bg-accent relative group",
+                  "w-full justify-start gap-2 relative group",
                   effectiveCollapsed && "justify-center px-2",
                 )}
               >
-                <Settings className="h-4 w-4 flex-shrink-0 text-foreground/70" />
+                <Settings className="h-4 w-4 flex-shrink-0 text-text-4" />
                 {!effectiveCollapsed && <span className="text-sm">{t("nav_ajustes")}</span>}
 
                 {/* Tooltip para modo colapsado */}
                 {effectiveCollapsed && (
-                  <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-foreground text-background text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                     {t("nav_ajustes")}
                   </div>
                 )}
@@ -576,16 +559,16 @@ function SidebarInner() {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  "w-full justify-start gap-2 hover:bg-destructive/10 hover:text-destructive relative group",
+                  "w-full justify-start gap-2 hover:bg-danger-soft hover:text-destructive relative group",
                   effectiveCollapsed && "justify-center px-2",
                 )}
               >
-                <LogOut className="h-4 w-4 flex-shrink-0 text-foreground/70" />
+                <LogOut className="h-4 w-4 flex-shrink-0 text-text-4" />
                 {!effectiveCollapsed && <span className="text-sm">{t("nav_cerrar_sesion")}</span>}
 
                 {/* Tooltip para modo colapsado */}
                 {effectiveCollapsed && (
-                  <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-foreground text-background text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                     {t("nav_cerrar_sesion")}
                   </div>
                 )}

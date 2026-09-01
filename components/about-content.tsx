@@ -111,7 +111,7 @@ export function AboutContent() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {modules.map((module) => (
-              <Card id={module.slug} key={module.title} className="border-border shadow-lg bg-card scroll-mt-24">
+              <Card id={module.slug} key={module.title} className="border-border bg-card scroll-mt-24">
                 <CardHeader>
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
@@ -152,7 +152,7 @@ export function AboutContent() {
           </div>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/signup">
-              <Button size="lg" className="text-lg px-8 py-3 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg">
+              <Button size="lg" className="text-lg px-8 py-3 bg-primary text-primary-foreground hover:bg-primary/90">
                 <CheckCircle className="mr-2 h-5 w-5" />
                 {t("about_cta_button1")}
               </Button>

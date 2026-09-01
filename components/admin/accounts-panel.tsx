@@ -22,7 +22,13 @@ import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
 import { plans, getPlanBySlug } from "@/lib/plans"
-import { ArrowLeft, Search, Users, Building2, FileText, Package, AlertTriangle, Trash2 } from "lucide-react"
+import { formatActiveTime, countryName } from "@/lib/admin-format"
+import { ArrowLeft, Search, Users, Building2, FileText, Package, AlertTriangle, Trash2, Globe, Clock, CircleAlert } from "lucide-react"
+
+// Umbral de "inactivo" en la lista de Cuentas: sin actividad registrada en los últimos
+// 14 días (y no en línea ahora mismo) — pedido implícito al agregar "tiempo en la app":
+// saber quién pasa más tiempo es más útil todavía si también se ve quién dejó de volver.
+const INACTIVE_THRESHOLD_MS = 14 * 24 * 60 * 60 * 1000
 
 interface AccountRow {
   userId: string
@@ -38,6 +44,8 @@ interface AccountRow {
   salesImportCount: number
   lastSalesImportAt: string | null
   hasActiveSubscription: boolean
+  country: string | null
+  totalActiveSeconds: number
 }
 
 interface AccountDetail {
@@ -94,6 +102,7 @@ export function AccountsPanel() {
   const [pageSize, setPageSize] = useState(25)
   const [search, setSearch] = useState("")
   const [planFilter, setPlanFilter] = useState("todos")
+  const [sortBy, setSortBy] = useState<"recent" | "time">("recent")
   const [loadingList, setLoadingList] = useState(false)
 
   const [selected, setSelected] = useState<AccountRow | null>(null)
@@ -120,11 +129,14 @@ export function AccountsPanel() {
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("")
   const [deletingAccount, setDeletingAccount] = useState(false)
 
-  const loadList = async (targetPage: number, targetSearch: string, targetPlan: string) => {
+  const loadList = async (targetPage: number, targetSearch: string, targetPlan: string, targetSort: string) => {
     setLoadingList(true)
     try {
       const planParam = targetPlan && targetPlan !== "todos" ? `&plan=${encodeURIComponent(targetPlan)}` : ""
-      const res = await fetch(`/api/admin/accounts?page=${targetPage}&search=${encodeURIComponent(targetSearch)}${planParam}`)
+      const sortParam = targetSort ? `&sort=${encodeURIComponent(targetSort)}` : ""
+      const res = await fetch(
+        `/api/admin/accounts?page=${targetPage}&search=${encodeURIComponent(targetSearch)}${planParam}${sortParam}`,
+      )
       const data = await res.json()
       if (Array.isArray(data.accounts)) {
         setAccounts(data.accounts)
@@ -140,7 +152,7 @@ export function AccountsPanel() {
   }
 
   useEffect(() => {
-    loadList(page, search, planFilter)
+    loadList(page, search, planFilter, sortBy)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page])
 
@@ -173,13 +185,19 @@ export function AccountsPanel() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setPage(1)
-    loadList(1, search, planFilter)
+    loadList(1, search, planFilter, sortBy)
   }
 
   const handlePlanFilterChange = (value: string) => {
     setPlanFilter(value)
     setPage(1)
-    loadList(1, search, value)
+    loadList(1, search, value, sortBy)
+  }
+
+  const handleSortChange = (value: string) => {
+    setSortBy(value as "recent" | "time")
+    setPage(1)
+    loadList(1, search, planFilter, value)
   }
 
   const loadDetail = async (account: AccountRow) => {
@@ -305,7 +323,7 @@ export function AccountsPanel() {
       }
       toast({ title: t("admin_accounts_delete_success_toast") })
       closeDetail()
-      loadList(page, search, planFilter)
+      loadList(page, search, planFilter, sortBy)
     } catch (error) {
       console.error("Error eliminando la cuenta:", error)
       toast({ title: t("admin_accounts_delete_error_toast"), variant: "destructive" })
@@ -335,6 +353,10 @@ export function AccountsPanel() {
               {t("admin_accounts_created")} {new Date(detail.createdAt).toLocaleDateString(getDateLocale(language))}
               {" · "}
               {detail.emailConfirmed ? t("admin_accounts_confirmed") : t("admin_accounts_unconfirmed")}
+              {" · "}
+              {t("admin_accounts_table_country")}: {countryName(selected.country) || t("admin_accounts_no_country")}
+              {" · "}
+              {t("admin_accounts_table_time_spent")}: {formatActiveTime(selected.totalActiveSeconds, t)}
             </CardDescription>
           )}
         </CardHeader>
@@ -586,6 +608,15 @@ export function AccountsPanel() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={sortBy} onValueChange={handleSortChange}>
+            <SelectTrigger className="w-56 shrink-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">{t("admin_accounts_sort_recent")}</SelectItem>
+              <SelectItem value="time">{t("admin_accounts_sort_time")}</SelectItem>
+            </SelectContent>
+          </Select>
           <Button type="submit" disabled={loadingList} className="shrink-0 gap-2">
             <Search className="h-4 w-4" />
             {loadingList ? t("admin_accounts_searching") : t("admin_accounts_search_button")}
@@ -597,6 +628,14 @@ export function AccountsPanel() {
             <TableHeader>
               <TableRow>
                 <TableHead>{t("admin_accounts_table_email")}</TableHead>
+                <TableHead>
+                  <Globe className="h-3.5 w-3.5 inline mr-1" />
+                  {t("admin_accounts_table_country")}
+                </TableHead>
+                <TableHead>
+                  <Clock className="h-3.5 w-3.5 inline mr-1" />
+                  {t("admin_accounts_table_time_spent")}
+                </TableHead>
                 <TableHead>{t("admin_accounts_table_plan")}</TableHead>
                 <TableHead>
                   <Building2 className="h-3.5 w-3.5 inline mr-1" />
@@ -623,7 +662,7 @@ export function AccountsPanel() {
               {loadingList && accounts.length === 0
                 ? Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={`skeleton-${i}`}>
-                      {Array.from({ length: 9 }).map((__, j) => (
+                      {Array.from({ length: 11 }).map((__, j) => (
                         <TableCell key={j}>
                           <Skeleton className="h-4 w-full" />
                         </TableCell>
@@ -652,6 +691,24 @@ export function AccountsPanel() {
                             }
                           />
                           {a.email}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {countryName(a.country) || (
+                          <span className="text-xs">{t("admin_accounts_no_country")}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        <span className="inline-flex items-center gap-1.5">
+                          {formatActiveTime(a.totalActiveSeconds, t)}
+                          {!presenceByUserId[a.userId]?.online &&
+                            presenceByUserId[a.userId]?.lastSeenAt &&
+                            Date.now() - new Date(presenceByUserId[a.userId]!.lastSeenAt as string).getTime() >
+                              INACTIVE_THRESHOLD_MS && (
+                              <span title={t("admin_accounts_inactive_badge")} className="shrink-0">
+                                <CircleAlert className="h-3.5 w-3.5 text-amber-500" />
+                              </span>
+                            )}
                         </span>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{getPlanBySlug(a.planSlug).name}</TableCell>

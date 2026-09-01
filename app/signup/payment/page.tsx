@@ -184,7 +184,7 @@ function PaymentPageInner() {
             </CardContent>
           </Card>
 
-          <Card className="border-border shadow-lg bg-card/95 backdrop-blur h-fit">
+          <Card className="border-border bg-card/95 backdrop-blur h-fit">
             <CardHeader>
               <CardTitle className="text-lg">{t("signup_payment_summary_title")}</CardTitle>
             </CardHeader>

@@ -75,13 +75,21 @@ const validPresentations = [
 ]
 
 // BUG CORREGIDO: colores fijos sin variante dark:, a diferencia de los badges de
-// estado en history-view.tsx (que usan variant="outline"/"secondary" y sí se adaptan).
+// estado en history-view.tsx (que usan variant="outline"/"secondary"y sí se adaptan).
 const orderStatusDefs = [
-  { value: "pending", labelKey: "pof_status_pending", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300" },
-  { value: "approved", labelKey: "pof_status_approved", color: "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300" },
-  { value: "ordered", labelKey: "pof_status_ordered", color: "bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300" },
-  { value: "received", labelKey: "pof_status_received", color: "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300" },
-  { value: "cancelled", labelKey: "pof_status_cancelled", color: "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300" },
+  {
+    value: "pending",
+    labelKey: "pof_status_pending",
+    color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300",
+  },
+  { value: "approved", labelKey: "pof_status_approved", color: "bg-info-soft text-info dark:text-blue-300" },
+  {
+    value: "ordered",
+    labelKey: "pof_status_ordered",
+    color: "bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300",
+  },
+  { value: "received", labelKey: "pof_status_received", color: "bg-success-soft text-success dark:text-green-300" },
+  { value: "cancelled", labelKey: "pof_status_cancelled", color: "bg-danger-soft text-destructive dark:text-red-300" },
 ] as const
 
 export function PurchaseOrderForm({
@@ -118,7 +126,7 @@ export function PurchaseOrderForm({
 
   // BUG CORREGIDO: aqui se sumaba un 15% de impuesto fijo, incondicional y sin
   // ningun control en la UI para cambiarlo o quitarlo — contradice la regla del
-  // proyecto (CLAUDE.md): "ISV/impuesto: 0 por defecto, opcional, sin logica de
+  // proyecto (CLAUDE.md):"ISV/impuesto: 0 por defecto, opcional, sin logica de
   // pais especifica". Ademas pisaba en silencio el tax:0 que ya armaban
   // correctamente handleAutoSuggestOrder y la generacion desde menu en
   // purchase-order-page.tsx. Ahora es 0 por defecto y editable (mismo patron que
@@ -228,7 +236,7 @@ export function PurchaseOrderForm({
         const ingredient = availableIngredients.find((ing) => ing.id === item.ingredientId)
         const netContent = ingredient?.pricing?.netContent
         const presentationQuantity =
-          netContent && netContent > 0 ? Math.ceil(item.quantity / netContent) : item.presentationQuantity ?? null
+          netContent && netContent > 0 ? Math.ceil(item.quantity / netContent) : (item.presentationQuantity ?? null)
         return { ...item, presentation, presentationQuantity }
       }),
     }))
@@ -397,7 +405,8 @@ export function PurchaseOrderForm({
           {(newItem.totalPrice ?? 0) > 0 && (
             <div className="mt-4 p-3 bg-muted rounded-lg">
               <p className="text-sm">
-                {t("pof_item_total_prefix")} <span className="font-semibold">{formatCurrency(newItem.totalPrice ?? 0)}</span>
+                {t("pof_item_total_prefix")}{" "}
+                <span className="font-semibold">{formatCurrency(newItem.totalPrice ?? 0)}</span>
               </p>
             </div>
           )}
@@ -407,7 +416,9 @@ export function PurchaseOrderForm({
       {/* Items List */}
       <Card>
         <CardHeader>
-          <CardTitle>{t("pof_items_title")} ({formData.items.length})</CardTitle>
+          <CardTitle>
+            {t("pof_items_title")} ({formData.items.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {formData.items.length === 0 ? (
@@ -428,7 +439,7 @@ export function PurchaseOrderForm({
                         {item.presentation && item.presentationQuantity ? (
                           <p className="text-sm text-muted-foreground">
                             {item.presentationQuantity} {item.presentation}
-                            {item.presentationQuantity !== 1 ? "s" : ""} ({item.quantity} {item.unit}) ×{" "}
+                            {item.presentationQuantity !== 1 ? "s" : ""} ({item.quantity} {item.unit}) ×{""}
                             {formatCurrency(item.unitPrice)}
                           </p>
                         ) : (
@@ -447,10 +458,7 @@ export function PurchaseOrderForm({
                   <div className="flex items-center gap-3 shrink-0">
                     {!item.presentation && (
                       <div className="w-36">
-                        <Select
-                          value=""
-                          onValueChange={(value) => handleItemPresentationChange(item.id, value)}
-                        >
+                        <Select value="" onValueChange={(value) => handleItemPresentationChange(item.id, value)}>
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue placeholder={t("pof_presentation_placeholder")} />
                           </SelectTrigger>
@@ -472,7 +480,7 @@ export function PurchaseOrderForm({
                       variant="ghost"
                       size="sm"
                       onClick={() => removeItem(item.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="text-destructive hover:text-destructive hover:bg-danger-soft"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

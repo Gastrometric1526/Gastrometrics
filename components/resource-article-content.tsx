@@ -69,7 +69,7 @@ export function ResourceArticleContent({ article }: { article: ResourceArticleDe
           </div>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/signup">
-              <Button size="lg" className="text-lg px-8 py-3 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg">
+              <Button size="lg" className="text-lg px-8 py-3 bg-primary text-primary-foreground hover:bg-primary/90">
                 <CheckCircle className="mr-2 h-5 w-5" />
                 {t("about_cta_button1")}
               </Button>

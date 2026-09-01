@@ -29,7 +29,7 @@ export function AnimatedPieChart({ data, colors, height = 320 }: AnimatedPieChar
     if (active && payload && payload.length) {
       const data = payload[0]
       return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+        <div className="bg-popover text-popover-foreground p-3 border rounded-lg shadow-overlay">
           <p className="font-semibold text-gray-800">{data.payload.name}</p>
           <p className="text-sm text-gray-600">
             Valor: <span className="font-bold text-primary">{formatCurrency(data.value)}</span>

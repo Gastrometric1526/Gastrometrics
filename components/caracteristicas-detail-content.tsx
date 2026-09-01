@@ -72,7 +72,7 @@ export function CaracteristicasDetailContent({ feature }: { feature: FeaturePage
         <section className="space-y-6">
           {feature.screenshots.map((shot) => (
             <figure key={shot.src} className="space-y-2">
-              <div className="rounded-xl border border-border shadow-lg overflow-hidden bg-card">
+              <div className="rounded-xl border border-border overflow-hidden bg-card">
                 <Image
                   src={shot.src}
                   alt={t(shot.altKey)}
@@ -89,7 +89,7 @@ export function CaracteristicasDetailContent({ feature }: { feature: FeaturePage
 
         <section className="space-y-4">
           <h2 className="text-2xl font-bold text-foreground">{t("feat_summary_title")}</h2>
-          <Card className="border-border shadow-lg bg-card">
+          <Card className="border-border bg-card">
             <CardContent className="pt-6">
               <ul className="space-y-3">
                 {feature.highlightKeys.map((key) => (
@@ -122,7 +122,7 @@ export function CaracteristicasDetailContent({ feature }: { feature: FeaturePage
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">{t("feat_ready_title")}</h2>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/signup">
-              <Button size="lg" className="text-lg px-8 py-3 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg">
+              <Button size="lg" className="text-lg px-8 py-3 bg-primary text-primary-foreground hover:bg-primary/90">
                 <CheckCircle className="mr-2 h-5 w-5" />
                 {t("about_cta_button1")}
               </Button>

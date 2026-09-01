@@ -60,12 +60,12 @@ export function MermaInfoDialog({ open, onOpenChange }: MermaInfoDialogProps) {
 
             {/* Tipos de Merma */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-green-50 dark:bg-green-950/40 rounded-lg border border-green-200 dark:border-green-900">
-                <h4 className="font-semibold text-green-900 dark:text-green-300 mb-2 flex items-center gap-2">
+              <div className="p-4 bg-success-soft rounded-lg border">
+                <h4 className="font-semibold text-success mb-2 flex items-center gap-2">
                   <Percent className="h-4 w-4" />
                   Merma Global
                 </h4>
-                <div className="text-sm text-green-800 dark:text-green-300 space-y-2">
+                <div className="text-sm text-success space-y-2">
                   <p>Utiliza porcentajes predefinidos basados en la categoría del ingrediente.</p>
                   <p>
                     <strong>Ventajas:</strong>
@@ -103,8 +103,8 @@ export function MermaInfoDialog({ open, onOpenChange }: MermaInfoDialogProps) {
             <Separator />
 
             {/* Top 10 Categorías */}
-            <div className="p-4 bg-amber-50 dark:bg-amber-950/40 rounded-lg border border-amber-200 dark:border-amber-900">
-              <h3 className="font-semibold text-amber-900 dark:text-amber-300 mb-3 flex items-center gap-2">
+            <div className="p-4 bg-warning-soft dark:bg-amber-950/40 rounded-lg border border-amber-200 dark:border-amber-900">
+              <h3 className="font-semibold text-warning mb-3 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
                 Top 10 Categorías con Mayor Merma
               </h3>
@@ -112,24 +112,27 @@ export function MermaInfoDialog({ open, onOpenChange }: MermaInfoDialogProps) {
                 {getTopMermaCategories().map(({ category, percentage }, index) => {
                   const level = getMermaLevel(percentage)
                   return (
-                    <div key={category} className="flex items-center justify-between p-2 bg-card rounded border border-border">
+                    <div
+                      key={category}
+                      className="flex items-center justify-between p-2 bg-card rounded border border-border"
+                    >
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-200 dark:bg-amber-900 rounded-full w-6 h-6 flex items-center justify-center">
+                        <span className="text-xs font-bold text-warning bg-amber-200 dark:bg-amber-900 rounded-full w-6 h-6 flex items-center justify-center">
                           {index + 1}
                         </span>
-                        <span className="text-sm font-medium text-amber-800 dark:text-amber-300">{category}</span>
+                        <span className="text-sm font-medium text-warning">{category}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge
                           variant="outline"
                           className={`text-xs ${
                             percentage <= 10
-                              ? "bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-300 dark:border-green-900"
+                              ? "bg-success-soft text-success"
                               : percentage <= 25
                                 ? "bg-yellow-100 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-900"
                                 : percentage <= 40
                                   ? "bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-900"
-                                  : "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-300 dark:border-red-900"
+                                  : "bg-danger-soft text-destructive"
                           }`}
                         >
                           {percentage}%
@@ -151,9 +154,15 @@ export function MermaInfoDialog({ open, onOpenChange }: MermaInfoDialogProps) {
                 <table className="w-full border border-border rounded-lg">
                   <thead className="bg-muted">
                     <tr>
-                      <th className="px-4 py-2 text-left text-sm font-semibold text-foreground border-b border-border">Categoría</th>
-                      <th className="px-4 py-2 text-center text-sm font-semibold text-foreground border-b border-border">Porcentaje</th>
-                      <th className="px-4 py-2 text-center text-sm font-semibold text-foreground border-b border-border">Nivel</th>
+                      <th className="px-4 py-2 text-left text-sm font-semibold text-foreground border-b border-border">
+                        Categoría
+                      </th>
+                      <th className="px-4 py-2 text-center text-sm font-semibold text-foreground border-b border-border">
+                        Porcentaje
+                      </th>
+                      <th className="px-4 py-2 text-center text-sm font-semibold text-foreground border-b border-border">
+                        Nivel
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -169,18 +178,20 @@ export function MermaInfoDialog({ open, onOpenChange }: MermaInfoDialogProps) {
                                 percentage === 0
                                   ? "bg-muted text-muted-foreground border-border"
                                   : percentage <= 10
-                                    ? "bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-300 dark:border-green-900"
+                                    ? "bg-success-soft text-success"
                                     : percentage <= 25
                                       ? "bg-yellow-100 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-900"
                                       : percentage <= 40
                                         ? "bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-900"
-                                        : "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-300 dark:border-red-900"
+                                        : "bg-danger-soft text-destructive"
                               }`}
                             >
                               {percentage}%
                             </Badge>
                           </td>
-                          <td className="px-4 py-2 text-center text-xs text-muted-foreground border-b border-border">{level}</td>
+                          <td className="px-4 py-2 text-center text-xs text-muted-foreground border-b border-border">
+                            {level}
+                          </td>
                         </tr>
                       )
                     })}
@@ -195,8 +206,8 @@ export function MermaInfoDialog({ open, onOpenChange }: MermaInfoDialogProps) {
             <div className="p-4 bg-muted rounded-lg border border-border">
               <h3 className="font-semibold text-foreground mb-3">Niveles de Merma</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="text-center p-2 bg-green-100 dark:bg-green-950/40 rounded border border-green-300 dark:border-green-900">
-                  <div className="font-semibold text-green-700 dark:text-green-300">Baja</div>
+                <div className="text-center p-2 bg-success-soft rounded border">
+                  <div className="font-semibold text-success">Baja</div>
                   <div className="text-xs text-green-600 dark:text-green-300">0% - 10%</div>
                 </div>
                 <div className="text-center p-2 bg-yellow-100 dark:bg-yellow-950/40 rounded border border-yellow-300 dark:border-yellow-900">
@@ -207,9 +218,9 @@ export function MermaInfoDialog({ open, onOpenChange }: MermaInfoDialogProps) {
                   <div className="font-semibold text-orange-700 dark:text-orange-300">Alta</div>
                   <div className="text-xs text-orange-600 dark:text-orange-300">26% - 40%</div>
                 </div>
-                <div className="text-center p-2 bg-red-100 dark:bg-red-950/40 rounded border border-red-300 dark:border-red-900">
-                  <div className="font-semibold text-red-700 dark:text-red-300">Muy Alta</div>
-                  <div className="text-xs text-red-600 dark:text-red-300">41%+</div>
+                <div className="text-center p-2 bg-danger-soft rounded border">
+                  <div className="font-semibold text-destructive">Muy Alta</div>
+                  <div className="text-xs text-destructive dark:text-red-300">41%+</div>
                 </div>
               </div>
             </div>
@@ -246,7 +257,7 @@ export function MermaInfoDialog({ open, onOpenChange }: MermaInfoDialogProps) {
                     </li>
                     <li>Las prácticas de preparación y habilidades del personal influyen en los desperdicios</li>
                     <li>Se recomienda ajustar los valores según la experiencia específica de cada establecimiento</li>
-                    <li>Utilice la opción de "Merma Personalizada" para valores más precisos según su operación</li>
+                    <li>Utilice la opción de"Merma Personalizada"para valores más precisos según su operación</li>
                   </ul>
                 </div>
               </div>

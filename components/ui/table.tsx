@@ -34,7 +34,11 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
   ({ className, ...props }, ref) => (
     <tr
       ref={ref}
-      className={cn("border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted", className)}
+      // Hairline de fila en vez del borde/hover de plantilla (rediseño visual, ver docs/79).
+      className={cn(
+        "border-b border-hairline transition-colors hover:bg-[#F9F9F8] data-[state=selected]:bg-muted",
+        className,
+      )}
       {...props}
     />
   ),
@@ -45,8 +49,9 @@ const TableHead = React.forwardRef<HTMLTableCellElement, React.ThHTMLAttributes<
   ({ className, ...props }, ref) => (
     <th
       ref={ref}
+      // Encabezado escaneable: mayúsculas pequeñas con tracking, no gris de plantilla.
       className={cn(
-        "h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",
+        "h-11 px-4 text-left align-middle text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4 [&:has([role=checkbox])]:pr-0",
         className,
       )}
       {...props}

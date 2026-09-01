@@ -3,7 +3,14 @@
 import { useMemo, useState } from "react"
 import { v4 as uuidv4 } from "uuid"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -38,15 +45,17 @@ type Step = "upload" | "mapping" | "review"
 
 const NONE_VALUE = "__none__"
 
-// BUG CORREGIDO: antes se hacia `.replace(",", ".")` a secas, que solo reemplaza
-// la PRIMERA coma — un numero con separador de miles ("1,234.56" o "1.234,56")
+// BUG CORREGIDO: antes se hacia `.replace(",",".")` a secas, que solo reemplaza
+// la PRIMERA coma — un numero con separador de miles ("1,234.56"o"1.234,56")
 // quedaba mal interpretado y podia inflar o truncar la cifra por un factor de
 // ~1000. Esta funcion detecta cual separador es el decimal (el que aparece al
 // final) y elimina el resto como separador de miles.
 function parseLocaleNumber(raw: string | number | null | undefined): number {
   if (raw === null || raw === undefined || raw === "") return 0
   if (typeof raw === "number") return raw
-  let s = String(raw).trim().replace(/[^0-9.,-]/g, "")
+  let s = String(raw)
+    .trim()
+    .replace(/[^0-9.,-]/g, "")
   if (!s) return 0
 
   const hasComma = s.includes(",")
@@ -68,8 +77,8 @@ function parseLocaleNumber(raw: string | number | null | undefined): number {
 }
 
 // BUG CORREGIDO: no habia ningun filtro para filas en blanco o filas resumen
-// ("TOTAL", "SUBTOTAL", etc.) que muchos POS agregan al final del reporte — una
-// fila asi se colaba como un "plato" mas con toda la venta del periodo, doblando
+// ("TOTAL","SUBTOTAL", etc.) que muchos POS agregan al final del reporte — una
+// fila asi se colaba como un"plato"mas con toda la venta del periodo, doblando
 // (o mas) los ingresos totales sin ningun aviso al usuario.
 const SUMMARY_ROW_PATTERN = /^(total|subtotal|gran\s*total|grand\s*total|resumen|suma)s?\s*:?$/i
 
@@ -79,7 +88,13 @@ function isSummaryOrBlankRow(rawDishName: string): boolean {
   return SUMMARY_ROW_PATTERN.test(trimmed)
 }
 
-export function POSSalesImportDialog({ open, onOpenChange, businessId, recipes, onImported }: POSSalesImportDialogProps) {
+export function POSSalesImportDialog({
+  open,
+  onOpenChange,
+  businessId,
+  recipes,
+  onImported,
+}: POSSalesImportDialogProps) {
   const { toast } = useToast()
   const { t } = useLanguage()
   const [step, setStep] = useState<Step>("upload")
@@ -117,7 +132,11 @@ export function POSSalesImportDialog({ open, onOpenChange, businessId, recipes, 
   const processFile = async (file: File) => {
     const validExt = /\.(xlsx|xls|csv)$/i.test(file.name)
     if (!validExt) {
-      toast({ title: t("posi_toast_invalid_file_title"), description: t("posi_toast_invalid_file_desc"), variant: "destructive" })
+      toast({
+        title: t("posi_toast_invalid_file_title"),
+        description: t("posi_toast_invalid_file_desc"),
+        variant: "destructive",
+      })
       return
     }
 
@@ -125,7 +144,11 @@ export function POSSalesImportDialog({ open, onOpenChange, businessId, recipes, 
     try {
       const rows = await parseExcelFile(file)
       if (!rows || rows.length === 0) {
-        toast({ title: t("posi_toast_empty_file_title"), description: t("posi_toast_empty_file_desc"), variant: "destructive" })
+        toast({
+          title: t("posi_toast_empty_file_title"),
+          description: t("posi_toast_empty_file_desc"),
+          variant: "destructive",
+        })
         setIsParsing(false)
         return
       }
@@ -148,10 +171,18 @@ export function POSSalesImportDialog({ open, onOpenChange, businessId, recipes, 
         detectedHeaders.includes(savedMapping.quantityColumn)
 
       if (savedHeadersMatch && savedMapping) {
-        setDateColumn(savedMapping.dateColumn && detectedHeaders.includes(savedMapping.dateColumn) ? savedMapping.dateColumn : NONE_VALUE)
+        setDateColumn(
+          savedMapping.dateColumn && detectedHeaders.includes(savedMapping.dateColumn)
+            ? savedMapping.dateColumn
+            : NONE_VALUE,
+        )
         setDishColumn(savedMapping.dishColumn)
         setQuantityColumn(savedMapping.quantityColumn)
-        setPriceColumn(savedMapping.priceColumn && detectedHeaders.includes(savedMapping.priceColumn) ? savedMapping.priceColumn : NONE_VALUE)
+        setPriceColumn(
+          savedMapping.priceColumn && detectedHeaders.includes(savedMapping.priceColumn)
+            ? savedMapping.priceColumn
+            : NONE_VALUE,
+        )
         setStep("review")
       } else {
         // Adivina columnas por nombre, como primer intento (el usuario puede corregir)
@@ -196,37 +227,37 @@ export function POSSalesImportDialog({ open, onOpenChange, businessId, recipes, 
     return rawRows
       .filter((row) => !isSummaryOrBlankRow(String(row[dishColumn] ?? "")))
       .map((row, index) => {
-      const rawDishName = String(row[dishColumn] ?? "").trim()
-      const quantity = parseLocaleNumber(row[quantityColumn])
-      const priceRaw = priceColumn !== NONE_VALUE ? row[priceColumn] : undefined
-      const unitPrice = priceRaw !== undefined && priceRaw !== "" ? parseLocaleNumber(priceRaw) : null
-      const dateRaw = dateColumn !== NONE_VALUE ? row[dateColumn] : undefined
+        const rawDishName = String(row[dishColumn] ?? "").trim()
+        const quantity = parseLocaleNumber(row[quantityColumn])
+        const priceRaw = priceColumn !== NONE_VALUE ? row[priceColumn] : undefined
+        const unitPrice = priceRaw !== undefined && priceRaw !== "" ? parseLocaleNumber(priceRaw) : null
+        const dateRaw = dateColumn !== NONE_VALUE ? row[dateColumn] : undefined
 
-      const normalized = normalizeName(rawDishName)
-      const learnedMatch = dishMappings.find((m) => m.normalizedPosName === normalized)
-      const manualRecipeId = manualMatches[normalized]
-      const autoMatch = !learnedMatch && !manualRecipeId ? findBestNameMatch(rawDishName, recipes) : null
+        const normalized = normalizeName(rawDishName)
+        const learnedMatch = dishMappings.find((m) => m.normalizedPosName === normalized)
+        const manualRecipeId = manualMatches[normalized]
+        const autoMatch = !learnedMatch && !manualRecipeId ? findBestNameMatch(rawDishName, recipes) : null
 
-      const matchedRecipeId = manualRecipeId || learnedMatch?.recipeId || autoMatch?.id || null
-      const recipe = matchedRecipeId ? recipes.find((r) => r.id === matchedRecipeId) : undefined
+        const matchedRecipeId = manualRecipeId || learnedMatch?.recipeId || autoMatch?.id || null
+        const recipe = matchedRecipeId ? recipes.find((r) => r.id === matchedRecipeId) : undefined
 
-      const effectiveUnitPrice = unitPrice ?? recipe?.unitPrice ?? 0
-      const revenue = quantity * effectiveUnitPrice
-      const theoreticalCost = recipe ? quantity * (recipe.costPerServing || 0) : 0
+        const effectiveUnitPrice = unitPrice ?? recipe?.unitPrice ?? 0
+        const revenue = quantity * effectiveUnitPrice
+        const theoreticalCost = recipe ? quantity * (recipe.costPerServing || 0) : 0
 
-      return {
-        rowIndex: index,
-        rawDishName,
-        normalized,
-        quantity,
-        unitPrice,
-        dateRaw: dateRaw ? String(dateRaw) : null,
-        recipeId: matchedRecipeId,
-        recipeName: recipe?.name,
-        revenue,
-        theoreticalCost,
-      }
-    })
+        return {
+          rowIndex: index,
+          rawDishName,
+          normalized,
+          quantity,
+          unitPrice,
+          dateRaw: dateRaw ? String(dateRaw) : null,
+          recipeId: matchedRecipeId,
+          recipeName: recipe?.name,
+          revenue,
+          theoreticalCost,
+        }
+      })
   }, [rawRows, dishColumn, quantityColumn, priceColumn, dateColumn, recipes, dishMappings, manualMatches])
 
   const unmatchedCount = parsedLines.filter((l) => !l.recipeId).length
@@ -259,7 +290,12 @@ export function POSSalesImportDialog({ open, onOpenChange, businessId, recipes, 
         .filter((line) => line.recipeId && line.normalized)
         .map((line) =>
           saveDishNameMapping(
-            { businessId, normalizedPosName: line.normalized, recipeId: line.recipeId!, updatedAt: new Date().toISOString() },
+            {
+              businessId,
+              normalizedPosName: line.normalized,
+              recipeId: line.recipeId!,
+              updatedAt: new Date().toISOString(),
+            },
             businessId,
           ),
         ),
@@ -277,8 +313,10 @@ export function POSSalesImportDialog({ open, onOpenChange, businessId, recipes, 
 
     const dates = parsedLines.map((l) => l.dateRaw).filter(Boolean) as string[]
     const parsedDates = dates.map((d) => new Date(d)).filter((d) => !isNaN(d.getTime()))
-    const periodStart = parsedDates.length > 0 ? new Date(Math.min(...parsedDates.map((d) => d.getTime()))).toISOString() : null
-    const periodEnd = parsedDates.length > 0 ? new Date(Math.max(...parsedDates.map((d) => d.getTime()))).toISOString() : null
+    const periodStart =
+      parsedDates.length > 0 ? new Date(Math.min(...parsedDates.map((d) => d.getTime()))).toISOString() : null
+    const periodEnd =
+      parsedDates.length > 0 ? new Date(Math.max(...parsedDates.map((d) => d.getTime()))).toISOString() : null
 
     const salesImport: SalesImport = {
       id: uuidv4(),
@@ -355,7 +393,7 @@ export function POSSalesImportDialog({ open, onOpenChange, businessId, recipes, 
         {step === "mapping" && (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              {t("posi_file_prefix")} <span className="font-medium text-foreground">{fileName}</span> ·{" "}
+              {t("posi_file_prefix")} <span className="font-medium text-foreground">{fileName}</span> ·{""}
               {t("posi_rows_detected").replace("{count}", String(rawRows.length))}
             </p>
             <div className="grid grid-cols-2 gap-4">
@@ -460,7 +498,7 @@ export function POSSalesImportDialog({ open, onOpenChange, businessId, recipes, 
                 {t("posi_matched_badge").replace("{count}", String(matchedCount))}
               </Badge>
               {unmatchedCount > 0 && (
-                <Badge variant="outline" className="gap-1.5 py-1.5 text-amber-700 border-amber-300">
+                <Badge variant="outline" className="gap-1.5 py-1.5 text-warning">
                   <AlertCircle className="h-3.5 w-3.5" />
                   {t("posi_unmatched_badge").replace("{count}", String(unmatchedCount))}
                 </Badge>
@@ -505,7 +543,9 @@ export function POSSalesImportDialog({ open, onOpenChange, businessId, recipes, 
                           )}
                         </TableCell>
                         <TableCell className="text-right text-sm tabular-nums">{line.quantity}</TableCell>
-                        <TableCell className="text-right text-sm tabular-nums">{formatCurrency(line.revenue)}</TableCell>
+                        <TableCell className="text-right text-sm tabular-nums">
+                          {formatCurrency(line.revenue)}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

@@ -1,7 +1,7 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Suspense } from "react"
-import { Inter } from "next/font/google"
+import { DM_Sans } from "next/font/google"
 import "./globals.css" // Ensure this path is correct, usually it's `app/globals.css` or `./globals.css`
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -16,7 +16,10 @@ import { ThemeInitializer } from "@/components/theme-initializer"
 import { AnalyticsTracker } from "@/components/analytics-tracker"
 import { PresenceTracker } from "@/components/presence-tracker"
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
+// Rediseño visual (ver docs/79): DM Sans en vez de Inter — geométrica y cercana, sin
+// perder cobertura de es/en/da/fr/pt (latín + latín extendido). zh sigue resolviendo
+// al fallback del sistema declarado en tailwind.config.js.
+const dmSans = DM_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-sans" })
 
 export const metadata: Metadata = {
   title: "GastroMetrics",
@@ -60,7 +63,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${inter.variable} ${inter.className}`}>
+      <body className={`${dmSans.variable} ${dmSans.className}`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {/* Corre justo después del script de next-themes (que ya dejó <html> en modo
               oscuro/claro según la preferencia guardada) y antes de que pinte cualquier

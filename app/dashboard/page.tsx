@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { Badge } from "@/components/ui/badge"
 import type { Business } from "@/types/business"
 import { calculateTotalMonthlyExpenses } from "@/types/business"
 import { formatCurrency } from "@/lib/currency"
@@ -575,11 +574,11 @@ export default function DashboardPage() {
       <Sidebar />
       <div className="flex-1 overflow-hidden">
         <div className="h-full overflow-y-auto">
-          <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
+          <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-10">
             {/* Header Section */}
-            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
-              <div className="space-y-2 flex-1 min-w-0" data-tour="dash-header">
-                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground truncate flex items-center gap-2">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+              <div className="space-y-1.5 flex-1 min-w-0" data-tour="dash-header">
+                <h1 className="text-2xl md:text-3xl lg:text-[34px] font-semibold tracking-[-0.03em] text-foreground truncate flex items-center gap-2">
                   {getGreeting()}, {user?.name}
                   {/* BUG CORREGIDO: este lápiz abría un diálogo de edición de perfil
                       propio y separado (isProfileOpen), que guardaba en las claves
@@ -593,7 +592,7 @@ export default function DashboardPage() {
                     trigger={
                       <button
                         type="button"
-                        className="shrink-0 text-foreground/40 hover:text-foreground transition-colors"
+                        className="shrink-0 text-text-4 hover:text-foreground transition-colors"
                         aria-label={t("dashboard_edit_profile_aria")}
                         title={t("dashboard_edit_profile_aria")}
                       >
@@ -602,31 +601,24 @@ export default function DashboardPage() {
                     }
                   />
                 </h1>
-                <p className="text-base md:text-lg text-foreground/80 font-medium">
+                <p className="text-base text-text-3">
                   {t("dashboard_welcome")}
                 </p>
-                <div className="flex items-center gap-2 text-sm text-foreground/70 font-medium">
+                <div className="flex items-center gap-2 text-sm text-text-4">
                   <Clock className="h-4 w-4 flex-shrink-0" />
                   <span className="truncate">{currentTime.toLocaleString()}</span>
                 </div>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0 flex-wrap">
                 <Link href="/ficha-tecnica">
-                  <Button
-                    data-tour="dash-new-recipe"
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg text-sm px-4 py-2 h-auto font-semibold"
-                  >
+                  <Button data-tour="dash-new-recipe" className="bg-primary text-primary-foreground hover:bg-primary/90">
                     <Plus className="h-4 w-4 mr-2" />
                     {t("dashboard_new_recipe")}
                   </Button>
                 </Link>
                 <SettingsDialog
                   trigger={
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="border-2 border-border hover:bg-accent bg-transparent h-10 w-10 flex-shrink-0"
-                    >
+                    <Button variant="outline" size="icon" className="h-10 w-10 flex-shrink-0">
                       <Settings className="h-4 w-4" />
                     </Button>
                   }
@@ -634,130 +626,112 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-tour="dash-stats">
+            {/* Stats — sin cajas: etiqueta, cifra grande, separadas por hairline
+                (docs/80/81/82: "cuatro KPIs sin cajas" del paquete de diseño). Mismos
+                cuatro valores reales de siempre (calculateCurrentStats más arriba),
+                solo cambia cómo se presentan. */}
+            <div
+              className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-hairline border-y border-hairline"
+              data-tour="dash-stats"
+            >
               {stats.map((stat, index) => (
-                <Card
-                  key={index}
-                  className="border-2 border-border shadow-lg hover:shadow-xl transition-all duration-300 bg-card overflow-hidden"
-                >
-                  <CardContent className="p-4 h-36 flex flex-col justify-between">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className={`p-2 rounded-lg ${stat.bgColor} flex-shrink-0`}>
-                        <stat.icon className={`h-6 w-6 ${stat.textColor}`} />
-                      </div>
-                    </div>
-                    <div className="space-y-1 min-w-0">
-                      <p className="text-xs font-semibold text-foreground/70 uppercase tracking-wide truncate">
-                        {stat.title}
-                      </p>
-                      <p className="text-2xl font-bold text-foreground truncate">{stat.value}</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div key={index} className="p-5 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <stat.icon className={`h-4 w-4 ${stat.textColor}`} />
+                    <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4 truncate">
+                      {stat.title}
+                    </p>
+                  </div>
+                  <p className="text-3xl font-semibold text-foreground tabular-nums truncate">{stat.value}</p>
+                </div>
               ))}
             </div>
 
-            {/* Mis Negocios Section */}
+            {/* Mis Negocios — rejilla de 1px (mismo patrón que los módulos del
+                landing): celdas separadas por hairline, sin tarjetas con sombra. */}
             {businesses.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl md:text-2xl font-bold text-foreground">{t("dashboard_my_businesses")}</h2>
+                  <h2 className="text-xl font-semibold tracking-[-0.02em] text-foreground">{t("dashboard_my_businesses")}</h2>
                   <Link href="/negocios">
-                    <Button variant="outline" className="border-2 font-semibold bg-transparent">
+                    <Button variant="outline" size="sm">
                       <Building2 className="h-4 w-4 mr-2" />
                       {t("dashboard_view_all")}
                     </Button>
                   </Link>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-px bg-hairline border border-hairline rounded-2xl overflow-hidden">
                   {businesses.slice(0, 6).map((business) => (
-                    <Card
+                    <div
                       key={business.id}
-                      className="border-2 border-border shadow-lg hover:shadow-xl transition-all duration-300 bg-card group cursor-pointer"
+                      className="bg-card hover:bg-[#F9F9F8] transition-colors duration-150 p-5 cursor-pointer"
                       onClick={() => handleBusinessClick(business.id)}
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Building2 className="h-5 w-5 text-primary" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors truncate">
-                              {business.name}
-                            </h3>
-                            <p className="text-sm text-foreground/70 truncate">
-                              {t("dashboard_created_on")}{" "}
-                              {new Date(business.createdAt || Date.now()).toLocaleDateString("es-HN", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                              })}
-                            </p>
-                          </div>
-                          {business.hasFinancialData && (
-                            <Badge variant="secondary" className="bg-green-100 text-green-800 dark:text-green-300 text-xs">
-                              {t("dashboard_complete")}
-                            </Badge>
-                          )}
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-primary-soft rounded-xl flex items-center justify-center flex-shrink-0">
+                          <Building2 className="h-5 w-5 text-primary" />
                         </div>
-
-                        {business.hasFinancialData && business.expenses && (
-                          <div className="text-sm text-foreground/70 mb-2">
-                            {t("dashboard_operational_cost")}: {formatCurrency(roundToNextHundred(calculateTotalMonthlyExpenses(business.expenses)))}
-                          </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-semibold text-foreground truncate">{business.name}</h3>
+                          <p className="text-xs text-text-4 truncate">
+                            {t("dashboard_created_on")}{" "}
+                            {new Date(business.createdAt || Date.now()).toLocaleDateString("es-HN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </p>
+                        </div>
+                        {business.hasFinancialData && (
+                          <span className="text-[11.5px] font-medium px-2.5 py-1 rounded-full bg-success-soft text-success shrink-0">
+                            {t("dashboard_complete")}
+                          </span>
                         )}
+                      </div>
 
-                        <div className="flex items-center text-primary group-hover:translate-x-1 transition-transform">
-                          <span className="text-sm font-bold">{t("dashboard_open_dashboard")}</span>
-                          <ArrowRight className="h-4 w-4 ml-2 flex-shrink-0" />
+                      {business.hasFinancialData && business.expenses && (
+                        <div className="text-sm text-text-3 mb-2">
+                          {t("dashboard_operational_cost")}: {formatCurrency(roundToNextHundred(calculateTotalMonthlyExpenses(business.expenses)))}
                         </div>
-                      </CardContent>
-                    </Card>
+                      )}
+
+                      <div className="flex items-center text-primary">
+                        <span className="text-sm font-medium">{t("dashboard_open_dashboard")}</span>
+                        <ArrowRight className="h-3.5 w-3.5 ml-1.5 flex-shrink-0" />
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Quick Actions */}
+            {/* Quick Actions — misma rejilla que "Todo conectado..." del landing:
+                fila con ícono, título/descripción y flecha, no tarjetas cuadradas. */}
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <h2 className="text-xl md:text-2xl font-bold text-foreground">{t("dashboard_quick_actions")}</h2>
-                <Button
-                  onClick={() => setShowAddDialog(true)}
-                  data-tour="dash-add-business"
-                  className="text-sm px-4 py-2 h-auto font-semibold shadow-lg flex-shrink-0"
-                >
+                <h2 className="text-xl font-semibold tracking-[-0.02em] text-foreground">{t("dashboard_quick_actions")}</h2>
+                <Button onClick={() => setShowAddDialog(true)} data-tour="dash-add-business" size="sm" variant="outline">
                   <PlusCircle className="h-4 w-4 mr-2" />
                   {t("dashboard_add_business")}
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6" data-tour="dash-quick-actions">
+              <div className="divide-y divide-hairline border-t border-b border-hairline" data-tour="dash-quick-actions">
                 {menuItems.map((action, index) => (
-                  <Link key={index} href={action.href}>
-                    <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all duration-300 bg-card group cursor-pointer h-56 overflow-hidden">
-                      <CardContent className="p-6 h-full flex flex-col justify-between">
-                        <div className="space-y-4">
-                          <div className={`p-4 rounded-lg ${action.bgColor} w-fit transition-all duration-300`}>
-                            <action.icon className={`h-8 w-8 ${action.textColor}`} />
-                          </div>
-                          <div className="space-y-3 min-w-0">
-                            <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors leading-tight">
-                              {action.text}
-                            </h3>
-                            <p className="text-sm text-foreground/70 font-medium leading-relaxed line-clamp-3">
-                              {action.description}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center text-primary group-hover:translate-x-1 transition-transform mt-4 pt-4 border-t border-border/50">
-                          <span className="text-sm font-bold">{t("dashboard_access_now")}</span>
-                          <ArrowRight className="h-4 w-4 ml-2 flex-shrink-0" />
-                        </div>
-                      </CardContent>
-                    </Card>
+                  <Link
+                    key={index}
+                    href={action.href}
+                    className="flex items-center gap-4 py-4 group hover:bg-[#F9F9F8] transition-colors -mx-2 px-2 rounded-lg"
+                  >
+                    <div className={`w-10 h-10 rounded-xl ${action.bgColor} flex items-center justify-center shrink-0`}>
+                      <action.icon className={`h-5 w-5 ${action.textColor}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground">{action.text}</p>
+                      <p className="text-sm text-text-3 mt-0.5 truncate">{action.description}</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-text-4 shrink-0 group-hover:translate-x-0.5 transition-transform" />
                   </Link>
                 ))}
               </div>
@@ -766,117 +740,89 @@ export default function DashboardPage() {
             {/* Recent Activity & Alerts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Recent Activity */}
-              <Card className="border-2 border-border shadow-lg bg-card h-80 overflow-hidden" data-tour="dash-recent-activity">
-                <CardHeader className="border-b-2 border-border p-4">
-                  <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
-                    <Activity className="h-5 w-5 flex-shrink-0" />
+              <Card className="border-hairline bg-card h-80 overflow-hidden" data-tour="dash-recent-activity">
+                <CardHeader className="border-b border-hairline p-4">
+                  <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Activity className="h-4 w-4 flex-shrink-0 text-text-4" />
                     <span className="truncate">{t("dashboard_recent_activity")}</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 h-full overflow-y-auto">
                   {recentActivity.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="divide-y divide-hairline">
                       {recentActivity.map((activity) => (
-                        <div
-                          key={activity.id}
-                          className="flex items-start gap-3 p-3 rounded-lg bg-muted/20 border border-border"
-                        >
+                        <div key={activity.id} className="flex items-start gap-3 py-3">
                           <div className="text-lg flex-shrink-0 mt-0.5">
                             {ActivityTracker.getActivityIcon(activity.type)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-foreground line-clamp-2">{activity.action}</p>
-                            <p className="text-xs text-foreground/70 font-medium mt-1">
+                            <p className="text-sm font-medium text-foreground line-clamp-2">{activity.action}</p>
+                            <p className="text-xs text-text-4 mt-0.5">
                               {ActivityTracker.formatTimeAgo(activity.timestamp)}
                             </p>
                           </div>
-                          <Badge variant="outline" className="text-xs font-semibold border-2 flex-shrink-0 capitalize">
-                            {activity.type}
-                          </Badge>
+                          <span className="text-[11px] text-text-4 capitalize shrink-0">{activity.type}</span>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div className="text-center py-8">
-                      <Activity className="h-12 w-12 text-foreground/30 mx-auto mb-4" />
-                      <p className="text-foreground/70 font-medium">{t("dashboard_no_activity")}</p>
-                      <p className="text-xs text-foreground/50 mt-1">{t("dashboard_no_activity_desc")}</p>
+                      <Activity className="h-10 w-10 text-text-4/50 mx-auto mb-3" />
+                      <p className="text-sm text-text-3">{t("dashboard_no_activity")}</p>
+                      <p className="text-xs text-text-4 mt-1">{t("dashboard_no_activity_desc")}</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
-              {/* System Alerts */}
-              <Card className="border-2 border-border shadow-lg bg-card h-80 overflow-hidden" data-tour="dash-notifications">
-                <CardHeader className="border-b-2 border-border p-4">
-                  <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
-                    <Bell className="h-5 w-5 flex-shrink-0" />
+              {/* System Alerts — el color ya no es la única señal: el texto de la
+                  fila dice qué tipo de aviso es (docs/06: "el estado nunca se
+                  comunica solo con color"). */}
+              <Card className="border-hairline bg-card h-80 overflow-hidden" data-tour="dash-notifications">
+                <CardHeader className="border-b border-hairline p-4">
+                  <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Bell className="h-4 w-4 flex-shrink-0 text-text-4" />
                     <span className="truncate">{t("dashboard_notifications")}</span>
                     {systemAlerts.filter((alert) => !alert.read).length > 0 && (
-                      <Badge variant="destructive" className="text-xs">
+                      <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-danger-soft text-destructive">
                         {systemAlerts.filter((alert) => !alert.read).length}
-                      </Badge>
+                      </span>
                     )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 h-full overflow-y-auto">
                   {systemAlerts.length > 0 ? (
-                    <div className="space-y-3">
-                      {systemAlerts.map((alert) => (
-                        <div
-                          key={alert.id}
-                          className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
-                            alert.type === "success"
-                              ? "bg-green-100 border-green-300 hover:bg-green-50 dark:bg-green-950/40"
-                              : alert.type === "warning"
-                                ? "bg-amber-100 border-amber-300 hover:bg-amber-50 dark:bg-amber-950/40"
-                                : alert.type === "error"
-                                  ? "bg-red-100 border-red-300 hover:bg-red-50 dark:bg-red-950/40"
-                                  : "bg-blue-100 border-blue-300 hover:bg-blue-50 dark:bg-blue-950/40"
-                          } ${alert.read ? "opacity-60" : ""}`}
-                          onClick={() => handleMarkAlertAsRead(alert.id, alert.businessId)}
-                        >
-                          <div className="text-lg flex-shrink-0 mt-0.5">{ActivityTracker.getAlertIcon(alert.type)}</div>
-                          <div className="flex-1 min-w-0">
-                            <p
-                              className={`text-sm font-bold ${
-                                alert.type === "success"
-                                  ? "text-green-900 dark:text-green-300"
-                                  : alert.type === "warning"
-                                    ? "text-amber-900 dark:text-amber-300"
-                                    : alert.type === "error"
-                                      ? "text-red-900 dark:text-red-300"
-                                      : "text-blue-900 dark:text-blue-300"
-                              }`}
-                            >
-                              {alert.title}
-                            </p>
-                            <p
-                              className={`text-xs font-medium mt-1 ${
-                                alert.type === "success"
-                                  ? "text-green-800 dark:text-green-300"
-                                  : alert.type === "warning"
-                                    ? "text-amber-800 dark:text-amber-300"
-                                    : alert.type === "error"
-                                      ? "text-red-800 dark:text-red-300"
-                                      : "text-blue-800 dark:text-blue-300"
-                              }`}
-                            >
-                              {alert.message}
-                            </p>
-                            <p className="text-xs text-foreground/50 mt-1">
-                              {ActivityTracker.formatTimeAgo(alert.timestamp)}
-                            </p>
+                    <div className="divide-y divide-hairline">
+                      {systemAlerts.map((alert) => {
+                        const dotColor =
+                          alert.type === "success"
+                            ? "bg-success"
+                            : alert.type === "warning"
+                              ? "bg-warning"
+                              : alert.type === "error"
+                                ? "bg-destructive"
+                                : "bg-primary"
+                        return (
+                          <div
+                            key={alert.id}
+                            className={`flex items-start gap-3 py-3 cursor-pointer ${alert.read ? "opacity-55" : ""}`}
+                            onClick={() => handleMarkAlertAsRead(alert.id, alert.businessId)}
+                          >
+                            <span className={`h-1.5 w-1.5 rounded-full shrink-0 mt-1.5 ${dotColor}`} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground">{alert.title}</p>
+                              <p className="text-xs text-text-3 mt-0.5">{alert.message}</p>
+                              <p className="text-xs text-text-4 mt-0.5">{ActivityTracker.formatTimeAgo(alert.timestamp)}</p>
+                            </div>
                           </div>
-                          {!alert.read && <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2"></div>}
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   ) : (
                     <div className="text-center py-8">
-                      <Bell className="h-12 w-12 text-foreground/30 mx-auto mb-4" />
-                      <p className="text-foreground/70 font-medium">{t("dashboard_no_notifications")}</p>
-                      <p className="text-xs text-foreground/50 mt-1">{t("dashboard_no_notifications_desc")}</p>
+                      <Bell className="h-10 w-10 text-text-4/50 mx-auto mb-3" />
+                      <p className="text-sm text-text-3">{t("dashboard_no_notifications")}</p>
+                      <p className="text-xs text-text-4 mt-1">{t("dashboard_no_notifications_desc")}</p>
                     </div>
                   )}
                 </CardContent>
@@ -893,9 +839,9 @@ export default function DashboardPage() {
 
             {/* Footer */}
             <div className="text-center py-6">
-              <p className="text-sm text-foreground/70 font-medium">
+              <p className="text-sm text-text-4">
                 ¿Tienes sugerencias?{" "}
-                <Link href="/contacto" className="text-primary hover:text-primary/80 font-semibold underline">
+                <Link href="/contacto" className="text-primary hover:text-primary/80 font-medium">
                   Compártelas con nosotros
                 </Link>
               </p>

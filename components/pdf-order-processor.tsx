@@ -25,21 +25,26 @@ interface PdfOrderProcessorProps {
 }
 
 // Create a memoized validation status component
-const ValidationStatus = memo(({ validation, validatedLabel }: { validation: ValidationResult; validatedLabel: string }) => {
-  if (validation.isValid) {
-    return (
-      <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-900">
-        <CheckCircle className="h-3 w-3 mr-1" /> {validatedLabel}
-      </Badge>
-    )
-  } else {
-    return (
-      <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900">
-        <AlertCircle className="h-3 w-3 mr-1" /> {validation.message}
-      </Badge>
-    )
-  }
-})
+const ValidationStatus = memo(
+  ({ validation, validatedLabel }: { validation: ValidationResult; validatedLabel: string }) => {
+    if (validation.isValid) {
+      return (
+        <Badge variant="outline" className="bg-success-soft text-success">
+          <CheckCircle className="h-3 w-3 mr-1" /> {validatedLabel}
+        </Badge>
+      )
+    } else {
+      return (
+        <Badge
+          variant="outline"
+          className="bg-warning-soft dark:bg-amber-950/40 text-warning border-amber-200 dark:border-amber-900"
+        >
+          <AlertCircle className="h-3 w-3 mr-1" /> {validation.message}
+        </Badge>
+      )
+    }
+  },
+)
 
 // Create a memoized order item component
 const OrderItem = memo(({ item, index, t }: { item: any; index: number; t: (key: any) => string }) => (
@@ -72,37 +77,40 @@ const OrderItem = memo(({ item, index, t }: { item: any; index: number; t: (key:
 ))
 
 // Create a memoized order component
-const OrderCard = memo(({ order, orderIndex, t }: { order: ProcessedOrder; orderIndex: number; t: (key: any) => string }) => (
-  <div key={orderIndex} className="border rounded-lg p-4">
-    <div className="flex justify-between items-start mb-4">
-      <div>
-        <h4 className="text-base font-semibold">
-          {order.orderName || t("procesar_order_fallback_name").replace("{number}", String(order.orderNumber))}
-        </h4>
-        <p className="text-sm text-muted-foreground">
-          {t("procesar_order_number_label")} {order.orderNumber} • {t("procesar_order_date_label")}{" "}
-          {new Date(order.date || Date.now()).toLocaleDateString()}
-        </p>
+const OrderCard = memo(
+  ({ order, orderIndex, t }: { order: ProcessedOrder; orderIndex: number; t: (key: any) => string }) => (
+    <div key={orderIndex} className="border rounded-lg p-4">
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h4 className="text-base font-semibold">
+            {order.orderName || t("procesar_order_fallback_name").replace("{number}", String(order.orderNumber))}
+          </h4>
+          <p className="text-sm text-muted-foreground">
+            {t("procesar_order_number_label")} {order.orderNumber} • {t("procesar_order_date_label")}
+            {""}
+            {new Date(order.date || Date.now()).toLocaleDateString()}
+          </p>
+        </div>
+        <Badge variant="outline">
+          {order.items.length} {t("procesar_items_suffix")}
+        </Badge>
       </div>
-      <Badge variant="outline">
-        {order.items.length} {t("procesar_items_suffix")}
-      </Badge>
-    </div>
 
-    <div className="space-y-2">
-      {order.items.map((item, itemIndex) => (
-        <OrderItem key={itemIndex} item={item} index={itemIndex} t={t} />
-      ))}
-    </div>
+      <div className="space-y-2">
+        {order.items.map((item, itemIndex) => (
+          <OrderItem key={itemIndex} item={item} index={itemIndex} t={t} />
+        ))}
+      </div>
 
-    <div className="mt-4 pt-2 border-t flex justify-between items-center">
-      <span className="font-medium">{t("procesar_total_label")}</span>
-      <span className="font-bold">
-        {formatCurrency(order.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0))}
-      </span>
+      <div className="mt-4 pt-2 border-t flex justify-between items-center">
+        <span className="font-medium">{t("procesar_total_label")}</span>
+        <span className="font-bold">
+          {formatCurrency(order.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0))}
+        </span>
+      </div>
     </div>
-  </div>
-))
+  ),
+)
 
 export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
   const { t } = useLanguage()

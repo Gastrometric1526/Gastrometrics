@@ -49,7 +49,7 @@ const DialogContent = React.forwardRef<
         // Layout and spacing
         "grid gap-4",
         // Styling
-        "border bg-background p-6 shadow-lg rounded-lg",
+        "border bg-background p-6 shadow-overlay rounded-lg",
         // Overflow handling
         "overflow-hidden",
         // Animations

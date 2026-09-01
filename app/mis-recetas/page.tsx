@@ -76,7 +76,7 @@ import type { Business } from "@/types/business"
 
 // Clasificaciones disponibles
 // BUG CORREGIDO: esta lista era una copia local con valores que no coinciden con ninguna
-// clasificación real (Ficha Técnica guarda "Línea caliente (Cuisine chaude)", etc., desde
+// clasificación real (Ficha Técnica guarda"Línea caliente (Cuisine chaude)", etc., desde
 // types/recipe.ts) — el filtro de clasificación nunca podía encontrar ninguna receta,
 // silenciosamente. Ahora usa la misma lista canónica que Ficha Técnica.
 const classificationFilterOptions = ["Todas", ...recipeClassifications]
@@ -264,7 +264,7 @@ export default function MisRecetasPage() {
       setRecipeToMigrate(null)
       setSelectedTargetBusiness("")
 
-      let message = `Receta "${recipeToMigrate.name}" migrada exitosamente`
+      let message = `Receta"${recipeToMigrate.name}"migrada exitosamente`
       if (migratedSubRecipes.length > 0) {
         message += `\n• ${migratedSubRecipes.length} sub-receta${migratedSubRecipes.length !== 1 ? "s" : ""} migrada${migratedSubRecipes.length !== 1 ? "s" : ""} junto con sus propios ingredientes`
       }
@@ -468,7 +468,10 @@ export default function MisRecetasPage() {
 
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
                 <Link href={`/ficha-tecnica${businessId ? `?business=${businessId}` : ""}`}>
-                  <Button data-tour="recetas-new" className="gap-1 md:gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg text-xs md:text-sm px-3 md:px-4 py-2">
+                  <Button
+                    data-tour="recetas-new"
+                    className="gap-1 md:gap-2 bg-primary text-primary-foreground hover:bg-primary/90 text-xs md:text-sm px-3 md:px-4 py-2"
+                  >
                     <Plus className="h-3 w-3 md:h-4 md:w-4" />
                     <span className="hidden sm:inline">Nueva Receta</span>
                     <span className="sm:hidden">Nueva</span>
@@ -476,8 +479,8 @@ export default function MisRecetasPage() {
                 </Link>
 
                 {/* BUG CORREGIDO: openTrash() antes solo estaba conectado a un botón dentro
-                    del estado vacío "0 resultados" — cualquier negocio con recetas visibles
-                    no tenía forma de llegar a la Papelera. Ahora es un botón permanente aquí. */}
+ del estado vacío"0 resultados"— cualquier negocio con recetas visibles
+ no tenía forma de llegar a la Papelera. Ahora es un botón permanente aquí. */}
                 <Button
                   data-tour="recetas-trash"
                   variant="outline"
@@ -506,10 +509,10 @@ export default function MisRecetasPage() {
 
             {/* Statistics Dashboard - Grid responsivo */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4" data-tour="recetas-stats">
-              <Card className="border-border shadow-lg hover:shadow-xl transition-all duration-300 bg-card">
+              <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center gap-2 md:gap-3">
-                    <div className="p-1.5 md:p-2 bg-blue-50 dark:bg-blue-950/40 rounded-lg">
+                    <div className="p-1.5 md:p-2 bg-blue-50 rounded-lg">
                       <ChefHat className="h-4 w-4 md:h-5 md:w-5 text-blue-600 dark:text-blue-300" />
                     </div>
                     <div>
@@ -520,10 +523,10 @@ export default function MisRecetasPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-border shadow-lg hover:shadow-xl transition-all duration-300 bg-card">
+              <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center gap-2 md:gap-3">
-                    <div className="p-1.5 md:p-2 bg-green-50 dark:bg-green-950/40 rounded-lg">
+                    <div className="p-1.5 md:p-2 bg-success-soft rounded-lg">
                       <Users className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-300" />
                     </div>
                     <div>
@@ -534,10 +537,10 @@ export default function MisRecetasPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-border shadow-lg hover:shadow-xl transition-all duration-300 bg-card">
+              <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center gap-2 md:gap-3">
-                    <div className="p-1.5 md:p-2 bg-amber-50 dark:bg-amber-950/40 rounded-lg">
+                    <div className="p-1.5 md:p-2 bg-warning-soft dark:bg-amber-950/40 rounded-lg">
                       <DollarSign className="h-4 w-4 md:h-5 md:w-5 text-amber-600 dark:text-amber-300" />
                     </div>
                     <div>
@@ -548,7 +551,7 @@ export default function MisRecetasPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-border shadow-lg hover:shadow-xl transition-all duration-300 bg-card">
+              <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center gap-2 md:gap-3">
                     <div className="p-1.5 md:p-2 bg-purple-50 dark:bg-purple-950/40 rounded-lg">
@@ -566,7 +569,7 @@ export default function MisRecetasPage() {
             </div>
 
             {/* Filters and Search - Responsivo */}
-            <Card className="border-border shadow-lg bg-card">
+            <Card className="border-border bg-card">
               <CardContent className="p-4 md:p-6">
                 {/* Búsqueda siempre visible */}
                 <div className="flex flex-col gap-4">
@@ -596,7 +599,10 @@ export default function MisRecetasPage() {
                             <SelectItem key={classification} value={classification}>
                               {classification === "Todas"
                                 ? "Todas"
-                                : getClassificationLabel(classification as (typeof recipeClassifications)[number], language)}
+                                : getClassificationLabel(
+                                    classification as (typeof recipeClassifications)[number],
+                                    language,
+                                  )}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -658,7 +664,7 @@ export default function MisRecetasPage() {
                 {selectedClassification !== "Todas" && (
                   <Badge
                     variant="outline"
-                    className="rounded-lg px-2 md:px-3 py-1 border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 text-xs"
+                    className="rounded-lg px-2 md:px-3 py-1 border-blue-200 dark:border-blue-900 text-info bg-blue-50 text-xs"
                   >
                     {getClassificationLabel(selectedClassification as (typeof recipeClassifications)[number], language)}
                   </Badge>
@@ -666,9 +672,9 @@ export default function MisRecetasPage() {
                 {searchQuery && (
                   <Badge
                     variant="outline"
-                    className="rounded-lg px-2 md:px-3 py-1 border-green-200 dark:border-green-900 text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/40 text-xs"
+                    className="rounded-lg px-2 md:px-3 py-1 text-success bg-success-soft text-xs"
                   >
-                    Búsqueda: "{searchQuery.length > 20 ? searchQuery.substring(0, 20) + "..." : searchQuery}"
+                    Búsqueda:"{searchQuery.length > 20 ? searchQuery.substring(0, 20) + "..." : searchQuery}"
                   </Badge>
                 )}
               </div>
@@ -686,7 +692,7 @@ export default function MisRecetasPage() {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
           ) : filteredAndSortedRecipes.length === 0 ? (
-            <Card className="border-border shadow-xl bg-card">
+            <Card className="border-border bg-card">
               <CardContent className="flex flex-col items-center justify-center py-12 md:py-16">
                 <ChefHat className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground mb-4 md:mb-6" />
                 <h3 className="text-lg md:text-xl font-semibold mb-2 md:mb-3 text-foreground text-center">
@@ -699,7 +705,7 @@ export default function MisRecetasPage() {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
                   <Link href={`/ficha-tecnica${businessId ? `?business=${businessId}` : ""}`}>
-                    <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg w-full sm:w-auto">
+                    <Button className="bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto">
                       <Plus className="h-4 w-4 mr-2" />
                       {recipes.length === 0 ? "Crear Primera Receta" : "Nueva Receta"}
                     </Button>
@@ -716,7 +722,11 @@ export default function MisRecetasPage() {
                       Limpiar Filtros
                     </Button>
                   )}
-                  <Button variant="outline" onClick={openTrash} className="border-border hover:bg-accent w-full sm:w-auto">
+                  <Button
+                    variant="outline"
+                    onClick={openTrash}
+                    className="border-border hover:bg-accent w-full sm:w-auto"
+                  >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Papelera
                   </Button>
@@ -739,7 +749,9 @@ export default function MisRecetasPage() {
                   onDelete={handleDelete}
                   onDuplicate={handleDuplicate}
                   onView={handleView}
-                  onMigrate={availableBusinesses.length > 0 || businessId !== "main" ? handleMigrateFromCard : undefined}
+                  onMigrate={
+                    availableBusinesses.length > 0 || businessId !== "main" ? handleMigrateFromCard : undefined
+                  }
                   onOpenDetails={setDetailsRecipe}
                 />
               ))}
@@ -752,7 +764,7 @@ export default function MisRecetasPage() {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent className="bg-card border-border max-w-md mx-4">
           <DialogHeader>
-            <DialogTitle className="text-red-600 dark:text-red-300 flex items-center gap-2">
+            <DialogTitle className="text-destructive dark:text-red-300 flex items-center gap-2">
               <Trash2 className="h-5 w-5" />
               Confirmar Eliminación
             </DialogTitle>
@@ -763,9 +775,9 @@ export default function MisRecetasPage() {
               se puede deshacer.
             </p>
             {recipeToDelete?.classification === SUBRECIPE_CLASSIFICATION && (
-              <Alert className="mt-4 border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40">
+              <Alert className="mt-4 border-amber-200 dark:border-amber-900 bg-warning-soft dark:bg-amber-950/40">
                 <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-300" />
-                <AlertDescription className="text-amber-800 dark:text-amber-300">
+                <AlertDescription className="text-warning">
                   <strong>Nota:</strong> Esta es una sub-receta. Al eliminarla, también se eliminará el ingrediente
                   asociado automáticamente.
                 </AlertDescription>
@@ -807,9 +819,9 @@ export default function MisRecetasPage() {
               <p className="text-base text-foreground mt-2">
                 Estás a punto de migrar la receta <strong>"{recipeToMigrate?.name}"</strong> a otro negocio.
               </p>
-              <Alert className="mt-4 border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/40">
+              <Alert className="mt-4 border-blue-200 dark:border-blue-900 bg-blue-50">
                 <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-300" />
-                <AlertDescription className="text-blue-800 dark:text-blue-300">
+                <AlertDescription className="text-info">
                   <p className="text-sm font-medium mb-1.5">Se migrará todo junto:</p>
                   <ul className="list-disc list-inside space-y-1 text-sm">
                     <li>Se creará una copia de la receta en el negocio destino</li>
@@ -907,7 +919,7 @@ export default function MisRecetasPage() {
                       <div className="min-w-0">
                         <p className="font-medium text-foreground truncate">{recipe.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          Eliminada el {new Date(deletedAt).toLocaleDateString()} ·{" "}
+                          Eliminada el {new Date(deletedAt).toLocaleDateString()} ·{""}
                           {daysRemaining > 0
                             ? `${daysRemaining} día${daysRemaining === 1 ? "" : "s"} restante${daysRemaining === 1 ? "" : "s"}`
                             : "Se purgará muy pronto"}
@@ -957,7 +969,9 @@ export default function MisRecetasPage() {
               <div className="grid grid-cols-2 gap-3 py-4">
                 <div className="rounded-lg border border-border p-3">
                   <p className="text-xs text-muted-foreground">Costo total</p>
-                  <p className="text-lg font-semibold text-foreground">{formatCurrency(detailsRecipe.totalCost || 0)}</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    {formatCurrency(detailsRecipe.totalCost || 0)}
+                  </p>
                 </div>
                 <div className="rounded-lg border border-border p-3">
                   <p className="text-xs text-muted-foreground">Precio de venta</p>

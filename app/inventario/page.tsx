@@ -25,7 +25,13 @@ import { InventarioTour } from "@/components/page-tours"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
-import { getInventory, saveInventory, getInventoryHistory, ensureInventoryLoaded, ensureInventoryHistoryLoaded } from "@/lib/storage/inventory"
+import {
+  getInventory,
+  saveInventory,
+  getInventoryHistory,
+  ensureInventoryLoaded,
+  ensureInventoryHistoryLoaded,
+} from "@/lib/storage/inventory"
 import { getIngredients, saveIngredients, useIngredients } from "@/lib/storage/ingredients"
 import { Badge } from "@/components/ui/badge"
 import { InventoryForm } from "@/components/inventory/inventory-form"
@@ -58,7 +64,7 @@ import { formatCurrency } from "@/lib/currency"
 import type { Ingredient } from "@/types/ingredient"
 
 // Algunos ingredientes guardados antes de que el precio/contenido neto vivieran bajo
-// `pricing` pudieron quedar con esos campos "planos" en la fila real — por eso el código
+// `pricing` pudieron quedar con esos campos"planos"en la fila real — por eso el código
 // de abajo revisa ambas formas. Este tipo solo documenta esa forma heredada para el
 // type-checker; `Ingredient` (types/ingredient.ts) ya no la declara.
 type LegacyIngredient = Ingredient & { purchasePrice?: number; netContent?: number | string }
@@ -184,7 +190,7 @@ export default function InventoryPage() {
           // BUG CORREGIDO: este efecto se dispara cada vez que se abre/cierra
           // RegisterInventoryModal (isRegisterModalOpen en las dependencias). Al cerrar el
           // modal después de guardar una compra, sobreescribía el currentStock recién
-          // guardado en storedInventory con el currentStock de "items" (el estado de esta
+          // guardado en storedInventory con el currentStock de"items"(el estado de esta
           // misma página, todavía desactualizado porque el guardado ocurrió dentro del
           // modal) — el resultado era que el stock actualizado se revertía a null/viejo
           // segundos después de registrar cualquier compra. storedInventory ya es la fuente
@@ -209,8 +215,7 @@ export default function InventoryPage() {
           const newInventoryItems = ingredients.map((ingredient): InventoryItem => {
             const ing = ingredient as LegacyIngredient
             const matchingIngredient = allIngredients.find((dbIng: any) => dbIng.name === ing.name) as
-              | LegacyIngredient
-              | undefined
+              LegacyIngredient | undefined
 
             let purchasePrice = 0
 
@@ -323,7 +328,7 @@ export default function InventoryPage() {
       // BUG CORREGIDO: comparaba data.currentStock (que InventoryForm puede dejar en
       // null si no se ingresa nada) directo contra minStock — `null <= minStock`
       // coerce null a 0, así que un ítem recién creado sin stock ingresado quedaba
-      // marcado "crítico" en vez de "sin contar todavía".
+      // marcado"crítico"en vez de"sin contar todavía".
       status:
         data.currentStock === null || data.currentStock === undefined
           ? "normal"
@@ -366,7 +371,10 @@ export default function InventoryPage() {
       downloadInventorySnapshotPDF(inventory, { businessName: business?.name, businessId: businessId || "main" })
       toast({
         title: t("inventario_toast_exporting_title"),
-        description: t("inventario_toast_exporting_desc").replace("{date}", formatDate(inventory.date, getDateLocale(language))),
+        description: t("inventario_toast_exporting_desc").replace(
+          "{date}",
+          formatDate(inventory.date, getDateLocale(language)),
+        ),
       })
     } catch (error) {
       console.error("Error exporting inventory PDF:", error)
@@ -408,7 +416,7 @@ export default function InventoryPage() {
       // Mismo bug que en el useEffect de arriba: esta función la llama directamente
       // RegisterInventoryModal por su prop onOpenChange al cerrar tras guardar, ANTES de
       // que el useEffect debounced llegue a correr — así que era esta la que realmente
-      // pisaba el currentStock recién guardado con el de "items" (desactualizado).
+      // pisaba el currentStock recién guardado con el de"items"(desactualizado).
       const preservedInventory = storedInventory.map((item) => {
         const existingItem = currentItems.find((current) => current.id === item.id)
         if (existingItem) {
@@ -525,21 +533,32 @@ export default function InventoryPage() {
                 </Link>
                 <div data-tour="inv-header">
                   <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("inventario_page_title")}</h1>
-                  <p className="text-muted-foreground mt-1">
-                    {t("inventario_page_subtitle")}
-                  </p>
+                  <p className="text-muted-foreground mt-1">{t("inventario_page_subtitle")}</p>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button data-tour="inv-add" onClick={handleCreate} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <Button
+                  data-tour="inv-add"
+                  onClick={handleCreate}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
                   <PlusCircle className="mr-2 h-4 w-4" />
                   {t("inventario_add_product_button")}
                 </Button>
-                <Button data-tour="inv-register" onClick={handleRegisterInventoryClick} className="bg-green-600 hover:bg-green-700 text-white">
+                <Button
+                  data-tour="inv-register"
+                  onClick={handleRegisterInventoryClick}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
                   <ClipboardList className="mr-2 h-4 w-4" />
                   {t("inventario_register_button")}
                 </Button>
-                <Button data-tour="inv-export-pdf" variant="outline" onClick={handleExportCurrentInventory} className="gap-2">
+                <Button
+                  data-tour="inv-export-pdf"
+                  variant="outline"
+                  onClick={handleExportCurrentInventory}
+                  className="gap-2"
+                >
                   <Download className="h-4 w-4" />
                   Exportar PDF
                 </Button>
@@ -548,8 +567,11 @@ export default function InventoryPage() {
 
             <Tabs defaultValue="inventory" value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
-                <TabsList className="w-full sm:w-auto bg-card border border-border shadow-sm">
-                  <TabsTrigger value="inventory" className="flex-1 sm:flex-initial data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsList className="w-full sm:w-auto bg-card border border-border">
+                  <TabsTrigger
+                    value="inventory"
+                    className="flex-1 sm:flex-initial data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  >
                     <Package className="mr-2 h-4 w-4" />
                     {t("inventario_tab_inventory")}
                   </TabsTrigger>
@@ -566,17 +588,21 @@ export default function InventoryPage() {
 
               <TabsContent value="inventory" className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card className="bg-card shadow-md border border-border">
+                  <Card className="bg-card border border-border">
                     <CardContent className="flex items-center p-6">
                       <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
                         <Package className="h-6 w-6 text-primary" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">{t("inventario_stat_total_products")}</p>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          {t("inventario_stat_total_products")}
+                        </p>
                         <div className="flex items-baseline">
                           <h3 className="text-2xl font-bold text-foreground">{items.length}</h3>
                           <Badge variant="outline" className="ml-2 border-border">
-                            {isLoading ? "..." : t("inventario_badge_filtered").replace("{count}", String(filteredItems.length))}
+                            {isLoading
+                              ? "..."
+                              : t("inventario_badge_filtered").replace("{count}", String(filteredItems.length))}
                           </Badge>
                         </div>
                       </div>
@@ -584,15 +610,17 @@ export default function InventoryPage() {
                   </Card>
 
                   <Card
-                    className="bg-card shadow-md border border-border cursor-pointer hover:bg-muted/30 transition-colors"
+                    className="bg-card border border-border cursor-pointer hover:bg-muted/30 transition-colors"
                     onClick={() => setIsCriticalItemsDialogOpen(true)}
                   >
                     <CardContent className="flex items-center p-6">
-                      <div className="h-12 w-12 rounded-full bg-red-50 dark:bg-red-950/40 flex items-center justify-center mr-4">
-                        <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-300" />
+                      <div className="h-12 w-12 rounded-full bg-danger-soft flex items-center justify-center mr-4">
+                        <AlertTriangle className="h-6 w-6 text-destructive dark:text-red-300" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">{t("inventario_stat_critical_products")}</p>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          {t("inventario_stat_critical_products")}
+                        </p>
                         <div className="flex items-baseline">
                           <h3 className="text-2xl font-bold">
                             {
@@ -618,9 +646,9 @@ export default function InventoryPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-card shadow-md border border-border">
+                  <Card className="bg-card border border-border">
                     <CardContent className="flex items-center p-6">
-                      <div className="h-12 w-12 rounded-full bg-green-50 dark:bg-green-950/40 flex items-center justify-center mr-4">
+                      <div className="h-12 w-12 rounded-full bg-success-soft flex items-center justify-center mr-4">
                         <DollarSign className="h-6 w-6 text-green-600 dark:text-green-300" />
                       </div>
                       <div>
@@ -637,7 +665,7 @@ export default function InventoryPage() {
                   </Card>
                 </div>
 
-                <Card className="shadow-md border border-border bg-card">
+                <Card className="border border-border bg-card">
                   <CardHeader className="pb-3 bg-muted/30 border-b border-border">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <CardTitle className="text-card-foreground">{t("inventario_current_inventory_title")}</CardTitle>
@@ -666,9 +694,7 @@ export default function InventoryPage() {
                         <GastrometricsLogo className="h-24 w-24 opacity-[0.08] mx-auto mb-4" />
                         <h3 className="text-lg font-medium text-foreground">{t("inventario_empty_title")}</h3>
                         <p className="text-muted-foreground mt-1 mb-6">
-                          {searchTerm
-                            ? t("inventario_empty_search_desc")
-                            : t("inventario_empty_no_search_desc")}
+                          {searchTerm ? t("inventario_empty_search_desc") : t("inventario_empty_no_search_desc")}
                         </p>
                         {searchTerm ? (
                           <Button variant="outline" onClick={() => setSearchQuery("")}>
@@ -716,7 +742,7 @@ export default function InventoryPage() {
                     isLoading={isLoading}
                   />
                 ) : (
-                  <Card className="shadow-sm">
+                  <Card>
                     <CardContent className="flex flex-col items-center justify-center py-16">
                       <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
                       <h3 className="text-lg font-medium">{t("inventario_history_empty_title")}</h3>
@@ -746,23 +772,19 @@ export default function InventoryPage() {
               <AlertTriangle className="h-5 w-5 text-amber-500" />
               {t("inventario_no_ingredients_title")}
             </DialogTitle>
-            <DialogDescription>
-              {t("inventario_no_ingredients_desc")}
-            </DialogDescription>
+            <DialogDescription>{t("inventario_no_ingredients_desc")}</DialogDescription>
           </DialogHeader>
           <div className="flex items-center justify-center p-4">
-            <div className="rounded-full bg-amber-50 dark:bg-amber-950/40 p-3">
+            <div className="rounded-full bg-warning-soft dark:bg-amber-950/40 p-3">
               <Package className="h-10 w-10 text-amber-500" />
             </div>
           </div>
-          <p className="text-center text-sm text-muted-foreground px-4">
-            {t("inventario_no_ingredients_body")}
-          </p>
+          <p className="text-center text-sm text-muted-foreground px-4">{t("inventario_no_ingredients_body")}</p>
           <DialogFooter className="flex flex-col sm:flex-row sm:justify-center gap-2 mt-2">
             <Button variant="outline" onClick={() => setIsNoIngredientsDialogOpen(false)}>
               {t("common_cancel")}
             </Button>
-            <Button onClick={navigateToIngredients} className="bg-amber-500 hover:bg-amber-600 text-white">
+            <Button onClick={navigateToIngredients} className="bg-warning-soft0 hover:bg-amber-600 text-white">
               {t("inventario_go_to_ingredients_button")}
             </Button>
           </DialogFooter>
@@ -773,9 +795,7 @@ export default function InventoryPage() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{selectedItem ? t("inventario_edit_item_title") : t("inventario_add_item_title")}</DialogTitle>
-            <DialogDescription>
-              {t("inventario_item_form_desc")}
-            </DialogDescription>
+            <DialogDescription>{t("inventario_item_form_desc")}</DialogDescription>
           </DialogHeader>
           <InventoryForm onSubmit={handleSubmit} onCancel={handleCancel} initialData={selectedItem} />
         </DialogContent>
@@ -826,7 +846,7 @@ export default function InventoryPage() {
                         <TableCell>
                           {item.minStock} {item.unit}
                         </TableCell>
-                        <TableCell className="text-red-600 dark:text-red-300 font-medium">
+                        <TableCell className="text-destructive dark:text-red-300 font-medium">
                           {item.currentStock} {item.unit}
                         </TableCell>
                         <TableCell>

@@ -9,12 +9,17 @@ const HEARTBEAT_INTERVAL_MS = 60_000
 
 /**
  * Presencia real (ver supabase/migrations/0014_user_presence.sql y docs/70) — un
- * upsert autenticado directo del navegador, cada ~60s, mientras haya sesión real y NO
- * se esté en /admin (mismo criterio de exclusión que ya usa AnalyticsTracker, para no
- * contaminar la propia navegación del dueño dentro de su panel). RLS
- * (user_presence_self_all) garantiza que cada quien solo puede tocar su propia fila —
- * no hace falta pasar por una ruta de servidor, mismo patrón ya usado por
- * syncPreferredLanguage/updateUserProfile en contexts/auth-context.tsx.
+ * heartbeat autenticado directo del navegador, cada ~60s, mientras haya sesión real y
+ * NO se esté en /admin (mismo criterio de exclusión que ya usa AnalyticsTracker, para
+ * no contaminar la propia navegación del dueño dentro de su panel).
+ *
+ * Llama al RPC bump_presence() (ver supabase/migrations/0016_presence_time_tracking.sql,
+ * docs/78) en vez de hacer un upsert directo — la función suma el tiempo transcurrido
+ * desde el heartbeat anterior a total_active_seconds de forma atómica del lado del
+ * servidor, algo que un upsert de solo escritura no puede hacer sin exponer una carrera
+ * entre pestañas. security definer + auth.uid() interno garantiza que cada quien solo
+ * puede sumar tiempo a su propia fila, mismo criterio que ya usa RLS
+ * (user_presence_self_all) para el resto de esta tabla.
  */
 export function PresenceTracker() {
   const pathname = usePathname()
@@ -25,12 +30,9 @@ export function PresenceTracker() {
 
     const ping = () => {
       const supabase = getSupabaseBrowserClient()
-      supabase
-        .from("user_presence")
-        .upsert({ user_id: user.id, last_seen_at: new Date().toISOString() })
-        .then(({ error }) => {
-          if (error) console.error("[presence] Error registrando presencia:", error)
-        })
+      supabase.rpc("bump_presence").then(({ error }) => {
+        if (error) console.error("[presence] Error registrando presencia:", error)
+      })
     }
 
     ping()

@@ -229,7 +229,7 @@ function EquipoContent() {
   const toolsLabelFor = (features: FeatureKey[]) =>
     features.length > 0
       ? features.map((key) => ASSIGNABLE_FEATURES.find((f) => f.key === key)?.label || key).join(", ")
-      : "—"
+      : t("equipo_tools_none_label")
 
   const handleSubmit = async () => {
     if (editingId) {
@@ -376,7 +376,7 @@ function EquipoContent() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-2 md:gap-4">
               <Link href="/dashboard">
-                <Button variant="outline" size="sm" className="gap-2 hover:bg-accent border-2 shadow-sm bg-transparent">
+                <Button variant="outline" size="sm" className="gap-2 hover:bg-accent bg-transparent">
                   <ArrowLeft className="h-4 w-4" />
                   <span className="hidden sm:inline">{t("mi_plan_back_to_dashboard")}</span>
                   <span className="sm:hidden">{t("common_back")}</span>
@@ -570,11 +570,11 @@ function EquipoContent() {
           </div>
 
           {members.length === 0 ? (
-            <Card className="border-2 border-dashed border-border bg-card">
+            <Card className="border-dashed">
               <CardContent className="flex flex-col items-center justify-center py-16 text-center gap-3">
-                <Users className="h-12 w-12 text-muted-foreground opacity-50" />
+                <Users className="h-12 w-12 text-text-4/50" />
                 <h3 className="text-lg font-semibold">{t("equipo_empty_title")}</h3>
-                <p className="text-muted-foreground text-sm max-w-md">
+                <p className="text-text-3 text-sm max-w-md">
                   {t("equipo_subtitle").replace("{max}", String(MAX_TEAM_MEMBERS))}
                 </p>
               </CardContent>
@@ -582,17 +582,28 @@ function EquipoContent() {
           ) : (
             <div className="grid grid-cols-1 gap-4" data-tour="equipo-members">
               {members.map((member) => (
-                <Card key={member.id} className="border border-border shadow-sm bg-card">
+                <Card key={member.id} className="border-hairline bg-card">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <CardTitle className="text-base flex items-center gap-2 flex-wrap">
-                          {member.name || member.email}
-                          <Badge variant={member.status === "activo" ? "default" : "outline"} className="text-xs">
-                            {member.status === "activo" ? t("equipo_status_active") : t("equipo_status_invited")}
-                          </Badge>
-                        </CardTitle>
-                        {member.name && <CardDescription>{member.email}</CardDescription>}
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary-soft flex items-center justify-center shrink-0 text-sm font-medium text-primary">
+                          {(member.name || member.email).charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <CardTitle className="text-base flex items-center gap-2 flex-wrap">
+                            {member.name || member.email}
+                            <span
+                              className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                                member.status === "activo"
+                                  ? "bg-success-soft text-success"
+                                  : "bg-secondary text-muted-foreground"
+                              }`}
+                            >
+                              {member.status === "activo" ? t("equipo_status_active") : t("equipo_status_invited")}
+                            </span>
+                          </CardTitle>
+                          {member.name && <CardDescription>{member.email}</CardDescription>}
+                        </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         <Button variant="ghost" size="sm" onClick={() => handlePreview(member)} className="gap-1.5">
@@ -657,20 +668,20 @@ function EquipoContent() {
                       </div>
                     )}
 
-                    <div className="pt-2 border-t border-border">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+                    <div className="pt-3 border-t border-hairline">
+                      <p className="text-[10.5px] font-medium text-text-4 uppercase tracking-[0.09em] mb-1.5">
                         {t("equipo_activity_label")}
                       </p>
                       {member.activity.length === 0 ? (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        <p className="text-xs text-text-4 flex items-center gap-1.5">
                           <Clock className="h-3 w-3" />
                           {t("equipo_activity_empty")}
                         </p>
                       ) : (
                         <ul className="space-y-1">
                           {member.activity.map((entry) => (
-                            <li key={entry.id} className="text-xs text-muted-foreground">
-                              {entry.description} — {new Date(entry.timestamp).toLocaleString()}
+                            <li key={entry.id} className="text-xs text-text-4">
+                              {entry.description} · {new Date(entry.timestamp).toLocaleString()}
                             </li>
                           ))}
                         </ul>

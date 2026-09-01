@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useTheme } from "next-themes"
 import type { NotificationData } from "@/contexts/notification-context"
 import { simpleAudioManager } from "@/lib/simple-audio-manager"
 
@@ -16,8 +15,6 @@ export function Notification({ notification, onClose }: NotificationProps) {
 
   const hasPlayedAudio = useRef(false)
   const isCleaningUp = useRef(false)
-
-  const { resolvedTheme } = useTheme()
 
   useEffect(() => {
     setMounted(true)
@@ -71,33 +68,28 @@ export function Notification({ notification, onClose }: NotificationProps) {
 
   if (!mounted) return null
 
-  const isDarkMode = resolvedTheme === "dark"
-
   // Get colors based on notification type and theme
   const getTypeColors = () => {
     switch (notification.type) {
       case "success":
         return {
-          progressBar: "bg-green-500 dark:bg-green-400",
-          badge:
-            "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700/50",
+          progressBar: "bg-success-soft0 dark:bg-green-400",
+          badge: "bg-success-soft text-success",
         }
       case "error":
         return {
-          progressBar: "bg-red-500 dark:bg-red-400",
-          badge: "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700/50",
+          progressBar: "bg-danger-soft0 dark:bg-red-400",
+          badge: "bg-danger-soft text-destructive",
         }
       case "warning":
         return {
-          progressBar: "bg-amber-500 dark:bg-amber-400",
-          badge:
-            "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700/50",
+          progressBar: "bg-warning-soft0 dark:bg-amber-400",
+          badge: "bg-warning-soft text-warning",
         }
       case "info":
         return {
           progressBar: "bg-blue-500 dark:bg-blue-400",
-          badge:
-            "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-700/50",
+          badge: "bg-info-soft text-info border-blue-200 dark:border-blue-700/50",
         }
       default:
         return {
@@ -119,16 +111,16 @@ export function Notification({ notification, onClose }: NotificationProps) {
     >
       <div
         className={`
-          notification-container group
-          bg-card border border-border text-card-foreground
-          rounded-lg shadow-lg p-4 max-w-sm backdrop-blur-sm
-          transition-all duration-300 hover:shadow-xl
-          relative overflow-hidden
-        `}
+ notification-container group
+ bg-card border border-border text-card-foreground
+ rounded-xl p-4 max-w-sm backdrop-blur-sm
+ transition-all duration-300
+ relative overflow-hidden
+ `}
         style={{
-          boxShadow: isDarkMode
-            ? "0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 0 1px hsl(var(--border))"
-            : "0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 0 0 1px hsl(var(--border))",
+          // Única sombra del rediseño visual (ver docs/79), igual en claro y oscuro —
+          // antes de esto cada modo tenía su propio valor ad-hoc.
+          boxShadow: "0 24px 52px -20px rgba(18,18,18,0.18)",
         }}
         onMouseEnter={() => {
           const progressBar = document.querySelector(".auto-hide-progress")

@@ -18,7 +18,10 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        // DM Sans (rediseño visual, ver docs/79) — geométrica y cercana, reemplaza a
+        // Inter. Fallback a Helvetica/Arial: cubre latín/latín-extendido (es/en/da/fr/pt);
+        // zh sigue resolviendo al fallback del sistema, igual que antes.
+        sans: ["var(--font-sans)", "Helvetica", "Arial", "sans-serif"],
       },
       colors: {
         chart: {
@@ -30,6 +33,15 @@ module.exports = {
           6: "hsl(var(--chart-6))",
           7: "hsl(var(--chart-7))",
         },
+        "canvas-alt": "hsl(var(--canvas-alt))",
+        hairline: "hsl(var(--hairline))",
+        "text-3": "hsl(var(--text-3))",
+        "text-4": "hsl(var(--text-4))",
+        success: { DEFAULT: "hsl(var(--success))", soft: "hsl(var(--success-soft))" },
+        warning: { DEFAULT: "hsl(var(--warning))", soft: "hsl(var(--warning-soft))" },
+        info: { DEFAULT: "hsl(var(--info))", soft: "hsl(var(--info-soft))" },
+        "danger-soft": "hsl(var(--danger-soft))",
+        "primary-soft": "hsl(var(--primary-soft))",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -68,6 +80,13 @@ module.exports = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        // Única sombra del rediseño visual — solo para overlays (dialog, sheet,
+        // dropdown, popover, context-menu, command). Nada más en la app usa sombra.
+        overlay: "0 24px 52px -20px rgb(18 18 18 / 0.18)",
+        // Toast: variante más suave de la misma sombra (ver docs/06 del paquete de diseño).
+        toast: "0 14px 32px -14px rgb(18 18 18 / 0.16)",
       },
       zIndex: {
         9999: "9999",

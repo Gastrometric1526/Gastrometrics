@@ -288,7 +288,7 @@ export default function MenusPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-2 hover:bg-accent border-2 shadow-sm bg-transparent"
+                      className="gap-2 hover:bg-accent bg-transparent"
                     >
                       <ArrowLeft className="h-4 w-4" />
                       <span className="hidden sm:inline">{t("mi_plan_back_to_dashboard")}</span>
@@ -309,7 +309,7 @@ export default function MenusPage() {
                   <Button
                     data-tour="menus-new"
                     size="lg"
-                    className="gap-2 shadow-lg px-6 py-3 font-semibold"
+                    className="gap-2 px-6 py-3 font-semibold"
                     onClick={() => {
                       setEditingMenu(null)
                       setShowEditor(true)
@@ -350,7 +350,7 @@ export default function MenusPage() {
               )}
 
               {/* Filters Card */}
-              <Card className="border-2 border-border shadow-lg bg-card">
+              <Card className="border-border bg-card">
                 <CardHeader className="bg-muted/20 border-b-2 border-border">
                   <CardTitle className="flex items-center gap-2">
                     <Search className="h-5 w-5 text-primary" />
@@ -380,7 +380,7 @@ export default function MenusPage() {
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                 </div>
               ) : filteredMenus.length === 0 ? (
-                <Card className="border-2 border-border shadow-lg bg-card">
+                <Card className="border-border bg-card">
                   <CardContent className="flex flex-col items-center justify-center py-16">
                     <GastrometricsLogo className="h-24 w-24 opacity-[0.08] mb-6" />
                     <h3 className="text-xl font-bold mb-3">
@@ -415,7 +415,7 @@ export default function MenusPage() {
                     return (
                       <Card
                         key={menu.id}
-                        className="border-2 border-border shadow-lg hover:shadow-xl transition-all duration-300 bg-card group"
+                        className="border-border transition-all duration-300 bg-card group"
                       >
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between">

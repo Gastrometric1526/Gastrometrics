@@ -13,7 +13,25 @@ import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { setDashboardData } from "@/utils/dashboard-data"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getCategoryMermaPercentage } from "@/lib/merma-categories"
+import { getPriceChangeHistory } from "@/lib/recalculate"
 import { useLanguage } from "@/contexts/language-context"
+
+// Tendencia de precio a 90 días (docs/04 del paquete de diseño: "el cambio de precio
+// a 90 días se muestra como barra fina, no como número suelto"). Usa el historial real
+// de cambios de precio que ya registra updateIngredientPriceAndRecalculate() (ver
+// lib/recalculate.ts) — no es un dato inventado, es el mismo historial que ya se
+// muestra como gráfica en /estadisticas, solo acotado a los últimos 90 días y resumido
+// en un porcentaje por ingrediente en vez de una gráfica completa.
+function getPriceTrend90d(businessId: string | null | undefined, ingredientId: string) {
+  const history = getPriceChangeHistory(businessId || "main", ingredientId)
+  const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000
+  const recent = history.filter((entry) => new Date(entry.timestamp).getTime() >= cutoff)
+  if (recent.length === 0) return null
+  const first = recent[0].oldPrice
+  const last = recent[recent.length - 1].newPrice
+  if (first <= 0) return null
+  return { pct: ((last - first) / first) * 100, count: recent.length }
+}
 
 type Props = {
   // Items to display (already filtered/sorted in the parent)
@@ -76,12 +94,12 @@ export function IngredientsTable({
     (ingredient: Ingredient, newUnit: Unit) => {
       if (ingredient.unit === newUnit) return
 
-      // Special handling for "unidad" - ingredients measured by individual units
+      // Special handling for"unidad"- ingredients measured by individual units
       let convertedContent: number
       const currentContent = ingredient.pricing?.netContent || 0
 
       if (ingredient.unit === "unidad" || newUnit === "unidad") {
-        // When converting from/to "unidad", maintain the numeric value but adjust context
+        // When converting from/to"unidad", maintain the numeric value but adjust context
         convertedContent = currentContent
       } else {
         // Normal unit conversion for weight/volume measurements
@@ -156,7 +174,7 @@ export function IngredientsTable({
         return (
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="inline-flex items-center justify-center w-4 h-4 bg-blue-100 text-blue-700 dark:text-blue-300 rounded-full text-xs font-bold border border-blue-300">
+              <span className="inline-flex items-center justify-center w-4 h-4 bg-info-soft text-info rounded-full text-xs font-bold border">
                 G
               </span>
             </TooltipTrigger>
@@ -177,7 +195,8 @@ export function IngredientsTable({
             </TooltipTrigger>
             <TooltipContent>
               <p>
-                {t("ingredientes_tooltip_merma_custom")}: {ingredient.merma?.customPercentage || ingredient.merma?.customValue || 0}
+                {t("ingredientes_tooltip_merma_custom")}:{" "}
+                {ingredient.merma?.customPercentage || ingredient.merma?.customValue || 0}
                 {ingredient.merma?.customType === "percentage" ? "%" : ` ${t("ingredientes_units_suffix")}`}
               </p>
             </TooltipContent>
@@ -192,10 +211,10 @@ export function IngredientsTable({
     <TooltipProvider>
       <div className="overflow-x-auto">
         {mermaSystemEnabled && (
-          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-lg">
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 dark:border-blue-900 rounded-lg">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">{t("ingredientes_merma_banner_active_title")}</span>
+              <span className="text-sm font-medium text-info">{t("ingredientes_merma_banner_active_title")}</span>
               <span className="text-xs text-blue-600 dark:text-blue-300">
                 {t("ingredientes_table_merma_banner_desc")}
               </span>
@@ -206,17 +225,33 @@ export function IngredientsTable({
         <table className="w-full min-w-[1200px]">
           <thead className="bg-muted/30 border-b border-border">
             <tr>
-              <th className="px-4 py-4 text-left text-sm font-semibold text-foreground w-[14%]">{t("ingredientes_col_category")}</th>
+              <th className="px-4 py-4 text-left text-sm font-semibold text-foreground w-[14%]">
+                {t("ingredientes_col_category")}
+              </th>
               <th className="px-4 py-4 text-left text-sm font-semibold text-foreground w-[18%]">
                 {t("ingredientes_col_name")}
               </th>
-              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[10%]">{t("ingredientes_field_presentation_label")}</th>
-              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[8%]">{t("ingredientes_col_unit")}</th>
-              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[12%]">{t("ingredientes_col_purchase_price")}</th>
-              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[10%]">{t("ingredientes_col_net_content")}</th>
-              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[12%]">{t("ingredientes_col_price_per_unit")}</th>
-              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[10%]">{t("ingredientes_col_supplier")}</th>
-              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[6%]">{t("ingredientes_col_actions")}</th>
+              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[10%]">
+                {t("ingredientes_field_presentation_label")}
+              </th>
+              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[8%]">
+                {t("ingredientes_col_unit")}
+              </th>
+              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[12%]">
+                {t("ingredientes_col_purchase_price")}
+              </th>
+              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[10%]">
+                {t("ingredientes_col_net_content")}
+              </th>
+              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[12%]">
+                {t("ingredientes_col_price_per_unit")}
+              </th>
+              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[10%]">
+                {t("ingredientes_col_supplier")}
+              </th>
+              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[6%]">
+                {t("ingredientes_col_actions")}
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -226,7 +261,7 @@ export function IngredientsTable({
               const pricePerUnit = ingredient.pricing?.pricePerUnit || (netContent > 0 ? purchasePrice / netContent : 0)
               const weightedAverageCost = ingredient.pricing?.weightedAverageCost
 
-              // Check if unit is "unidad" (should be locked)
+              // Check if unit is"unidad"(should be locked)
               const isUnitLocked = ingredient.unit === "unidad"
 
               // Check if presentation is already selected (should be locked)
@@ -244,8 +279,8 @@ export function IngredientsTable({
                         variant="outline"
                         className={`text-xs font-medium ${
                           ingredient.category === "Sub Receta / produccion (Mise en place)"
-                            ? "border-green-200 dark:border-green-900 text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/40"
-                            : "border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40"
+                            ? "text-success bg-success-soft"
+                            : "border-blue-200 dark:border-blue-900 text-info bg-blue-50"
                         }`}
                       >
                         {ingredient.category}
@@ -294,19 +329,19 @@ export function IngredientsTable({
                     )}
                   </td>
 
-                  {/* Unidad (dropdown con bloqueo especial para "unidad") */}
+                  {/* Unidad (dropdown con bloqueo especial para"unidad") */}
                   <td className="px-4 py-4 text-center">
                     {isUnitLocked ? (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-950/40 rounded-md border border-red-200 dark:border-red-900 w-[100px] justify-center mx-auto cursor-help">
-                            <Lock className="h-3 w-3 text-red-600 dark:text-red-300" />
-                            <span className="text-sm font-medium text-red-700 dark:text-red-300">{ingredient.unit}</span>
+                          <div className="flex items-center gap-2 px-3 py-2 bg-danger-soft rounded-md border w-[100px] justify-center mx-auto cursor-help">
+                            <Lock className="h-3 w-3 text-destructive dark:text-red-300" />
+                            <span className="text-sm font-medium text-destructive">{ingredient.unit}</span>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
                           <div className="text-center">
-                            <p className="font-medium text-red-600 dark:text-red-300">
+                            <p className="font-medium text-destructive dark:text-red-300">
                               ⚠️ {t("ingredientes_tooltip_unit_locked_title").replace("{unit}", "unidad")}
                             </p>
                             <p className="text-xs">{t("ingredientes_tooltip_unit_locked_desc")}</p>
@@ -369,7 +404,8 @@ export function IngredientsTable({
                               onClick={() => setWacInfoIngredientId(ingredient.id)}
                               className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-300 font-medium cursor-pointer mt-0.5 hover:underline"
                             >
-                              {t("ingredientes_weighted_avg_label")}: {formatCurrency(Number(weightedAverageCost.toFixed(2)))}
+                              {t("ingredientes_weighted_avg_label")}:{" "}
+                              {formatCurrency(Number(weightedAverageCost.toFixed(2)))}
                               <Info className="h-3 w-3" />
                             </button>
                           </TooltipTrigger>
@@ -378,6 +414,35 @@ export function IngredientsTable({
                           </TooltipContent>
                         </Tooltip>
                       )}
+                      {(() => {
+                        const trend = getPriceTrend90d(businessId, ingredient.id)
+                        if (!trend) return null
+                        const isUp = trend.pct > 0
+                        const barWidth = Math.min(100, Math.abs(trend.pct) * 2)
+                        return (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-1.5 w-[72px] mt-1 cursor-help">
+                                <div className="relative h-1 flex-1 rounded-full bg-secondary overflow-hidden">
+                                  <div
+                                    className={`absolute inset-y-0 left-0 rounded-full ${isUp ? "bg-destructive" : "bg-success"}`}
+                                    style={{ width: `${barWidth}%` }}
+                                  />
+                                </div>
+                                <span
+                                  className={`text-[10px] font-medium tabular-nums shrink-0 ${isUp ? "text-destructive" : "text-success"}`}
+                                >
+                                  {isUp ? "+" : ""}
+                                  {trend.pct.toFixed(0)}%
+                                </span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{t("ingredientes_price_trend_90d_tooltip").replace("{count}", String(trend.count))}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )
+                      })()}
                     </div>
                   </td>
 
@@ -389,7 +454,8 @@ export function IngredientsTable({
                       </span>
                       {ingredient.metadata?.updatedAt && (
                         <span className="text-xs text-muted-foreground">
-                          {t("ingredientes_updated_on_label")}: {new Date(ingredient.metadata.updatedAt).toLocaleDateString()}
+                          {t("ingredientes_updated_on_label")}:{" "}
+                          {new Date(ingredient.metadata.updatedAt).toLocaleDateString()}
                         </span>
                       )}
                     </div>
@@ -404,7 +470,7 @@ export function IngredientsTable({
                             variant="ghost"
                             size="sm"
                             onClick={() => onEdit(ingredient)}
-                            className="h-8 w-8 p-0 hover:bg-blue-50 dark:bg-blue-950/40 hover:text-blue-600 dark:text-blue-300"
+                            className="h-8 w-8 p-0 hover:bg-info-soft/70 hover:text-blue-600 dark:text-blue-300"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -412,7 +478,9 @@ export function IngredientsTable({
                         <TooltipContent>
                           <p>{t("ingredientes_tooltip_edit_ingredient")}</p>
                           {(isUnitLocked || isPresentationLocked) && (
-                            <p className="text-xs text-amber-600 dark:text-amber-300">{t("ingredientes_tooltip_edit_unlocks_fields")}</p>
+                            <p className="text-xs text-amber-600 dark:text-amber-300">
+                              {t("ingredientes_tooltip_edit_unlocks_fields")}
+                            </p>
                           )}
                         </TooltipContent>
                       </Tooltip>
@@ -424,7 +492,7 @@ export function IngredientsTable({
                             variant="ghost"
                             size="sm"
                             onClick={() => onDelete(ingredient)}
-                            className="h-8 w-8 p-0 hover:bg-red-50 dark:bg-red-950/40 hover:text-red-600 dark:text-red-300"
+                            className="h-8 w-8 p-0 hover:bg-danger-soft hover:text-destructive dark:text-red-300"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -432,7 +500,9 @@ export function IngredientsTable({
                         <TooltipContent>
                           <p>{t("ingredientes_tooltip_delete_ingredient")}</p>
                           {ingredient.category === "Sub Receta / produccion (Mise en place)" && (
-                            <p className="text-xs text-amber-600 dark:text-amber-300">⚠️ {t("ingredientes_tooltip_delete_subrecipe_warning")}</p>
+                            <p className="text-xs text-amber-600 dark:text-amber-300">
+                              ⚠️ {t("ingredientes_tooltip_delete_subrecipe_warning")}
+                            </p>
                           )}
                         </TooltipContent>
                       </Tooltip>
@@ -459,16 +529,17 @@ export function IngredientsTable({
               <div className="p-3 bg-muted/50 rounded border font-mono text-xs">
                 {t("ingredientes_weighted_avg_info_formula")}
               </div>
-              <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-lg border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-300">
-                {t("ingredientes_weighted_avg_info_current_label")}{" "}
+              <div className="p-3 bg-warning-soft dark:bg-amber-950/40 rounded-lg border border-amber-200 dark:border-amber-900 text-warning">
+                {t("ingredientes_weighted_avg_info_current_label")}
+                {""}
                 <span className="font-bold">
                   {formatCurrency(Number((wacInfoIngredient.pricing?.weightedAverageCost || 0).toFixed(2)))}
-                </span>{" "}
+                </span>
+                {""}
                 {t("ingredientes_per_prefix")} {unitAbbreviations[wacInfoIngredient.unit] || wacInfoIngredient.unit}
                 {typeof wacInfoIngredient.pricing?.weightedAverageQuantity === "number" && (
                   <>
-                    {" "}
-                    ({wacInfoIngredient.pricing.weightedAverageQuantity} {wacInfoIngredient.unit})
+                    {""}({wacInfoIngredient.pricing.weightedAverageQuantity} {wacInfoIngredient.unit})
                   </>
                 )}
               </div>

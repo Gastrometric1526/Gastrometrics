@@ -28,7 +28,18 @@ const nextConfig = {
   // middleware.ts y propagarlo a cada script), con riesgo real de romper el
   // renderizado en producción sin poder probarlo exhaustivamente. El resto de la
   // política sí es estricta: nada de por defecto, nada de terceros salvo Supabase.
+  //
+  // 'unsafe-eval' SOLO en desarrollo (docs/82): el bundler de `next dev` (Fast
+  // Refresh) envuelve los módulos en eval() para los source maps — sin esto, cualquier
+  // chunk que dependa de ese envoltorio falla en silencio (el error real, "Evaluating
+  // a string as JavaScript violates... script-src", quedaba invisible como ruido de
+  // consola) y páginas con bundles más pesados (ej. /dashboard) rendían un <main>
+  // completamente vacío, sin ningún error visible en pantalla. El build de producción
+  // de Next NO usa eval() para los módulos — `next build` siempre corre con
+  // NODE_ENV=production sin importar esta rama, así que la política de producción
+  // queda exactamente igual de estricta que antes.
   async headers() {
+    const isDev = process.env.NODE_ENV === "development"
     return [
       {
         source: "/:path*",
@@ -53,7 +64,7 @@ const nextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline'",
+              `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob:",
               "font-src 'self' data:",

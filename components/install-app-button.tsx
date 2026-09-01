@@ -57,7 +57,7 @@ export function InstallAppButton() {
   return (
     <>
       <div className="md:hidden fixed bottom-4 left-4 right-4 z-40">
-        <Button onClick={handleClick} className="w-full shadow-lg gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button onClick={handleClick} className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
           <Download className="h-4 w-4" />
           {t("install_app_button")}
         </Button>

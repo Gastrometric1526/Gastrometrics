@@ -353,16 +353,25 @@ export interface Database {
         Row: {
           user_id: string
           last_seen_at: string
+          total_active_seconds: number
         }
-        Insert: Omit<Database["public"]["Tables"]["user_presence"]["Row"], "last_seen_at"> & {
+        Insert: Omit<Database["public"]["Tables"]["user_presence"]["Row"], "last_seen_at" | "total_active_seconds"> & {
           last_seen_at?: string
+          total_active_seconds?: number
         }
         Update: Partial<Database["public"]["Tables"]["user_presence"]["Row"]>
         Relationships: never[]
       }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      // ver supabase/migrations/0016_presence_time_tracking.sql — sin argumentos,
+      // opera sobre auth.uid() del lado del servidor.
+      bump_presence: {
+        Args: Record<string, never>
+        Returns: void
+      }
+    }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
   }

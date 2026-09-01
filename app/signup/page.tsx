@@ -549,7 +549,7 @@ function SignupPageInner() {
             {currentStep === 4 && (
               <div className="space-y-6 animate-in fade-in-50 duration-300">
                 <div className="text-center space-y-4">
-                  <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto shadow-lg">
+                  <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto">
                     <CheckCircle2 className="h-10 w-10 text-primary-foreground" />
                   </div>
                   <div>

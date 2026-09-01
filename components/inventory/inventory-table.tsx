@@ -171,15 +171,18 @@ export function InventoryTable({
       <Table className="min-w-full">
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[15%] text-center">{t("inventario_table_category")}</TableHead>
-            <TableHead className="w-[20%] text-center">{t("inventario_table_name")}</TableHead>
+            <TableHead className="w-[14%] text-center">{t("inventario_table_category")}</TableHead>
+            <TableHead className="w-[19%] text-center">{t("inventario_table_name")}</TableHead>
             <TableHead className="w-[10%] text-center">{t("inventario_table_presentation")}</TableHead>
-            <TableHead className="w-[10%] text-center">{t("inventario_min_stock_label")}</TableHead>
-            <TableHead className="w-[10%] text-center">{t("inventario_table_unit")}</TableHead>
+            {/* Stock actual y mínimo combinados en una sola columna (docs/04 del
+                paquete de diseño: "en bodega/mínimo combinados en una sola barra con
+                la cifra al lado" — antes eran dos columnas numéricas separadas que
+                había que comparar mentalmente). */}
+            <TableHead className="w-[16%] text-center">{t("inventario_stock_combined_label")}</TableHead>
+            <TableHead className="w-[8%] text-center">{t("inventario_table_unit")}</TableHead>
             <TableHead className="w-[10%] text-center">{t("inventario_purchase_price_label")}</TableHead>
-            <TableHead className="w-[10%] text-center">{t("inventario_current_stock_label")}</TableHead>
             <TableHead className="w-[15%] text-center">{t("inventario_supplier_label")}</TableHead>
-            <TableHead className="w-[10%] text-right">{t("inventario_table_actions")}</TableHead>
+            <TableHead className="w-[8%] text-right">{t("inventario_table_actions")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -233,21 +236,47 @@ export function InventoryTable({
                     </select>
                   )}
                 </TableCell>
-                {/* Modificar la celda de Stock Mínimo para permitir edición directa sin necesidad de entrar en modo edición */}
+                {/* Stock combinado: barra de en-bodega-contra-mínimo + la cifra al lado.
+                    El stock actual siempre fue de solo lectura acá (se edita registrando
+                    inventario); el mínimo sigue editable en línea, igual que antes. */}
                 <TableCell className="text-center">
                   {editedItemId === item.id ? (
-                    <Input
-                      type="number"
-                      value={item.minStock}
-                      onChange={(e) => {
-                        const newValue = Number(e.target.value)
-                        handleInputChange(item.id, "minStock", newValue)
-                      }}
-                      className="text-center"
-                      min="0"
-                    />
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-xs text-text-4">
+                        {item.currentStock !== null ? `${item.currentStock} ${item.unit}` : "-"}
+                      </span>
+                      <Input
+                        type="number"
+                        value={item.minStock}
+                        onChange={(e) => {
+                          const newValue = Number(e.target.value)
+                          handleInputChange(item.id, "minStock", newValue)
+                        }}
+                        className="text-center h-8 w-20"
+                        min="0"
+                        aria-label={t("inventario_min_stock_label")}
+                      />
+                    </div>
+                  ) : item.currentStock !== null ? (
+                    (() => {
+                      const barPct = item.minStock > 0 ? Math.min(100, (item.currentStock / (item.minStock * 2)) * 100) : 100
+                      const barColor =
+                        item.status === "critical" ? "bg-destructive" : item.status === "low" ? "bg-warning" : "bg-success"
+                      const textColor =
+                        item.status === "critical" ? "text-destructive" : item.status === "low" ? "text-warning" : "text-foreground"
+                      return (
+                        <div className="flex flex-col items-center gap-1 w-[110px] mx-auto">
+                          <span className={`text-sm font-medium tabular-nums ${textColor}`}>
+                            {item.currentStock} / {item.minStock} {item.unit}
+                          </span>
+                          <div className="relative h-1 w-full rounded-full bg-secondary overflow-hidden">
+                            <div className={`absolute inset-y-0 left-0 rounded-full ${barColor}`} style={{ width: `${barPct}%` }} />
+                          </div>
+                        </div>
+                      )
+                    })()
                   ) : (
-                    item.minStock
+                    "-"
                   )}
                 </TableCell>
                 <TableCell className="text-center">{item.unit}</TableCell>
@@ -257,22 +286,11 @@ export function InventoryTable({
                       type="number"
                       value={item.price || 0}
                       onChange={(e) => handleInputChange(item.id, "price", Number(e.target.value))}
-                      className="text-green-600"
                     />
                   ) : (
-                    <span className="font-medium text-green-600">
+                    <span className="font-medium text-foreground tabular-nums">
                       {formatCurrency(typeof item.price === "number" ? item.price : 0)}
                     </span>
-                  )}
-                </TableCell>
-                {/* Modificar la celda de Stock Actual para asegurar que sea de solo lectura */}
-                <TableCell className="text-center">
-                  {item.currentStock !== null ? (
-                    <span className={item.status === "critical" ? "text-red-600 font-medium" : ""}>
-                      {item.currentStock} {item.unit}
-                    </span>
-                  ) : (
-                    "-"
                   )}
                 </TableCell>
                 {/* Proveedor es de solo lectura en esta edición rápida en línea — se edita

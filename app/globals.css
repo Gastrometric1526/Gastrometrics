@@ -5,27 +5,31 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Rediseño visual (ver docs/79-rediseno-visual-*): tinta neutra sin tinte azul de
+       plantilla shadcn, #121212 en vez de casi-negro azulado. */
+    --foreground: 0 0% 7%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 0 0% 7%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 0 0% 7%;
     /* Naranja Brasa: color de marca, nuevo default (ver docs/36) — la app debe abrir
        aquí, no en el azul de plantilla de shadcn. */
     --primary: 14 87% 54%;
     --primary-foreground: 60 9.1% 97.8%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
+    /* Neutro sin tinte (#F7F7F6), no el azulado de plantilla (210 40% 96%). */
+    --secondary: 60 6% 97%;
+    --secondary-foreground: 0 0% 7%;
+    --muted: 60 6% 97%;
+    --muted-foreground: 60 3% 42%;
+    --accent: 60 6% 97%;
+    --accent-foreground: 0 0% 7%;
+    /* Rojo tostado (#B3341A) — convive con el naranja de marca; el rojo semáforo lo apuñala. */
+    --destructive: 11 75% 40%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 60 6% 94%;
+    --input: 60 6% 88%;
     --ring: 14 87% 54%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -33,29 +37,45 @@
     --chart-5: 27 87% 67%;
     --chart-6: 262 47% 55%;
     --chart-7: 199 65% 45%;
+
+    /* Tokens nuevos del rediseño visual (ver docs/79) — franjas de sección, hairlines de
+       fila, y los cuatro semánticos apagados (nunca colores de semáforo puro). */
+    --canvas-alt: 60 20% 99%;
+    --hairline: 60 6% 96%;
+    --text-3: 60 3% 53%;
+    --text-4: 60 3% 65%;
+    --success: 152 55% 27%;
+    --success-soft: 154 35% 95%;
+    --warning: 33 45% 37%;
+    --warning-soft: 38 63% 95%;
+    --info: 208 52% 36%;
+    --info-soft: 210 40% 96%;
+    --danger-soft: 14 76% 96%;
+    --primary-soft: 14 100% 97%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    --background: 0 0% 7%;
+    --foreground: 60 5% 96%;
+    --card: 0 0% 9%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+    /* Se despega del fondo, en vez de compartir el mismo tono que --card. */
+    --popover: 0 0% 11%;
     --popover-foreground: 210 40% 98%;
     /* Misma marca que en claro, un poco más clara para leerse bien sobre el fondo casi
        negro del modo oscuro — mismo criterio que ya usaba el azul de plantilla aquí. */
     --primary: 14 90% 58%;
     --primary-foreground: 20 40% 12%;
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 0 0% 14%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 60 3% 62%;
+    --accent: 0 0% 14%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 0 0% 15%;
+    --input: 0 0% 19%;
     --ring: 14 90% 58%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -64,6 +84,19 @@
     --chart-5: 340 75% 55%;
     --chart-6: 262 60% 65%;
     --chart-7: 199 75% 55%;
+
+    --canvas-alt: 0 0% 9%;
+    --hairline: 0 0% 13%;
+    --text-3: 60 3% 62%;
+    --text-4: 60 3% 50%;
+    --success: 148 42% 65%;
+    --success-soft: 152 30% 12%;
+    --warning: 38 60% 62%;
+    --warning-soft: 36 40% 12%;
+    --info: 208 50% 68%;
+    --info-soft: 208 35% 13%;
+    --danger-soft: 12 40% 13%;
+    --primary-soft: 14 45% 14%;
   }
 }
 

@@ -137,7 +137,7 @@ function StatCard({
 }) {
   const colors = chartColorClasses[token]
   return (
-    <Card className="border-2 border-border shadow-lg bg-card">
+    <Card className="border-border bg-card">
       <CardContent className="p-4 flex items-start gap-3">
         <div className={`p-2.5 rounded-lg ${colors.softBg} shrink-0`}>
           <Icon className={`h-5 w-5 ${colors.text}`} />
@@ -406,7 +406,7 @@ function EstadisticasContent() {
               {/* Header */}
               <div className="flex items-center gap-2 md:gap-4">
                 <Link href={businessId !== "main" ? `/business/${businessId}` : "/dashboard"}>
-                  <Button variant="outline" size="sm" className="gap-2 hover:bg-accent border-2 shadow-sm bg-transparent">
+                  <Button variant="outline" size="sm" className="gap-2 hover:bg-accent bg-transparent">
                     <ArrowLeft className="h-4 w-4" />
                     <span className="hidden sm:inline">{t("mi_plan_back_to_dashboard")}</span>
                     <span className="sm:hidden">{t("common_back")}</span>
@@ -428,7 +428,7 @@ function EstadisticasContent() {
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                 </div>
               ) : !hasAnyData ? (
-                <Card className="border-2 border-border shadow-lg bg-card">
+                <Card className="border-border bg-card">
                   <CardContent className="flex flex-col items-center justify-center py-16">
                     <GastrometricsLogo className="h-24 w-24 opacity-[0.08] mb-6" />
                     <h3 className="text-xl font-bold mb-3">{t("estadisticas_empty_title")}</h3>
@@ -437,7 +437,7 @@ function EstadisticasContent() {
                 </Card>
               ) : (
                 <Tabs defaultValue="panorama" className="w-full">
-                  <TabsList className="bg-card border border-border shadow-sm">
+                  <TabsList className="bg-card border border-border">
                     <TabsTrigger id="stats-tab-panorama" value="panorama" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       <BarChart3 className="h-4 w-4" />
                       {t("estadisticas_tab_panorama")}
@@ -493,7 +493,7 @@ function EstadisticasContent() {
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Recetas por clasificación */}
-                    <Card className="border-2 border-border shadow-lg bg-card">
+                    <Card className="border-border bg-card">
                       <CardHeader>
                         <CardTitle className="text-base">{t("estadisticas_recipes_by_classification_title")}</CardTitle>
                         <CardDescription>{t("estadisticas_recipes_by_classification_desc")}</CardDescription>
@@ -519,7 +519,7 @@ function EstadisticasContent() {
                     </Card>
 
                     {/* Ingredientes por categoría */}
-                    <Card className="border-2 border-border shadow-lg bg-card">
+                    <Card className="border-border bg-card">
                       <CardHeader>
                         <CardTitle className="text-base">{t("estadisticas_ingredients_by_category_title")}</CardTitle>
                         <CardDescription>{t("estadisticas_ingredients_by_category_desc")}</CardDescription>
@@ -545,7 +545,7 @@ function EstadisticasContent() {
                     </Card>
 
                     {/* Mejor margen */}
-                    <Card className="border-2 border-border shadow-lg bg-card">
+                    <Card className="border-border bg-card">
                       <CardHeader>
                         <CardTitle className="text-base flex items-center gap-2">
                           <TrendingUp className="h-4 w-4 text-chart-2" />
@@ -570,7 +570,7 @@ function EstadisticasContent() {
                     </Card>
 
                     {/* Peor margen */}
-                    <Card className="border-2 border-border shadow-lg bg-card">
+                    <Card className="border-border bg-card">
                       <CardHeader>
                         <CardTitle className="text-base flex items-center gap-2">
                           <TrendingDown className="h-4 w-4 text-chart-3" />
@@ -603,7 +603,7 @@ function EstadisticasContent() {
                     </Card>
 
                     {/* Ingredientes más usados */}
-                    <Card className="border-2 border-border shadow-lg bg-card">
+                    <Card className="border-border bg-card">
                       <CardHeader>
                         <CardTitle className="text-base flex items-center gap-2">
                           <Flame className="h-4 w-4 text-chart-4" />
@@ -653,7 +653,7 @@ function EstadisticasContent() {
                     </Card>
 
                     {/* Ingredientes más gastados según inventario */}
-                    <Card className="border-2 border-border shadow-lg bg-card">
+                    <Card className="border-border bg-card">
                       <CardHeader>
                         <CardTitle className="text-base flex items-center gap-2">
                           <Boxes className="h-4 w-4 text-chart-5" />
@@ -678,7 +678,7 @@ function EstadisticasContent() {
                     </Card>
 
                     {/* Ingredientes más caros */}
-                    <Card className="border-2 border-border shadow-lg bg-card">
+                    <Card className="border-border bg-card">
                       <CardHeader>
                         <CardTitle className="text-base flex items-center gap-2">
                           <DollarSign className="h-4 w-4 text-chart-1" />
@@ -703,7 +703,7 @@ function EstadisticasContent() {
                     </Card>
 
                     {/* Valor de inventario por categoría */}
-                    <Card className="border-2 border-border shadow-lg bg-card">
+                    <Card className="border-border bg-card">
                       <CardHeader>
                         <CardTitle className="text-base flex items-center gap-2">
                           <Boxes className="h-4 w-4 text-chart-6" />
@@ -722,7 +722,7 @@ function EstadisticasContent() {
                   </div>
 
                   {/* Historial de Precios de Ingredientes */}
-                  <Card className="border-2 border-border shadow-lg bg-card" data-tour="stats-price-history">
+                  <Card className="border-border bg-card" data-tour="stats-price-history">
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
                         <History className="h-4 w-4 text-chart-1" />

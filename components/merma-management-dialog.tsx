@@ -405,7 +405,7 @@ export function MermaManagementDialog({
                       const mermaLevel = getMermaLevel(categoryMerma)
 
                       return (
-                        <TableRow key={ingredient.id} className={isAdjusted ? "bg-green-50 dark:bg-green-950/40" : ""}>
+                        <TableRow key={ingredient.id} className={isAdjusted ? "bg-success-soft" : ""}>
                           <TableCell className="font-medium">
                             <div>
                               <div className="font-medium">{ingredient.name}</div>
@@ -423,12 +423,12 @@ export function MermaManagementDialog({
                                   categoryMerma === 0
                                     ? "bg-gray-100 text-gray-600"
                                     : categoryMerma <= 10
-                                      ? "bg-green-100 text-green-700 dark:text-green-300"
+                                      ? "bg-success-soft text-success"
                                       : categoryMerma <= 25
                                         ? "bg-yellow-100 text-yellow-700 dark:text-yellow-300"
                                         : categoryMerma <= 40
                                           ? "bg-orange-100 text-orange-700 dark:text-orange-300"
-                                          : "bg-red-100 text-red-700 dark:text-red-300"
+                                          : "bg-danger-soft text-destructive"
                                 }`}
                               >
                                 {categoryMerma}%
@@ -445,7 +445,7 @@ export function MermaManagementDialog({
                               className={
                                 ingredient.merma?.useGlobal === false
                                   ? "bg-orange-500 hover:bg-orange-600 text-white"
-                                  : "bg-green-50 dark:bg-green-950/40 hover:bg-green-100 text-green-700 dark:text-green-300 border-green-200 dark:border-green-900"
+                                  : "bg-success-soft hover:bg-success-soft text-success"
                               }
                             >
                               {ingredient.merma?.useGlobal === false
@@ -500,7 +500,11 @@ export function MermaManagementDialog({
                             <div className={`font-medium ${isAdjusted ? "text-green-600 dark:text-green-300" : ""}`}>
                               {Number(currentContent.toFixed(2))} {ingredient.unit}
                             </div>
-                            {isAdjusted && <div className="text-xs text-green-600 dark:text-green-300">{t("ingredientes_merma_adjusted_label")}</div>}
+                            {isAdjusted && (
+                              <div className="text-xs text-green-600 dark:text-green-300">
+                                {t("ingredientes_merma_adjusted_label")}
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell className="text-center">
                             <div className="font-medium">${Number(ingredient.pricing.pricePerUnit.toFixed(2))}</div>

@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton"
 import { ProgressBar } from "@/components/ui/dashboard"
 import { useLanguage } from "@/contexts/language-context"
-import { Users, Building2, MailWarning, Bug } from "lucide-react"
+import { formatActiveTime } from "@/lib/admin-format"
+import { Users, Building2, MailWarning, Bug, Clock } from "lucide-react"
 
 interface Stats {
   totalUsers: number
@@ -13,6 +14,8 @@ interface Stats {
   totalTeamMembers: number
   planDistribution: { slug: string; name: string; count: number }[]
   estimatedMrrUsdCents: number
+  countryDistribution: { code: string; name: string | null; count: number }[]
+  avgActiveSecondsPerUser: number
 }
 
 // Mismo patrón visual que las tarjetas de estadística de app/dashboard/page.tsx (chip de
@@ -26,6 +29,7 @@ const STAT_CARDS = [
 ]
 
 const PLAN_BAR_COLORS: Array<"blue" | "green" | "amber" | "red"> = ["blue", "green", "amber", "red"]
+const COUNTRY_BAR_COLORS: Array<"blue" | "green" | "amber" | "red"> = ["blue", "green", "amber", "red"]
 
 /** Estadísticas globales reales (no "este navegador") — pedido explícito del dueño del proyecto, ver docs/63. Rediseñado en docs/71. */
 export function StatsPanel({ feedbackCounts }: { feedbackCounts: { total: number; nuevo: number; bug: number } }) {
@@ -43,6 +47,7 @@ export function StatsPanel({ feedbackCounts }: { feedbackCounts: { total: number
 
   const mrr = stats ? (stats.estimatedMrrUsdCents / 100).toLocaleString(undefined, { style: "currency", currency: "USD" }) : "—"
   const maxPlanCount = stats ? Math.max(1, ...stats.planDistribution.map((p) => p.count)) : 1
+  const maxCountryCount = stats ? Math.max(1, ...stats.countryDistribution.map((c) => c.count)) : 1
   const values: Record<string, number> = {
     totalUsers: stats?.totalUsers ?? 0,
     totalBusinesses: stats?.totalBusinesses ?? 0,
@@ -52,7 +57,7 @@ export function StatsPanel({ feedbackCounts }: { feedbackCounts: { total: number
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {STAT_CARDS.map((card) => (
           <Card key={card.key}>
             <CardContent className="p-4 space-y-3">
@@ -70,6 +75,21 @@ export function StatsPanel({ feedbackCounts }: { feedbackCounts: { total: number
             </CardContent>
           </Card>
         ))}
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="inline-flex p-2 rounded-lg bg-chart-3/10">
+              <Clock className="h-5 w-5 text-chart-3" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("admin_stat_avg_time")}</p>
+              {stats ? (
+                <p className="text-2xl font-bold text-foreground">{formatActiveTime(stats.avgActiveSecondsPerUser, t)}</p>
+              ) : (
+                <Skeleton className="h-8 w-12 mt-1" />
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
@@ -97,6 +117,42 @@ export function StatsPanel({ feedbackCounts }: { feedbackCounts: { total: number
                 </div>
               ))}
             </div>
+          ) : (
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("admin_country_distribution_title")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {stats ? (
+            stats.countryDistribution.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">{t("admin_country_distribution_empty")}</p>
+            ) : (
+              <div className="space-y-3">
+                {stats.countryDistribution.map((c, index) => (
+                  <div key={c.code} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-foreground font-medium">
+                        {c.name ?? t("admin_country_distribution_others")}
+                      </span>
+                      <span className="text-muted-foreground">{c.count}</span>
+                    </div>
+                    <ProgressBar
+                      value={(c.count / maxCountryCount) * 100}
+                      color={COUNTRY_BAR_COLORS[index % COUNTRY_BAR_COLORS.length]}
+                    />
+                  </div>
+                ))}
+              </div>
+            )
           ) : (
             <div className="space-y-3">
               <Skeleton className="h-4 w-full" />

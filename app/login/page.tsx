@@ -24,6 +24,17 @@ export default function LoginPage() {
   const { login } = useAuth()
   const { t } = useLanguage()
 
+  // Aplica el plan de tester si corresponde y redirige. Ver app/api/plan/dev-account/route.ts.
+  const afterLogin = async () => {
+    const devAccountResult = await fetch("/api/plan/dev-account", { method: "POST" })
+      .then((res) => res.json())
+      .catch(() => null)
+    if (devAccountResult?.applied && devAccountResult.planSlug) {
+      setCurrentPlanSlug(devAccountResult.planSlug)
+    }
+    router.push("/dashboard")
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -38,20 +49,7 @@ export default function LoginPage() {
       // esto no la toca — login no valida contra ella, así que sobrescribirla en cada
       // inicio de sesión volvería inútil el chequeo posterior.
       await bootstrapPasswordHashIfMissing(password)
-
-      // Lista blanca de testers (dueño del proyecto + hasta 10 invitados, ver
-      // TESTER_ALLOWLIST_EMAILS): entrar con uno de esos correos debe verse como si
-      // tuviera el plan Chef Ejecutivo, sin pasar por Stripe. Con account_plans ya no
-      // escribible directo desde el cliente (ver supabase/migrations/0004_account_plans.sql),
-      // esto lo aplica una ruta de servidor que verifica el correo contra la sesión real
-      // y la lista guardada en variables de entorno — ver app/api/plan/dev-account/route.ts.
-      const devAccountResult = await fetch("/api/plan/dev-account", { method: "POST" })
-        .then((res) => res.json())
-        .catch(() => null)
-      if (devAccountResult?.applied && devAccountResult.planSlug) {
-        setCurrentPlanSlug(devAccountResult.planSlug)
-      }
-      router.push("/dashboard")
+      await afterLogin()
     } catch (error: any) {
       console.error("Login error:", error)
       const message = typeof error?.message === "string" ? error.message.toLowerCase() : ""
@@ -85,7 +83,7 @@ export default function LoginPage() {
         </div>
 
         {/* Login Card */}
-        <Card className="border-border shadow-xl bg-card">
+        <Card className="border-border bg-card">
           <CardHeader className="text-center space-y-2">
             <CardTitle className="text-2xl font-bold text-foreground">{t("login_title")}</CardTitle>
             <CardDescription className="text-muted-foreground">
@@ -139,7 +137,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 disabled={isLoading}
               >
                 {isLoading ? (

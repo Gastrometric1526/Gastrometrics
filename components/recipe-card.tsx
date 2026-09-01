@@ -60,7 +60,7 @@ export function RecipeCard({
 
   // Calcular estadísticas de la receta
   // BUG CORREGIDO: unitCost/yield/procedures no existen en Recipe (types/recipe.ts) —
-  // siempre daban undefined, así que "Porciones" mostraba 1 y "Pasos" mostraba 0 para
+  // siempre daban undefined, así que"Porciones"mostraba 1 y"Pasos"mostraba 0 para
   // TODAS las recetas sin importar sus valores reales. Los campos reales son
   // costPerServing, yieldAmount y procedure.
   const stats = {
@@ -74,15 +74,18 @@ export function RecipeCard({
   // Determinar el color del badge según la clasificación
   const getClassificationColor = (classification: string) => {
     const colors = {
-      Entrada: "bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-900",
-      "Plato Principal": "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900",
+      Entrada: "bg-success-soft text-success",
+      "Plato Principal": "bg-blue-50 text-info border-blue-200 dark:border-blue-900",
       Postre: "bg-pink-50 text-pink-700 border-pink-200",
       Bebida: "bg-cyan-50 text-cyan-700 border-cyan-200",
-      "Sub Receta": "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900",
-      Aperitivo: "bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-900",
-      Guarnición: "bg-yellow-50 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-900",
-      Salsa: "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900",
-      Panadería: "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900",
+      "Sub Receta":
+        "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900",
+      Aperitivo:
+        "bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-900",
+      Guarnición:
+        "bg-yellow-50 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-900",
+      Salsa: "bg-danger-soft text-destructive",
+      Panadería: "bg-warning-soft dark:bg-amber-950/40 text-warning border-amber-200 dark:border-amber-900",
       Repostería: "bg-rose-50 text-rose-700 border-rose-200",
     }
     return colors[classification as keyof typeof colors] || "bg-gray-50 text-gray-700 border-gray-200"
@@ -92,7 +95,7 @@ export function RecipeCard({
   if (viewMode === "list") {
     return (
       <Card
-        className="border-border shadow-md hover:shadow-lg transition-all duration-300 bg-card cursor-pointer"
+        className="border-border hover:bg-[#F9F9F8] transition-colors duration-150 bg-card cursor-pointer"
         onDoubleClick={() => onOpenDetails?.(recipe)}
         title="Doble clic para ver todas las opciones"
       >
@@ -126,7 +129,9 @@ export function RecipeCard({
                       variant="outline"
                       className={`text-xs ${getClassificationColor(recipe.classification || "Otros")}`}
                     >
-                      {recipe.classification ? getClassificationLabel(recipe.classification as Classification, language) : "Sin clasificar"}
+                      {recipe.classification
+                        ? getClassificationLabel(recipe.classification as Classification, language)
+                        : "Sin clasificar"}
                     </Badge>
                     {recipe.plate && (
                       <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">
@@ -135,7 +140,10 @@ export function RecipeCard({
                       </Badge>
                     )}
                     {recipe.metadata?.migratedFrom && (
-                      <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900">
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-blue-50 text-info border-blue-200 dark:border-blue-900"
+                      >
                         <ArrowRightLeft className="h-2 w-2 mr-1" />
                         Migrada
                       </Badge>
@@ -170,7 +178,10 @@ export function RecipeCard({
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => onDelete(recipe)} className="text-red-600 dark:text-red-300 focus:text-red-600 dark:text-red-300">
+                    <DropdownMenuItem
+                      onClick={() => onDelete(recipe)}
+                      className="text-destructive dark:text-red-300 focus:text-destructive dark:text-red-300"
+                    >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Eliminar
                     </DropdownMenuItem>
@@ -229,7 +240,7 @@ export function RecipeCard({
   // Vista de grid (solo desktop)
   return (
     <Card
-      className="border-border shadow-md hover:shadow-xl transition-all duration-300 bg-card group cursor-pointer"
+      className="border-border transition-all duration-300 bg-card group cursor-pointer"
       onDoubleClick={() => onOpenDetails?.(recipe)}
       title="Doble clic para ver todas las opciones"
     >
@@ -242,7 +253,9 @@ export function RecipeCard({
                 variant="outline"
                 className={`text-xs ${getClassificationColor(recipe.classification || "Otros")}`}
               >
-                {recipe.classification ? getClassificationLabel(recipe.classification as Classification, language) : "Sin clasificar"}
+                {recipe.classification
+                  ? getClassificationLabel(recipe.classification as Classification, language)
+                  : "Sin clasificar"}
               </Badge>
               {recipe.plate && (
                 <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">
@@ -251,7 +264,7 @@ export function RecipeCard({
                 </Badge>
               )}
               {recipe.metadata?.migratedFrom && (
-                <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900">
+                <Badge variant="outline" className="text-xs bg-blue-50 text-info border-blue-200 dark:border-blue-900">
                   <ArrowRightLeft className="h-2 w-2 mr-1" />
                   Migrada
                 </Badge>
@@ -289,7 +302,10 @@ export function RecipeCard({
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => onDelete(recipe)} className="text-red-600 dark:text-red-300 focus:text-red-600 dark:text-red-300">
+              <DropdownMenuItem
+                onClick={() => onDelete(recipe)}
+                className="text-destructive dark:text-red-300 focus:text-destructive dark:text-red-300"
+              >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Eliminar
               </DropdownMenuItem>
@@ -357,7 +373,7 @@ export function RecipeCard({
           {recipe.metadata?.updatedAt && (
             <div className="pt-2 border-t border-border">
               <p className="text-xs text-muted-foreground">
-                Actualizada:{" "}
+                Actualizada:{""}
                 {new Date(recipe.metadata.updatedAt).toLocaleDateString(getDateLocale(language), {
                   year: "numeric",
                   month: "short",

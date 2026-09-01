@@ -103,19 +103,14 @@ const EXCEL_COLUMN_MAPPINGS = {
 }
 
 // Sin tildes/diéresis y en mayúsculas, para comparar sin importar cómo haya escrito
-// el usuario la categoría en el Excel ("Lácteos y derivados" == "LACTEOS Y DERIVADOS").
-const stripAccents = (value: string): string =>
-  value
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toUpperCase()
-    .trim()
+// el usuario la categoría en el Excel ("Lácteos y derivados"=="LACTEOS Y DERIVADOS").
+const stripAccents = (value: string): string => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().trim()
 
 /**
  * Empareja la categoría que venga en el Excel importado contra las categorías reales
  * que ya ofrece la base de datos (types/ingredient.ts, `categories`) — sin importar
  * tildes, mayúsculas/minúsculas, o espacios extra. Si no hay ninguna coincidencia,
- * cae a "OTROS" en vez de fallar la fila completa.
+ * cae a"OTROS"en vez de fallar la fila completa.
  */
 const normalizeCategory = (value: string): (typeof categories)[number] => {
   if (!value) return "OTROS"
@@ -123,7 +118,7 @@ const normalizeCategory = (value: string): (typeof categories)[number] => {
   const match = categories.find((cat) => stripAccents(cat) === normalizedValue)
   if (match) return match
 
-  // Coincidencia parcial como último recurso (ej. "Lacteos" sin "y derivados").
+  // Coincidencia parcial como último recurso (ej."Lacteos"sin"y derivados").
   const partial = categories.find(
     (cat) => stripAccents(cat).includes(normalizedValue) || normalizedValue.includes(stripAccents(cat)),
   )
@@ -285,12 +280,15 @@ export default function IngredientesPage() {
     }, FIELD_ADVANCE_DELAY_MS)
   }, [])
 
-  const handleIngredientNameKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault()
-      focusAndOpenIngredientCategory()
-    }
-  }, [focusAndOpenIngredientCategory])
+  const handleIngredientNameKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault()
+        focusAndOpenIngredientCategory()
+      }
+    },
+    [focusAndOpenIngredientCategory],
+  )
 
   // Import state
   const [importFile, setImportFile] = useState<File | null>(null)
@@ -471,7 +469,10 @@ export default function IngredientesPage() {
     try {
       const data = await parseExcelFile(file)
       setImportPreview(data.slice(0, 10)) // Show first 10 rows as preview
-      showInfo(t("ingredientes_toast_file_processed_title"), t("ingredientes_toast_file_processed_desc").replace("{count}", String(data.length)))
+      showInfo(
+        t("ingredientes_toast_file_processed_title"),
+        t("ingredientes_toast_file_processed_desc").replace("{count}", String(data.length)),
+      )
     } catch (error) {
       console.error("Error processing file:", error)
       showError(t("ingredientes_toast_process_error_title"), t("ingredientes_toast_process_error_desc"))
@@ -495,7 +496,10 @@ export default function IngredientesPage() {
       showSuccess(t("ingredientes_toast_template_downloaded_title"), t("ingredientes_toast_template_downloaded_desc"))
     } catch (error) {
       console.error("Error downloading template:", error)
-      showError(t("ingredientes_toast_template_download_error_title"), t("ingredientes_toast_template_download_error_desc"))
+      showError(
+        t("ingredientes_toast_template_download_error_title"),
+        t("ingredientes_toast_template_download_error_desc"),
+      )
     }
   }
 
@@ -556,7 +560,7 @@ export default function IngredientesPage() {
           const unit = normalizeUnit(unitRaw)
           // La categoría del Excel se compara contra las categorías reales que ya
           // ofrece la base de datos (sin importar tildes/mayúsculas) — si la fila no
-          // trae categoría, o no coincide con ninguna, cae a "OTROS" (editable después
+          // trae categoría, o no coincide con ninguna, cae a"OTROS"(editable después
           // desde el selector de la tabla, igual que antes).
           const category = normalizeCategory(categoryRaw)
           const presentation = undefined
@@ -607,7 +611,7 @@ export default function IngredientesPage() {
             newIngredients.push(newIngredient)
             importedCount++
           } else {
-            console.log(`Ingredient "${newIngredient.name}" already exists, skipping`)
+            console.log(`Ingredient"${newIngredient.name}"already exists, skipping`)
           }
         } catch (rowError) {
           console.error(`Error processing row ${i + 1}:`, rowError)
@@ -671,7 +675,10 @@ export default function IngredientesPage() {
     } catch (error) {
       console.error("Error importing:", error)
       const errorMessage = error instanceof Error ? error.message : String(error)
-      showError(t("ingredientes_toast_import_error_title"), t("ingredientes_toast_import_error_desc").replace("{message}", errorMessage))
+      showError(
+        t("ingredientes_toast_import_error_title"),
+        t("ingredientes_toast_import_error_desc").replace("{message}", errorMessage),
+      )
 
       // Track error activity
       if (typeof window !== "undefined") {
@@ -788,7 +795,10 @@ export default function IngredientesPage() {
               if (result.affectedRecipes.length > 0) {
                 showSuccess(
                   t("ingredientes_toast_recipes_recalculated_title"),
-                  t("ingredientes_toast_recipes_recalculated_desc").replace("{count}", String(result.affectedRecipes.length)),
+                  t("ingredientes_toast_recipes_recalculated_desc").replace(
+                    "{count}",
+                    String(result.affectedRecipes.length),
+                  ),
                 )
               }
             } catch (error) {
@@ -1119,8 +1129,10 @@ export default function IngredientesPage() {
         window.dispatchEvent(event)
       }
 
-      const systemName = targetSystem === "metric" ? t("ingredientes_system_metric_name") : t("ingredientes_system_imperial_name")
-      const baseUnits = targetSystem === "metric" ? t("ingredientes_units_metric_base") : t("ingredientes_units_imperial_base")
+      const systemName =
+        targetSystem === "metric" ? t("ingredientes_system_metric_name") : t("ingredientes_system_imperial_name")
+      const baseUnits =
+        targetSystem === "metric" ? t("ingredientes_units_metric_base") : t("ingredientes_units_imperial_base")
 
       showSuccess(
         t("ingredientes_toast_mass_conversion_title").replace("{system}", systemName),
@@ -1166,7 +1178,7 @@ export default function IngredientesPage() {
           {/* Drag overlay */}
           {isDragOver && (
             <div className="fixed inset-0 bg-primary/20 backdrop-blur-sm z-50 flex items-center justify-center">
-              <div className="bg-card p-8 rounded-xl border-2 border-dashed border-primary shadow-xl">
+              <div className="bg-card p-8 rounded-xl border-2 border-dashed border-primary">
                 <div className="text-center">
                   <Upload className="h-16 w-16 text-primary mx-auto mb-4" />
                   <h3 className="text-xl font-semibold mb-2">{t("ingredientes_drag_drop_title")}</h3>
@@ -1194,24 +1206,24 @@ export default function IngredientesPage() {
                   <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
                     {t("ingredientes_page_title")}
                   </h1>
-                  <p className="text-sm md:text-base text-muted-foreground">
-                    {t("ingredientes_page_subtitle")}
-                  </p>
+                  <p className="text-sm md:text-base text-muted-foreground">{t("ingredientes_page_subtitle")}</p>
                 </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-2 md:gap-3">
                 {ingredients.some((ing) => ing.merma?.enabled) && (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-900 rounded-md">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm font-medium text-green-700 dark:text-green-300">{t("ingredientes_merma_system_active_badge")}</span>
+                  <div className="flex items-center gap-2 px-3 py-2 bg-success-soft border rounded-md">
+                    <div className="w-2 h-2 bg-success-soft0 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-medium text-success">
+                      {t("ingredientes_merma_system_active_badge")}
+                    </span>
                   </div>
                 )}
 
                 <Button
                   data-tour="ing-new"
                   onClick={() => setShowAddDialog(true)}
-                  className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+                  className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   <Plus className="h-4 w-4" />
                   {t("ingredientes_new_ingredient_button")}
@@ -1253,10 +1265,10 @@ export default function IngredientesPage() {
 
             {/* Statistics Dashboard */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <Card className="border-border shadow-lg hover:shadow-xl transition-all duration-300 bg-card">
+              <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-50 dark:bg-blue-950/40 rounded-lg">
+                    <div className="p-2 bg-blue-50 rounded-lg">
                       <Package className="h-5 w-5 text-blue-600 dark:text-blue-300" />
                     </div>
                     <div>
@@ -1267,10 +1279,10 @@ export default function IngredientesPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-border shadow-lg hover:shadow-xl transition-all duration-300 bg-card">
+              <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-50 dark:bg-green-950/40 rounded-lg">
+                    <div className="p-2 bg-success-soft rounded-lg">
                       <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-300" />
                     </div>
                     <div>
@@ -1281,10 +1293,10 @@ export default function IngredientesPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-border shadow-lg hover:shadow-xl transition-all duration-300 bg-card">
+              <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-amber-50 dark:bg-amber-950/40 rounded-lg">
+                    <div className="p-2 bg-warning-soft dark:bg-amber-950/40 rounded-lg">
                       <DollarSign className="h-5 w-5 text-amber-600 dark:text-amber-300" />
                     </div>
                     <div>
@@ -1295,7 +1307,7 @@ export default function IngredientesPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-border shadow-lg hover:shadow-xl transition-all duration-300 bg-card">
+              <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-50 dark:bg-purple-950/40 rounded-lg">
@@ -1309,11 +1321,11 @@ export default function IngredientesPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-border shadow-lg hover:shadow-xl transition-all duration-300 bg-card">
+              <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-red-50 dark:bg-red-950/40 rounded-lg">
-                      <TrendingUp className="h-5 w-5 text-red-600 dark:text-red-300" />
+                    <div className="p-2 bg-danger-soft rounded-lg">
+                      <TrendingUp className="h-5 w-5 text-destructive dark:text-red-300" />
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.totalValue)}</p>
@@ -1325,7 +1337,7 @@ export default function IngredientesPage() {
             </div>
 
             {/* Filters and Search */}
-            <Card className="border-border shadow-lg bg-card" data-tour="ing-search">
+            <Card className="border-border bg-card" data-tour="ing-search">
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row gap-4">
                   <div className="flex-1 relative">
@@ -1379,13 +1391,16 @@ export default function IngredientesPage() {
                   {t("ingredientes_found_count").replace("{count}", String(filteredAndSortedIngredients.length))}
                 </Badge>
                 {selectedCategory !== "Todas" && (
-                  <Badge variant="outline" className="rounded-lg px-3 py-1 border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40">
+                  <Badge
+                    variant="outline"
+                    className="rounded-lg px-3 py-1 border-blue-200 dark:border-blue-900 text-info bg-blue-50"
+                  >
                     {selectedCategory}
                   </Badge>
                 )}
                 {searchQuery && (
-                  <Badge variant="outline" className="rounded-lg px-3 py-1 border-green-200 dark:border-green-900 text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/40">
-                    {t("ingredientes_search_label")}: "{searchQuery}"
+                  <Badge variant="outline" className="rounded-lg px-3 py-1 text-success bg-success-soft">
+                    {t("ingredientes_search_label")}:"{searchQuery}"
                   </Badge>
                 )}
               </div>
@@ -1413,7 +1428,7 @@ export default function IngredientesPage() {
                     className="peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input"
                   >
                     <SwitchPrimitives.Thumb
-                      className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform ${
+                      className={`pointer-events-none block h-5 w-5 rounded-full bg-background ring-0 transition-transform ${
                         activeSystem === "metric"
                           ? "translate-x-0"
                           : activeSystem === "imperial"
@@ -1442,11 +1457,13 @@ export default function IngredientesPage() {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
           ) : filteredAndSortedIngredients.length === 0 ? (
-            <Card className="border-border shadow-xl bg-card">
+            <Card className="border-border bg-card">
               <CardContent className="flex flex-col items-center justify-center py-16">
                 <Package className="h-16 w-16 text-muted-foreground mb-6" />
                 <h3 className="text-xl font-semibold mb-3 text-foreground">
-                  {ingredients.length === 0 ? t("ingredientes_empty_no_ingredients") : t("ingredientes_empty_not_found")}
+                  {ingredients.length === 0
+                    ? t("ingredientes_empty_no_ingredients")
+                    : t("ingredientes_empty_not_found")}
                 </h3>
                 <p className="text-muted-foreground text-center mb-8">
                   {ingredients.length === 0
@@ -1456,10 +1473,12 @@ export default function IngredientesPage() {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button
                     onClick={() => setShowAddDialog(true)}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    {ingredients.length === 0 ? t("ingredientes_add_first_button") : t("ingredientes_new_ingredient_button")}
+                    {ingredients.length === 0
+                      ? t("ingredientes_add_first_button")
+                      : t("ingredientes_new_ingredient_button")}
                   </Button>
                   <Button
                     variant="outline"
@@ -1485,7 +1504,7 @@ export default function IngredientesPage() {
               </CardContent>
             </Card>
           ) : (
-            <Card className="border-border shadow-lg bg-card" data-tour="ing-table">
+            <Card className="border-border bg-card" data-tour="ing-table">
               <CardContent className="p-0">
                 <IngredientsTable
                   items={filteredAndSortedIngredients}
@@ -1509,7 +1528,9 @@ export default function IngredientesPage() {
                       <p className="text-xl font-bold text-primary">{filteredAndSortedIngredients.length}</p>
                     </div>
                     <div className="text-center">
-                      <span className="font-semibold text-foreground">{t("ingredientes_summary_total_value_label")}</span>
+                      <span className="font-semibold text-foreground">
+                        {t("ingredientes_summary_total_value_label")}
+                      </span>
                       <p className="text-xl font-bold text-green-600 dark:text-green-300">
                         {formatCurrency(
                           filteredAndSortedIngredients.reduce((sum, ing) => sum + (ing.pricing?.purchasePrice || 0), 0),
@@ -1530,7 +1551,9 @@ export default function IngredientesPage() {
                       </p>
                     </div>
                     <div className="text-center">
-                      <span className="font-semibold text-foreground">{t("ingredientes_summary_unique_categories_label")}</span>
+                      <span className="font-semibold text-foreground">
+                        {t("ingredientes_summary_unique_categories_label")}
+                      </span>
                       <p className="text-xl font-bold text-purple-600 dark:text-purple-300">
                         {[...new Set(filteredAndSortedIngredients.map((ing) => ing.category))].length}
                       </p>
@@ -1562,9 +1585,7 @@ export default function IngredientesPage() {
               {ingredientToEdit ? t("ingredientes_dialog_edit_title") : t("ingredientes_dialog_add_title")}
             </DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              {ingredientToEdit
-                ? t("ingredientes_dialog_edit_desc")
-                : t("ingredientes_dialog_add_desc")}
+              {ingredientToEdit ? t("ingredientes_dialog_edit_desc") : t("ingredientes_dialog_add_desc")}
             </DialogDescription>
           </DialogHeader>
 
@@ -1637,7 +1658,10 @@ export default function IngredientesPage() {
                       open={ingredientCategoryOpen}
                       onOpenChange={setIngredientCategoryOpen}
                     >
-                      <SelectTrigger ref={ingredientCategoryTriggerRef} className="border-border focus:ring-2 focus:ring-primary">
+                      <SelectTrigger
+                        ref={ingredientCategoryTriggerRef}
+                        className="border-border focus:ring-2 focus:ring-primary"
+                      >
                         <SelectValue placeholder={t("ingredientes_select_placeholder")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -1663,7 +1687,10 @@ export default function IngredientesPage() {
                       open={ingredientUnitOpen}
                       onOpenChange={setIngredientUnitOpen}
                     >
-                      <SelectTrigger ref={ingredientUnitTriggerRef} className="border-border focus:ring-2 focus:ring-primary">
+                      <SelectTrigger
+                        ref={ingredientUnitTriggerRef}
+                        className="border-border focus:ring-2 focus:ring-primary"
+                      >
                         <SelectValue placeholder={t("ingredientes_select_placeholder")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -1686,7 +1713,10 @@ export default function IngredientesPage() {
                       open={ingredientPresentationOpen}
                       onOpenChange={setIngredientPresentationOpen}
                     >
-                      <SelectTrigger ref={ingredientPresentationTriggerRef} className="border-border focus:ring-2 focus:ring-primary">
+                      <SelectTrigger
+                        ref={ingredientPresentationTriggerRef}
+                        className="border-border focus:ring-2 focus:ring-primary"
+                      >
                         <SelectValue placeholder={t("ingredientes_select_placeholder")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -1930,9 +1960,7 @@ export default function IngredientesPage() {
                 <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
                   <FileSpreadsheet className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">{t("ingredientes_select_file_title")}</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {t("ingredientes_select_file_desc")}
-                  </p>
+                  <p className="text-muted-foreground mb-4">{t("ingredientes_select_file_desc")}</p>
                   <FileUpload
                     onFileSelect={(file) => {
                       setImportFile(file)
@@ -2013,18 +2041,14 @@ export default function IngredientesPage() {
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <div>
                     <h4 className="font-semibold mb-1">{t("ingredientes_template_format_title")}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {t("ingredientes_template_format_desc")}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{t("ingredientes_template_format_desc")}</p>
                   </div>
                   <Button onClick={handleDownloadTemplate} className="gap-2 shrink-0">
                     <Download className="h-4 w-4" />
                     {t("ingredientes_download_template_button")}
                   </Button>
                 </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {t("ingredientes_template_columns_intro")}
-                </p>
+                <p className="text-sm text-muted-foreground mb-4">{t("ingredientes_template_columns_intro")}</p>
                 <div className="text-sm">
                   <strong>{t("ingredientes_recognized_columns_label")}</strong>
                   <ul className="list-disc list-inside mt-2 space-y-1">
@@ -2038,12 +2062,12 @@ export default function IngredientesPage() {
                 </div>
               </div>
 
-              <div className="p-4 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-lg">
+              <div className="p-4 bg-blue-50 border border-blue-200 dark:border-blue-900 rounded-lg">
                 <div className="flex items-start gap-3">
                   <Info className="h-5 w-5 text-blue-600 dark:text-blue-300 mt-0.5" />
                   <div className="text-sm">
-                    <p className="font-medium text-blue-800 dark:text-blue-300 mb-1">{t("ingredientes_import_tips_title")}</p>
-                    <ul className="text-blue-700 dark:text-blue-300 space-y-1">
+                    <p className="font-medium text-info mb-1">{t("ingredientes_import_tips_title")}</p>
+                    <ul className="text-info space-y-1">
                       <li>• {t("ingredientes_import_tip_1")}</li>
                       <li>• {t("ingredientes_import_tip_2")}</li>
                       <li>• {t("ingredientes_import_tip_3")}</li>
@@ -2085,7 +2109,7 @@ export default function IngredientesPage() {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-red-600 dark:text-red-300 flex items-center gap-2">
+            <DialogTitle className="text-destructive dark:text-red-300 flex items-center gap-2">
               <AlertTriangle className="h-5 w-5" />
               {t("ingredientes_delete_dialog_title")}
             </DialogTitle>
@@ -2093,7 +2117,7 @@ export default function IngredientesPage() {
               {t("ingredientes_delete_dialog_desc_prefix")} <strong>"{ingredientToDelete?.name}"</strong>
               {t("ingredientes_delete_dialog_desc_suffix")}
               {ingredientToDelete?.category === "Sub Receta / produccion (Mise en place)" && (
-                <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded text-amber-800 dark:text-amber-300 text-sm">
+                <div className="mt-2 p-2 bg-warning-soft dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded text-warning text-sm">
                   <strong>{t("ingredientes_note_label")}</strong> {t("ingredientes_delete_subrecipe_warning")}
                 </div>
               )}

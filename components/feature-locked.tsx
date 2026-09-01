@@ -18,7 +18,7 @@ export function FeatureLockedPage({ feature, title, description }: { feature: Fe
     <div className="flex min-h-screen bg-background">
       <Sidebar />
       <div className="flex-1 flex items-center justify-center p-6">
-        <Card className="max-w-md w-full border-2 border-border shadow-lg bg-card">
+        <Card className="max-w-md w-full border-border bg-card">
           <CardContent className="pt-8 pb-8 flex flex-col items-center text-center gap-4">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
               <Lock className="h-7 w-7 text-primary" />
