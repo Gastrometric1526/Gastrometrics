@@ -168,11 +168,24 @@ export function MenusTour() {
   return <PageTour steps={steps} storageKey="tour_completed_menus" />
 }
 
-export function EstadisticasTour() {
+// canAccessManualSales/canAccessFinance vienen de useFeatureAccess("manual_sales"/"stats_finance")
+// en app/estadisticas/page.tsx — sin esto, el tour mencionaba y apuntaba a la pestaña
+// Finanzas (import de POS) para CUALQUIER plan, incluido Chef de Partie, que no la tiene
+// todavía: el paso caía a un recuadro centrado sin nada que resaltar (page-tour.tsx ya
+// tolera un selector que no existe), pero seguía describiendo una función bloqueada, y
+// el tour nunca mencionaba la pestaña "Ventas" (registro manual) en absoluto — pedido
+// explícito del dueño del proyecto: que sea obvio dónde está.
+export function EstadisticasTour({
+  canAccessManualSales,
+  canAccessFinance,
+}: {
+  canAccessManualSales: boolean
+  canAccessFinance: boolean
+}) {
   const { t } = useLanguage()
-  // Igual que en Configuración (ver docs/35): las pestañas Panorama/Finanzas son Radix
-  // Tabs, así que el contenido de la pestaña inactiva no existe en el DOM hasta que se
-  // hace clic — y TabsTrigger reacciona a onMouseDown, no a onClick.
+  // Igual que en Configuración (ver docs/35): las pestañas son Radix Tabs, así que el
+  // contenido de la pestaña inactiva no existe en el DOM hasta que se hace clic — y
+  // TabsTrigger reacciona a onMouseDown, no a onClick.
   const clickTab = (id: string) => () => {
     document.getElementById(id)?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }))
   }
@@ -197,19 +210,40 @@ export function EstadisticasTour() {
       description: t("tour_stats_price_history_desc"),
       selector: '[data-tour="stats-price-history"]',
     },
-    {
-      id: "finanzas-import",
-      title: t("tour_stats_finanzas_import_title"),
-      description: t("tour_stats_finanzas_import_desc"),
-      selector: '[data-tour="finanzas-import-pos"]',
-      beforeShow: clickTab("stats-tab-finanzas"),
-    },
-    {
-      id: "finanzas-key-cards",
-      title: t("tour_stats_finanzas_cards_title"),
-      description: t("tour_stats_finanzas_cards_desc"),
-      selector: '[data-tour="finanzas-key-cards"]',
-    },
+    ...(canAccessManualSales
+      ? [
+          {
+            id: "ventas-tab",
+            title: t("tour_stats_ventas_title"),
+            description: t("tour_stats_ventas_desc"),
+            selector: '[data-tour="stats-tab-ventas-trigger"]',
+            beforeShow: clickTab("stats-tab-ventas"),
+          } as TourStep,
+          {
+            id: "ventas-register",
+            title: t("tour_stats_ventas_register_title"),
+            description: t("tour_stats_ventas_register_desc"),
+            selector: '[data-tour="ventas-register-button"]',
+          } as TourStep,
+        ]
+      : []),
+    ...(canAccessFinance
+      ? [
+          {
+            id: "finanzas-import",
+            title: t("tour_stats_finanzas_import_title"),
+            description: t("tour_stats_finanzas_import_desc"),
+            selector: '[data-tour="finanzas-import-pos"]',
+            beforeShow: clickTab("stats-tab-finanzas"),
+          } as TourStep,
+          {
+            id: "finanzas-key-cards",
+            title: t("tour_stats_finanzas_cards_title"),
+            description: t("tour_stats_finanzas_cards_desc"),
+            selector: '[data-tour="finanzas-key-cards"]',
+          } as TourStep,
+        ]
+      : []),
   ]
 
   return <PageTour steps={steps} storageKey="tour_completed_estadisticas" />
@@ -241,7 +275,12 @@ export function OrdenesCompraTour() {
 // una pestaña que no es "Perfil" (la que abre por defecto) usa `beforeShow` para
 // hacer clic en su trigger antes de buscar el elemento — si no, el contenido de esa
 // pestaña ni siquiera existe en el DOM todavía (Radix Tabs no monta pestañas inactivas).
-export function SettingsTour() {
+// showDeveloperTools viene de !isTeamPreview en components/settings-dialog.tsx — sin
+// esto, el tour intentaba abrir y explicar la pestaña "Herramientas de desarrollo"
+// incluso para un invitado de equipo, para quien esa pestaña ya no existe en el DOM
+// (docs/88) — el paso caía a un recuadro centrado sin nada que resaltar, pero seguía
+// describiendo Respaldo y Restauración a alguien sin acceso a esa función.
+export function SettingsTour({ showDeveloperTools = true }: { showDeveloperTools?: boolean } = {}) {
   const { t } = useLanguage()
   // Radix's TabsTrigger cambia de pestaña en su handler de onMouseDown (o onFocus en
   // modo de activación automática) — nunca en onClick. `element.click()` no dispara
@@ -285,19 +324,23 @@ export function SettingsTour() {
       selector: '[data-tour="settings-notifications-toggles"]',
       beforeShow: clickTab("settings-tab-notifications"),
     },
-    {
-      id: "developer-backup",
-      title: t("tour_settings_developer_backup_title"),
-      description: t("tour_settings_developer_backup_desc"),
-      selector: '[data-tour="settings-developer-backup"]',
-      beforeShow: clickTab("settings-tab-developer"),
-    },
-    {
-      id: "developer-reset",
-      title: t("tour_settings_developer_reset_title"),
-      description: t("tour_settings_developer_reset_desc"),
-      selector: '[data-tour="settings-developer-reset"]',
-    },
+    ...(showDeveloperTools
+      ? [
+          {
+            id: "developer-backup",
+            title: t("tour_settings_developer_backup_title"),
+            description: t("tour_settings_developer_backup_desc"),
+            selector: '[data-tour="settings-developer-backup"]',
+            beforeShow: clickTab("settings-tab-developer"),
+          } as TourStep,
+          {
+            id: "developer-reset",
+            title: t("tour_settings_developer_reset_title"),
+            description: t("tour_settings_developer_reset_desc"),
+            selector: '[data-tour="settings-developer-reset"]',
+          } as TourStep,
+        ]
+      : []),
     {
       id: "save",
       title: t("tour_settings_save_title"),

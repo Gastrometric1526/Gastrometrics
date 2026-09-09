@@ -63,6 +63,7 @@ import { getMenus, ensureMenusLoaded } from "@/lib/menus"
 import { getPriceChangeHistory, type PriceChangeNotification } from "@/lib/recalculate"
 import { formatCurrency } from "@/lib/currency"
 import type { Recipe, Classification } from "@/types/recipe"
+import { SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 import type { InventoryItem } from "@/types/inventory"
 import { getClassificationLabel } from "@/lib/classification-labels"
@@ -248,6 +249,20 @@ function EstadisticasContent() {
     [recipes],
   )
 
+  // Pedido explícito del dueño del proyecto: una sub-receta (SUBRECIPE_CLASSIFICATION,
+  // ver lib/subrecipe/core.ts) crea/actualiza automáticamente un ingrediente vinculado
+  // en la base de datos (categoría "Sub Receta / produccion (Mise en place)") para que
+  // otras recetas puedan usarla como si fuera un ingrediente más — pero esa fila NO es
+  // un ingrediente real que se compra, es la misma receta ya contada en "RECETAS".
+  // Sin este filtro, el catálogo de ingredientes de Estadísticas (total, desglose por
+  // categoría, más caros) contaba/mezclaba dos veces lo mismo. `realIngredients` es lo
+  // que de verdad se compra; `subRecipeIngredientsCount` se muestra aparte, no se oculta.
+  const realIngredients = useMemo(
+    () => ingredients.filter((ing) => ing.category !== SUBRECIPE_CLASSIFICATION),
+    [ingredients],
+  )
+  const subRecipeIngredientsCount = ingredients.length - realIngredients.length
+
   const avgCostPercent = useMemo(() => {
     if (recipesWithPricing.length === 0) return 0
     const total = recipesWithPricing.reduce((sum, r) => sum + ((r.costPerServing || 0) / (r.unitPrice || 1)) * 100, 0)
@@ -273,14 +288,14 @@ function EstadisticasContent() {
 
   const ingredientsByCategory = useMemo(() => {
     const map = new Map<string, number>()
-    ingredients.forEach((i) => {
+    realIngredients.forEach((i) => {
       const key = i.category || "Sin categoría"
       map.set(key, (map.get(key) || 0) + 1)
     })
     return Array.from(map.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6)
-  }, [ingredients])
+  }, [realIngredients])
 
   const topMarginRecipes = useMemo(
     () =>
@@ -338,11 +353,11 @@ function EstadisticasContent() {
   // Ingredientes más caros: mayor precio por unidad de compra.
   const mostExpensiveIngredients = useMemo(
     () =>
-      [...ingredients]
+      [...realIngredients]
         .filter((ing) => (ing.pricing?.pricePerUnit || 0) > 0)
         .sort((a, b) => (b.pricing?.pricePerUnit || 0) - (a.pricing?.pricePerUnit || 0))
         .slice(0, 5),
-    [ingredients],
+    [realIngredients],
   )
 
   // Ingredientes con historial de precio, agrupados y ordenados por cantidad de cambios
@@ -410,7 +425,7 @@ function EstadisticasContent() {
         <div className="flex-1 overflow-hidden">
           <div className="h-full overflow-y-auto">
             <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
-              <EstadisticasTour />
+              <EstadisticasTour canAccessManualSales={!!canAccessManualSales} canAccessFinance={!!canAccessFinance} />
               {/* Header */}
               <div className="flex items-center gap-2 md:gap-4">
                 <Link href={businessId !== "main" ? `/business/${businessId}` : "/dashboard"}>
@@ -444,13 +459,16 @@ function EstadisticasContent() {
                   </CardContent>
                 </Card>
               ) : (
-                <Tabs defaultValue="panorama" className="w-full">
+                <Tabs
+                  defaultValue={["panorama", "ventas", "finanzas"].includes(searchParams.get("tab") || "") ? searchParams.get("tab")! : "panorama"}
+                  className="w-full"
+                >
                   <TabsList className="bg-card border border-border">
                     <TabsTrigger id="stats-tab-panorama" value="panorama" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       <BarChart3 className="h-4 w-4" />
                       {t("estadisticas_tab_panorama")}
                     </TabsTrigger>
-                    <TabsTrigger id="stats-tab-ventas" value="ventas" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <TabsTrigger id="stats-tab-ventas" value="ventas" data-tour="stats-tab-ventas-trigger" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       <Receipt className="h-4 w-4" />
                       {t("estadisticas_tab_ventas")}
                     </TabsTrigger>
@@ -470,7 +488,13 @@ function EstadisticasContent() {
                   {/* Overview */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-tour="stats-overview-cards">
                     <StatCard icon={ChefHat} label={t("estadisticas_stat_recipes")} value={String(recipes.length)} token="chart-1" />
-                    <StatCard icon={Database} label={t("estadisticas_stat_ingredients")} value={String(ingredients.length)} token="chart-2" />
+                    <StatCard
+                      icon={Database}
+                      label={t("estadisticas_stat_ingredients")}
+                      value={String(realIngredients.length)}
+                      sub={subRecipeIngredientsCount > 0 ? t("estadisticas_stat_ingredients_subrecipes_note").replace("{count}", String(subRecipeIngredientsCount)) : undefined}
+                      token="chart-2"
+                    />
                     <StatCard icon={UtensilsCrossed} label={t("estadisticas_stat_menus")} value={String(menuCount)} token="chart-6" />
                     <StatCard
                       icon={ShoppingCart}
@@ -574,7 +598,7 @@ function EstadisticasContent() {
                                   key={rawKey}
                                   label={label}
                                   count={count}
-                                  total={ingredients.length}
+                                  total={realIngredients.length}
                                   token={chartTokens[i % chartTokens.length]}
                                 />
                               )

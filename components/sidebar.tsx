@@ -97,7 +97,7 @@ function useNavigationItems() {
       "/inventario": ["inventory"],
       "/menus": ["menus"],
       "/menu-y-compras": ["purchase_orders_manual", "purchase_orders_auto"],
-      "/estadisticas": ["stats_panorama", "stats_finance"],
+      "/estadisticas": ["stats_panorama", "stats_finance", "manual_sales"],
       // Delegable desde docs/75 — un miembro con la función 'team' habilitada
       // también puede gestionar el equipo (ver supabase/migrations/
       // 0015_team_delegate_management.sql para el porqué hacía falta una migración,

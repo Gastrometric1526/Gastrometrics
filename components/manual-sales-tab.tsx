@@ -72,13 +72,13 @@ export function ManualSalesTab({ businessId }: ManualSalesTabProps) {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card data-tour="ventas-register-card">
         <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
           <div>
             <CardTitle className="text-base">{t("manual_sales_tab_title")}</CardTitle>
             <CardDescription>{t("manual_sales_tab_desc")}</CardDescription>
           </div>
-          <Button onClick={() => setIsDialogOpen(true)} className="gap-2 shrink-0">
+          <Button onClick={() => setIsDialogOpen(true)} className="gap-2 shrink-0" data-tour="ventas-register-button">
             <Plus className="h-4 w-4" />
             {t("manual_sales_register_button")}
           </Button>

@@ -28,6 +28,7 @@ import {
   Activity,
   Building2,
   Pencil,
+  Receipt,
 } from "lucide-react"
 import { SettingsDialog } from "@/components/settings-dialog"
 import { Sidebar } from "@/components/sidebar"
@@ -49,6 +50,7 @@ export default function DashboardPage() {
   const { isLoggedIn, authChecked, user } = useAuth()
   const { t } = useLanguage()
   const canAccessTeam = useFeatureAccess("team")
+  const canAccessManualSales = useFeatureAccess("manual_sales")
   const { active: previewActive, member: previewMember } = useActiveMembership()
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [businesses, setBusinesses] = useState<Business[]>([])
@@ -480,6 +482,22 @@ export default function DashboardPage() {
       bgColor: "bg-chart-7/10 group-hover:bg-chart-7/20",
       textColor: "text-chart-7",
     },
+    // Pedido explícito del dueño del proyecto: que sea obvio dónde está el registro
+    // manual de ventas (docs/90) — antes solo se podía llegar entrando a Reportes y
+    // encontrando la pestaña "Ventas" por cuenta propia. Enlace directo con ?tab=ventas
+    // (ver app/estadisticas/page.tsx, defaultValue del Tabs lee ese query param).
+    ...(canAccessManualSales
+      ? [
+          {
+            href: "/estadisticas?tab=ventas",
+            text: t("dashboard_quick_manual_sales"),
+            icon: Receipt,
+            description: t("dashboard_quick_manual_sales_desc"),
+            bgColor: "bg-chart-2/10 group-hover:bg-chart-2/20",
+            textColor: "text-chart-2",
+          },
+        ]
+      : []),
     ...(canAccessTeam
       ? [
           {
@@ -506,7 +524,8 @@ export default function DashboardPage() {
       "/inventario": ["inventory"],
       "/menus": ["menus"],
       "/ordenes-compra": ["purchase_orders_manual", "purchase_orders_auto"],
-      "/estadisticas": ["stats_panorama", "stats_finance"],
+      "/estadisticas": ["stats_panorama", "stats_finance", "manual_sales"],
+      "/estadisticas?tab=ventas": ["manual_sales"],
       // Delegable desde docs/75 — ver components/sidebar.tsx para el mismo mapeo.
       "/equipo": ["team"],
     }

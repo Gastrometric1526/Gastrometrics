@@ -996,7 +996,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
           </>
         )}
       </DialogContent>
-      {open && <SettingsTour />}
+      {open && <SettingsTour showDeveloperTools={!isTeamPreview} />}
     </Dialog>
   )
 }
