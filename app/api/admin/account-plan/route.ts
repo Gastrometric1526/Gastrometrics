@@ -69,6 +69,13 @@ export async function GET(request: Request) {
     // todavía no se hayan corrido (columnas nuevas, ver docs/59) — sin esto, este panel
     // mostraría "Foodie" para TODAS las cuentas (aunque tengan otro plan real) hasta que
     // alguien las corra.
+    //
+    // BUG CORREGIDO: pedir las columnas de las DOS migraciones en un solo select hacía
+    // que, si solo 0008 ya se había corrido (el caso real ahora mismo) pero 0019
+    // todavía no, Postgres rechazara la consulta completa — y el fallback caía directo
+    // a "sin vencimiento", ocultándole a este panel cualquier fecha de vencimiento
+    // REAL ya guardada. Fallback escalonado: primero sin los extras nuevos, solo si
+    // eso también falla se cae a sin vencimiento.
     let planRow: {
       plan_slug: string
       updated_at: string
@@ -78,14 +85,23 @@ export async function GET(request: Request) {
       extra_team_seats: number
     } | null = planResult.data
     if (planResult.error) {
-      const fallback = await admin
+      const expiryOnly = await admin
         .from("account_plans")
-        .select("plan_slug, updated_at, stripe_customer_id")
+        .select("plan_slug, updated_at, stripe_customer_id, plan_expires_at")
         .eq("account_id", user.id)
         .maybeSingle()
-      planRow = fallback.data
-        ? { ...fallback.data, plan_expires_at: null, extra_businesses: 0, extra_team_seats: 0 }
-        : null
+      if (!expiryOnly.error) {
+        planRow = expiryOnly.data ? { ...expiryOnly.data, extra_businesses: 0, extra_team_seats: 0 } : null
+      } else {
+        const fallback = await admin
+          .from("account_plans")
+          .select("plan_slug, updated_at, stripe_customer_id")
+          .eq("account_id", user.id)
+          .maybeSingle()
+        planRow = fallback.data
+          ? { ...fallback.data, plan_expires_at: null, extra_businesses: 0, extra_team_seats: 0 }
+          : null
+      }
     }
 
     return NextResponse.json({
@@ -176,26 +192,56 @@ export async function PATCH(request: Request) {
 
     // Tolera que supabase/migrations/0008_plan_expiry.sql y/o
     // 0019_account_overrides.sql todavía no se hayan corrido (columnas nuevas, ver
-    // docs/59) — sin esto, aplicar CUALQUIER plan se rompería por completo hasta que
-    // alguien las corra a mano. Si pasa esto Y de verdad pidieron algo que necesita
-    // esas columnas, se avisa en vez de aplicarlo en silencio como si no tuviera efecto.
+    // docs/59). Escalonado, NO todo-o-nada: pedir las dos columnas nuevas juntas en
+    // un solo upsert hacía que, si solo falta 0019 (el caso real ahora mismo, 0008 ya
+    // corrió), Postgres rechazara el upsert COMPLETO — y el fallback anterior ni
+    // siquiera intentaba guardar el vencimiento real, mostrando éxito pero sin
+    // aplicar lo que el admin pidió (o, peor, sin poder BORRAR un vencimiento real ya
+    // guardado, porque la columna quedaba fuera del upsert reducido).
+    let extrasWarning: string | null = null
     if (error) {
-      if (expiresAt || extraBusinesses > 0 || extraTeamSeats > 0) {
-        return NextResponse.json(
-          {
-            error:
-              "Falta correr supabase/migrations/0008_plan_expiry.sql y/o 0019_account_overrides.sql antes de poder usar el vencimiento o los extras.",
-          },
-          { status: 409 },
-        )
-      }
-      const fallback = await admin
+      const withoutExtras = await admin
         .from("account_plans")
-        .upsert({ account_id: user.id, plan_slug: planSlug, updated_at: new Date().toISOString() })
-        .select("plan_slug, updated_at")
+        .upsert({
+          account_id: user.id,
+          plan_slug: planSlug,
+          plan_expires_at: expiresAt,
+          updated_at: new Date().toISOString(),
+        })
+        .select("plan_slug, updated_at, plan_expires_at")
         .single()
-      data = fallback.data ? { ...fallback.data, plan_expires_at: null, extra_businesses: 0, extra_team_seats: 0 } : null
-      error = fallback.error
+
+      if (!withoutExtras.error) {
+        // Solo falta 0019 — el plan y el vencimiento SÍ se guardaron de verdad arriba.
+        // Si además pidieron negocios/cupos extra, avisamos que esa parte no se pudo
+        // (no rechazamos toda la operación: rechazar acá mentiría, el resto ya quedó
+        // aplicado en la base de datos).
+        if (extraBusinesses > 0 || extraTeamSeats > 0) {
+          extrasWarning = "El plan y el vencimiento se guardaron, pero los negocios/cupos extra necesitan correr supabase/migrations/0019_account_overrides.sql primero."
+        }
+        data = { ...withoutExtras.data, extra_businesses: 0, extra_team_seats: 0 }
+        error = null
+      } else {
+        // Tampoco existe plan_expires_at — falta 0008 además de 0019. Acá sí
+        // rechazamos ANTES de escribir nada si de verdad pidieron algo que
+        // necesita esas columnas (nunca se llegó a ejecutar ningún upsert real).
+        if (expiresAt || extraBusinesses > 0 || extraTeamSeats > 0) {
+          return NextResponse.json(
+            {
+              error:
+                "Falta correr supabase/migrations/0008_plan_expiry.sql y/o 0019_account_overrides.sql antes de poder usar el vencimiento o los extras.",
+            },
+            { status: 409 },
+          )
+        }
+        const fallback = await admin
+          .from("account_plans")
+          .upsert({ account_id: user.id, plan_slug: planSlug, updated_at: new Date().toISOString() })
+          .select("plan_slug, updated_at")
+          .single()
+        data = fallback.data ? { ...fallback.data, plan_expires_at: null, extra_businesses: 0, extra_team_seats: 0 } : null
+        error = fallback.error
+      }
     }
 
     if (error || !data) throw error || new Error("No se pudo guardar el plan.")
@@ -236,6 +282,7 @@ export async function PATCH(request: Request) {
       planExpiresAt: data.plan_expires_at,
       extraBusinesses: data.extra_businesses || 0,
       extraTeamSeats: data.extra_team_seats || 0,
+      warning: extrasWarning,
     })
   } catch (error) {
     console.error("[api/admin/account-plan] Error cambiando el plan:", error)

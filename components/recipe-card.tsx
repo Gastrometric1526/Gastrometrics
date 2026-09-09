@@ -338,7 +338,7 @@ export function RecipeCard({
               <DollarSign className="h-4 w-4 text-green-600 dark:text-green-300" />
               <div>
                 <p className="font-medium text-green-600 dark:text-green-300">{formatCurrency(stats.totalCost)}</p>
-                <p className="text-muted-foreground text-xs">Costo total</p>
+                <p className="text-muted-foreground text-xs">{t("recipecard_total_cost")}</p>
               </div>
             </div>
 
@@ -356,7 +356,7 @@ export function RecipeCard({
               <ChefHat className="h-4 w-4 text-purple-600 dark:text-purple-300" />
               <div>
                 <p className="font-medium text-purple-600 dark:text-purple-300">{stats.ingredientsCount}</p>
-                <p className="text-muted-foreground text-xs">Ingredientes</p>
+                <p className="text-muted-foreground text-xs">{t("recipecard_ingredients")}</p>
               </div>
             </div>
 

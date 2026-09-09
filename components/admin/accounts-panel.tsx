@@ -304,9 +304,13 @@ export function AccountsPanel() {
               }
             : prev,
         )
-        toast({ title: t("admin_accounts_plan_applied_toast") })
+        if (data.warning) {
+          toast({ title: t("admin_accounts_plan_applied_toast"), description: data.warning, variant: "destructive" })
+        } else {
+          toast({ title: t("admin_accounts_plan_applied_toast") })
+        }
       } else {
-        toast({ title: t("admin_accounts_error_toast"), variant: "destructive" })
+        toast({ title: t("admin_accounts_error_toast"), description: data?.error, variant: "destructive" })
       }
     } catch (error) {
       console.error("Error cambiando el plan:", error)

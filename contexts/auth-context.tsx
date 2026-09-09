@@ -110,6 +110,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 0019_account_overrides.sql todavía no se hayan corrido (columnas nuevas, ver
       // docs/59) — sin esto, el sync de plan de CADA sesión se rompería por completo
       // (nunca refrescaría el plan real) hasta que alguien corra esas migraciones a mano.
+      //
+      // BUG CORREGIDO: el select de arriba pedía las columnas de AMBAS migraciones
+      // juntas — si solo 0008 ya se había corrido (el caso real en producción ahora
+      // mismo) pero 0019 todavía no, Postgres rechaza la consulta COMPLETA por la
+      // columna que falta, no solo esa columna sola. El fallback de abajo caía
+      // directo a solo "plan_slug", tirando también plan_expires_at aunque esa
+      // columna sí existiera — apagando en silencio el vencimiento de planes
+      // asignados a mano para TODAS las sesiones. Ahora el fallback es escalonado:
+      // primero intenta sin los extras, y solo si eso también falla, sin vencimiento.
       let planRow: {
         plan_slug: string
         plan_expires_at: string | null
@@ -117,14 +126,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         extra_team_seats: number
       } | null = planResult.data
       if (planResult.error) {
-        const fallback = await supabase
+        const expiryOnly = await supabase
           .from("account_plans")
-          .select("plan_slug")
+          .select("plan_slug, plan_expires_at")
           .eq("account_id", sessionUser.id)
           .maybeSingle()
-        planRow = fallback.data
-          ? { ...fallback.data, plan_expires_at: null, extra_businesses: 0, extra_team_seats: 0 }
-          : null
+        if (!expiryOnly.error) {
+          planRow = expiryOnly.data ? { ...expiryOnly.data, extra_businesses: 0, extra_team_seats: 0 } : null
+        } else {
+          const slugOnly = await supabase
+            .from("account_plans")
+            .select("plan_slug")
+            .eq("account_id", sessionUser.id)
+            .maybeSingle()
+          planRow = slugOnly.data
+            ? { ...slugOnly.data, plan_expires_at: null, extra_businesses: 0, extra_team_seats: 0 }
+            : null
+        }
       }
 
       if (cancelled) return
