@@ -107,7 +107,7 @@ export async function POST(request: Request) {
     const labels = getEmailLabels(preferredLanguage)
     const resend = new Resend(process.env.RESEND_API_KEY)
     const html = renderEmailTemplate("03-cambio-contrasena.html", {
-      htmlLang: preferredLanguage,
+      htmlLang: normalizeEmailLang(preferredLanguage),
       title: labels.e03_title,
       preheader: labels.e03_preheader,
       heading: labels.e03_heading,
