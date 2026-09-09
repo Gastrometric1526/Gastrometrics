@@ -11,6 +11,7 @@ import type { InventorySnapshot } from "@/types/inventory"
 import type { PurchaseOrder } from "@/types/purchase-order"
 import type { BusinessExpenses } from "@/types/business"
 import type { Ingredient } from "@/types/ingredient"
+import type { Menu } from "@/lib/types/menus"
 
 // ============== DESEMPEÑO POR PLATO ==============
 
@@ -26,14 +27,21 @@ export interface DishPerformance {
   unitCost: number
 }
 
-export function aggregateSalesByDish(salesImports: SalesImport[], recipes: Recipe[]): DishPerformance[] {
+// menus es opcional (parámetro nuevo, docs/90) — el registro manual de ventas es el
+// único que puede producir una línea con menuId (la importación de POS solo conoce
+// recetas). Sin menus, una línea de menú simplemente cae al mismo bucket "unmatched"
+// que tenía antes, en vez de romper la llamada — mantiene compatible cualquier
+// llamador viejo que todavía no le pase el arreglo de menús.
+export function aggregateSalesByDish(salesImports: SalesImport[], recipes: Recipe[], menus: Menu[] = []): DishPerformance[] {
   const map = new Map<string, DishPerformance>()
 
   salesImports.forEach((imp) => {
     imp.lines.forEach((line) => {
-      const key = line.recipeId || `unmatched:${line.rawDishName.trim().toLowerCase()}`
+      const key =
+        line.recipeId || (line.menuId ? `menu:${line.menuId}` : `unmatched:${line.rawDishName.trim().toLowerCase()}`)
       const recipe = line.recipeId ? recipes.find((r) => r.id === line.recipeId) : undefined
-      const name = recipe?.name || line.rawDishName
+      const menu = !line.recipeId && line.menuId ? menus.find((m) => m.id === line.menuId) : undefined
+      const name = recipe?.name || menu?.name || line.rawDishName
 
       const existing = map.get(key)
       if (existing) {

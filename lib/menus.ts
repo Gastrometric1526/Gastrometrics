@@ -5,6 +5,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { createBusinessScopedCache } from "./storage/supabase-cache"
 import type { Database } from "@/types/database"
 import type { Menu, MenuItem, MenuSection, MenuStep } from "@/lib/types/menus"
+import type { Recipe } from "@/types/recipe"
 
 export type { Menu, MenuItem, MenuSection, MenuStep }
 
@@ -64,6 +65,28 @@ function mapClassificationToSection(classification: string): MenuSection {
 export function getRecipeSection(recipe: { plate?: string; classification?: string }): MenuSection {
   if (recipe.plate && stepToSection[recipe.plate]) return stepToSection[recipe.plate]
   return mapClassificationToSection(recipe.classification || "")
+}
+
+/**
+ * Precio y costo de vender UN menú completo como una sola unidad (docs/90, registro
+ * manual de ventas sin POS) — no existía en ningún lado: app/menus/page.tsx solo
+ * calcula el PROMEDIO por plato dentro del menú (getAveragePrice), útil para mostrar
+ * "cuánto cuesta en promedio un plato de este menú", pero no "cuánto se cobra por
+ * vender el menú entero una vez". Suma (no promedia) el precio/costo de cada ítem
+ * habilitado — mismo criterio de precio que ya usa esa pantalla (priceOverride si el
+ * usuario lo puso, si no el precio de venta ya calculado de la receta).
+ */
+export function getMenuUnitPriceAndCost(menu: Menu, recipes: Recipe[]): { price: number; cost: number } {
+  const enabledItems = menu.items.filter((item) => item.enabled)
+  return enabledItems.reduce(
+    (acc, item) => {
+      const recipe = recipes.find((r) => r.id === item.recipeId)
+      const price = item.priceOverride ?? recipe?.unitPrice ?? 0
+      const cost = recipe?.costPerServing ?? 0
+      return { price: acc.price + price, cost: acc.cost + cost }
+    },
+    { price: 0, cost: 0 },
+  )
 }
 
 function generateId(prefix: string): string {

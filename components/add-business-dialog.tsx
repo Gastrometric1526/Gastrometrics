@@ -25,6 +25,7 @@ import { getMaxBusinesses, getCurrentPlan } from "@/lib/plan-access"
 import { getCurrentCurrencyOption } from "@/lib/currency"
 import { getAllBusinesses, addBusiness } from "@/lib/storage/businesses"
 import Link from "next/link"
+import { useLanguage } from "@/contexts/language-context"
 
 interface AddBusinessDialogProps {
   open: boolean
@@ -51,6 +52,7 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
   const [targetFoodCostPercent, setTargetFoodCostPercent] = useState(DEFAULT_TARGET_FOOD_COST_PERCENT)
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
+  const { t } = useLanguage()
 
   // Limite de negocios por plan (ver docs, tabla de precios confirmada por el dueño
   // del proyecto): se revisa al abrir el dialogo, no en cada tecla, para no leer
@@ -71,8 +73,8 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
     if (step === 1) {
       if (!formData.name.trim()) {
         toast({
-          title: "Error",
-          description: "El nombre del negocio es requerido.",
+          title: t("addbiz_toast_error_title"),
+          description: t("addbiz_toast_name_required_desc"),
           variant: "destructive",
         })
         return
@@ -147,14 +149,14 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
       setStep(1)
 
       toast({
-        title: "¡Negocio creado exitosamente!",
-        description: `${newBusiness.name} ha sido configurado y está listo para usar.`,
+        title: t("addbiz_toast_created_title"),
+        description: t("addbiz_toast_created_desc").replace("{name}", newBusiness.name),
       })
     } catch (error) {
       console.error("Error creating business:", error)
       toast({
-        title: "Error",
-        description: "Hubo un problema al crear el negocio. Inténtalo de nuevo.",
+        title: t("addbiz_toast_error_title"),
+        description: t("addbiz_toast_create_error_desc"),
         variant: "destructive",
       })
     } finally {
@@ -162,6 +164,9 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
     }
   }
 
+  // Los VALORES canónicos se mantienen en español (lo que se guarda en el negocio);
+  // solo la etiqueta que ve el usuario se traduce, siguiendo el mismo patrón que
+  // lib/classification-labels.ts y lib/ingredient-labels.ts.
   const businessTypes = [
     "Restaurante",
     "Cafetería",
@@ -175,6 +180,33 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
     "Otro",
   ]
 
+  const getBusinessTypeLabel = (type: string): string => {
+    switch (type) {
+      case "Restaurante":
+        return t("addbiz_type_restaurante")
+      case "Cafetería":
+        return t("addbiz_type_cafeteria")
+      case "Panadería":
+        return t("addbiz_type_panaderia")
+      case "Pastelería":
+        return t("addbiz_type_pasteleria")
+      case "Food Truck":
+        return t("addbiz_type_food_truck")
+      case "Catering":
+        return t("addbiz_type_catering")
+      case "Bar":
+        return t("addbiz_type_bar")
+      case "Pizzería":
+        return t("addbiz_type_pizzeria")
+      case "Comida Rápida":
+        return t("addbiz_type_comida_rapida")
+      case "Otro":
+        return t("addbiz_type_otro")
+      default:
+        return type
+    }
+  }
+
   if (limitReached) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -182,7 +214,7 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5 text-primary" />
-              Límite de negocios alcanzado
+              {t("addbiz_limit_reached_title")}
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center text-center gap-4 py-4">
@@ -190,13 +222,15 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
               <Lock className="h-6 w-6 text-primary" />
             </div>
             <p className="text-sm text-muted-foreground">
-              Tu plan <span className="font-semibold text-foreground">{currentPlan.name}</span> permite hasta{" "}
-              {maxBusinesses} negocio{maxBusinesses !== 1 ? "s" : ""}. Ya tienes {existingBusinessCount} registrado
-              {existingBusinessCount !== 1 ? "s" : ""}.
+              {t("addbiz_limit_reached_plan_prefix")}{" "}
+              <span className="font-semibold text-foreground">{currentPlan.name}</span>{" "}
+              {t("addbiz_limit_reached_allows")
+                .replace("{max}", String(maxBusinesses))
+                .replace("{count}", String(existingBusinessCount))}
             </p>
             <Link href="/planes">
               <Button className="gap-2">
-                Ver planes
+                {t("addbiz_view_plans")}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
@@ -212,12 +246,12 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5 text-primary" />
-            Crear Nuevo Negocio
+            {t("addbiz_dialog_title")}
           </DialogTitle>
           <DialogDescription>
-            {step === 1 && "Configura la información básica de tu negocio"}
-            {step === 2 && "Detalla tus gastos mensuales para análisis precisos"}
-            {step === 3 && "Elige cómo quieres calcular el precio de venta en este negocio"}
+            {step === 1 && t("addbiz_step1_desc")}
+            {step === 2 && t("addbiz_step2_desc")}
+            {step === 3 && t("addbiz_step3_desc")}
           </DialogDescription>
         </DialogHeader>
 
@@ -226,7 +260,7 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
         <div className="space-y-1.5 shrink-0">
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>
-              Paso {step} de {TOTAL_STEPS}
+              {t("addbiz_step_indicator").replace("{step}", String(step)).replace("{total}", String(TOTAL_STEPS))}
             </span>
             <span>{Math.round((step / TOTAL_STEPS) * 100)}%</span>
           </div>
@@ -237,10 +271,10 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
           {step === 1 && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nombre del Negocio *</Label>
+                <Label htmlFor="name">{t("addbiz_field_name_label")}</Label>
                 <Input
                   id="name"
-                  placeholder="Ej: Restaurante La Cocina"
+                  placeholder={t("addbiz_field_name_placeholder")}
                   value={formData.name}
                   onChange={(e) => handleInputChange("name", e.target.value)}
                   className="w-full"
@@ -248,10 +282,10 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Descripción</Label>
+                <Label htmlFor="description">{t("addbiz_field_description_label")}</Label>
                 <Textarea
                   id="description"
-                  placeholder="Breve descripción de tu negocio..."
+                  placeholder={t("addbiz_field_description_placeholder")}
                   value={formData.description}
                   onChange={(e) => handleInputChange("description", e.target.value)}
                   className="w-full min-h-[80px]"
@@ -259,15 +293,15 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="type">Tipo de Negocio</Label>
+                <Label htmlFor="type">{t("addbiz_field_type_label")}</Label>
                 <Select value={formData.type} onValueChange={(value) => handleInputChange("type", value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona el tipo de negocio" />
+                    <SelectValue placeholder={t("addbiz_field_type_placeholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {businessTypes.map((type) => (
                       <SelectItem key={type} value={type}>
-                        {type}
+                        {getBusinessTypeLabel(type)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -282,79 +316,91 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <DollarSign className="h-5 w-5 text-primary" />
-                    Gastos Mensuales Detallados
+                    {t("addbiz_expenses_card_title")}
                   </CardTitle>
-                  <CardDescription>Especifica tus gastos mensuales para obtener análisis más precisos.</CardDescription>
+                  <CardDescription>{t("addbiz_expenses_card_desc")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="rent">Renta/Alquiler ({currencySymbol})</Label>
+                      <Label htmlFor="rent">
+                        {t("addbiz_field_rent_label")} ({currencySymbol})
+                      </Label>
                       <Input
                         id="rent"
                         type="number"
                         step="0.01"
-                        placeholder="Ej: 5000"
+                        placeholder={t("addbiz_field_rent_placeholder")}
                         value={formData.rent}
                         onChange={(e) => handleInputChange("rent", e.target.value)}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="utilities">Servicios públicos ({currencySymbol})</Label>
+                      <Label htmlFor="utilities">
+                        {t("addbiz_field_utilities_label")} ({currencySymbol})
+                      </Label>
                       <Input
                         id="utilities"
                         type="number"
                         step="0.01"
-                        placeholder="Ej: 800"
+                        placeholder={t("addbiz_field_utilities_placeholder")}
                         value={formData.utilities}
                         onChange={(e) => handleInputChange("utilities", e.target.value)}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="operationalCosts">Costos operativos ({currencySymbol})</Label>
+                      <Label htmlFor="operationalCosts">
+                        {t("addbiz_field_operational_costs_label")} ({currencySymbol})
+                      </Label>
                       <Input
                         id="operationalCosts"
                         type="number"
                         step="0.01"
-                        placeholder="Ej: 3000"
+                        placeholder={t("addbiz_field_operational_costs_placeholder")}
                         value={formData.operationalCosts}
                         onChange={(e) => handleInputChange("operationalCosts", e.target.value)}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="marketing">Marketing y publicidad ({currencySymbol})</Label>
+                      <Label htmlFor="marketing">
+                        {t("addbiz_field_marketing_label")} ({currencySymbol})
+                      </Label>
                       <Input
                         id="marketing"
                         type="number"
                         step="0.01"
-                        placeholder="Ej: 1200"
+                        placeholder={t("addbiz_field_marketing_placeholder")}
                         value={formData.marketing}
                         onChange={(e) => handleInputChange("marketing", e.target.value)}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="laborCosts">Costos laborales ({currencySymbol})</Label>
+                      <Label htmlFor="laborCosts">
+                        {t("addbiz_field_labor_costs_label")} ({currencySymbol})
+                      </Label>
                       <Input
                         id="laborCosts"
                         type="number"
                         step="0.01"
-                        placeholder="Ej: 8000"
+                        placeholder={t("addbiz_field_labor_costs_placeholder")}
                         value={formData.laborCosts}
                         onChange={(e) => handleInputChange("laborCosts", e.target.value)}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="otherExpenses">Otros gastos ({currencySymbol})</Label>
+                      <Label htmlFor="otherExpenses">
+                        {t("addbiz_field_other_expenses_label")} ({currencySymbol})
+                      </Label>
                       <Input
                         id="otherExpenses"
                         type="number"
                         step="0.01"
-                        placeholder="Ej: 500"
+                        placeholder={t("addbiz_field_other_expenses_placeholder")}
                         value={formData.otherExpenses}
                         onChange={(e) => handleInputChange("otherExpenses", e.target.value)}
                       />
@@ -364,8 +410,7 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
                   <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded-lg flex items-start gap-2">
                     <Lightbulb className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                     <p className="text-sm text-foreground">
-                      <strong>Consejo:</strong> Estos datos te ayudarán a calcular costos más precisos por plato y
-                      establecer precios competitivos.
+                      <strong>{t("addbiz_tip_label")}</strong> {t("addbiz_tip_text")}
                     </p>
                   </div>
                 </CardContent>
@@ -386,13 +431,9 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <Calculator className="h-5 w-5 text-primary" />
-                    <span className="font-semibold">GastroMetrics (recomendado)</span>
+                    <span className="font-semibold">{t("addbiz_pricing_gastrometrics_title")}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Seis rubros (renta, servicios, marketing, operación, personal, ganancia neta) calculados sobre el
-                    costo de producción de cada receta, más un solo redondeo al final. Más detallado, ideal si
-                    quieres ver de dónde sale cada parte del precio.
-                  </p>
+                  <p className="text-sm text-muted-foreground">{t("addbiz_pricing_gastrometrics_desc")}</p>
                 </button>
 
                 <button
@@ -405,18 +446,15 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <Percent className="h-5 w-5 text-primary" />
-                    <span className="font-semibold">Food Cost % (estándar de industria)</span>
+                    <span className="font-semibold">{t("addbiz_pricing_food_cost_title")}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Precio = Costo de producción ÷ % de food cost objetivo (típico: 28-35%). Un solo número, más
-                    simple, común en restaurantes que ya trabajan con este indicador.
-                  </p>
+                  <p className="text-sm text-muted-foreground">{t("addbiz_pricing_food_cost_desc")}</p>
                 </button>
               </div>
 
               {pricingMethod === "food_cost" && (
                 <div className="space-y-2">
-                  <Label htmlFor="targetFoodCostPercent">Food cost objetivo (%)</Label>
+                  <Label htmlFor="targetFoodCostPercent">{t("addbiz_field_target_food_cost_label")}</Label>
                   <Input
                     id="targetFoodCostPercent"
                     type="number"
@@ -429,10 +467,7 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
                 </div>
               )}
 
-              <p className="text-xs text-muted-foreground">
-                Puedes cambiar esto después desde cada ficha técnica, o venir a ajustarlo aquí más adelante, este es
-                solo el punto de partida por defecto para las recetas nuevas de este negocio.
-              </p>
+              <p className="text-xs text-muted-foreground">{t("addbiz_pricing_footnote")}</p>
             </div>
           )}
         </div>
@@ -440,17 +475,17 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
         <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-4 border-t shrink-0">
           {step > 1 && (
             <Button variant="outline" onClick={handleBack} className="w-full sm:w-auto bg-transparent">
-              Atrás
+              {t("mw_back_button")}
             </Button>
           )}
 
           {step < 3 ? (
             <Button onClick={handleNext} className="w-full sm:w-auto">
-              Siguiente
+              {t("mw_next_button")}
             </Button>
           ) : (
             <Button onClick={handleSubmit} disabled={loading} className="w-full sm:w-auto">
-              {loading ? "Creando..." : "Crear Negocio"}
+              {loading ? t("addbiz_creating") : t("addbiz_create_button")}
             </Button>
           )}
         </DialogFooter>

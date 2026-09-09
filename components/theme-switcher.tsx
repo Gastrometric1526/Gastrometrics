@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { Check, Palette, Sun, Moon, Monitor } from "lucide-react"
 import { useTheme } from "next-themes"
 import { CURATED_THEMES, DEFAULT_THEME_SLUG, resolveThemeSlug, applyThemeAttribute } from "@/lib/theme-colors"
+import { useLanguage } from "@/contexts/language-context"
 
 interface ThemeSwitcherProps {
   businessId?: string
@@ -16,6 +17,7 @@ interface ThemeSwitcherProps {
 }
 
 export function ThemeSwitcher({ businessId, showLightDark = true, className }: ThemeSwitcherProps) {
+  const { t } = useLanguage()
   const { theme: systemTheme, setTheme: setSystemTheme } = useTheme()
   const [currentColorTheme, setCurrentColorTheme] = useState(DEFAULT_THEME_SLUG)
   const [mounted, setMounted] = useState(false)
@@ -56,7 +58,7 @@ export function ThemeSwitcher({ businessId, showLightDark = true, className }: T
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
             <Monitor className="h-4 w-4" />
-            Modo de visualización
+            {t("themeswitch_display_mode")}
           </h4>
           <div className="grid grid-cols-3 gap-2">
             <Button
@@ -66,7 +68,7 @@ export function ThemeSwitcher({ businessId, showLightDark = true, className }: T
               className="justify-start"
             >
               <Sun className="h-4 w-4 mr-2" />
-              Claro
+              {t("business_menu_theme_light")}
             </Button>
             <Button
               variant={systemTheme === "dark" ? "default" : "outline"}
@@ -75,7 +77,7 @@ export function ThemeSwitcher({ businessId, showLightDark = true, className }: T
               className="justify-start"
             >
               <Moon className="h-4 w-4 mr-2" />
-              Oscuro
+              {t("business_menu_theme_dark")}
             </Button>
             <Button
               variant={systemTheme === "system" ? "default" : "outline"}
@@ -84,7 +86,7 @@ export function ThemeSwitcher({ businessId, showLightDark = true, className }: T
               className="justify-start"
             >
               <Monitor className="h-4 w-4 mr-2" />
-              Sistema
+              {t("business_menu_theme_system")}
             </Button>
           </div>
         </div>
@@ -93,7 +95,7 @@ export function ThemeSwitcher({ businessId, showLightDark = true, className }: T
       <div className="space-y-3">
         <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
           <Palette className="h-4 w-4" />
-          Colores del tema {businessId ? "(Este negocio)" : "(Dashboard principal)"}
+          {businessId ? t("themeswitch_theme_colors_business") : t("themeswitch_theme_colors_main")}
         </h4>
 
         <div className="grid grid-cols-2 gap-2">
@@ -128,7 +130,7 @@ export function ThemeSwitcher({ businessId, showLightDark = true, className }: T
       {businessId && (
         <div className="pt-2 border-t border-border">
           <Badge variant="secondary" className="text-xs">
-            Tema independiente para este negocio
+            {t("themeswitch_independent_theme_badge")}
           </Badge>
         </div>
       )}

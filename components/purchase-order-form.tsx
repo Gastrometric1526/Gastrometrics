@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Trash2, Plus, Package } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
-import { getCategoryLabel } from "@/lib/ingredient-labels"
+import { getCategoryLabel, getPresentationLabel, getUnitLabel, matchUnitLabel } from "@/lib/ingredient-labels"
 
 export interface PurchaseOrderFormItem {
   id: string
@@ -361,7 +361,7 @@ export function PurchaseOrderForm({
                 <SelectContent>
                   {availableIngredients.map((ingredient) => (
                     <SelectItem key={ingredient.id} value={ingredient.id}>
-                      {ingredient.name} - {ingredient.category}
+                      {ingredient.name} - {getCategoryLabel(ingredient.category, language)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -384,11 +384,15 @@ export function PurchaseOrderForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {validUnits.map((unit) => (
-                    <SelectItem key={unit} value={unit}>
-                      {unit}
-                    </SelectItem>
-                  ))}
+                  {validUnits.map((unit) => {
+                    const canonicalUnit = matchUnitLabel(unit)
+                    const unitLabel = canonicalUnit ? getUnitLabel(canonicalUnit, language) : unit
+                    return (
+                      <SelectItem key={unit} value={unit}>
+                        {unitLabel}
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -449,7 +453,7 @@ export function PurchaseOrderForm({
                         <p className="font-medium truncate">{item.ingredientName}</p>
                         {item.presentation && item.presentationQuantity ? (
                           <p className="text-sm text-muted-foreground">
-                            {item.presentationQuantity} {item.presentation}
+                            {item.presentationQuantity} {getPresentationLabel(item.presentation, language)}
                             {item.presentationQuantity !== 1 ? "s" : ""} ({item.quantity} {item.unit}) ×{""}
                             {formatCurrency(item.unitPrice)}
                           </p>
@@ -480,7 +484,7 @@ export function PurchaseOrderForm({
                           <SelectContent>
                             {validPresentations.map((p) => (
                               <SelectItem key={p} value={p}>
-                                {p}
+                                {getPresentationLabel(p, language)}
                               </SelectItem>
                             ))}
                           </SelectContent>

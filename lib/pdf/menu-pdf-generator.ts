@@ -5,6 +5,7 @@ import type { Recipe } from "@/types/recipe"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { getPdfLabels } from "@/lib/i18n/pdf-labels"
 import { getBusinessThemeRgb, BRAND_ORANGE_RGB } from "@/lib/theme-colors"
+import { drawBusinessLogo } from "./pdf-logo"
 
 // PDF de Menus — dos variantes con objetivos deliberadamente opuestos, no solo dos
 // temas de color sobre la misma plantilla (pedido explicito: "toma libertad creativa"):
@@ -175,6 +176,10 @@ export type MenuPDFType = "cliente" | "interno"
 export interface MenuPDFOptions {
   type: MenuPDFType
   businessName?: string
+  // Solo se dibuja en la copia "interno" — la copia "cliente" se queda a propósito en
+  // naranja de marca fijo y sin logo del negocio (ver docs/36 sección 1, "fuera de la
+  // sesión"), es una pieza para el comensal, no un documento operativo del negocio.
+  businessLogo?: string
 }
 
 export function generateMenuPDF(menu: Menu, recipes: Recipe[], options: MenuPDFOptions): jsPDF {
@@ -347,16 +352,22 @@ function generateInternalMenuPDF(
 
   doc.setFillColor(...COLORS.primary)
   doc.rect(0, 0, pageWidth, 30, "F")
+
+  if (options.businessLogo) {
+    drawBusinessLogo(doc, options.businessLogo, margin, 3, 15, 15)
+  }
+  const headerTextX = margin + (options.businessLogo ? 18 : 0)
+
   doc.setFontSize(9)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(...COLORS.white)
-  doc.text(sanitizeText(options.businessName) || "GastroMetrics", margin, 10)
+  doc.text(sanitizeText(options.businessName) || "GastroMetrics", headerTextX, 10)
 
   doc.setFillColor(185, 28, 28)
   doc.rect(pageWidth - margin - 48, 4, 48, 6, "F")
   doc.setFontSize(7)
   doc.setFont("helvetica", "bold")
-  doc.text("COPIA INTERNA", pageWidth - margin - 24, 8, { align: "center" })
+  doc.text(labels.copiaInterna, pageWidth - margin - 24, 8, { align: "center" })
   doc.setTextColor(...COLORS.white)
 
   doc.setFontSize(20)
@@ -440,7 +451,7 @@ function generateInternalMenuPDF(
     doc.setFont("helvetica", "normal")
     doc.setTextColor(...COLORS.darkGray)
     doc.text(`Costo total del menu (${totalItems} platos)`, margin + 3, yPosition + 6)
-    doc.text("Precio total del menu", margin + 3, yPosition + 12)
+    doc.text(labels.precioTotalMenu, margin + 3, yPosition + 12)
 
     doc.setFont("helvetica", "bold")
     doc.text(formatCurrency(totalCost), pageWidth - margin - 45, yPosition + 6, { align: "right" })
@@ -461,7 +472,7 @@ function generateInternalMenuPDF(
     doc.setFontSize(10)
     doc.setFont("helvetica", "bold")
     doc.setTextColor(...COLORS.darkGray)
-    doc.text("DISTRIBUCION VISUAL", margin, yPosition)
+    doc.text(labels.distribucionVisual, margin, yPosition)
     yPosition += 6
 
     const chartsTop = yPosition
@@ -470,7 +481,7 @@ function generateInternalMenuPDF(
     doc.setFontSize(8)
     doc.setFont("helvetica", "bold")
     doc.setTextColor(...COLORS.secondary)
-    doc.text("Margen por plato (%)", margin, chartsTop)
+    doc.text(labels.margenPorPlato, margin, chartsTop)
     const barData: ChartDatum[] = dishStats
       .slice(0, 8)
       .map((d, i) => ({ label: d.name, value: d.marginPct, color: CHART_COLORS[i % CHART_COLORS.length] }))
@@ -480,7 +491,7 @@ function generateInternalMenuPDF(
     doc.setFontSize(8)
     doc.setFont("helvetica", "bold")
     doc.setTextColor(...COLORS.secondary)
-    doc.text("Composicion del precio total por plato", pieColX, chartsTop)
+    doc.text(labels.composicionPrecioTotalPorPlato, pieColX, chartsTop)
 
     const sortedByPrice = [...dishStats].sort((a, b) => b.price - a.price)
     const topDishes = sortedByPrice.slice(0, 5)

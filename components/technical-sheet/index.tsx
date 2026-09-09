@@ -39,6 +39,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { logActivity } from "@/lib/services/activity-log"
 import { useLanguage } from "@/contexts/language-context"
 import { getClassificationLabel } from "@/lib/classification-labels"
+import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 
 interface TechnicalSheetProps {
   mode: "new" | "view" | "edit"
@@ -890,7 +891,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
                     <SelectContent>
                       {recipeSteps.map((step) => (
                         <SelectItem key={step} value={step}>
-                          {step}
+                          {getRecipeStepLabel(step, language)}
                         </SelectItem>
                       ))}
                     </SelectContent>

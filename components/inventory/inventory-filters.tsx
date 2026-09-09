@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label"
 import { categories } from "@/types/inventory"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useLanguage } from "@/contexts/language-context"
+import { getCategoryLabel } from "@/lib/ingredient-labels"
 
 interface InventoryFiltersProps {
   category: string
@@ -14,7 +15,7 @@ interface InventoryFiltersProps {
 }
 
 export function InventoryFilters({ category, setCategory, status, setStatus }: InventoryFiltersProps) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   return (
     <div className="flex flex-wrap items-center justify-start gap-2 sm:gap-3">
       <div className="flex items-center space-x-2">
@@ -27,7 +28,7 @@ export function InventoryFilters({ category, setCategory, status, setStatus }: I
             <SelectItem value="all">{t("inventario_filter_all_feminine")}</SelectItem>
             {categories.map((cat) => (
               <SelectItem key={cat} value={cat}>
-                {cat}
+                {getCategoryLabel(cat, language)}
               </SelectItem>
             ))}
           </SelectContent>

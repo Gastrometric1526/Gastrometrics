@@ -67,6 +67,45 @@ describe("aggregateSalesByDish", () => {
     expect(result[0].name).toBe("Plato Misterioso")
     expect(result[0].recipeId).toBeNull()
   })
+
+  // Cubre docs/90 (registro manual de ventas): una línea de menú (menuId, sin
+  // recipeId) debe agruparse por su propio menú a través de varias importaciones —
+  // no caer en el bucket "unmatched" genérico por nombre, que es frágil (dos menús
+  // con nombres parecidos, o el mismo menú renombrado, no colapsarían igual).
+  it("agrupa líneas de menú (sin recipeId) por menuId, usando el nombre del menú", () => {
+    const imports = [
+      makeImport({
+        lines: [
+          { id: "l1", rawDishName: "Almuerzo Ejecutivo", recipeId: null, menuId: "m1", quantity: 3, unitPrice: 200, revenue: 600, theoreticalCost: 210 },
+        ],
+      }),
+      makeImport({
+        id: "imp2",
+        lines: [
+          { id: "l2", rawDishName: "Almuerzo Ejecutivo", recipeId: null, menuId: "m1", quantity: 2, unitPrice: 200, revenue: 400, theoreticalCost: 140 },
+        ],
+      }),
+    ]
+    const menus = [{ id: "m1", name: "Almuerzo Ejecutivo" } as any]
+    const result = aggregateSalesByDish(imports, [], menus)
+    expect(result).toHaveLength(1)
+    expect(result[0].name).toBe("Almuerzo Ejecutivo")
+    expect(result[0].quantitySold).toBe(5)
+    expect(result[0].revenue).toBe(1000)
+    expect(result[0].theoreticalCost).toBe(350)
+  })
+
+  it("sin el arreglo de menús, una línea de menú cae al mismo bucket 'unmatched' de siempre (compatibilidad)", () => {
+    const imports = [
+      makeImport({
+        lines: [
+          { id: "l1", rawDishName: "Almuerzo Ejecutivo", recipeId: null, menuId: "m1", quantity: 3, unitPrice: 200, revenue: 600, theoreticalCost: 210 },
+        ],
+      }),
+    ]
+    const result = aggregateSalesByDish(imports, [])
+    expect(result[0].name).toBe("Almuerzo Ejecutivo")
+  })
 })
 
 describe("classifyMenuEngineering", () => {

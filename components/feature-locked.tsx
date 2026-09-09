@@ -7,12 +7,16 @@ import { Button } from "@/components/ui/button"
 import { Sidebar } from "@/components/sidebar"
 import { getMinimumPlanForFeature } from "@/lib/plan-access"
 import type { FeatureKey } from "@/lib/plans"
+import { useLanguage } from "@/contexts/language-context"
 
 // Pantalla de bloqueo por plan — reemplaza el contenido completo de una pagina
 // cuando el plan actual no incluye la funcion. No oculta la existencia de la
 // funcion (mala UX/confuso), la muestra con un CTA claro a /planes.
 export function FeatureLockedPage({ feature, title, description }: { feature: FeatureKey; title: string; description: string }) {
   const minPlan = getMinimumPlanForFeature(feature)
+  const { t } = useLanguage()
+  const [availableFromBefore, availableFromAfterRaw] = t("featurelocked_available_from_plan").split("{name}")
+  const availableFromAfter = availableFromAfterRaw?.replace("{price}", minPlan?.price ?? "")
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -27,12 +31,14 @@ export function FeatureLockedPage({ feature, title, description }: { feature: Fe
             <p className="text-muted-foreground text-sm">{description}</p>
             {minPlan && (
               <p className="text-sm text-foreground">
-                Disponible desde el plan <span className="font-semibold">{minPlan.name}</span> ({minPlan.price}).
+                {availableFromBefore}
+                <span className="font-semibold">{minPlan.name}</span>
+                {availableFromAfter}
               </p>
             )}
             <Link href="/mi-plan">
               <Button className="gap-2">
-                Ver planes
+                {t("landing_hero_cta_secondary")}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
@@ -47,6 +53,9 @@ export function FeatureLockedPage({ feature, title, description }: { feature: Fe
 // boton dentro de una pagina que por lo demas si es accesible en el plan actual.
 export function FeatureLockedInline({ feature, title, description }: { feature: FeatureKey; title: string; description: string }) {
   const minPlan = getMinimumPlanForFeature(feature)
+  const { t } = useLanguage()
+  const [availableFromBefore, availableFromAfterRaw] = t("featurelocked_available_from").split("{name}")
+  const availableFromAfter = availableFromAfterRaw?.replace("{price}", minPlan?.price ?? "")
 
   return (
     <Card className="border-2 border-dashed border-border bg-muted/20">
@@ -56,12 +65,14 @@ export function FeatureLockedInline({ feature, title, description }: { feature: 
         <p className="text-xs text-muted-foreground max-w-sm">{description}</p>
         {minPlan && (
           <p className="text-xs text-muted-foreground">
-            Disponible desde <span className="font-medium text-foreground">{minPlan.name}</span> ({minPlan.price})
+            {availableFromBefore}
+            <span className="font-medium text-foreground">{minPlan.name}</span>
+            {availableFromAfter}
           </p>
         )}
         <Link href="/mi-plan">
           <Button size="sm" variant="outline" className="gap-1.5">
-            Ver planes
+            {t("landing_hero_cta_secondary")}
             <ArrowRight className="h-3.5 w-3.5" />
           </Button>
         </Link>

@@ -171,6 +171,7 @@ export default function MenusPage() {
       const doc = generateMenuPDF(menu, recipes, {
         type,
         businessName: business?.name,
+        businessLogo: business?.logo,
       })
       const suffix = type === "interno" ? "interno" : "cliente"
       doc.save(`menu-${menu.name.toLowerCase().replace(/\s+/g, "-")}-${suffix}.pdf`)

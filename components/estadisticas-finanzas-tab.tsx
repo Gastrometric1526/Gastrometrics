@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
 import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
+import { getMenus, ensureMenusLoaded } from "@/lib/menus"
 import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 import {
   getInventoryHistory,
@@ -113,6 +114,7 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
       ensurePurchaseOrdersLoaded(businessId),
       ensureInventoryLoaded(businessId),
       ensureInventoryHistoryLoaded(businessId),
+      ensureMenusLoaded(businessId),
       refreshBusinesses(),
     ]).then(() => {
       if (!cancelled) setRefreshKey((k) => k + 1)
@@ -123,6 +125,7 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
   }, [businessId])
 
   const recipes = useMemo(() => getRecipes(businessId), [businessId, refreshKey])
+  const menus = useMemo(() => getMenus(businessId), [businessId, refreshKey])
   const ingredients = useMemo(() => getIngredients(businessId), [businessId, refreshKey])
   const purchaseOrders = useMemo(() => getPurchaseOrders(businessId), [businessId, refreshKey])
   const inventoryHistory = useMemo(() => getInventoryHistory(businessId), [businessId, refreshKey])
@@ -150,7 +153,10 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
     }
   }, [salesImports])
 
-  const dishPerformance = useMemo(() => aggregateSalesByDish(salesImports, recipes), [salesImports, recipes])
+  const dishPerformance = useMemo(
+    () => aggregateSalesByDish(salesImports, recipes, menus),
+    [salesImports, recipes, menus],
+  )
   const menuEngineering = useMemo(() => classifyMenuEngineering(dishPerformance), [dishPerformance])
   const avgPopularity =
     dishPerformance.length > 0 ? dishPerformance.reduce((s, d) => s + d.quantitySold, 0) / dishPerformance.length : 0
@@ -620,7 +626,14 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
                   className="flex items-center justify-between text-sm bg-muted/20 rounded-lg px-3 py-2"
                 >
                   <div className="min-w-0">
-                    <p className="font-medium truncate">{imp.fileName}</p>
+                    <p className="font-medium truncate flex items-center gap-2">
+                      <span className="truncate">{imp.fileName}</span>
+                      {imp.source === "manual" && (
+                        <Badge variant="secondary" className="shrink-0 text-[10px]">
+                          {t("finanzas_manual_entry_badge")}
+                        </Badge>
+                      )}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {new Date(imp.importedAt).toLocaleString()} · {imp.lineCount} {t("finanzas_import_rows_suffix")} ·{" "}
                       {formatCurrency(imp.totalRevenue)}

@@ -17,6 +17,8 @@ import { FileDown, FileText, Users, File, CheckCircle, Lock, ShieldAlert } from 
 import type { Recipe, PDFExportType } from "@/types/recipe"
 import { downloadRecipePDF } from "@/lib/pdf/recipe-pdf-generator"
 import { useFeatureAccess, useActiveMembership } from "@/lib/plan-access"
+import { useLanguage } from "@/contexts/language-context"
+import { useToast } from "@/hooks/use-toast"
 
 interface RecipePDFExportDialogProps {
   recipe: Recipe
@@ -36,6 +38,8 @@ export function RecipePDFExportDialog({
   const canExportAdministrative = useFeatureAccess("pdf_admin")
   const canExportAtAll = useFeatureAccess("pdf_export")
   const { member: previewMember } = useActiveMembership()
+  const { t } = useLanguage()
+  const { toast } = useToast()
   const [selectedType, setSelectedType] = useState<PDFExportType>(canExportAdministrative ? "administrative" : "employee")
 
   // El plan puede confirmarse (de null a true) recien despues del primer render en el
@@ -72,7 +76,11 @@ export function RecipePDFExportDialog({
       onOpenChange(false)
     } catch (error) {
       console.error("Error exporting PDF:", error)
-      alert("Error al exportar PDF. Por favor intenta de nuevo.")
+      toast({
+        title: t("pdfexport_toast_error_title"),
+        description: t("pdfexport_toast_error_desc"),
+        variant: "destructive",
+      })
     } finally {
       setIsExporting(false)
     }
@@ -82,23 +90,20 @@ export function RecipePDFExportDialog({
     {
       value: "administrative" as PDFExportType,
       icon: FileText,
-      title: "PDF Administrativo",
-      description:
-        "Todos los datos completos: costos, rendimientos, porcentajes, observaciones, ingredientes, clasificaciones, pasos, precios y cálculos. Ideal para gestión interna.",
+      title: t("pdfexport_type_administrative_title"),
+      description: t("pdfexport_type_administrative_desc"),
     },
     {
       value: "employee" as PDFExportType,
       icon: Users,
-      title: "PDF de Empleado",
-      description:
-        "Solo información para preparación: nombre, clasificación, paso, rendimiento, foto, ingredientes (nombre, cantidad, unidad), procedimiento y observaciones. Sin costos ni precios.",
+      title: t("pdfexport_type_employee_title"),
+      description: t("pdfexport_type_employee_desc"),
     },
     {
       value: "normal" as PDFExportType,
       icon: File,
-      title: "PDF Normal",
-      description:
-        "Para presentaciones: nombre, clasificación, paso, rendimiento, foto, ingredientes, procedimiento breve, alérgenos y precio final con ISV. Sin costos administrativos.",
+      title: t("pdfexport_type_normal_title"),
+      description: t("pdfexport_type_normal_desc"),
     },
   ]
 
@@ -108,23 +113,22 @@ export function RecipePDFExportDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <FileDown className="h-5 w-5" />
-            Exportar Receta a PDF
+            {t("pdfexport_dialog_title")}
           </DialogTitle>
-          <DialogDescription>Selecciona el tipo de documento que deseas generar para "{recipe.name}"</DialogDescription>
+          <DialogDescription>
+            {t("pdfexport_dialog_desc").replace("{name}", recipe.name)}
+          </DialogDescription>
         </DialogHeader>
 
         {canExportAtAll === false ? (
           <div className="py-6 flex flex-col items-center text-center gap-3">
             <ShieldAlert className="h-10 w-10 text-muted-foreground" />
             <div>
-              <p className="font-semibold">Exportar a PDF fue deshabilitado por el administrador</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                El administrador de esta cuenta no te dio acceso a exportar PDF de recetas. Contacta al administrador
-                de la cuenta para solicitar acceso.
-              </p>
+              <p className="font-semibold">{t("pdfexport_locked_title")}</p>
+              <p className="text-sm text-muted-foreground mt-1">{t("pdfexport_locked_desc")}</p>
               {previewMember && (
                 <p className="text-xs text-muted-foreground mt-3">
-                  Estás viendo la app como {previewMember.name || previewMember.email}
+                  {t("pdfexport_preview_member").replace("{name}", previewMember.name || previewMember.email)}
                 </p>
               )}
             </div>
@@ -154,7 +158,7 @@ export function RecipePDFExportDialog({
                       {type.title}
                       {isLocked && (
                         <span className="inline-flex items-center gap-1 text-xs font-normal text-muted-foreground">
-                          <Lock className="h-3 w-3" /> Requiere plan Home Cook o superior
+                          <Lock className="h-3 w-3" /> {t("pdfexport_requires_plan")}
                         </span>
                       )}
                     </Label>
@@ -171,11 +175,11 @@ export function RecipePDFExportDialog({
           <Alert>
             <FileText className="h-4 w-4" />
             <AlertDescription className="text-sm">
-              <strong>Formato del archivo:</strong> [Tipo][NombreReceta]v[Versión][AAAA-MM-DD][HHmm].pdf
+              <strong>{t("pdfexport_info_filename_label")}</strong> [Tipo][NombreReceta]v[Versión][AAAA-MM-DD][HHmm].pdf
               <br />
-              <strong>Formato de página:</strong> A4 vertical
+              <strong>{t("pdfexport_info_pagesize_label")}</strong> {t("pdfexport_info_pagesize_value")}
               <br />
-              <strong>Incluye:</strong> Encabezado con logo y fecha, pie de página con numeración
+              <strong>{t("pdfexport_info_includes_label")}</strong> {t("pdfexport_info_includes_value")}
             </AlertDescription>
           </Alert>
         </div>
@@ -183,7 +187,7 @@ export function RecipePDFExportDialog({
 
         <DialogFooter className="flex flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
-            {canExportAtAll === false ? "Cerrar" : "Cancelar"}
+            {canExportAtAll === false ? t("common_close") : t("common_cancel")}
           </Button>
           {canExportAtAll !== false && (
             <Button
@@ -194,12 +198,12 @@ export function RecipePDFExportDialog({
               {isExporting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Generando PDF...
+                  {t("pdfexport_generating")}
                 </>
               ) : (
                 <>
                   <FileDown className="h-4 w-4 mr-2" />
-                  Exportar PDF
+                  {t("ficha_tecnica_export_pdf")}
                 </>
               )}
             </Button>

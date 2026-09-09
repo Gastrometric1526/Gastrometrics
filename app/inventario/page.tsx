@@ -390,7 +390,7 @@ export default function InventoryPage() {
   const exportInventory = (inventory: InventorySnapshot) => {
     try {
       const business = getBusinessById(businessId || "main")
-      downloadInventorySnapshotPDF(inventory, { businessName: business?.name, businessId: businessId || "main" })
+      downloadInventorySnapshotPDF(inventory, { businessName: business?.name, businessLogo: business?.logo, businessId: businessId || "main" })
       toast({
         title: t("inventario_toast_exporting_title"),
         description: t("inventario_toast_exporting_desc").replace(
@@ -411,7 +411,7 @@ export default function InventoryPage() {
   const handleExportCurrentInventory = () => {
     try {
       const business = getBusinessById(businessId || "main")
-      downloadCurrentInventoryPDF(items, { businessName: business?.name, businessId: businessId || "main" })
+      downloadCurrentInventoryPDF(items, { businessName: business?.name, businessLogo: business?.logo, businessId: businessId || "main" })
     } catch (error) {
       console.error("Error exporting current inventory PDF:", error)
       toast({

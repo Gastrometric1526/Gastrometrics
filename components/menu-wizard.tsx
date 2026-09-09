@@ -25,6 +25,7 @@ import { formatCurrency } from "@/lib/currency"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
+import { getMenuTypeLabel } from "@/lib/menu-type-labels"
 
 interface MenuWizardProps {
   open: boolean
@@ -349,7 +350,7 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
                     <SelectContent>
                       {menuTypes.map((type) => (
                         <SelectItem key={type} value={type}>
-                          {type}
+                          {getMenuTypeLabel(type, language)}
                         </SelectItem>
                       ))}
                     </SelectContent>

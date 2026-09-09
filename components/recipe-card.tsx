@@ -56,7 +56,7 @@ export function RecipeCard({
   onOpenDetails,
 }: RecipeCardProps) {
   const [imageError, setImageError] = useState(false)
-  const { language } = useLanguage()
+  const { language, t } = useLanguage()
 
   // Calcular estadísticas de la receta
   // BUG CORREGIDO: unitCost/yield/procedures no existen en Recipe (types/recipe.ts) —
@@ -97,7 +97,7 @@ export function RecipeCard({
       <Card
         className="border-border hover:bg-[#F9F9F8] transition-colors duration-150 bg-card cursor-pointer"
         onDoubleClick={() => onOpenDetails?.(recipe)}
-        title="Doble clic para ver todas las opciones"
+        title={t("recipecard_double_click_hint")}
       >
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -131,7 +131,7 @@ export function RecipeCard({
                     >
                       {recipe.classification
                         ? getClassificationLabel(recipe.classification as Classification, language)
-                        : "Sin clasificar"}
+                        : t("recipecard_unclassified")}
                     </Badge>
                     {recipe.plate && (
                       <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">
@@ -145,7 +145,7 @@ export function RecipeCard({
                         className="text-xs bg-blue-50 text-info border-blue-200 dark:border-blue-900"
                       >
                         <ArrowRightLeft className="h-2 w-2 mr-1" />
-                        Migrada
+                        {t("recipecard_migrated_badge")}
                       </Badge>
                     )}
                   </div>
@@ -161,20 +161,20 @@ export function RecipeCard({
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem onClick={() => onView(recipe)}>
                       <Eye className="h-4 w-4 mr-2" />
-                      Ver receta
+                      {t("recipecard_view")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onEdit(recipe)}>
                       <Edit className="h-4 w-4 mr-2" />
-                      Editar
+                      {t("recipecard_edit")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onDuplicate(recipe)}>
                       <Copy className="h-4 w-4 mr-2" />
-                      Duplicar
+                      {t("recipecard_duplicate")}
                     </DropdownMenuItem>
                     {onMigrate && (
                       <DropdownMenuItem onClick={() => onMigrate(recipe)}>
                         <ArrowRightLeft className="h-4 w-4 mr-2" />
-                        Migrar
+                        {t("recipecard_migrate")}
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
@@ -183,7 +183,7 @@ export function RecipeCard({
                       className="text-destructive dark:text-red-300 focus:text-destructive dark:text-red-300"
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
-                      Eliminar
+                      {t("recipecard_delete")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -195,7 +195,7 @@ export function RecipeCard({
                   <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 dark:text-green-300" />
                   <div>
                     <p className="font-medium text-green-600 dark:text-green-300">{formatCurrency(stats.totalCost)}</p>
-                    <p className="text-muted-foreground text-xs">Costo total</p>
+                    <p className="text-muted-foreground text-xs">{t("recipecard_total_cost")}</p>
                   </div>
                 </div>
 
@@ -203,7 +203,7 @@ export function RecipeCard({
                   <Users className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-300" />
                   <div>
                     <p className="font-medium text-blue-600 dark:text-blue-300">{stats.yield}</p>
-                    <p className="text-muted-foreground text-xs">Porciones</p>
+                    <p className="text-muted-foreground text-xs">{t("recipecard_servings")}</p>
                   </div>
                 </div>
 
@@ -211,7 +211,7 @@ export function RecipeCard({
                   <ChefHat className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600 dark:text-purple-300" />
                   <div>
                     <p className="font-medium text-purple-600 dark:text-purple-300">{stats.ingredientsCount}</p>
-                    <p className="text-muted-foreground text-xs">Ingredientes</p>
+                    <p className="text-muted-foreground text-xs">{t("recipecard_ingredients")}</p>
                   </div>
                 </div>
 
@@ -226,7 +226,7 @@ export function RecipeCard({
                           })
                         : "N/A"}
                     </p>
-                    <p className="text-muted-foreground text-xs">Actualizada</p>
+                    <p className="text-muted-foreground text-xs">{t("recipecard_updated")}</p>
                   </div>
                 </div>
               </div>
@@ -266,7 +266,7 @@ export function RecipeCard({
               {recipe.metadata?.migratedFrom && (
                 <Badge variant="outline" className="text-xs bg-blue-50 text-info border-blue-200 dark:border-blue-900">
                   <ArrowRightLeft className="h-2 w-2 mr-1" />
-                  Migrada
+                  {t("recipecard_migrated_badge")}
                 </Badge>
               )}
             </div>
@@ -345,8 +345,8 @@ export function RecipeCard({
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-blue-600 dark:text-blue-300" />
               <div>
-                <p className="font-medium text-blue-600 dark:text-blue-300">{stats.yield} porciones</p>
-                <p className="text-muted-foreground text-xs">Rendimiento</p>
+                <p className="font-medium text-blue-600 dark:text-blue-300">{stats.yield} {t("recipecard_servings_suffix")}</p>
+                <p className="text-muted-foreground text-xs">{t("recipecard_yield_label")}</p>
               </div>
             </div>
           </div>
@@ -364,7 +364,7 @@ export function RecipeCard({
               <Clock className="h-4 w-4 text-amber-600 dark:text-amber-300" />
               <div>
                 <p className="font-medium text-amber-600 dark:text-amber-300">{stats.proceduresCount}</p>
-                <p className="text-muted-foreground text-xs">Pasos</p>
+                <p className="text-muted-foreground text-xs">{t("recipecard_steps")}</p>
               </div>
             </div>
           </div>
@@ -373,7 +373,7 @@ export function RecipeCard({
           {recipe.metadata?.updatedAt && (
             <div className="pt-2 border-t border-border">
               <p className="text-xs text-muted-foreground">
-                Actualizada:{""}
+                {t("recipecard_updated_prefix")}{" "}
                 {new Date(recipe.metadata.updatedAt).toLocaleDateString(getDateLocale(language), {
                   year: "numeric",
                   month: "short",
@@ -388,7 +388,10 @@ export function RecipeCard({
             <div className="pt-2 border-t border-border">
               <p className="text-xs text-blue-600 dark:text-blue-300 flex items-center gap-1">
                 <ArrowRightLeft className="h-3 w-3" />
-                Migrada desde {recipe.metadata.migratedFrom === "main" ? "dashboard principal" : "otro negocio"}
+                {t("recipecard_migrated_from_prefix")}{" "}
+                {recipe.metadata.migratedFrom === "main"
+                  ? t("recipecard_migrated_from_dashboard")
+                  : t("recipecard_migrated_from_business")}
               </p>
             </div>
           )}
@@ -403,7 +406,7 @@ export function RecipeCard({
             className="flex-1 border-border hover:bg-accent"
           >
             <Eye className="h-4 w-4 mr-2" />
-            Ver
+            {t("recipecard_view_short")}
           </Button>
           <Button
             variant="default"
@@ -412,7 +415,7 @@ export function RecipeCard({
             className="flex-1 bg-primary hover:bg-primary/90"
           >
             <Edit className="h-4 w-4 mr-2" />
-            Editar
+            {t("recipecard_edit")}
           </Button>
         </div>
       </CardContent>

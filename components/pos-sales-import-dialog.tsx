@@ -82,7 +82,14 @@ function parseLocaleNumber(raw: string | number | null | undefined): number {
 // ("TOTAL","SUBTOTAL", etc.) que muchos POS agregan al final del reporte — una
 // fila asi se colaba como un"plato"mas con toda la venta del periodo, doblando
 // (o mas) los ingresos totales sin ningun aviso al usuario.
-const SUMMARY_ROW_PATTERN = /^(total|subtotal|gran\s*total|grand\s*total|resumen|suma)s?\s*:?$/i
+// MEJORADO: ahora detecta palabras clave de resumen en los 6 idiomas soportables:
+// - Español: total, subtotal, gran total, resumen, suma
+// - Inglés: total, subtotal, grand total, summary
+// - Danés: total, beløb, i alt
+// - Francés: total, sous-total, somme, résumé
+// - Portugués: total, subtotal, soma, resumo
+// - Chino: 总计, 小计, 合计, 汇总
+const SUMMARY_ROW_PATTERN = /^(total|subtotal|grand?\s*total|resumen|suma|beløb|i\s*alt|sous-total|somme|résumé|sous\s*total|soma|resumo|总计|小计|合计|汇总)s?\s*:?$/i
 
 function isSummaryOrBlankRow(rawDishName: string): boolean {
   const trimmed = rawDishName.trim()
@@ -188,13 +195,15 @@ export function POSSalesImportDialog({
         )
         setStep("review")
       } else {
-        // Adivina columnas por nombre, como primer intento (el usuario puede corregir)
+        // Adivina columnas por nombre, soportando los 6 idiomas soportables.
+        // Si falla el guess, el usuario puede mapear manualmente en el paso "mapping".
         const guess = (candidates: string[]) =>
           detectedHeaders.find((h) => candidates.some((c) => h.toLowerCase().includes(c))) || NONE_VALUE
-        setDateColumn(guess(["fecha", "date"]))
-        setDishColumn(guess(["plato", "producto", "item", "articulo", "dish", "product"]))
-        setQuantityColumn(guess(["cantidad", "cant", "qty", "unidades"]))
-        setPriceColumn(guess(["precio", "price", "monto", "total"]))
+        // Español | Inglés | Danés | Francés (mismo "date" que en inglés) | Portugués | Chino
+        setDateColumn(guess(["fecha", "date", "dato", "data", "日期"]))
+        setDishColumn(guess(["plato", "producto", "item", "articulo", "dish", "product", "artikel", "plat", "prato", "菜"]))
+        setQuantityColumn(guess(["cantidad", "cant", "qty", "unidades", "quantity", "mængde", "quantité", "quantidade", "数量"]))
+        setPriceColumn(guess(["precio", "price", "monto", "total", "pris", "prix", "preço", "价格"]))
         setStep("mapping")
       }
     } catch (error: any) {

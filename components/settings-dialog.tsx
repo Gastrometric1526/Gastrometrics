@@ -88,6 +88,25 @@ const businessTypes = [
   "Otro",
 ]
 
+// El VALOR guardado/enviado de cada tipo de negocio se queda en español (no se toca,
+// para no romper datos ya guardados) — solo la ETIQUETA que se muestra se traduce, vía
+// esta tabla que mapea cada valor a una clave de traducción. Mismo patrón que
+// lib/classification-labels.ts / lib/ingredient-labels.ts. Reutiliza las claves de
+// signup_business_type_* donde el texto es idéntico; "Pastelería" y "Hotel" (a secas,
+// distinto de "Hotel/Resort" del registro) no tienen equivalente ahí y usan claves
+// propias.
+const businessTypeLabelKeys = {
+  "Restaurante": "signup_business_type_restaurant_label",
+  "Cafetería": "signup_business_type_cafe_label",
+  "Panadería": "signup_business_type_bakery_label",
+  "Pastelería": "settingsprofile_business_type_pastry",
+  "Food Truck": "signup_business_type_food_truck_label",
+  "Catering": "signup_business_type_catering_label",
+  "Bar/Pub": "signup_business_type_bar_label",
+  "Hotel": "settingsprofile_business_type_hotel",
+  "Otro": "signup_business_type_other_label",
+} as const
+
 interface SettingsDialogProps {
   trigger?: React.ReactNode
   businessId?: string
@@ -221,8 +240,8 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
     setEmailConfirmError("")
 
     toast({
-      title: "Configuraciones guardadas",
-      description: "Tus preferencias han sido actualizadas correctamente.",
+      title: t("settings_saved"),
+      description: t("settings_saved_desc"),
     })
     setOpen(false)
   }
@@ -269,7 +288,10 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
     resetAllData(resetOptions)
 
     logDevToolAction(
-      `Datos restablecidos: ${summary.businesses} negocios, ${summary.recipes} recetas, ${summary.ingredients} ingredientes eliminados`,
+      t("settingsdev_log_reset")
+        .replace("{businesses}", String(summary.businesses))
+        .replace("{recipes}", String(summary.recipes))
+        .replace("{ingredients}", String(summary.ingredients)),
       {
         resetOptions,
         dataSummary: summary,
@@ -280,8 +302,8 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
     setOpen(false)
 
     toast({
-      title: "Datos restablecidos",
-      description: "Todos los datos de usuario han sido eliminados. Redirigiendo...",
+      title: t("settingsdev_toast_reset_title"),
+      description: t("settingsdev_toast_reset_desc"),
     })
 
     setTimeout(() => {
@@ -303,14 +325,14 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
 
-    logDevToolAction(`Datos exportados a ${filename}`, {
+    logDevToolAction(t("settingsdev_log_export").replace("{filename}", filename), {
       filename,
       dataSummary: getDataSummary(),
     })
 
     toast({
-      title: "Datos exportados",
-      description: "El respaldo se ha descargado correctamente.",
+      title: t("settingsdev_toast_export_title"),
+      description: t("settingsdev_toast_export_desc"),
     })
   }
 
@@ -328,14 +350,14 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
             importAllData(jsonData)
             setDataSummary(getDataSummary())
 
-            logDevToolAction(`Datos importados desde ${file.name}`, {
+            logDevToolAction(t("settingsdev_log_import").replace("{filename}", file.name), {
               filename: file.name,
               dataSummary: getDataSummary(),
             })
 
             toast({
-              title: "Datos importados",
-              description: "Los datos se han restaurado correctamente.",
+              title: t("settingsdev_toast_import_title"),
+              description: t("settingsdev_toast_import_desc"),
             })
 
             setTimeout(() => {
@@ -343,8 +365,8 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
             }, 1000)
           } catch (error) {
             toast({
-              title: "Error",
-              description: "No se pudo importar el archivo. Verifica que sea un respaldo válido.",
+              title: t("inventario_toast_error_title"),
+              description: t("settingsdev_toast_import_error_desc"),
               variant: "destructive",
             })
           }
@@ -358,8 +380,8 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
   const handleRefreshSummary = () => {
     setDataSummary(getDataSummary())
     toast({
-      title: "Actualizado",
-      description: "El resumen de datos se ha actualizado.",
+      title: t("settingsdev_toast_refresh_title"),
+      description: t("settingsdev_toast_refresh_desc"),
     })
   }
 
@@ -615,7 +637,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                         <SelectContent>
                           {businessTypes.map((type) => (
                             <SelectItem key={type} value={type}>
-                              {type}
+                              {t(businessTypeLabelKeys[type as keyof typeof businessTypeLabelKeys])}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -730,10 +752,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground">
-                      Traduce los textos de la interfaz. El contenido que escribas tú (nombres de
-                      recetas, ingredientes, negocios) no se traduce.
-                    </p>
+                    <p className="text-xs text-muted-foreground">{t("settings_language_note")}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -807,10 +826,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                     <Database className="h-5 w-5" />
                     {t("settings_dev_tools")}
                   </CardTitle>
-                  <CardDescription>
-                    Gestiona los datos de la aplicación para pruebas y desarrollo. Las acciones realizadas aquí se
-                    registrarán en Actividad Reciente.
-                  </CardDescription>
+                  <CardDescription>{t("settingsdev_card_desc")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-3">
@@ -863,9 +879,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                         {t("settings_import_data")}
                       </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Exporta todos los datos para crear un respaldo o importa datos desde un archivo de respaldo.
-                    </p>
+                    <p className="text-xs text-muted-foreground">{t("settingsdev_backup_restore_desc")}</p>
                   </div>
 
                   <Separator />
@@ -906,8 +920,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                         </div>
                         <div className="p-3 bg-muted rounded-lg">
                           <p className="text-xs text-muted-foreground">
-                            ℹ️ Las actividades recientes y notificaciones siempre se mantienen para registrar las
-                            acciones de desarrollo.
+                            ℹ️ {t("settingsdev_reset_keep_note")}
                           </p>
                         </div>
                       </div>
@@ -915,9 +928,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                         <Trash2 className="h-4 w-4" />
                         {t("settings_reset_all")}
                       </Button>
-                      <p className="text-xs text-muted-foreground">
-                        Esta acción eliminará todos los datos de usuario de la aplicación.
-                      </p>
+                      <p className="text-xs text-muted-foreground">{t("settingsdev_reset_warning")}</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -926,17 +937,27 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                           <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
                           <div className="space-y-2 flex-1">
                             <h4 className="font-semibold text-destructive">{t("settings_confirm_title")}</h4>
-                            <p className="text-sm text-muted-foreground">Esta acción eliminará permanentemente:</p>
+                            <p className="text-sm text-muted-foreground">{t("settingsdev_confirm_intro")}</p>
                             <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                              <li>{dataSummary.businesses} negocios</li>
-                              <li>{dataSummary.recipes} recetas</li>
-                              <li>{dataSummary.ingredients} ingredientes</li>
-                              <li>{dataSummary.purchaseOrders} órdenes de compra</li>
-                              <li>{dataSummary.menus} menús</li>
-                              <li>Y todos los demás datos de usuario</li>
+                              <li>
+                                {dataSummary.businesses} {t("settingsdev_confirm_item_businesses")}
+                              </li>
+                              <li>
+                                {dataSummary.recipes} {t("settingsdev_confirm_item_recipes")}
+                              </li>
+                              <li>
+                                {dataSummary.ingredients} {t("settingsdev_confirm_item_ingredients")}
+                              </li>
+                              <li>
+                                {dataSummary.purchaseOrders} {t("settingsdev_confirm_item_purchase_orders")}
+                              </li>
+                              <li>
+                                {dataSummary.menus} {t("settingsdev_confirm_item_menus")}
+                              </li>
+                              <li>{t("settingsdev_confirm_item_other")}</li>
                             </ul>
                             <Badge variant="destructive" className="mt-2">
-                              Esta acción no se puede deshacer
+                              {t("negocios_delete_confirm_irreversible")}
                             </Badge>
                           </div>
                         </div>

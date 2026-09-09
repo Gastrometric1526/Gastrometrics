@@ -316,7 +316,7 @@ export function generatePurchaseOrderPDF(order: PurchaseOrder, options: Purchase
     doc.setFontSize(11)
     doc.setFont("helvetica", "bold")
     doc.setTextColor(...COLORS.darkGray)
-    doc.text("DISTRIBUCION POR PROVEEDOR", margin, yPosition)
+    doc.text(labels.distribucionPorProveedor, margin, yPosition)
     drawLine(yPosition + 2)
     yPosition += 10
 

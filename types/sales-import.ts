@@ -5,8 +5,13 @@
 
 export interface SalesImportLine {
   id: string
-  rawDishName: string // el nombre tal como vino del archivo del POS
+  rawDishName: string // el nombre tal como vino del archivo del POS (o el nombre de la receta/menú, en un registro manual)
   recipeId: string | null // receta vinculada, o null si no se pudo/quiso vincular
+  // Menú vendido como una sola unidad (docs/90, registro manual sin POS) — nunca lo
+  // pone la importación de POS (esa solo conoce recetas). Mutuamente excluyente con
+  // recipeId en la práctica, pero no se fuerza a nivel de tipo para no complicar el
+  // resto del código que ya asume recipeId como el único vínculo posible.
+  menuId?: string | null
   quantity: number
   unitPrice: number | null // precio de venta si el archivo lo trae; si no, se usa el de la receta
   revenue: number // quantity * (unitPrice ?? recipe.unitPrice ?? 0)
@@ -25,6 +30,10 @@ export interface SalesImport {
   lineCount: number
   unmatchedDishNames: string[]
   lines: SalesImportLine[]
+  // "manual" = registrado a mano desde /estadisticas → Ventas (docs/90, sin POS).
+  // Ausente/"pos_import" en todo lo importado antes de esto — se trata como
+  // "pos_import" en cualquier lugar que lo lea, para no romper datos ya guardados.
+  source?: "pos_import" | "manual"
 }
 
 // Mapeo de columnas del archivo del POS -> campos que necesitamos. Se guarda una

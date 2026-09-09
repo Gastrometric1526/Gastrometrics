@@ -109,6 +109,9 @@ export type EmailLabelKeys =
   | "e06_unlocked_heading"
   | "e06_removed_heading"
   | "e06_next_charge_prefix"
+  | "e06_body_admin"
+  | "e06_expires_prefix"
+  | "e06_no_expiry_value"
   | "e06_cta"
   | "e06_footnote"
 
@@ -199,6 +202,9 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e06_unlocked_heading: "Se desbloqueó",
     e06_removed_heading: "Ya no incluye",
     e06_next_charge_prefix: "Próximo cobro",
+    e06_body_admin: "Un administrador de GastroMetrics actualizó tu plan. No hubo ningún cobro por este cambio.",
+    e06_expires_prefix: "Tu plan vence",
+    e06_no_expiry_value: "Sin vencimiento",
     e06_cta: "Ver mi plan",
     e06_footnote: "Puedes bajar de plan cuando quieras desde Mi Plan; nada de lo que ya guardaste se borra.",
   },
@@ -288,6 +294,9 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e06_unlocked_heading: "Unlocked",
     e06_removed_heading: "No longer included",
     e06_next_charge_prefix: "Next charge",
+    e06_body_admin: "A GastroMetrics administrator updated your plan. There was no charge for this change.",
+    e06_expires_prefix: "Your plan expires",
+    e06_no_expiry_value: "No expiration",
     e06_cta: "View my plan",
     e06_footnote: "You can downgrade anytime from My Plan; nothing you already saved gets deleted.",
   },
@@ -377,6 +386,9 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e06_unlocked_heading: "Låst op",
     e06_removed_heading: "Ikke længere inkluderet",
     e06_next_charge_prefix: "Næste opkrævning",
+    e06_body_admin: "En GastroMetrics-administrator opdaterede din plan. Der var ingen opkrævning for denne ændring.",
+    e06_expires_prefix: "Din plan udløber",
+    e06_no_expiry_value: "Intet udløb",
     e06_cta: "Se min plan",
     e06_footnote: "Du kan nedgradere når du vil fra Min Plan; intet af det, du allerede har gemt, bliver slettet.",
   },
@@ -466,6 +478,9 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e06_unlocked_heading: "Débloqué",
     e06_removed_heading: "N'est plus inclus",
     e06_next_charge_prefix: "Prochain prélèvement",
+    e06_body_admin: "Un administrateur de GastroMetrics a mis à jour ton plan. Aucun prélèvement n'a été effectué pour ce changement.",
+    e06_expires_prefix: "Ton plan expire",
+    e06_no_expiry_value: "Sans expiration",
     e06_cta: "Voir mon plan",
     e06_footnote: "Tu peux rétrograder quand tu veux depuis Mon Plan ; rien de ce que tu as déjà enregistré n'est supprimé.",
   },
@@ -555,6 +570,9 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e06_unlocked_heading: "Foi desbloqueado",
     e06_removed_heading: "Não está mais incluído",
     e06_next_charge_prefix: "Próxima cobrança",
+    e06_body_admin: "Um administrador da GastroMetrics atualizou seu plano. Não houve cobrança por essa mudança.",
+    e06_expires_prefix: "Seu plano vence em",
+    e06_no_expiry_value: "Sem vencimento",
     e06_cta: "Ver meu plano",
     e06_footnote: "Você pode fazer downgrade quando quiser em Meu Plano; nada do que você já salvou é apagado.",
   },
@@ -640,6 +658,9 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e06_unlocked_heading: "已解锁",
     e06_removed_heading: "不再包含",
     e06_next_charge_prefix: "下次扣费",
+    e06_body_admin: "GastroMetrics 管理员更新了您的套餐。此次变更没有产生任何扣费。",
+    e06_expires_prefix: "您的套餐到期日",
+    e06_no_expiry_value: "无到期日",
     e06_cta: "查看我的套餐",
     e06_footnote: "您可以随时在“我的套餐”中降级；已保存的数据不会被删除。",
   },

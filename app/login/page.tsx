@@ -20,6 +20,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [loginError, setLoginError] = useState("")
+  const [isDevLoggingIn, setIsDevLoggingIn] = useState(false)
   const router = useRouter()
   const { login } = useAuth()
   const { t } = useLanguage()
@@ -63,6 +64,45 @@ export default function LoginPage() {
     }
   }
 
+  // Login sin contraseña, SOLO en local (docs/82, reintroducido — ver
+  // app/api/auth/dev-login/route.ts). El botón mismo desaparece del bundle de
+  // producción porque next build reemplaza process.env.NODE_ENV en tiempo de build y
+  // elimina la rama muerta — no es solo un `if` en tiempo de ejecución del lado del
+  // cliente.
+  const handleDevLogin = async () => {
+    setIsDevLoggingIn(true)
+    setLoginError("")
+    try {
+      const res = await fetch("/api/auth/dev-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setLoginError(body?.error || t("login_error_generic"))
+        return
+      }
+      await fetch("/api/plan/dev-account", { method: "POST" }).catch(() => null)
+      // BUG REAL encontrado al probar: a diferencia del login normal (que llama
+      // supabase.auth.signInWithPassword del lado del CLIENTE, actualizando de una vez
+      // la sesión en memoria del cliente de Supabase del navegador), este login pasa
+      // enteramente por el servidor — deja la cookie de sesión bien puesta (confirmado:
+      // la siguiente petición ya la lee), pero el cliente de Supabase del navegador
+      // sigue con su estado en memoria de "sin sesión" hasta que se reinicializa. Un
+      // router.push (transición de cliente, sin recarga) llegaba a /dashboard antes de
+      // que ese cliente se enterara, y el guard de autenticación rebotaba de vuelta a
+      // /login. Una navegación dura fuerza al cliente a releer la sesión real de las
+      // cookies desde cero.
+      window.location.href = "/dashboard"
+    } catch (error) {
+      console.error("Dev login error:", error)
+      setLoginError(t("login_error_generic"))
+    } finally {
+      setIsDevLoggingIn(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
@@ -73,7 +113,7 @@ export default function LoginPage() {
             className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Volver al inicio
+            {t("login_back_home")}
           </Link>
           {/* Lockup vertical, 64px: primer punto de contacto con la marca (ver docs/36). */}
           <div className="flex flex-col items-center justify-center gap-2">
@@ -143,7 +183,7 @@ export default function LoginPage() {
                 {isLoading ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
-                    Iniciando sesión...
+                    {t("login_signing_in")}
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
@@ -153,6 +193,23 @@ export default function LoginPage() {
                 )}
               </Button>
             </form>
+
+            {process.env.NODE_ENV === "development" && (
+              <div className="mt-4 pt-4 border-t border-dashed border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={!email || isDevLoggingIn}
+                  onClick={handleDevLogin}
+                >
+                  {isDevLoggingIn ? t("login_signing_in") : `Entrar como ${email || "..."}`}
+                </Button>
+                <p className="text-[11px] text-muted-foreground text-center mt-1">
+                  Solo local (NODE_ENV=development) — correo debe estar en TESTER_ALLOWLIST_EMAILS
+                </p>
+              </div>
+            )}
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-4">

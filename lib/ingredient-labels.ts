@@ -1,5 +1,5 @@
 import type { LanguageCode } from "@/lib/i18n/translations"
-import type { Category, Unit, Presentation } from "@/types/ingredient"
+import { categories, units, type Category, type Unit, type Presentation } from "@/types/ingredient"
 
 /**
  * Mismo patrón no invasivo que lib/classification-labels.ts: las categorías, unidades y
@@ -376,4 +376,77 @@ export function getPresentationLabel(presentation: string, language: LanguageCod
 export function getMermaLevelLabel(level: string, language: LanguageCode): string {
   if (language === "es") return level
   return MERMA_LEVEL_LABELS[language]?.[level] ?? level
+}
+
+/**
+ * Reconoce categoría/unidad al importar un Excel/CSV (Ingredientes, `app/ingredientes/
+ * page.tsx`) escrito en cualquiera de los 6 idiomas seleccionables de la app, o con
+ * abreviaturas comunes — no solo el valor canónico en Español. Nunca se usa para
+ * mostrar nada al usuario, solo para EMPAREJAR texto libre contra el valor canónico
+ * antes de guardarlo (que siempre queda en Español, igual que hoy).
+ */
+const stripAccentsUpper = (value: string): string =>
+  value.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().trim()
+
+// Abreviaturas/sinónimos comunes que no son, en sí, la etiqueta traducida de ningún
+// idioma (ej. "kg", "fl oz") — se suman a las tablas de arriba para el reconocimiento.
+const UNIT_ALIASES: Record<Unit, string[]> = {
+  gramos: ["g", "gr", "gram", "gramo", "gramme", "gramm"],
+  kilogramos: ["kg", "kilo", "kilogramo", "kilogramme"],
+  mililitros: ["ml", "mililitro", "millilitre", "millilitro"],
+  litros: ["l", "lt", "litro", "liter", "litre"],
+  onzas: ["oz", "onza", "ounce"],
+  "onzas líquidas": ["fl oz", "floz", "onza liquida", "fluid ounce", "once liquide"],
+  libras: ["lb", "lbs", "libra", "pound"],
+  galones: ["gal", "galon", "gallon"],
+  unidad: ["u", "ud", "pza", "pieza", "unit", "stk", "enhed", "piece", "unidade"],
+}
+
+let unitReverseMap: Map<string, Unit> | null = null
+function buildUnitReverseMap(): Map<string, Unit> {
+  if (unitReverseMap) return unitReverseMap
+  const map = new Map<string, Unit>()
+  const add = (key: string, unit: Unit) => {
+    const normalized = stripAccentsUpper(key)
+    if (normalized) map.set(normalized, unit)
+  }
+  units.forEach((unit) => {
+    add(unit, unit)
+    UNIT_ALIASES[unit]?.forEach((alias) => add(alias, unit))
+  })
+  Object.keys(UNIT_LABELS).forEach((lang) => {
+    const table = UNIT_LABELS[lang as LanguageCode]
+    if (!table) return
+    ;(Object.keys(table) as Unit[]).forEach((unit) => add(table[unit], unit))
+  })
+  unitReverseMap = map
+  return map
+}
+
+export function matchUnitLabel(rawText: string): Unit | null {
+  if (!rawText) return null
+  return buildUnitReverseMap().get(stripAccentsUpper(rawText)) ?? null
+}
+
+let categoryReverseMap: Map<string, Category> | null = null
+function buildCategoryReverseMap(): Map<string, Category> {
+  if (categoryReverseMap) return categoryReverseMap
+  const map = new Map<string, Category>()
+  const add = (key: string, cat: Category) => {
+    const normalized = stripAccentsUpper(key)
+    if (normalized) map.set(normalized, cat)
+  }
+  categories.forEach((cat) => add(cat, cat))
+  Object.keys(CATEGORY_LABELS).forEach((lang) => {
+    const table = CATEGORY_LABELS[lang as LanguageCode]
+    if (!table) return
+    ;(Object.keys(table) as Category[]).forEach((cat) => add(table[cat], cat))
+  })
+  categoryReverseMap = map
+  return map
+}
+
+export function matchCategoryLabel(rawText: string): Category | null {
+  if (!rawText) return null
+  return buildCategoryReverseMap().get(stripAccentsUpper(rawText)) ?? null
 }

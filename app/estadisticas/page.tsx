@@ -13,6 +13,7 @@ import { GastrometricsLogo } from "@/components/gastrometrics-logo"
 import { EstadisticasTour } from "@/components/page-tours"
 import { AuthGuard } from "@/components/auth-guard"
 import { EstadisticasFinanzasTab } from "@/components/estadisticas-finanzas-tab"
+import { ManualSalesTab } from "@/components/manual-sales-tab"
 import { useFeatureAccess } from "@/lib/plan-access"
 import { FeatureLockedPage, FeatureLockedInline } from "@/components/feature-locked"
 import { AdminRestrictedPage, AdminRestrictedInline } from "@/components/admin-restricted"
@@ -35,6 +36,7 @@ import {
   Wallet,
   History,
   Info,
+  Receipt,
 } from "lucide-react"
 import { EstadisticasPanoramaInfoDialog } from "@/components/estadisticas-panorama-info-dialog"
 import {
@@ -60,9 +62,11 @@ import { getSalesImports, ensureSalesImportsLoaded } from "@/lib/storage/sales-i
 import { getMenus, ensureMenusLoaded } from "@/lib/menus"
 import { getPriceChangeHistory, type PriceChangeNotification } from "@/lib/recalculate"
 import { formatCurrency } from "@/lib/currency"
-import type { Recipe } from "@/types/recipe"
+import type { Recipe, Classification } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 import type { InventoryItem } from "@/types/inventory"
+import { getClassificationLabel } from "@/lib/classification-labels"
+import { getCategoryLabel } from "@/lib/ingredient-labels"
 
 const chartTokens = ["chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "chart-6", "chart-7"] as const
 
@@ -186,8 +190,9 @@ function EstadisticasContent() {
   const searchParams = useSearchParams()
   const businessId = searchParams.get("business") || "main"
   const canAccessPanorama = useFeatureAccess("stats_panorama")
+  const canAccessManualSales = useFeatureAccess("manual_sales")
   const canAccessFinance = useFeatureAccess("stats_finance")
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
 
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
@@ -445,6 +450,10 @@ function EstadisticasContent() {
                       <BarChart3 className="h-4 w-4" />
                       {t("estadisticas_tab_panorama")}
                     </TabsTrigger>
+                    <TabsTrigger id="stats-tab-ventas" value="ventas" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                      <Receipt className="h-4 w-4" />
+                      {t("estadisticas_tab_ventas")}
+                    </TabsTrigger>
                     <TabsTrigger id="stats-tab-finanzas" value="finanzas" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       <Wallet className="h-4 w-4" />
                       {t("estadisticas_tab_finanzas")}
@@ -512,16 +521,29 @@ function EstadisticasContent() {
                           <p className="text-sm text-muted-foreground">{t("estadisticas_no_recipes_yet")}</p>
                         ) : (
                           <>
-                            <CategoryPieChart data={recipesByClassification} />
-                            {recipesByClassification.map(([label, count], i) => (
-                              <BreakdownBar
-                                key={label}
-                                label={label}
-                                count={count}
-                                total={recipes.length}
-                                token={chartTokens[i % chartTokens.length]}
-                              />
-                            ))}
+                            <CategoryPieChart
+                              data={recipesByClassification.map(([key, count]): [string, number] => [
+                                key === "Sin clasificar"
+                                  ? t("recipecard_unclassified")
+                                  : getClassificationLabel(key as Classification, language),
+                                count,
+                              ])}
+                            />
+                            {recipesByClassification.map(([rawKey, count], i) => {
+                              const label =
+                                rawKey === "Sin clasificar"
+                                  ? t("recipecard_unclassified")
+                                  : getClassificationLabel(rawKey as Classification, language)
+                              return (
+                                <BreakdownBar
+                                  key={rawKey}
+                                  label={label}
+                                  count={count}
+                                  total={recipes.length}
+                                  token={chartTokens[i % chartTokens.length]}
+                                />
+                              )
+                            })}
                           </>
                         )}
                       </CardContent>
@@ -538,16 +560,25 @@ function EstadisticasContent() {
                           <p className="text-sm text-muted-foreground">{t("estadisticas_no_ingredients_yet")}</p>
                         ) : (
                           <>
-                            <CategoryPieChart data={ingredientsByCategory} />
-                            {ingredientsByCategory.map(([label, count], i) => (
-                              <BreakdownBar
-                                key={label}
-                                label={label}
-                                count={count}
-                                total={ingredients.length}
-                                token={chartTokens[i % chartTokens.length]}
-                              />
-                            ))}
+                            <CategoryPieChart
+                              data={ingredientsByCategory.map(([key, count]): [string, number] => [
+                                key === "Sin categoría" ? t("estadisticas_uncategorized") : getCategoryLabel(key, language),
+                                count,
+                              ])}
+                            />
+                            {ingredientsByCategory.map(([rawKey, count], i) => {
+                              const label =
+                                rawKey === "Sin categoría" ? t("estadisticas_uncategorized") : getCategoryLabel(rawKey, language)
+                              return (
+                                <BreakdownBar
+                                  key={rawKey}
+                                  label={label}
+                                  count={count}
+                                  total={ingredients.length}
+                                  token={chartTokens[i % chartTokens.length]}
+                                />
+                              )
+                            })}
                           </>
                         )}
                       </CardContent>
@@ -843,6 +874,20 @@ function EstadisticasContent() {
                       )}
                     </CardContent>
                   </Card>
+                  </TabsContent>
+
+                  <TabsContent value="ventas" className="mt-4">
+                    {canAccessManualSales ? (
+                      <ManualSalesTab businessId={businessId} />
+                    ) : getAccessBlockReason("manual_sales") === "admin" ? (
+                      <AdminRestrictedInline sectionName={t("estadisticas_ventas_section_name")} />
+                    ) : (
+                      <FeatureLockedInline
+                        feature="manual_sales"
+                        title={t("estadisticas_ventas_locked_title")}
+                        description={t("estadisticas_ventas_locked_desc")}
+                      />
+                    )}
                   </TabsContent>
 
                   <TabsContent value="finanzas" className="mt-4">

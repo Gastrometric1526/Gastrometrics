@@ -57,6 +57,7 @@ import { useNotification } from "@/hooks/use-notification"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { FileUpload } from "@/components/file-upload"
 import { MermaManagementDialog } from "@/components/merma-management-dialog"
+import { matchCategoryLabel, matchUnitLabel } from "@/lib/ingredient-labels"
 import type { Ingredient } from "@/types/ingredient"
 import { categories, units, presentations } from "@/types/ingredient"
 import { getCategoryLabel, getUnitLabel, getPresentationLabel } from "@/lib/ingredient-labels"
@@ -95,13 +96,59 @@ const getFormSteps = (t: Translator) => [
 
 // Columnas que el sistema pide vía Excel: solo estas 4. Categoría, presentación,
 // proveedor y notas se llenan después en la tabla con opciones seleccionables.
+// Alias por campo en los 6 idiomas seleccionables de la app (no solo Español/Inglés)
+// — así una plantilla de ingredientes exportada en cualquiera de esos idiomas (o de
+// cualquier POS/ERP que las nombre distinto) igual se reconoce automáticamente.
+// Español | Inglés | Danés | Francés | Portugués | Chino
 const EXCEL_COLUMN_MAPPINGS = {
-  name: ["nombre", "name", "ingrediente", "producto", "item"],
-  unit: ["unidad", "unit", "medida", "u"],
-  price: ["precio", "price", "costo", "valor", "importe"],
-  content: ["contenido", "content", "cantidad", "peso", "volumen", "neto"],
-  category: ["categoria", "category", "rubro", "clasificacion"],
-  supplier: ["proveedor", "supplier", "vendor"],
+  name: [
+    "nombre", "ingrediente", "producto",
+    "name", "item", "product",
+    "navn", "produkt",
+    "nom", "produit", "ingrédient",
+    "nome", "produto", "ingrediente",
+    "名称", "产品", "食材",
+  ],
+  unit: [
+    "unidad", "medida",
+    "unit", "measure", "u",
+    "enhed",
+    "unité", "mesure",
+    "unidade",
+    "单位",
+  ],
+  price: [
+    "precio", "costo", "valor", "importe",
+    "price", "cost", "value",
+    "pris",
+    "prix", "coût",
+    "preço", "custo",
+    "价格", "价钱",
+  ],
+  content: [
+    "contenido", "cantidad", "peso", "volumen", "neto",
+    "content", "quantity", "weight", "volume", "net",
+    "indhold", "mængde", "vægt",
+    "contenu", "quantité", "poids",
+    "conteúdo", "quantidade", "peso",
+    "净含量", "数量", "重量",
+  ],
+  category: [
+    "categoria", "rubro", "clasificacion",
+    "category", "classification",
+    "kategori",
+    "catégorie", "classification",
+    "categoria", "classificação",
+    "类别", "分类",
+  ],
+  supplier: [
+    "proveedor",
+    "supplier", "vendor",
+    "leverandør",
+    "fournisseur",
+    "fornecedor",
+    "供应商",
+  ],
 }
 
 // Sin tildes/diéresis y en mayúsculas, para comparar sin importar cómo haya escrito
@@ -111,14 +158,19 @@ const stripAccents = (value: string): string => value.normalize("NFD").replace(/
 /**
  * Empareja la categoría que venga en el Excel importado contra las categorías reales
  * que ya ofrece la base de datos (types/ingredient.ts, `categories`) — sin importar
- * tildes, mayúsculas/minúsculas, o espacios extra. Si no hay ninguna coincidencia,
- * cae a"OTROS"en vez de fallar la fila completa.
+ * tildes, mayúsculas/minúsculas, espacios extra, o el idioma en que venga escrita
+ * (matchCategoryLabel reconoce las etiquetas de los 6 idiomas seleccionables, ver
+ * lib/ingredient-labels.ts). Si no hay ninguna coincidencia, cae a"OTROS"en vez de
+ * fallar la fila completa.
  */
 const normalizeCategory = (value: string): (typeof categories)[number] => {
   if (!value) return "OTROS"
   const normalizedValue = stripAccents(value)
   const match = categories.find((cat) => stripAccents(cat) === normalizedValue)
   if (match) return match
+
+  const translatedMatch = matchCategoryLabel(value)
+  if (translatedMatch) return translatedMatch
 
   // Coincidencia parcial como último recurso (ej."Lacteos"sin"y derivados").
   const partial = categories.find(
@@ -127,14 +179,15 @@ const normalizeCategory = (value: string): (typeof categories)[number] => {
   return partial || "OTROS"
 }
 
-// Function to find matching column
+// Function to find matching column — ignora tildes además de mayúsculas/minúsculas,
+// para que un encabezado como"Catégorie"o"日期"emparejen igual de bien que uno en
+// Español.
 const findMatchingColumn = (headers: string[], possibleNames: string[]): string | null => {
-  const normalizedHeaders = headers.map((h) => h.toLowerCase().trim())
+  const normalizedHeaders = headers.map((h) => stripAccents(h))
 
   for (const possibleName of possibleNames) {
-    const found = normalizedHeaders.find(
-      (header) => header.includes(possibleName.toLowerCase()) || possibleName.toLowerCase().includes(header),
-    )
+    const normalizedName = stripAccents(possibleName)
+    const found = normalizedHeaders.find((header) => header.includes(normalizedName) || normalizedName.includes(header))
     if (found) {
       return headers[normalizedHeaders.indexOf(found)]
     }
@@ -142,58 +195,25 @@ const findMatchingColumn = (headers: string[], possibleNames: string[]): string 
   return null
 }
 
-// Function to normalize unit values
+// Function to normalize unit values — reconoce el valor canónico, abreviaturas
+// comunes (kg, fl oz, etc.), y la etiqueta traducida en cualquiera de los 6 idiomas
+// seleccionables (matchUnitLabel, lib/ingredient-labels.ts). BUG CORREGIDO: la tabla
+// anterior mapeaba "taza"/"cdta"/"cda" a "tazas"/"cucharaditas"/"cucharadas", que NO
+// son unidades válidas de types/ingredient.ts (`units`) — un ingrediente importado con
+// esas palabras quedaba guardado con un valor de unidad inválido/inexistente. Ahora,
+// si no hay una unidad canónica equivalente real, cae al mismo valor por defecto que
+// cualquier otro texto no reconocido.
 const normalizeUnit = (value: string): string => {
   if (!value) return "gramos"
 
   const normalized = value.toLowerCase().trim()
-
-  // Map common variations to standard units
-  const unitMappings: { [key: string]: string } = {
-    g: "gramos",
-    gr: "gramos",
-    gram: "gramos",
-    gramo: "gramos",
-    kg: "kilogramos",
-    kilo: "kilogramos",
-    kilogramo: "kilogramos",
-    ml: "mililitros",
-    mililitro: "mililitros",
-    l: "litros",
-    lt: "litros",
-    litro: "litros",
-    oz: "onzas",
-    onza: "onzas",
-    lb: "libras",
-    libra: "libras",
-    taza: "tazas",
-    cup: "tazas",
-    cdta: "cucharaditas",
-    cucharadita: "cucharaditas",
-    tsp: "cucharaditas",
-    cda: "cucharadas",
-    cucharada: "cucharadas",
-    tbsp: "cucharadas",
-    pza: "unidad",
-    pieza: "unidad",
-    u: "unidad",
-    ud: "unidad",
-    unit: "unidad",
-  }
 
   // Check if it's already a valid unit
   if (units.includes(normalized as any)) {
     return normalized
   }
 
-  // Try to find a mapping
-  for (const [key, value] of Object.entries(unitMappings)) {
-    if (normalized === key || normalized.includes(key)) {
-      return value
-    }
-  }
-
-  return "gramos"
+  return matchUnitLabel(value) || "gramos"
 }
 
 export default function IngredientesPage() {

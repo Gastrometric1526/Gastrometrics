@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { useTeamPreview } from "@/lib/plan-access"
 import { stopTeamPreview } from "@/lib/storage/team-preview"
 import { useRouter } from "next/navigation"
+import { useLanguage } from "@/contexts/language-context"
 
 // Banner permanente mientras el dueño de la cuenta está viendo la app "como" una
 // persona invitada (ver /equipo, botón "Vista previa") — imposible de confundir con
@@ -13,8 +14,11 @@ import { useRouter } from "next/navigation"
 export function TeamPreviewBanner() {
   const { active, member } = useTeamPreview()
   const router = useRouter()
+  const { t } = useLanguage()
 
   if (!active || !member) return null
+
+  const [viewingAsBefore, viewingAsAfter] = t("teampreview_viewing_as").split("{name}")
 
   const handleExit = () => {
     stopTeamPreview()
@@ -26,8 +30,9 @@ export function TeamPreviewBanner() {
       <div className="fixed top-0 left-0 right-0 z-[1001] bg-amber-500 text-amber-950 px-4 py-2 flex items-center justify-center gap-3 text-sm font-medium shadow-md flex-wrap">
         <Eye className="h-4 w-4 shrink-0" />
         <span className="truncate">
-          Viendo la app como <span className="font-bold">{member.name || member.email}</span> — así es exactamente
-          lo que esta persona puede ver y hacer
+          {viewingAsBefore}
+          <span className="font-bold">{member.name || member.email}</span>
+          {viewingAsAfter}
         </span>
         <Button
           size="sm"
@@ -36,7 +41,7 @@ export function TeamPreviewBanner() {
           onClick={handleExit}
         >
           <X className="h-3.5 w-3.5" />
-          Salir de vista previa
+          {t("teampreview_exit_button")}
         </Button>
       </div>
       {/* Empuja el contenido de abajo (sidebar incluido, que también es fixed) para que

@@ -16,6 +16,10 @@ import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { plans } from "@/lib/plans"
+import { sendPlanChangedEmail } from "@/lib/services/notify-billing"
+import { recordPlanChangeNotice } from "@/lib/services/plan-change-notice"
+
+const FREE_PLAN_SLUG = "foodie"
 
 const VALID_PLAN_SLUGS = plans.map((plan) => plan.slug)
 
@@ -127,6 +131,16 @@ export async function PATCH(request: Request) {
     }
 
     const admin = getSupabaseAdminClient()
+
+    // Plan anterior, ANTES de sobreescribirlo — para el popup/correo de "de X a Y"
+    // (docs/89). Mismo patrón que ya usa app/api/webhooks/stripe/route.ts.
+    const { data: previousRow } = await admin
+      .from("account_plans")
+      .select("plan_slug")
+      .eq("account_id", user.id)
+      .maybeSingle()
+    const previousPlanSlug = previousRow?.plan_slug || FREE_PLAN_SLUG
+
     let { data, error } = await admin
       .from("account_plans")
       .upsert({
@@ -160,6 +174,34 @@ export async function PATCH(request: Request) {
     }
 
     if (error || !data) throw error || new Error("No se pudo guardar el plan.")
+
+    // Popup en el dashboard + correo, igual que un cambio real por Stripe — pero sin
+    // cobro (bypasa Stripe por completo) y con la fecha de vencimiento en vez de
+    // "próximo cobro" cuando el admin puso una (docs/89). Best-effort: el plan ya
+    // quedó aplicado arriba sin importar si esto falla.
+    const expiresAtUnixSeconds = expiresAt ? Math.floor(new Date(expiresAt).getTime() / 1000) : null
+    try {
+      await sendPlanChangedEmail({
+        accountId: user.id,
+        fromPlanSlug: previousPlanSlug,
+        toPlanSlug: planSlug,
+        nextChargeUnixSeconds: null,
+        nextChargeAmountCents: null,
+        expiresAtUnixSeconds,
+        source: "admin",
+      })
+    } catch (emailError) {
+      console.error("[api/admin/account-plan] Error mandando el correo de cambio de plan:", emailError)
+    }
+    await recordPlanChangeNotice({
+      accountId: user.id,
+      fromPlanSlug: previousPlanSlug,
+      toPlanSlug: planSlug,
+      amountCents: null,
+      nextChargeUnixSeconds: null,
+      expiresAtUnixSeconds,
+      source: "admin",
+    })
 
     return NextResponse.json({
       ok: true,

@@ -4,6 +4,7 @@ import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { getPdfLabels } from "@/lib/i18n/pdf-labels"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
+import { drawBusinessLogo } from "./pdf-logo"
 
 // ============== HELPERS ==============
 // Mismo patron que los demas generadores en lib/pdf/ (recipe/menu/purchase-order):
@@ -176,6 +177,7 @@ interface InventoryPDFData {
 
 export interface InventoryPDFOptions {
   businessName?: string
+  businessLogo?: string
   businessId?: string
 }
 
@@ -238,15 +240,20 @@ function renderInventoryPDF(doc: jsPDF, data: InventoryPDFData, options: Invento
   doc.rect(0, 0, pageWidth, 24, "F")
   drawLine(24)
 
+  if (options.businessLogo) {
+    drawBusinessLogo(doc, options.businessLogo, margin, 3, 15, 15)
+  }
+  const headerTextX = margin + (options.businessLogo ? 18 : 0)
+
   doc.setFontSize(11)
   doc.setFont("helvetica", "bold")
   doc.setTextColor(...COLORS.text)
-  doc.text(sanitizeText(options.businessName) || "GastroMetrics", margin, 11)
+  doc.text(sanitizeText(options.businessName) || "GastroMetrics", headerTextX, 11)
 
   doc.setFontSize(8)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(...COLORS.secondary)
-  doc.text(`${labels.exportado}: ${new Date().toLocaleString(labels.locale)}`, margin, 18)
+  doc.text(`${labels.exportado}: ${new Date().toLocaleString(labels.locale)}`, headerTextX, 18)
 
   doc.setFontSize(15)
   doc.setFont("helvetica", "bold")
@@ -330,7 +337,7 @@ function renderInventoryPDF(doc: jsPDF, data: InventoryPDFData, options: Invento
         doc.setFontSize(8)
         doc.setFont("helvetica", "bold")
         doc.setTextColor(...COLORS.secondary)
-        doc.text("TOP PRODUCTOS POR VALOR", barX, yPosition)
+        doc.text(labels.topProductosPorValor, barX, yPosition)
         drawBarChart(
           doc,
           topProducts.map((p, i) => ({ label: p.name, value: p.totalValue, color: CHART_COLORS[i % CHART_COLORS.length] })),

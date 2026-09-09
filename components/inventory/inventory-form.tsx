@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { InventoryItem } from "@/types/inventory"
 import { useLanguage } from "@/contexts/language-context"
+import { getPresentationLabel } from "@/lib/ingredient-labels"
 
 interface InventoryFormProps {
   onSubmit: (data: any) => void
@@ -27,7 +28,7 @@ const conversionFactors: { [key: string]: number } = {
 }
 
 export function InventoryForm({ onSubmit, onCancel, initialData }: InventoryFormProps) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -194,7 +195,7 @@ export function InventoryForm({ onSubmit, onCancel, initialData }: InventoryForm
               <SelectItem value="default">{t("inventario_select_presentation_placeholder")}</SelectItem>
               {presentations.map((presentation) => (
                 <SelectItem key={presentation} value={presentation}>
-                  {presentation}
+                  {getPresentationLabel(presentation, language)}
                 </SelectItem>
               ))}
             </SelectContent>

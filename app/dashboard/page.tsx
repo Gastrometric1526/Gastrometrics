@@ -38,6 +38,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { AddBusinessDialog } from "@/components/add-business-dialog"
 import { OnboardingTour } from "@/components/onboarding-tour"
+import { PlanChangeNoticeDialog } from "@/components/plan-change-notice-dialog"
 import { useFeatureAccess, useActiveMembership, setCurrentPlanSlug } from "@/lib/plan-access"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { getAllBusinesses, refreshBusinesses } from "@/lib/storage/businesses"
@@ -589,6 +590,7 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-screen bg-background">
       <OnboardingTour />
+      <PlanChangeNoticeDialog />
       <Sidebar />
       <div className="flex-1 overflow-hidden">
         <div className="h-full overflow-y-auto">

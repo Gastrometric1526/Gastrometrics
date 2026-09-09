@@ -65,13 +65,13 @@ export function LandingAdminPdfPreview() {
               <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-text-4">
                 {t("landing_admin_preview_name_label")}
               </p>
-              <p className="text-sm font-semibold text-foreground mt-0.5">Hamburguesa clásica</p>
+              <p className="text-sm font-semibold text-foreground mt-0.5 break-words">Hamburguesa clásica</p>
             </div>
             <div>
               <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-text-4">
                 {t("landing_admin_preview_classification_label")}
               </p>
-              <p className="text-sm font-semibold text-foreground mt-0.5">
+              <p className="text-sm font-semibold text-foreground mt-0.5 break-words">
                 {getClassificationLabel("Línea caliente (Cuisine chaude)", language)}
               </p>
             </div>

@@ -8,7 +8,7 @@
 
 import { Resend } from "resend"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
-import { getPlanBySlug, plans } from "@/lib/plans"
+import { getPlanBySlug, getLocalizedPlan, plans } from "@/lib/plans"
 import { renderEmailTemplate, renderEmailTemplateWithFeatureRows, escapeHtml } from "./email-templates"
 import { getEmailLabels, fillLabel, normalizeEmailLang, EMAIL_DATE_LOCALES } from "@/lib/i18n/email-labels"
 
@@ -47,6 +47,12 @@ export async function sendPlanChangedEmail(input: {
   toPlanSlug: string
   nextChargeUnixSeconds: number | null
   nextChargeAmountCents: number | null
+  // Cambios asignados a mano desde /admin (app/api/admin/account-plan/route.ts) no
+  // pasan por Stripe — no hay cobro real ni "próximo cobro", pero sí puede haber una
+  // fecha de vencimiento del plan (docs/59). Cuando viene esto, el correo muestra esa
+  // fecha en vez de un cobro, y usa un cuerpo que no menciona prorrateo (docs/89).
+  expiresAtUnixSeconds?: number | null
+  source?: "stripe" | "admin"
 }): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
   if (input.fromPlanSlug === input.toPlanSlug) return // no hubo cambio real de plan, no molestar
@@ -55,9 +61,10 @@ export async function sendPlanChangedEmail(input: {
   if (!account) return
   const { email, language } = account
   const labels = getEmailLabels(language)
+  const isAdminChange = input.source === "admin"
 
-  const fromPlan = getPlanBySlug(input.fromPlanSlug)
-  const toPlan = getPlanBySlug(input.toPlanSlug)
+  const fromPlan = getLocalizedPlan(getPlanBySlug(input.fromPlanSlug), normalizeEmailLang(language))
+  const toPlan = getLocalizedPlan(getPlanBySlug(input.toPlanSlug), normalizeEmailLang(language))
   const isUpgrade = planRank(input.toPlanSlug) > planRank(input.fromPlanSlug)
 
   // Qué features cambiaron: en upgrade, lo que trae el plan nuevo y no tenía el viejo;
@@ -82,11 +89,12 @@ export async function sendPlanChangedEmail(input: {
       htmlLang: normalizeEmailLang(language),
       title: labels.e06_title,
       preheader: fillLabel(labels.e06_preheader, { fromPlan: fromPlan.name, toPlan: toPlan.name }),
-      body: labels.e06_body,
+      body: isAdminChange ? labels.e06_body_admin : labels.e06_body,
       labelBefore: labels.e06_label_before,
       labelNow: labels.e06_label_now,
       featuresHeading: isUpgrade ? labels.e06_unlocked_heading : labels.e06_removed_heading,
-      nextChargePrefix: labels.e06_next_charge_prefix,
+      nextChargePrefix:
+        isAdminChange && input.expiresAtUnixSeconds ? labels.e06_expires_prefix : labels.e06_next_charge_prefix,
       cta: labels.e06_cta,
       footnote: labels.e06_footnote,
       footerAddress: labels.footer_address,
@@ -95,7 +103,13 @@ export async function sendPlanChangedEmail(input: {
       toPlan: escapeHtml(toPlan.name),
       fromPrice: escapeHtml(fromPlan.price),
       toPrice: escapeHtml(toPlan.price),
-      nextChargeDate: input.nextChargeUnixSeconds ? formatDate(input.nextChargeUnixSeconds, language) : "—",
+      nextChargeDate: input.expiresAtUnixSeconds
+        ? formatDate(input.expiresAtUnixSeconds, language)
+        : input.nextChargeUnixSeconds
+          ? formatDate(input.nextChargeUnixSeconds, language)
+          : isAdminChange
+            ? labels.e06_no_expiry_value
+            : "—",
       nextChargeAmount:
         input.nextChargeAmountCents !== null && input.nextChargeAmountCents !== undefined
           ? formatUsd(input.nextChargeAmountCents)

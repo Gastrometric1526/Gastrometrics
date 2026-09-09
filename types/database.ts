@@ -295,15 +295,44 @@ export interface Database {
           stripe_subscription_id: string | null
           plan_expires_at: string | null
           updated_at: string
+          // Aviso de cambio de plan pendiente de mostrar (popup en dashboard), ver
+          // supabase/migrations/0018_plan_change_notice.sql y docs/89.
+          last_change_from_plan: string | null
+          last_change_to_plan: string | null
+          last_change_amount_cents: number | null
+          last_change_next_charge_at: string | null
+          last_change_expires_at: string | null
+          last_change_source: string | null
+          last_change_at: string | null
+          last_change_acknowledged: boolean
         }
         Insert: Omit<
           Database["public"]["Tables"]["account_plans"]["Row"],
-          "updated_at" | "stripe_customer_id" | "stripe_subscription_id" | "plan_expires_at"
+          | "updated_at"
+          | "stripe_customer_id"
+          | "stripe_subscription_id"
+          | "plan_expires_at"
+          | "last_change_from_plan"
+          | "last_change_to_plan"
+          | "last_change_amount_cents"
+          | "last_change_next_charge_at"
+          | "last_change_expires_at"
+          | "last_change_source"
+          | "last_change_at"
+          | "last_change_acknowledged"
         > & {
           updated_at?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           plan_expires_at?: string | null
+          last_change_from_plan?: string | null
+          last_change_to_plan?: string | null
+          last_change_amount_cents?: number | null
+          last_change_next_charge_at?: string | null
+          last_change_expires_at?: string | null
+          last_change_source?: string | null
+          last_change_at?: string | null
+          last_change_acknowledged?: boolean
         }
         Update: Partial<Database["public"]["Tables"]["account_plans"]["Row"]>
         Relationships: never[]

@@ -25,6 +25,7 @@ import { getStripeClient } from "@/lib/stripe/client"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getPlanBySlug } from "@/lib/plans"
 import { sendPlanChangedEmail, sendSubscriptionCancelledEmail } from "@/lib/services/notify-billing"
+import { recordPlanChangeNotice } from "@/lib/services/plan-change-notice"
 
 const FREE_PLAN_SLUG = "foodie"
 
@@ -129,13 +130,25 @@ export async function POST(request: Request) {
           try {
             const subscription = await getStripeClient().subscriptions.retrieve(subscriptionId)
             const subscriptionItem = subscription.items.data[0]
+            const amountCents =
+              typeof subscriptionItem?.price.unit_amount === "number" ? subscriptionItem.price.unit_amount : null
             await sendPlanChangedEmail({
               accountId,
               fromPlanSlug: FREE_PLAN_SLUG,
               toPlanSlug: planSlug,
               nextChargeUnixSeconds: subscriptionItem?.current_period_end ?? null,
-              nextChargeAmountCents:
-                typeof subscriptionItem?.price.unit_amount === "number" ? subscriptionItem.price.unit_amount : null,
+              nextChargeAmountCents: amountCents,
+              source: "stripe",
+            })
+            // Popup de "tu plan cambió" en el próximo ingreso al dashboard (docs/89).
+            await recordPlanChangeNotice({
+              accountId,
+              fromPlanSlug: FREE_PLAN_SLUG,
+              toPlanSlug: planSlug,
+              amountCents,
+              nextChargeUnixSeconds: subscriptionItem?.current_period_end ?? null,
+              expiresAtUnixSeconds: null,
+              source: "stripe",
             })
           } catch (emailError) {
             console.error("[api/webhooks/stripe] Error mandando el correo de confirmación de pago:", emailError)
@@ -180,12 +193,25 @@ export async function POST(request: Request) {
         // falla, así que un error de Resend no debe hacer que Stripe reintente el
         // evento completo.
         try {
+          const nextChargeUnixSeconds = subscription.items?.data?.[0]?.current_period_end ?? null
+          const amountCents = subscription.items?.data?.[0]?.price?.unit_amount ?? null
           await sendPlanChangedEmail({
             accountId,
             fromPlanSlug: previousPlanSlug,
             toPlanSlug: resolvedPlanSlug,
-            nextChargeUnixSeconds: subscription.items?.data?.[0]?.current_period_end ?? null,
-            nextChargeAmountCents: subscription.items?.data?.[0]?.price?.unit_amount ?? null,
+            nextChargeUnixSeconds,
+            nextChargeAmountCents: amountCents,
+            source: "stripe",
+          })
+          // Popup de "tu plan cambió" en el próximo ingreso al dashboard (docs/89).
+          await recordPlanChangeNotice({
+            accountId,
+            fromPlanSlug: previousPlanSlug,
+            toPlanSlug: resolvedPlanSlug,
+            amountCents,
+            nextChargeUnixSeconds,
+            expiresAtUnixSeconds: null,
+            source: "stripe",
           })
         } catch (emailError) {
           console.error("[api/webhooks/stripe] Error mandando el correo de cambio de plan:", emailError)

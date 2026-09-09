@@ -22,6 +22,12 @@ export type FeatureKey =
   | "inventory"
   | "menus"
   | "stats_panorama"
+  // Registro manual de ventas (docs/90) — para negocios sin sistema de POS. A
+  // propósito una llave SEPARADA de "stats_finance", no anidada dentro de esa pestaña:
+  // se desbloquea un nivel más abajo (Chef de Partie) que Finanzas completas (Sous
+  // Chef), confirmado con el dueño del proyecto — sin esto, alguien en Chef de Partie
+  // no podría ni siquiera VER la pestaña donde viviría el registro manual.
+  | "manual_sales"
   | "stats_finance"
   | "team"
   // "recipes"/"ingredients" no son parte de la matriz de planes de arriba — Ficha
@@ -114,11 +120,12 @@ export const plans: Plan[] = [
       "Menús completos (con escalado por PAX)",
       "1 negocio",
       "Estadísticas de uso (panorama del negocio)",
+      "Registro manual de ventas (sin necesidad de un POS)",
     ],
     locked: ["Finanzas completas (P&L, importación de POS, Menu Engineering)", "Multi-negocio", "Usuarios extra"],
     maxBusinesses: 1,
     maxUsers: 1,
-    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "inventory", "menus", "stats_panorama"],
+    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "inventory", "menus", "stats_panorama", "manual_sales"],
   },
   {
     slug: "sous-chef",
@@ -140,7 +147,7 @@ export const plans: Plan[] = [
     locked: ["Multi-negocio masivo (+5)", "Soporte prioritario", "Usuarios ilimitados"],
     maxBusinesses: 2,
     maxUsers: 2,
-    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "inventory", "menus", "stats_panorama", "stats_finance"],
+    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance"],
     highlighted: true,
   },
   {
@@ -161,7 +168,7 @@ export const plans: Plan[] = [
     locked: [],
     maxBusinesses: 5,
     maxUsers: 5,
-    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "inventory", "menus", "stats_panorama", "stats_finance", "team"],
+    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance", "team"],
     comingSoon: true,
   },
 ]

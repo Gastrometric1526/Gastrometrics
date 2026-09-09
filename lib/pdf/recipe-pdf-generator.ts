@@ -411,7 +411,7 @@ function generateAdministrativePDF(
   if (yieldByWeight && yieldByWeight > 0) {
     doc.setFont("helvetica", "bold")
     doc.setTextColor(...COLORS.darkGray)
-    doc.text("Rend. en peso (est.):", col3X, metaY + 6)
+    doc.text(labels.rendPesoEstimado, col3X, metaY + 6)
     doc.setFont("helvetica", "normal")
     doc.setTextColor(...COLORS.text)
     const weightDisplay = yieldByWeight >= 1000 ? `${(yieldByWeight / 1000).toFixed(2)} kg` : `${yieldByWeight.toFixed(0)} g`
@@ -461,7 +461,7 @@ function generateAdministrativePDF(
   doc.setFontSize(7)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(...COLORS.white)
-  doc.text("Ganancia Neta Total", netProfitBoxX + 2, yPosition + 5)
+  doc.text(`${labels.gananciaNeta} ${labels.total}`, netProfitBoxX + 2, yPosition + 5)
   doc.setFont("helvetica", "bold")
   doc.setFontSize(9)
   doc.text(formatCurrency2(netProfitTotal), netProfitBoxX + 2, yPosition + 11)
@@ -555,7 +555,7 @@ function generateAdministrativePDF(
   doc.setFontSize(10)
   doc.setFont("helvetica", "bold")
   doc.setTextColor(...COLORS.darkGray)
-  doc.text("DESGLOSE DE COSTOS", breakdownX, breakdownHeadingY)
+  doc.text(labels.desgloseDeCostos, breakdownX, breakdownHeadingY)
 
   const pricingConfig = recipe.pricingConfig || {
     publicServices: 10,
@@ -644,7 +644,7 @@ function generateAdministrativePDF(
     doc.setFontSize(10)
     doc.setFont("helvetica", "bold")
     doc.setTextColor(...COLORS.darkGray)
-    doc.text("DISTRIBUCION VISUAL", margin, yPosition)
+    doc.text(labels.distribucionVisual, margin, yPosition)
     yPosition += 6
 
     const chartsTop = yPosition
@@ -654,7 +654,7 @@ function generateAdministrativePDF(
     doc.setFontSize(8)
     doc.setFont("helvetica", "bold")
     doc.setTextColor(...COLORS.secondary)
-    doc.text("Rubros de costeo", margin, chartsTop)
+    doc.text(labels.rubrosDeCosteo, margin, chartsTop)
     const barData: ChartDatum[] = costBreakdown
       .filter((item) => item.amount > 0)
       .map((item, i) => ({ label: item.label, value: item.amount, color: CHART_COLORS[i % CHART_COLORS.length] }))
@@ -667,7 +667,7 @@ function generateAdministrativePDF(
     doc.setFontSize(8)
     doc.setFont("helvetica", "bold")
     doc.setTextColor(...COLORS.secondary)
-    doc.text("Composicion del costo por ingrediente", pieColX, chartsTop)
+    doc.text(labels.composicionCostoPorIngrediente, pieColX, chartsTop)
 
     const ingredientCosts = recipe.ingredients
       .map((ing) => ({
@@ -799,7 +799,7 @@ function generateAdministrativePDF(
     doc.setFontSize(9)
     doc.setFont("helvetica", "bold")
     doc.setTextColor(...COLORS.darkGray)
-    doc.text("NOTAS:", margin, yPosition)
+    doc.text(`${labels.notas.toUpperCase()}:`, margin, yPosition)
     yPosition += 4
     doc.setFont("helvetica", "normal")
     doc.setFontSize(8)
@@ -1050,7 +1050,7 @@ function generateNormalPDF(
 
   doc.setFontSize(9)
   doc.setFont("helvetica", "bold")
-  doc.text("PDF GENERAL", pageWidth - margin, 15, { align: "right" })
+  doc.text(labels.pdfGeneral, pageWidth - margin, 15, { align: "right" })
 
   yPosition = 38
 
@@ -1087,7 +1087,7 @@ function generateNormalPDF(
   doc.setFontSize(14)
   doc.setFont("helvetica", "bold")
   doc.setTextColor(...COLORS.darkGray)
-  doc.text("Ingredientes", margin, yPosition)
+  doc.text(labels.ingredientes, margin, yPosition)
   yPosition += 5
 
   const ingredientRows = recipe.ingredients.map((ing) => [
@@ -1187,7 +1187,7 @@ function generateNormalPDF(
     doc.setFontSize(11)
     doc.setFont("helvetica", "bold")
     doc.setTextColor(...COLORS.darkGray)
-    doc.text("Notas Adicionales", margin, yPosition)
+    doc.text(labels.notasAdicionales, margin, yPosition)
     yPosition += 5
 
     doc.setFont("helvetica", "normal")

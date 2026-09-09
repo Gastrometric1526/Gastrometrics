@@ -84,20 +84,20 @@ const classificationFilterOptions = ["Todas", ...recipeClassifications]
 
 // Opciones de ordenamiento
 const sortOptions = [
-  { value: "name-asc", label: "Nombre A-Z", icon: SortAsc },
-  { value: "name-desc", label: "Nombre Z-A", icon: SortDesc },
-  { value: "cost-asc", label: "Menor costo", icon: TrendingUp },
-  { value: "cost-desc", label: "Mayor costo", icon: TrendingUp },
-  { value: "recent", label: "Más recientes", icon: Clock },
-  { value: "oldest", label: "Más antiguos", icon: Clock },
-]
+  { value: "name-asc", labelKey: "ingredientes_sort_name_asc", icon: SortAsc },
+  { value: "name-desc", labelKey: "ingredientes_sort_name_desc", icon: SortDesc },
+  { value: "cost-asc", labelKey: "ingredientes_sort_cost_asc", icon: TrendingUp },
+  { value: "cost-desc", labelKey: "ingredientes_sort_cost_desc", icon: TrendingUp },
+  { value: "recent", labelKey: "ingredientes_sort_recent", icon: Clock },
+  { value: "oldest", labelKey: "misrecetas_sort_oldest", icon: Clock },
+] as const
 
 export default function MisRecetasPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const businessId = searchParams.get("business") || "main"
   const { isLoggedIn, authChecked, user } = useAuth()
-  const { language } = useLanguage()
+  const { t, language } = useLanguage()
   const { showSuccess, showError, showInfo } = useNotification()
   const canAccessRecipes = useFeatureAccess("recipes")
   // Un invitado de equipo (sesión real, o la "Vista previa" que corre el propio dueño)
@@ -165,7 +165,7 @@ export default function MisRecetasPage() {
         setAvailableBusinesses(businesses)
       } catch (error) {
         console.error("Error loading recipes:", error)
-        showError("Error al cargar", "No se pudieron cargar las recetas")
+        showError(t("misrecetas_toast_load_error_title"), t("misrecetas_toast_load_error_desc"))
       } finally {
         setIsLoading(false)
       }
@@ -242,7 +242,7 @@ export default function MisRecetasPage() {
   // Manejar migración
   const handleMigration = async () => {
     if (!selectedTargetBusiness || !recipeToMigrate) {
-      showError("Selecciona destino", "Debes seleccionar un negocio de destino")
+      showError(t("misrecetas_toast_select_target_title"), t("misrecetas_toast_select_target_desc"))
       return
     }
 
@@ -254,7 +254,7 @@ export default function MisRecetasPage() {
       const migrationResult = await migrateCompleteRecipe(recipeToMigrate, businessId, selectedTargetBusiness)
 
       if (!migrationResult.success || !migrationResult.migratedRecipe) {
-        throw new Error(migrationResult.error || "Error en migración")
+        throw new Error(migrationResult.error || t("misrecetas_toast_migration_error_fallback"))
       }
 
       const { migratedRecipe, migratedIngredients, migratedSubRecipes, skippedIngredients } = migrationResult
@@ -277,24 +277,28 @@ export default function MisRecetasPage() {
       setRecipeToMigrate(null)
       setSelectedTargetBusiness("")
 
-      let message = `Receta"${recipeToMigrate.name}"migrada exitosamente`
+      let message = t("misrecetas_toast_migration_success_desc").replace("{name}", recipeToMigrate.name)
       if (migratedSubRecipes.length > 0) {
-        message += `\n• ${migratedSubRecipes.length} sub-receta${migratedSubRecipes.length !== 1 ? "s" : ""} migrada${migratedSubRecipes.length !== 1 ? "s" : ""} junto con sus propios ingredientes`
+        const subrecipesLine =
+          migratedSubRecipes.length === 1
+            ? t("misrecetas_toast_migration_subrecipes_one")
+            : t("misrecetas_toast_migration_subrecipes_other").replace("{count}", String(migratedSubRecipes.length))
+        message += `\n• ${subrecipesLine}`
       }
       if (migratedIngredients.length > 0) {
-        message += `\n• ${migratedIngredients.length} ingredientes migrados`
+        message += `\n• ${t("misrecetas_toast_migration_ingredients_line").replace("{count}", String(migratedIngredients.length))}`
       }
       if (skippedIngredients.length > 0) {
-        message += `\n• ${skippedIngredients.length} ingredientes ya existían (reutilizados)`
+        message += `\n• ${t("misrecetas_toast_migration_skipped_line").replace("{count}", String(skippedIngredients.length))}`
       }
       if (recipeToMigrate.classification === SUBRECIPE_CLASSIFICATION || recipeToMigrate.isSubRecipe) {
-        message += `\n• Ingrediente de sub-receta creado automáticamente`
+        message += `\n• ${t("misrecetas_toast_migration_subrecipe_ingredient_line")}`
       }
 
       if (user) {
         const targetLabel =
           selectedTargetBusiness === "main"
-            ? "Dashboard Principal"
+            ? t("misrecetas_main_dashboard")
             : availableBusinesses.find((b) => b.id === selectedTargetBusiness)?.name || selectedTargetBusiness
         logActivity({
           user,
@@ -305,11 +309,11 @@ export default function MisRecetasPage() {
         })
       }
 
-      showSuccess("Migración completada", message)
+      showSuccess(t("misrecetas_toast_migration_success_title"), message)
       console.log("✅ Migración completada exitosamente")
     } catch (error) {
       console.error("❌ Error migrating recipe:", error)
-      showError("Error en migración", error instanceof Error ? error.message : "No se pudo migrar la receta")
+      showError(t("misrecetas_toast_migration_error_title"), error instanceof Error ? error.message : t("misrecetas_toast_migration_error_fallback"))
     } finally {
       setIsMigrating(false)
     }
@@ -348,12 +352,12 @@ export default function MisRecetasPage() {
         }),
       )
 
-      showSuccess("Receta movida a la papelera", "Puedes restaurarla desde la papelera durante los próximos 30 días")
+      showSuccess(t("misrecetas_toast_delete_success_title"), t("misrecetas_toast_delete_success_desc"))
       setShowDeleteDialog(false)
       setRecipeToDelete(null)
     } catch (error) {
       console.error("Error deleting recipe:", error)
-      showError("Error al eliminar", "No se pudo eliminar la receta")
+      showError(t("ingredientes_toast_delete_error_title"), t("misrecetas_toast_delete_error_desc"))
     }
   }
 
@@ -371,10 +375,10 @@ export default function MisRecetasPage() {
 
       setRecipes(getRecipes(businessId))
       setTrashedRecipes(getTrashedRecipes(businessId))
-      showSuccess("Receta restaurada", "La receta volvió a Mis Recetas")
+      showSuccess(t("misrecetas_toast_restore_success_title"), t("misrecetas_toast_restore_success_desc"))
     } catch (error) {
       console.error("Error restoring recipe:", error)
-      showError("Error al restaurar", "No se pudo restaurar la receta")
+      showError(t("misrecetas_toast_restore_error_title"), t("misrecetas_toast_restore_error_desc"))
     }
   }
 
@@ -384,10 +388,10 @@ export default function MisRecetasPage() {
       if (!success) throw new Error("No se pudo eliminar la receta")
 
       setTrashedRecipes(getTrashedRecipes(businessId))
-      showSuccess("Receta eliminada permanentemente", "Esta acción no se puede deshacer")
+      showSuccess(t("misrecetas_toast_permanent_delete_success_title"), t("negocios_delete_confirm_irreversible"))
     } catch (error) {
       console.error("Error permanently deleting recipe:", error)
-      showError("Error al eliminar", "No se pudo eliminar la receta permanentemente")
+      showError(t("ingredientes_toast_delete_error_title"), t("misrecetas_toast_permanent_delete_error_desc"))
     }
   }
 
@@ -397,7 +401,7 @@ export default function MisRecetasPage() {
       const duplicatedRecipe: Recipe = {
         ...recipe,
         id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        name: `${recipe.name} (Copia)`,
+        name: `${recipe.name} ${t("misrecetas_duplicate_suffix")}`,
         businessId,
         metadata: {
           createdAt: new Date().toISOString(),
@@ -422,10 +426,10 @@ export default function MisRecetasPage() {
         }),
       )
 
-      showSuccess("Receta duplicada", "Se ha creado una copia de la receta")
+      showSuccess(t("misrecetas_toast_duplicate_success_title"), t("misrecetas_toast_duplicate_success_desc"))
     } catch (error) {
       console.error("Error duplicating recipe:", error)
-      showError("Error al duplicar", "No se pudo duplicar la receta")
+      showError(t("misrecetas_toast_duplicate_error_title"), t("misrecetas_toast_duplicate_error_desc"))
     }
   }
 
@@ -450,7 +454,7 @@ export default function MisRecetasPage() {
   if (!isLoggedIn) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <p>Por favor, inicia sesión para ver esta página.</p>
+        <p>{t("ingredientes_please_login")}</p>
       </div>
     )
   }
@@ -460,7 +464,7 @@ export default function MisRecetasPage() {
   }
 
   if (!canAccessRecipes) {
-    return <AdminRestrictedPage sectionName="Mis Recetas" />
+    return <AdminRestrictedPage sectionName={t("nav_mis_recetas")} />
   }
 
   return (
@@ -480,15 +484,15 @@ export default function MisRecetasPage() {
                     className="gap-1 md:gap-2 hover:bg-accent hover:text-accent-foreground transition-all duration-200 p-2 md:p-3"
                   >
                     <ArrowLeft className="h-3 w-3 md:h-4 md:w-4" />
-                    <span className="hidden sm:inline">Volver</span>
+                    <span className="hidden sm:inline">{t("common_back")}</span>
                   </Button>
                 </Link>
                 <div className="flex-1 sm:flex-none" data-tour="recetas-header">
                   <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
-                    Mis Recetas
+                    {t("nav_mis_recetas")}
                   </h1>
                   <p className="text-xs md:text-sm lg:text-base text-muted-foreground hidden sm:block">
-                    Gestiona y organiza todas tus recetas de cocina
+                    {t("misrecetas_subtitle")}
                   </p>
                 </div>
               </div>
@@ -500,8 +504,8 @@ export default function MisRecetasPage() {
                     className="gap-1 md:gap-2 bg-primary text-primary-foreground hover:bg-primary/90 text-xs md:text-sm px-3 md:px-4 py-2"
                   >
                     <Plus className="h-3 w-3 md:h-4 md:w-4" />
-                    <span className="hidden sm:inline">Nueva Receta</span>
-                    <span className="sm:hidden">Nueva</span>
+                    <span className="hidden sm:inline">{t("dashboard_new_recipe")}</span>
+                    <span className="sm:hidden">{t("misrecetas_new_short")}</span>
                   </Button>
                 </Link>
 
@@ -516,7 +520,7 @@ export default function MisRecetasPage() {
                   className="gap-1 md:gap-2 border-border text-xs md:text-sm px-3 md:px-4 py-2"
                 >
                   <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
-                  <span className="hidden sm:inline">Papelera</span>
+                  <span className="hidden sm:inline">{t("misrecetas_trash")}</span>
                 </Button>
 
                 {/* Botón de filtros móvil */}
@@ -544,7 +548,7 @@ export default function MisRecetasPage() {
                     </div>
                     <div>
                       <p className="text-lg md:text-2xl font-bold text-foreground">{stats.totalRecipes}</p>
-                      <p className="text-xs md:text-sm text-muted-foreground">Total</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">{t("ingredientes_stat_total")}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -558,7 +562,7 @@ export default function MisRecetasPage() {
                     </div>
                     <div>
                       <p className="text-lg md:text-2xl font-bold text-foreground">{stats.subRecipes}</p>
-                      <p className="text-xs md:text-sm text-muted-foreground">Sub-recetas</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">{t("ingredientes_stat_subrecipes")}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -572,7 +576,7 @@ export default function MisRecetasPage() {
                     </div>
                     <div>
                       <p className="text-lg md:text-2xl font-bold text-foreground">{formatCurrency(stats.avgCost)}</p>
-                      <p className="text-xs md:text-sm text-muted-foreground">Costo Prom.</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">{t("ingredientes_stat_avg_cost")}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -588,7 +592,7 @@ export default function MisRecetasPage() {
                       <p className="text-lg md:text-2xl font-bold text-foreground">
                         {formatCurrency(stats.totalValue)}
                       </p>
-                      <p className="text-xs md:text-sm text-muted-foreground">Valor Total</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">{t("ingredientes_stat_total_value")}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -604,7 +608,7 @@ export default function MisRecetasPage() {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                       type="text"
-                      placeholder="Buscar recetas por nombre, clasificación o plato..."
+                      placeholder={t("misrecetas_search_placeholder")}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-10 border-border focus:ring-2 focus:ring-primary text-sm md:text-base"
@@ -625,7 +629,7 @@ export default function MisRecetasPage() {
                           {classificationFilterOptions.map((classification) => (
                             <SelectItem key={classification} value={classification}>
                               {classification === "Todas"
-                                ? "Todas"
+                                ? t("inventario_filter_all_feminine")
                                 : getClassificationLabel(
                                     classification as (typeof recipeClassifications)[number],
                                     language,
@@ -645,7 +649,7 @@ export default function MisRecetasPage() {
                             <SelectItem key={option.value} value={option.value}>
                               <div className="flex items-center gap-2">
                                 <option.icon className="h-4 w-4" />
-                                {option.label}
+                                {t(option.labelKey)}
                               </div>
                             </SelectItem>
                           ))}
@@ -662,7 +666,7 @@ export default function MisRecetasPage() {
                         className="gap-2"
                       >
                         <Grid3X3 className="h-4 w-4" />
-                        Grid
+                        {t("misrecetas_view_grid")}
                       </Button>
                       <Button
                         variant={viewMode === "list" ? "default" : "outline"}
@@ -671,7 +675,7 @@ export default function MisRecetasPage() {
                         className="gap-2"
                       >
                         <List className="h-4 w-4" />
-                        Lista
+                        {t("misrecetas_view_list")}
                       </Button>
                     </div>
                   </div>
@@ -686,7 +690,7 @@ export default function MisRecetasPage() {
                   variant="secondary"
                   className="rounded-lg px-2 md:px-3 py-1 bg-muted text-foreground font-medium text-xs md:text-sm"
                 >
-                  {filteredAndSortedRecipes.length} recetas encontradas
+                  {t("misrecetas_results_count").replace("{count}", String(filteredAndSortedRecipes.length))}
                 </Badge>
                 {selectedClassification !== "Todas" && (
                   <Badge
@@ -701,14 +705,19 @@ export default function MisRecetasPage() {
                     variant="outline"
                     className="rounded-lg px-2 md:px-3 py-1 text-success bg-success-soft text-xs"
                   >
-                    Búsqueda:"{searchQuery.length > 20 ? searchQuery.substring(0, 20) + "..." : searchQuery}"
+                    {t("misrecetas_search_badge").replace(
+                      "{query}",
+                      searchQuery.length > 20 ? searchQuery.substring(0, 20) + "..." : searchQuery,
+                    )}
                   </Badge>
                 )}
               </div>
               <div className="text-xs md:text-sm text-muted-foreground">
                 {isMobile
-                  ? `${filteredAndSortedRecipes.length} resultados`
-                  : `Mostrando ${filteredAndSortedRecipes.length} de ${recipes.length} recetas`}
+                  ? t("misrecetas_mobile_results_count").replace("{count}", String(filteredAndSortedRecipes.length))
+                  : t("misrecetas_showing_count")
+                      .replace("{shown}", String(filteredAndSortedRecipes.length))
+                      .replace("{total}", String(recipes.length))}
               </div>
             </div>
           </div>
@@ -723,18 +732,18 @@ export default function MisRecetasPage() {
               <CardContent className="flex flex-col items-center justify-center py-12 md:py-16">
                 <ChefHat className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground mb-4 md:mb-6" />
                 <h3 className="text-lg md:text-xl font-semibold mb-2 md:mb-3 text-foreground text-center">
-                  {recipes.length === 0 ? "No hay recetas registradas" : "No se encontraron recetas"}
+                  {recipes.length === 0 ? t("misrecetas_empty_no_recipes_title") : t("misrecetas_empty_not_found_title")}
                 </h3>
                 <p className="text-muted-foreground text-center mb-6 md:mb-8 text-sm md:text-base px-4">
                   {recipes.length === 0
-                    ? "Comienza creando tu primera receta con nuestra ficha técnica."
-                    : "Intenta ajustar los filtros de búsqueda para encontrar lo que buscas."}
+                    ? t("misrecetas_empty_no_recipes_desc")
+                    : t("ingredientes_empty_not_found_desc")}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
                   <Link href={`/ficha-tecnica${businessId ? `?business=${businessId}` : ""}`}>
                     <Button className="bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto">
                       <Plus className="h-4 w-4 mr-2" />
-                      {recipes.length === 0 ? "Crear Primera Receta" : "Nueva Receta"}
+                      {recipes.length === 0 ? t("misrecetas_create_first") : t("dashboard_new_recipe")}
                     </Button>
                   </Link>
                   {recipes.length > 0 && (
@@ -746,7 +755,7 @@ export default function MisRecetasPage() {
                       }}
                       className="border-border hover:bg-accent w-full sm:w-auto"
                     >
-                      Limpiar Filtros
+                      {t("ingredientes_clear_filters_button")}
                     </Button>
                   )}
                   <Button
@@ -755,7 +764,7 @@ export default function MisRecetasPage() {
                     className="border-border hover:bg-accent w-full sm:w-auto"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Papelera
+                    {t("misrecetas_trash")}
                   </Button>
                 </div>
               </CardContent>
@@ -791,20 +800,19 @@ export default function MisRecetasPage() {
           <DialogHeader>
             <DialogTitle className="text-destructive dark:text-red-300 flex items-center gap-2">
               <Trash2 className="h-5 w-5" />
-              Confirmar Eliminación
+              {t("ingredientes_delete_dialog_title")}
             </DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <p className="text-muted-foreground text-sm md:text-base">
-              ¿Estás seguro de que quieres eliminar la receta <strong>"{recipeToDelete?.name}"</strong>? Esta acción no
-              se puede deshacer.
+              {t("misrecetas_delete_confirm_prefix")} <strong>"{recipeToDelete?.name}"</strong>
+              {t("misrecetas_delete_confirm_suffix")}
             </p>
             {recipeToDelete?.classification === SUBRECIPE_CLASSIFICATION && (
               <Alert className="mt-4 border-amber-200 dark:border-amber-900 bg-warning-soft dark:bg-amber-950/40">
                 <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-300" />
                 <AlertDescription className="text-warning">
-                  <strong>Nota:</strong> Esta es una sub-receta. Al eliminarla, también se eliminará el ingrediente
-                  asociado automáticamente.
+                  <strong>{t("misrecetas_delete_subrecipe_note_label")}</strong> {t("misrecetas_delete_subrecipe_note_desc")}
                 </AlertDescription>
               </Alert>
             )}
@@ -818,7 +826,7 @@ export default function MisRecetasPage() {
               }}
               className="border-border w-full sm:w-auto"
             >
-              Cancelar
+              {t("common_cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -826,7 +834,7 @@ export default function MisRecetasPage() {
               className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Eliminar
+              {t("common_delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -838,26 +846,24 @@ export default function MisRecetasPage() {
           <DialogHeader>
             <DialogTitle className="text-foreground flex items-center gap-2">
               <ArrowRightLeft className="h-5 w-5 text-primary" />
-              Migrar Receta a Otro Negocio
+              {t("misrecetas_migration_dialog_title")}
             </DialogTitle>
             <DialogDescription>
               <p className="text-base text-foreground mt-2">
-                Estás a punto de migrar la receta <strong>"{recipeToMigrate?.name}"</strong> a otro negocio.
+                {t("misrecetas_migration_dialog_prefix")} <strong>"{recipeToMigrate?.name}"</strong>{" "}
+                {t("misrecetas_migration_dialog_suffix")}
               </p>
               <Alert className="mt-4 border-blue-200 dark:border-blue-900 bg-blue-50">
                 <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                 <AlertDescription className="text-info">
-                  <p className="text-sm font-medium mb-1.5">Se migrará todo junto:</p>
+                  <p className="text-sm font-medium mb-1.5">{t("misrecetas_migration_all_together_title")}</p>
                   <ul className="list-disc list-inside space-y-1 text-sm">
-                    <li>Se creará una copia de la receta en el negocio destino</li>
-                    <li>Los ingredientes utilizados se migrarán si no existen en el destino</li>
-                    <li>
-                      Si la receta usa sub-recetas, esas sub-recetas también se migrarán completas (con sus propios
-                      ingredientes), no solo como un costo
-                    </li>
-                    <li>Los ingredientes migrados tendrán un indicador especial</li>
+                    <li>{t("misrecetas_migration_bullet_copy")}</li>
+                    <li>{t("misrecetas_migration_bullet_ingredients")}</li>
+                    <li>{t("misrecetas_migration_bullet_subrecipes")}</li>
+                    <li>{t("misrecetas_migration_bullet_indicator")}</li>
                     {recipeToMigrate?.classification === SUBRECIPE_CLASSIFICATION && (
-                      <li>Se creará el ingrediente correspondiente para la sub-receta</li>
+                      <li>{t("misrecetas_migration_bullet_subrecipe_ingredient")}</li>
                     )}
                   </ul>
                 </AlertDescription>
@@ -868,14 +874,16 @@ export default function MisRecetasPage() {
             <div className="space-y-2">
               <Label htmlFor="target-business" className="flex items-center gap-2">
                 <Building2 className="h-4 w-4" />
-                Negocio destino
+                {t("misrecetas_migration_target_label")}
               </Label>
               <Select value={selectedTargetBusiness} onValueChange={setSelectedTargetBusiness}>
                 <SelectTrigger id="target-business">
-                  <SelectValue placeholder="Selecciona un negocio" />
+                  <SelectValue placeholder={t("misrecetas_migration_target_placeholder")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {businessId !== "main" && !isTeamPreview && <SelectItem value="main">Dashboard Principal</SelectItem>}
+                  {businessId !== "main" && !isTeamPreview && (
+                    <SelectItem value="main">{t("misrecetas_main_dashboard")}</SelectItem>
+                  )}
                   {availableBusinesses.map((business) => (
                     <SelectItem key={business.id} value={business.id}>
                       {business.name}
@@ -896,7 +904,7 @@ export default function MisRecetasPage() {
               disabled={isMigrating}
               className="border-border w-full sm:w-auto"
             >
-              Cancelar
+              {t("common_cancel")}
             </Button>
             <Button
               onClick={handleMigration}
@@ -906,12 +914,12 @@ export default function MisRecetasPage() {
               {isMigrating ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Migrando...
+                  {t("misrecetas_migrating")}
                 </>
               ) : (
                 <>
                   <ArrowRightLeft className="h-4 w-4 mr-2" />
-                  Migrar
+                  {t("misrecetas_migrate_button")}
                 </>
               )}
             </Button>
@@ -925,15 +933,13 @@ export default function MisRecetasPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Trash2 className="h-5 w-5" />
-              Papelera de Recetas
+              {t("tour_recetas_trash_title")}
             </DialogTitle>
-            <DialogDescription>
-              Las recetas eliminadas se conservan aquí 30 días antes de borrarse definitivamente.
-            </DialogDescription>
+            <DialogDescription>{t("misrecetas_trash_dialog_desc")}</DialogDescription>
           </DialogHeader>
 
           {trashedRecipes.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">La papelera está vacía.</div>
+            <div className="text-center py-8 text-muted-foreground">{t("misrecetas_trash_empty")}</div>
           ) : (
             <div className="space-y-3">
               {trashedRecipes.map(({ recipe, deletedAt }) => {
@@ -944,18 +950,20 @@ export default function MisRecetasPage() {
                       <div className="min-w-0">
                         <p className="font-medium text-foreground truncate">{recipe.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          Eliminada el {new Date(deletedAt).toLocaleDateString()} ·{""}
+                          {t("misrecetas_trash_deleted_on_prefix")} {new Date(deletedAt).toLocaleDateString()} ·{" "}
                           {daysRemaining > 0
-                            ? `${daysRemaining} día${daysRemaining === 1 ? "" : "s"} restante${daysRemaining === 1 ? "" : "s"}`
-                            : "Se purgará muy pronto"}
+                            ? daysRemaining === 1
+                              ? t("misrecetas_trash_days_remaining_one")
+                              : t("misrecetas_trash_days_remaining_other").replace("{days}", String(daysRemaining))
+                            : t("misrecetas_trash_purge_soon")}
                         </p>
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
                         <Button size="sm" variant="outline" onClick={() => handleRestore(recipe.id)}>
-                          Restaurar
+                          {t("misrecetas_trash_restore_button")}
                         </Button>
                         <Button size="sm" variant="destructive" onClick={() => handlePermanentDelete(recipe.id)}>
-                          Borrar ya
+                          {t("misrecetas_trash_delete_now_button")}
                         </Button>
                       </div>
                     </CardContent>
@@ -984,7 +992,7 @@ export default function MisRecetasPage() {
                           : "bg-muted text-muted-foreground"
                       }`}
                     >
-                      {detailsRecipe.classification || "Sin clasificar"}
+                      {detailsRecipe.classification || t("misrecetas_detail_unclassified")}
                     </Badge>
                     {detailsRecipe.plate && <Badge variant="secondary">{detailsRecipe.plate}</Badge>}
                   </div>
@@ -993,25 +1001,25 @@ export default function MisRecetasPage() {
 
               <div className="grid grid-cols-2 gap-3 py-4">
                 <div className="rounded-lg border border-border p-3">
-                  <p className="text-xs text-muted-foreground">Costo total</p>
+                  <p className="text-xs text-muted-foreground">{t("misrecetas_detail_total_cost")}</p>
                   <p className="text-lg font-semibold text-foreground">
                     {formatCurrency(detailsRecipe.totalCost || 0)}
                   </p>
                 </div>
                 <div className="rounded-lg border border-border p-3">
-                  <p className="text-xs text-muted-foreground">Precio de venta</p>
+                  <p className="text-xs text-muted-foreground">{t("misrecetas_detail_sale_price")}</p>
                   <p className="text-lg font-semibold text-foreground">
                     {formatCurrency(detailsRecipe.unitPrice || 0)}
                   </p>
                 </div>
                 <div className="rounded-lg border border-border p-3">
-                  <p className="text-xs text-muted-foreground">Rendimiento</p>
+                  <p className="text-xs text-muted-foreground">{t("ficha_tecnica_field_yield")}</p>
                   <p className="text-lg font-semibold text-foreground">
                     {detailsRecipe.yieldAmount || detailsRecipe.servings || ""}
                   </p>
                 </div>
                 <div className="rounded-lg border border-border p-3">
-                  <p className="text-xs text-muted-foreground">Ingredientes</p>
+                  <p className="text-xs text-muted-foreground">{t("stat_ingredients")}</p>
                   <p className="text-lg font-semibold text-foreground">{detailsRecipe.ingredients?.length || 0}</p>
                 </div>
               </div>
@@ -1027,7 +1035,7 @@ export default function MisRecetasPage() {
                   }}
                 >
                   <Eye className="h-4 w-4" />
-                  Ver ficha completa
+                  {t("misrecetas_menu_view_full")}
                 </Button>
                 <Button
                   variant="outline"
@@ -1038,7 +1046,7 @@ export default function MisRecetasPage() {
                   }}
                 >
                   <Edit className="h-4 w-4" />
-                  Editar receta
+                  {t("misrecetas_menu_edit")}
                 </Button>
                 <Button
                   variant="outline"
@@ -1049,7 +1057,7 @@ export default function MisRecetasPage() {
                   }}
                 >
                   <Copy className="h-4 w-4" />
-                  Duplicar receta
+                  {t("misrecetas_menu_duplicate")}
                 </Button>
                 {canMigrateAnywhere && (
                   <Button
@@ -1061,7 +1069,7 @@ export default function MisRecetasPage() {
                     }}
                   >
                     <ArrowRightLeft className="h-4 w-4" />
-                    Migrar a otro negocio
+                    {t("misrecetas_menu_migrate")}
                   </Button>
                 )}
               </div>
@@ -1076,7 +1084,7 @@ export default function MisRecetasPage() {
                   }}
                 >
                   <Trash2 className="h-4 w-4" />
-                  Eliminar receta
+                  {t("misrecetas_menu_delete")}
                 </Button>
               </SheetFooter>
             </>

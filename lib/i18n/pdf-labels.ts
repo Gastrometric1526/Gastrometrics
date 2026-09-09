@@ -72,6 +72,19 @@ export interface PdfLabels {
   productosRegistrados: string
   valorTotalInventario: string
   ubicacion: string
+  rendPesoEstimado: string
+  desgloseDeCostos: string
+  distribucionVisual: string
+  rubrosDeCosteo: string
+  composicionCostoPorIngrediente: string
+  pdfGeneral: string
+  notasAdicionales: string
+  copiaInterna: string
+  precioTotalMenu: string
+  margenPorPlato: string
+  composicionPrecioTotalPorPlato: string
+  distribucionPorProveedor: string
+  topProductosPorValor: string
 }
 
 const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
@@ -139,6 +152,19 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     productosRegistrados: "Productos Registrados",
     valorTotalInventario: "Valor Total de Inventario",
     ubicacion: "Ubicacion",
+    rendPesoEstimado: "Rend. en peso (est.):",
+    desgloseDeCostos: "DESGLOSE DE COSTOS",
+    distribucionVisual: "DISTRIBUCION VISUAL",
+    rubrosDeCosteo: "Rubros de costeo",
+    composicionCostoPorIngrediente: "Composicion del costo por ingrediente",
+    pdfGeneral: "PDF GENERAL",
+    notasAdicionales: "Notas Adicionales",
+    copiaInterna: "COPIA INTERNA",
+    precioTotalMenu: "Precio total del menu",
+    margenPorPlato: "Margen por plato (%)",
+    composicionPrecioTotalPorPlato: "Composicion del precio total por plato",
+    distribucionPorProveedor: "DISTRIBUCION POR PROVEEDOR",
+    topProductosPorValor: "TOP PRODUCTOS POR VALOR",
   },
   en: {
     nombre: "Name:",
@@ -204,6 +230,19 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     productosRegistrados: "Registered Products",
     valorTotalInventario: "Total Inventory Value",
     ubicacion: "Location",
+    rendPesoEstimado: "Weight yield (est.):",
+    desgloseDeCostos: "COST BREAKDOWN",
+    distribucionVisual: "VISUAL BREAKDOWN",
+    rubrosDeCosteo: "Cost categories",
+    composicionCostoPorIngrediente: "Cost composition by ingredient",
+    pdfGeneral: "GENERAL PDF",
+    notasAdicionales: "Additional Notes",
+    copiaInterna: "INTERNAL COPY",
+    precioTotalMenu: "Total menu price",
+    margenPorPlato: "Margin per dish (%)",
+    composicionPrecioTotalPorPlato: "Total price composition by dish",
+    distribucionPorProveedor: "DISTRIBUTION BY SUPPLIER",
+    topProductosPorValor: "TOP PRODUCTS BY VALUE",
   },
   da: {
     nombre: "Navn:",
@@ -269,6 +308,19 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     productosRegistrados: "Registrerede produkter",
     valorTotalInventario: "Samlet lagerværdi",
     ubicacion: "Placering",
+    rendPesoEstimado: "Vægtudbytte (est.):",
+    desgloseDeCostos: "OMKOSTNINGSFORDELING",
+    distribucionVisual: "VISUEL FORDELING",
+    rubrosDeCosteo: "Omkostningskategorier",
+    composicionCostoPorIngrediente: "Omkostningssammensætning pr. ingrediens",
+    pdfGeneral: "GENEREL PDF",
+    notasAdicionales: "Yderligere noter",
+    copiaInterna: "INTERN KOPI",
+    precioTotalMenu: "Samlet menupris",
+    margenPorPlato: "Avance pr. ret (%)",
+    composicionPrecioTotalPorPlato: "Sammensætning af den samlede pris pr. ret",
+    distribucionPorProveedor: "FORDELING PR. LEVERANDØR",
+    topProductosPorValor: "TOP PRODUKTER EFTER VÆRDI",
   },
   fr: {
     nombre: "Nom :",
@@ -334,6 +386,19 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     productosRegistrados: "Produits Enregistres",
     valorTotalInventario: "Valeur Totale de l'Inventaire",
     ubicacion: "Emplacement",
+    rendPesoEstimado: "Rendement en poids (est.) :",
+    desgloseDeCostos: "REPARTITION DES COUTS",
+    distribucionVisual: "REPARTITION VISUELLE",
+    rubrosDeCosteo: "Postes de couts",
+    composicionCostoPorIngrediente: "Composition du cout par ingredient",
+    pdfGeneral: "PDF GENERAL",
+    notasAdicionales: "Notes Complementaires",
+    copiaInterna: "COPIE INTERNE",
+    precioTotalMenu: "Prix total du menu",
+    margenPorPlato: "Marge par plat (%)",
+    composicionPrecioTotalPorPlato: "Composition du prix total par plat",
+    distribucionPorProveedor: "REPARTITION PAR FOURNISSEUR",
+    topProductosPorValor: "TOP PRODUITS PAR VALEUR",
   },
   pt: {
     nombre: "Nome:",
@@ -399,6 +464,19 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     productosRegistrados: "Produtos Registrados",
     valorTotalInventario: "Valor Total do Estoque",
     ubicacion: "Localizacao",
+    rendPesoEstimado: "Rendimento em peso (est.):",
+    desgloseDeCostos: "DETALHAMENTO DE CUSTOS",
+    distribucionVisual: "DISTRIBUICAO VISUAL",
+    rubrosDeCosteo: "Itens de custeio",
+    composicionCostoPorIngrediente: "Composicao do custo por ingrediente",
+    pdfGeneral: "PDF GERAL",
+    notasAdicionales: "Notas Adicionais",
+    copiaInterna: "COPIA INTERNA",
+    precioTotalMenu: "Preco total do cardapio",
+    margenPorPlato: "Margem por prato (%)",
+    composicionPrecioTotalPorPlato: "Composicao do preco total por prato",
+    distribucionPorProveedor: "DISTRIBUICAO POR FORNECEDOR",
+    topProductosPorValor: "TOP PRODUTOS POR VALOR",
   },
   zh: {
     nombre: "名称：",
@@ -464,6 +542,19 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     productosRegistrados: "已登记产品",
     valorTotalInventario: "库存总价值",
     ubicacion: "位置",
+    rendPesoEstimado: "重量产出（估）：",
+    desgloseDeCostos: "成本明细",
+    distribucionVisual: "可视化分布",
+    rubrosDeCosteo: "成本项目",
+    composicionCostoPorIngrediente: "各食材成本构成",
+    pdfGeneral: "通用PDF",
+    notasAdicionales: "补充说明",
+    copiaInterna: "内部版",
+    precioTotalMenu: "菜单总价",
+    margenPorPlato: "每道菜利润率（%）",
+    composicionPrecioTotalPorPlato: "各菜品总价构成",
+    distribucionPorProveedor: "按供应商分布",
+    topProductosPorValor: "价值最高的产品",
   },
 }
 
