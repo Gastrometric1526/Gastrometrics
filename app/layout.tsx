@@ -43,6 +43,12 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
   },
+  // Verificación de dominio para Trustpilot Business (una sola vez, ver docs/93) —
+  // confirma que gastrometrics.org es dueño real del sitio antes de dejar publicar el
+  // perfil de reseñas. Seguro dejarlo permanente en el HTML, no es sensible.
+  other: {
+    "trustpilot-one-time-domain-verification-id": "e72037ef-e0df-4ca6-93b6-29882c1fb3e9",
+  },
 }
 
 // viewport-fit=cover + los paddings de env(safe-area-inset-*) en globals.css son lo que
