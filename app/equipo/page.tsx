@@ -56,8 +56,15 @@ import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { logActivity } from "@/lib/services/activity-log"
 import { getAllBusinesses } from "@/lib/storage/businesses"
-import { getTeamMembers, inviteTeamMember, updateTeamMember, removeTeamMember, ensureTeamMembersLoaded } from "@/lib/storage/team"
-import { MAX_TEAM_MEMBERS, type TeamMember, type TeamMemberPdfAccess } from "@/types/team"
+import {
+  getTeamMembers,
+  inviteTeamMember,
+  updateTeamMember,
+  removeTeamMember,
+  ensureTeamMembersLoaded,
+  getEffectiveMaxTeamMembers,
+} from "@/lib/storage/team"
+import type { TeamMember, TeamMemberPdfAccess } from "@/types/team"
 import type { FeatureKey } from "@/lib/plans"
 import type { Business } from "@/types/business"
 
@@ -151,6 +158,10 @@ function EquipoContent() {
   // PDFs, y enviarlas todas juntas en vez de abrir y cerrar el diálogo por persona.
   const [inviteQueue, setInviteQueue] = useState<MemberFormState[]>([])
   const [isSending, setIsSending] = useState(false)
+
+  // Base fija (3) + lo que /admin le haya cedido de más a esta cuenta — ver
+  // lib/storage/team.ts y lib/plan-overrides.ts.
+  const MAX_TEAM_MEMBERS = getEffectiveMaxTeamMembers()
 
   const load = async () => {
     await ensureTeamMembersLoaded()

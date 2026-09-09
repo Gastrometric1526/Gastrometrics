@@ -8,6 +8,7 @@ import { consumeAuthHashFromUrl } from "@/lib/supabase/consume-auth-hash"
 import type { Database } from "@/types/database"
 import type { UserProfile } from "@/lib/types/user"
 import { setCurrentPlanSlug } from "@/lib/plan-access"
+import { setCurrentPlanOverrides } from "@/lib/plan-overrides"
 import { refreshBusinesses } from "@/lib/storage/businesses"
 import { ensureTeamMembersLoaded, ensureMyMembershipsLoaded } from "@/lib/storage/team"
 
@@ -99,20 +100,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const [{ data: profileRow }, planResult] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", sessionUser.id).maybeSingle(),
-        supabase.from("account_plans").select("plan_slug, plan_expires_at").eq("account_id", sessionUser.id).maybeSingle(),
+        supabase
+          .from("account_plans")
+          .select("plan_slug, plan_expires_at, extra_businesses, extra_team_seats")
+          .eq("account_id", sessionUser.id)
+          .maybeSingle(),
       ])
-      // Tolera que supabase/migrations/0008_plan_expiry.sql todavía no se haya corrido
-      // (columna nueva, ver docs/59) — sin esto, el sync de plan de CADA sesión se
-      // rompería por completo (nunca refrescaría el plan real) hasta que alguien corra
-      // esa migración a mano.
-      let planRow = planResult.data
+      // Tolera que supabase/migrations/0008_plan_expiry.sql y/o
+      // 0019_account_overrides.sql todavía no se hayan corrido (columnas nuevas, ver
+      // docs/59) — sin esto, el sync de plan de CADA sesión se rompería por completo
+      // (nunca refrescaría el plan real) hasta que alguien corra esas migraciones a mano.
+      let planRow: {
+        plan_slug: string
+        plan_expires_at: string | null
+        extra_businesses: number
+        extra_team_seats: number
+      } | null = planResult.data
       if (planResult.error) {
         const fallback = await supabase
           .from("account_plans")
           .select("plan_slug")
           .eq("account_id", sessionUser.id)
           .maybeSingle()
-        planRow = fallback.data ? { ...fallback.data, plan_expires_at: null } : null
+        planRow = fallback.data
+          ? { ...fallback.data, plan_expires_at: null, extra_businesses: 0, extra_team_seats: 0 }
+          : null
       }
 
       if (cancelled) return
@@ -134,6 +146,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // real se corrige la próxima vez que alguien la edite desde /admin.
       const isExpired = planRow?.plan_expires_at ? new Date(planRow.plan_expires_at).getTime() < Date.now() : false
       if (planRow?.plan_slug) setCurrentPlanSlug(isExpired ? "foodie" : planRow.plan_slug)
+      // Negocios/cupos de equipo extra cedidos a mano desde /admin (ver
+      // lib/plan-overrides.ts) — independientes del vencimiento del plan, se
+      // sincronizan siempre que la fila exista.
+      setCurrentPlanOverrides({
+        extraBusinesses: planRow?.extra_businesses || 0,
+        extraTeamSeats: planRow?.extra_team_seats || 0,
+      })
       // Dispara la carga real de la lista de negocios desde Supabase — ver
       // lib/storage/businesses.ts. No se espera (fire-and-forget): las pantallas que la
       // necesitan ya toleran verla vacía por un instante mientras carga, mismo patrón

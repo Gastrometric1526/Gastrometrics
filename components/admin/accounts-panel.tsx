@@ -75,6 +75,8 @@ interface AccountDetail {
   emailConfirmed: boolean
   planSlug: string
   planExpiresAt: string | null
+  extraBusinesses: number
+  extraTeamSeats: number
   businessCount: number
 }
 
@@ -132,6 +134,8 @@ export function AccountsPanel() {
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [selectedPlanSlug, setSelectedPlanSlug] = useState("")
   const [expiresAtInput, setExpiresAtInput] = useState("")
+  const [extraBusinessesInput, setExtraBusinessesInput] = useState("0")
+  const [extraTeamSeatsInput, setExtraTeamSeatsInput] = useState("0")
   const [applyingPlan, setApplyingPlan] = useState(false)
 
   const [presenceByUserId, setPresenceByUserId] = useState<
@@ -247,6 +251,8 @@ export function AccountsPanel() {
         setDetail(planData)
         setSelectedPlanSlug(planData.planSlug)
         setExpiresAtInput(toDateInputValue(planData.planExpiresAt))
+        setExtraBusinessesInput(String(planData.extraBusinesses || 0))
+        setExtraTeamSeatsInput(String(planData.extraTeamSeats || 0))
       }
       setBusinesses(Array.isArray(businessesData.businesses) ? businessesData.businesses : [])
       setTeam(Array.isArray(teamData.members) ? teamData.members : [])
@@ -281,11 +287,23 @@ export function AccountsPanel() {
           email: detail.email,
           planSlug: selectedPlanSlug,
           expiresAt: expiresAtInput ? dateInputToIso(expiresAtInput) : null,
+          extraBusinesses: Number(extraBusinessesInput) || 0,
+          extraTeamSeats: Number(extraTeamSeatsInput) || 0,
         }),
       })
       const data = await res.json()
       if (res.ok && data.ok) {
-        setDetail((prev) => (prev ? { ...prev, planSlug: data.planSlug, planExpiresAt: data.planExpiresAt } : prev))
+        setDetail((prev) =>
+          prev
+            ? {
+                ...prev,
+                planSlug: data.planSlug,
+                planExpiresAt: data.planExpiresAt,
+                extraBusinesses: data.extraBusinesses,
+                extraTeamSeats: data.extraTeamSeats,
+              }
+            : prev,
+        )
         toast({ title: t("admin_accounts_plan_applied_toast") })
       } else {
         toast({ title: t("admin_accounts_error_toast"), variant: "destructive" })
@@ -452,7 +470,11 @@ export function AccountsPanel() {
 
   const planIsExpired = Boolean(detail?.planExpiresAt && new Date(detail.planExpiresAt).getTime() < Date.now())
   const hasUnappliedChanges =
-    !!detail && (selectedPlanSlug !== detail.planSlug || expiresAtInput !== toDateInputValue(detail.planExpiresAt))
+    !!detail &&
+    (selectedPlanSlug !== detail.planSlug ||
+      expiresAtInput !== toDateInputValue(detail.planExpiresAt) ||
+      Number(extraBusinessesInput) !== (detail.extraBusinesses || 0) ||
+      Number(extraTeamSeatsInput) !== (detail.extraTeamSeats || 0))
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const deleteConfirmMatches =
     !!selected && deleteConfirmEmail.trim().toLowerCase() === selected.email.trim().toLowerCase()
@@ -499,6 +521,13 @@ export function AccountsPanel() {
                               "{date}",
                               new Date(detail.planExpiresAt).toLocaleDateString(getDateLocale(language)),
                             )}
+                      </Badge>
+                    )}
+                    {(detail.extraBusinesses > 0 || detail.extraTeamSeats > 0) && (
+                      <Badge variant="outline">
+                        {t("admin_accounts_extra_badge")
+                          .replace("{businesses}", String(detail.extraBusinesses))
+                          .replace("{seats}", String(detail.extraTeamSeats))}
                       </Badge>
                     )}
                   </div>
@@ -555,6 +584,37 @@ export function AccountsPanel() {
                     >
                       {t("admin_accounts_expires_clear")}
                     </Button>
+                  </div>
+                  <div className="flex flex-wrap items-end gap-2 pt-2 border-t border-border">
+                    <div className="space-y-1">
+                      <Label htmlFor="extra-businesses" className="text-xs text-muted-foreground">
+                        {t("admin_accounts_extra_businesses_label")}
+                      </Label>
+                      <Input
+                        id="extra-businesses"
+                        type="number"
+                        min="0"
+                        step="1"
+                        className="w-28"
+                        value={extraBusinessesInput}
+                        onChange={(e) => setExtraBusinessesInput(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="extra-team-seats" className="text-xs text-muted-foreground">
+                        {t("admin_accounts_extra_team_seats_label")}
+                      </Label>
+                      <Input
+                        id="extra-team-seats"
+                        type="number"
+                        min="0"
+                        step="1"
+                        className="w-28"
+                        value={extraTeamSeatsInput}
+                        onChange={(e) => setExtraTeamSeatsInput(e.target.value)}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground pb-2">{t("admin_accounts_extra_hint")}</p>
                   </div>
                 </div>
               )}

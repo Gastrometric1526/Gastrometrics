@@ -12,7 +12,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
 import { useAllBusinesses } from "@/lib/storage/businesses"
 import { getPlanBySlug } from "@/lib/plans"
-import { useCurrentPlanSlug } from "@/lib/plan-access"
+import { useCurrentPlanSlug, getMaxBusinesses } from "@/lib/plan-access"
 
 // Página de plan dentro del dashboard — antes, "Plan: X" en el sidebar y el CTA de
 // las pantallas bloqueadas por plan (components/feature-locked.tsx) mandaban a /planes,
@@ -39,6 +39,9 @@ export default function MiPlanPage() {
   const businesses = useAllBusinesses()
   const currentPlanSlug = useCurrentPlanSlug()
   const currentPlan = getPlanBySlug(currentPlanSlug)
+  // Suma lo que /admin le haya cedido de más a esta cuenta (ver lib/plan-overrides.ts)
+  // — currentPlan.maxBusinesses por sí solo ignoraría ese extra.
+  const maxBusinesses = getMaxBusinesses()
 
   // El botón de Portal de Cliente solo aparece para quien ya completó un pago real por
   // Stripe Checkout — alguien en el plan Foodie gratis nunca tiene un customer id de
@@ -125,15 +128,15 @@ export default function MiPlanPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-lg font-semibold text-foreground tabular-nums">
-                  {businesses.length} / {currentPlan.maxBusinesses}
+                  {businesses.length} / {maxBusinesses}
                 </span>
               </div>
               <div className="relative h-1.5 w-full rounded-full bg-secondary overflow-hidden">
                 <div
                   className={`absolute inset-y-0 left-0 rounded-full ${
-                    businesses.length >= currentPlan.maxBusinesses ? "bg-warning" : "bg-primary"
+                    businesses.length >= maxBusinesses ? "bg-warning" : "bg-primary"
                   }`}
-                  style={{ width: `${Math.min(100, (businesses.length / Math.max(1, currentPlan.maxBusinesses)) * 100)}%` }}
+                  style={{ width: `${Math.min(100, (businesses.length / Math.max(1, maxBusinesses)) * 100)}%` }}
                 />
               </div>
             </div>

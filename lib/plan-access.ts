@@ -19,6 +19,7 @@ import { useEffect, useState } from "react"
 import { plans, getPlanBySlug, type Plan, type FeatureKey } from "./plans"
 import { getActivePreviewMember, TEAM_PREVIEW_EVENT } from "./storage/team-preview"
 import { getMyMemberships } from "./storage/team"
+import { getCurrentPlanOverrides } from "./plan-overrides"
 import type { TeamMember } from "@/types/team"
 
 const PLAN_STORAGE_KEY = "current_plan_slug"
@@ -107,8 +108,11 @@ export function getAccessBlockReason(feature: FeatureKey): "plan" | "admin" | nu
   return getCurrentPlan().unlockedFeatures.includes(feature) ? null : "plan"
 }
 
+// Suma lo que /admin le haya cedido de más a esta cuenta puntual (ver
+// lib/plan-overrides.ts y supabase/migrations/0019_account_overrides.sql) — por
+// encima del límite base de su plan, no en vez de él.
 export function getMaxBusinesses(): number {
-  return getCurrentPlan().maxBusinesses
+  return getCurrentPlan().maxBusinesses + getCurrentPlanOverrides().extraBusinesses
 }
 
 export function getMaxUsers(): number {

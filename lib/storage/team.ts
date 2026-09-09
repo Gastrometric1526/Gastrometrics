@@ -20,7 +20,13 @@ import { getAllBusinesses } from "./businesses"
 import type { Database } from "@/types/database"
 import type { TeamMember, TeamMemberScope, TeamMemberPdfAccess, TeamMemberActivityEntry } from "@/types/team"
 import { MAX_TEAM_MEMBERS } from "@/types/team"
+import { getCurrentPlanOverrides } from "@/lib/plan-overrides"
 import type { FeatureKey } from "@/lib/plans"
+
+/** MAX_TEAM_MEMBERS + lo que /admin le haya cedido de más a esta cuenta (ver lib/plan-overrides.ts). */
+export function getEffectiveMaxTeamMembers(): number {
+  return MAX_TEAM_MEMBERS + getCurrentPlanOverrides().extraTeamSeats
+}
 
 type TeamMemberRow = Database["public"]["Tables"]["team_members"]["Row"]
 
@@ -107,7 +113,7 @@ export function getTeamMembers(): TeamMember[] {
 }
 
 export function canInviteMoreMembers(): boolean {
-  return getTeamMembers().length < MAX_TEAM_MEMBERS
+  return getTeamMembers().length < getEffectiveMaxTeamMembers()
 }
 
 const MY_MEMBERSHIPS_KEY = "__my_team_memberships__"
@@ -158,8 +164,9 @@ export async function inviteTeamMember(input: {
   invitedUserId?: string | null
 }): Promise<TeamMember> {
   const all = getTeamMembers()
-  if (all.length >= MAX_TEAM_MEMBERS) {
-    throw new Error(`Ya invitaste al máximo de ${MAX_TEAM_MEMBERS} personas.`)
+  const effectiveMax = getEffectiveMaxTeamMembers()
+  if (all.length >= effectiveMax) {
+    throw new Error(`Ya invitaste al máximo de ${effectiveMax} personas.`)
   }
   const normalizedEmail = input.email.trim().toLowerCase()
   if (all.some((m) => m.email.toLowerCase() === normalizedEmail)) {

@@ -79,12 +79,25 @@ export async function POST(request: Request) {
   // — alguien llamando esta ruta directo podía saltárselo por completo y crear más
   // cuentas/otorgar más accesos reales de los que el plan permite. Se revisa también
   // aquí, contra el conteo real en Supabase, antes de crear nada.
+  //
+  // extra_team_seats (ver supabase/migrations/0019_account_overrides.sql) es lo que
+  // /admin le haya cedido de más a ESTA cuenta por encima del tope base — el cliente
+  // no puede mandarlo él mismo (leído de la fila real, no del body de la request).
+  // Tolera que esa columna todavía no exista (mismo patrón que el resto de este
+  // proyecto para migraciones nuevas): sin fila o sin columna, extra = 0.
+  const { data: ownerPlanRow } = await admin
+    .from("account_plans")
+    .select("extra_team_seats")
+    .eq("account_id", ownerAccountId)
+    .maybeSingle()
+  const effectiveMaxTeamMembers = MAX_TEAM_MEMBERS + (ownerPlanRow?.extra_team_seats || 0)
+
   const { count: currentMemberCount } = await admin
     .from("team_members")
     .select("id", { count: "exact", head: true })
     .eq("owner_id", ownerAccountId)
-  if ((currentMemberCount || 0) >= MAX_TEAM_MEMBERS) {
-    return NextResponse.json({ error: `Ya invitaste al máximo de ${MAX_TEAM_MEMBERS} personas.` }, { status: 400 })
+  if ((currentMemberCount || 0) >= effectiveMaxTeamMembers) {
+    return NextResponse.json({ error: `Ya invitaste al máximo de ${effectiveMaxTeamMembers} personas.` }, { status: 400 })
   }
 
   const { data: profileRow } = await supabase

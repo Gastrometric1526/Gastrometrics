@@ -60,22 +60,32 @@ export async function GET(request: Request) {
     const [planResult, { count: businessCount }] = await Promise.all([
       admin
         .from("account_plans")
-        .select("plan_slug, updated_at, stripe_customer_id, plan_expires_at")
+        .select("plan_slug, updated_at, stripe_customer_id, plan_expires_at, extra_businesses, extra_team_seats")
         .eq("account_id", user.id)
         .maybeSingle(),
       admin.from("businesses").select("id", { count: "exact", head: true }).eq("owner_id", user.id),
     ])
-    // Tolera que supabase/migrations/0008_plan_expiry.sql todavía no se haya corrido
-    // (columna nueva, ver docs/59) — sin esto, este panel mostraría "Foodie" para
-    // TODAS las cuentas (aunque tengan otro plan real) hasta que alguien la corra.
-    let planRow = planResult.data
+    // Tolera que supabase/migrations/0008_plan_expiry.sql y/o 0019_account_overrides.sql
+    // todavía no se hayan corrido (columnas nuevas, ver docs/59) — sin esto, este panel
+    // mostraría "Foodie" para TODAS las cuentas (aunque tengan otro plan real) hasta que
+    // alguien las corra.
+    let planRow: {
+      plan_slug: string
+      updated_at: string
+      stripe_customer_id: string | null
+      plan_expires_at: string | null
+      extra_businesses: number
+      extra_team_seats: number
+    } | null = planResult.data
     if (planResult.error) {
       const fallback = await admin
         .from("account_plans")
         .select("plan_slug, updated_at, stripe_customer_id")
         .eq("account_id", user.id)
         .maybeSingle()
-      planRow = fallback.data ? { ...fallback.data, plan_expires_at: null } : null
+      planRow = fallback.data
+        ? { ...fallback.data, plan_expires_at: null, extra_businesses: 0, extra_team_seats: 0 }
+        : null
     }
 
     return NextResponse.json({
@@ -87,6 +97,8 @@ export async function GET(request: Request) {
       planSlug: planRow?.plan_slug || "foodie",
       planUpdatedAt: planRow?.updated_at || null,
       planExpiresAt: planRow?.plan_expires_at || null,
+      extraBusinesses: planRow?.extra_businesses || 0,
+      extraTeamSeats: planRow?.extra_team_seats || 0,
       hasStripeCustomer: Boolean(planRow?.stripe_customer_id),
       businessCount: businessCount || 0,
     })
@@ -116,6 +128,14 @@ export async function PATCH(request: Request) {
     }
     expiresAt = parsed.toISOString()
   }
+
+  // Negocios/cupos de equipo extra otorgados a mano, por encima del límite base del
+  // plan (ver supabase/migrations/0019_account_overrides.sql). 0 = sin extra, el
+  // comportamiento de siempre. Se redondea y nunca se acepta negativo — "cederle
+  // menos que su plan base" no es lo que este control hace, para eso se cambia el
+  // plan mismo.
+  const extraBusinesses = Math.max(0, Math.floor(Number(body?.extraBusinesses) || 0))
+  const extraTeamSeats = Math.max(0, Math.floor(Number(body?.extraTeamSeats) || 0))
 
   if (!email || !planSlug) {
     return NextResponse.json({ error: "Falta el correo o el plan." }, { status: 400 })
@@ -147,20 +167,25 @@ export async function PATCH(request: Request) {
         account_id: user.id,
         plan_slug: planSlug,
         plan_expires_at: expiresAt,
+        extra_businesses: extraBusinesses,
+        extra_team_seats: extraTeamSeats,
         updated_at: new Date().toISOString(),
       })
-      .select("plan_slug, updated_at, plan_expires_at")
+      .select("plan_slug, updated_at, plan_expires_at, extra_businesses, extra_team_seats")
       .single()
 
-    // Tolera que supabase/migrations/0008_plan_expiry.sql todavía no se haya corrido
-    // (columna nueva, ver docs/59) — sin esto, aplicar CUALQUIER plan (con o sin
-    // vencimiento) se rompería por completo hasta que alguien la corra a mano. Si
-    // pasa esto Y de verdad pidieron un vencimiento, se avisa en vez de aplicarlo en
-    // silencio como si no venciera nunca.
+    // Tolera que supabase/migrations/0008_plan_expiry.sql y/o
+    // 0019_account_overrides.sql todavía no se hayan corrido (columnas nuevas, ver
+    // docs/59) — sin esto, aplicar CUALQUIER plan se rompería por completo hasta que
+    // alguien las corra a mano. Si pasa esto Y de verdad pidieron algo que necesita
+    // esas columnas, se avisa en vez de aplicarlo en silencio como si no tuviera efecto.
     if (error) {
-      if (expiresAt) {
+      if (expiresAt || extraBusinesses > 0 || extraTeamSeats > 0) {
         return NextResponse.json(
-          { error: "Falta correr supabase/migrations/0008_plan_expiry.sql antes de poder usar el vencimiento." },
+          {
+            error:
+              "Falta correr supabase/migrations/0008_plan_expiry.sql y/o 0019_account_overrides.sql antes de poder usar el vencimiento o los extras.",
+          },
           { status: 409 },
         )
       }
@@ -169,7 +194,7 @@ export async function PATCH(request: Request) {
         .upsert({ account_id: user.id, plan_slug: planSlug, updated_at: new Date().toISOString() })
         .select("plan_slug, updated_at")
         .single()
-      data = fallback.data ? { ...fallback.data, plan_expires_at: null } : null
+      data = fallback.data ? { ...fallback.data, plan_expires_at: null, extra_businesses: 0, extra_team_seats: 0 } : null
       error = fallback.error
     }
 
@@ -209,6 +234,8 @@ export async function PATCH(request: Request) {
       planSlug: data.plan_slug,
       updatedAt: data.updated_at,
       planExpiresAt: data.plan_expires_at,
+      extraBusinesses: data.extra_businesses || 0,
+      extraTeamSeats: data.extra_team_seats || 0,
     })
   } catch (error) {
     console.error("[api/admin/account-plan] Error cambiando el plan:", error)

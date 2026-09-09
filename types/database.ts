@@ -305,6 +305,10 @@ export interface Database {
           last_change_source: string | null
           last_change_at: string | null
           last_change_acknowledged: boolean
+          // Negocios/cupos de equipo extra otorgados a mano desde /admin, por encima
+          // del límite base del plan — ver supabase/migrations/0019_account_overrides.sql.
+          extra_businesses: number
+          extra_team_seats: number
         }
         Insert: Omit<
           Database["public"]["Tables"]["account_plans"]["Row"],
@@ -320,6 +324,8 @@ export interface Database {
           | "last_change_source"
           | "last_change_at"
           | "last_change_acknowledged"
+          | "extra_businesses"
+          | "extra_team_seats"
         > & {
           updated_at?: string
           stripe_customer_id?: string | null
@@ -333,6 +339,8 @@ export interface Database {
           last_change_source?: string | null
           last_change_at?: string | null
           last_change_acknowledged?: boolean
+          extra_businesses?: number
+          extra_team_seats?: number
         }
         Update: Partial<Database["public"]["Tables"]["account_plans"]["Row"]>
         Relationships: never[]
