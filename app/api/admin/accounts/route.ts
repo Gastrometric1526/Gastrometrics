@@ -106,13 +106,32 @@ export async function GET(request: Request) {
     for (const row of ingredientRows.data ?? []) {
       ingredientCountByUser.set(row.owner_id, (ingredientCountByUser.get(row.owner_id) || 0) + 1)
     }
-    const importSummaryByUser = new Map<string, { count: number; lastImportedAt: string | null }>()
+    // Separa POS ("pos_import"/ausente, ver types/sales-import.ts) de registro manual
+    // ("manual", docs/90) — antes se mezclaban bajo un solo conteo, y no había forma de
+    // saber desde /admin si la función nueva de ventas manuales estaba aterrizando.
+    const importSummaryByUser = new Map<
+      string,
+      { posCount: number; lastPosImportAt: string | null; manualCount: number; lastManualSalesAt: string | null }
+    >()
     for (const row of salesImportRows.data ?? []) {
-      const info = row.data as { importedAt?: string }
-      const prev = importSummaryByUser.get(row.owner_id) || { count: 0, lastImportedAt: null }
-      prev.count += 1
-      if (info.importedAt && (!prev.lastImportedAt || info.importedAt > prev.lastImportedAt)) {
-        prev.lastImportedAt = info.importedAt
+      const info = row.data as { importedAt?: string; source?: string }
+      const prev =
+        importSummaryByUser.get(row.owner_id) || {
+          posCount: 0,
+          lastPosImportAt: null,
+          manualCount: 0,
+          lastManualSalesAt: null,
+        }
+      if (info.source === "manual") {
+        prev.manualCount += 1
+        if (info.importedAt && (!prev.lastManualSalesAt || info.importedAt > prev.lastManualSalesAt)) {
+          prev.lastManualSalesAt = info.importedAt
+        }
+      } else {
+        prev.posCount += 1
+        if (info.importedAt && (!prev.lastPosImportAt || info.importedAt > prev.lastPosImportAt)) {
+          prev.lastPosImportAt = info.importedAt
+        }
       }
       importSummaryByUser.set(row.owner_id, prev)
     }
@@ -128,8 +147,10 @@ export async function GET(request: Request) {
       teamMemberCount: teamCountByUser.get(u.id) || 0,
       recipeCount: recipeCountByUser.get(u.id) || 0,
       ingredientCount: ingredientCountByUser.get(u.id) || 0,
-      salesImportCount: importSummaryByUser.get(u.id)?.count || 0,
-      lastSalesImportAt: importSummaryByUser.get(u.id)?.lastImportedAt || null,
+      posImportCount: importSummaryByUser.get(u.id)?.posCount || 0,
+      lastPosImportAt: importSummaryByUser.get(u.id)?.lastPosImportAt || null,
+      manualSalesCount: importSummaryByUser.get(u.id)?.manualCount || 0,
+      lastManualSalesAt: importSummaryByUser.get(u.id)?.lastManualSalesAt || null,
       hasActiveSubscription: Boolean(planByUser.get(u.id)?.stripe_subscription_id),
       country: countryByUser.get(u.id) || null,
       totalActiveSeconds: activeSecondsByUser.get(u.id) || 0,

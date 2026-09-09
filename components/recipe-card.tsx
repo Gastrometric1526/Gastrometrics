@@ -242,7 +242,7 @@ export function RecipeCard({
     <Card
       className="border-border transition-all duration-300 bg-card group cursor-pointer"
       onDoubleClick={() => onOpenDetails?.(recipe)}
-      title="Doble clic para ver todas las opciones"
+      title={t("recipecard_double_click_hint")}
     >
       <CardHeader className="p-4 pb-2">
         <div className="flex items-start justify-between gap-2">
@@ -255,7 +255,7 @@ export function RecipeCard({
               >
                 {recipe.classification
                   ? getClassificationLabel(recipe.classification as Classification, language)
-                  : "Sin clasificar"}
+                  : t("recipecard_unclassified")}
               </Badge>
               {recipe.plate && (
                 <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">
@@ -285,20 +285,20 @@ export function RecipeCard({
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={() => onView(recipe)}>
                 <Eye className="h-4 w-4 mr-2" />
-                Ver receta
+                {t("recipecard_view")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(recipe)}>
                 <Edit className="h-4 w-4 mr-2" />
-                Editar
+                {t("recipecard_edit")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onDuplicate(recipe)}>
                 <Copy className="h-4 w-4 mr-2" />
-                Duplicar
+                {t("recipecard_duplicate")}
               </DropdownMenuItem>
               {onMigrate && (
                 <DropdownMenuItem onClick={() => onMigrate(recipe)}>
                   <ArrowRightLeft className="h-4 w-4 mr-2" />
-                  Migrar
+                  {t("recipecard_migrate")}
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
@@ -307,7 +307,7 @@ export function RecipeCard({
                 className="text-destructive dark:text-red-300 focus:text-destructive dark:text-red-300"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Eliminar
+                {t("recipecard_delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

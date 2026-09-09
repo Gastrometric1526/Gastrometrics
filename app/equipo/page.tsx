@@ -564,13 +564,17 @@ function EquipoContent() {
                     {t("common_cancel")}
                   </Button>
                   <Button onClick={handleSubmit} disabled={isSending}>
-                    {isSending
-                      ? t("equipo_sending_button")
-                      : editingId
-                        ? t("equipo_save_changes_button")
-                        : inviteQueue.length > 0
-                          ? t("equipo_send_invitations_button").replace("{count}", String(inviteQueue.length + (form.email.trim() ? 1 : 0)))
-                          : t("equipo_send_invitation_button")}
+                    {(() => {
+                      if (isSending) return t("equipo_sending_button")
+                      if (editingId) return t("equipo_save_changes_button")
+                      const totalToSend = inviteQueue.length + (form.email.trim() ? 1 : 0)
+                      // BUG CORREGIDO: con 1 en la cola y el campo de correo vacío, el total
+                      // es 1 pero siempre se usaba la plantilla plural ("Enviar 1 invitaciones")
+                      // porque la condición solo miraba si la cola tenía algo, no el total real.
+                      return totalToSend > 1
+                        ? t("equipo_send_invitations_button").replace("{count}", String(totalToSend))
+                        : t("equipo_send_invitation_button")
+                    })()}
                   </Button>
                 </DialogFooter>
               </DialogContent>

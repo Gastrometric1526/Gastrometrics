@@ -451,7 +451,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
       "/inventario": ["inventory"],
       "/menus": ["menus"],
       "/menu-y-compras": ["purchase_orders_manual", "purchase_orders_auto"],
-      "/estadisticas": ["stats_panorama", "stats_finance"],
+      "/estadisticas": ["stats_panorama", "stats_finance", "manual_sales"],
     }
     const base = item.href.split("?")[0]
     const required = hrefFeatureMap[base]

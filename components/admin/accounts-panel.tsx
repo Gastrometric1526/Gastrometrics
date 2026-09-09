@@ -59,8 +59,10 @@ interface AccountRow {
   teamMemberCount: number
   recipeCount: number
   ingredientCount: number
-  salesImportCount: number
-  lastSalesImportAt: string | null
+  posImportCount: number
+  lastPosImportAt: string | null
+  manualSalesCount: number
+  lastManualSalesAt: string | null
   hasActiveSubscription: boolean
   country: string | null
   totalActiveSeconds: number
@@ -864,6 +866,7 @@ export function AccountsPanel() {
                   {t("admin_accounts_table_ingredients")}
                 </TableHead>
                 <TableHead>{t("admin_accounts_table_pos_import")}</TableHead>
+                <TableHead>{t("admin_accounts_table_manual_sales")}</TableHead>
                 <TableHead>{t("admin_accounts_table_created")}</TableHead>
                 <TableHead />
               </TableRow>
@@ -872,7 +875,7 @@ export function AccountsPanel() {
               {loadingList && accounts.length === 0
                 ? Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={`skeleton-${i}`}>
-                      {Array.from({ length: 11 }).map((__, j) => (
+                      {Array.from({ length: 12 }).map((__, j) => (
                         <TableCell key={j}>
                           <Skeleton className="h-4 w-full" />
                         </TableCell>
@@ -927,19 +930,35 @@ export function AccountsPanel() {
                       <TableCell className="text-muted-foreground">{a.recipeCount}</TableCell>
                       <TableCell className="text-muted-foreground">{a.ingredientCount}</TableCell>
                       <TableCell className="text-muted-foreground">
-                        {a.salesImportCount > 0 ? (
+                        {a.posImportCount > 0 ? (
                           <Badge
                             variant="secondary"
                             title={
-                              a.lastSalesImportAt
-                                ? new Date(a.lastSalesImportAt).toLocaleDateString(getDateLocale(language))
+                              a.lastPosImportAt
+                                ? new Date(a.lastPosImportAt).toLocaleDateString(getDateLocale(language))
                                 : undefined
                             }
                           >
-                            {t("admin_accounts_pos_imported").replace("{count}", String(a.salesImportCount))}
+                            {t("admin_accounts_pos_imported").replace("{count}", String(a.posImportCount))}
                           </Badge>
                         ) : (
                           <span className="text-xs">{t("admin_accounts_pos_none")}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {a.manualSalesCount > 0 ? (
+                          <Badge
+                            variant="secondary"
+                            title={
+                              a.lastManualSalesAt
+                                ? new Date(a.lastManualSalesAt).toLocaleDateString(getDateLocale(language))
+                                : undefined
+                            }
+                          >
+                            {t("admin_accounts_manual_sales_recorded").replace("{count}", String(a.manualSalesCount))}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs">{t("admin_accounts_manual_sales_none")}</span>
                         )}
                       </TableCell>
                       <TableCell className="text-muted-foreground">

@@ -71,7 +71,7 @@ import { getClassificationLabel } from "@/lib/classification-labels"
 import { useLanguage } from "@/contexts/language-context"
 import { syncSubRecipeToIngredient, deleteSubRecipeIngredient } from "@/lib/subrecipe/core"
 import { migrateCompleteRecipe } from "@/lib/subrecipe/migration"
-import { getAllBusinesses } from "@/lib/storage/businesses"
+import { useAllBusinesses } from "@/lib/storage/businesses"
 import type { Recipe } from "@/types/recipe"
 import type { Business } from "@/types/business"
 
@@ -127,7 +127,17 @@ export default function MisRecetasPage() {
   const [showMigrationDialog, setShowMigrationDialog] = useState(false)
   const [recipeToDelete, setRecipeToDelete] = useState<Recipe | null>(null)
   const [recipeToMigrate, setRecipeToMigrate] = useState<Recipe | null>(null)
-  const [availableBusinesses, setAvailableBusinesses] = useState<Business[]>([])
+  // BUG CORREGIDO: antes se leía con el getter síncrono getAllBusinesses() una sola vez
+  // dentro del efecto de carga de recetas, corriendo en paralelo (no en secuencia) con la
+  // carga real de negocios que dispara auth-context — si esa carga no había resuelto
+  // todavía, la lista quedaba vacía para siempre en esta página (nunca se reintentaba), y
+  // "Migrar" desaparecía del menú de cada receta sin ningún error visible. useAllBusinesses
+  // es el hook reactivo (ver lib/storage/businesses.ts) que sí se actualiza solo.
+  const allBusinesses = useAllBusinesses()
+  const availableBusinesses = useMemo(
+    () => allBusinesses.filter((b) => b.id !== businessId),
+    [allBusinesses, businessId],
+  )
   const [selectedTargetBusiness, setSelectedTargetBusiness] = useState<string>("")
   const [isMigrating, setIsMigrating] = useState(false)
   // Hay algún destino válido si hay otros negocios visibles, o si el destino sería
@@ -159,10 +169,6 @@ export default function MisRecetasPage() {
         await ensureRecipesLoaded(businessId)
         const savedRecipes = getRecipes(businessId)
         setRecipes(savedRecipes)
-
-        // Negocios disponibles como destino de migración: todos excepto el actual.
-        const businesses = getAllBusinesses().filter((b) => b.id !== businessId)
-        setAvailableBusinesses(businesses)
       } catch (error) {
         console.error("Error loading recipes:", error)
         showError(t("misrecetas_toast_load_error_title"), t("misrecetas_toast_load_error_desc"))
