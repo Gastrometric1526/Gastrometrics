@@ -67,7 +67,7 @@ import { SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 import type { InventoryItem } from "@/types/inventory"
 import { getClassificationLabel } from "@/lib/classification-labels"
-import { getCategoryLabel } from "@/lib/ingredient-labels"
+import { getCategoryLabel, getUnitLabel } from "@/lib/ingredient-labels"
 
 const chartTokens = ["chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "chart-6", "chart-7"] as const
 
@@ -296,6 +296,34 @@ function EstadisticasContent() {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6)
   }, [realIngredients])
+
+  // Pedido explícito del dueño del proyecto: aunque las sub-recetas no cuenten como
+  // ingrediente (arriba), siempre debe haber datos propios sobre ellas — en cuántas
+  // recetas se usa cada una y qué cantidad total de esa sub-receta piden en conjunto.
+  // No existe en la app ningún registro de "veces que se preparó/produjo" una receta
+  // (no hay lotes de producción, solo fichas técnicas e inventario de ingredientes
+  // comprados) — lo más real y verificable que se puede mostrar es el uso DENTRO de
+  // otras recetas: `RecipeIngredient.ingredientId` enlaza directo al `Ingredient.id`
+  // que syncSubRecipeToIngredient (lib/subrecipe/core.ts) generó para cada sub-receta,
+  // así que esto no es una aproximación por nombre — es el mismo vínculo que ya usa el
+  // costeo en cascada (lib/recalculate.ts) para saber qué recetas recalcular.
+  const subRecipeUsage = useMemo(() => {
+    const subRecipeIngredients = ingredients.filter((ing) => ing.category === SUBRECIPE_CLASSIFICATION)
+    return subRecipeIngredients
+      .map((subIng) => {
+        let usedInRecipes = 0
+        let totalQuantity = 0
+        recipes.forEach((r) => {
+          const match = (r.ingredients || []).find((ri) => ri.ingredientId === subIng.id)
+          if (match) {
+            usedInRecipes += 1
+            totalQuantity += match.quantity || 0
+          }
+        })
+        return { id: subIng.id, name: subIng.name, unit: subIng.unit, usedInRecipes, totalQuantity }
+      })
+      .sort((a, b) => b.usedInRecipes - a.usedInRecipes)
+  }, [ingredients, recipes])
 
   const topMarginRecipes = useMemo(
     () =>
@@ -715,6 +743,42 @@ function EstadisticasContent() {
                         )}
                       </CardContent>
                     </Card>
+
+                    {/* Sub-recetas: en cuántas recetas se usa cada una y qué cantidad total
+                        piden en conjunto — pedido explícito del dueño del proyecto: que
+                        siempre haya datos propios de sub-recetas, no solo excluirlas del
+                        conteo de ingredientes (ver nota en el useMemo subRecipeUsage). */}
+                    {subRecipeUsage.length > 0 && (
+                      <Card className="border-border bg-card">
+                        <CardHeader>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <ChefHat className="h-4 w-4 text-chart-3" />
+                            {t("estadisticas_subrecipe_usage_title")}
+                          </CardTitle>
+                          <CardDescription>{t("estadisticas_subrecipe_usage_desc")}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          {subRecipeUsage.map((sub) => (
+                            <div key={sub.id} className="flex items-center justify-between text-sm bg-muted/20 rounded-lg px-3 py-2 gap-2">
+                              <span className="truncate pr-2">{sub.name}</span>
+                              <span className="font-semibold text-foreground tabular-nums shrink-0 text-right">
+                                {sub.usedInRecipes > 0 ? (
+                                  <>
+                                    {sub.usedInRecipes} {t(sub.usedInRecipes !== 1 ? "estadisticas_recipe_plural" : "estadisticas_recipe_singular")}
+                                    <span className="text-muted-foreground font-normal">
+                                      {" "}
+                                      · {sub.totalQuantity} {getUnitLabel(sub.unit, language)}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="text-muted-foreground font-normal">{t("estadisticas_subrecipe_not_used")}</span>
+                                )}
+                              </span>
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
+                    )}
 
                     {/* Ingredientes más gastados según inventario */}
                     <Card className="border-border bg-card">
