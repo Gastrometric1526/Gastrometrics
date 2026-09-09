@@ -82,6 +82,15 @@ export async function addSalesImport(salesImport: SalesImport, businessId?: stri
   if (error) console.error("[SalesImports] Error guardando la importación:", error)
 }
 
+export async function updateSalesImport(salesImport: SalesImport, businessId?: string | null): Promise<void> {
+  importsCache.mutateSnapshot(businessId, (list) => list.map((i) => (i.id === salesImport.id ? salesImport : i)))
+
+  const supabase = getSupabaseBrowserClient()
+  const { id, ...rest } = salesImport
+  const { error } = await supabase.from("sales_imports").update({ data: rest }).eq("id", id)
+  if (error) console.error("[SalesImports] Error actualizando la importación:", error)
+}
+
 export async function deleteSalesImport(id: string, businessId?: string | null): Promise<void> {
   importsCache.mutateSnapshot(businessId, (list) => list.filter((i) => i.id !== id))
 

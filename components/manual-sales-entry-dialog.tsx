@@ -22,7 +22,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { logActivity } from "@/lib/services/activity-log"
 import { formatCurrency } from "@/lib/currency"
-import { addSalesImport } from "@/lib/storage/sales-imports"
+import { addSalesImport, updateSalesImport } from "@/lib/storage/sales-imports"
 import { getMenuUnitPriceAndCost } from "@/lib/menus"
 import { EMAIL_DATE_LOCALES, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import type { Recipe } from "@/types/recipe"
@@ -36,6 +36,8 @@ interface ManualSalesEntryDialogProps {
   recipes: Recipe[]
   menus: Menu[]
   onSaved: (salesImport: SalesImport) => void
+  /** Presente = editando este registro ya guardado en vez de crear uno nuevo. */
+  editingImport?: SalesImport | null
 }
 
 interface DraftLine {
@@ -69,6 +71,7 @@ export function ManualSalesEntryDialog({
   recipes,
   menus,
   onSaved,
+  editingImport = null,
 }: ManualSalesEntryDialogProps) {
   const { toast } = useToast()
   const { user } = useAuth()
@@ -95,6 +98,39 @@ export function ManualSalesEntryDialog({
     setDraftUnitPrice(suggested > 0 ? suggested.toFixed(2) : "0")
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftRefId, draftType])
+
+  // Al abrir el diálogo para editar un registro ya guardado, precarga sus líneas y
+  // fecha — sin esto, "Editar" abriría el mismo formulario vacío que "Registrar
+  // ventas" y quien lo use pensaría que no hizo nada. Al abrir para uno nuevo (o
+  // cerrar), vuelve todo a blanco.
+  useEffect(() => {
+    if (!open) return
+    if (editingImport) {
+      setSaleDate(editingImport.periodStart ? editingImport.periodStart.slice(0, 10) : todayIso())
+      setLines(
+        editingImport.lines.map((l) => {
+          const sourceType: "recipe" | "menu" = l.menuId ? "menu" : "recipe"
+          const quantity = l.quantity
+          return {
+            id: l.id,
+            sourceType,
+            refId: (sourceType === "menu" ? l.menuId : l.recipeId) || "",
+            name: l.rawDishName,
+            quantity,
+            unitPrice: l.unitPrice ?? 0,
+            unitCost: quantity > 0 ? l.theoreticalCost / quantity : 0,
+          }
+        }),
+      )
+    } else {
+      setSaleDate(todayIso())
+      setLines([])
+    }
+    setDraftRefId(NONE_VALUE)
+    setDraftQuantity("1")
+    setDraftUnitPrice("0")
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, editingImport])
 
   const handleAddLine = () => {
     if (draftRefId === NONE_VALUE) return
@@ -158,10 +194,10 @@ export function ManualSalesEntryDialog({
     })
 
     const salesImport: SalesImport = {
-      id: uuidv4(),
+      id: editingImport?.id ?? uuidv4(),
       businessId,
       fileName: `${t("manual_sales_entry_label")} — ${displayDate}`,
-      importedAt: new Date().toISOString(),
+      importedAt: editingImport?.importedAt ?? new Date().toISOString(),
       periodStart: isoDate,
       periodEnd: isoDate,
       totalRevenue: importLines.reduce((sum, l) => sum + l.revenue, 0),
@@ -172,7 +208,11 @@ export function ManualSalesEntryDialog({
       source: "manual",
     }
 
-    await addSalesImport(salesImport, businessId)
+    if (editingImport) {
+      await updateSalesImport(salesImport, businessId)
+    } else {
+      await addSalesImport(salesImport, businessId)
+    }
     onSaved(salesImport)
 
     if (user) {
@@ -180,17 +220,24 @@ export function ManualSalesEntryDialog({
         user,
         businessId: businessId && businessId !== "main" ? businessId : null,
         module: "estadisticas",
-        action: "imported",
+        action: editingImport ? "updated" : "imported",
         metadata: { count: importLines.length },
       })
     }
 
-    toast({
-      title: t("manual_sales_toast_saved_title"),
-      description: t("manual_sales_toast_saved_desc")
-        .replace("{count}", String(importLines.length))
-        .replace("{revenue}", formatCurrency(salesImport.totalRevenue)),
-    })
+    toast(
+      editingImport
+        ? {
+            title: t("manual_sales_toast_updated_title"),
+            description: t("manual_sales_toast_updated_desc").replace("{revenue}", formatCurrency(salesImport.totalRevenue)),
+          }
+        : {
+            title: t("manual_sales_toast_saved_title"),
+            description: t("manual_sales_toast_saved_desc")
+              .replace("{count}", String(importLines.length))
+              .replace("{revenue}", formatCurrency(salesImport.totalRevenue)),
+          },
+    )
 
     setIsSaving(false)
     resetAndClose()
@@ -200,8 +247,8 @@ export function ManualSalesEntryDialog({
     <Dialog open={open} onOpenChange={(next) => !next && resetAndClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t("manual_sales_dialog_title")}</DialogTitle>
-          <DialogDescription>{t("manual_sales_dialog_desc")}</DialogDescription>
+          <DialogTitle>{editingImport ? t("manual_sales_dialog_title_edit") : t("manual_sales_dialog_title")}</DialogTitle>
+          <DialogDescription>{editingImport ? t("manual_sales_dialog_desc_edit") : t("manual_sales_dialog_desc")}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -321,7 +368,11 @@ export function ManualSalesEntryDialog({
             {t("common_cancel")}
           </Button>
           <Button onClick={handleSave} disabled={lines.length === 0 || isSaving}>
-            {isSaving ? t("manual_sales_saving") : t("manual_sales_save_button")}
+            {isSaving
+              ? t("manual_sales_saving")
+              : editingImport
+                ? t("equipo_save_changes_button")
+                : t("manual_sales_save_button")}
           </Button>
         </DialogFooter>
       </DialogContent>

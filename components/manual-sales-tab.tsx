@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Trash2, Receipt, Plus } from "lucide-react"
+import { Trash2, Receipt, Plus, Pencil } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
 import { formatCurrency } from "@/lib/currency"
@@ -32,6 +32,7 @@ export function ManualSalesTab({ businessId }: ManualSalesTabProps) {
   const [salesImports, setSalesImports] = useState<SalesImport[]>([])
   const [refreshKey, setRefreshKey] = useState(0)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [editingImport, setEditingImport] = useState<SalesImport | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -62,6 +63,17 @@ export function ManualSalesTab({ businessId }: ManualSalesTabProps) {
 
   const handleSaved = () => {
     setSalesImports(getSalesImports(businessId))
+    setEditingImport(null)
+  }
+
+  const handleOpenNew = () => {
+    setEditingImport(null)
+    setIsDialogOpen(true)
+  }
+
+  const handleOpenEdit = (imp: SalesImport) => {
+    setEditingImport(imp)
+    setIsDialogOpen(true)
   }
 
   const handleDelete = async (id: string) => {
@@ -78,7 +90,7 @@ export function ManualSalesTab({ businessId }: ManualSalesTabProps) {
             <CardTitle className="text-base">{t("manual_sales_tab_title")}</CardTitle>
             <CardDescription>{t("manual_sales_tab_desc")}</CardDescription>
           </div>
-          <Button onClick={() => setIsDialogOpen(true)} className="gap-2 shrink-0" data-tour="ventas-register-button">
+          <Button onClick={handleOpenNew} className="gap-2 shrink-0" data-tour="ventas-register-button">
             <Plus className="h-4 w-4" />
             {t("manual_sales_register_button")}
           </Button>
@@ -88,7 +100,7 @@ export function ManualSalesTab({ businessId }: ManualSalesTabProps) {
             <div className="text-center py-10 space-y-3">
               <Receipt className="h-10 w-10 mx-auto text-muted-foreground" />
               <p className="text-sm text-muted-foreground max-w-sm mx-auto">{t("manual_sales_empty_state")}</p>
-              <Button onClick={() => setIsDialogOpen(true)} variant="outline" className="gap-2">
+              <Button onClick={handleOpenNew} variant="outline" className="gap-2">
                 <Plus className="h-4 w-4" />
                 {t("manual_sales_register_button")}
               </Button>
@@ -103,9 +115,14 @@ export function ManualSalesTab({ businessId }: ManualSalesTabProps) {
                       {imp.lineCount} {t("manual_sales_lines_suffix")} · {formatCurrency(imp.totalRevenue)}
                     </p>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => handleDelete(imp.id)} className="shrink-0">
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(imp)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(imp.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -115,11 +132,15 @@ export function ManualSalesTab({ businessId }: ManualSalesTabProps) {
 
       <ManualSalesEntryDialog
         open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        onOpenChange={(next) => {
+          setIsDialogOpen(next)
+          if (!next) setEditingImport(null)
+        }}
         businessId={businessId}
         recipes={recipes}
         menus={menus}
         onSaved={handleSaved}
+        editingImport={editingImport}
       />
     </div>
   )
