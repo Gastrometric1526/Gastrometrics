@@ -49,7 +49,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, profile: SignUpProfileData, options: SignUpOptions) => Promise<void>
   logout: () => Promise<void>
-  updateUserProfile: (profile: UserProfile) => Promise<void>
+  updateUserProfile: (profile: UserProfile) => Promise<{ emailUpdateFailed: boolean }>
   // Sincroniza el idioma elegido en la UI (contexts/language-context.tsx) hacia
   // profiles.preferred_language — best-effort, sin bloquear el cambio de idioma si
   // falla o si no hay sesión (usuario anónimo en la landing, por ejemplo).
@@ -271,16 +271,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const updateUserProfile = useCallback(
-    async (profile: UserProfile) => {
+    async (profile: UserProfile): Promise<{ emailUpdateFailed: boolean }> => {
       const supabase = getSupabaseBrowserClient()
 
       // Si el correo cambió, se pide a Supabase Auth que lo actualice de verdad (manda
       // un correo de confirmación al nuevo destino; auth.users.email no cambia hasta que
       // se confirma). No se bloquea el guardado del resto del perfil si esto falla — es
       // un paso extra sobre lo que ya hacía esta función antes de la migración.
+      //
+      // BUG CORREGIDO: este error solo se registraba en consola — el llamador
+      // (components/settings-dialog.tsx) no tenía forma de saber que el cambio de
+      // correo específicamente había fallado (correo repetido, formato inválido según
+      // Supabase, etc.) y mostraba "guardado correctamente" igual. Ahora se devuelve
+      // el resultado para que el llamador pueda avisar y revertir el campo.
+      let emailUpdateFailed = false
       if (user && profile.email && profile.email !== user.email) {
         const { error: emailError } = await supabase.auth.updateUser({ email: profile.email })
-        if (emailError) console.error("No se pudo actualizar el correo en Supabase Auth:", emailError)
+        if (emailError) {
+          console.error("No se pudo actualizar el correo en Supabase Auth:", emailError)
+          emailUpdateFailed = true
+        }
       }
 
       const { error } = await supabase
@@ -299,14 +309,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error("No se pudo guardar el perfil en Supabase:", error)
-        return
+        throw error
       }
 
-      setUserProfile(profile)
+      // Si el correo falló, no se refleja el correo nuevo en el perfil/usuario local —
+      // el correo real de la sesión sigue siendo el anterior hasta que Supabase Auth
+      // lo confirme de verdad.
+      const effectiveProfile = emailUpdateFailed ? { ...profile, email: user?.email || profile.email } : profile
+
+      setUserProfile(effectiveProfile)
       setUser((currentUser) =>
-        currentUser ? { ...currentUser, name: profile.fullName, email: profile.email } : currentUser,
+        currentUser ? { ...currentUser, name: effectiveProfile.fullName, email: effectiveProfile.email } : currentUser,
       )
-      window.dispatchEvent(new CustomEvent("userProfileUpdated", { detail: profile }))
+      window.dispatchEvent(new CustomEvent("userProfileUpdated", { detail: effectiveProfile }))
+
+      return { emailUpdateFailed }
     },
     [user],
   )

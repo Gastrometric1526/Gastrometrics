@@ -104,13 +104,16 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
         formData.otherExpenses
       )
 
+      // BUG CORREGIDO: los inputs son type="number" con min="0", pero eso no bloquea
+      // escribir un negativo a mano — sin este guard, un gasto negativo se colaba en
+      // cada cálculo de food cost/margen que suma business.expenses.
       const expenses = {
-        rent: Number(formData.rent) || 0,
-        utilities: Number(formData.utilities) || 0,
-        operationalCosts: Number(formData.operationalCosts) || 0,
-        marketing: Number(formData.marketing) || 0,
-        laborCosts: Number(formData.laborCosts) || 0,
-        otherExpenses: Number(formData.otherExpenses) || 0,
+        rent: Math.max(0, Number(formData.rent) || 0),
+        utilities: Math.max(0, Number(formData.utilities) || 0),
+        operationalCosts: Math.max(0, Number(formData.operationalCosts) || 0),
+        marketing: Math.max(0, Number(formData.marketing) || 0),
+        laborCosts: Math.max(0, Number(formData.laborCosts) || 0),
+        otherExpenses: Math.max(0, Number(formData.otherExpenses) || 0),
       }
 
       const newBusiness: Business = {

@@ -465,15 +465,18 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
       const updatedBusiness: Business = {
         ...editedBusiness,
         hasFinancialData: true,
+        // BUG CORREGIDO: sin este guard, un gasto negativo escrito a mano en este
+        // formulario se colaba en cada cálculo de food cost/margen que suma
+        // business.expenses (ver el mismo fix en add-business-dialog.tsx).
         expenses: {
-          rent: Number(editedBusiness.expenses?.rent) || 0,
-          utilities: Number(editedBusiness.expenses?.utilities) || 0,
-          operationalCosts: Number(editedBusiness.expenses?.operationalCosts) || 0,
-          marketing: Number(editedBusiness.expenses?.marketing) || 0,
-          laborCosts: Number(editedBusiness.expenses?.laborCosts) || 0,
-          otherExpenses: Number(editedBusiness.expenses?.otherExpenses) || 0,
+          rent: Math.max(0, Number(editedBusiness.expenses?.rent) || 0),
+          utilities: Math.max(0, Number(editedBusiness.expenses?.utilities) || 0),
+          operationalCosts: Math.max(0, Number(editedBusiness.expenses?.operationalCosts) || 0),
+          marketing: Math.max(0, Number(editedBusiness.expenses?.marketing) || 0),
+          laborCosts: Math.max(0, Number(editedBusiness.expenses?.laborCosts) || 0),
+          otherExpenses: Math.max(0, Number(editedBusiness.expenses?.otherExpenses) || 0),
         },
-        estimatedMonthlyPlates: Number(editedBusiness.estimatedMonthlyPlates) || 0,
+        estimatedMonthlyPlates: Math.max(0, Number(editedBusiness.estimatedMonthlyPlates) || 0),
       }
 
       setBusiness(updatedBusiness)

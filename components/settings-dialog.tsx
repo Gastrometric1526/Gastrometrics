@@ -205,7 +205,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
   // correctamente" mientras el cambio se perdía en silencio. Ahora usa
   // `realUserProfile`/`user` (useAuth()), la fuente real — siempre con el id de
   // Supabase Auth de la sesión activa.
-  const performSave = (emailChanged: boolean) => {
+  const performSave = async (emailChanged: boolean) => {
     const existingProfile: Partial<UserProfile> = realUserProfile || {}
 
     const updatedProfile: UserProfile = {
@@ -227,28 +227,66 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
       ...(emailChanged ? { emailVerified: false } : {}),
     }
 
-    updateUserProfile(updatedProfile)
+    // BUG CORREGIDO: se llamaba sin esperar la promesa — el toast de éxito y el
+    // cierre del diálogo se disparaban de inmediato, sin importar si la escritura real
+    // en Supabase (o el cambio de correo específicamente, ver auth-context.tsx) había
+    // fallado. Ahora se espera, se distingue el caso "cambio de correo rechazado" (el
+    // resto del perfil sí se guarda, solo el correo no) de un error real, y solo se
+    // cierra el diálogo cuando de verdad terminó.
+    try {
+      const { emailUpdateFailed } = await updateUserProfile(updatedProfile)
 
-    const selectedCountry = countries.find((c) => c.code === country)
-    localStorage.setItem("currency_symbol", selectedCountry?.symbol || "L")
-    setCurrentCurrencyCode(selectedCountry?.currency || currency || "HNL")
-    localStorage.setItem("notification_prefs", JSON.stringify(notificationPrefs))
+      const selectedCountry = countries.find((c) => c.code === country)
+      localStorage.setItem("currency_symbol", selectedCountry?.symbol || "L")
+      setCurrentCurrencyCode(selectedCountry?.currency || currency || "HNL")
+      localStorage.setItem("notification_prefs", JSON.stringify(notificationPrefs))
 
-    setOriginalEmail(email)
-    setShowEmailConfirm(false)
-    setEmailConfirmPassword("")
-    setEmailConfirmError("")
+      setShowEmailConfirm(false)
+      setEmailConfirmPassword("")
+      setEmailConfirmError("")
 
-    toast({
-      title: t("settings_saved"),
-      description: t("settings_saved_desc"),
-    })
-    setOpen(false)
+      if (emailChanged && emailUpdateFailed) {
+        setEmail(originalEmail)
+        toast({
+          title: t("settings_email_update_failed_title"),
+          description: t("settings_email_update_failed_desc"),
+          variant: "destructive",
+        })
+        return
+      }
+
+      setOriginalEmail(email)
+      toast({
+        title: t("settings_saved"),
+        description: t("settings_saved_desc"),
+      })
+      setOpen(false)
+    } catch (error) {
+      console.error("Error guardando el perfil:", error)
+      toast({
+        title: t("settings_save_error_title"),
+        description: t("settings_save_error_desc"),
+        variant: "destructive",
+      })
+    }
   }
 
   const handleSave = () => {
     const emailChanged = email.trim() !== originalEmail.trim()
     if (emailChanged) {
+      // BUG CORREGIDO: el campo es type="email" pero no vive dentro de un <form>
+      // (Guardar es un botón suelto con onClick, no un submit) — la validación nativa
+      // del navegador nunca se disparaba. Sin este chequeo, un correo mal escrito
+      // llegaba hasta Supabase Auth, que lo rechazaba en silencio (ver el comentario en
+      // performSave/updateUserProfile para esa otra mitad del bug).
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        toast({
+          title: t("settings_email_invalid_title"),
+          description: t("settings_email_invalid_desc"),
+          variant: "destructive",
+        })
+        return
+      }
       // No se guarda todavía — primero hay que confirmar el cambio (ver
       // handleConfirmEmailChange). Pedido explícito del dueño del proyecto: cambiar
       // el correo necesita confirmación + contraseña actual, no solo tocar Guardar.

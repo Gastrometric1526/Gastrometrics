@@ -54,6 +54,19 @@ export function roundToNearestFive(value: number): number {
   return Math.ceil(value / 5) * 5
 }
 
+// BUG CORREGIDO: el blur de precio/ganancia personalizados solo limpiaba el campo si
+// quedaba vacío o no era un número — nunca si era negativo — y de todas formas no era
+// el único camino: el guardado real (más abajo) parsea el input directo, sin pasar por
+// el blur, así que escribir "-50" y hacer clic en Guardar sin que el campo perdiera
+// foco lo guardaba igual. Este helper es el único punto real donde se decide el valor
+// que se guarda en la receta.
+function parsePositiveOrUndefined(input: string): number | undefined {
+  if (input === "") return undefined
+  const parsed = Number.parseFloat(input)
+  if (isNaN(parsed) || parsed < 0) return undefined
+  return parsed
+}
+
 export function TechnicalSheet({ mode, recipeId, businessId = "main" }: TechnicalSheetProps) {
   const router = useRouter()
   const { toast } = useToast()
@@ -285,8 +298,11 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
 
     const calculatedUnitProfit = effectiveYield > 0 ? calculatedSalePrice / effectiveYield : 0
 
-    const customValue = customUnitProfitInput !== "" ? Number.parseFloat(customUnitProfitInput) : null
-    const unitProfit = customValue !== null && !isNaN(customValue) ? customValue : calculatedUnitProfit
+    // BUG CORREGIDO: no validaba que la ganancia personalizada fuera >= 0 — un valor
+    // negativo se colaba en gastrometricsPrice (más abajo) y de ahí al precio de venta
+    // final guardado en la receta.
+    const customValue = parsePositiveOrUndefined(customUnitProfitInput)
+    const unitProfit = customValue !== undefined ? customValue : calculatedUnitProfit
 
     // Método GastroMetrics (conservador): seis rubros sumados sobre el costo de producción.
     const gastrometricsPrice = roundToNearestFive(unitCost + unitProfit)
@@ -302,8 +318,10 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
     // El precio de venta calculado es siempre una sugerencia — si el usuario escribió un
     // precio directamente, ese manda para todo lo que sigue (venta total, márgenes, etc.).
     // Si nunca lo toca, se usa el sugerido tal cual, sin que tenga que hacer nada.
-    const customPriceValue = customPriceInput !== "" ? Number.parseFloat(customPriceInput) : null
-    const finalPrice = customPriceValue !== null && !isNaN(customPriceValue) ? customPriceValue : recommendedPrice
+    // BUG CORREGIDO: mismo caso que unitProfit arriba — un precio negativo escrito a
+    // mano se colaba directo en totalSales/netProfit/margen de contribución.
+    const customPriceValue = parsePositiveOrUndefined(customPriceInput)
+    const finalPrice = customPriceValue !== undefined ? customPriceValue : recommendedPrice
 
     const totalSales = finalPrice * effectiveYield
 
@@ -368,8 +386,8 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
       unitPrice: calculations.finalPrice,
       totalPrice: calculations.totalSales,
       netProfit: calculations.netProfit,
-      customUnitProfit: customUnitProfitInput !== "" ? Number.parseFloat(customUnitProfitInput) : undefined,
-      customUnitPrice: customPriceInput !== "" ? Number.parseFloat(customPriceInput) : undefined,
+      customUnitProfit: parsePositiveOrUndefined(customUnitProfitInput),
+      customUnitPrice: parsePositiveOrUndefined(customPriceInput),
       contributionMargin,
       publicServices,
       marketing,
@@ -713,8 +731,8 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
         procedure: validProcedures,
         observations: undefined,
         pricingConfig,
-        customUnitProfit: customUnitProfitInput !== "" ? Number.parseFloat(customUnitProfitInput) : undefined,
-        customUnitPrice: customPriceInput !== "" ? Number.parseFloat(customPriceInput) : undefined,
+        customUnitProfit: parsePositiveOrUndefined(customUnitProfitInput),
+        customUnitPrice: parsePositiveOrUndefined(customPriceInput),
         contributionMargin,
         publicServices,
         marketing,
@@ -804,8 +822,12 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
     setCustomUnitProfitInput(value)
   }, [])
 
+  // BUG CORREGIDO: solo se limpiaba el campo si quedaba vacío o no era un número —
+  // un negativo escrito a mano (ej. "-50") pasaba de largo y se guardaba en la receta,
+  // mostrándose como precio/ganancia negativos en tarjetas, menús y PDFs.
   const handleUnitProfitBlur = useCallback(() => {
-    if (customUnitProfitInput === "" || isNaN(Number.parseFloat(customUnitProfitInput))) {
+    const parsed = Number.parseFloat(customUnitProfitInput)
+    if (customUnitProfitInput === "" || isNaN(parsed) || parsed < 0) {
       setCustomUnitProfitInput("")
     }
   }, [customUnitProfitInput])
@@ -815,7 +837,8 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
   }, [])
 
   const handlePriceBlur = useCallback(() => {
-    if (customPriceInput === "" || isNaN(Number.parseFloat(customPriceInput))) {
+    const parsed = Number.parseFloat(customPriceInput)
+    if (customPriceInput === "" || isNaN(parsed) || parsed < 0) {
       setCustomPriceInput("")
     }
   }, [customPriceInput])

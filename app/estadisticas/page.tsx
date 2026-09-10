@@ -19,6 +19,7 @@ import { FeatureLockedPage, FeatureLockedInline } from "@/components/feature-loc
 import { AdminRestrictedPage, AdminRestrictedInline } from "@/components/admin-restricted"
 import { getAccessBlockReason } from "@/lib/plan-access"
 import { useLanguage } from "@/contexts/language-context"
+import { useNotification } from "@/hooks/use-notification"
 import {
   ArrowLeft,
   BarChart3,
@@ -194,6 +195,7 @@ function EstadisticasContent() {
   const canAccessManualSales = useFeatureAccess("manual_sales")
   const canAccessFinance = useFeatureAccess("stats_finance")
   const { t, language } = useLanguage()
+  const { showError } = useNotification()
 
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
@@ -236,7 +238,12 @@ function EstadisticasContent() {
       // en cada compra/edición (ver lib/recalculate.ts) — no requiere una tabla nueva.
       setPriceHistory(getPriceChangeHistory(businessId))
     } catch (error) {
+      // BUG CORREGIDO: solo se registraba en consola — un error real (red, sesión
+      // vencida) se veía exactamente igual que un negocio genuinamente sin datos
+      // (todo en cero), sin ninguna pista de que algo falló y de que reintentar
+      // podría arreglarlo.
       console.error("Error loading estadísticas:", error)
+      showError(t("estadisticas_toast_load_error_title"), t("estadisticas_toast_load_error_desc"))
     } finally {
       setIsLoading(false)
     }
