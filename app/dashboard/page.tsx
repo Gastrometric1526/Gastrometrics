@@ -665,6 +665,35 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {/* Estado vacío / primer paso — cuenta sin ninguna receta ni ingrediente
+                todavía (ver docs/96 y referencia-estrategia-crecimiento...: el tour
+                ya explica el flujo de valor, pero un usuario que cierra el tour o
+                vuelve días después aterrizaba en una grilla de KPIs en cero sin
+                ningún camino obvio hacia adelante). Se calcula sobre `stats` (ya
+                cargado desde Supabase) en vez de sobre datos crudos, así no hay
+                parpadeo mientras stats sigue vacío en el primer render. */}
+            {stats.length > 0 && Number(stats[0]?.value || 0) === 0 && Number(stats[1]?.value || 0) === 0 && (
+              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 md:p-8">
+                <div className="flex flex-col md:flex-row md:items-center gap-5">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <ChefHat className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">
+                      {t("dashboard_empty_state_title")}
+                    </h2>
+                    <p className="text-base text-text-3 max-w-2xl">{t("dashboard_empty_state_desc")}</p>
+                  </div>
+                  <Link href="/ingredientes" className="shrink-0">
+                    <Button size="lg" className="w-full md:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
+                      <Plus className="h-4 w-4 mr-2" />
+                      {t("dashboard_empty_state_cta")}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            )}
+
             {/* Stats — sin cajas: etiqueta, cifra grande, separadas por hairline
                 (docs/80/81/82: "cuatro KPIs sin cajas" del paquete de diseño). Mismos
                 cuatro valores reales de siempre (calculateCurrentStats más arriba),
