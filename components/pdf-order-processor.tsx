@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef, useCallback, useMemo, memo } from "react"
+import { useState, useRef, useCallback, useEffect, useMemo, memo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,12 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, FileText, CheckCircle, AlertCircle, Upload } from "lucide-react"
-import { getDashboardData } from "@/lib/dashboard-data"
+import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
+import { getPurchaseOrders, ensurePurchaseOrdersLoaded, savePurchaseOrders } from "@/lib/storage/purchase-orders"
 import { useToast } from "@/hooks/use-toast"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { processPdfOrder } from "@/utils/pdf-order-processor"
-import type { ProcessedOrder, ValidationResult } from "@/types/purchase-order"
-import type { Ingredient } from "@/types/ingredient"
+import type { ProcessedOrder, ValidationResult, PurchaseOrder } from "@/types/purchase-order"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
 
@@ -115,15 +115,32 @@ const OrderCard = memo(
 export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
   const { t } = useLanguage()
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [processedOrders, setProcessedOrders] = useState<ProcessedOrder[]>([])
   const [activeTab, setActiveTab] = useState("upload")
+  const [ingredientsRefreshKey, setIngredientsRefreshKey] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
-  // Memoize the ingredients to avoid repeated fetches
-  const ingredients = useMemo(() => {
-    return getDashboardData<Ingredient[]>("ingredients", businessId) || []
+  // BUG CORREGIDO: leía el catálogo de ingredientes con getDashboardData(), un helper
+  // @deprecated de puro localStorage que nada en la app escribe desde la migración a
+  // Supabase (ver lib/storage/ingredients.ts) — siempre devolvía [], así que ninguna
+  // línea de una orden en PDF podía validarse nunca contra el catálogo real. Ahora usa
+  // la misma carga real (ensureIngredientsLoaded) que el resto de la app.
+  useEffect(() => {
+    let cancelled = false
+    ensureIngredientsLoaded(businessId).then(() => {
+      if (!cancelled) setIngredientsRefreshKey((k) => k + 1)
+    })
+    return () => {
+      cancelled = true
+    }
   }, [businessId])
+
+  const ingredients = useMemo(() => {
+    return getIngredients(businessId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [businessId, ingredientsRefreshKey])
 
   const handleFileUpload = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,15 +197,23 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
     [ingredients, toast, t],
   )
 
-  const handleSaveOrders = useCallback(() => {
+  // BUG CORREGIDO: guardaba con un setDashboardData() local que escribía directo a
+  // localStorage (business_${id}_purchaseOrders), una clave que ningún otro archivo de
+  // la app lee desde la migración a Supabase (la fuente real es
+  // lib/storage/purchase-orders.ts). El usuario veía "Órdenes guardadas" y la lista se
+  // vaciaba, pero la orden no aparecía en Órdenes de Compra ni en Menú y Compras — se
+  // perdía en silencio. Ahora usa el mismo store real que el resto de la app, y espera
+  // la escritura real antes de limpiar la pantalla.
+  const handleSaveOrders = useCallback(async () => {
     if (processedOrders.length === 0) return
+    const effectiveBusinessId = businessId || "main"
+    setIsSaving(true)
 
     try {
-      // Get existing purchase orders
-      const existingOrders = getDashboardData<any[]>("purchaseOrders", businessId) || []
+      await ensurePurchaseOrdersLoaded(effectiveBusinessId)
+      const existingOrders = getPurchaseOrders(effectiveBusinessId)
 
-      // Convert processed orders in a memory-efficient way
-      const newOrders = processedOrders.map((order) => ({
+      const newOrders: PurchaseOrder[] = processedOrders.map((order) => ({
         id: `order-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         name: order.orderName || `Orden #${order.orderNumber}`,
         number: order.orderNumber,
@@ -204,18 +229,10 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
           supplier: item.supplier || "N/A",
         })),
         total: order.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0),
+        status: "pending",
       }))
 
-      // Save the combined orders
-      const updatedOrders = [...existingOrders, ...newOrders]
-
-      // Helper function to store data
-      function setDashboardData(key: string, data: any, businessId?: string): void {
-        const storageKey = businessId ? `business_${businessId}_${key}` : `main_${key}`
-        localStorage.setItem(storageKey, JSON.stringify(data))
-      }
-
-      setDashboardData("purchaseOrders", updatedOrders, businessId)
+      await savePurchaseOrders(effectiveBusinessId, [...existingOrders, ...newOrders])
 
       toast({
         title: t("procesar_toast_saved_title"),
@@ -232,6 +249,8 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
         description: t("procesar_toast_save_error_desc"),
         variant: "destructive",
       })
+    } finally {
+      setIsSaving(false)
     }
   }, [processedOrders, businessId, toast, t])
 
@@ -249,7 +268,16 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-medium">{t("procesar_results_title")}</h3>
-          <Button onClick={handleSaveOrders}>{t("procesar_save_orders")}</Button>
+          <Button onClick={handleSaveOrders} disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t("procesar_saving")}
+              </>
+            ) : (
+              t("procesar_save_orders")
+            )}
+          </Button>
         </div>
 
         <ScrollArea className="h-[400px] rounded-md border p-4">
@@ -261,7 +289,7 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
         </ScrollArea>
       </div>
     )
-  }, [processedOrders, handleSaveOrders, t])
+  }, [processedOrders, handleSaveOrders, isSaving, t])
 
   return (
     <Card className="w-full">

@@ -704,7 +704,7 @@ export default function DashboardPage() {
                   {businesses.slice(0, 6).map((business) => (
                     <div
                       key={business.id}
-                      className="bg-card hover:bg-[#F9F9F8] transition-colors duration-150 p-5 cursor-pointer"
+                      className="bg-card hover:bg-canvas-alt transition-colors duration-150 p-5 cursor-pointer"
                       onClick={() => handleBusinessClick(business.id)}
                     >
                       <div className="flex items-center gap-3 mb-3">
@@ -761,7 +761,7 @@ export default function DashboardPage() {
                   <Link
                     key={index}
                     href={action.href}
-                    className="flex items-center gap-4 py-4 group hover:bg-[#F9F9F8] transition-colors -mx-2 px-2 rounded-lg"
+                    className="flex items-center gap-4 py-4 group hover:bg-canvas-alt transition-colors -mx-2 px-2 rounded-lg"
                   >
                     <div className={`w-10 h-10 rounded-xl ${action.bgColor} flex items-center justify-center shrink-0`}>
                       <action.icon className={`h-5 w-5 ${action.textColor}`} />

@@ -433,13 +433,13 @@ export function MermaManagementDialog({
                                 variant={categoryMerma > 0 ? "default" : "secondary"}
                                 className={`text-xs ${
                                   categoryMerma === 0
-                                    ? "bg-gray-100 text-gray-600"
+                                    ? "bg-gray-100 dark:bg-gray-800/40 text-gray-600 dark:text-gray-300"
                                     : categoryMerma <= 10
                                       ? "bg-success-soft text-success"
                                       : categoryMerma <= 25
-                                        ? "bg-yellow-100 text-yellow-700 dark:text-yellow-300"
+                                        ? "bg-yellow-100 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300"
                                         : categoryMerma <= 40
-                                          ? "bg-orange-100 text-orange-700 dark:text-orange-300"
+                                          ? "bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300"
                                           : "bg-danger-soft text-destructive"
                                 }`}
                               >

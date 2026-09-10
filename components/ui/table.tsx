@@ -36,7 +36,7 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
       ref={ref}
       // Hairline de fila en vez del borde/hover de plantilla (rediseño visual, ver docs/79).
       className={cn(
-        "border-b border-hairline transition-colors hover:bg-[#F9F9F8] data-[state=selected]:bg-muted",
+        "border-b border-hairline transition-colors hover:bg-canvas-alt data-[state=selected]:bg-muted",
         className,
       )}
       {...props}

@@ -359,7 +359,7 @@ export default function NegociosPage() {
                   return (
                     <Card
                       key={business.id}
-                      className="group transition-colors duration-150 cursor-pointer border-hairline hover:bg-[#F9F9F8] w-full"
+                      className="group transition-colors duration-150 cursor-pointer border-hairline hover:bg-canvas-alt w-full"
                       onClick={() => handleBusinessClick(business.id)}
                     >
                       <CardContent className="p-6">

@@ -177,12 +177,23 @@ export default function InventoryPage() {
   }
 
   useEffect(() => {
+    let cancelled = false
     setIsLoading(true)
-    Promise.all([ensureInventoryLoaded(businessId), ensureInventoryHistoryLoaded(businessId)])
 
-    const allIngredients = getIngredients(businessId)
+    // BUG CORREGIDO: antes se disparaba la carga real (Supabase) sin esperarla, y un
+    // setTimeout(800ms) hacía de reloj de arena para "ya debió cargar" — en una
+    // conexión lenta o un arranque en frío, los 800ms se cumplían ANTES de que
+    // ensureInventoryLoaded resolviera de verdad. getInventory(businessId) devolvía
+    // [] (caché todavía fría), el código lo interpretaba como "este negocio nunca
+    // tuvo inventario", y creaba un inventario nuevo con currentStock: null para
+    // cada ingrediente — pisando en Supabase el stock real ya guardado. Ahora se
+    // espera la carga real antes de leer la caché síncrona, sin adivinar tiempos.
+    const load = async () => {
+      await Promise.all([ensureInventoryLoaded(businessId), ensureInventoryHistoryLoaded(businessId)])
+      if (cancelled) return
 
-    const timer = setTimeout(() => {
+      const allIngredients = getIngredients(businessId)
+
       if (ingredients.length > 0) {
         const storedInventory = getInventory(businessId)
 
@@ -267,9 +278,12 @@ export default function InventoryPage() {
       setInventoryHistory(history || [])
 
       setIsLoading(false)
-    }, 800)
+    }
 
-    return () => clearTimeout(timer)
+    load()
+    return () => {
+      cancelled = true
+    }
   }, [ingredients, isRegisterModalOpen])
 
   const handleCreate = () => {
@@ -817,7 +831,7 @@ export default function InventoryPage() {
             <Button variant="outline" onClick={() => setIsNoIngredientsDialogOpen(false)}>
               {t("common_cancel")}
             </Button>
-            <Button onClick={navigateToIngredients} className="bg-warning-soft0 hover:bg-amber-600 text-white">
+            <Button onClick={navigateToIngredients} className="bg-warning hover:bg-amber-600 text-white">
               {t("inventario_go_to_ingredients_button")}
             </Button>
           </DialogFooter>

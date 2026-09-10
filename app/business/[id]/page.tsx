@@ -123,16 +123,17 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
   const { active: previewActive, member: previewMember } = useActiveMembership()
   const { setTheme } = useTheme()
 
-  const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4"]
-
+  // Paleta del tema (--chart-1..7, ver app/globals.css) en vez de hex fijos — así el
+  // gráfico de gastos se adapta solo a modo oscuro y a cualquier tema de color elegido,
+  // igual que ya hace app/estadisticas/page.tsx con el mismo patrón.
   const expenseCategories = useMemo(
     () => [
-      { key: "rent", label: t("business_expense_category_rent"), color: "#FF6B6B", icon: "🏢" },
-      { key: "utilities", label: t("business_expense_category_utilities"), color: "#4ECDC4", icon: "⚡" },
-      { key: "operationalCosts", label: t("business_expense_category_operational"), color: "#45B7D1", icon: "⚙️" },
-      { key: "marketing", label: t("business_expense_category_marketing"), color: "#96CEB4", icon: "📢" },
-      { key: "laborCosts", label: t("business_expense_category_labor"), color: "#FFEAA7", icon: "👥" },
-      { key: "otherExpenses", label: t("business_expense_category_other"), color: "#DDA0DD", icon: "📦" },
+      { key: "rent", label: t("business_expense_category_rent"), color: "hsl(var(--chart-1))", icon: "🏢" },
+      { key: "utilities", label: t("business_expense_category_utilities"), color: "hsl(var(--chart-2))", icon: "⚡" },
+      { key: "operationalCosts", label: t("business_expense_category_operational"), color: "hsl(var(--chart-3))", icon: "⚙️" },
+      { key: "marketing", label: t("business_expense_category_marketing"), color: "hsl(var(--chart-4))", icon: "📢" },
+      { key: "laborCosts", label: t("business_expense_category_labor"), color: "hsl(var(--chart-5))", icon: "👥" },
+      { key: "otherExpenses", label: t("business_expense_category_other"), color: "hsl(var(--chart-6))", icon: "📦" },
     ],
     [t],
   )
@@ -158,7 +159,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
           return {
             name: category?.label || key,
             value: Number(value),
-            color: category?.color || "#9ca3af",
+            color: category?.color || "hsl(var(--muted-foreground))",
           }
         })
         .filter((item) => item.value > 0)

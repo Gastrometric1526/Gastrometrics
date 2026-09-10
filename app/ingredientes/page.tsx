@@ -1320,7 +1320,7 @@ export default function IngredientesPage() {
               <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-50 rounded-lg">
+                    <div className="p-2 bg-blue-50 dark:bg-blue-950/40 rounded-lg">
                       <Package className="h-5 w-5 text-blue-600 dark:text-blue-300" />
                     </div>
                     <div>
@@ -1445,7 +1445,7 @@ export default function IngredientesPage() {
                 {selectedCategory !== "Todas" && (
                   <Badge
                     variant="outline"
-                    className="rounded-lg px-3 py-1 border-blue-200 dark:border-blue-900 text-info bg-blue-50"
+                    className="rounded-lg px-3 py-1 border-blue-200 dark:border-blue-900 text-info bg-info-soft"
                   >
                     {selectedCategory}
                   </Badge>
@@ -1465,7 +1465,7 @@ export default function IngredientesPage() {
                 )}
                 <div className="flex items-center gap-2" data-tour="ing-unit-switch">
                   <Scale
-                    className={`h-4 w-4 ${activeSystem === "metric" ? "text-blue-600 dark:text-blue-300" : "text-muted-foreground"}`}
+                    className={`h-4 w-4 ${activeSystem === "metric" ? "text-info" : "text-muted-foreground"}`}
                   />
                   <span
                     className={`text-sm font-medium ${activeSystem === "metric" ? "text-foreground" : "text-muted-foreground"}`}
@@ -1495,7 +1495,7 @@ export default function IngredientesPage() {
                     {t("ingredientes_imperial_label")}
                   </span>
                   <Ruler
-                    className={`h-4 w-4 ${activeSystem === "imperial" ? "text-amber-600 dark:text-amber-300" : "text-muted-foreground"}`}
+                    className={`h-4 w-4 ${activeSystem === "imperial" ? "text-warning" : "text-muted-foreground"}`}
                   />
                 </div>
                 <div className="text-sm text-muted-foreground">{t("ingredientes_drag_hint")}</div>

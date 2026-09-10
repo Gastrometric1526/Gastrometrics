@@ -75,9 +75,9 @@ export function RecipeCard({
   const getClassificationColor = (classification: string) => {
     const colors = {
       Entrada: "bg-success-soft text-success",
-      "Plato Principal": "bg-blue-50 text-info border-blue-200 dark:border-blue-900",
-      Postre: "bg-pink-50 text-pink-700 border-pink-200",
-      Bebida: "bg-cyan-50 text-cyan-700 border-cyan-200",
+      "Plato Principal": "bg-blue-50 dark:bg-blue-950/40 text-info border-blue-200 dark:border-blue-900",
+      Postre: "bg-pink-50 dark:bg-pink-950/40 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-900",
+      Bebida: "bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-900",
       "Sub Receta":
         "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900",
       Aperitivo:
@@ -86,16 +86,19 @@ export function RecipeCard({
         "bg-yellow-50 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-900",
       Salsa: "bg-danger-soft text-destructive",
       Panadería: "bg-warning-soft dark:bg-amber-950/40 text-warning border-amber-200 dark:border-amber-900",
-      Repostería: "bg-rose-50 text-rose-700 border-rose-200",
+      Repostería: "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900",
     }
-    return colors[classification as keyof typeof colors] || "bg-gray-50 text-gray-700 border-gray-200"
+    return (
+      colors[classification as keyof typeof colors] ||
+      "bg-gray-50 dark:bg-gray-800/40 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
+    )
   }
 
   // Vista de lista (móvil y desktop)
   if (viewMode === "list") {
     return (
       <Card
-        className="border-border hover:bg-[#F9F9F8] transition-colors duration-150 bg-card cursor-pointer"
+        className="border-border hover:bg-canvas-alt transition-colors duration-150 bg-card cursor-pointer"
         onDoubleClick={() => onOpenDetails?.(recipe)}
         title={t("recipecard_double_click_hint")}
       >

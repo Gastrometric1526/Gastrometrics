@@ -103,10 +103,8 @@ export function ThemeSwitcher({ businessId, showLightDark = true, className }: T
             <Card
               key={theme.slug}
               className={cn(
-                "cursor-pointer transition-all duration-200 hover:shadow-md border-2",
-                currentColorTheme === theme.slug
-                  ? "border-primary shadow-md"
-                  : "border-border hover:border-primary/50",
+                "cursor-pointer transition-all duration-200 border-2",
+                currentColorTheme === theme.slug ? "border-primary" : "border-border hover:border-primary/50",
               )}
               onClick={() => handleColorThemeChange(theme.slug)}
             >

@@ -280,7 +280,7 @@ export function HomeContent() {
               <Link
                 key={`${mod.slug}-${i}`}
                 href={`/caracteristicas/${mod.slug}`}
-                className="flex items-center gap-5 py-5 group hover:bg-[#F9F9F8] transition-colors -mx-2 px-2 rounded-lg"
+                className="flex items-center gap-5 py-5 group hover:bg-canvas-alt transition-colors -mx-2 px-2 rounded-lg"
               >
                 <div className="w-10 h-10 rounded-xl bg-primary-soft flex items-center justify-center shrink-0">
                   <mod.icon className="h-5 w-5 text-primary" />

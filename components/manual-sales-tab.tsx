@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Trash2, Receipt, Plus, Pencil } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Trash2, Receipt, Plus, Pencil, ChevronDown, ChevronUp, DollarSign, Package, ListOrdered } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
 import { formatCurrency } from "@/lib/currency"
@@ -33,6 +34,17 @@ export function ManualSalesTab({ businessId }: ManualSalesTabProps) {
   const [refreshKey, setRefreshKey] = useState(0)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingImport, setEditingImport] = useState<SalesImport | null>(null)
+  // Pedido explícito: "que el usuario pueda verlo todo" — antes solo se veía el nombre
+  // del registro, el conteo de líneas y el ingreso total; para ver QUÉ se vendió había
+  // que abrir el diálogo de edición. Ahora cada registro se puede expandir en la misma
+  // lista, sin entrar a editar.
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  // BUG CORREGIDO: eliminar borraba de inmediato al primer clic, sin confirmación — a
+  // diferencia de todo el resto de la app (recetas, ingredientes, negocios), donde
+  // borrar algo siempre pide confirmar primero. Un clic accidental perdía el registro
+  // de ventas de un día completo sin aviso ni forma de deshacerlo.
+  const [entryToDelete, setEntryToDelete] = useState<SalesImport | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -61,6 +73,17 @@ export function ManualSalesTab({ businessId }: ManualSalesTabProps) {
     [salesImports],
   )
 
+  // Resumen a simple vista — antes había que sumar cada registro a mano para saber
+  // cuánto se había vendido en total.
+  const summary = useMemo(() => {
+    const totalRevenue = manualEntries.reduce((sum, imp) => sum + imp.totalRevenue, 0)
+    const totalUnits = manualEntries.reduce(
+      (sum, imp) => sum + imp.lines.reduce((lineSum, line) => lineSum + line.quantity, 0),
+      0,
+    )
+    return { totalRevenue, totalUnits, count: manualEntries.length }
+  }, [manualEntries])
+
   const handleSaved = () => {
     setSalesImports(getSalesImports(businessId))
     setEditingImport(null)
@@ -76,14 +99,66 @@ export function ManualSalesTab({ businessId }: ManualSalesTabProps) {
     setIsDialogOpen(true)
   }
 
-  const handleDelete = async (id: string) => {
-    await deleteSalesImport(id, businessId)
+  const toggleExpanded = (id: string) => {
+    setExpandedId((current) => (current === id ? null : id))
+  }
+
+  const confirmDelete = async () => {
+    if (!entryToDelete) return
+    setIsDeleting(true)
+    await deleteSalesImport(entryToDelete.id, businessId)
     setSalesImports(getSalesImports(businessId))
     toast({ title: t("manual_sales_toast_deleted_title") })
+    setIsDeleting(false)
+    setEntryToDelete(null)
   }
 
   return (
     <div className="space-y-6">
+      {manualEntries.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Card className="border-border bg-card">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2.5 rounded-lg bg-success-soft shrink-0">
+                <DollarSign className="h-5 w-5 text-success" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide truncate">
+                  {t("manual_sales_overview_revenue")}
+                </p>
+                <p className="text-xl font-bold text-foreground tabular-nums truncate">{formatCurrency(summary.totalRevenue)}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border bg-card">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 shrink-0">
+                <Package className="h-5 w-5 text-info" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide truncate">
+                  {t("manual_sales_overview_units")}
+                </p>
+                <p className="text-xl font-bold text-foreground tabular-nums truncate">{summary.totalUnits}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border bg-card">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2.5 rounded-lg bg-purple-50 dark:bg-purple-950/40 shrink-0">
+                <ListOrdered className="h-5 w-5 text-purple-600 dark:text-purple-300" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide truncate">
+                  {t("manual_sales_overview_entries")}
+                </p>
+                <p className="text-xl font-bold text-foreground tabular-nums truncate">{summary.count}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <Card data-tour="ventas-register-card">
         <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
           <div>
@@ -107,24 +182,53 @@ export function ManualSalesTab({ businessId }: ManualSalesTabProps) {
             </div>
           ) : (
             <div className="space-y-2">
-              {manualEntries.map((imp) => (
-                <div key={imp.id} className="flex items-center justify-between text-sm bg-muted/20 rounded-lg px-3 py-2">
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">{imp.fileName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {imp.lineCount} {t("manual_sales_lines_suffix")} · {formatCurrency(imp.totalRevenue)}
-                    </p>
+              {manualEntries.map((imp) => {
+                const isExpanded = expandedId === imp.id
+                return (
+                  <div key={imp.id} className="rounded-lg border border-hairline bg-muted/20 overflow-hidden">
+                    <div className="flex items-center justify-between text-sm px-3 py-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleExpanded(imp.id)}
+                        className="min-w-0 flex-1 flex items-center gap-2 text-left"
+                        aria-expanded={isExpanded}
+                      >
+                        {isExpanded ? (
+                          <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{imp.fileName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {imp.lineCount} {t("manual_sales_lines_suffix")} · {formatCurrency(imp.totalRevenue)}
+                          </p>
+                        </div>
+                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(imp)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setEntryToDelete(imp)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                    {isExpanded && (
+                      <div className="border-t border-hairline divide-y divide-hairline bg-card">
+                        {imp.lines.map((line) => (
+                          <div key={line.id} className="flex items-center justify-between px-3 py-2 text-xs gap-2">
+                            <span className="truncate text-foreground">{line.rawDishName}</span>
+                            <span className="text-muted-foreground shrink-0">
+                              {line.quantity} × {formatCurrency(line.unitPrice ?? 0)} = {formatCurrency(line.revenue)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(imp)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(imp.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </CardContent>
@@ -142,6 +246,40 @@ export function ManualSalesTab({ businessId }: ManualSalesTabProps) {
         onSaved={handleSaved}
         editingImport={editingImport}
       />
+
+      <Dialog open={!!entryToDelete} onOpenChange={(next) => !next && setEntryToDelete(null)}>
+        <DialogContent className="bg-card border-border max-w-md mx-4">
+          <DialogHeader>
+            <DialogTitle className="text-destructive dark:text-red-300 flex items-center gap-2">
+              <Trash2 className="h-5 w-5" />
+              {t("manual_sales_delete_dialog_title")}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-muted-foreground text-sm md:text-base">
+            {t("manual_sales_delete_confirm_prefix")} <strong>"{entryToDelete?.fileName}"</strong>
+            {t("manual_sales_delete_confirm_suffix")}
+          </p>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setEntryToDelete(null)}
+              className="border-border w-full sm:w-auto"
+              disabled={isDeleting}
+            >
+              {t("common_cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
+              disabled={isDeleting}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {isDeleting ? t("manual_sales_saving") : t("common_delete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

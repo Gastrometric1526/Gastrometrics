@@ -516,7 +516,7 @@ export function POSSalesImportDialog({
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <Badge variant="outline" className="gap-1.5 py-1.5">
-                <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                 {t("posi_matched_badge").replace("{count}", String(matchedCount))}
               </Badge>
               {unmatchedCount > 0 && (

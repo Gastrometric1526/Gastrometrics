@@ -549,7 +549,7 @@ export default function MisRecetasPage() {
               <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center gap-2 md:gap-3">
-                    <div className="p-1.5 md:p-2 bg-blue-50 rounded-lg">
+                    <div className="p-1.5 md:p-2 bg-blue-50 dark:bg-blue-950/40 rounded-lg">
                       <ChefHat className="h-4 w-4 md:h-5 md:w-5 text-blue-600 dark:text-blue-300" />
                     </div>
                     <div>
@@ -701,7 +701,7 @@ export default function MisRecetasPage() {
                 {selectedClassification !== "Todas" && (
                   <Badge
                     variant="outline"
-                    className="rounded-lg px-2 md:px-3 py-1 border-blue-200 dark:border-blue-900 text-info bg-blue-50 text-xs"
+                    className="rounded-lg px-2 md:px-3 py-1 border-blue-200 dark:border-blue-900 text-info bg-info-soft text-xs"
                   >
                     {getClassificationLabel(selectedClassification as (typeof recipeClassifications)[number], language)}
                   </Badge>

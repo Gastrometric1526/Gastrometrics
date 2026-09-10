@@ -235,7 +235,7 @@ function SignupPageInner() {
           <div className="flex flex-col items-center justify-center gap-2">
             <GastrometricsLogo className="h-16 w-16" variant="brand" />
           </div>
-          <Card className="border-border shadow-2xl bg-card/95 backdrop-blur">
+          <Card className="border-border bg-card/95 backdrop-blur">
             <CardContent className="pt-8 pb-8 space-y-4">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                 <Mail className="h-8 w-8 text-primary" />
@@ -284,7 +284,7 @@ function SignupPageInner() {
         </div>
 
         {/* Main Card */}
-        <Card className="border-border shadow-2xl bg-card/95 backdrop-blur">
+        <Card className="border-border bg-card/95 backdrop-blur">
           <CardHeader className="text-center space-y-2 pb-6">
             <CardTitle className="text-2xl font-bold text-foreground">
               {currentStep === 1 && t("signup_step1_title")}
