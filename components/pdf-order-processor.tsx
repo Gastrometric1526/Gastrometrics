@@ -119,6 +119,11 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
   const [processedOrders, setProcessedOrders] = useState<ProcessedOrder[]>([])
   const [activeTab, setActiveTab] = useState("upload")
   const [ingredientsRefreshKey, setIngredientsRefreshKey] = useState(0)
+  // BUG CORREGIDO: sin esto, alguien que selecciona un PDF apenas entra a la pantalla
+  // (antes de que ensureIngredientsLoaded resuelva) validaba sus líneas contra un
+  // catálogo todavía vacío — la misma falla que el fix de abajo soluciona, solo que
+  // acotada a esa ventana de carga en vez de permanente.
+  const [ingredientsLoaded, setIngredientsLoaded] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
@@ -129,8 +134,12 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
   // la misma carga real (ensureIngredientsLoaded) que el resto de la app.
   useEffect(() => {
     let cancelled = false
+    setIngredientsLoaded(false)
     ensureIngredientsLoaded(businessId).then(() => {
-      if (!cancelled) setIngredientsRefreshKey((k) => k + 1)
+      if (!cancelled) {
+        setIngredientsRefreshKey((k) => k + 1)
+        setIngredientsLoaded(true)
+      }
     })
     return () => {
       cancelled = true
@@ -146,6 +155,18 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
     async (event: React.ChangeEvent<HTMLInputElement>) => {
       const files = event.target.files
       if (!files || files.length === 0) return
+
+      // BUG CORREGIDO: sin este guard, seleccionar un PDF antes de que el catálogo de
+      // ingredientes terminara de cargar validaba cada línea contra un arreglo vacío.
+      if (!ingredientsLoaded) {
+        toast({
+          title: t("procesar_toast_generic_error_title"),
+          description: t("procesar_ingredients_loading"),
+          variant: "destructive",
+        })
+        if (fileInputRef.current) fileInputRef.current.value = ""
+        return
+      }
 
       setIsProcessing(true)
       setProcessedOrders([])
@@ -194,7 +215,7 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
         }
       }
     },
-    [ingredients, toast, t],
+    [ingredients, ingredientsLoaded, toast, t],
   )
 
   // BUG CORREGIDO: guardaba con un setDashboardData() local que escribía directo a
@@ -322,11 +343,16 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
                   id="pdf-upload"
                 />
                 <Label htmlFor="pdf-upload" asChild>
-                  <Button disabled={isProcessing}>
+                  <Button disabled={isProcessing || !ingredientsLoaded}>
                     {isProcessing ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         {t("procesar_processing")}
+                      </>
+                    ) : !ingredientsLoaded ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t("procesar_ingredients_loading")}
                       </>
                     ) : (
                       <>

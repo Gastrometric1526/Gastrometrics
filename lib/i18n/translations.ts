@@ -1543,6 +1543,7 @@ const translations = {
     procesar_upload_desc: "Sube PDFs de órdenes de compra para extraer automáticamente la información",
     procesar_processing: "Procesando...",
     procesar_saving: "Guardando...",
+    procesar_ingredients_loading: "Cargando ingredientes...",
     procesar_select_pdfs: "Seleccionar PDFs",
     procesar_info_title: "Información",
     procesar_info_desc:
@@ -4428,6 +4429,7 @@ const translations = {
     procesar_upload_desc: "Upload purchase order PDFs to automatically extract the information",
     procesar_processing: "Processing...",
     procesar_saving: "Saving...",
+    procesar_ingredients_loading: "Loading ingredients...",
     procesar_select_pdfs: "Select PDFs",
     procesar_info_title: "Information",
     procesar_info_desc:
@@ -7295,6 +7297,7 @@ const translations = {
     procesar_upload_desc: "Upload PDF'er med indkøbsordrer for automatisk at udtrække oplysningerne",
     procesar_processing: "Behandler...",
     procesar_saving: "Gemmer...",
+    procesar_ingredients_loading: "Indlæser ingredienser...",
     procesar_select_pdfs: "Vælg PDF'er",
     procesar_info_title: "Information",
     procesar_info_desc:
@@ -10164,6 +10167,7 @@ const translations = {
     procesar_upload_desc: "Téléchargez des PDF de commandes pour extraire automatiquement les informations",
     procesar_processing: "Traitement en cours...",
     procesar_saving: "Enregistrement...",
+    procesar_ingredients_loading: "Chargement des ingrédients...",
     procesar_select_pdfs: "Sélectionner des PDF",
     procesar_info_title: "Information",
     procesar_info_desc:
@@ -13033,6 +13037,7 @@ const translations = {
     procesar_upload_desc: "Envie PDFs de ordens de compra para extrair automaticamente as informações",
     procesar_processing: "Processando...",
     procesar_saving: "Salvando...",
+    procesar_ingredients_loading: "Carregando ingredientes...",
     procesar_select_pdfs: "Selecionar PDFs",
     procesar_info_title: "Informação",
     procesar_info_desc:
@@ -15881,6 +15886,7 @@ const translations = {
     procesar_upload_desc: "上传采购订单 PDF 以自动提取信息",
     procesar_processing: "处理中…",
     procesar_saving: "保存中…",
+    procesar_ingredients_loading: "正在加载食材...",
     procesar_select_pdfs: "选择 PDF",
     procesar_info_title: "提示",
     procesar_info_desc: "系统会提取供应商信息，并与您的食材数据库进行核对。请确保您的食材已录入最新的供应商信息。",
