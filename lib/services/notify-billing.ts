@@ -205,9 +205,9 @@ export async function sendSubscriptionCancelledEmail(input: {
   const html = renderEmailTemplate("05-cancelacion-suscripcion.html", {
     htmlLang: normalizeEmailLang(language),
     title: labels.e05_title,
-    preheader: fillLabel(labels.e05_preheader, { accessUntil }),
+    preheader: fillLabel(labels.e05_preheader, { accessUntil, planName: escapeHtml(plan.name) }),
     heading: labels.e05_heading,
-    body: fillLabel(labels.e05_body, { planName: escapeHtml(plan.name) }),
+    body: fillLabel(labels.e05_body, { planName: escapeHtml(plan.name), accessUntil }),
     labelAccessUntil: labels.e05_label_access_until,
     labelThen: labels.e05_label_then,
     valueThen: labels.e05_value_then,
