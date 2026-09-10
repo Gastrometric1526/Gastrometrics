@@ -12,6 +12,62 @@ import { getPlanBySlug, getLocalizedPlan, plans } from "@/lib/plans"
 import { renderEmailTemplate, renderEmailTemplateWithFeatureRows, escapeHtml } from "./email-templates"
 import { getEmailLabels, fillLabel, normalizeEmailLang, EMAIL_DATE_LOCALES } from "@/lib/i18n/email-labels"
 
+// Aviso al dueño del proyecto por cada evento REAL de dinero de Stripe (suscripción
+// nueva pagada, cambio de plan pagado, cancelación) — pedido explícito: "que me caigan
+// notificaciones... cuando un usuario paga y cambia de plan". Antes de esto, un pago
+// real solo generaba el correo al CLIENTE (sendPlanChangedEmail/sendSubscriptionCancelledEmail
+// arriba) — el dueño no se enteraba de nada salvo que entrara a mirar /admin o el
+// dashboard de Stripe. Mismo patrón que lib/services/notify-signup.ts (mismas
+// variables de entorno FEEDBACK_NOTIFY_TO/FEEDBACK_NOTIFY_FROM, ya configuradas tanto
+// en local como en Vercel — nada nuevo que configurar). Deliberadamente NO se dispara
+// para cambios de plan hechos a mano desde /admin (app/api/admin/account-plan/route.ts)
+// — ese cambio lo hizo el propio dueño, avisarle de su propia acción sería ruido.
+export async function sendOwnerBillingNotification(input: {
+  event: "new_subscription" | "plan_changed" | "cancelled"
+  accountId: string
+  fromPlanSlug?: string
+  toPlanSlug?: string
+  amountCents?: number | null
+}): Promise<void> {
+  if (!process.env.RESEND_API_KEY || !process.env.FEEDBACK_NOTIFY_TO) return
+
+  const account = await getAccountEmailAndLanguage(input.accountId)
+  const accountLabel = account?.email || input.accountId
+
+  const eventLabel = {
+    new_subscription: "Nueva suscripción pagada",
+    plan_changed: "Cambio de plan pagado",
+    cancelled: "Suscripción cancelada",
+  }[input.event]
+
+  const fromPlanName = input.fromPlanSlug ? getPlanBySlug(input.fromPlanSlug).name : null
+  const toPlanName = input.toPlanSlug ? getPlanBySlug(input.toPlanSlug).name : null
+  const amountLabel =
+    input.amountCents !== null && input.amountCents !== undefined ? formatUsd(input.amountCents) : null
+
+  const resend = new Resend(process.env.RESEND_API_KEY)
+  const { error } = await resend.emails.send({
+    from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
+    to: [process.env.FEEDBACK_NOTIFY_TO as string],
+    subject: `[GastroMetrics] ${eventLabel}: ${accountLabel}`,
+    html: `
+      <p><strong>Cuenta:</strong> ${escapeHtml(accountLabel)}</p>
+      ${fromPlanName ? `<p><strong>Plan anterior:</strong> ${escapeHtml(fromPlanName)}</p>` : ""}
+      ${toPlanName ? `<p><strong>Plan nuevo:</strong> ${escapeHtml(toPlanName)}</p>` : ""}
+      ${amountLabel ? `<p><strong>Monto del cobro:</strong> ${escapeHtml(amountLabel)}</p>` : ""}
+      <hr/>
+      <p style="color:#888;font-size:12px">Evento real de Stripe, ${escapeHtml(new Date().toLocaleString("es-HN"))}. Revisa el detalle desde el panel /admin.</p>
+    `,
+  })
+  // El SDK de Resend no lanza en errores de la API (mismo hallazgo que
+  // notify-signup.ts/notify-feedback.ts, ver docs/53) — se loguea en vez de lanzar
+  // porque esto es un aviso adicional, nunca debe hacer que Stripe reintente el
+  // webhook ni afectar el correo real al cliente.
+  if (error) {
+    console.error("[notify-billing] Resend rechazó la notificación al dueño:", error)
+  }
+}
+
 // Correo de servidor-a-servidor (webhook de Stripe) — no hay sesión ni idioma de UI de
 // donde leerlo, así que se busca el correo Y el idioma guardado en profiles en la misma
 // consulta.

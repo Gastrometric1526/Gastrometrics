@@ -24,7 +24,7 @@ import { NextResponse } from "next/server"
 import { getStripeClient } from "@/lib/stripe/client"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getPlanBySlug } from "@/lib/plans"
-import { sendPlanChangedEmail, sendSubscriptionCancelledEmail } from "@/lib/services/notify-billing"
+import { sendPlanChangedEmail, sendSubscriptionCancelledEmail, sendOwnerBillingNotification } from "@/lib/services/notify-billing"
 import { recordPlanChangeNotice } from "@/lib/services/plan-change-notice"
 
 const FREE_PLAN_SLUG = "foodie"
@@ -150,6 +150,14 @@ export async function POST(request: Request) {
               expiresAtUnixSeconds: null,
               source: "stripe",
             })
+            // Aviso al dueño del proyecto — pedido explícito, ver notify-billing.ts.
+            await sendOwnerBillingNotification({
+              event: "new_subscription",
+              accountId,
+              fromPlanSlug: FREE_PLAN_SLUG,
+              toPlanSlug: planSlug,
+              amountCents,
+            })
           } catch (emailError) {
             console.error("[api/webhooks/stripe] Error mandando el correo de confirmación de pago:", emailError)
           }
@@ -213,6 +221,17 @@ export async function POST(request: Request) {
             expiresAtUnixSeconds: null,
             source: "stripe",
           })
+          // Aviso al dueño del proyecto — solo si de verdad cambió el plan (este evento
+          // también se dispara en cada renovación sin cambio real, ver docs/89).
+          if (previousPlanSlug !== resolvedPlanSlug) {
+            await sendOwnerBillingNotification({
+              event: "plan_changed",
+              accountId,
+              fromPlanSlug: previousPlanSlug,
+              toPlanSlug: resolvedPlanSlug,
+              amountCents,
+            })
+          }
         } catch (emailError) {
           console.error("[api/webhooks/stripe] Error mandando el correo de cambio de plan:", emailError)
         }
@@ -234,6 +253,13 @@ export async function POST(request: Request) {
             accountId,
             planSlug: previousPlanSlug,
             accessUntilUnixSeconds: subscription.current_period_end ?? null,
+          })
+          // Aviso al dueño del proyecto — pedido explícito, ver notify-billing.ts.
+          await sendOwnerBillingNotification({
+            event: "cancelled",
+            accountId,
+            fromPlanSlug: previousPlanSlug,
+            toPlanSlug: FREE_PLAN_SLUG,
           })
         } catch (emailError) {
           console.error("[api/webhooks/stripe] Error mandando el correo de cancelación:", emailError)
