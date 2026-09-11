@@ -29,6 +29,7 @@ import {
   Building2,
   Pencil,
   Receipt,
+  Loader2,
 } from "lucide-react"
 import { SettingsDialog } from "@/components/settings-dialog"
 import { Sidebar } from "@/components/sidebar"
@@ -45,10 +46,11 @@ import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { getAllBusinesses, refreshBusinesses } from "@/lib/storage/businesses"
 import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
+import { getOrSeedExampleRecipe } from "@/lib/services/seed-example-recipe"
 
 export default function DashboardPage() {
   const { isLoggedIn, authChecked, user } = useAuth()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const canAccessTeam = useFeatureAccess("team")
   const canAccessManualSales = useFeatureAccess("manual_sales")
   const { active: previewActive, member: previewMember } = useActiveMembership()
@@ -58,6 +60,7 @@ export default function DashboardPage() {
   const [recentActivity, setRecentActivity] = useState<ActivityLogEntry[]>([])
   const [systemAlerts, setSystemAlerts] = useState<ActivityLogEntry[]>([])
   const [unreadNotifications, setUnreadNotifications] = useState(0)
+  const [isSeedingExample, setIsSeedingExample] = useState(false)
 
   const router = useRouter()
   const { toast } = useToast()
@@ -541,6 +544,27 @@ export default function DashboardPage() {
     [router],
   )
 
+  // Botón "Ver un ejemplo primero" del estado vacío — crea (o reutiliza, si ya existe)
+  // el ingrediente + receta de ejemplo de esta cuenta y abre la receta ya en modo
+  // edición, para que se vea el costo/margen calculado sin escribir nada primero. Ver
+  // lib/services/seed-example-recipe.ts.
+  const handleSeeExample = useCallback(async () => {
+    if (!user) return
+    setIsSeedingExample(true)
+    try {
+      const recipeId = await getOrSeedExampleRecipe(user.id, language)
+      router.push(`/ficha-tecnica/${recipeId}?business=main&mode=edit`)
+    } catch (error) {
+      console.error("Error creando la receta de ejemplo:", error)
+      toast({
+        title: t("dashboard_empty_state_example_error_title"),
+        description: t("dashboard_empty_state_example_error_desc"),
+        variant: "destructive",
+      })
+      setIsSeedingExample(false)
+    }
+  }, [user, language, router, toast, t])
+
   const roundToNextHundred = (num: number) => {
     return Math.ceil(num / 100) * 100
   }
@@ -684,12 +708,28 @@ export default function DashboardPage() {
                     </h2>
                     <p className="text-base text-text-3 max-w-2xl">{t("dashboard_empty_state_desc")}</p>
                   </div>
-                  <Link href="/ingredientes" className="shrink-0">
-                    <Button size="lg" className="w-full md:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
-                      <Plus className="h-4 w-4 mr-2" />
-                      {t("dashboard_empty_state_cta")}
+                  <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={handleSeeExample}
+                      disabled={isSeedingExample}
+                      className="w-full md:w-auto"
+                    >
+                      {isSeedingExample ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <ChefHat className="h-4 w-4 mr-2" />
+                      )}
+                      {t("dashboard_empty_state_example_cta")}
                     </Button>
-                  </Link>
+                    <Link href="/ingredientes" className="shrink-0">
+                      <Button size="lg" className="w-full md:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
+                        <Plus className="h-4 w-4 mr-2" />
+                        {t("dashboard_empty_state_cta")}
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             )}
