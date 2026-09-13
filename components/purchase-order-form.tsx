@@ -47,6 +47,26 @@ export interface PurchaseOrderFormData {
   notes?: string
 }
 
+// BUG CORREGIDO: el formulario nunca volvía a este estado en blanco al pasar de
+// editar/duplicar una orden a crear una nueva (o al cancelar y volver a abrir "Nueva
+// Orden") — el useEffect de abajo solo actuaba cuando initialData tenía algo, así que
+// sin esto el formulario seguía mostrando (y podía llegar a guardar) los items de la
+// orden anterior, con el usuario creyendo que estaba armando una orden nueva y vacía.
+function createEmptyPurchaseOrderFormData(): PurchaseOrderFormData {
+  return {
+    orderNumber: `PO-${Date.now()}`,
+    supplier: "",
+    orderDate: new Date().toISOString().split("T")[0],
+    expectedDeliveryDate: "",
+    status: "pending",
+    items: [],
+    subtotal: 0,
+    tax: 0,
+    total: 0,
+    notes: "",
+  }
+}
+
 interface PurchaseOrderFormProps {
   onSubmit: (data: PurchaseOrderFormData) => void
   onCancel: () => void
@@ -111,18 +131,7 @@ export function PurchaseOrderForm({
   const { t, language } = useLanguage()
   const orderStatuses = orderStatusDefs.map((s) => ({ ...s, label: t(s.labelKey) }))
 
-  const [formData, setFormData] = useState<PurchaseOrderFormData>({
-    orderNumber: `PO-${Date.now()}`,
-    supplier: "",
-    orderDate: new Date().toISOString().split("T")[0],
-    expectedDeliveryDate: "",
-    status: "pending",
-    items: [],
-    subtotal: 0,
-    tax: 0,
-    total: 0,
-    notes: "",
-  })
+  const [formData, setFormData] = useState<PurchaseOrderFormData>(createEmptyPurchaseOrderFormData)
 
   const [newItem, setNewItem] = useState<Partial<PurchaseOrderFormItem>>({
     ingredientId: "",
@@ -146,6 +155,9 @@ export function PurchaseOrderForm({
     if (initialData) {
       setFormData(initialData)
       setTaxPercent(initialData.subtotal > 0 ? (initialData.tax / initialData.subtotal) * 100 : 0)
+    } else {
+      setFormData(createEmptyPurchaseOrderFormData())
+      setTaxPercent(0)
     }
   }, [initialData])
 
@@ -300,7 +312,6 @@ export function PurchaseOrderForm({
                   id="supplier"
                   value={formData.supplier}
                   onChange={(e) => handleInputChange("supplier", e.target.value)}
-                  required
                 />
               </div>
             )}

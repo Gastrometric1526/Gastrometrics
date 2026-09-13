@@ -758,14 +758,26 @@ export function PurchaseOrderPage() {
               </DialogDescription>
             </DialogHeader>
 
-            <PurchaseOrderForm
-              initialData={editingOrderFormData || suggestedFormData}
-              availableIngredients={ingredients}
-              onSubmit={handleFormSubmit}
-              onCancel={handleCloseDialog}
-              onPresentationChange={handlePresentationPersist}
-              hideSupplierField={!editingOrder && isSuggestedFromMenu}
-            />
+            {/* BUG CORREGIDO: montado condicionalmente a propósito — Dialog de Radix solo
+                oculta su contenido con CSS al cerrarse, así que <PurchaseOrderForm> seguía
+                montado (y su estado interno de items intacto) entre una sesión y la
+                siguiente. Sin esto, cancelar una orden nueva o editar una y luego tocar
+                "Nueva Orden" reabría el formulario con los items de la sesión anterior
+                todavía adentro, listos para guardarse sin que el usuario lo notara — ver
+                initialData={null} de abajo, que nunca cambia de referencia entre sesiones
+                de "crear" seguidas, así que el useEffect que sincroniza initialData nunca
+                alcanzaba a limpiar el formulario por sí solo. Desmontar/remontar fuerza el
+                useState inicial (createEmptyPurchaseOrderFormData) en cada apertura real. */}
+            {isCreateDialogOpen && (
+              <PurchaseOrderForm
+                initialData={editingOrderFormData || suggestedFormData}
+                availableIngredients={ingredients}
+                onSubmit={handleFormSubmit}
+                onCancel={handleCloseDialog}
+                onPresentationChange={handlePresentationPersist}
+                hideSupplierField={!editingOrder && isSuggestedFromMenu}
+              />
+            )}
           </DialogContent>
         </Dialog>
 
