@@ -114,6 +114,26 @@ export type EmailLabelKeys =
   | "e06_no_expiry_value"
   | "e06_cta"
   | "e06_footnote"
+  | "e07_footer2"
+  | "e07_footnote"
+  | "e07_reminder_subject"
+  | "e07_reminder_title"
+  | "e07_reminder_preheader"
+  | "e07_reminder_heading"
+  | "e07_reminder_body"
+  | "e07_reminder_cta"
+  | "e07_day7_subject"
+  | "e07_day7_title"
+  | "e07_day7_preheader"
+  | "e07_day7_heading"
+  | "e07_day7_body"
+  | "e07_day7_cta"
+  | "e07_firstsale_subject"
+  | "e07_firstsale_title"
+  | "e07_firstsale_preheader"
+  | "e07_firstsale_heading"
+  | "e07_firstsale_body"
+  | "e07_firstsale_cta"
 
 export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
   es: {
@@ -207,6 +227,26 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e06_no_expiry_value: "Sin vencimiento",
     e06_cta: "Ver mi plan",
     e06_footnote: "Puedes bajar de plan cuando quieras desde Mi Plan; nada de lo que ya guardaste se borra.",
+    e07_footer2: "Correo automático de activación de tu cuenta Gastrometrics.",
+    e07_footnote: "Si no querés recibir este tipo de correos, respondé este mensaje y te sacamos de la lista.",
+    e07_reminder_subject: "¿Ya probaste Gastrometrics?",
+    e07_reminder_title: "Todavía no cargaste tu primera receta",
+    e07_reminder_preheader: "Te toma menos de 5 minutos ver el costo real de un plato.",
+    e07_reminder_heading: "¿Le diste una vuelta a Gastrometrics?",
+    e07_reminder_body: "Te registraste hace unos días y todavía no cargaste ninguna receta. Cargá un ingrediente y armá una ficha técnica — en menos de 5 minutos vas a ver el costo real y el margen de un plato tuyo, calculados solos.",
+    e07_reminder_cta: "Cargar mi primera receta",
+    e07_day7_subject: "Tu margen real, una semana después",
+    e07_day7_title: "Una semana usando Gastrometrics",
+    e07_day7_preheader: "Mirá cómo te está quedando el margen de tus recetas.",
+    e07_day7_heading: "Ya llevás una semana con Gastrometrics",
+    e07_day7_body: "Es un buen momento para revisar el margen real de tus recetas y ajustar precios si hace falta. Entrá a Reportes para ver el panorama completo de tu costo promedio.",
+    e07_day7_cta: "Ver mi margen",
+    e07_firstsale_subject: "Registraste tu primera venta",
+    e07_firstsale_title: "¡Primera venta registrada!",
+    e07_firstsale_preheader: "Así es como Gastrometrics te ayuda a no perder plata sin darte cuenta.",
+    e07_firstsale_heading: "Registraste tu primera venta en Gastrometrics",
+    e07_firstsale_body: "Cada venta que registrás se compara contra el costo real de la receta — así vas a poder ver, con el tiempo, si tus platos realmente te están dejando la ganancia que pensás. Seguí registrando para que el panorama sea cada vez más preciso.",
+    e07_firstsale_cta: "Ver mis reportes",
   },
   en: {
     footer_address: "Gastrometrics &middot; Kitchen costing &middot; Tegucigalpa, Honduras",
@@ -299,6 +339,26 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e06_no_expiry_value: "No expiration",
     e06_cta: "View my plan",
     e06_footnote: "You can downgrade anytime from My Plan; nothing you already saved gets deleted.",
+    e07_footer2: "Automatic activation email for your Gastrometrics account.",
+    e07_footnote: "If you'd rather not get these emails, reply to this message and we'll take you off the list.",
+    e07_reminder_subject: "Have you tried Gastrometrics yet?",
+    e07_reminder_title: "You haven't loaded your first recipe yet",
+    e07_reminder_preheader: "It takes less than 5 minutes to see a dish's real cost.",
+    e07_reminder_heading: "Did you get a chance to try Gastrometrics?",
+    e07_reminder_body: "You signed up a few days ago and haven't loaded any recipe yet. Add an ingredient and build a recipe sheet — in under 5 minutes you'll see the real cost and margin of one of your dishes, calculated automatically.",
+    e07_reminder_cta: "Load my first recipe",
+    e07_day7_subject: "Your real margin, one week in",
+    e07_day7_title: "One week with Gastrometrics",
+    e07_day7_preheader: "See how your recipe margins are looking.",
+    e07_day7_heading: "You've been using Gastrometrics for a week",
+    e07_day7_body: "It's a good time to check the real margin on your recipes and adjust prices if needed. Head to Reports for the full picture of your average cost.",
+    e07_day7_cta: "Check my margin",
+    e07_firstsale_subject: "You logged your first sale",
+    e07_firstsale_title: "First sale logged!",
+    e07_firstsale_preheader: "Here's how Gastrometrics helps you stop losing money without noticing.",
+    e07_firstsale_heading: "You logged your first sale in Gastrometrics",
+    e07_firstsale_body: "Every sale you log gets compared against the real cost of the recipe — over time you'll be able to see whether your dishes are really leaving you the profit you think they are. Keep logging so the picture gets sharper.",
+    e07_firstsale_cta: "See my reports",
   },
   da: {
     footer_address: "Gastrometrics &middot; Køkkenkalkulation &middot; Tegucigalpa, Honduras",
@@ -391,6 +451,26 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e06_no_expiry_value: "Intet udløb",
     e06_cta: "Se min plan",
     e06_footnote: "Du kan nedgradere når du vil fra Min Plan; intet af det, du allerede har gemt, bliver slettet.",
+    e07_footer2: "Automatisk aktiveringsmail til din Gastrometrics-konto.",
+    e07_footnote: "Hvis du hellere vil undvære denne slags e-mails, så svar på denne besked, og vi fjerner dig fra listen.",
+    e07_reminder_subject: "Har du prøvet Gastrometrics endnu?",
+    e07_reminder_title: "Du har endnu ikke indlæst din første opskrift",
+    e07_reminder_preheader: "Det tager under 5 minutter at se en rets reelle omkostning.",
+    e07_reminder_heading: "Fik du prøvet Gastrometrics?",
+    e07_reminder_body: "Du oprettede din konto for nogle dage siden og har endnu ikke indlæst nogen opskrift. Tilføj en ingrediens og byg en opskrift — på under 5 minutter ser du den reelle omkostning og avance for en af dine retter, beregnet automatisk.",
+    e07_reminder_cta: "Indlæs min første opskrift",
+    e07_day7_subject: "Din reelle avance, en uge efter",
+    e07_day7_title: "En uge med Gastrometrics",
+    e07_day7_preheader: "Se hvordan avancen på dine opskrifter ser ud.",
+    e07_day7_heading: "Du har brugt Gastrometrics i en uge nu",
+    e07_day7_body: "Det er et godt tidspunkt at tjekke den reelle avance på dine opskrifter og justere priser om nødvendigt. Gå til Rapporter for det fulde overblik over din gennemsnitlige omkostning.",
+    e07_day7_cta: "Se min avance",
+    e07_firstsale_subject: "Du registrerede dit første salg",
+    e07_firstsale_title: "Første salg registreret!",
+    e07_firstsale_preheader: "Sådan hjælper Gastrometrics dig med at stoppe med at tabe penge uden at vide det.",
+    e07_firstsale_heading: "Du registrerede dit første salg i Gastrometrics",
+    e07_firstsale_body: "Hvert salg du registrerer, bliver sammenlignet med opskriftens reelle omkostning — over tid kan du se, om dine retter faktisk giver den fortjeneste, du tror. Bliv ved med at registrere, så billedet bliver skarpere.",
+    e07_firstsale_cta: "Se mine rapporter",
   },
   fr: {
     footer_address: "Gastrometrics &middot; Calcul des coûts de cuisine &middot; Tegucigalpa, Honduras",
@@ -483,6 +563,26 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e06_no_expiry_value: "Sans expiration",
     e06_cta: "Voir mon plan",
     e06_footnote: "Tu peux rétrograder quand tu veux depuis Mon Plan ; rien de ce que tu as déjà enregistré n'est supprimé.",
+    e07_footer2: "E-mail automatique d'activation de ton compte Gastrometrics.",
+    e07_footnote: "Si tu préfères ne plus recevoir ce type d'e-mails, réponds à ce message et on te retire de la liste.",
+    e07_reminder_subject: "As-tu déjà essayé Gastrometrics ?",
+    e07_reminder_title: "Tu n'as pas encore chargé ta première recette",
+    e07_reminder_preheader: "Ça prend moins de 5 minutes pour voir le coût réel d'un plat.",
+    e07_reminder_heading: "As-tu eu l'occasion d'essayer Gastrometrics ?",
+    e07_reminder_body: "Tu t'es inscrit il y a quelques jours et tu n'as pas encore chargé de recette. Ajoute un ingrédient et construis une fiche technique — en moins de 5 minutes tu vas voir le coût réel et la marge d'un de tes plats, calculés automatiquement.",
+    e07_reminder_cta: "Charger ma première recette",
+    e07_day7_subject: "Ta marge réelle, une semaine après",
+    e07_day7_title: "Une semaine avec Gastrometrics",
+    e07_day7_preheader: "Regarde à quoi ressemble la marge de tes recettes.",
+    e07_day7_heading: "Ça fait une semaine que tu utilises Gastrometrics",
+    e07_day7_body: "C'est le bon moment pour vérifier la marge réelle de tes recettes et ajuster les prix si besoin. Va dans Rapports pour voir le panorama complet de ton coût moyen.",
+    e07_day7_cta: "Voir ma marge",
+    e07_firstsale_subject: "Tu as enregistré ta première vente",
+    e07_firstsale_title: "Première vente enregistrée !",
+    e07_firstsale_preheader: "Voici comment Gastrometrics t'aide à arrêter de perdre de l'argent sans t'en rendre compte.",
+    e07_firstsale_heading: "Tu as enregistré ta première vente dans Gastrometrics",
+    e07_firstsale_body: "Chaque vente que tu enregistres est comparée au coût réel de la recette — avec le temps, tu pourras voir si tes plats te laissent vraiment la marge que tu penses. Continue à enregistrer pour affiner le panorama.",
+    e07_firstsale_cta: "Voir mes rapports",
   },
   pt: {
     footer_address: "Gastrometrics &middot; Custeio de cozinha &middot; Tegucigalpa, Honduras",
@@ -575,6 +675,26 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e06_no_expiry_value: "Sem vencimento",
     e06_cta: "Ver meu plano",
     e06_footnote: "Você pode fazer downgrade quando quiser em Meu Plano; nada do que você já salvou é apagado.",
+    e07_footer2: "E-mail automático de ativação da sua conta Gastrometrics.",
+    e07_footnote: "Se você não quiser mais receber esse tipo de e-mail, responda esta mensagem e nós te tiramos da lista.",
+    e07_reminder_subject: "Você já experimentou o Gastrometrics?",
+    e07_reminder_title: "Você ainda não carregou sua primeira receita",
+    e07_reminder_preheader: "Leva menos de 5 minutos para ver o custo real de um prato.",
+    e07_reminder_heading: "Você chegou a experimentar o Gastrometrics?",
+    e07_reminder_body: "Você se cadastrou há alguns dias e ainda não carregou nenhuma receita. Adicione um ingrediente e monte uma ficha técnica — em menos de 5 minutos você vai ver o custo real e a margem de um dos seus pratos, calculados automaticamente.",
+    e07_reminder_cta: "Carregar minha primeira receita",
+    e07_day7_subject: "Sua margem real, uma semana depois",
+    e07_day7_title: "Uma semana com o Gastrometrics",
+    e07_day7_preheader: "Veja como está a margem das suas receitas.",
+    e07_day7_heading: "Você já usa o Gastrometrics há uma semana",
+    e07_day7_body: "É um bom momento para revisar a margem real das suas receitas e ajustar preços se precisar. Vá até Relatórios para ver o panorama completo do seu custo médio.",
+    e07_day7_cta: "Ver minha margem",
+    e07_firstsale_subject: "Você registrou sua primeira venda",
+    e07_firstsale_title: "Primeira venda registrada!",
+    e07_firstsale_preheader: "Veja como o Gastrometrics te ajuda a parar de perder dinheiro sem perceber.",
+    e07_firstsale_heading: "Você registrou sua primeira venda no Gastrometrics",
+    e07_firstsale_body: "Cada venda que você registra é comparada com o custo real da receita — com o tempo você vai poder ver se seus pratos realmente deixam o lucro que você imagina. Continue registrando para que o panorama fique cada vez mais preciso.",
+    e07_firstsale_cta: "Ver meus relatórios",
   },
   zh: {
     footer_address: "Gastrometrics &middot; 厨房成本核算 &middot; 洪都拉斯特古西加尔巴",
@@ -662,7 +782,27 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e06_expires_prefix: "您的套餐到期日",
     e06_no_expiry_value: "无到期日",
     e06_cta: "查看我的套餐",
-    e06_footnote: "您可以随时在“我的套餐”中降级；已保存的数据不会被删除。",
+    e06_footnote: "您可以随时在\"我的套餐\"中降级；已保存的数据不会被删除。",
+    e07_footer2: "这是您 Gastrometrics 账户的自动激活邮件。",
+    e07_footnote: "如果您不想再收到此类邮件，回复本邮件即可为您取消订阅。",
+    e07_reminder_subject: "您试用 Gastrometrics 了吗？",
+    e07_reminder_title: "您还没有录入第一个配方",
+    e07_reminder_preheader: "只需不到 5 分钟即可查看一道菜的真实成本。",
+    e07_reminder_heading: "您试用 Gastrometrics 了吗？",
+    e07_reminder_body: "您几天前注册了账户，但还没有录入任何配方。添加一个食材并搭建一个配方——不到 5 分钟，您就能看到自己某道菜的真实成本和利润，全部自动计算。",
+    e07_reminder_cta: "录入我的第一个配方",
+    e07_day7_subject: "一周后，您的真实利润",
+    e07_day7_title: "使用 Gastrometrics 一周了",
+    e07_day7_preheader: "看看您配方的利润情况如何。",
+    e07_day7_heading: "您已经使用 Gastrometrics 一周了",
+    e07_day7_body: "现在是查看配方真实利润、并在需要时调整价格的好时机。前往报表查看您平均成本的完整情况。",
+    e07_day7_cta: "查看我的利润",
+    e07_firstsale_subject: "您记录了第一笔销售",
+    e07_firstsale_title: "第一笔销售已记录！",
+    e07_firstsale_preheader: "了解 Gastrometrics 如何帮助您避免在不知不觉中亏钱。",
+    e07_firstsale_heading: "您在 Gastrometrics 记录了第一笔销售",
+    e07_firstsale_body: "您记录的每一笔销售都会与配方的真实成本进行对比——随着时间推移，您就能看清自己的菜品是否真的带来了预期的利润。继续记录，数据会越来越精确。",
+    e07_firstsale_cta: "查看我的报表",
   },
 }
 

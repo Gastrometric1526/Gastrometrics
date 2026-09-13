@@ -371,6 +371,20 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["profiles"]["Row"]>
         Relationships: never[]
       }
+      activation_emails_sent: {
+        Row: {
+          id: number
+          account_id: string
+          email_type: "first_recipe_reminder" | "day7_margin_checkin" | "first_sale_reinforcement"
+          sent_at: string
+        }
+        Insert: Omit<Database["public"]["Tables"]["activation_emails_sent"]["Row"], "id" | "sent_at"> & {
+          id?: number
+          sent_at?: string
+        }
+        Update: Partial<Database["public"]["Tables"]["activation_emails_sent"]["Row"]>
+        Relationships: never[]
+      }
       page_views: {
         Row: {
           id: number
