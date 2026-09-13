@@ -314,7 +314,7 @@ function generateAdministrativePDF(
 
   // Center: Title
   const isSubRecipe = recipe.classification?.includes("Sub Receta") || recipe.isSubRecipe
-  const titleText = `FICHA TECNICA - ${isSubRecipe ? "SUBRECETA" : "PLATO"}`
+  const titleText = `${labels.fichaTecnicaTitulo} - ${isSubRecipe ? labels.subreceta : labels.platoTitulo}`
   doc.setFontSize(12)
   doc.setFont("helvetica", "bold")
   doc.setTextColor(...COLORS.darkGray)
@@ -452,17 +452,17 @@ function generateAdministrativePDF(
   // (hallazgo de auditoria externa, ver docs/98, seccion 2.6).
   const summaryData = isSubRecipe
     ? [
-        { label: "Costo Produccion", value: formatCurrency2(totalCost) },
-        { label: "Rendimiento", value: `${yieldAmount} ${sanitizeText(recipe.yieldUnit)}` },
-        { label: "Costo de Uso (unitario)", value: formatCurrency2(costPerUnit) },
+        { label: labels.costoProduccion, value: formatCurrency2(totalCost) },
+        { label: labels.rendimiento.replace(":", ""), value: `${yieldAmount} ${sanitizeText(recipe.yieldUnit)}` },
+        { label: labels.costoDeUso, value: formatCurrency2(costPerUnit) },
       ]
     : [
-        { label: "Costo Produccion", value: formatCurrency2(totalCost) },
-        { label: "Rendimiento", value: `${yieldAmount} ${sanitizeText(recipe.yieldUnit)}` },
-        { label: "Costo Unitario", value: formatCurrency2(costPerUnit) },
-        { label: "Ganancia Unit.", value: formatCurrency2(unitProfit) },
-        { label: "Precio Unit.", value: formatCurrency2(unitPrice) },
-        { label: "Venta Total", value: formatCurrency2(totalSales) },
+        { label: labels.costoProduccion, value: formatCurrency2(totalCost) },
+        { label: labels.rendimiento.replace(":", ""), value: `${yieldAmount} ${sanitizeText(recipe.yieldUnit)}` },
+        { label: labels.costoUnitario, value: formatCurrency2(costPerUnit) },
+        { label: labels.gananciaUnitaria, value: formatCurrency2(unitProfit) },
+        { label: labels.precioUnitario, value: formatCurrency2(unitPrice) },
+        { label: labels.ventaTotal, value: formatCurrency2(totalSales) },
       ]
 
   const cellWidth = (contentWidth - (isSubRecipe ? 4 : 50)) / summaryData.length
@@ -526,7 +526,7 @@ function generateAdministrativePDF(
     (sum, ing) => sum + (ing.extension || ing.quantity * (ing.unitCost || 0)),
     0
   )
-  ingredientRows.push(["", "", "TOTAL", "", "", "", formatCurrency2(totalExtension)])
+  ingredientRows.push(["", "", labels.total, "", "", "", formatCurrency2(totalExtension)])
 
   autoTable(doc, {
     startY: yPosition + 3,
@@ -714,7 +714,7 @@ function generateAdministrativePDF(
         color: CHART_COLORS[i % CHART_COLORS.length],
       }))
       if (otherIngredientsTotal > 0) {
-        pieData.push({ label: "Otros", value: otherIngredientsTotal, color: CHART_COLORS[CHART_COLORS.length - 1] })
+        pieData.push({ label: labels.otros, value: otherIngredientsTotal, color: CHART_COLORS[CHART_COLORS.length - 1] })
       }
 
       const pieRadius = 15
@@ -740,9 +740,12 @@ function generateAdministrativePDF(
   const statsMarginPct = totalSales > 0 ? 100 - statsFoodCostPct : 0
   const methodLabel =
     recipe.pricingMethod === "food_cost"
-      ? `Food Cost % (meta ${recipe.targetFoodCostPercent ?? 30}%)`
-      : "GastroMetrics (6 rubros)"
-  const priceOrigin = recipe.customUnitPrice !== undefined && recipe.customUnitPrice !== null ? "Editado manualmente" : "Calculado automaticamente"
+      ? `Food Cost % (${labels.metaObjetivo} ${recipe.targetFoodCostPercent ?? 30}%)`
+      : labels.metodoSeisRubros
+  const priceOrigin =
+    recipe.customUnitPrice !== undefined && recipe.customUnitPrice !== null
+      ? labels.editadoManualmente
+      : labels.calculadoAutomaticamente
 
   doc.setFontSize(10)
   doc.setFont("helvetica", "bold")
@@ -754,7 +757,7 @@ function generateAdministrativePDF(
     [labels.costoPorcentaje, `${statsFoodCostPct.toFixed(2)}%`],
     [labels.margenContribucion, `${statsMarginPct.toFixed(2)}%`],
     [labels.metodoPrecio, methodLabel],
-    ["Origen del precio", priceOrigin],
+    [labels.origenPrecio, priceOrigin],
   ]
 
   autoTable(doc, {

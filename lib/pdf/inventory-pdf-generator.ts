@@ -188,8 +188,9 @@ export interface InventoryPDFOptions {
 }
 
 export function buildInventoryPDFDataFromCurrent(items: InventoryItem[]): InventoryPDFData {
+  const labels = getPdfLabels()
   return {
-    title: "INVENTARIO ACTUAL",
+    title: labels.inventarioActualTitulo,
     subtitle: new Date(),
     rows: items.map((item) => ({
       name: item.name,
@@ -205,10 +206,15 @@ export function buildInventoryPDFDataFromCurrent(items: InventoryItem[]): Invent
 }
 
 export function buildInventoryPDFDataFromSnapshot(snapshot: InventorySnapshot): InventoryPDFData {
+  const labels = getPdfLabels()
   const typeLabel =
-    snapshot.type === "initial" ? "Inventario Inicial" : snapshot.type === "final" ? "Inventario Final" : "Compra"
+    snapshot.type === "initial"
+      ? labels.inventarioInicial
+      : snapshot.type === "final"
+        ? labels.inventarioFinalLabel
+        : labels.compraLabel
   return {
-    title: `INVENTARIO - ${typeLabel.toUpperCase()}`,
+    title: `${labels.inventario} - ${typeLabel.toUpperCase()}`,
     subtitle: new Date(snapshot.date),
     rows: (snapshot.items || []).map((item) => ({
       name: item.name,
@@ -304,7 +310,7 @@ function renderInventoryPDF(doc: jsPDF, data: InventoryPDFData, options: Invento
   // ===== DISTRIBUCION VISUAL (por categoria) =====
   const byCategory = new Map<string, number>()
   data.rows.forEach((r) => {
-    byCategory.set(r.category || "SIN CATEGORIA", (byCategory.get(r.category || "SIN CATEGORIA") || 0) + r.totalValue)
+    byCategory.set(r.category || labels.sinCategoria, (byCategory.get(r.category || labels.sinCategoria) || 0) + r.totalValue)
   })
   const categoryEntries = Array.from(byCategory.entries())
     .filter(([, v]) => v > 0)
@@ -326,7 +332,7 @@ function renderInventoryPDF(doc: jsPDF, data: InventoryPDFData, options: Invento
       value,
       color: CHART_COLORS[i % CHART_COLORS.length],
     }))
-    if (restTotal > 0) pieData.push({ label: "Otros", value: restTotal, color: CHART_COLORS[7] })
+    if (restTotal > 0) pieData.push({ label: labels.otros, value: restTotal, color: CHART_COLORS[7] })
 
     const pieCx = margin + 24
     const pieCy = yPosition + 22

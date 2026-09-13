@@ -244,7 +244,7 @@ function generateClientMenuPDF(
   doc.setFont("times", "bold")
   doc.setFontSize(26)
   doc.setTextColor(...COLORS.text)
-  doc.text(sanitizeText(menu.name) || "Menu", pageWidth / 2, yPosition, { align: "center" })
+  doc.text(sanitizeText(menu.name) || labels.menuSinNombre, pageWidth / 2, yPosition, { align: "center" })
   yPosition += 3
 
   const subtitleParts = [
@@ -381,7 +381,7 @@ function generateInternalMenuPDF(
 
   doc.setFontSize(20)
   doc.setFont("helvetica", "bold")
-  doc.text(sanitizeText(menu.name) || "Menu", pageWidth / 2, 20, { align: "center" })
+  doc.text(sanitizeText(menu.name) || labels.menuSinNombre, pageWidth / 2, 20, { align: "center" })
 
   doc.setFontSize(9)
   doc.setFont("helvetica", "normal")
@@ -429,7 +429,7 @@ function generateInternalMenuPDF(
 
     autoTable(doc, {
       startY: yPosition,
-      head: [["Plato", "Costo", "Precio", "Margen"]],
+      head: [[labels.platoColumna, labels.costo, labels.precioColumna, labels.margenColumna]],
       body: rows,
       theme: "grid",
       margin: { left: margin, right: margin },
@@ -511,7 +511,7 @@ function generateInternalMenuPDF(
       color: CHART_COLORS[i % CHART_COLORS.length],
     }))
     if (otherTotal > 0) {
-      pieData.push({ label: "Otros", value: otherTotal, color: CHART_COLORS[CHART_COLORS.length - 1] })
+      pieData.push({ label: labels.otros, value: otherTotal, color: CHART_COLORS[CHART_COLORS.length - 1] })
     }
 
     const pieRadius = 15

@@ -190,11 +190,11 @@ export function generatePurchaseOrderPDF(order: PurchaseOrder, options: Purchase
 
   // ===== DATOS GENERALES =====
   const statusLabels: Record<string, string> = {
-    pending: "Pendiente",
-    approved: "Aprobada",
-    ordered: "Ordenada",
-    received: "Recibida",
-    cancelled: "Cancelada",
+    pending: labels.estadoPendiente,
+    approved: labels.estadoAprobada,
+    ordered: labels.estadoOrdenada,
+    received: labels.estadoRecibida,
+    cancelled: labels.estadoCancelada,
   }
 
   doc.setFillColor(...COLORS.highlightBg)
@@ -329,7 +329,7 @@ export function generatePurchaseOrderPDF(order: PurchaseOrder, options: Purchase
       color: CHART_COLORS[i % CHART_COLORS.length],
     }))
     if (restTotal > 0) {
-      pieData.push({ label: "Otros", value: restTotal, color: CHART_COLORS[7] })
+      pieData.push({ label: labels.otros, value: restTotal, color: CHART_COLORS[7] })
     }
 
     const pieCx = margin + 24
