@@ -35,9 +35,17 @@ function resolveModule(pathname: string | null): ActivityModule | null {
   return MODULE_ROUTES[pathname] || null
 }
 
+// "main" (el workspace por defecto) NUNCA existe como fila real en Supabase — ver
+// lib/storage/businesses.ts. Todo el resto del código ya normaliza esto a `null`
+// antes de tocar Supabase (mismo patrón `businessId !== "main" ? businessId : null`
+// en purchase-order-page.tsx, ingredientes/page.tsx, menu-wizard.tsx, etc.); acá
+// faltaba, y por eso `logActivity` mandaba business_id: "main" a la tabla real —
+// la política RLS de activity_log rechaza ese insert porque no existe ningún
+// business_members/businesses con ese id, y el usuario no es "miembro" de él.
 function resolveBusinessId(pathname: string | null, searchParams: URLSearchParams): string | null {
   const businessRouteMatch = pathname?.match(/^\/business\/([^/?]+)/)
-  return businessRouteMatch?.[1] || searchParams.get("business") || null
+  const raw = businessRouteMatch?.[1] || searchParams.get("business") || null
+  return raw && raw !== "main" ? raw : null
 }
 
 export function ModuleActivityTracker() {
