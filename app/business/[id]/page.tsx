@@ -76,7 +76,7 @@ import { getMenus } from "@/lib/menus"
 import { addScenarioResult } from "@/lib/storage/menus.store"
 import { calculateScenario, generateRecommendation } from "@/lib/analytics/menuScenario"
 import type { Menu, MenuSection, ScenarioParams, ScenarioResult } from "@/lib/types/menus"
-import { formatCurrency } from "@/lib/currency"
+import { formatCurrency, getCurrentCurrencyOption } from "@/lib/currency"
 
 const roundToNextHundred = (num: number) => {
   return Math.ceil(num / 100) * 100
@@ -1500,7 +1500,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                           type="number"
                           min="0"
                           className="col-span-2"
-                          placeholder="L 0.00"
+                          placeholder={`${getCurrentCurrencyOption().symbol} 0.00`}
                         />
                       </div>
                     ))}
