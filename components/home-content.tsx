@@ -12,29 +12,18 @@ import { getLocalizedPlans } from "@/lib/plans"
 import { useLanguage } from "@/contexts/language-context"
 import { AnimatedNumber } from "@/components/animated-number"
 import { LandingAdminPdfPreview } from "@/components/landing-admin-pdf-preview"
-import {
-  ChefHat,
-  Package,
-  Calculator,
-  UtensilsCrossed,
-  BarChart3,
-  ArrowRight,
-  Star,
-  CheckCircle2,
-  Sparkles,
-  Beef,
-  Puzzle,
-  Dog,
-} from "lucide-react"
+import { ChefHat, Calculator, BarChart3, ArrowRight, Star, CheckCircle2 } from "lucide-react"
 
-// Landing rediseñado — docs/80-rediseno-visual-y-logo-oficial.md, siguiendo el orden
-// y el argumento de la entrega "Revisión visual y logo oficial" (docs/03-landing.md
-// del paquete): hero con producto real (no ilustración), investigación con fuentes
-// citadas, la fuga invisible, tres pasos, seis módulos con su plan de desbloqueo real
-// (tomado de lib/plans.ts, no inventado), un vistazo real a Inventario/Menu
-// Engineering/PDFs, planes reales, reseñas de Trustpilot en espera, y cierre. El FAQ
-// que ya existía se conserva más abajo (no estaba en el paquete de diseño, pero
-// responde preguntas reales de compra que sí conviene mantener).
+// Landing recortada — docs/80-rediseno-visual-y-logo-oficial.md fue el diseño
+// original (hero + investigación + fuga invisible + tres pasos + seis módulos + un
+// vistazo por dentro + planes + Trustpilot + cierre); esta versión sigue el hallazgo
+// de una auditoría externa (ver docs/98, Parte 3.2 y 3.6: "el comprador no compra
+// módulos, compra alivio de un dolor" — recortar a hero + antes/después + 3
+// beneficios + prueba social + CTA único + precios más abajo). Se quitaron la
+// sección aparte de cuatro cifras, la grilla de seis módulos, y el segundo bloque de
+// capturas (Inventario/Menu Engineering/tipos de PDF) — ver los comentarios en cada
+// sección para el detalle de qué se fusionó y qué se cortó del todo. El FAQ se
+// conserva (responde preguntas reales de compra, no vende funciones).
 export function HomeContent() {
   const { t, language } = useLanguage()
   const plans = getLocalizedPlans(language)
@@ -55,15 +44,16 @@ export function HomeContent() {
     { titleKey: "landing_step3_title", descKey: "landing_step3_desc", timeKey: "landing_step3_time" },
   ] as const
 
-  // Badge de cada módulo viene de la matriz real de planes (lib/plans.ts
-  // unlockedFeatures), no de una suposición — ver docs/80.
-  const modules = [
-    { slug: "fichas-tecnicas", icon: ChefHat, titleKey: "landing_module1_title", descKey: "landing_module1_desc", badge: t("landing_module_badge_free") },
-    { slug: "ingredientes-inventario", icon: Package, titleKey: "landing_module2_title", descKey: "landing_module2_desc", badge: t("landing_module_badge_free") },
-    { slug: "costeo", icon: Calculator, titleKey: "landing_module3_title", descKey: "landing_module3_desc", badge: "Home Cook" },
-    { slug: "ingredientes-inventario", icon: Package, titleKey: "landing_module4_title", descKey: "landing_module4_desc", badge: "Chef de Partie" },
-    { slug: "menus", icon: UtensilsCrossed, titleKey: "landing_module5_title", descKey: "landing_module5_desc", badge: "Chef de Partie" },
-    { slug: "estadisticas", icon: BarChart3, titleKey: "landing_module6_title", descKey: "landing_module6_desc", badge: "Sous Chef" },
+  // Tres beneficios orientados a resultado, no a módulo — reemplaza la grilla de seis
+  // módulos (hallazgo de auditoría externa, ver docs/98: "el comprador no compra
+  // módulos, compra alivio de un dolor"; PDF 3.6 "Foco de producto"). Cada uno mapea
+  // a lo que el propio PDF señala como más sólido del producto: costeo real, ventas
+  // sin POS (docs/90, "una de las mejores decisiones de producto"), y el motor de
+  // recálculo en cascada (antes enterrado como la frase de cierre de la grilla vieja).
+  const benefits = [
+    { icon: Calculator, titleKey: "landing_benefit1_title", descKey: "landing_benefit1_desc" },
+    { icon: ChefHat, titleKey: "landing_benefit2_title", descKey: "landing_benefit2_desc" },
+    { icon: BarChart3, titleKey: "landing_benefit3_title", descKey: "landing_benefit3_desc" },
   ] as const
 
   // Mismas tres cifras que la tarjeta real de Estadísticas → Finanzas
@@ -75,36 +65,6 @@ export function HomeContent() {
   const realCostPercent = 34.8
   const theoreticalCostPercent = 30.6
   const costVariance = realCostPercent - theoreticalCostPercent
-
-  // Estados reales de Inventario — mismas tres palabras que usa la pantalla de
-  // verdad (inventario_status_critical/low/normal en lib/i18n/translations.ts), no
-  // etiquetas inventadas para el landing. Antes decía "Ordenar ya"/"Sugerido"/
-  // "Suficiente", que no existen en ningún lado de la app real.
-  const inventoryRows = [
-    { name: "Queso duro", stock: "3.2 / 12 kg", statusKey: "inventario_status_critical" as const, tone: "danger" as const },
-    { name: "Mantequilla crema", stock: "4.1 / 10 kg", statusKey: "inventario_status_critical" as const, tone: "danger" as const },
-    { name: "Machaca de res", stock: "8.5 / 15 kg", statusKey: "inventario_status_low" as const, tone: "warning" as const },
-    { name: "Harina de trigo", stock: "48 / 25 kg", statusKey: "inventario_status_normal" as const, tone: "success" as const },
-  ]
-
-  // Menu Engineering — misma estructura que el widget real (components/
-  // estadisticas-finanzas-tab.tsx): icono + etiqueta + contador + una línea de
-  // consejo + lista de nombres de plato, SIN cifras de margen/cantidad por plato
-  // (esas viven en la tabla detallada aparte, no en estas tarjetas). Antes el
-  // landing mostraba "71% · 412" junto a cada plato, algo que el componente real
-  // nunca hace.
-  const menuEngineering = [
-    { titleKey: "landing_inside_menueng_stars", descKey: "landing_inside_menueng_stars_desc", icon: Sparkles, color: "text-chart-1", items: ["Baleada de machaca", "Pastelitos de carne"] },
-    { titleKey: "landing_inside_menueng_cows", descKey: "landing_inside_menueng_cows_desc", icon: Beef, color: "text-chart-4", items: ["Plato típico", "Menú del día"] },
-    { titleKey: "landing_inside_menueng_puzzles", descKey: "landing_inside_menueng_puzzles_desc", icon: Puzzle, color: "text-chart-2", items: ["Menú degustación", "Sopa de caracol"] },
-    { titleKey: "landing_inside_menueng_dogs", descKey: "landing_inside_menueng_dogs_desc", icon: Dog, color: "text-chart-3", items: ["Brunch dominical", "Tres leches"] },
-  ] as const
-
-  const pdfTypes = [
-    { titleKey: "landing_inside_pdf_kitchen", descKey: "landing_inside_pdf_kitchen_desc" },
-    { titleKey: "landing_inside_pdf_presentation", descKey: "landing_inside_pdf_presentation_desc" },
-    { titleKey: "landing_inside_pdf_admin", descKey: "landing_inside_pdf_admin_desc" },
-  ] as const
 
   const trustCards = [
     { quoteKey: "landing_trust1_quote", nameKey: "landing_trust1_name", businessKey: "landing_trust1_business", stars: 5 },
@@ -131,17 +91,19 @@ export function HomeContent() {
               <span className="text-primary">{t("landing_hero_title_line2")}</span>
             </h1>
             <p className="text-lg text-text-3 max-w-xl mx-auto">{t("landing_hero_desc")}</p>
-            <div className="flex flex-wrap justify-center gap-3">
+            {/* CTA único (hallazgo de auditoría externa, ver docs/98: "vende módulos
+                en vez de un resultado claro"; PDF 3.2 pide "CTA único"). "Ver planes"
+                pasa de botón a link de texto — sigue accesible, pero ya no compite
+                visualmente con la acción principal. */}
+            <div className="flex flex-col items-center gap-3">
               <Link href="/signup">
                 <Button size="lg" className="text-base px-6 py-3 bg-primary text-primary-foreground hover:bg-primary/90">
                   {t("landing_hero_cta_primary")}
                 </Button>
               </Link>
-              <Link href="/planes">
-                <Button size="lg" variant="outline" className="text-base px-6 py-3">
-                  {t("landing_hero_cta_secondary")}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+              <Link href="/planes" className="text-sm text-text-3 hover:text-primary inline-flex items-center gap-1">
+                {t("landing_hero_cta_secondary")}
+                <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
             <p className="text-sm text-text-4 flex flex-wrap justify-center gap-x-2">
@@ -162,37 +124,24 @@ export function HomeContent() {
           </div>
         </section>
 
-        {/* Investigación — cuatro cifras con fuente citada (docs/03: prueba de que el
-            problema existe, sin testimonios inventados). */}
-        <section className="bg-canvas-alt border-y border-hairline">
-          <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-20 space-y-10">
-            <div className="max-w-2xl space-y-3">
-              <h2 className="text-3xl md:text-[40px] font-semibold tracking-[-0.038em] text-foreground">{t("landing_stats_title")}</h2>
-              <p className="text-text-3">{t("landing_stats_intro")}</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-hairline border border-hairline rounded-2xl overflow-hidden">
-              {stats.map((stat) => (
-                <div key={stat.descKey} className="bg-card p-6 space-y-3">
-                  <AnimatedNumber
-                    value={stat.value}
-                    prefix={stat.prefix}
-                    suffix={stat.suffix}
-                    className="block text-4xl font-semibold text-primary tabular-nums"
-                  />
-                  <p className="text-sm text-foreground leading-snug">{t(stat.descKey)}</p>
-                  <p className="text-xs text-text-4 leading-snug">{t(stat.sourceKey)}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* La fuga invisible — el mejor gancho (docs/03). */}
+        {/* La fuga invisible — el mejor gancho (docs/03), ahora con la cifra más fuerte
+            de la ex-sección "Investigación" incrustada como dato de apoyo en vez de
+            una sección aparte con cuatro tarjetas (hallazgo de auditoría externa, ver
+            docs/98: recortar a "hero + antes/después + 3 beneficios", no una landing
+            larga por secciones). Las otras tres cifras de `stats` ya no se muestran
+            como número individual, pero sus fuentes completas (las mismas cuatro
+            organizaciones) siguen citadas abajo en "Fuentes de las cifras citadas" —
+            no se inventó ni se ocultó ninguna fuente, solo se dejó de dedicarle una
+            tarjeta grande a cada cifra. */}
         <section className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           <div className="space-y-6">
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-primary">{t("landing_leak_kicker")}</p>
             <h2 className="text-3xl md:text-[40px] font-semibold tracking-[-0.038em] text-foreground leading-[1.08]">{t("landing_leak_title")}</h2>
             <p className="text-text-3 leading-relaxed">{t("landing_leak_body")}</p>
+            <p className="text-sm text-foreground bg-canvas-alt border border-hairline rounded-xl px-4 py-3">
+              <AnimatedNumber value={stats[0].value} suffix={stats[0].suffix} className="font-semibold text-primary tabular-nums" />{" "}
+              {t(stats[0].descKey)} <span className="text-text-4">— {t(stats[0].sourceKey)}</span>
+            </p>
             <ol className="divide-y divide-hairline border-t border-hairline">
               {leakItems.map((key, i) => (
                 <li key={key} className="flex gap-4 py-4">
@@ -269,124 +218,27 @@ export function HomeContent() {
           </div>
         </section>
 
-        {/* Seis módulos — cada uno con el plan real desde el que se desbloquea. */}
-        <section className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 space-y-10">
-          <div className="max-w-2xl space-y-3">
-            <h2 className="text-3xl md:text-[40px] font-semibold tracking-[-0.038em] text-foreground">{t("landing_modules_title")}</h2>
-            <p className="text-text-3">{t("landing_modules_body")}</p>
-          </div>
-          <div className="divide-y divide-hairline border-t border-b border-hairline">
-            {modules.map((mod, i) => (
-              <Link
-                key={`${mod.slug}-${i}`}
-                href={`/caracteristicas/${mod.slug}`}
-                className="flex items-center gap-5 py-5 group hover:bg-canvas-alt transition-colors -mx-2 px-2 rounded-lg"
-              >
-                <div className="w-10 h-10 rounded-xl bg-primary-soft flex items-center justify-center shrink-0">
-                  <mod.icon className="h-5 w-5 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">{t(mod.titleKey)}</p>
-                  <p className="text-sm text-text-3 mt-0.5">{t(mod.descKey)}</p>
-                </div>
-                <Badge variant="secondary" className="bg-secondary text-muted-foreground font-medium shrink-0 hidden sm:inline-flex">
-                  {mod.badge}
-                </Badge>
-                <ArrowRight className="h-4 w-4 text-text-4 shrink-0 group-hover:translate-x-0.5 transition-transform" />
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* Así se ve por dentro — UI real, sin ilustración (docs/03). */}
+        {/* Tres beneficios — resultado, no módulos (ver comentario del array `benefits`
+            arriba). Reemplaza tanto la grilla de seis módulos como la sección completa
+            "Así se ve por dentro" (capturas de Inventario/Menu Engineering/PDFs) que
+            vendían funciones en vez de un resultado — hallazgo de auditoría externa,
+            ver docs/98. */}
         <section className="bg-canvas-alt border-y border-hairline">
           <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 space-y-10">
             <div className="max-w-2xl space-y-3">
-              <h2 className="text-3xl md:text-[40px] font-semibold tracking-[-0.038em] text-foreground">{t("landing_inside_title")}</h2>
-              <p className="text-text-3">{t("landing_inside_subtitle")}</p>
+              <h2 className="text-3xl md:text-[40px] font-semibold tracking-[-0.038em] text-foreground">{t("landing_benefits_title")}</h2>
             </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Inventario */}
-              <Card className="border-hairline bg-card">
-                <CardContent className="p-6 space-y-4">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{t("landing_inside_inventory_title")}</p>
-                    <p className="text-xs text-text-4">{t("landing_inside_inventory_subtitle")} · 7 / 318</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-hairline border border-hairline rounded-2xl overflow-hidden">
+              {benefits.map((benefit) => (
+                <div key={benefit.titleKey} className="bg-card p-6 space-y-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary-soft flex items-center justify-center">
+                    <benefit.icon className="h-5 w-5 text-primary" />
                   </div>
-                  <div className="divide-y divide-hairline border-t border-hairline">
-                    {inventoryRows.map((row) => (
-                      <div key={row.name} className="flex items-center justify-between py-3 gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm text-foreground font-medium truncate">{row.name}</p>
-                          <p className="text-xs text-text-4 tabular-nums">{row.stock}</p>
-                        </div>
-                        <span
-                          className={
-                            "text-xs font-medium px-2.5 py-1 rounded-full shrink-0 " +
-                            (row.tone === "danger"
-                              ? "bg-danger-soft text-destructive"
-                              : row.tone === "warning"
-                                ? "bg-warning-soft text-warning"
-                                : "bg-success-soft text-success")
-                          }
-                        >
-                          {t(row.statusKey)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Menu Engineering — misma estructura que el widget real de Reportes:
-                  icono + etiqueta + contador, una línea de consejo, y la lista de
-                  platos de ese cuadrante (nada de cifras inline, esas viven en la
-                  tabla detallada de la pantalla real). */}
-              <Card className="border-hairline bg-card">
-                <CardContent className="p-6 space-y-4">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{t("landing_inside_menueng_title")}</p>
-                    <p className="text-xs text-text-4">{t("landing_inside_menueng_period")}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    {menuEngineering.map((quad) => (
-                      <div key={quad.titleKey} className="border border-hairline rounded-lg p-3 space-y-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <quad.icon className={`h-3.5 w-3.5 ${quad.color}`} />
-                          <p className="text-xs font-semibold text-foreground">{t(quad.titleKey)}</p>
-                          <span className="ml-auto text-[10px] text-text-4 tabular-nums">{quad.items.length}</span>
-                        </div>
-                        <p className="text-[11px] text-text-4 leading-snug">{t(quad.descKey)}</p>
-                        <div className="space-y-0.5 pt-0.5">
-                          {quad.items.map((name) => (
-                            <p key={name} className="text-[11px] text-text-3 truncate">
-                              {name}
-                            </p>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Un PDF para cada quien */}
-            <Card className="border-hairline bg-card">
-              <CardContent className="p-6 space-y-5">
-                <p className="text-sm font-semibold text-foreground">{t("landing_inside_pdf_title")}</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-hairline border border-hairline rounded-xl overflow-hidden">
-                  {pdfTypes.map((pdf) => (
-                    <div key={pdf.titleKey} className="bg-card p-4">
-                      <p className="text-sm font-medium text-foreground">{t(pdf.titleKey)}</p>
-                      <p className="text-xs text-text-4 mt-1">{t(pdf.descKey)}</p>
-                    </div>
-                  ))}
+                  <p className="text-lg font-semibold text-foreground">{t(benefit.titleKey)}</p>
+                  <p className="text-sm text-text-3 leading-relaxed">{t(benefit.descKey)}</p>
                 </div>
-                <p className="text-xs text-text-4">{t("landing_inside_pdf_caption")}</p>
-              </CardContent>
-            </Card>
+              ))}
+            </div>
           </div>
         </section>
 
