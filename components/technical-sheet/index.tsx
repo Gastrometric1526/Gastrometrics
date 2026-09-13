@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Check, ChevronsUpDown, Upload, Settings, RotateCcw, Calculator, Info } from "lucide-react"
+import { Check, ChevronsUpDown, Upload, Settings, RotateCcw, Calculator, Info, AlertTriangle } from "lucide-react"
 import { CalculationInfoDialog } from "./calculation-info-dialog"
 import { cn } from "@/lib/utils"
 import { getRecipeById, saveRecipe, ensureRecipesLoaded } from "@/lib/storage/recipes"
@@ -254,6 +254,23 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
     const effectiveYield =
       recipe.yieldAmount && recipe.yieldAmount > 0 ? recipe.yieldAmount * paxMultiplier : yieldByWeight
 
+    // Aviso de rendimiento absurdo (hallazgo de auditoría externa, ver docs/98, sección
+    // 2.6: ej. "rendimiento 1 g con 200 huevos"). Deliberadamente NO se basa en
+    // yieldByWeight (arriba) — esa suma mezcla cantidades de unidades distintas sin
+    // convertir (gramos, kilogramos, unidades juntos), así que compararla contra el
+    // rendimiento declarado daría falsos positivos constantes solo por qué unidad
+    // eligió cada quien para cada ingrediente. En cambio, se compara el Rendimiento
+    // declarado contra la cantidad de cualquier ingrediente medido en "unidad" (piezas
+    // contables: huevos, latas, etc.) — la misma naturaleza de conteo que el ejemplo
+    // real de la crítica, sin necesitar conversión de unidades. Es un aviso, nunca
+    // bloquea guardar ni exportar.
+    const maxUnitIngredientQuantity = recipe.ingredients.reduce(
+      (max, ing) => (ing.unit === "unidad" && ing.quantity > max ? ing.quantity : max),
+      0,
+    )
+    const yieldSanityWarning =
+      recipe.yieldAmount > 0 && maxUnitIngredientQuantity >= recipe.yieldAmount * 20
+
     const unitCost = effectiveYield > 0 ? productionCost / effectiveYield : 0
 
     const publicServicesAmount = productionCost * (publicServices / 100)
@@ -359,6 +376,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
       foodCostPercent,
       scaledIngredientQuantities,
       paxMultiplier,
+      yieldSanityWarning,
     }
   }, [
     recipe.ingredients,
@@ -975,6 +993,13 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
                   />
                 </div>
               </div>
+
+              {calculations.yieldSanityWarning && (
+                <div className="flex items-start gap-2 text-sm bg-warning-soft text-warning border border-warning/40 rounded-lg px-4 py-3">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <p>{t("ficha_tecnica_yield_sanity_warning")}</p>
+                </div>
+              )}
 
               <div className="bg-muted p-4 rounded-lg" data-tour="ficha-pax">
                 <Label htmlFor="paxModifier" className="font-semibold">

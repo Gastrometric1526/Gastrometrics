@@ -433,16 +433,29 @@ function generateAdministrativePDF(
   const totalSales = unitPrice * yieldAmount
   const netProfitTotal = recipe.netProfit || totalSales - totalCost
 
-  const summaryData = [
-    { label: "Costo Produccion", value: formatCurrency2(totalCost) },
-    { label: "Rendimiento", value: `${yieldAmount} ${sanitizeText(recipe.yieldUnit)}` },
-    { label: "Costo Unitario", value: formatCurrency2(costPerUnit) },
-    { label: "Ganancia Unit.", value: formatCurrency2(unitProfit) },
-    { label: "Precio Unit.", value: formatCurrency2(unitPrice) },
-    { label: "Venta Total", value: formatCurrency2(totalSales) },
-  ]
+  // Una sub-receta nunca se vende directo a un cliente — es un componente interno que
+  // se usa DENTRO de otras fichas. Mostrarle "Precio Unit.", "Venta Total" y una caja
+  // verde de "Ganancia Neta" es engañoso (esos numeros no significan nada para algo que
+  // no se vende solo). En su lugar se muestra unicamente el costo de produccion, el
+  // rendimiento y el costo unitario — que es exactamente el "costo de uso" que se
+  // arrastra cuando esta sub-receta se agrega como ingrediente en otra ficha
+  // (hallazgo de auditoria externa, ver docs/98, seccion 2.6).
+  const summaryData = isSubRecipe
+    ? [
+        { label: "Costo Produccion", value: formatCurrency2(totalCost) },
+        { label: "Rendimiento", value: `${yieldAmount} ${sanitizeText(recipe.yieldUnit)}` },
+        { label: "Costo de Uso (unitario)", value: formatCurrency2(costPerUnit) },
+      ]
+    : [
+        { label: "Costo Produccion", value: formatCurrency2(totalCost) },
+        { label: "Rendimiento", value: `${yieldAmount} ${sanitizeText(recipe.yieldUnit)}` },
+        { label: "Costo Unitario", value: formatCurrency2(costPerUnit) },
+        { label: "Ganancia Unit.", value: formatCurrency2(unitProfit) },
+        { label: "Precio Unit.", value: formatCurrency2(unitPrice) },
+        { label: "Venta Total", value: formatCurrency2(totalSales) },
+      ]
 
-  const cellWidth = (contentWidth - 50) / summaryData.length
+  const cellWidth = (contentWidth - (isSubRecipe ? 4 : 50)) / summaryData.length
   doc.setFontSize(7)
 
   summaryData.forEach((item, i) => {
@@ -454,17 +467,19 @@ function generateAdministrativePDF(
     doc.text(item.value, x, yPosition + 10)
   })
 
-  // Net Profit box
-  const netProfitBoxX = pageWidth - margin - 48
-  doc.setFillColor(46, 125, 50) // Green
-  doc.rect(netProfitBoxX, yPosition, 46, costSummaryHeight, "F")
-  doc.setFontSize(7)
-  doc.setFont("helvetica", "normal")
-  doc.setTextColor(...COLORS.white)
-  doc.text(`${labels.gananciaNeta} ${labels.total}`, netProfitBoxX + 2, yPosition + 5)
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(9)
-  doc.text(formatCurrency2(netProfitTotal), netProfitBoxX + 2, yPosition + 11)
+  if (!isSubRecipe) {
+    // Net Profit box
+    const netProfitBoxX = pageWidth - margin - 48
+    doc.setFillColor(46, 125, 50) // Green
+    doc.rect(netProfitBoxX, yPosition, 46, costSummaryHeight, "F")
+    doc.setFontSize(7)
+    doc.setFont("helvetica", "normal")
+    doc.setTextColor(...COLORS.white)
+    doc.text(`${labels.gananciaNeta} ${labels.total}`, netProfitBoxX + 2, yPosition + 5)
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(9)
+    doc.text(formatCurrency2(netProfitTotal), netProfitBoxX + 2, yPosition + 11)
+  }
 
   yPosition += costSummaryHeight + 6
 
@@ -662,13 +677,10 @@ function generateAdministrativePDF(
 
     // Pastel: composicion del costo de produccion por ingrediente (los que mas pesan,
     // agrupando el resto en "Otros") — util para saber donde se va el dinero, no solo
-    // cuanto cuesta la receta en total.
-    const pieColX = margin + halfWidth + 8
-    doc.setFontSize(8)
-    doc.setFont("helvetica", "bold")
-    doc.setTextColor(...COLORS.secondary)
-    doc.text(labels.composicionCostoPorIngrediente, pieColX, chartsTop)
-
+    // cuanto cuesta la receta en total. Con un solo ingrediente con costo el "pastel"
+    // es un circulo completo de un solo color — no compara nada, asi que se omite del
+    // todo en vez de imprimir un grafico sin informacion (hallazgo de auditoria
+    // externa, ver docs/98, seccion 2.6).
     const ingredientCosts = recipe.ingredients
       .map((ing) => ({
         label: sanitizeText(ing.name) || labels.general,
@@ -677,24 +689,30 @@ function generateAdministrativePDF(
       .filter((i) => i.value > 0)
       .sort((a, b) => b.value - a.value)
 
-    const topIngredients = ingredientCosts.slice(0, 5)
-    const otherIngredientsTotal = ingredientCosts.slice(5).reduce((sum, i) => sum + i.value, 0)
-    const pieData: ChartDatum[] = topIngredients.map((item, i) => ({
-      ...item,
-      color: CHART_COLORS[i % CHART_COLORS.length],
-    }))
-    if (otherIngredientsTotal > 0) {
-      pieData.push({ label: "Otros", value: otherIngredientsTotal, color: CHART_COLORS[CHART_COLORS.length - 1] })
-    }
+    let pieEndY = chartsTop
+    if (ingredientCosts.length > 1) {
+      const pieColX = margin + halfWidth + 8
+      doc.setFontSize(8)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(...COLORS.secondary)
+      doc.text(labels.composicionCostoPorIngrediente, pieColX, chartsTop)
 
-    const pieRadius = 15
-    const pieCx = pieColX + pieRadius + 2
-    const pieCy = chartsTop + 6 + pieRadius
-    const pieLegendX = pieCx + pieRadius + 8
-    const pieEndY =
-      pieData.length > 0
-        ? drawPieChart(doc, pieData, pieCx, pieCy, pieRadius, pieLegendX, chartsTop + 8, (n) => formatCurrency2(n))
-        : chartsTop
+      const topIngredients = ingredientCosts.slice(0, 5)
+      const otherIngredientsTotal = ingredientCosts.slice(5).reduce((sum, i) => sum + i.value, 0)
+      const pieData: ChartDatum[] = topIngredients.map((item, i) => ({
+        ...item,
+        color: CHART_COLORS[i % CHART_COLORS.length],
+      }))
+      if (otherIngredientsTotal > 0) {
+        pieData.push({ label: "Otros", value: otherIngredientsTotal, color: CHART_COLORS[CHART_COLORS.length - 1] })
+      }
+
+      const pieRadius = 15
+      const pieCx = pieColX + pieRadius + 2
+      const pieCy = chartsTop + 6 + pieRadius
+      const pieLegendX = pieCx + pieRadius + 8
+      pieEndY = drawPieChart(doc, pieData, pieCx, pieCy, pieRadius, pieLegendX, chartsTop + 8, (n) => formatCurrency2(n))
+    }
 
     yPosition = Math.max(barsEndY, pieEndY, chartsTop + chartsHeight) + 6
   }
