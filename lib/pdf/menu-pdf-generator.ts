@@ -277,8 +277,17 @@ function generateClientMenuPDF(
     doc.setFont("times", "bold")
     doc.setFontSize(12)
     doc.setTextColor(...COLORS.text)
-    const stepLabelWidth = doc.getTextWidth(stepLabel.split("").join("  "))
-    doc.text(stepLabel.split("").join("  "), pageWidth / 2, yPosition, { align: "center" })
+    // BUG CORREGIDO (hallazgo de auditoria externa, ver docs/98/99): el tracking
+    // unia cada caracter con dos espacios Unicode "hair space" (U+200A) invisibles.
+    // Las fuentes base de jsPDF (Times/Helvetica) no soportan ese caracter fuera de
+    // WinAnsi, asi que se renderizaba como texto roto/mal compuesto ("ENTRADA" se
+    // veia corrupto). charSpace (nativo de jsPDF, en unidades del documento) separa
+    // las letras de verdad via el operador Tc del PDF, sin depender de ningun glifo
+    // especial. El centrado se calcula a mano para no depender de que jsPDF sume el
+    // charSpace al centrar con align:"center".
+    const stepLabelCharSpace = 1
+    const stepLabelWidth = doc.getTextWidth(stepLabel) + stepLabelCharSpace * Math.max(0, stepLabel.length - 1)
+    doc.text(stepLabel, pageWidth / 2 - stepLabelWidth / 2, yPosition, { charSpace: stepLabelCharSpace })
     const lineY = yPosition - 1.5
     const lineGap = stepLabelWidth / 2 + 6
     doc.setLineWidth(0.25)

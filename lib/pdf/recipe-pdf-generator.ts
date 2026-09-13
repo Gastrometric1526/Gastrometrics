@@ -367,20 +367,30 @@ function generateAdministrativePDF(
   const shortClass = classText.length > 35 ? classText.substring(0, 35) + "..." : classText
   doc.text(shortClass, col1X + 24, metaY + 6)
 
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(...COLORS.darkGray)
-  doc.text(labels.plato, col1X, metaY + 12)
-  doc.setFont("helvetica", "normal")
-  doc.setTextColor(...COLORS.text)
-  doc.text(sanitizeText(recipe.plate) || "N/A", col1X + 13, metaY + 12)
+  // BUG CORREGIDO (hallazgo de auditoria externa, ver docs/98/99): estas dos celdas
+  // imprimian "N/A" cuando la receta no tenia plato/etapa cargados — el PDF quedaba
+  // ensuciado con campos vacios etiquetados. Ahora, si no hay dato, no se imprime ni
+  // la etiqueta ni el valor (la celda del grid queda en blanco en vez de "Plato: N/A").
+  const platoText = sanitizeText(recipe.plate)
+  if (platoText) {
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(...COLORS.darkGray)
+    doc.text(labels.plato, col1X, metaY + 12)
+    doc.setFont("helvetica", "normal")
+    doc.setTextColor(...COLORS.text)
+    doc.text(platoText, col1X + 13, metaY + 12)
+  }
 
   // Column 2
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(...COLORS.darkGray)
-  doc.text(labels.etapaEstacion, col2X, metaY)
-  doc.setFont("helvetica", "normal")
-  doc.setTextColor(...COLORS.text)
-  doc.text(sanitizeText(recipe.step) || "N/A", col2X + 28, metaY)
+  const stepText = sanitizeText(recipe.step)
+  if (stepText) {
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(...COLORS.darkGray)
+    doc.text(labels.etapaEstacion, col2X, metaY)
+    doc.setFont("helvetica", "normal")
+    doc.setTextColor(...COLORS.text)
+    doc.text(stepText, col2X + 28, metaY)
+  }
 
   doc.setFont("helvetica", "bold")
   doc.setTextColor(...COLORS.darkGray)
@@ -1176,7 +1186,12 @@ function generateNormalPDF(
   }
 
   // ===== PRICE (if available) =====
-  if (recipe.unitPrice) {
+  // BUG CORREGIDO (hallazgo de auditoria externa, ver docs/98/99): este PDF mostraba
+  // el precio de venta de CUALQUIER receta, incluidas las sub-recetas — que nunca se
+  // venden directo a un cliente, asi que imprimirles un precio de venta es enganoso
+  // (misma logica ya aplicada al PDF Administrativo).
+  const isSubRecipeNormal = recipe.classification?.includes("Sub Receta") || recipe.isSubRecipe
+  if (recipe.unitPrice && !isSubRecipeNormal) {
     yPosition += 8
     if (yPosition > ctx.pageHeight - 20) {
       doc.addPage()

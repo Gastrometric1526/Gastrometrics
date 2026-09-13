@@ -171,7 +171,13 @@ interface InventoryPDFRow {
 
 interface InventoryPDFData {
   title: string
-  subtitle: string
+  // BUG CORREGIDO (hallazgo de auditoria externa, ver docs/98/99): antes esto ya
+  // llegaba formateado como string (toLocaleDateString() sin locale, es decir con el
+  // locale por defecto del entorno) desde build*() mas abajo, mezclando formatos de
+  // fecha con el resto del PDF (que si usa labels.locale). Ahora se guarda la fecha
+  // cruda y se formatea con labels.locale recien al momento de dibujar, igual que
+  // todos los demas PDFs.
+  subtitle: Date
   rows: InventoryPDFRow[]
 }
 
@@ -184,7 +190,7 @@ export interface InventoryPDFOptions {
 export function buildInventoryPDFDataFromCurrent(items: InventoryItem[]): InventoryPDFData {
   return {
     title: "INVENTARIO ACTUAL",
-    subtitle: new Date().toLocaleDateString(),
+    subtitle: new Date(),
     rows: items.map((item) => ({
       name: item.name,
       category: item.category,
@@ -203,7 +209,7 @@ export function buildInventoryPDFDataFromSnapshot(snapshot: InventorySnapshot): 
     snapshot.type === "initial" ? "Inventario Inicial" : snapshot.type === "final" ? "Inventario Final" : "Compra"
   return {
     title: `INVENTARIO - ${typeLabel.toUpperCase()}`,
-    subtitle: new Date(snapshot.date).toLocaleDateString(),
+    subtitle: new Date(snapshot.date),
     rows: (snapshot.items || []).map((item) => ({
       name: item.name,
       category: item.category,
@@ -263,7 +269,7 @@ function renderInventoryPDF(doc: jsPDF, data: InventoryPDFData, options: Invento
   doc.setFontSize(9)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(...COLORS.darkGray)
-  doc.text(`${labels.fecha}: ${data.subtitle}`, pageWidth - margin, 18, { align: "right" })
+  doc.text(`${labels.fecha}: ${data.subtitle.toLocaleDateString(labels.locale)}`, pageWidth - margin, 18, { align: "right" })
 
   yPosition = 32
 
