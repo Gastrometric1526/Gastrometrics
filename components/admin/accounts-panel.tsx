@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -124,7 +124,7 @@ export function AccountsPanel() {
   const [pageSize, setPageSize] = useState(25)
   const [search, setSearch] = useState("")
   const [planFilter, setPlanFilter] = useState("todos")
-  const [sortBy, setSortBy] = useState<"recent" | "time">("recent")
+  const [sortBy, setSortBy] = useState<"recent" | "time" | "plan">("recent")
   const [loadingList, setLoadingList] = useState(false)
 
   const [selected, setSelected] = useState<AccountRow | null>(null)
@@ -163,7 +163,16 @@ export function AccountsPanel() {
   const [tempPasswordResult, setTempPasswordResult] = useState<string | null>(null)
   const [copiedTempPassword, setCopiedTempPassword] = useState(false)
 
+  // requestSeqRef: evita una condición de carrera real — sin esto, si dos llamadas a
+  // loadList quedan en vuelo a la vez (ej. el efecto de montaje pidiendo "recent" justo
+  // cuando el usuario ya cambió a "por plan"), la respuesta que tarde más en llegar pisa
+  // el estado sin importar cuál se pidió después, y la lista queda mostrando datos
+  // obsoletos aunque la red ya haya traído los correctos. Solo la respuesta de la
+  // llamada MÁS RECIENTE puede escribir en el estado.
+  const requestSeqRef = useRef(0)
+
   const loadList = async (targetPage: number, targetSearch: string, targetPlan: string, targetSort: string) => {
+    const requestId = ++requestSeqRef.current
     setLoadingList(true)
     try {
       const planParam = targetPlan && targetPlan !== "todos" ? `&plan=${encodeURIComponent(targetPlan)}` : ""
@@ -172,6 +181,7 @@ export function AccountsPanel() {
         `/api/admin/accounts?page=${targetPage}&search=${encodeURIComponent(targetSearch)}${planParam}${sortParam}`,
       )
       const data = await res.json()
+      if (requestId !== requestSeqRef.current) return
       if (Array.isArray(data.accounts)) {
         setAccounts(data.accounts)
         setTotal(data.total || 0)
@@ -179,9 +189,11 @@ export function AccountsPanel() {
       }
     } catch (error) {
       console.error("Error listando cuentas:", error)
-      toast({ title: t("admin_accounts_error_toast"), variant: "destructive" })
+      if (requestId === requestSeqRef.current) {
+        toast({ title: t("admin_accounts_error_toast"), variant: "destructive" })
+      }
     } finally {
-      setLoadingList(false)
+      if (requestId === requestSeqRef.current) setLoadingList(false)
     }
   }
 
@@ -229,7 +241,7 @@ export function AccountsPanel() {
   }
 
   const handleSortChange = (value: string) => {
-    setSortBy(value as "recent" | "time")
+    setSortBy(value as "recent" | "time" | "plan")
     setPage(1)
     loadList(1, search, planFilter, value)
   }
@@ -891,6 +903,7 @@ export function AccountsPanel() {
             <SelectContent>
               <SelectItem value="recent">{t("admin_accounts_sort_recent")}</SelectItem>
               <SelectItem value="time">{t("admin_accounts_sort_time")}</SelectItem>
+              <SelectItem value="plan">{t("admin_accounts_sort_plan")}</SelectItem>
             </SelectContent>
           </Select>
           <Button type="submit" disabled={loadingList} className="shrink-0 gap-2">

@@ -14,14 +14,22 @@
  * traen completos para TODAS las cuentas antes de ordenar/paginar, porque "página 1
  * ordenada por tiempo" tiene que ser de verdad el top 25 de toda la base, no de los 25
  * que hubieran salido primero por fecha de registro.
+ *
+ * Ordenar por plan (?sort=plan): además del filtro exacto por plan (?plan=<slug>, arriba),
+ * esto deja ver TODAS las cuentas juntas pero agrupadas por nivel de plan (Foodie primero,
+ * Chef Ejecutivo al final) — pedido explícito del dueño del proyecto ("organizar a los
+ * usuarios por planes"). Usa el orden real de negocio de PLAN_ORDER (igual a como aparecen
+ * en lib/plans.ts), no alfabético.
  */
 
 import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
+import { plans } from "@/lib/plans"
 
 const PAGE_SIZE = 25
+const PLAN_ORDER = new Map(plans.map((plan, index) => [plan.slug, index]))
 
 export async function GET(request: Request) {
   if (!(await hasAdminSession())) {
@@ -72,6 +80,13 @@ export async function GET(request: Request) {
     }
     if (sort === "time") {
       filtered.sort((a, b) => (activeSecondsByUser.get(b.id) || 0) - (activeSecondsByUser.get(a.id) || 0))
+    } else if (sort === "plan") {
+      filtered.sort((a, b) => {
+        const planA = planByUser.get(a.id)?.plan_slug || "foodie"
+        const planB = planByUser.get(b.id)?.plan_slug || "foodie"
+        const orderDiff = (PLAN_ORDER.get(planA) ?? 0) - (PLAN_ORDER.get(planB) ?? 0)
+        return orderDiff !== 0 ? orderDiff : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      })
     } else {
       filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     }
