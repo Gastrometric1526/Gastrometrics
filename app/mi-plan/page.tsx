@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Settings2, Building2 } from "lucide-react"
+import { ArrowLeft, Settings2, Building2, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sidebar } from "@/components/sidebar"
 import { AuthGuard } from "@/components/auth-guard"
@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useAllBusinesses } from "@/lib/storage/businesses"
 import { getPlanBySlug } from "@/lib/plans"
 import { useCurrentPlanSlug, getMaxBusinesses } from "@/lib/plan-access"
+import { getDateLocale } from "@/lib/i18n/translations"
 
 // Página de plan dentro del dashboard — antes, "Plan: X" en el sidebar y el CTA de
 // las pantallas bloqueadas por plan (components/feature-locked.tsx) mandaban a /planes,
@@ -21,10 +22,14 @@ import { useCurrentPlanSlug, getMaxBusinesses } from "@/lib/plan-access"
 // salir por completo del dashboard para volver a entrar después — la grilla de planes
 // es la misma (components/plans-grid.tsx), pero esta vive dentro del shell de la app.
 export default function MiPlanPage() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const { toast } = useToast()
   const [hasStripeCustomer, setHasStripeCustomer] = useState(false)
   const [isOpeningPortal, setIsOpeningPortal] = useState(false)
+  // "Cancelando, termina el [fecha]" — ver app/api/webhooks/stripe/route.ts
+  // (customer.subscription.updated) y supabase/migrations/0023_plan_cancellation_status.sql.
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(false)
+  const [currentPeriodEnd, setCurrentPeriodEnd] = useState<string | null>(null)
 
   // Barra de uso (docs/04 del paquete de diseño: "plan actual, barras de uso...").
   // Solo negocios — es el único de los tres (negocios/usuarios/recetas) con un tope
@@ -53,7 +58,11 @@ export default function MiPlanPage() {
   useEffect(() => {
     fetch("/api/stripe/portal")
       .then((res) => res.json())
-      .then((data) => setHasStripeCustomer(Boolean(data?.hasStripeCustomer)))
+      .then((data) => {
+        setHasStripeCustomer(Boolean(data?.hasStripeCustomer))
+        setCancelAtPeriodEnd(Boolean(data?.cancelAtPeriodEnd))
+        setCurrentPeriodEnd(data?.currentPeriodEnd ?? null)
+      })
       .catch(() => setHasStripeCustomer(false))
   }, [])
 
@@ -117,6 +126,23 @@ export default function MiPlanPage() {
                 </Button>
               )}
             </div>
+
+            {cancelAtPeriodEnd && (
+              <div className="flex items-start gap-3 rounded-xl border border-warning/40 bg-warning-soft p-4">
+                <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium text-foreground">{t("mi_plan_cancelling_title")}</p>
+                  <p className="text-sm text-text-3">
+                    {currentPeriodEnd
+                      ? t("mi_plan_cancelling_desc").replace(
+                          "{date}",
+                          new Date(currentPeriodEnd).toLocaleDateString(getDateLocale(language), { dateStyle: "long" }),
+                        )
+                      : t("mi_plan_cancelling_desc_no_date")}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Barra de uso — solo negocios, ver nota junto a useAllBusinesses() arriba. */}
             <div className="max-w-xs border border-hairline rounded-xl p-4 space-y-2">

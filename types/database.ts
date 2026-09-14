@@ -309,6 +309,10 @@ export interface Database {
           // del límite base del plan — ver supabase/migrations/0019_account_overrides.sql.
           extra_businesses: number
           extra_team_seats: number
+          // Cancelación en curso de una suscripción real (Portal de Cliente de Stripe) —
+          // ver supabase/migrations/0023_plan_cancellation_status.sql.
+          cancel_at_period_end: boolean
+          current_period_end: string | null
         }
         Insert: Omit<
           Database["public"]["Tables"]["account_plans"]["Row"],
@@ -326,6 +330,8 @@ export interface Database {
           | "last_change_acknowledged"
           | "extra_businesses"
           | "extra_team_seats"
+          | "cancel_at_period_end"
+          | "current_period_end"
         > & {
           updated_at?: string
           stripe_customer_id?: string | null
@@ -341,6 +347,8 @@ export interface Database {
           last_change_acknowledged?: boolean
           extra_businesses?: number
           extra_team_seats?: number
+          cancel_at_period_end?: boolean
+          current_period_end?: string | null
         }
         Update: Partial<Database["public"]["Tables"]["account_plans"]["Row"]>
         Relationships: never[]

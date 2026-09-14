@@ -48,13 +48,20 @@ async function setPlanForAccount(accountId: string, planSlug: string, extra: Rec
     ...extra,
   })
 
-  // Tolera que supabase/migrations/0008_plan_expiry.sql todavía no se haya corrido
-  // (columna nueva) — sin esto, aplicar un plan real pagado se rompería por completo
-  // (pagos ya cobrados sin que el plan real se active) hasta que alguien la corra.
+  // Tolera que supabase/migrations/0008_plan_expiry.sql y/o
+  // 0023_plan_cancellation_status.sql todavía no se hayan corrido (columnas nuevas)
+  // — sin esto, aplicar un plan real pagado se rompería por completo (pagos ya
+  // cobrados sin que el plan real se active) hasta que alguien las corra. Se
+  // reintenta primero sin cancel_at_period_end/current_period_end (solo
+  // informativos, no bloquean el plan real) antes de darse por vencido.
   if (error) {
-    const fallback = await admin
-      .from("account_plans")
-      .upsert({ account_id: accountId, plan_slug: planSlug, updated_at: new Date().toISOString(), ...extra })
+    const { cancel_at_period_end, current_period_end, ...extraWithoutCancelInfo } = extra as Record<string, unknown>
+    const fallback = await admin.from("account_plans").upsert({
+      account_id: accountId,
+      plan_slug: planSlug,
+      updated_at: new Date().toISOString(),
+      ...extraWithoutCancelInfo,
+    })
     error = fallback.error
   }
 
@@ -115,6 +122,10 @@ export async function POST(request: Request) {
         await setPlanForAccount(accountId, planSlug, {
           stripe_customer_id: customerId ?? null,
           stripe_subscription_id: subscriptionId ?? null,
+          // Suscripción recién creada — nunca "cancelando" (limpia cualquier estado
+          // viejo de una suscripción anterior de esta cuenta que sí lo hubiera sido).
+          cancel_at_period_end: false,
+          current_period_end: null,
         })
 
         // Correo de confirmación del primer pago (ver docs/77) — no existía ninguno:
@@ -183,6 +194,7 @@ export async function POST(request: Request) {
         customer: string | { id: string }
         metadata?: { planSlug?: string; accountId?: string }
         status: string
+        cancel_at_period_end?: boolean
         items?: { data?: Array<{ current_period_end?: number; price?: { unit_amount?: number | null } }> }
       }
       const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id
@@ -193,16 +205,27 @@ export async function POST(request: Request) {
         const activeStatuses = ["active", "trialing", "past_due"]
         const resolvedPlanSlug = activeStatuses.includes(subscription.status) ? planSlug : FREE_PLAN_SLUG
         const previousPlanSlug = await getCurrentPlanSlug(accountId)
+        const nextChargeUnixSeconds = subscription.items?.data?.[0]?.current_period_end ?? null
+        const amountCents = subscription.items?.data?.[0]?.price?.unit_amount ?? null
+        // "Cancelando, termina el [fecha]" — pedido explícito del dueño del proyecto:
+        // el Portal de Cliente de Stripe por default no borra la suscripción al
+        // cancelarla, la deja activa (cancel_at_period_end=true) hasta el final del
+        // período ya pagado, y recién ahí dispara customer.subscription.deleted. Sin
+        // esto la app se veía exactamente igual que una suscripción normal durante
+        // todo ese tiempo, sin confirmarle al usuario que su cancelación sí se
+        // registró. Solo tiene sentido mientras el plan pagado sigue activo — si ya
+        // se resolvió a gratis (status inactivo) no hay nada "en curso" que avisar.
+        const isCancelling = resolvedPlanSlug === planSlug && Boolean(subscription.cancel_at_period_end)
         await setPlanForAccount(accountId, resolvedPlanSlug, {
           stripe_customer_id: customerId,
           stripe_subscription_id: subscription.id,
+          cancel_at_period_end: isCancelling,
+          current_period_end: nextChargeUnixSeconds ? new Date(nextChargeUnixSeconds * 1000).toISOString() : null,
         })
         // Correo best-effort — el plan ya quedó aplicado arriba sin importar si esto
         // falla, así que un error de Resend no debe hacer que Stripe reintente el
         // evento completo.
         try {
-          const nextChargeUnixSeconds = subscription.items?.data?.[0]?.current_period_end ?? null
-          const amountCents = subscription.items?.data?.[0]?.price?.unit_amount ?? null
           await sendPlanChangedEmail({
             accountId,
             fromPlanSlug: previousPlanSlug,
@@ -247,7 +270,11 @@ export async function POST(request: Request) {
       const accountId = await findAccountIdByStripeCustomer(customerId)
       if (accountId) {
         const previousPlanSlug = await getCurrentPlanSlug(accountId)
-        await setPlanForAccount(accountId, FREE_PLAN_SLUG, { stripe_subscription_id: null })
+        await setPlanForAccount(accountId, FREE_PLAN_SLUG, {
+          stripe_subscription_id: null,
+          cancel_at_period_end: false,
+          current_period_end: null,
+        })
         try {
           await sendSubscriptionCancelledEmail({
             accountId,
