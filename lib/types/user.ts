@@ -21,6 +21,10 @@ export interface UserProfile {
   // vez que la persona cambia de idioma en la UI, ver docs/58. Independiente de
   // localStorage("app_language"), que solo controla la UI en el navegador actual.
   preferredLanguage: string
+  // Casilla de "recibir novedades del producto por correo" (paso 4 del registro, o
+  // cambiada después en Configuración → Notificaciones). Default false — ver
+  // supabase/migrations/0022_product_updates_optin.sql.
+  productUpdatesOptIn: boolean
 }
 
 export interface UserRegistrationData {

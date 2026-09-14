@@ -9,13 +9,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLanguage } from "@/contexts/language-context"
-import { ArrowLeft, Lock, LayoutDashboard, Users, Inbox, LineChart, BellOff, Rocket } from "lucide-react"
+import { ArrowLeft, Lock, LayoutDashboard, Users, Inbox, LineChart, BellOff, Rocket, Mail } from "lucide-react"
 import { StatsPanel } from "@/components/admin/stats-panel"
 import { AccountsPanel } from "@/components/admin/accounts-panel"
 import { FeedbackPanel } from "@/components/admin/feedback-panel"
 import { AnalyticsPanel } from "@/components/admin/analytics-panel"
 import { BusinessHealthPanel } from "@/components/admin/business-health-panel"
 import { ActivationPanel } from "@/components/admin/activation-panel"
+import { ProductUpdatesPanel } from "@/components/admin/product-updates-panel"
 
 // Candado de acceso — pedido explícito: agregar algún control de acceso a /admin,
 // que hoy cualquiera con el link puede ver. SIN backend no existe un sistema de roles
@@ -217,6 +218,10 @@ export default function AdminPage() {
               <Rocket className="h-4 w-4" />
               {t("admin_tab_activation")}
             </TabsTrigger>
+            <TabsTrigger value="novedades" className="gap-1.5">
+              <Mail className="h-4 w-4" />
+              {t("admin_tab_product_updates")}
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="resumen" className="mt-6">
             <StatsPanel feedbackCounts={feedbackCounts} />
@@ -235,6 +240,9 @@ export default function AdminPage() {
           </TabsContent>
           <TabsContent value="activacion" className="mt-6">
             <ActivationPanel />
+          </TabsContent>
+          <TabsContent value="novedades" className="mt-6">
+            <ProductUpdatesPanel />
           </TabsContent>
         </Tabs>
       </div>

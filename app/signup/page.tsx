@@ -72,6 +72,7 @@ function SignupPageInner() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
+  const [productUpdatesOptIn, setProductUpdatesOptIn] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [showTermsDialog, setShowTermsDialog] = useState(false)
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false)
@@ -164,7 +165,7 @@ function SignupPageInner() {
           businessSize: formData.businessSize!,
           industryExperience: formData.industryExperience!,
         },
-        { preferredLanguage: language },
+        { preferredLanguage: language, productUpdatesOptIn },
       )
 
       // Contraseña local (ver lib/utils/password-hash.ts) para el chequeo de "confirma
@@ -636,6 +637,27 @@ function SignupPageInner() {
                   </div>
                 </div>
                 {errors.terms && <p className="text-sm text-destructive">{errors.terms}</p>}
+
+                {/* Opcional a propósito (nunca bloquea el submit, a diferencia de
+                    "terms" arriba) — pedido explícito: "para que no sea tan molesto".
+                    Default sin marcar; ver supabase/migrations/0022_product_updates_optin.sql. */}
+                <div className="flex items-start space-x-3 p-4 bg-muted/30 rounded-lg">
+                  <Checkbox
+                    id="productUpdates"
+                    checked={productUpdatesOptIn}
+                    onCheckedChange={(checked) => setProductUpdatesOptIn(checked as boolean)}
+                  />
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="productUpdates"
+                      className="text-sm font-medium leading-none cursor-pointer"
+                    >
+                      {t("signup_product_updates_label")}
+                    </Label>
+                    <p className="text-xs text-muted-foreground">{t("signup_product_updates_desc")}</p>
+                  </div>
+                </div>
+
                 {errors.submit && <p className="text-sm text-destructive text-center">{errors.submit}</p>}
               </div>
             )}

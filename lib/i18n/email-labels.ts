@@ -134,6 +134,13 @@ export type EmailLabelKeys =
   | "e07_firstsale_heading"
   | "e07_firstsale_body"
   | "e07_firstsale_cta"
+  | "e08_subject"
+  | "e08_title"
+  | "e08_preheader"
+  | "e08_heading"
+  | "e08_cta"
+  | "e08_footnote"
+  | "e08_footer2"
 
 export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
   es: {
@@ -229,6 +236,13 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e06_footnote: "Puedes bajar de plan cuando quieras desde Mi Plan; nada de lo que ya guardaste se borra.",
     e07_footer2: "Correo automático de activación de tu cuenta Gastrometrics.",
     e07_footnote: "Si no querés recibir este tipo de correos, respondé este mensaje y te sacamos de la lista.",
+    e08_subject: "Novedades en Gastrometrics",
+    e08_title: "Novedades en Gastrometrics",
+    e08_preheader: "Esto es lo que agregamos últimamente",
+    e08_heading: "Esto es lo que agregamos últimamente",
+    e08_cta: "Ver en Gastrometrics",
+    e08_footnote: "Si no querés recibir este correo, desmarcá la casilla en Configuración → Notificaciones dentro de la app.",
+    e08_footer2: "Correo de novedades de tu cuenta Gastrometrics.",
     e07_reminder_subject: "¿Ya probaste Gastrometrics?",
     e07_reminder_title: "Todavía no cargaste tu primera receta",
     e07_reminder_preheader: "Te toma menos de 5 minutos ver el costo real de un plato.",
@@ -341,6 +355,13 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e06_footnote: "You can downgrade anytime from My Plan; nothing you already saved gets deleted.",
     e07_footer2: "Automatic activation email for your Gastrometrics account.",
     e07_footnote: "If you'd rather not get these emails, reply to this message and we'll take you off the list.",
+    e08_subject: "What's new in Gastrometrics",
+    e08_title: "What's new in Gastrometrics",
+    e08_preheader: "Here's what we shipped recently",
+    e08_heading: "Here's what we shipped recently",
+    e08_cta: "Open Gastrometrics",
+    e08_footnote: "If you'd rather not get this email, uncheck the box in Settings → Notifications inside the app.",
+    e08_footer2: "Product update email for your Gastrometrics account.",
     e07_reminder_subject: "Have you tried Gastrometrics yet?",
     e07_reminder_title: "You haven't loaded your first recipe yet",
     e07_reminder_preheader: "It takes less than 5 minutes to see a dish's real cost.",
@@ -453,6 +474,13 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e06_footnote: "Du kan nedgradere når du vil fra Min Plan; intet af det, du allerede har gemt, bliver slettet.",
     e07_footer2: "Automatisk aktiveringsmail til din Gastrometrics-konto.",
     e07_footnote: "Hvis du hellere vil undvære denne slags e-mails, så svar på denne besked, og vi fjerner dig fra listen.",
+    e08_subject: "Nyheder i Gastrometrics",
+    e08_title: "Nyheder i Gastrometrics",
+    e08_preheader: "Det her har vi tilføjet på det seneste",
+    e08_heading: "Det her har vi tilføjet på det seneste",
+    e08_cta: "Åbn Gastrometrics",
+    e08_footnote: "Hvis du hellere vil undvære denne e-mail, så fjern fluebenet under Indstillinger → Notifikationer i appen.",
+    e08_footer2: "Produktnyheds-mail til din Gastrometrics-konto.",
     e07_reminder_subject: "Har du prøvet Gastrometrics endnu?",
     e07_reminder_title: "Du har endnu ikke indlæst din første opskrift",
     e07_reminder_preheader: "Det tager under 5 minutter at se en rets reelle omkostning.",
@@ -565,6 +593,13 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e06_footnote: "Tu peux rétrograder quand tu veux depuis Mon Plan ; rien de ce que tu as déjà enregistré n'est supprimé.",
     e07_footer2: "E-mail automatique d'activation de ton compte Gastrometrics.",
     e07_footnote: "Si tu préfères ne plus recevoir ce type d'e-mails, réponds à ce message et on te retire de la liste.",
+    e08_subject: "Nouveautés de Gastrometrics",
+    e08_title: "Nouveautés de Gastrometrics",
+    e08_preheader: "Voici ce qu'on a ajouté récemment",
+    e08_heading: "Voici ce qu'on a ajouté récemment",
+    e08_cta: "Ouvrir Gastrometrics",
+    e08_footnote: "Si tu préfères ne plus recevoir cet e-mail, décoche la case dans Paramètres → Notifications dans l'application.",
+    e08_footer2: "E-mail de nouveautés pour ton compte Gastrometrics.",
     e07_reminder_subject: "As-tu déjà essayé Gastrometrics ?",
     e07_reminder_title: "Tu n'as pas encore chargé ta première recette",
     e07_reminder_preheader: "Ça prend moins de 5 minutes pour voir le coût réel d'un plat.",
@@ -677,6 +712,13 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e06_footnote: "Você pode fazer downgrade quando quiser em Meu Plano; nada do que você já salvou é apagado.",
     e07_footer2: "E-mail automático de ativação da sua conta Gastrometrics.",
     e07_footnote: "Se você não quiser mais receber esse tipo de e-mail, responda esta mensagem e nós te tiramos da lista.",
+    e08_subject: "Novidades no Gastrometrics",
+    e08_title: "Novidades no Gastrometrics",
+    e08_preheader: "Veja o que adicionamos recentemente",
+    e08_heading: "Veja o que adicionamos recentemente",
+    e08_cta: "Abrir o Gastrometrics",
+    e08_footnote: "Se você não quiser mais receber este e-mail, desmarque a caixa em Configurações → Notificações dentro do app.",
+    e08_footer2: "E-mail de novidades da sua conta Gastrometrics.",
     e07_reminder_subject: "Você já experimentou o Gastrometrics?",
     e07_reminder_title: "Você ainda não carregou sua primeira receita",
     e07_reminder_preheader: "Leva menos de 5 minutos para ver o custo real de um prato.",
@@ -785,6 +827,13 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e06_footnote: "您可以随时在\"我的套餐\"中降级；已保存的数据不会被删除。",
     e07_footer2: "这是您 Gastrometrics 账户的自动激活邮件。",
     e07_footnote: "如果您不想再收到此类邮件，回复本邮件即可为您取消订阅。",
+    e08_subject: "Gastrometrics 更新内容",
+    e08_title: "Gastrometrics 更新内容",
+    e08_preheader: "以下是我们最近新增的内容",
+    e08_heading: "以下是我们最近新增的内容",
+    e08_cta: "打开 Gastrometrics",
+    e08_footnote: "如果你不想再收到此邮件，可以在应用内的“设置 → 通知”中取消勾选。",
+    e08_footer2: "这是你的 Gastrometrics 账户的产品更新邮件。",
     e07_reminder_subject: "您试用 Gastrometrics 了吗？",
     e07_reminder_title: "您还没有录入第一个配方",
     e07_reminder_preheader: "只需不到 5 分钟即可查看一道菜的真实成本。",

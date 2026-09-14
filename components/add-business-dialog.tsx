@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Building2, DollarSign, Calculator, Percent, Lock, ArrowRight, Lightbulb } from "lucide-react"
+import { Building2, DollarSign, Calculator, Percent, Lock, ArrowRight, Lightbulb, ChefHat, Loader2, PartyPopper } from "lucide-react"
 import type { Business, PricingMethod } from "@/types/business"
 import { DEFAULT_PRICING_METHOD, DEFAULT_TARGET_FOOD_COST_PERCENT } from "@/types/business"
 import { cn } from "@/lib/utils"
@@ -25,7 +25,10 @@ import { getMaxBusinesses, getCurrentPlan } from "@/lib/plan-access"
 import { getCurrentCurrencyOption } from "@/lib/currency"
 import { getAllBusinesses, addBusiness } from "@/lib/storage/businesses"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useLanguage } from "@/contexts/language-context"
+import { useAuth } from "@/contexts/auth-context"
+import { getOrSeedExampleRecipe } from "@/lib/services/seed-example-recipe"
 
 interface AddBusinessDialogProps {
   open: boolean
@@ -51,8 +54,17 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
   const [pricingMethod, setPricingMethod] = useState<PricingMethod>(DEFAULT_PRICING_METHOD)
   const [targetFoodCostPercent, setTargetFoodCostPercent] = useState(DEFAULT_TARGET_FOOD_COST_PERCENT)
   const [loading, setLoading] = useState(false)
+  // Negocio recién creado, mientras se muestra la pantalla de "listo" (paso 4) — no es
+  // parte del asistente de 3 pasos, es la bisagra para ofrecer el plato de ejemplo
+  // dentro de ESTE negocio nuevo en vez de que quede una pantalla vacía (feedback de
+  // producto: "aha moment en los primeros 5 minutos"). Sembrar solo si el usuario lo
+  // pide con este botón — nunca en segundo plano, ver lib/services/seed-example-recipe.ts.
+  const [createdBusiness, setCreatedBusiness] = useState<Business | null>(null)
+  const [isSeedingExample, setIsSeedingExample] = useState(false)
   const { toast } = useToast()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+  const { user } = useAuth()
+  const router = useRouter()
 
   // Limite de negocios por plan (ver docs, tabla de precios confirmada por el dueño
   // del proyecto): se revisa al abrir el dialogo, no en cada tecla, para no leer
@@ -135,7 +147,8 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
 
       onBusinessAdded(newBusiness)
 
-      // Reset form
+      // Reset form (pero se queda en el paso 4 — "listo" — en vez de volver al 1, para
+      // ofrecer el plato de ejemplo antes de cerrar; ver createdBusiness arriba).
       setFormData({
         name: "",
         description: "",
@@ -149,7 +162,8 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
       })
       setPricingMethod(DEFAULT_PRICING_METHOD)
       setTargetFoodCostPercent(DEFAULT_TARGET_FOOD_COST_PERCENT)
-      setStep(1)
+      setStep(4)
+      setCreatedBusiness(newBusiness)
 
       toast({
         title: t("addbiz_toast_created_title"),
@@ -164,6 +178,35 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Cierra el dialogo y lo deja listo para la próxima vez que se abra (crear otro
+  // negocio desde cero, no reabrir en la pantalla de "listo" del anterior).
+  const handleCloseAfterCreate = () => {
+    setCreatedBusiness(null)
+    setStep(1)
+    onOpenChange(false)
+  }
+
+  const handleSeedExampleForNewBusiness = async () => {
+    if (!user || !createdBusiness) return
+    setIsSeedingExample(true)
+    try {
+      const recipeId = await getOrSeedExampleRecipe(user.id, language, createdBusiness.id)
+      setCreatedBusiness(null)
+      setStep(1)
+      onOpenChange(false)
+      router.push(`/ficha-tecnica/${recipeId}?business=${createdBusiness.id}&mode=edit`)
+    } catch (error) {
+      console.error("Error creando la receta de ejemplo:", error)
+      toast({
+        title: t("addbiz_toast_error_title"),
+        description: t("addbiz_seed_example_error_desc"),
+        variant: "destructive",
+      })
+    } finally {
+      setIsSeedingExample(false)
     }
   }
 
@@ -243,8 +286,19 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
     )
   }
 
+  // Si se cierra el dialogo desde afuera (click fuera, Escape, la X) estando en el
+  // paso 4, no debe reabrir la próxima vez ya parado en la pantalla de "listo" de un
+  // negocio anterior.
+  const handleDialogOpenChange = (next: boolean) => {
+    if (!next) {
+      setCreatedBusiness(null)
+      setStep(1)
+    }
+    onOpenChange(next)
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -255,22 +309,40 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
             {step === 1 && t("addbiz_step1_desc")}
             {step === 2 && t("addbiz_step2_desc")}
             {step === 3 && t("addbiz_step3_desc")}
+            {step === 4 && " "}
           </DialogDescription>
         </DialogHeader>
 
         {/* Indicador de paso — mismo patrón que app/signup/page.tsx, antes ausente aquí
-            aunque es el mismo tipo de flujo de varios pasos (ver feedback del dueño). */}
-        <div className="space-y-1.5 shrink-0">
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>
-              {t("addbiz_step_indicator").replace("{step}", String(step)).replace("{total}", String(TOTAL_STEPS))}
-            </span>
-            <span>{Math.round((step / TOTAL_STEPS) * 100)}%</span>
+            aunque es el mismo tipo de flujo de varios pasos (ver feedback del dueño).
+            No se muestra en el paso 4 ("listo") — ese ya no es parte del asistente. */}
+        {step <= TOTAL_STEPS && (
+          <div className="space-y-1.5 shrink-0">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>
+                {t("addbiz_step_indicator").replace("{step}", String(step)).replace("{total}", String(TOTAL_STEPS))}
+              </span>
+              <span>{Math.round((step / TOTAL_STEPS) * 100)}%</span>
+            </div>
+            <Progress value={(step / TOTAL_STEPS) * 100} className="h-1.5" />
           </div>
-          <Progress value={(step / TOTAL_STEPS) * 100} className="h-1.5" />
-        </div>
+        )}
 
         <div className="flex-1 overflow-y-auto pr-2">
+          {step === 4 && createdBusiness && (
+            <div className="flex flex-col items-center text-center gap-4 py-6">
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                <PartyPopper className="h-7 w-7 text-primary" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-lg font-semibold">
+                  {t("addbiz_success_title").replace("{name}", createdBusiness.name)}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-sm">{t("addbiz_success_desc")}</p>
+              </div>
+            </div>
+          )}
+
           {step === 1 && (
             <div className="space-y-4">
               <div className="space-y-2">
@@ -476,20 +548,38 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
         </div>
 
         <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-4 border-t shrink-0">
-          {step > 1 && (
-            <Button variant="outline" onClick={handleBack} className="w-full sm:w-auto bg-transparent">
-              {t("mw_back_button")}
-            </Button>
-          )}
-
-          {step < 3 ? (
-            <Button onClick={handleNext} className="w-full sm:w-auto">
-              {t("mw_next_button")}
-            </Button>
+          {step === 4 ? (
+            <>
+              <Button variant="outline" onClick={handleCloseAfterCreate} className="w-full sm:w-auto bg-transparent">
+                {t("addbiz_success_skip_button")}
+              </Button>
+              <Button onClick={handleSeedExampleForNewBusiness} disabled={isSeedingExample} className="w-full sm:w-auto">
+                {isSeedingExample ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <ChefHat className="h-4 w-4 mr-2" />
+                )}
+                {t("addbiz_success_seed_button")}
+              </Button>
+            </>
           ) : (
-            <Button onClick={handleSubmit} disabled={loading} className="w-full sm:w-auto">
-              {loading ? t("addbiz_creating") : t("addbiz_create_button")}
-            </Button>
+            <>
+              {step > 1 && (
+                <Button variant="outline" onClick={handleBack} className="w-full sm:w-auto bg-transparent">
+                  {t("mw_back_button")}
+                </Button>
+              )}
+
+              {step < 3 ? (
+                <Button onClick={handleNext} className="w-full sm:w-auto">
+                  {t("mw_next_button")}
+                </Button>
+              ) : (
+                <Button onClick={handleSubmit} disabled={loading} className="w-full sm:w-auto">
+                  {loading ? t("addbiz_creating") : t("addbiz_create_button")}
+                </Button>
+              )}
+            </>
           )}
         </DialogFooter>
       </DialogContent>

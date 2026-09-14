@@ -357,16 +357,18 @@ export interface Database {
           email_verified: boolean
           onboarding_completed: boolean
           preferred_language: string
+          product_updates_opt_in: boolean
           created_at: string
           updated_at: string
         }
         Insert: Omit<
           Database["public"]["Tables"]["profiles"]["Row"],
-          "created_at" | "updated_at" | "preferred_language"
+          "created_at" | "updated_at" | "preferred_language" | "product_updates_opt_in"
         > & {
           created_at?: string
           updated_at?: string
           preferred_language?: string
+          product_updates_opt_in?: boolean
         }
         Update: Partial<Database["public"]["Tables"]["profiles"]["Row"]>
         Relationships: never[]

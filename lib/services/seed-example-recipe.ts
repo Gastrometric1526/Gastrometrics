@@ -13,8 +13,9 @@
  * ese panel es medir qué hace la gente, no lo que el sistema le regala.
  *
  * Se dispara solo a pedido (botón "Ver un ejemplo primero" en el estado vacío del
- * dashboard, app/dashboard/page.tsx) — nunca en segundo plano al cargar la página, para
- * no escribir datos sin que el usuario lo haya pedido.
+ * dashboard, app/dashboard/page.tsx; o el botón "Cargar plato de ejemplo" al terminar
+ * de crear un negocio nuevo, components/add-business-dialog.tsx) — nunca en segundo
+ * plano al cargar la página, para no escribir datos sin que el usuario lo haya pedido.
  */
 
 import { addIngredient } from "@/lib/storage/ingredients"
@@ -92,11 +93,20 @@ const EXAMPLE_RECIPE_ID_KEY_PREFIX = "example_recipe_id_"
  * Devuelve el id de la receta de ejemplo de esta cuenta, creándola si hace falta.
  * Idempotente: si ya existe (guardada la última vez en localStorage, y todavía viva en
  * la caché), la reutiliza en vez de duplicarla; si el usuario la borró, crea una nueva.
+ *
+ * `businessId` es opcional (por defecto `null`, el workspace "main" que ya usaba el
+ * dashboard principal) — pasar el id real de un negocio recién creado siembra el
+ * ejemplo DENTRO de ese negocio en vez de en "main", con su propia bandera de
+ * idempotencia en localStorage (un negocio nuevo no debe heredar el "ya lo vi" de otro).
  */
-export async function getOrSeedExampleRecipe(userId: string, language: LanguageCode): Promise<string> {
-  const key = `${EXAMPLE_RECIPE_ID_KEY_PREFIX}${userId}`
+export async function getOrSeedExampleRecipe(
+  userId: string,
+  language: LanguageCode,
+  businessId: string | null = null,
+): Promise<string> {
+  const key = `${EXAMPLE_RECIPE_ID_KEY_PREFIX}${userId}_${businessId ?? "main"}`
   const storedId = typeof window !== "undefined" ? localStorage.getItem(key) : null
-  if (storedId && getRecipeById(storedId, null)) {
+  if (storedId && getRecipeById(storedId, businessId)) {
     return storedId
   }
 
@@ -122,8 +132,8 @@ export async function getOrSeedExampleRecipe(userId: string, language: LanguageC
     metadata: { createdAt: now, updatedAt: now, version: 1 },
   }
 
-  const savedChicken = await addIngredient(chicken, null)
-  const savedOil = await addIngredient(oil, null)
+  const savedChicken = await addIngredient(chicken, businessId)
+  const savedOil = await addIngredient(oil, businessId)
 
   const recipeIngredients: RecipeIngredient[] = [
     {
@@ -178,11 +188,11 @@ export async function getOrSeedExampleRecipe(userId: string, language: LanguageC
     laborCosts: defaultPricingConfig.laborCosts,
     isv: defaultPricingConfig.isv,
     contributionMargin: defaultPricingConfig.netProfit,
-    businessId: "main",
+    businessId: businessId ?? "main",
     metadata: { createdAt: now, updatedAt: now, version: 1 },
   }
 
-  const savedRecipe = await saveRecipe(recipe, null)
+  const savedRecipe = await saveRecipe(recipe, businessId)
   if (typeof window !== "undefined") localStorage.setItem(key, savedRecipe.id)
   return savedRecipe.id
 }

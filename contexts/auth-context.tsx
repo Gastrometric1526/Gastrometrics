@@ -35,6 +35,10 @@ export interface SignUpOptions {
   // manda al trigger de creación de perfil (ver supabase/migrations/0007) para que el
   // correo de confirmación de registro salga en ese idioma, no siempre en español.
   preferredLanguage: string
+  // Casilla de "quiero recibir novedades del producto por correo" del paso 4 del
+  // registro (ver app/signup/page.tsx) — opcional y default false en el trigger
+  // (supabase/migrations/0022_product_updates_optin.sql) si no se manda.
+  productUpdatesOptIn?: boolean
 }
 
 interface AuthContextType {
@@ -74,6 +78,7 @@ function rowToProfile(row: ProfileRow, email: string): UserProfile {
     emailVerified: row.email_verified,
     onboardingCompleted: row.onboarding_completed,
     preferredLanguage: row.preferred_language,
+    productUpdatesOptIn: row.product_updates_opt_in,
   }
 }
 
@@ -238,6 +243,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           businessSize: profile.businessSize,
           industryExperience: profile.industryExperience,
           preferredLanguage: options.preferredLanguage,
+          productUpdatesOptIn: options.productUpdatesOptIn ?? false,
         },
       }),
     })
@@ -304,6 +310,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           industry_experience: profile.industryExperience,
           email_verified: profile.emailVerified,
           onboarding_completed: profile.onboardingCompleted,
+          product_updates_opt_in: profile.productUpdatesOptIn,
         })
         .eq("id", profile.id)
 

@@ -125,6 +125,9 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
   const isTeamPreview = previewActive && !!previewMember
   const [open, setOpen] = useState(false)
   const [notificationPrefs, setNotificationPrefs] = useState({ email: true, push: true, sms: false })
+  // A diferencia de los tres de arriba (solo localStorage), este sí es un campo real
+  // de `profiles` — se guarda con el resto del perfil en performSave, no aparte.
+  const [productUpdatesOptIn, setProductUpdatesOptIn] = useState(false)
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   // Correo tal como estaba guardado antes de que el usuario tocara el campo — se
@@ -183,6 +186,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
       setBusinessType(realUserProfile.businessType || "Restaurante")
       setBusinessSize(realUserProfile.businessSize || "")
       setExperience(realUserProfile.industryExperience || "")
+      setProductUpdatesOptIn(realUserProfile.productUpdatesOptIn ?? false)
     } else if (user) {
       setEmail(user.email || "")
       setOriginalEmail(user.email || "")
@@ -222,6 +226,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
       businessType,
       businessSize,
       industryExperience: experience,
+      productUpdatesOptIn,
       // Un correo nuevo no hereda la verificación del anterior — nadie ha probado
       // todavía que esta dirección nueva sea suya.
       ...(emailChanged ? { emailVerified: false } : {}),
@@ -849,6 +854,23 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                         id="notif-sms"
                         checked={notificationPrefs.sms}
                         onCheckedChange={(checked) => setNotificationPrefs((prev) => ({ ...prev, sms: checked }))}
+                      />
+                    </div>
+
+                    <Separator />
+
+                    {/* A diferencia de los tres de arriba, este SÍ viaja a Supabase con
+                        el resto del perfil (ver performSave) — es el mismo campo que la
+                        casilla del paso 4 del registro. */}
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="notif-product-updates">{t("settings_product_updates")}</Label>
+                        <p className="text-sm text-muted-foreground">{t("settings_product_updates_desc")}</p>
+                      </div>
+                      <Switch
+                        id="notif-product-updates"
+                        checked={productUpdatesOptIn}
+                        onCheckedChange={setProductUpdatesOptIn}
                       />
                     </div>
                   </div>

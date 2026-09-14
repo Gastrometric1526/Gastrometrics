@@ -30,6 +30,9 @@ import {
   Pencil,
   Receipt,
   Loader2,
+  AlertTriangle,
+  Tag,
+  TrendingUp,
 } from "lucide-react"
 import { SettingsDialog } from "@/components/settings-dialog"
 import { Sidebar } from "@/components/sidebar"
@@ -40,12 +43,14 @@ import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { AddBusinessDialog } from "@/components/add-business-dialog"
 import { OnboardingTour } from "@/components/onboarding-tour"
+import { WhatsNewDialog } from "@/components/whats-new-dialog"
 import { PlanChangeNoticeDialog } from "@/components/plan-change-notice-dialog"
 import { useFeatureAccess, useActiveMembership, setCurrentPlanSlug } from "@/lib/plan-access"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { getAllBusinesses, refreshBusinesses } from "@/lib/storage/businesses"
-import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
+import { getRecipes, ensureRecipesLoaded, isSubRecipe } from "@/lib/storage/recipes"
 import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
+import { ensureInventoryLoaded, getInventory } from "@/lib/storage/inventory"
 import { getOrSeedExampleRecipe } from "@/lib/services/seed-example-recipe"
 
 export default function DashboardPage() {
@@ -61,6 +66,12 @@ export default function DashboardPage() {
   const [systemAlerts, setSystemAlerts] = useState<ActivityLogEntry[]>([])
   const [unreadNotifications, setUnreadNotifications] = useState(0)
   const [isSeedingExample, setIsSeedingExample] = useState(false)
+  // "Qué hacer hoy" — se llena dentro de calculateCurrentStats (más abajo), no en un
+  // efecto propio, para que se refresque gratis en cada uno de los puntos que ya
+  // recalculan `stats` sin tener que tocar todos esos call sites por separado.
+  const [actionItems, setActionItems] = useState<
+    { id: string; count: number | null; label: string; href: string; icon: typeof AlertTriangle; tone: "critical" | "warn" | "info" | "ok" }[]
+  >([])
 
   const router = useRouter()
   const { toast } = useToast()
@@ -85,11 +96,12 @@ export default function DashboardPage() {
     const businessIds = [null, ...realBusinesses.map((b) => b.id)]
 
     await Promise.all(
-      businessIds.flatMap((id) => [ensureRecipesLoaded(id), ensureIngredientsLoaded(id)]),
+      businessIds.flatMap((id) => [ensureRecipesLoaded(id), ensureIngredientsLoaded(id), ensureInventoryLoaded(id)]),
     )
 
     const allRecipes = businessIds.flatMap((id) => getRecipes(id))
     const allIngredients = businessIds.flatMap((id) => getIngredients(id))
+    const allInventory = businessIds.flatMap((id) => getInventory(id))
 
     let totalCost = 0
     let recipeCount = 0
@@ -102,6 +114,66 @@ export default function DashboardPage() {
     })
 
     const averageCost = recipeCount > 0 ? totalCost / recipeCount : 0
+
+    // "Qué hacer hoy" — tres señales que sí se pueden calcular con lo que ya está
+    // cargado en esta misma función, sin depender de ventas de POS importadas (esas
+    // viven aparte, en Reportes → Finanzas, y requieren un negocio con importación
+    // real; ver lib/sales-analytics.ts). Se calculan aquí (no en un efecto separado)
+    // para que se refresquen gratis cada vez que algo ya llama a calculateCurrentStats,
+    // sin tener que tocar cada uno de esos puntos de llamada (feedback de producto:
+    // "el dashboard debe decir qué hacer hoy", no solo mostrar conteos genéricos).
+    const lowStockCount = allInventory.filter((item) => item.status === "critical" || item.status === "low").length
+
+    const sellableRecipes = allRecipes.filter((recipe) => !isSubRecipe(recipe))
+    const recipesWithoutPriceCount = sellableRecipes.filter((recipe) => !(recipe.unitPrice && recipe.unitPrice > 0)).length
+
+    const pricedRecipes = sellableRecipes.filter(
+      (recipe) => recipe.unitPrice && recipe.unitPrice > 0 && recipe.yieldAmount && recipe.yieldAmount > 0,
+    )
+    const averageMargin =
+      pricedRecipes.length > 0
+        ? pricedRecipes.reduce((sum, recipe) => {
+            const totalSales = (recipe.unitPrice || 0) * (recipe.yieldAmount || 1)
+            const margin = totalSales > 0 ? ((totalSales - (recipe.totalCost || 0)) / totalSales) * 100 : 0
+            return sum + margin
+          }, 0) / pricedRecipes.length
+        : null
+
+    setActionItems([
+      {
+        id: "low-stock",
+        count: lowStockCount,
+        label:
+          lowStockCount === 1
+            ? t("dashboard_action_low_stock_one")
+            : t("dashboard_action_low_stock_many").replace("{count}", String(lowStockCount)),
+        href: "/inventario",
+        icon: AlertTriangle,
+        tone: lowStockCount > 0 ? "critical" : "ok",
+      },
+      {
+        id: "no-price",
+        count: recipesWithoutPriceCount,
+        label:
+          recipesWithoutPriceCount === 1
+            ? t("dashboard_action_no_price_one")
+            : t("dashboard_action_no_price_many").replace("{count}", String(recipesWithoutPriceCount)),
+        href: "/mis-recetas",
+        icon: Tag,
+        tone: recipesWithoutPriceCount > 0 ? "warn" : "ok",
+      },
+      {
+        id: "avg-margin",
+        count: averageMargin,
+        label:
+          averageMargin === null
+            ? t("dashboard_action_margin_empty")
+            : t("dashboard_action_margin_value").replace("{percent}", averageMargin.toFixed(1)),
+        href: "/estadisticas",
+        icon: TrendingUp,
+        tone: "info",
+      },
+    ])
 
     return [
       {
@@ -633,6 +705,7 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-screen bg-background">
       <OnboardingTour />
+      <WhatsNewDialog />
       <PlanChangeNoticeDialog />
       <Sidebar />
       <div className="flex-1 overflow-hidden">
@@ -734,6 +807,52 @@ export default function DashboardPage() {
               </div>
             )}
 
+            {/* "Qué hacer hoy" — a diferencia de los 4 KPIs de abajo (conteos
+                generales, siempre neutros), estas tres tarjetas son accionables: cada
+                una lleva directo a la pantalla donde se resuelve, y el tono de color
+                refuerza (nunca sustituye, docs/06) lo que ya dice el texto. Se
+                calculan dentro de calculateCurrentStats — ver el comentario ahí arriba
+                sobre por qué, en vez de un efecto propio. */}
+            {actionItems.length > 0 && (
+              <div className="space-y-3">
+                <h2 className="text-sm font-semibold uppercase tracking-[0.09em] text-text-4">
+                  {t("dashboard_actions_heading")}
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-hairline border border-hairline rounded-2xl overflow-hidden">
+                  {actionItems.map((item) => {
+                    const toneClasses =
+                      item.tone === "critical"
+                        ? "text-destructive"
+                        : item.tone === "warn"
+                          ? "text-warning"
+                          : item.tone === "info"
+                            ? "text-chart-1"
+                            : "text-emerald-600"
+                    const iconBg =
+                      item.tone === "critical"
+                        ? "bg-danger-soft"
+                        : item.tone === "warn"
+                          ? "bg-warning-soft"
+                          : item.tone === "info"
+                            ? "bg-chart-1/10"
+                            : "bg-emerald-500/10"
+                    return (
+                      <Link
+                        key={item.id}
+                        href={item.href}
+                        className="bg-card p-5 flex items-start gap-3 hover:bg-accent/40 transition-colors"
+                      >
+                        <span className={`flex-shrink-0 rounded-full p-2 ${iconBg}`}>
+                          <item.icon className={`h-4 w-4 ${toneClasses}`} />
+                        </span>
+                        <span className="text-sm font-medium text-foreground leading-snug">{item.label}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Stats — sin cajas: etiqueta, cifra grande, separadas por hairline
                 (docs/80/81/82: "cuatro KPIs sin cajas" del paquete de diseño). Mismos
                 cuatro valores reales de siempre (calculateCurrentStats más arriba),
@@ -814,8 +933,11 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Quick Actions — misma rejilla que "Todo conectado..." del landing:
-                fila con ícono, título/descripción y flecha, no tarjetas cuadradas. */}
+            {/* Quick Actions — botones grandes (vuelta atrás a pedido explícito del
+                dueño del proyecto: la fila delgada con flecha, de la rejilla "Todo
+                conectado..." del landing, quedaba demasiado chica/discreta para ser el
+                acceso principal a Ficha Técnica/Ingredientes/etc. desde el Dashboard).
+                Cada botón es su propia tarjeta cuadrada con el ícono grande arriba. */}
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <h2 className="text-xl font-semibold tracking-[-0.02em] text-foreground">{t("dashboard_quick_actions")}</h2>
@@ -825,21 +947,24 @@ export default function DashboardPage() {
                 </Button>
               </div>
 
-              <div className="divide-y divide-hairline border-t border-b border-hairline" data-tour="dash-quick-actions">
+              <div
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"
+                data-tour="dash-quick-actions"
+              >
                 {menuItems.map((action, index) => (
                   <Link
                     key={index}
                     href={action.href}
-                    className="flex items-center gap-4 py-4 group hover:bg-canvas-alt transition-colors -mx-2 px-2 rounded-lg"
+                    className="group flex flex-col items-start gap-3 rounded-2xl border border-hairline bg-card p-5 hover:border-primary/40 hover:shadow-sm transition-all"
                   >
-                    <div className={`w-10 h-10 rounded-xl ${action.bgColor} flex items-center justify-center shrink-0`}>
-                      <action.icon className={`h-5 w-5 ${action.textColor}`} />
+                    <div className={`w-12 h-12 rounded-xl ${action.bgColor} flex items-center justify-center shrink-0`}>
+                      <action.icon className={`h-6 w-6 ${action.textColor}`} />
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold text-foreground">{action.text}</p>
-                      <p className="text-sm text-text-3 mt-0.5 truncate">{action.description}</p>
+                      <p className="text-xs text-text-3 mt-1 line-clamp-2">{action.description}</p>
                     </div>
-                    <ArrowRight className="h-4 w-4 text-text-4 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+                    <ArrowRight className="h-4 w-4 text-text-4 shrink-0 mt-auto group-hover:translate-x-0.5 group-hover:text-primary transition-all" />
                   </Link>
                 ))}
               </div>

@@ -88,6 +88,7 @@ export async function POST(request: Request) {
         business_size: profile.businessSize || "",
         industry_experience: profile.industryExperience || "",
         preferred_language: preferredLanguage,
+        product_updates_opt_in: profile.productUpdatesOptIn === true,
       },
     },
   })
