@@ -77,7 +77,7 @@ begin
     return new;
   end if;
 
-  old_data := case when TG_OP = 'UPDATE' then old.data else '{}'::jsonb end;
+  old_data := case when tg_op = 'UPDATE' then old.data else '{}'::jsonb end;
 
   merma_changed :=
     (old_data -> 'merma') is distinct from (new.data -> 'merma')
