@@ -28,26 +28,14 @@ import {
   DollarSign,
   Save,
   Bell,
-  Code2,
   AlertTriangle,
-  Download,
-  Upload,
   Trash2,
-  Database,
-  RefreshCw,
+  Loader2,
   HelpCircle,
   Eye,
   EyeOff,
   ShieldAlert,
 } from "lucide-react"
-import {
-  resetAllData,
-  getDataSummary,
-  exportAllData,
-  importAllData,
-  logDevToolAction,
-  type ResetOptions,
-} from "@/lib/utils/reset-data"
 import { useRouter } from "next/navigation"
 import { setCurrentCurrencyCode } from "@/lib/currency"
 import { SettingsTour } from "@/components/page-tours"
@@ -114,7 +102,7 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
   const router = useRouter()
-  const { user, userProfile: realUserProfile, updateUserProfile } = useAuth()
+  const { user, userProfile: realUserProfile, updateUserProfile, logout } = useAuth()
   const { language, setLanguage, t } = useLanguage()
   // Herramientas de desarrollo (Respaldo y Restauración + Reset) tocan TODO el
   // localStorage del navegador sin distinguir de quién es cada dato — quedan fuera de
@@ -140,18 +128,20 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
   const [businessType, setBusinessType] = useState("Restaurante")
   const [businessSize, setBusinessSize] = useState("")
   const [experience, setExperience] = useState("")
-  const [resetOptions, setResetOptions] = useState<ResetOptions>({
-    keepTheme: true,
-    keepSettings: true,
-    keepAuth: false,
-  })
-  const [showConfirm, setShowConfirm] = useState(false)
-  const [dataSummary, setDataSummary] = useState(getDataSummary())
+  // Eliminar cuenta (self-service, ver app/api/account/delete/route.ts) — reemplaza
+  // al viejo "Restablecer Todo" de la pestaña Desarrollador: ese solo limpiaba
+  // localStorage (arquitectura previa a la migración a Supabase, ver docs/60), así
+  // que no borraba ningún dato real y encima redirigía a la landing page sin haber
+  // hecho nada de lo que el usuario esperaba. Esto sí borra la cuenta de verdad.
+  const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false)
+  const [deleteAccountConfirmEmail, setDeleteAccountConfirmEmail] = useState("")
+  const [deleteAccountError, setDeleteAccountError] = useState("")
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
 
   // Confirmación + contraseña actual antes de aplicar un cambio de correo (pedido
   // explícito del dueño del proyecto). showEmailConfirm reemplaza TODO el contenido
-  // del diálogo (no solo una pestaña, a diferencia de showConfirm/reset) porque el
-  // usuario puede tocar Guardar estando en cualquier pestaña, no solo en Perfil.
+  // del diálogo (no solo una pestaña, a diferencia de showDeleteAccountConfirm) porque
+  // el usuario puede tocar Guardar estando en cualquier pestaña, no solo en Perfil.
   const [showEmailConfirm, setShowEmailConfirm] = useState(false)
   const [emailConfirmPassword, setEmailConfirmPassword] = useState("")
   const [showEmailConfirmPassword, setShowEmailConfirmPassword] = useState(false)
@@ -326,106 +316,36 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
     setEmailConfirmError("")
   }
 
-  const handleReset = () => {
-    const summary = getDataSummary()
-    resetAllData(resetOptions)
-
-    logDevToolAction(
-      t("settingsdev_log_reset")
-        .replace("{businesses}", String(summary.businesses))
-        .replace("{recipes}", String(summary.recipes))
-        .replace("{ingredients}", String(summary.ingredients)),
-      {
-        resetOptions,
-        dataSummary: summary,
-      },
-    )
-
-    setShowConfirm(false)
-    setOpen(false)
-
-    toast({
-      title: t("settingsdev_toast_reset_title"),
-      description: t("settingsdev_toast_reset_desc"),
-    })
-
-    setTimeout(() => {
-      router.push("/")
-      router.refresh()
-    }, 1000)
-  }
-
-  const handleExport = () => {
-    const data = exportAllData()
-    const blob = new Blob([data], { type: "application/json" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    const filename = `gastrometrics-backup-${new Date().toISOString().split("T")[0]}.json`
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-
-    logDevToolAction(t("settingsdev_log_export").replace("{filename}", filename), {
-      filename,
-      dataSummary: getDataSummary(),
-    })
-
-    toast({
-      title: t("settingsdev_toast_export_title"),
-      description: t("settingsdev_toast_export_desc"),
-    })
-  }
-
-  const handleImport = () => {
-    const input = document.createElement("input")
-    input.type = "file"
-    input.accept = "application/json"
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
-      if (file) {
-        const reader = new FileReader()
-        reader.onload = (event) => {
-          try {
-            const jsonData = event.target?.result as string
-            importAllData(jsonData)
-            setDataSummary(getDataSummary())
-
-            logDevToolAction(t("settingsdev_log_import").replace("{filename}", file.name), {
-              filename: file.name,
-              dataSummary: getDataSummary(),
-            })
-
-            toast({
-              title: t("settingsdev_toast_import_title"),
-              description: t("settingsdev_toast_import_desc"),
-            })
-
-            setTimeout(() => {
-              router.refresh()
-            }, 1000)
-          } catch (error) {
-            toast({
-              title: t("inventario_toast_error_title"),
-              description: t("settingsdev_toast_import_error_desc"),
-              variant: "destructive",
-            })
-          }
-        }
-        reader.readAsText(file)
-      }
+  const handleDeleteAccount = async () => {
+    if (!user?.email || deleteAccountConfirmEmail.trim().toLowerCase() !== user.email.toLowerCase()) {
+      setDeleteAccountError(t("settings_delete_account_error_mismatch"))
+      return
     }
-    input.click()
-  }
+    setDeleteAccountError("")
+    setIsDeletingAccount(true)
+    try {
+      const res = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmEmail: deleteAccountConfirmEmail.trim() }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setDeleteAccountError(json.error || t("settings_delete_account_generic_error"))
+        setIsDeletingAccount(false)
+        return
+      }
 
-  const handleRefreshSummary = () => {
-    setDataSummary(getDataSummary())
-    toast({
-      title: t("settingsdev_toast_refresh_title"),
-      description: t("settingsdev_toast_refresh_desc"),
-    })
+      await logout()
+      // Navegación dura (mismo criterio que el "Cerrar sesión" del sidebar): la
+      // cuenta ya no existe, así que no hay nada que un router.push de React
+      // pudiera perder contra el guard de páginas protegidas.
+      window.location.href = "/"
+    } catch (error) {
+      console.error("Error eliminando la cuenta:", error)
+      setDeleteAccountError(t("settings_delete_account_generic_error"))
+      setIsDeletingAccount(false)
+    }
   }
 
   const getSelectedCountry = () => {
@@ -559,9 +479,9 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
               <span className="hidden sm:inline truncate">{t("settings_notifications")}</span>
             </TabsTrigger>
             {!isTeamPreview && (
-              <TabsTrigger id="settings-tab-developer" value="developer" className="flex items-center gap-2" title={t("settings_tab_developer")}>
-                <Code2 className="h-4 w-4 shrink-0" />
-                <span className="hidden sm:inline truncate">{t("settings_tab_developer")}</span>
+              <TabsTrigger id="settings-tab-account" value="developer" className="flex items-center gap-2" title={t("settings_tab_account")}>
+                <Trash2 className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline truncate">{t("settings_tab_account")}</span>
               </TabsTrigger>
             )}
           </TabsList>
@@ -883,112 +803,27 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Database className="h-5 w-5" />
-                    {t("settings_dev_tools")}
+                    <Trash2 className="h-5 w-5 text-destructive" />
+                    {t("settings_delete_account_title")}
                   </CardTitle>
-                  <CardDescription>{t("settingsdev_card_desc")}</CardDescription>
+                  <CardDescription>{t("settings_delete_account_desc")}</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-semibold">{t("settings_data_summary")}</h3>
-                      <Button variant="ghost" size="sm" onClick={handleRefreshSummary} className="h-8 gap-2">
-                        <RefreshCw className="h-3 w-3" />
-                        {t("settings_refresh")}
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="rounded-lg border p-3 space-y-1">
-                        <p className="text-xs text-muted-foreground">{t("settings_total_keys")}</p>
-                        <p className="text-2xl font-bold">{dataSummary.totalKeys}</p>
-                      </div>
-                      <div className="rounded-lg border p-3 space-y-1">
-                        <p className="text-xs text-muted-foreground">{t("nav_negocios")}</p>
-                        <p className="text-2xl font-bold">{dataSummary.businesses}</p>
-                      </div>
-                      <div className="rounded-lg border p-3 space-y-1">
-                        <p className="text-xs text-muted-foreground">{t("settings_recipes_label")}</p>
-                        <p className="text-2xl font-bold">{dataSummary.recipes}</p>
-                      </div>
-                      <div className="rounded-lg border p-3 space-y-1">
-                        <p className="text-xs text-muted-foreground">{t("nav_ingredientes")}</p>
-                        <p className="text-2xl font-bold">{dataSummary.ingredients}</p>
-                      </div>
-                      <div className="rounded-lg border p-3 space-y-1">
-                        <p className="text-xs text-muted-foreground">{t("settings_orders")}</p>
-                        <p className="text-2xl font-bold">{dataSummary.purchaseOrders}</p>
-                      </div>
-                      <div className="rounded-lg border p-3 space-y-1">
-                        <p className="text-xs text-muted-foreground">{t("nav_menus")}</p>
-                        <p className="text-2xl font-bold">{dataSummary.menus}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div data-tour="settings-developer-backup" className="space-y-3">
-                    <h3 className="text-sm font-semibold">{t("settings_backup_restore")}</h3>
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={handleExport} className="flex-1 gap-2 bg-transparent">
-                        <Download className="h-4 w-4" />
-                        {t("settings_export_data")}
-                      </Button>
-                      <Button variant="outline" onClick={handleImport} className="flex-1 gap-2 bg-transparent">
-                        <Upload className="h-4 w-4" />
-                        {t("settings_import_data")}
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{t("settingsdev_backup_restore_desc")}</p>
-                  </div>
-
-                  <Separator />
-
-                  {!showConfirm ? (
-                    <div data-tour="settings-developer-reset" className="space-y-3">
-                      <h3 className="text-sm font-semibold">{t("settings_reset_data")}</h3>
-                      <div className="space-y-3 rounded-lg border p-4">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="keep-theme" className="text-sm">
-                            {t("settings_keep_theme")}
-                          </Label>
-                          <Switch
-                            id="keep-theme"
-                            checked={resetOptions.keepTheme}
-                            onCheckedChange={(checked) => setResetOptions({ ...resetOptions, keepTheme: checked })}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="keep-settings" className="text-sm">
-                            {t("settings_keep_settings")}
-                          </Label>
-                          <Switch
-                            id="keep-settings"
-                            checked={resetOptions.keepSettings}
-                            onCheckedChange={(checked) => setResetOptions({ ...resetOptions, keepSettings: checked })}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="keep-auth" className="text-sm">
-                            {t("settings_keep_auth")}
-                          </Label>
-                          <Switch
-                            id="keep-auth"
-                            checked={resetOptions.keepAuth}
-                            onCheckedChange={(checked) => setResetOptions({ ...resetOptions, keepAuth: checked })}
-                          />
-                        </div>
-                        <div className="p-3 bg-muted rounded-lg">
-                          <p className="text-xs text-muted-foreground">
-                            ℹ️ {t("settingsdev_reset_keep_note")}
-                          </p>
-                        </div>
-                      </div>
-                      <Button variant="destructive" onClick={() => setShowConfirm(true)} className="w-full gap-2">
+                <CardContent className="space-y-4">
+                  {!showDeleteAccountConfirm ? (
+                    <div data-tour="settings-account-delete" className="space-y-3">
+                      <p className="text-sm text-muted-foreground">{t("settings_delete_account_body")}</p>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          setDeleteAccountError("")
+                          setDeleteAccountConfirmEmail("")
+                          setShowDeleteAccountConfirm(true)
+                        }}
+                        className="gap-2"
+                      >
                         <Trash2 className="h-4 w-4" />
-                        {t("settings_reset_all")}
+                        {t("settings_delete_account_button")}
                       </Button>
-                      <p className="text-xs text-muted-foreground">{t("settingsdev_reset_warning")}</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -997,37 +832,44 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                           <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
                           <div className="space-y-2 flex-1">
                             <h4 className="font-semibold text-destructive">{t("settings_confirm_title")}</h4>
-                            <p className="text-sm text-muted-foreground">{t("settingsdev_confirm_intro")}</p>
-                            <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                              <li>
-                                {dataSummary.businesses} {t("settingsdev_confirm_item_businesses")}
-                              </li>
-                              <li>
-                                {dataSummary.recipes} {t("settingsdev_confirm_item_recipes")}
-                              </li>
-                              <li>
-                                {dataSummary.ingredients} {t("settingsdev_confirm_item_ingredients")}
-                              </li>
-                              <li>
-                                {dataSummary.purchaseOrders} {t("settingsdev_confirm_item_purchase_orders")}
-                              </li>
-                              <li>
-                                {dataSummary.menus} {t("settingsdev_confirm_item_menus")}
-                              </li>
-                              <li>{t("settingsdev_confirm_item_other")}</li>
-                            </ul>
+                            <p className="text-sm text-muted-foreground">{t("settings_delete_account_confirm_intro")}</p>
                             <Badge variant="destructive" className="mt-2">
                               {t("negocios_delete_confirm_irreversible")}
                             </Badge>
                           </div>
                         </div>
                       </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="delete-account-email" className="text-sm">
+                          {t("settings_delete_account_confirm_input_label").replace("{email}", user?.email || "")}
+                        </Label>
+                        <Input
+                          id="delete-account-email"
+                          type="email"
+                          autoComplete="off"
+                          value={deleteAccountConfirmEmail}
+                          onChange={(e) => setDeleteAccountConfirmEmail(e.target.value)}
+                          placeholder={user?.email || ""}
+                        />
+                        {deleteAccountError && <p className="text-sm text-destructive">{deleteAccountError}</p>}
+                      </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => setShowConfirm(false)} className="flex-1">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowDeleteAccountConfirm(false)}
+                          disabled={isDeletingAccount}
+                          className="flex-1"
+                        >
                           {t("common_cancel")}
                         </Button>
-                        <Button variant="destructive" onClick={handleReset} className="flex-1">
-                          {t("settings_yes_reset")}
+                        <Button
+                          variant="destructive"
+                          onClick={handleDeleteAccount}
+                          disabled={isDeletingAccount || !deleteAccountConfirmEmail}
+                          className="flex-1 gap-2"
+                        >
+                          {isDeletingAccount && <Loader2 className="h-4 w-4 animate-spin" />}
+                          {isDeletingAccount ? t("settings_delete_account_deleting") : t("settings_delete_account_confirm_button")}
                         </Button>
                       </div>
                     </div>

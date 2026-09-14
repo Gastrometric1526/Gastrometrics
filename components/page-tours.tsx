@@ -276,10 +276,10 @@ export function OrdenesCompraTour() {
 // hacer clic en su trigger antes de buscar el elemento — si no, el contenido de esa
 // pestaña ni siquiera existe en el DOM todavía (Radix Tabs no monta pestañas inactivas).
 // showDeveloperTools viene de !isTeamPreview en components/settings-dialog.tsx — sin
-// esto, el tour intentaba abrir y explicar la pestaña "Herramientas de desarrollo"
+// esto, el tour intentaba abrir y explicar la pestaña "Cuenta" (eliminar cuenta)
 // incluso para un invitado de equipo, para quien esa pestaña ya no existe en el DOM
 // (docs/88) — el paso caía a un recuadro centrado sin nada que resaltar, pero seguía
-// describiendo Respaldo y Restauración a alguien sin acceso a esa función.
+// describiendo una función a la que no tiene acceso.
 export function SettingsTour({ showDeveloperTools = true }: { showDeveloperTools?: boolean } = {}) {
   const { t } = useLanguage()
   // Radix's TabsTrigger cambia de pestaña en su handler de onMouseDown (o onFocus en
@@ -327,17 +327,11 @@ export function SettingsTour({ showDeveloperTools = true }: { showDeveloperTools
     ...(showDeveloperTools
       ? [
           {
-            id: "developer-backup",
-            title: t("tour_settings_developer_backup_title"),
-            description: t("tour_settings_developer_backup_desc"),
-            selector: '[data-tour="settings-developer-backup"]',
-            beforeShow: clickTab("settings-tab-developer"),
-          } as TourStep,
-          {
-            id: "developer-reset",
-            title: t("tour_settings_developer_reset_title"),
-            description: t("tour_settings_developer_reset_desc"),
-            selector: '[data-tour="settings-developer-reset"]',
+            id: "account-delete",
+            title: t("tour_settings_account_delete_title"),
+            description: t("tour_settings_account_delete_desc"),
+            selector: '[data-tour="settings-account-delete"]',
+            beforeShow: clickTab("settings-tab-account"),
           } as TourStep,
         ]
       : []),
