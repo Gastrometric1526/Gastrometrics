@@ -18,6 +18,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { plans } from "@/lib/plans"
 import { sendPlanChangedEmail } from "@/lib/services/notify-billing"
 import { recordPlanChangeNotice } from "@/lib/services/plan-change-notice"
+import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
 
 const FREE_PLAN_SLUG = "foodie"
 
@@ -172,10 +173,48 @@ export async function PATCH(request: Request) {
     // (docs/89). Mismo patrón que ya usa app/api/webhooks/stripe/route.ts.
     const { data: previousRow } = await admin
       .from("account_plans")
-      .select("plan_slug")
+      .select("plan_slug, stripe_subscription_id")
       .eq("account_id", user.id)
       .maybeSingle()
     const previousPlanSlug = previousRow?.plan_slug || FREE_PLAN_SLUG
+
+    // BUG CORREGIDO (mismo patrón que docs/76, ver app/api/plan/set-free/route.ts):
+    // este endpoint solo escribía plan_slug/vencimiento/extras en account_plans,
+    // nunca tocaba Stripe. Si el plan de verdad cambia (no solo el vencimiento o los
+    // extras) para una cuenta con una suscripción real activa, Stripe seguía
+    // cobrando la suscripción vieja mientras la app mostraba el plan nuevo puesto a
+    // mano por el admin — exactamente el bug que ya se corrigió en el downgrade a
+    // gratis desde /planes, sin corregir en este panel. Se cancela la suscripción
+    // real primero (si existe y el plan de verdad cambia) antes de aplicar el plan a
+    // mano; si la cancelación falla, se aborta todo el cambio en vez de dejar a la
+    // cuenta mostrando un plan que ya no coincide con lo que Stripe sigue cobrando.
+    let stripeSubscriptionCleared = false
+    if (previousRow?.stripe_subscription_id && previousPlanSlug !== planSlug) {
+      if (!isStripeConfigured()) {
+        return NextResponse.json(
+          {
+            error:
+              "Esta cuenta tiene una suscripción de Stripe activa, pero Stripe no está configurado en este entorno. No se cambió el plan.",
+          },
+          { status: 409 },
+        )
+      }
+      try {
+        await getStripeClient().subscriptions.cancel(previousRow.stripe_subscription_id)
+        stripeSubscriptionCleared = true
+      } catch (stripeError: any) {
+        // "resource_missing" = ya no existía en Stripe — se trata igual que cancelada.
+        if (stripeError?.code !== "resource_missing") {
+          console.error("[api/admin/account-plan] Error cancelando la suscripción de Stripe:", stripeError)
+          return NextResponse.json(
+            { error: "No se pudo cancelar la suscripción de Stripe activa de esta cuenta. No se cambió el plan." },
+            { status: 500 },
+          )
+        }
+        stripeSubscriptionCleared = true
+      }
+    }
+    const stripeIdOverride = stripeSubscriptionCleared ? { stripe_subscription_id: null } : {}
 
     let { data, error } = await admin
       .from("account_plans")
@@ -186,6 +225,7 @@ export async function PATCH(request: Request) {
         extra_businesses: extraBusinesses,
         extra_team_seats: extraTeamSeats,
         updated_at: new Date().toISOString(),
+        ...stripeIdOverride,
       })
       .select("plan_slug, updated_at, plan_expires_at, extra_businesses, extra_team_seats")
       .single()
@@ -207,6 +247,7 @@ export async function PATCH(request: Request) {
           plan_slug: planSlug,
           plan_expires_at: expiresAt,
           updated_at: new Date().toISOString(),
+          ...stripeIdOverride,
         })
         .select("plan_slug, updated_at, plan_expires_at")
         .single()
@@ -236,7 +277,12 @@ export async function PATCH(request: Request) {
         }
         const fallback = await admin
           .from("account_plans")
-          .upsert({ account_id: user.id, plan_slug: planSlug, updated_at: new Date().toISOString() })
+          .upsert({
+            account_id: user.id,
+            plan_slug: planSlug,
+            updated_at: new Date().toISOString(),
+            ...stripeIdOverride,
+          })
           .select("plan_slug, updated_at")
           .single()
         data = fallback.data ? { ...fallback.data, plan_expires_at: null, extra_businesses: 0, extra_team_seats: 0 } : null
