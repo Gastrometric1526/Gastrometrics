@@ -28,7 +28,22 @@ function rowToImport(row: SalesImportRow): SalesImport {
   return { ...(row.data as unknown as SalesImport), id: row.id }
 }
 function rowToMapping(row: POSColumnMappingRow): POSColumnMapping {
-  return row.data as unknown as POSColumnMapping
+  const data = row.data as unknown as Partial<POSColumnMapping>
+  // Compatibilidad con filas guardadas antes de que existiera el id/nombre de
+  // plantilla (una sola plantilla por negocio, sin nombre): se les da un id y
+  // nombre de reemplazo para que sigan funcionando como "la plantilla de antes",
+  // en vez de romper al leerlas.
+  return {
+    id: data.id || row.id,
+    name: data.name || "Mapeo guardado",
+    businessId: data.businessId || "",
+    dateColumn: data.dateColumn ?? null,
+    dishColumn: data.dishColumn || "",
+    quantityColumn: data.quantityColumn || "",
+    priceColumn: data.priceColumn ?? null,
+    dateFormat: data.dateFormat || "auto",
+    updatedAt: data.updatedAt || new Date().toISOString(),
+  }
 }
 function rowToDishMapping(row: DishNameMappingRow): DishNameMapping {
   return row.data as unknown as DishNameMapping
@@ -99,41 +114,61 @@ export async function deleteSalesImport(id: string, businessId?: string | null):
   if (error) console.error("[SalesImports] Error eliminando la importación:", error)
 }
 
-// ============== MAPEO DE COLUMNAS DEL POS (una fila por negocio) ==============
+// ============== MAPEO DE COLUMNAS DEL POS (varias plantillas por negocio) ==============
+// Antes había una sola fila por negocio (id = businessId); ahora puede haber varias,
+// una por plantilla con nombre, con id compuesto `${businessId}::${templateId}` —
+// mismo patrón que ya usa dish_name_mappings más abajo. Una fila vieja de antes de
+// este cambio (id = businessId a secas) se sigue leyendo bien: la filtra el índice
+// por business_id, no la forma del id.
 
-async function fetchColumnMapping(businessId: string): Promise<POSColumnMapping[]> {
+async function fetchColumnMappings(businessId: string): Promise<POSColumnMapping[]> {
   const supabase = getSupabaseBrowserClient()
-  const { data, error } = await supabase.from("pos_column_mappings").select("*").eq("id", dbId(businessId)).maybeSingle()
-  if (error || !data) return []
-  return [rowToMapping(data)]
+  const dbBusinessId = toDbBusinessId(businessId)
+  let query = supabase.from("pos_column_mappings").select("*")
+  query = dbBusinessId === null ? query.is("business_id", null) : query.eq("business_id", dbBusinessId)
+  const { data, error } = await query
+  if (error) {
+    console.error("[SalesImports] Error cargando las plantillas de mapeo:", error)
+    return []
+  }
+  return (data ?? []).map(rowToMapping)
 }
 
 export function ensurePOSColumnMappingLoaded(businessId?: string | null): Promise<void> {
-  return columnMappingCache.ensureLoaded(businessId, () => fetchColumnMapping(dbId(businessId)))
+  return columnMappingCache.ensureLoaded(businessId, () => fetchColumnMappings(dbId(businessId)))
 }
 
-export function getPOSColumnMapping(businessId?: string | null): POSColumnMapping | null {
-  return columnMappingCache.getSnapshot(businessId)[0] || null
+/** Todas las plantillas de mapeo guardadas para este negocio. */
+export function getPOSColumnMappings(businessId?: string | null): POSColumnMapping[] {
+  return columnMappingCache.getSnapshot(businessId)
 }
 
 export async function savePOSColumnMapping(mapping: POSColumnMapping, businessId?: string | null): Promise<void> {
   const ownerId = await currentUserId()
   if (!ownerId) {
-    console.error("[SalesImports] No hay sesión — no se pudo guardar el mapeo en Supabase.")
+    console.error("[SalesImports] No hay sesión — no se pudo guardar la plantilla en Supabase.")
     return
   }
 
-  columnMappingCache.setSnapshot(businessId, [mapping])
+  columnMappingCache.mutateSnapshot(businessId, (list) => [...list.filter((m) => m.id !== mapping.id), mapping])
 
   const supabase = getSupabaseBrowserClient()
   const { error } = await supabase.from("pos_column_mappings").upsert({
-    id: dbId(businessId),
+    id: `${dbId(businessId)}::${mapping.id}`,
     business_id: toDbBusinessId(businessId),
     owner_id: ownerId,
     updated_at: new Date().toISOString(),
     data: mapping as unknown as Record<string, unknown>,
   })
-  if (error) console.error("[SalesImports] Error guardando el mapeo de columnas:", error)
+  if (error) console.error("[SalesImports] Error guardando la plantilla de mapeo:", error)
+}
+
+export async function deletePOSColumnMapping(id: string, businessId?: string | null): Promise<void> {
+  columnMappingCache.mutateSnapshot(businessId, (list) => list.filter((m) => m.id !== id))
+
+  const supabase = getSupabaseBrowserClient()
+  const { error } = await supabase.from("pos_column_mappings").delete().eq("id", `${dbId(businessId)}::${id}`)
+  if (error) console.error("[SalesImports] Error eliminando la plantilla de mapeo:", error)
 }
 
 // ============== EMPAREJAMIENTO PLATO -> RECETA (lista por negocio) ==============

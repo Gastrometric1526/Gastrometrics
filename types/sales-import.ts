@@ -36,15 +36,30 @@ export interface SalesImport {
   source?: "pos_import" | "manual"
 }
 
-// Mapeo de columnas del archivo del POS -> campos que necesitamos. Se guarda una
-// vez por negocio y se reusa en la siguiente importación (ver spec del dueño del
-// proyecto: "las siguientes importaciones son casi de un solo clic").
+// Formato de fecha del archivo del POS — necesario porque "03/04/2026" es ambiguo
+// (3 de abril o 4 de marzo) y antes se le pasaba tal cual a `new Date(...)`, que en
+// el navegador interpreta MM/DD/AAAA sin avisar, dando fechas silenciosamente mal
+// para cualquier POS que exporte DD/MM/AAAA (la norma en Centroamérica). "auto"
+// detecta el formato mirando los valores reales de la columna (ver detectDateFormat
+// en components/pos-sales-import-dialog.tsx); YMD (ISO) nunca es ambiguo así que no
+// hace falta elegirlo a mano, pero se guarda igual para que una plantilla con fechas
+// ISO no vuelva a preguntar.
+export type DateFormatHint = "auto" | "DMY" | "MDY" | "YMD"
+
+// Mapeo de columnas del archivo del POS -> campos que necesitamos. Antes existía una
+// sola plantilla por negocio (se sobrescribía en cada importación); ahora puede haber
+// varias con nombre ("Toast", "SoftRestaurant") para negocios que usan más de un POS
+// o que cambiaron de sistema — ver spec del dueño del proyecto ("las siguientes
+// importaciones son casi de un solo clic", ahora por plantilla en vez de por negocio).
 export interface POSColumnMapping {
+  id: string // id de la plantilla (uuid) — antes no existía, había una sola por negocio
+  name: string // nombre elegido por el usuario, p.ej. "Toast" — antes no existía
   businessId: string
   dateColumn: string | null
   dishColumn: string
   quantityColumn: string
   priceColumn: string | null
+  dateFormat?: DateFormatHint
   updatedAt: string
 }
 

@@ -8,14 +8,46 @@ export interface ExcelParseResult {
   errors: string[]
 }
 
+// BUG CORREGIDO (hallazgo de uso real): un .csv/.txt se leía siempre como bytes
+// crudos (`XLSX.read(data, {type:"array"})`), que SheetJS interpreta con su propia
+// detección de codificación — no siempre acierta con Windows-1252/Latin-1, la
+// codificación real de muchos POS viejos que exportan en español (tildes/eñes como
+// "Ã±"/"Ã©" en vez de "ñ"/"é" cuando se decodifica mal como UTF-8). Para .csv/.txt
+// se decodifica el texto explícitamente antes de pasarlo a SheetJS: UTF-8 si el
+// archivo es UTF-8 válido (con o sin BOM), si no Windows-1252 — que es un
+// superconjunto de Latin-1 y la codificación real que casi todo software de
+// Windows escribe cuando dice "ANSI". Los .xlsx/.xls no pasan por aquí: son
+// binarios con su propia codificación interna, SheetJS ya la maneja bien.
+function isPlainTextFile(fileName: string): boolean {
+  return /\.(csv|txt)$/i.test(fileName)
+}
+
+function decodeTextBuffer(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer)
+  // BOM UTF-8 (EF BB BF) — si está, es UTF-8 seguro, sin necesidad de validar.
+  const hasBom = bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf
+  if (hasBom) {
+    return new TextDecoder("utf-8").decode(buffer)
+  }
+  try {
+    // {fatal:true} hace que TextDecoder lance en vez de reemplazar bytes invalidos
+    // por "�" en silencio — es la unica forma de detectar que NO es UTF-8 de verdad.
+    return new TextDecoder("utf-8", { fatal: true }).decode(buffer)
+  } catch {
+    return new TextDecoder("windows-1252").decode(buffer)
+  }
+}
+
 export async function parseExcelFile(file: File): Promise<any[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
 
     reader.onload = (e) => {
       try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer)
-        const workbook = XLSX.read(data, { type: "array" })
+        const buffer = e.target?.result as ArrayBuffer
+        const workbook = isPlainTextFile(file.name)
+          ? XLSX.read(decodeTextBuffer(buffer), { type: "string" })
+          : XLSX.read(new Uint8Array(buffer), { type: "array" })
 
         // Get the first worksheet
         const firstSheetName = workbook.SheetNames[0]

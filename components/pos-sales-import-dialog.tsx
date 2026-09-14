@@ -14,8 +14,9 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { UploadCloud, FileSpreadsheet, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react"
+import { UploadCloud, FileSpreadsheet, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, Trash2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
 import { logActivity } from "@/lib/services/activity-log"
@@ -23,8 +24,9 @@ import { parseExcelFile } from "@/lib/excel-utils"
 import { formatCurrency } from "@/lib/currency"
 import { findBestNameMatch, normalizeName } from "@/lib/utils/name-match"
 import {
-  getPOSColumnMapping,
+  getPOSColumnMappings,
   savePOSColumnMapping,
+  deletePOSColumnMapping,
   getDishNameMappings,
   saveDishNameMapping,
   addSalesImport,
@@ -32,8 +34,9 @@ import {
   ensureDishNameMappingsLoaded,
 } from "@/lib/storage/sales-imports"
 import type { Recipe } from "@/types/recipe"
-import type { SalesImport, SalesImportLine } from "@/types/sales-import"
+import type { SalesImport, SalesImportLine, POSColumnMapping, DateFormatHint } from "@/types/sales-import"
 import { useLanguage } from "@/contexts/language-context"
+import { getDateLocale } from "@/lib/i18n/translations"
 
 interface POSSalesImportDialogProps {
   open: boolean
@@ -97,6 +100,59 @@ function isSummaryOrBlankRow(rawDishName: string): boolean {
   return SUMMARY_ROW_PATTERN.test(trimmed)
 }
 
+// BUG CORREGIDO (hallazgo de uso real): las fechas del archivo se le pasaban tal
+// cual a `new Date(string)`, que en el navegador asume MM/DD/AAAA sin avisar —
+// "03/04/2026" se leia como 4 de marzo en vez de 3 de abril para cualquier POS que
+// exporte DD/MM/AAAA (la norma fuera de EE.UU., incluida Centroamerica). Ahora se
+// detecta el formato real mirando los valores de la columna (si algun dia/mes pasa
+// de 12, ya sabemos cual es cual) y se puede corregir a mano si la detteccion
+// automatica no alcanza (fechas ambiguas, todos los dias <=12).
+function detectDateFormat(samples: string[]): "DMY" | "MDY" | "YMD" {
+  for (const raw of samples) {
+    if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}/.test(raw.trim())) return "YMD"
+  }
+  for (const raw of samples) {
+    const m = raw.trim().match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/)
+    if (!m) continue
+    const a = Number.parseInt(m[1], 10)
+    const b = Number.parseInt(m[2], 10)
+    if (a > 12) return "DMY"
+    if (b > 12) return "MDY"
+  }
+  // Ambiguo (todos los valores de muestra tienen dia y mes <=12) — DMY por default,
+  // es la convencion de la region que usa esta app (Centroamerica), no la de EE.UU.
+  return "DMY"
+}
+
+function parseLocaleDate(raw: string, format: "DMY" | "MDY" | "YMD"): Date | null {
+  const s = raw.trim()
+  if (!s) return null
+
+  const iso = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/)
+  if (iso) {
+    const d = new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]))
+    return Number.isNaN(d.getTime()) ? null : d
+  }
+
+  const m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/)
+  if (!m) {
+    // Formato no numerico reconocible (p.ej. "14 Sep 2026") — se deja que el
+    // navegador lo intente, no es ambiguo de la misma forma que dd/mm vs mm/dd.
+    const d = new Date(s)
+    return Number.isNaN(d.getTime()) ? null : d
+  }
+
+  const n1 = Number.parseInt(m[1], 10)
+  const n2 = Number.parseInt(m[2], 10)
+  const day = format === "MDY" ? n2 : n1
+  const month = format === "MDY" ? n1 : n2
+  let year = Number.parseInt(m[3], 10)
+  if (m[3].length === 2) year += year < 70 ? 2000 : 1900
+
+  const d = new Date(year, month - 1, day)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
 export function POSSalesImportDialog({
   open,
   onOpenChange,
@@ -106,7 +162,7 @@ export function POSSalesImportDialog({
 }: POSSalesImportDialogProps) {
   const { toast } = useToast()
   const { user } = useAuth()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const [step, setStep] = useState<Step>("upload")
   const [isDragOver, setIsDragOver] = useState(false)
   const [fileName, setFileName] = useState("")
@@ -118,6 +174,14 @@ export function POSSalesImportDialog({
   const [dishColumn, setDishColumn] = useState<string>(NONE_VALUE)
   const [quantityColumn, setQuantityColumn] = useState<string>(NONE_VALUE)
   const [priceColumn, setPriceColumn] = useState<string>(NONE_VALUE)
+  const [dateFormat, setDateFormat] = useState<DateFormatHint>("auto")
+
+  // Plantillas de mapeo guardadas para este negocio (una por POS, con nombre —
+  // antes solo existia una por negocio, sin nombre, ver types/sales-import.ts).
+  // templateId null = "Nueva plantilla"; distinto de null = editando una existente.
+  const [templates, setTemplates] = useState<POSColumnMapping[]>([])
+  const [templateId, setTemplateId] = useState<string | null>(null)
+  const [templateName, setTemplateName] = useState("")
 
   // recipeId elegido manualmente por fila no emparejada automaticamente, por nombre crudo normalizado
   const [manualMatches, setManualMatches] = useState<Record<string, string>>({})
@@ -131,6 +195,9 @@ export function POSSalesImportDialog({
     setDishColumn(NONE_VALUE)
     setQuantityColumn(NONE_VALUE)
     setPriceColumn(NONE_VALUE)
+    setDateFormat("auto")
+    setTemplateId(null)
+    setTemplateName("")
     setManualMatches({})
   }
 
@@ -139,8 +206,22 @@ export function POSSalesImportDialog({
     onOpenChange(false)
   }
 
+  const applyTemplate = (template: POSColumnMapping, detectedHeaders: string[]) => {
+    setTemplateId(template.id)
+    setTemplateName(template.name)
+    setDateColumn(
+      template.dateColumn && detectedHeaders.includes(template.dateColumn) ? template.dateColumn : NONE_VALUE,
+    )
+    setDishColumn(detectedHeaders.includes(template.dishColumn) ? template.dishColumn : NONE_VALUE)
+    setQuantityColumn(detectedHeaders.includes(template.quantityColumn) ? template.quantityColumn : NONE_VALUE)
+    setPriceColumn(
+      template.priceColumn && detectedHeaders.includes(template.priceColumn) ? template.priceColumn : NONE_VALUE,
+    )
+    setDateFormat(template.dateFormat || "auto")
+  }
+
   const processFile = async (file: File) => {
-    const validExt = /\.(xlsx|xls|csv)$/i.test(file.name)
+    const validExt = /\.(xlsx|xls|csv|txt)$/i.test(file.name)
     if (!validExt) {
       toast({
         title: t("posi_toast_invalid_file_title"),
@@ -171,28 +252,17 @@ export function POSSalesImportDialog({
       // Carga real desde Supabase (ver docs/60) antes de leer la caché en memoria.
       await Promise.all([ensurePOSColumnMappingLoaded(businessId), ensureDishNameMappingsLoaded(businessId)])
 
-      // Intenta reusar el mapeo guardado de una importacion anterior; si los
-      // encabezados coinciden, salta directo a la revision (casi de un solo clic).
-      const savedMapping = getPOSColumnMapping(businessId)
-      const savedHeadersMatch =
-        savedMapping &&
-        savedMapping.dishColumn &&
-        detectedHeaders.includes(savedMapping.dishColumn) &&
-        detectedHeaders.includes(savedMapping.quantityColumn)
+      // Intenta reusar alguna plantilla guardada de una importacion anterior; si los
+      // encabezados de una coinciden, salta directo a la revision (casi de un solo
+      // clic). Con mas de una coincidencia, usa la mas reciente.
+      const savedTemplates = getPOSColumnMappings(businessId)
+      setTemplates(savedTemplates)
+      const matchingTemplate = [...savedTemplates]
+        .filter((m) => m.dishColumn && detectedHeaders.includes(m.dishColumn) && detectedHeaders.includes(m.quantityColumn))
+        .sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""))[0]
 
-      if (savedHeadersMatch && savedMapping) {
-        setDateColumn(
-          savedMapping.dateColumn && detectedHeaders.includes(savedMapping.dateColumn)
-            ? savedMapping.dateColumn
-            : NONE_VALUE,
-        )
-        setDishColumn(savedMapping.dishColumn)
-        setQuantityColumn(savedMapping.quantityColumn)
-        setPriceColumn(
-          savedMapping.priceColumn && detectedHeaders.includes(savedMapping.priceColumn)
-            ? savedMapping.priceColumn
-            : NONE_VALUE,
-        )
+      if (matchingTemplate) {
+        applyTemplate(matchingTemplate, detectedHeaders)
         setStep("review")
       } else {
         // Adivina columnas por nombre, soportando los 6 idiomas soportables.
@@ -204,6 +274,11 @@ export function POSSalesImportDialog({
         setDishColumn(guess(["plato", "producto", "item", "articulo", "dish", "product", "artikel", "plat", "prato", "菜"]))
         setQuantityColumn(guess(["cantidad", "cant", "qty", "unidades", "quantity", "mængde", "quantité", "quantidade", "数量"]))
         setPriceColumn(guess(["precio", "price", "monto", "total", "pris", "prix", "preço", "价格"]))
+        setDateFormat("auto")
+        setTemplateId(null)
+        // Nombre por default a partir del archivo — para que rara vez quede vacio,
+        // pero se puede cambiar por algo mas reconocible como "Toast" o "SoftRestaurant".
+        setTemplateName(file.name.replace(/\.(xlsx|xls|csv|txt)$/i, ""))
         setStep("mapping")
       }
     } catch (error: any) {
@@ -217,6 +292,43 @@ export function POSSalesImportDialog({
       setIsParsing(false)
     }
   }
+
+  const handleSelectTemplate = (value: string) => {
+    if (value === NONE_VALUE) {
+      setTemplateId(null)
+      setTemplateName("")
+      setDateColumn(NONE_VALUE)
+      setDishColumn(NONE_VALUE)
+      setQuantityColumn(NONE_VALUE)
+      setPriceColumn(NONE_VALUE)
+      setDateFormat("auto")
+      return
+    }
+    const template = templates.find((tpl) => tpl.id === value)
+    if (template) applyTemplate(template, headers)
+  }
+
+  const handleDeleteTemplate = async (id: string) => {
+    await deletePOSColumnMapping(id, businessId)
+    setTemplates((prev) => prev.filter((tpl) => tpl.id !== id))
+    if (templateId === id) handleSelectTemplate(NONE_VALUE)
+  }
+
+  const dateSamples = useMemo(() => {
+    if (dateColumn === NONE_VALUE) return []
+    return rawRows
+      .slice(0, 20)
+      .map((r) => String(r[dateColumn] ?? ""))
+      .filter(Boolean)
+  }, [rawRows, dateColumn])
+
+  const detectedDateFormat = useMemo(() => detectDateFormat(dateSamples), [dateSamples])
+  const effectiveDateFormat: "DMY" | "MDY" | "YMD" = dateFormat === "auto" ? detectedDateFormat : dateFormat
+  const dateFormatPreview = useMemo(() => {
+    if (!dateSamples[0]) return null
+    const parsed = parseLocaleDate(dateSamples[0], effectiveDateFormat)
+    return parsed ? parsed.toLocaleDateString(getDateLocale(language), { dateStyle: "long" }) : null
+  }, [dateSamples, effectiveDateFormat, language])
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -286,11 +398,14 @@ export function POSSalesImportDialog({
 
     await savePOSColumnMapping(
       {
+        id: templateId || uuidv4(),
+        name: templateName.trim() || t("posi_template_default_name"),
         businessId,
         dateColumn: dateColumn !== NONE_VALUE ? dateColumn : null,
         dishColumn,
         quantityColumn,
         priceColumn: priceColumn !== NONE_VALUE ? priceColumn : null,
+        dateFormat,
         updatedAt: new Date().toISOString(),
       },
       businessId,
@@ -324,7 +439,9 @@ export function POSSalesImportDialog({
     }))
 
     const dates = parsedLines.map((l) => l.dateRaw).filter(Boolean) as string[]
-    const parsedDates = dates.map((d) => new Date(d)).filter((d) => !isNaN(d.getTime()))
+    const parsedDates = dates
+      .map((d) => parseLocaleDate(d, effectiveDateFormat))
+      .filter((d): d is Date => d !== null)
     const periodStart =
       parsedDates.length > 0 ? new Date(Math.min(...parsedDates.map((d) => d.getTime()))).toISOString() : null
     const periodEnd =
@@ -399,7 +516,7 @@ export function POSSalesImportDialog({
             <p className="text-sm text-muted-foreground">{t("posi_drop_subtext")}</p>
             <input
               type="file"
-              accept=".xlsx,.xls,.csv"
+              accept=".xlsx,.xls,.csv,.txt"
               className="hidden"
               id="pos-sales-file-input"
               onChange={handleFileInput}
@@ -418,6 +535,49 @@ export function POSSalesImportDialog({
               {t("posi_file_prefix")} <span className="font-medium text-foreground">{fileName}</span> ·{""}
               {t("posi_rows_detected").replace("{count}", String(rawRows.length))}
             </p>
+
+            {templates.length > 0 && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">{t("posi_template_label")}</label>
+                <Select value={templateId || NONE_VALUE} onValueChange={handleSelectTemplate}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE_VALUE}>{t("posi_template_new")}</SelectItem>
+                    {templates.map((tpl) => (
+                      <SelectItem key={tpl.id} value={tpl.id}>
+                        {tpl.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">{t("posi_template_name_label")}</label>
+              <div className="flex gap-2">
+                <Input
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  placeholder={t("posi_template_name_placeholder")}
+                  className="flex-1"
+                />
+                {templateId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleDeleteTemplate(templateId)}
+                    title={t("posi_template_delete")}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">{t("posi_col_dish_label")}</label>
@@ -482,6 +642,30 @@ export function POSSalesImportDialog({
                 </Select>
               </div>
             </div>
+
+            {dateColumn !== NONE_VALUE && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">{t("posi_date_format_label")}</label>
+                <Select value={dateFormat} onValueChange={(v) => setDateFormat(v as DateFormatHint)}>
+                  <SelectTrigger className="w-full sm:w-64">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">
+                      {t("posi_date_format_auto")} ({t(detectedDateFormat === "DMY" ? "posi_date_format_dmy" : detectedDateFormat === "MDY" ? "posi_date_format_mdy" : "posi_date_format_ymd")})
+                    </SelectItem>
+                    <SelectItem value="DMY">{t("posi_date_format_dmy")}</SelectItem>
+                    <SelectItem value="MDY">{t("posi_date_format_mdy")}</SelectItem>
+                    <SelectItem value="YMD">{t("posi_date_format_ymd")}</SelectItem>
+                  </SelectContent>
+                </Select>
+                {dateFormatPreview && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("posi_date_format_preview").replace("{raw}", dateSamples[0]).replace("{parsed}", dateFormatPreview)}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="border rounded-md">
               <ScrollArea className="h-40">
