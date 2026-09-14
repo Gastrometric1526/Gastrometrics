@@ -31,6 +31,25 @@ const formatCurrency2 = formatCurrency
  */
 const formatPercent = (value: number): string => `${(value || 0).toFixed(2)}%`
 
+/**
+ * BUG CORREGIDO (hallazgo de uso real): las celdas de la fila de resumen de costos y
+ * la caja de "Ganancia Neta" imprimen el valor con un tamano de fuente fijo sin
+ * chequear si cabe en el ancho disponible — con datos de entrada fuera de rango (o
+ * simplemente un negocio con montos altos) el numero se sale de su celda y queda
+ * montado sobre la celda vecina. En vez de truncar el numero (perderia un digito sin
+ * avisar), se reduce el tamano de fuente hasta que quepa, con un piso legible.
+ * Devuelve el tamano usado y deja el fontSize del doc en ese valor.
+ */
+const fitFontSize = (doc: jsPDF, text: string, maxWidth: number, baseFontSize: number, minFontSize = 5.5): number => {
+  let size = baseFontSize
+  doc.setFontSize(size)
+  while (size > minFontSize && doc.getTextWidth(text) > maxWidth) {
+    size -= 0.5
+    doc.setFontSize(size)
+  }
+  return size
+}
+
 // ============== COLORS ==============
 const COLORS = {
   primary: [41, 98, 255] as [number, number, number],
@@ -92,7 +111,21 @@ function drawBarChart(
     doc.setFontSize(7)
     doc.setFont("helvetica", "normal")
     doc.setTextColor(...COLORS.text)
-    doc.text(d.label, x, currentY + barHeight - 1, { maxWidth: labelWidth - 2 })
+    // BUG CORREGIDO (hallazgo de uso real): la opcion `maxWidth` de jsPDF no trunca,
+    // envuelve el texto en varias lineas — con una etiqueta que no cabe (un rubro con
+    // nombre largo, o traducido a un idioma mas largo que el espanol) la segunda linea
+    // se dibujaba fuera del alto reservado para esta fila (barHeight + gap) y quedaba
+    // montada sobre la barra de la fila siguiente. Se trunca con "…" en una sola linea
+    // en su lugar.
+    let barLabel = d.label
+    const labelMaxWidth = labelWidth - 2
+    if (doc.getTextWidth(barLabel) > labelMaxWidth) {
+      while (barLabel.length > 1 && doc.getTextWidth(barLabel + "…") > labelMaxWidth) {
+        barLabel = barLabel.slice(0, -1)
+      }
+      barLabel = barLabel.trimEnd() + "…"
+    }
+    doc.text(barLabel, x, currentY + barHeight - 1)
 
     doc.setFillColor(...COLORS.lightGray)
     doc.rect(barAreaX, currentY, barAreaWidth, barHeight, "F")
@@ -101,7 +134,11 @@ function drawBarChart(
 
     doc.setFont("helvetica", "bold")
     doc.setTextColor(...COLORS.darkGray)
-    doc.text(formatValue(d.value), barAreaX + barAreaWidth + 3, currentY + barHeight - 1)
+    const barValueText = formatValue(d.value)
+    const barValueMaxWidth = width - labelWidth - barAreaWidth - 5
+    fitFontSize(doc, barValueText, barValueMaxWidth, 7)
+    doc.text(barValueText, barAreaX + barAreaWidth + 3, currentY + barHeight - 1)
+    doc.setFontSize(7)
 
     currentY += barHeight + gap
   })
@@ -140,6 +177,7 @@ function drawPieChart(
   radius: number,
   legendX: number,
   legendY: number,
+  legendWidth: number,
   formatValue: (n: number) => string,
 ): number {
   const total = data.reduce((sum, d) => sum + Math.max(0, d.value), 0) || 1
@@ -158,17 +196,40 @@ function drawPieChart(
   doc.setLineWidth(0.6)
   doc.circle(cx, cy, radius, "S")
 
+  // BUG CORREGIDO (hallazgo de uso real): el valor se dibujaba siempre a
+  // legendX + 58, un offset fijo pensado para una columna mas ancha de la que en
+  // realidad queda disponible junto al pastel — con un nombre de ingrediente largo
+  // (o un porcentaje de 2 digitos) la etiqueta invadia esa posicion y el texto del
+  // monto quedaba montado literalmente encima de la etiqueta. Ahora el monto se
+  // ancla al borde derecho real de la leyenda (legendX + legendWidth) y la etiqueta
+  // se trunca con "…" para dejarle siempre el espacio que necesita.
   let legendCurrentY = legendY
   data.forEach((d) => {
     const pct = (Math.max(0, d.value) / total) * 100
     doc.setFillColor(...d.color)
     doc.rect(legendX, legendCurrentY - 2.5, 3, 3, "F")
+
     doc.setFontSize(7)
-    doc.setFont("helvetica", "normal")
-    doc.setTextColor(...COLORS.text)
-    doc.text(`${d.label} (${pct.toFixed(1)}%)`, legendX + 5, legendCurrentY)
     doc.setFont("helvetica", "bold")
-    doc.text(formatValue(Math.max(0, d.value)), legendX + 58, legendCurrentY)
+    const valueText = formatValue(Math.max(0, d.value))
+    const valueWidth = doc.getTextWidth(valueText)
+
+    doc.setFont("helvetica", "normal")
+    const labelGap = 3
+    const labelMaxWidth = Math.max(10, legendWidth - 5 - valueWidth - labelGap)
+    let labelText = `${d.label} (${pct.toFixed(1)}%)`
+    if (doc.getTextWidth(labelText) > labelMaxWidth) {
+      while (labelText.length > 1 && doc.getTextWidth(labelText + "…") > labelMaxWidth) {
+        labelText = labelText.slice(0, -1)
+      }
+      labelText = labelText.trimEnd() + "…"
+    }
+    doc.setTextColor(...COLORS.text)
+    doc.text(labelText, legendX + 5, legendCurrentY)
+
+    doc.setFont("helvetica", "bold")
+    doc.text(valueText, legendX + legendWidth - valueWidth, legendCurrentY)
+
     legendCurrentY += 4.6
   })
 
@@ -288,9 +349,12 @@ function generateAdministrativePDF(
   let yPosition = ctx.yPosition
 
   // ===== HEADER (Thin, professional) =====
+  // Alto subido de 18 a 20 junto con el corrimiento de las fechas de abajo (ver nota
+  // en "Right: Dates") para que la segunda linea de fecha (y=17) no quede pegada al
+  // borde inferior del encabezado.
   doc.setFillColor(...COLORS.lightGray)
-  doc.rect(0, 0, pageWidth, 18, "F")
-  drawLine(18, COLORS.tableBorder)
+  doc.rect(0, 0, pageWidth, 20, "F")
+  drawLine(20, COLORS.tableBorder)
 
   // Left: Business name & logo
   if (options.businessLogo) {
@@ -313,14 +377,27 @@ function generateAdministrativePDF(
   doc.setTextColor(...COLORS.text)
 
   // Center: Title
+  // BUG CORREGIDO (hallazgo de uso real: el titulo decia literalmente "Ficha Tecnica
+  // - Plato"/"Ficha Tecnica - Subreceta", la misma palabra generica para cualquier
+  // receta, en vez del nombre real). Ahora usa el nombre de la receta, truncado igual
+  // que el nombre en el bloque de metadata de abajo para que un nombre largo no se
+  // salga de la franja central.
   const isSubRecipe = recipe.classification?.includes("Sub Receta") || recipe.isSubRecipe
-  const titleText = `${labels.fichaTecnicaTitulo} - ${isSubRecipe ? labels.subreceta : labels.platoTitulo}`
+  const titlePrefix = `${labels.fichaTecnicaTitulo} - `
+  const titleRecipeName = sanitizeText(recipe.name)
+  const shortTitleRecipeName =
+    titleRecipeName.length > 40 ? titleRecipeName.substring(0, 40) + "..." : titleRecipeName
+  const titleText = `${titlePrefix}${shortTitleRecipeName}`
   doc.setFontSize(12)
   doc.setFont("helvetica", "bold")
   doc.setTextColor(...COLORS.darkGray)
   doc.text(titleText, pageWidth / 2, 10, { align: "center" })
 
   // Right: Dates
+  // BUG CORREGIDO (hallazgo de uso real: estas dos lineas se dibujaban en y=7 y y=12,
+  // ambas ancladas al mismo borde derecho que la franja roja "COPIA ADMINISTRATIVA"
+  // (que ocupa y=3 a y=9) — la primera linea quedaba literalmente encima de esa franja,
+  // texto sobre texto. Se bajan ambas por debajo de la franja, sin tocarla.
   doc.setFontSize(8)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(...COLORS.secondary)
@@ -328,10 +405,10 @@ function generateAdministrativePDF(
     ? new Date(recipe.metadata.updatedAt).toLocaleDateString(labels.locale)
     : "N/A"
   const exportedAt = new Date().toLocaleDateString(labels.locale)
-  doc.text(`${labels.ultimaRevision}: ${updatedAt}`, pageWidth - margin, 7, { align: "right" })
-  doc.text(`${labels.exportado}: ${exportedAt}`, pageWidth - margin, 12, { align: "right" })
+  doc.text(`${labels.ultimaRevision}: ${updatedAt}`, pageWidth - margin, 13, { align: "right" })
+  doc.text(`${labels.exportado}: ${exportedAt}`, pageWidth - margin, 17, { align: "right" })
 
-  yPosition = 24
+  yPosition = 26
 
   // ===== METADATA BLOCK (Grid style) =====
   doc.setFillColor(...COLORS.highlightBg)
@@ -466,14 +543,17 @@ function generateAdministrativePDF(
       ]
 
   const cellWidth = (contentWidth - (isSubRecipe ? 4 : 50)) / summaryData.length
+  const cellInnerWidth = cellWidth - 3 // pequeno margen para que no toque la celda vecina
   doc.setFontSize(7)
 
   summaryData.forEach((item, i) => {
     const x = margin + 2 + i * cellWidth
     doc.setFont("helvetica", "normal")
     doc.setTextColor(...COLORS.white)
+    fitFontSize(doc, item.label, cellInnerWidth, 7)
     doc.text(item.label, x, yPosition + 5)
     doc.setFont("helvetica", "bold")
+    fitFontSize(doc, item.value, cellInnerWidth, 7)
     doc.text(item.value, x, yPosition + 10)
   })
 
@@ -487,14 +567,76 @@ function generateAdministrativePDF(
     doc.setTextColor(...COLORS.white)
     doc.text(`${labels.gananciaNeta} ${labels.total}`, netProfitBoxX + 2, yPosition + 5)
     doc.setFont("helvetica", "bold")
-    doc.setFontSize(9)
-    doc.text(formatCurrency2(netProfitTotal), netProfitBoxX + 2, yPosition + 11)
+    const netProfitText = formatCurrency2(netProfitTotal)
+    fitFontSize(doc, netProfitText, 46 - 4, 9)
+    doc.text(netProfitText, netProfitBoxX + 2, yPosition + 11)
   }
 
   yPosition += costSummaryHeight + 6
 
+  // ===== ADVERTENCIAS DE DATOS (hallazgo de uso real, ver feedback externo) =====
+  // Con datos de entrada muy fuera de rango (p.ej. 150 unidades de un ingrediente
+  // caro) la ficha imprime costos/precios de seis cifras sin ningun aviso, restando
+  // credibilidad al documento ("COPIA ADMINISTRATIVA - CONFIDENCIAL" con numeros
+  // imposibles). Dos señales objetivas y sin umbrales de moneda fijos (la app es
+  // multi-moneda):
+  {
+    const warnings: string[] = []
+    if (!isSubRecipe && totalSales > 0 && totalCost > totalSales) {
+      warnings.push(labels.advertenciaCostoSuperaVenta)
+    }
+    // Misma regla que components/technical-sheet/index.tsx (calculations.yieldSanityWarning,
+    // hallazgo de auditoria externa, docs/98 seccion 2.6: ej. "rendimiento 1 g con 200
+    // huevos") duplicada aqui a proposito — no depende de conversion de unidades
+    // (compara solo contra ingredientes medidos en "unidad", piezas contables), asi
+    // que un solo ingrediente ya es suficiente para detectarla, sin necesitar otros
+    // ingredientes de referencia. Es el caso real que las senales anteriores (costo
+    // vs precio) no cubrian: el precio de venta tambien se calcula a partir del mismo
+    // costo inflado, asi que nunca queda por debajo de el.
+    if (recipe.yieldAmount > 0) {
+      const maxUnitIngredient = recipe.ingredients.reduce(
+        (max, ing) => (ing.unit === "unidad" && ing.quantity > max.quantity ? { name: ing.name, quantity: ing.quantity } : max),
+        { name: "", quantity: 0 },
+      )
+      if (maxUnitIngredient.quantity >= recipe.yieldAmount * 20) {
+        warnings.push(
+          labels.advertenciaRendimientoBajo
+            .replace("{rendimiento}", `${recipe.yieldAmount} ${sanitizeText(recipe.yieldUnit)}`)
+            .replace("{ingrediente}", sanitizeText(maxUnitIngredient.name))
+            .replace("{cantidad}", `${maxUnitIngredient.quantity} unidad`),
+        )
+      }
+    }
+
+    if (warnings.length > 0) {
+      const warnLineHeight = 4.2
+      const warnHeight = 5 + warnings.length * warnLineHeight
+      doc.setFillColor(255, 243, 205)
+      doc.rect(margin, yPosition, contentWidth, warnHeight, "F")
+      doc.setDrawColor(217, 119, 6)
+      doc.setLineWidth(0.4)
+      doc.rect(margin, yPosition, contentWidth, warnHeight, "S")
+      doc.setFontSize(7.5)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(146, 64, 14)
+      doc.text(`${labels.advertenciaTitulo}:`, margin + 3, yPosition + 4.5)
+      doc.setFont("helvetica", "normal")
+      warnings.forEach((w, i) => {
+        doc.text(w, margin + 3, yPosition + 4.5 + (i + 1) * warnLineHeight, { maxWidth: contentWidth - 6 })
+      })
+      yPosition += warnHeight + 5
+    }
+  }
+
   // ===== TWO COLUMN LAYOUT: Ingredients (left) + Cost Breakdown (right) =====
-  const leftColWidth = contentWidth * 0.68
+  // Una sub-receta no tiene rubros de venta (marketing, ganancia neta, etc. — esos
+  // porcentajes son parte de COMO se fija el precio al cliente final, y una
+  // sub-receta no se vende sola) asi que ese panel no se dibuja para ella; la tabla
+  // de ingredientes usa entonces todo el ancho de contenido en vez de ceder una
+  // columna a un panel que no aplica (hallazgo de uso real: el desglose de 6 rubros
+  // seguia apareciendo en sub-recetas aun despues de que el resumen superior ya
+  // mostrara solo "costo de uso").
+  const leftColWidth = isSubRecipe ? contentWidth : contentWidth * 0.68
   const rightColWidth = contentWidth * 0.30
   const colGap = contentWidth * 0.02
 
@@ -569,97 +711,114 @@ function generateAdministrativePDF(
   const ingredientsEndY = (doc as any).lastAutoTable.finalY
   const ingredientsTablePaginated = doc.getNumberOfPages() > pageBeforeIngredientsTable
 
-  // Si la tabla de ingredientes se paso a una pagina nueva, Desglose de Costos ya
-  // no puede dibujarse "al lado" de ella (quedaria calculado sobre una pagina que
-  // ya no es la actual), se apila debajo en la pagina donde termino en su lugar.
-  const rightColX = margin + leftColWidth + colGap
-  const breakdownX = ingredientsTablePaginated ? margin : rightColX
-  const breakdownWidth = ingredientsTablePaginated ? contentWidth : rightColWidth
-  const breakdownHeadingY = ingredientsTablePaginated ? ingredientsEndY + 8 : yPosition
+  // Una sub-receta no se vende sola, asi que los rubros de venta (marketing, costos
+  // operativos, ganancia neta, etc.) no aplican — ese panel completo se omite para
+  // ella en vez de mostrar un desglose que no significa nada para algo que no tiene
+  // precio de venta propio (misma logica ya aplicada arriba al resumen superior).
+  let costBreakdown: { label: string; percent: number; amount: number }[] = []
+  if (!isSubRecipe) {
+    // Si la tabla de ingredientes se paso a una pagina nueva, Desglose de Costos ya
+    // no puede dibujarse "al lado" de ella (quedaria calculado sobre una pagina que
+    // ya no es la actual), se apila debajo en la pagina donde termino en su lugar.
+    const rightColX = margin + leftColWidth + colGap
+    const breakdownX = ingredientsTablePaginated ? margin : rightColX
+    const breakdownWidth = ingredientsTablePaginated ? contentWidth : rightColWidth
+    const breakdownHeadingY = ingredientsTablePaginated ? ingredientsEndY + 8 : yPosition
 
-  doc.setFontSize(10)
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(...COLORS.darkGray)
-  doc.text(labels.desgloseDeCostos, breakdownX, breakdownHeadingY)
+    doc.setFontSize(10)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(...COLORS.darkGray)
+    doc.text(labels.desgloseDeCostos, breakdownX, breakdownHeadingY)
 
-  const pricingConfig = recipe.pricingConfig || {
-    publicServices: 10,
-    marketing: 10,
-    operationalCosts: 30,
-    laborCosts: 35,
-    netProfit: 25,
-    isv: 0,
+    const pricingConfig = recipe.pricingConfig || {
+      publicServices: 10,
+      marketing: 10,
+      operationalCosts: 30,
+      laborCosts: 35,
+      netProfit: 25,
+      isv: 0,
+    }
+
+    costBreakdown = [
+      {
+        label: labels.serviciosPublicos,
+        percent: pricingConfig.publicServices,
+        amount: totalCost * (pricingConfig.publicServices / 100),
+      },
+      { label: labels.marketing, percent: pricingConfig.marketing, amount: totalCost * (pricingConfig.marketing / 100) },
+      {
+        label: labels.costosOperativos,
+        percent: pricingConfig.operationalCosts,
+        amount: totalCost * (pricingConfig.operationalCosts / 100),
+      },
+      {
+        label: labels.costosLaborales,
+        percent: pricingConfig.laborCosts,
+        amount: totalCost * (pricingConfig.laborCosts / 100),
+      },
+      { label: "ISV", percent: pricingConfig.isv, amount: totalCost * (pricingConfig.isv / 100) },
+      { label: labels.gananciaNeta, percent: pricingConfig.netProfit, amount: totalCost * (pricingConfig.netProfit / 100) },
+    ]
+
+    const totalPercent = costBreakdown.reduce((sum, item) => sum + item.percent, 0)
+    const totalAmount = costBreakdown.reduce((sum, item) => sum + item.amount, 0)
+
+    const breakdownRows = costBreakdown.map((item) => [item.label, formatPercent(item.percent), formatCurrency2(item.amount)])
+    breakdownRows.push([labels.total, formatPercent(totalPercent), formatCurrency2(totalAmount)])
+
+    autoTable(doc, {
+      startY: breakdownHeadingY + 3,
+      head: [[labels.concepto, "%", labels.monto]],
+      body: breakdownRows,
+      theme: "grid",
+      tableWidth: breakdownWidth,
+      margin: { left: breakdownX },
+      headStyles: {
+        fillColor: COLORS.tableHeader,
+        textColor: COLORS.white,
+        fontSize: 7,
+        fontStyle: "bold",
+        halign: "center",
+        cellPadding: 1.5,
+      },
+      bodyStyles: {
+        fontSize: 7,
+        textColor: COLORS.text,
+        cellPadding: 1.5,
+      },
+      columnStyles: {
+        0: { cellWidth: "auto" },
+        1: { cellWidth: 15, halign: "right" },
+        2: { cellWidth: 25, halign: "right" },
+      },
+      didParseCell: (data) => {
+        if (data.row.index === breakdownRows.length - 1) {
+          data.cell.styles.fontStyle = "bold"
+          data.cell.styles.fillColor = COLORS.lightGray
+        }
+      },
+    })
   }
 
-  const costBreakdown = [
-    {
-      label: labels.serviciosPublicos,
-      percent: pricingConfig.publicServices,
-      amount: totalCost * (pricingConfig.publicServices / 100),
-    },
-    { label: labels.marketing, percent: pricingConfig.marketing, amount: totalCost * (pricingConfig.marketing / 100) },
-    {
-      label: labels.costosOperativos,
-      percent: pricingConfig.operationalCosts,
-      amount: totalCost * (pricingConfig.operationalCosts / 100),
-    },
-    {
-      label: labels.costosLaborales,
-      percent: pricingConfig.laborCosts,
-      amount: totalCost * (pricingConfig.laborCosts / 100),
-    },
-    { label: "ISV", percent: pricingConfig.isv, amount: totalCost * (pricingConfig.isv / 100) },
-    { label: labels.gananciaNeta, percent: pricingConfig.netProfit, amount: totalCost * (pricingConfig.netProfit / 100) },
-  ]
-
-  const totalPercent = costBreakdown.reduce((sum, item) => sum + item.percent, 0)
-  const totalAmount = costBreakdown.reduce((sum, item) => sum + item.amount, 0)
-
-  const breakdownRows = costBreakdown.map((item) => [item.label, formatPercent(item.percent), formatCurrency2(item.amount)])
-  breakdownRows.push([labels.total, formatPercent(totalPercent), formatCurrency2(totalAmount)])
-
-  autoTable(doc, {
-    startY: breakdownHeadingY + 3,
-    head: [[labels.concepto, "%", labels.monto]],
-    body: breakdownRows,
-    theme: "grid",
-    tableWidth: breakdownWidth,
-    margin: { left: breakdownX },
-    headStyles: {
-      fillColor: COLORS.tableHeader,
-      textColor: COLORS.white,
-      fontSize: 7,
-      fontStyle: "bold",
-      halign: "center",
-      cellPadding: 1.5,
-    },
-    bodyStyles: {
-      fontSize: 7,
-      textColor: COLORS.text,
-      cellPadding: 1.5,
-    },
-    columnStyles: {
-      0: { cellWidth: "auto" },
-      1: { cellWidth: 15, halign: "right" },
-      2: { cellWidth: 25, halign: "right" },
-    },
-    didParseCell: (data) => {
-      if (data.row.index === breakdownRows.length - 1) {
-        data.cell.styles.fontStyle = "bold"
-        data.cell.styles.fillColor = COLORS.lightGray
-      }
-    },
-  })
-
   // Ambas tablas ya quedaron en la misma pagina final (o siempre estuvieron juntas
-  // si no hubo paginacion), asi que comparar sus Y aqui es seguro.
-  yPosition = Math.max(ingredientsEndY, (doc as any).lastAutoTable.finalY) + 8
+  // si no hubo paginacion), asi que comparar sus Y aqui es seguro. Para sub-recetas
+  // no hubo segunda tabla que dibujar, asi que se usa directo el fin de ingredientes.
+  yPosition = isSubRecipe
+    ? ingredientsEndY + 8
+    : Math.max(ingredientsEndY, (doc as any).lastAutoTable.finalY) + 8
 
   // ===== GRAFICOS: desglose de costos (barras) + composicion por ingrediente (pastel) =====
   // Pedido explicito: los PDFs administrativos/internos deben llevar la mayor cantidad de
   // informacion, con estadisticas de barra y pastel — la tabla de arriba ya da los numeros
   // exactos, esto da la lectura visual rapida encima.
-  {
+  // Para una sub-receta sin barras (no tiene rubros de venta) y con un solo
+  // ingrediente con costo (el pastel tampoco aplicaria, ver mas abajo), no queda
+  // nada que graficar — se omite la seccion entera en vez de imprimir un
+  // encabezado "DISTRIBUCION VISUAL" seguido de espacio en blanco.
+  const chartableIngredientCount = recipe.ingredients.filter(
+    (ing) => (ing.extension || ing.quantity * (ing.unitCost || 0)) > 0,
+  ).length
+  if (!isSubRecipe || chartableIngredientCount > 1) {
     const chartsHeight = 58
     if (yPosition + chartsHeight > pageHeight - 20) {
       doc.addPage()
@@ -676,14 +835,19 @@ function generateAdministrativePDF(
     const halfWidth = contentWidth / 2 - 4
 
     // Barras: los 6 rubros de costeo (mismos datos que la tabla de Desglose de Costos).
-    doc.setFontSize(8)
-    doc.setFont("helvetica", "bold")
-    doc.setTextColor(...COLORS.secondary)
-    doc.text(labels.rubrosDeCosteo, margin, chartsTop)
-    const barData: ChartDatum[] = costBreakdown
-      .filter((item) => item.amount > 0)
-      .map((item, i) => ({ label: item.label, value: item.amount, color: CHART_COLORS[i % CHART_COLORS.length] }))
-    const barsEndY = drawBarChart(doc, barData, margin, chartsTop + 4, halfWidth, (n) => formatCurrency2(n))
+    // No aplican a una sub-receta (no tiene esos rubros de venta, ver arriba), asi
+    // que se omiten y el pastel de ingredientes usa el ancho completo en su lugar.
+    let barsEndY = chartsTop
+    if (!isSubRecipe) {
+      doc.setFontSize(8)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(...COLORS.secondary)
+      doc.text(labels.rubrosDeCosteo, margin, chartsTop)
+      const barData: ChartDatum[] = costBreakdown
+        .filter((item) => item.amount > 0)
+        .map((item, i) => ({ label: item.label, value: item.amount, color: CHART_COLORS[i % CHART_COLORS.length] }))
+      barsEndY = drawBarChart(doc, barData, margin, chartsTop + 4, halfWidth, (n) => formatCurrency2(n))
+    }
 
     // Pastel: composicion del costo de produccion por ingrediente (los que mas pesan,
     // agrupando el resto en "Otros") — util para saber donde se va el dinero, no solo
@@ -701,7 +865,7 @@ function generateAdministrativePDF(
 
     let pieEndY = chartsTop
     if (ingredientCosts.length > 1) {
-      const pieColX = margin + halfWidth + 8
+      const pieColX = isSubRecipe ? margin : margin + halfWidth + 8
       doc.setFontSize(8)
       doc.setFont("helvetica", "bold")
       doc.setTextColor(...COLORS.secondary)
@@ -721,7 +885,13 @@ function generateAdministrativePDF(
       const pieCx = pieColX + pieRadius + 2
       const pieCy = chartsTop + 6 + pieRadius
       const pieLegendX = pieCx + pieRadius + 8
-      pieEndY = drawPieChart(doc, pieData, pieCx, pieCy, pieRadius, pieLegendX, chartsTop + 8, (n) => formatCurrency2(n))
+      // Ancho real disponible para la leyenda: desde donde empieza hasta el borde
+      // derecho del area de contenido (antes se asumia un ancho fijo mas generoso
+      // del que realmente queda en esta columna, ver nota dentro de drawPieChart).
+      const pieLegendWidth = margin + contentWidth - pieLegendX
+      pieEndY = drawPieChart(doc, pieData, pieCx, pieCy, pieRadius, pieLegendX, chartsTop + 8, pieLegendWidth, (n) =>
+        formatCurrency2(n),
+      )
     }
 
     yPosition = Math.max(barsEndY, pieEndY, chartsTop + chartsHeight) + 6
@@ -732,52 +902,58 @@ function generateAdministrativePDF(
   // rentabilidad, solo el desglose de costos por rubro. Se agrega este bloque con
   // datos ya guardados en la receta (sin recalcular la formula de precio aqui, para
   // no duplicar esa logica — ver components/technical-sheet/index.tsx).
-  if (yPosition > pageHeight - 45) {
-    doc.addPage()
-    yPosition = margin
+  // Igual que el desglose de costos, estas estadisticas parten del precio de venta
+  // (food cost %, margen de contribucion, metodo de precio) — sin precio de venta
+  // propio, una sub-receta las mostraria como 0%/0% de forma constante y enganosa,
+  // asi que se omiten para ella.
+  if (!isSubRecipe) {
+    if (yPosition > pageHeight - 45) {
+      doc.addPage()
+      yPosition = margin
+    }
+    const statsFoodCostPct = totalSales > 0 ? (totalCost / totalSales) * 100 : 0
+    const statsMarginPct = totalSales > 0 ? 100 - statsFoodCostPct : 0
+    const methodLabel =
+      recipe.pricingMethod === "food_cost"
+        ? `Food Cost % (${labels.metaObjetivo} ${recipe.targetFoodCostPercent ?? 30}%)`
+        : labels.metodoSeisRubros
+    const priceOrigin =
+      recipe.customUnitPrice !== undefined && recipe.customUnitPrice !== null
+        ? labels.editadoManualmente
+        : labels.calculadoAutomaticamente
+
+    doc.setFontSize(10)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(...COLORS.darkGray)
+    doc.text(labels.estadisticas.toUpperCase(), margin, yPosition)
+    yPosition += 3
+
+    const statsRows = [
+      [labels.costoPorcentaje, `${statsFoodCostPct.toFixed(2)}%`],
+      [labels.margenContribucion, `${statsMarginPct.toFixed(2)}%`],
+      [labels.metodoPrecio, methodLabel],
+      [labels.origenPrecio, priceOrigin],
+    ]
+
+    autoTable(doc, {
+      startY: yPosition,
+      body: statsRows,
+      theme: "grid",
+      tableWidth: contentWidth,
+      margin: { left: margin },
+      bodyStyles: {
+        fontSize: 8,
+        textColor: COLORS.text,
+        cellPadding: 1.5,
+      },
+      columnStyles: {
+        0: { cellWidth: 55, fontStyle: "bold", fillColor: COLORS.lightGray },
+        1: { cellWidth: "auto" },
+      },
+    })
+
+    yPosition = (doc as any).lastAutoTable.finalY + 8
   }
-  const statsFoodCostPct = totalSales > 0 ? (totalCost / totalSales) * 100 : 0
-  const statsMarginPct = totalSales > 0 ? 100 - statsFoodCostPct : 0
-  const methodLabel =
-    recipe.pricingMethod === "food_cost"
-      ? `Food Cost % (${labels.metaObjetivo} ${recipe.targetFoodCostPercent ?? 30}%)`
-      : labels.metodoSeisRubros
-  const priceOrigin =
-    recipe.customUnitPrice !== undefined && recipe.customUnitPrice !== null
-      ? labels.editadoManualmente
-      : labels.calculadoAutomaticamente
-
-  doc.setFontSize(10)
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(...COLORS.darkGray)
-  doc.text(labels.estadisticas.toUpperCase(), margin, yPosition)
-  yPosition += 3
-
-  const statsRows = [
-    [labels.costoPorcentaje, `${statsFoodCostPct.toFixed(2)}%`],
-    [labels.margenContribucion, `${statsMarginPct.toFixed(2)}%`],
-    [labels.metodoPrecio, methodLabel],
-    [labels.origenPrecio, priceOrigin],
-  ]
-
-  autoTable(doc, {
-    startY: yPosition,
-    body: statsRows,
-    theme: "grid",
-    tableWidth: contentWidth,
-    margin: { left: margin },
-    bodyStyles: {
-      fontSize: 8,
-      textColor: COLORS.text,
-      cellPadding: 1.5,
-    },
-    columnStyles: {
-      0: { cellWidth: 55, fontStyle: "bold", fillColor: COLORS.lightGray },
-      1: { cellWidth: "auto" },
-    },
-  })
-
-  yPosition = (doc as any).lastAutoTable.finalY + 8
 
   // ===== PROCEDIMIENTO Y OBSERVACIONES (una sola lista numerada) =====
   // recipe.procedure ya es el campo único desde que se fusionó con observations en
@@ -1188,29 +1364,11 @@ function generateNormalPDF(
     }
   }
 
-  // ===== PRICE (if available) =====
-  // BUG CORREGIDO (hallazgo de auditoria externa, ver docs/98/99): este PDF mostraba
-  // el precio de venta de CUALQUIER receta, incluidas las sub-recetas — que nunca se
-  // venden directo a un cliente, asi que imprimirles un precio de venta es enganoso
-  // (misma logica ya aplicada al PDF Administrativo).
-  const isSubRecipeNormal = recipe.classification?.includes("Sub Receta") || recipe.isSubRecipe
-  if (recipe.unitPrice && !isSubRecipeNormal) {
-    yPosition += 8
-    if (yPosition > ctx.pageHeight - 20) {
-      doc.addPage()
-      yPosition = margin
-    }
-
-    doc.setFontSize(14)
-    doc.setFont("helvetica", "bold")
-    doc.setTextColor(...COLORS.primary)
-    const priceText = `Precio: ${formatCurrency2(recipe.unitPrice)}`
-    if (recipe.isv && recipe.isv > 0) {
-      doc.text(`${priceText} (incluye ${recipe.isv}% ISV)`, margin, yPosition)
-    } else {
-      doc.text(priceText, margin, yPosition)
-    }
-  }
+  // Sin precio de venta ni costos: este PDF se redefinio como "Ficha Rapida", pensada
+  // para compartir hacia afuera (un proveedor, un socio) sin exponer informacion
+  // financiera del negocio — antes mostraba el precio de venta (ver docs/98/99, ya
+  // se habia quitado para sub-recetas; ahora se quita para cualquier receta, no solo
+  // esas, porque ese es el nuevo proposito del tipo, no una excepcion puntual).
 
   // ===== NOTES =====
   if (recipe.notes && options.includeNotes) {

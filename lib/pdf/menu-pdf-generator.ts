@@ -61,6 +61,21 @@ interface ChartDatum {
   color: [number, number, number]
 }
 
+/**
+ * BUG CORREGIDO (hallazgo de uso real, mismo problema en lib/pdf/recipe-pdf-generator.ts):
+ * usado para que el valor de una barra/leyenda nunca se salga del ancho que tiene
+ * disponible — reduce el tamano de fuente (sin truncar el numero) hasta que quepa.
+ */
+const fitFontSize = (doc: jsPDF, text: string, maxWidth: number, baseFontSize: number, minFontSize = 5.5): number => {
+  let size = baseFontSize
+  doc.setFontSize(size)
+  while (size > minFontSize && doc.getTextWidth(text) > maxWidth) {
+    size -= 0.5
+    doc.setFontSize(size)
+  }
+  return size
+}
+
 function drawBarChart(
   doc: jsPDF,
   data: ChartDatum[],
@@ -83,7 +98,18 @@ function drawBarChart(
     doc.setFontSize(7)
     doc.setFont("helvetica", "normal")
     doc.setTextColor(...COLORS.text)
-    doc.text(d.label, x, currentY + barHeight - 1, { maxWidth: labelWidth - 2 })
+    // BUG CORREGIDO: `maxWidth` en jsPDF envuelve el texto en varias lineas en vez de
+    // truncarlo — una etiqueta larga desbordaba el alto de esta fila y quedaba montada
+    // sobre la barra siguiente. Se trunca con "…" en una sola linea en su lugar.
+    let barLabel = d.label
+    const labelMaxWidth = labelWidth - 2
+    if (doc.getTextWidth(barLabel) > labelMaxWidth) {
+      while (barLabel.length > 1 && doc.getTextWidth(barLabel + "…") > labelMaxWidth) {
+        barLabel = barLabel.slice(0, -1)
+      }
+      barLabel = barLabel.trimEnd() + "…"
+    }
+    doc.text(barLabel, x, currentY + barHeight - 1)
 
     doc.setFillColor(...COLORS.lightGray)
     doc.rect(barAreaX, currentY, barAreaWidth, barHeight, "F")
@@ -92,7 +118,11 @@ function drawBarChart(
 
     doc.setFont("helvetica", "bold")
     doc.setTextColor(...COLORS.darkGray)
-    doc.text(formatValue(d.value), barAreaX + barAreaWidth + 3, currentY + barHeight - 1)
+    const barValueText = formatValue(d.value)
+    const barValueMaxWidth = width - labelWidth - barAreaWidth - 5
+    fitFontSize(doc, barValueText, barValueMaxWidth, 7)
+    doc.text(barValueText, barAreaX + barAreaWidth + 3, currentY + barHeight - 1)
+    doc.setFontSize(7)
 
     currentY += barHeight + gap
   })
@@ -135,6 +165,7 @@ function drawPieChart(
   radius: number,
   legendX: number,
   legendY: number,
+  legendWidth: number,
   formatValue: (n: number) => string,
 ): number {
   const total = data.reduce((sum, d) => sum + Math.max(0, d.value), 0) || 1
@@ -153,18 +184,40 @@ function drawPieChart(
   doc.setLineWidth(0.6)
   doc.circle(cx, cy, radius, "S")
 
+  // BUG CORREGIDO (hallazgo de uso real, mismo problema en lib/pdf/recipe-pdf-generator.ts):
+  // el valor se dibujaba siempre a legendX + 58, un offset fijo mas ancho de lo que en
+  // realidad queda disponible junto al pastel — con una etiqueta larga o un porcentaje
+  // de 2 digitos, el texto del monto quedaba montado encima de la etiqueta. Ahora el
+  // monto se ancla al borde derecho real de la leyenda y la etiqueta se trunca con "…"
+  // para dejarle siempre el espacio que necesita.
   let legendCurrentY = legendY
   data.forEach((d) => {
     const value = Math.max(0, d.value)
     const pct = (value / total) * 100
     doc.setFillColor(...d.color)
     doc.rect(legendX, legendCurrentY - 2.5, 3, 3, "F")
+
     doc.setFontSize(7)
-    doc.setFont("helvetica", "normal")
-    doc.setTextColor(...COLORS.text)
-    doc.text(`${d.label} (${pct.toFixed(1)}%)`, legendX + 5, legendCurrentY)
     doc.setFont("helvetica", "bold")
-    doc.text(formatValue(value), legendX + 58, legendCurrentY)
+    const valueText = formatValue(value)
+    const valueWidth = doc.getTextWidth(valueText)
+
+    doc.setFont("helvetica", "normal")
+    const labelGap = 3
+    const labelMaxWidth = Math.max(10, legendWidth - 5 - valueWidth - labelGap)
+    let labelText = `${d.label} (${pct.toFixed(1)}%)`
+    if (doc.getTextWidth(labelText) > labelMaxWidth) {
+      while (labelText.length > 1 && doc.getTextWidth(labelText + "…") > labelMaxWidth) {
+        labelText = labelText.slice(0, -1)
+      }
+      labelText = labelText.trimEnd() + "…"
+    }
+    doc.setTextColor(...COLORS.text)
+    doc.text(labelText, legendX + 5, legendCurrentY)
+
+    doc.setFont("helvetica", "bold")
+    doc.text(valueText, legendX + legendWidth - valueWidth, legendCurrentY)
+
     legendCurrentY += 4.6
   })
 
@@ -285,7 +338,12 @@ function generateClientMenuPDF(
     // las letras de verdad via el operador Tc del PDF, sin depender de ningun glifo
     // especial. El centrado se calcula a mano para no depender de que jsPDF sume el
     // charSpace al centrar con align:"center".
-    const stepLabelCharSpace = 1
+    // AJUSTE (feedback de uso real, prueba con carta "almuerzo"): 1mm de charSpace
+    // en un encabezado de 12pt separaba tanto las letras que se leia como "E N T R A
+    // D A" — forzado, no elegante. Se reduce a un tracking sutil (tipico de
+    // encabezados en mayuscula de cartas impresas) que sigue distinguiendo el
+    // encabezado del cuerpo sin que cada letra se lea aislada.
+    const stepLabelCharSpace = 0.35
     const stepLabelWidth = doc.getTextWidth(stepLabel) + stepLabelCharSpace * Math.max(0, stepLabel.length - 1)
     doc.text(stepLabel, pageWidth / 2 - stepLabelWidth / 2, yPosition, { charSpace: stepLabelCharSpace })
     const lineY = yPosition - 1.5
@@ -496,12 +554,6 @@ function generateInternalMenuPDF(
       .map((d, i) => ({ label: d.name, value: d.marginPct, color: CHART_COLORS[i % CHART_COLORS.length] }))
     const barsEndY = drawBarChart(doc, barData, margin, chartsTop + 4, halfWidth, (n) => `${n.toFixed(1)}%`)
 
-    const pieColX = margin + halfWidth + 8
-    doc.setFontSize(8)
-    doc.setFont("helvetica", "bold")
-    doc.setTextColor(...COLORS.secondary)
-    doc.text(labels.composicionPrecioTotalPorPlato, pieColX, chartsTop)
-
     const sortedByPrice = [...dishStats].sort((a, b) => b.price - a.price)
     const topDishes = sortedByPrice.slice(0, 5)
     const otherTotal = sortedByPrice.slice(5).reduce((sum, d) => sum + d.price, 0)
@@ -514,14 +566,26 @@ function generateInternalMenuPDF(
       pieData.push({ label: labels.otros, value: otherTotal, color: CHART_COLORS[CHART_COLORS.length - 1] })
     }
 
-    const pieRadius = 15
-    const pieCx = pieColX + pieRadius + 2
-    const pieCy = chartsTop + 6 + pieRadius
-    const pieLegendX = pieCx + pieRadius + 8
-    const pieEndY =
-      pieData.length > 0
-        ? drawPieChart(doc, pieData, pieCx, pieCy, pieRadius, pieLegendX, chartsTop + 8, (n) => formatCurrency(n))
-        : chartsTop
+    // Con un solo plato (o un solo plato con precio) el "pastel" es un circulo
+    // completo de un solo color — no compara nada, asi que se omite en vez de
+    // imprimir un grafico sin informacion (mismo criterio que recipe-pdf-generator).
+    const pieColX = margin + halfWidth + 8
+    let pieEndY = chartsTop
+    if (pieData.length > 1) {
+      doc.setFontSize(8)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(...COLORS.secondary)
+      doc.text(labels.composicionPrecioTotalPorPlato, pieColX, chartsTop)
+
+      const pieRadius = 15
+      const pieCx = pieColX + pieRadius + 2
+      const pieCy = chartsTop + 6 + pieRadius
+      const pieLegendX = pieCx + pieRadius + 8
+      const pieLegendWidth = margin + contentWidth - pieLegendX
+      pieEndY = drawPieChart(doc, pieData, pieCx, pieCy, pieRadius, pieLegendX, chartsTop + 8, pieLegendWidth, (n) =>
+        formatCurrency(n),
+      )
+    }
 
     yPosition = Math.max(barsEndY, pieEndY, chartsTop + chartsHeight) + 6
   }

@@ -51,6 +51,21 @@ interface ChartDatum {
   color: [number, number, number]
 }
 
+/**
+ * BUG CORREGIDO (hallazgo de uso real, mismo problema en lib/pdf/recipe-pdf-generator.ts):
+ * usado para que el valor de una barra/leyenda nunca se salga del ancho que tiene
+ * disponible — reduce el tamano de fuente (sin truncar el numero) hasta que quepa.
+ */
+const fitFontSize = (doc: jsPDF, text: string, maxWidth: number, baseFontSize: number, minFontSize = 5.5): number => {
+  let size = baseFontSize
+  doc.setFontSize(size)
+  while (size > minFontSize && doc.getTextWidth(text) > maxWidth) {
+    size -= 0.5
+    doc.setFontSize(size)
+  }
+  return size
+}
+
 function drawBarChart(
   doc: jsPDF,
   data: ChartDatum[],
@@ -73,7 +88,18 @@ function drawBarChart(
     doc.setFontSize(7)
     doc.setFont("helvetica", "normal")
     doc.setTextColor(...COLORS.text)
-    doc.text(d.label, x, currentY + barHeight - 1, { maxWidth: labelWidth - 2 })
+    // BUG CORREGIDO: `maxWidth` en jsPDF envuelve el texto en varias lineas en vez de
+    // truncarlo — una etiqueta larga desbordaba el alto de esta fila y quedaba montada
+    // sobre la barra siguiente. Se trunca con "…" en una sola linea en su lugar.
+    let barLabel = d.label
+    const labelMaxWidth = labelWidth - 2
+    if (doc.getTextWidth(barLabel) > labelMaxWidth) {
+      while (barLabel.length > 1 && doc.getTextWidth(barLabel + "…") > labelMaxWidth) {
+        barLabel = barLabel.slice(0, -1)
+      }
+      barLabel = barLabel.trimEnd() + "…"
+    }
+    doc.text(barLabel, x, currentY + barHeight - 1)
 
     doc.setFillColor(...COLORS.lightGray)
     doc.rect(barAreaX, currentY, barAreaWidth, barHeight, "F")
@@ -82,7 +108,11 @@ function drawBarChart(
 
     doc.setFont("helvetica", "bold")
     doc.setTextColor(...COLORS.darkGray)
-    doc.text(formatValue(d.value), barAreaX + barAreaWidth + 3, currentY + barHeight - 1)
+    const barValueText = formatValue(d.value)
+    const barValueMaxWidth = width - labelWidth - barAreaWidth - 5
+    fitFontSize(doc, barValueText, barValueMaxWidth, 7)
+    doc.text(barValueText, barAreaX + barAreaWidth + 3, currentY + barHeight - 1)
+    doc.setFontSize(7)
 
     currentY += barHeight + gap
   })
@@ -121,6 +151,7 @@ function drawPieChart(
   radius: number,
   legendX: number,
   legendY: number,
+  legendWidth: number,
   formatValue: (n: number) => string,
 ): number {
   const total = data.reduce((sum, d) => sum + Math.max(0, d.value), 0) || 1
@@ -139,17 +170,39 @@ function drawPieChart(
   doc.setLineWidth(0.6)
   doc.circle(cx, cy, radius, "S")
 
+  // BUG CORREGIDO (hallazgo de uso real, mismo problema en lib/pdf/recipe-pdf-generator.ts):
+  // el valor se dibujaba siempre a legendX + 58, un offset fijo mas ancho de lo que en
+  // realidad queda disponible junto al pastel — con una etiqueta larga o un porcentaje
+  // de 2 digitos, el texto del monto quedaba montado encima de la etiqueta. Ahora el
+  // monto se ancla al borde derecho real de la leyenda y la etiqueta se trunca con "…"
+  // para dejarle siempre el espacio que necesita.
   let legendCurrentY = legendY
   data.forEach((d) => {
     const pct = (Math.max(0, d.value) / total) * 100
     doc.setFillColor(...d.color)
     doc.rect(legendX, legendCurrentY - 2.5, 3, 3, "F")
+
     doc.setFontSize(7)
-    doc.setFont("helvetica", "normal")
-    doc.setTextColor(...COLORS.text)
-    doc.text(`${d.label} (${pct.toFixed(1)}%)`, legendX + 5, legendCurrentY)
     doc.setFont("helvetica", "bold")
-    doc.text(formatValue(Math.max(0, d.value)), legendX + 58, legendCurrentY)
+    const valueText = formatValue(Math.max(0, d.value))
+    const valueWidth = doc.getTextWidth(valueText)
+
+    doc.setFont("helvetica", "normal")
+    const labelGap = 3
+    const labelMaxWidth = Math.max(10, legendWidth - 5 - valueWidth - labelGap)
+    let labelText = `${d.label} (${pct.toFixed(1)}%)`
+    if (doc.getTextWidth(labelText) > labelMaxWidth) {
+      while (labelText.length > 1 && doc.getTextWidth(labelText + "…") > labelMaxWidth) {
+        labelText = labelText.slice(0, -1)
+      }
+      labelText = labelText.trimEnd() + "…"
+    }
+    doc.setTextColor(...COLORS.text)
+    doc.text(labelText, legendX + 5, legendCurrentY)
+
+    doc.setFont("helvetica", "bold")
+    doc.text(valueText, legendX + legendWidth - valueWidth, legendCurrentY)
+
     legendCurrentY += 4.6
   })
 
@@ -324,27 +377,43 @@ function renderInventoryPDF(doc: jsPDF, data: InventoryPDFData, options: Invento
     drawLine(yPosition + 2)
     yPosition += 10
 
-    const top = categoryEntries.slice(0, 6)
-    const rest = categoryEntries.slice(6)
-    const restTotal = rest.reduce((sum, [, v]) => sum + v, 0)
-    const pieData: ChartDatum[] = top.map(([label, value], i) => ({
-      label,
-      value,
-      color: CHART_COLORS[i % CHART_COLORS.length],
-    }))
-    if (restTotal > 0) pieData.push({ label: labels.otros, value: restTotal, color: CHART_COLORS[7] })
+    // Con una sola categoria el "pastel" es un circulo completo de un solo color —
+    // no compara nada, asi que se omite (mismo criterio que recipe-pdf-generator) y
+    // la barra de top productos, que si sigue siendo util con una sola categoria,
+    // ocupa el ancho completo en su lugar de compartirlo con un grafico vacio.
+    const hasPie = categoryEntries.length > 1
+    let legendMaxY = yPosition
 
-    const pieCx = margin + 24
-    const pieCy = yPosition + 22
-    const legendMaxY = drawPieChart(doc, pieData, pieCx, pieCy, 22, margin + 58, yPosition + 4, (n) => formatCurrency(n))
+    if (hasPie) {
+      const top = categoryEntries.slice(0, 6)
+      const rest = categoryEntries.slice(6)
+      const restTotal = rest.reduce((sum, [, v]) => sum + v, 0)
+      const pieData: ChartDatum[] = top.map(([label, value], i) => ({
+        label,
+        value,
+        color: CHART_COLORS[i % CHART_COLORS.length],
+      }))
+      if (restTotal > 0) pieData.push({ label: labels.otros, value: restTotal, color: CHART_COLORS[7] })
 
-    // Top productos por valor, como barra al lado del pastel
+      const pieCx = margin + 24
+      const pieCy = yPosition + 22
+      const pieLegendX = margin + 58
+      // La columna de "top productos" empieza en margin + 118 cuando hay pastel (ver
+      // barX debajo) — la leyenda debe dejar de dibujar texto antes de esa columna.
+      const pieLegendWidth = 118 - 58 - 4
+      legendMaxY = drawPieChart(doc, pieData, pieCx, pieCy, 22, pieLegendX, yPosition + 4, pieLegendWidth, (n) =>
+        formatCurrency(n),
+      )
+    }
+
+    // Top productos por valor, como barra al lado del pastel (o a todo el ancho si
+    // no hay pastel que dibujar)
     const topProducts = [...data.rows]
       .filter((r) => r.totalValue > 0)
       .sort((a, b) => b.totalValue - a.totalValue)
       .slice(0, 6)
     if (topProducts.length > 0) {
-      const barX = margin + 118
+      const barX = hasPie ? margin + 118 : margin
       if (barX + 70 <= pageWidth - margin) {
         doc.setFontSize(8)
         doc.setFont("helvetica", "bold")

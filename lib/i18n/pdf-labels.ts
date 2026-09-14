@@ -114,6 +114,9 @@ export interface PdfLabels {
   estadoOrdenada: string
   estadoRecibida: string
   estadoCancelada: string
+  advertenciaTitulo: string
+  advertenciaCostoSuperaVenta: string
+  advertenciaRendimientoBajo: string
 }
 
 const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
@@ -186,7 +189,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     distribucionVisual: "DISTRIBUCION VISUAL",
     rubrosDeCosteo: "Rubros de costeo",
     composicionCostoPorIngrediente: "Composicion del costo por ingrediente",
-    pdfGeneral: "PDF GENERAL",
+    pdfGeneral: "FICHA RAPIDA",
     notasAdicionales: "Notas Adicionales",
     copiaInterna: "COPIA INTERNA",
     precioTotalMenu: "Precio total del menu",
@@ -223,6 +226,9 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     estadoOrdenada: "Ordenada",
     estadoRecibida: "Recibida",
     estadoCancelada: "Cancelada",
+    advertenciaTitulo: "ADVERTENCIA: revisar datos",
+    advertenciaCostoSuperaVenta: "El costo de produccion supera el precio de venta configurado.",
+    advertenciaRendimientoBajo: "El rendimiento declarado ({rendimiento}) parece muy bajo frente a la cantidad de \"{ingrediente}\" ({cantidad}). Revisa que no sea un error antes de usar este documento.",
   },
   en: {
     nombre: "Name:",
@@ -293,7 +299,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     distribucionVisual: "VISUAL BREAKDOWN",
     rubrosDeCosteo: "Cost categories",
     composicionCostoPorIngrediente: "Cost composition by ingredient",
-    pdfGeneral: "GENERAL PDF",
+    pdfGeneral: "QUICK SHEET",
     notasAdicionales: "Additional Notes",
     copiaInterna: "INTERNAL COPY",
     precioTotalMenu: "Total menu price",
@@ -330,6 +336,9 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     estadoOrdenada: "Ordered",
     estadoRecibida: "Received",
     estadoCancelada: "Cancelled",
+    advertenciaTitulo: "WARNING: check data",
+    advertenciaCostoSuperaVenta: "Production cost exceeds the configured sale price.",
+    advertenciaRendimientoBajo: "The declared yield ({rendimiento}) looks very low compared to the quantity of \"{ingrediente}\" ({cantidad}). Check it isn't a typo before using this document.",
   },
   da: {
     nombre: "Navn:",
@@ -400,7 +409,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     distribucionVisual: "VISUEL FORDELING",
     rubrosDeCosteo: "Omkostningskategorier",
     composicionCostoPorIngrediente: "Omkostningssammensætning pr. ingrediens",
-    pdfGeneral: "GENEREL PDF",
+    pdfGeneral: "HURTIGT ARK",
     notasAdicionales: "Yderligere noter",
     copiaInterna: "INTERN KOPI",
     precioTotalMenu: "Samlet menupris",
@@ -437,6 +446,9 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     estadoOrdenada: "Bestilt",
     estadoRecibida: "Modtaget",
     estadoCancelada: "Annulleret",
+    advertenciaTitulo: "ADVARSEL: tjek data",
+    advertenciaCostoSuperaVenta: "Produktionsomkostningen overstiger den fastsatte salgspris.",
+    advertenciaRendimientoBajo: "Det angivne udbytte ({rendimiento}) virker meget lavt i forhold til mængden af \"{ingrediente}\" ({cantidad}). Tjek at det ikke er en fejl, før du bruger dette dokument.",
   },
   fr: {
     nombre: "Nom :",
@@ -507,7 +519,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     distribucionVisual: "REPARTITION VISUELLE",
     rubrosDeCosteo: "Postes de couts",
     composicionCostoPorIngrediente: "Composition du cout par ingredient",
-    pdfGeneral: "PDF GENERAL",
+    pdfGeneral: "FICHE RAPIDE",
     notasAdicionales: "Notes Complementaires",
     copiaInterna: "COPIE INTERNE",
     precioTotalMenu: "Prix total du menu",
@@ -544,6 +556,9 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     estadoOrdenada: "Commandée",
     estadoRecibida: "Reçue",
     estadoCancelada: "Annulée",
+    advertenciaTitulo: "ATTENTION : verifier les donnees",
+    advertenciaCostoSuperaVenta: "Le cout de production depasse le prix de vente configure.",
+    advertenciaRendimientoBajo: "Le rendement declare ({rendimiento}) semble tres faible par rapport a la quantite de \"{ingrediente}\" ({cantidad}). Verifiez qu'il ne s'agit pas d'une erreur avant d'utiliser ce document.",
   },
   pt: {
     nombre: "Nome:",
@@ -614,7 +629,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     distribucionVisual: "DISTRIBUICAO VISUAL",
     rubrosDeCosteo: "Itens de custeio",
     composicionCostoPorIngrediente: "Composicao do custo por ingrediente",
-    pdfGeneral: "PDF GERAL",
+    pdfGeneral: "FICHA RAPIDA",
     notasAdicionales: "Notas Adicionais",
     copiaInterna: "COPIA INTERNA",
     precioTotalMenu: "Preco total do cardapio",
@@ -651,6 +666,9 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     estadoOrdenada: "Encomendado",
     estadoRecibida: "Recebido",
     estadoCancelada: "Cancelado",
+    advertenciaTitulo: "ATENCAO: revisar dados",
+    advertenciaCostoSuperaVenta: "O custo de producao supera o preco de venda configurado.",
+    advertenciaRendimientoBajo: "O rendimento declarado ({rendimiento}) parece muito baixo em relacao a quantidade de \"{ingrediente}\" ({cantidad}). Verifique se nao e um erro antes de usar este documento.",
   },
   zh: {
     nombre: "名称：",
@@ -721,7 +739,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     distribucionVisual: "可视化分布",
     rubrosDeCosteo: "成本项目",
     composicionCostoPorIngrediente: "各食材成本构成",
-    pdfGeneral: "通用PDF",
+    pdfGeneral: "快速单据",
     notasAdicionales: "补充说明",
     copiaInterna: "内部版",
     precioTotalMenu: "菜单总价",
@@ -758,6 +776,9 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     estadoOrdenada: "已下单",
     estadoRecibida: "已收货",
     estadoCancelada: "已取消",
+    advertenciaTitulo: "警告：请核实数据",
+    advertenciaCostoSuperaVenta: "生产成本超过了设定的销售价格。",
+    advertenciaRendimientoBajo: "申报的产量（{rendimiento}）相对于\"{ingrediente}\"的用量（{cantidad}）显得过低，使用本文档前请核实是否有误。",
   },
 }
 

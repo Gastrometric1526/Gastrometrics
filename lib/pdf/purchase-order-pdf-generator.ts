@@ -80,6 +80,7 @@ function drawPieChart(
   radius: number,
   legendX: number,
   legendY: number,
+  legendWidth: number,
   formatValue: (n: number) => string,
 ): number {
   const total = data.reduce((sum, d) => sum + Math.max(0, d.value), 0) || 1
@@ -98,17 +99,39 @@ function drawPieChart(
   doc.setLineWidth(0.6)
   doc.circle(cx, cy, radius, "S")
 
+  // BUG CORREGIDO (hallazgo de uso real, mismo problema en lib/pdf/recipe-pdf-generator.ts):
+  // el valor se dibujaba siempre a legendX + 58, un offset fijo mas ancho de lo que en
+  // realidad queda disponible junto al pastel — con una etiqueta larga o un porcentaje
+  // de 2 digitos, el texto del monto quedaba montado encima de la etiqueta. Ahora el
+  // monto se ancla al borde derecho real de la leyenda y la etiqueta se trunca con "…"
+  // para dejarle siempre el espacio que necesita.
   let legendCurrentY = legendY
   data.forEach((d) => {
     const pct = (Math.max(0, d.value) / total) * 100
     doc.setFillColor(...d.color)
     doc.rect(legendX, legendCurrentY - 2.5, 3, 3, "F")
+
     doc.setFontSize(7)
-    doc.setFont("helvetica", "normal")
-    doc.setTextColor(...COLORS.text)
-    doc.text(`${d.label} (${pct.toFixed(1)}%)`, legendX + 5, legendCurrentY)
     doc.setFont("helvetica", "bold")
-    doc.text(formatValue(Math.max(0, d.value)), legendX + 58, legendCurrentY)
+    const valueText = formatValue(Math.max(0, d.value))
+    const valueWidth = doc.getTextWidth(valueText)
+
+    doc.setFont("helvetica", "normal")
+    const labelGap = 3
+    const labelMaxWidth = Math.max(10, legendWidth - 5 - valueWidth - labelGap)
+    let labelText = `${d.label} (${pct.toFixed(1)}%)`
+    if (doc.getTextWidth(labelText) > labelMaxWidth) {
+      while (labelText.length > 1 && doc.getTextWidth(labelText + "…") > labelMaxWidth) {
+        labelText = labelText.slice(0, -1)
+      }
+      labelText = labelText.trimEnd() + "…"
+    }
+    doc.setTextColor(...COLORS.text)
+    doc.text(labelText, legendX + 5, legendCurrentY)
+
+    doc.setFont("helvetica", "bold")
+    doc.text(valueText, legendX + legendWidth - valueWidth, legendCurrentY)
+
     legendCurrentY += 4.6
   })
 
@@ -334,7 +357,9 @@ export function generatePurchaseOrderPDF(order: PurchaseOrder, options: Purchase
 
     const pieCx = margin + 24
     const pieCy = yPosition + 20
-    drawPieChart(doc, pieData, pieCx, pieCy, 20, margin + 55, yPosition + 4, (n) => formatCurrency(n))
+    const pieLegendX = margin + 55
+    const pieLegendWidth = margin + contentWidth - pieLegendX
+    drawPieChart(doc, pieData, pieCx, pieCy, 20, pieLegendX, yPosition + 4, pieLegendWidth, (n) => formatCurrency(n))
 
     yPosition += 55
   }
