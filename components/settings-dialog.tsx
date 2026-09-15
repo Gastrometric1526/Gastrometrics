@@ -882,9 +882,19 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
         </Tabs>
 
         <div className="flex items-center justify-between gap-2 pt-4 border-t shrink-0">
-          <Link href="/contacto" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            {t("settings_feedback_link")}
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/contacto" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              {t("settings_feedback_link")}
+            </Link>
+            <a
+              href="/api/manual"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {t("settings_manual_link")}
+            </a>
+          </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setOpen(false)}>
               {t("common_cancel")}

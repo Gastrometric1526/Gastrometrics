@@ -649,6 +649,7 @@ const translations = {
     settings_confirm_title: "¿Estás seguro?",
     settings_save_button: "Guardar Configuraciones",
     settings_feedback_link: "Sugerencias y reportes",
+    settings_manual_link: "Manual de usuario (PDF)",
 
     // Tutorial guiado — chrome común (botones, contador de pasos)
     tour_step: "Paso",
@@ -3578,6 +3579,7 @@ const translations = {
     settings_confirm_title: "Are you sure?",
     settings_save_button: "Save Settings",
     settings_feedback_link: "Suggestions and reports",
+    settings_manual_link: "User manual (PDF)",
 
     tour_step: "Step",
     tour_of: "of",
@@ -6494,6 +6496,7 @@ const translations = {
     settings_confirm_title: "Er du sikker?",
     settings_save_button: "Gem indstillinger",
     settings_feedback_link: "Forslag og fejlrapporter",
+    settings_manual_link: "Brugermanual (PDF)",
     tour_step: "Trin",
     tour_of: "af",
     tour_back: "Tilbage",
@@ -9391,6 +9394,7 @@ const translations = {
     settings_confirm_title: "Êtes-vous sûr(e) ?",
     settings_save_button: "Enregistrer les paramètres",
     settings_feedback_link: "Suggestions et signalements",
+    settings_manual_link: "Manuel utilisateur (PDF)",
     tour_step: "Étape",
     tour_of: "sur",
     tour_back: "Précédent",
@@ -12290,6 +12294,7 @@ const translations = {
     settings_confirm_title: "Tem certeza?",
     settings_save_button: "Salvar Configurações",
     settings_feedback_link: "Sugestões e relatórios",
+    settings_manual_link: "Manual do usuário (PDF)",
     tour_step: "Passo",
     tour_of: "de",
     tour_back: "Voltar",
@@ -15177,6 +15182,7 @@ const translations = {
     settings_confirm_title: "您确定吗？",
     settings_save_button: "保存设置",
     settings_feedback_link: "建议与反馈",
+    settings_manual_link: "用户手册（PDF）",
     tour_step: "步骤",
     tour_of: "共",
     tour_back: "上一步",

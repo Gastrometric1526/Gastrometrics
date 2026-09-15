@@ -9,6 +9,18 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Garantiza que el PDF del manual (lib/assets/, fuera de public/ a propósito para que
+  // solo se sirva vía la ruta autenticada app/api/manual/route.ts) viaje dentro del
+  // bundle de la función serverless en Vercel — el output file tracing normalmente lo
+  // detectaría solo con la ruta estática que usa esa ruta, pero se declara explícito
+  // acá para no depender de que el análisis estático lo infiera correctamente. En
+  // Next 14.2.x esta clave vive bajo `experimental` — a nivel raíz next dev la ignora
+  // en silencio con una advertencia ("Unrecognized key(s)"), confirmado al probarlo.
+  experimental: {
+    outputFileTracingIncludes: {
+      "/api/manual": ["./lib/assets/manual-gastrometrics.pdf"],
+    },
+  },
   // Cabeceras de seguridad (ver docs/61 para las 5 originales; docs/68 para la CSP,
   // agregada después de auditar qué recursos externos usa de verdad la app: Supabase
   // (fetch directo del navegador a *.supabase.co), y nada más — el checkout de Stripe
