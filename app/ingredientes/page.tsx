@@ -62,6 +62,8 @@ import type { Ingredient } from "@/types/ingredient"
 import { categories, units, presentations } from "@/types/ingredient"
 import { getCategoryLabel, getUnitLabel, getPresentationLabel } from "@/lib/ingredient-labels"
 import { getIngredients, saveIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
+import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
+import type { Recipe } from "@/types/recipe"
 import { parseExcelFile, createIngredientsExcelTemplate } from "@/lib/excel-utils"
 import { IngredientsTable } from "@/components/ingredients/ingredients-table"
 import { IngredientesTour } from "@/components/page-tours"
@@ -231,6 +233,9 @@ export default function IngredientesPage() {
 
   // State management
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
+  // Solo para calcular que recetas se afectan al borrar un ingrediente (ver mas
+  // abajo) — esta pantalla no muestra ni edita recetas directamente.
+  const [recipes, setRecipes] = useState<Recipe[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("Todas")
@@ -244,6 +249,9 @@ export default function IngredientesPage() {
   const [showMermaDialog, setShowMermaDialog] = useState(false)
   const [ingredientToEdit, setIngredientToEdit] = useState<Ingredient | null>(null)
   const [ingredientToDelete, setIngredientToDelete] = useState<Ingredient | null>(null)
+  // Recetas que usan el ingrediente que se va a borrar — para avisar ANTES de
+  // confirmar (pedido explícito: nunca se sabía qué recetas se afectaban).
+  const [recipesUsingIngredientToDelete, setRecipesUsingIngredientToDelete] = useState<Recipe[]>([])
 
   // Form wizard state
   const [currentStep, setCurrentStep] = useState(0)
@@ -331,6 +339,10 @@ export default function IngredientesPage() {
         await ensureIngredientsLoaded(businessId)
         const savedIngredients = getIngredients(businessId)
         setIngredients(savedIngredients)
+        // Best-effort: solo se usa para el aviso de "recetas afectadas" al borrar,
+        // no bloquea la carga de ingredientes si falla.
+        await ensureRecipesLoaded(businessId)
+        setRecipes(getRecipes(businessId))
       } catch (error) {
         console.error("Error loading ingredients:", error)
         showError(t("ingredientes_toast_load_error_title"), t("ingredientes_toast_load_error_desc"))
@@ -953,8 +965,15 @@ export default function IngredientesPage() {
   }
 
   // Handle delete - PERMITIR ELIMINAR INGREDIENTES DE SUB-RECETAS
+  // Antes no había forma de saber, antes de confirmar, qué recetas quedarían con un
+  // ingrediente roto/faltante al borrarlo — pedido explícito: avisar cuáles se
+  // afectan (mismo filtro que ya usa lib/recalculate.ts para el caso de cambio de
+  // precio, aplicado aquí al borrado).
   const handleDelete = (ingredient: Ingredient) => {
     setIngredientToDelete(ingredient)
+    setRecipesUsingIngredientToDelete(
+      recipes.filter((recipe) => recipe.ingredients?.some((item) => item.ingredientId === ingredient.id)),
+    )
     setShowDeleteDialog(true)
   }
 
@@ -1000,6 +1019,7 @@ export default function IngredientesPage() {
       showSuccess(t("ingredientes_toast_deleted_title"), t("ingredientes_toast_deleted_desc"))
       setShowDeleteDialog(false)
       setIngredientToDelete(null)
+      setRecipesUsingIngredientToDelete([])
     } catch (error) {
       console.error("Error deleting ingredient:", error)
       showError(t("ingredientes_toast_delete_error_title"), t("ingredientes_toast_delete_error_desc"))
@@ -2171,6 +2191,29 @@ export default function IngredientesPage() {
               {ingredientToDelete?.category === "Sub Receta / produccion (Mise en place)" && (
                 <div className="mt-2 p-2 bg-warning-soft dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded text-warning text-sm">
                   <strong>{t("ingredientes_note_label")}</strong> {t("ingredientes_delete_subrecipe_warning")}
+                </div>
+              )}
+              {recipesUsingIngredientToDelete.length > 0 && (
+                <div className="mt-2 p-3 bg-destructive/10 dark:bg-red-950/40 border border-destructive/30 dark:border-red-900 rounded text-sm">
+                  <p className="font-medium text-destructive dark:text-red-300">
+                    {t("ingredientes_delete_affected_recipes_title").replace(
+                      "{count}",
+                      String(recipesUsingIngredientToDelete.length),
+                    )}
+                  </p>
+                  <ul className="mt-1.5 space-y-0.5 list-disc list-inside text-muted-foreground">
+                    {recipesUsingIngredientToDelete.slice(0, 8).map((recipe) => (
+                      <li key={recipe.id}>{recipe.name}</li>
+                    ))}
+                    {recipesUsingIngredientToDelete.length > 8 && (
+                      <li>
+                        {t("ingredientes_delete_affected_recipes_more").replace(
+                          "{count}",
+                          String(recipesUsingIngredientToDelete.length - 8),
+                        )}
+                      </li>
+                    )}
+                  </ul>
                 </div>
               )}
             </DialogDescription>
