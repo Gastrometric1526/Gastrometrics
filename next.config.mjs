@@ -18,7 +18,14 @@ const nextConfig = {
   // en silencio con una advertencia ("Unrecognized key(s)"), confirmado al probarlo.
   experimental: {
     outputFileTracingIncludes: {
-      "/api/manual": ["./lib/assets/manual-gastrometrics.pdf"],
+      "/api/manual": [
+        "./lib/assets/manual-es.pdf",
+        "./lib/assets/manual-en.pdf",
+        "./lib/assets/manual-da.pdf",
+        "./lib/assets/manual-fr.pdf",
+        "./lib/assets/manual-pt.pdf",
+        "./lib/assets/manual-zh.pdf",
+      ],
     },
   },
   // Cabeceras de seguridad (ver docs/61 para las 5 originales; docs/68 para la CSP,
