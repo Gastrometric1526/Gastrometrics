@@ -21,6 +21,65 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-09-15",
+    content: {
+      es: {
+        title: "Novedades en GastroMetrics",
+        items: [
+          "La app está más traducida que nunca: se corrigieron textos que quedaban en español sin importar el idioma elegido (menú inferior en el celular, actividad reciente, plantilla de importación de ingredientes, y más).",
+          "El manual de usuario completo ahora se puede ver y descargar en PDF directo desde Configuración, sin salir de tu cuenta.",
+          "Si tu cuenta ya existía antes de que pudieras elegir recibir novedades por correo, ahora las recibes por default — puedes desactivarlo en cualquier momento desde Configuración → Notificaciones.",
+          "Se quitó el interruptor de \"Notificaciones SMS\" de Configuración: nunca hizo nada, así que no tenía sentido dejarlo.",
+        ],
+      },
+      en: {
+        title: "What's new in GastroMetrics",
+        items: [
+          "The app is more translated than ever: fixed text that stayed in Spanish no matter which language you picked (mobile bottom navigation, recent activity, ingredient import template, and more).",
+          "The full user manual can now be viewed and downloaded as a PDF right from Settings, without leaving your account.",
+          "If your account existed before you could choose to receive product updates by email, you now receive them by default — you can turn it off anytime from Settings → Notifications.",
+          "Removed the \"SMS notifications\" toggle from Settings: it never actually did anything, so there was no point keeping it.",
+        ],
+      },
+      da: {
+        title: "Nyheder i GastroMetrics",
+        items: [
+          "Appen er mere oversat end nogensinde: rettet tekst, der blev på spansk uanset hvilket sprog du valgte (bundnavigation på mobil, seneste aktivitet, skabelon til import af ingredienser, og mere).",
+          "Hele brugermanualen kan nu ses og downloades som PDF direkte fra Indstillinger, uden at forlade din konto.",
+          "Hvis din konto eksisterede, før du kunne vælge at få produktnyheder via e-mail, får du dem nu som standard — du kan slå det fra når som helst fra Indstillinger → Notifikationer.",
+          "Fjernet \"SMS-notifikationer\"-kontakten fra Indstillinger: den gjorde faktisk aldrig noget, så der var ingen grund til at beholde den.",
+        ],
+      },
+      fr: {
+        title: "Nouveautés de GastroMetrics",
+        items: [
+          "L'application est plus traduite que jamais : correction de textes qui restaient en espagnol quelle que soit la langue choisie (navigation mobile en bas d'écran, activité récente, modèle d'importation d'ingrédients, et plus encore).",
+          "Le manuel utilisateur complet peut désormais être consulté et téléchargé en PDF directement depuis Paramètres, sans quitter votre compte.",
+          "Si votre compte existait avant que vous puissiez choisir de recevoir les nouveautés par e-mail, vous les recevez maintenant par défaut — vous pouvez désactiver cela à tout moment depuis Paramètres → Notifications.",
+          "Suppression du bouton \"Notifications SMS\" dans Paramètres : il ne faisait en réalité rien, donc il n'y avait aucune raison de le garder.",
+        ],
+      },
+      pt: {
+        title: "Novidades no GastroMetrics",
+        items: [
+          "O app está mais traduzido do que nunca: corrigimos textos que ficavam em espanhol independente do idioma escolhido (navegação inferior no celular, atividade recente, modelo de importação de ingredientes, e mais).",
+          "O manual do usuário completo agora pode ser visualizado e baixado em PDF direto em Configurações, sem sair da sua conta.",
+          "Se sua conta já existia antes de você poder escolher receber novidades por e-mail, agora você as recebe por padrão — pode desativar isso a qualquer momento em Configurações → Notificações.",
+          "Removemos o botão \"Notificações por SMS\" de Configurações: ele nunca fazia nada de fato, então não fazia sentido mantê-lo.",
+        ],
+      },
+      zh: {
+        title: "GastroMetrics 更新内容",
+        items: [
+          "应用的多语言支持比以往更完善：修复了之前无论选择哪种语言都仍显示西班牙语的文字（手机底部导航栏、最近活动记录、食材导入模板等）。",
+          "现在可以直接在“设置”中在线查看并下载完整的PDF用户手册，无需离开你的账户。",
+          "如果你的账户是在可以选择接收产品更新邮件功能上线之前创建的，现在会默认为你开启此功能——你可以随时在“设置 → 通知”中关闭。",
+          "移除了“设置”中的“短信通知”开关：它其实从未真正起作用，留着也没有意义。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-09-14",
     content: {
       es: {
