@@ -116,6 +116,13 @@ export default function MisRecetasPage() {
   // Papelera de recetas (ver documento de continuidad) — retención de 30 días
   const [showTrashDialog, setShowTrashDialog] = useState(false)
   const [trashedRecipes, setTrashedRecipes] = useState<TrashedRecipe[]>([])
+  // BUG CORREGIDO (hallazgo de un chequeo exhaustivo de la interfaz): dos clics
+  // rapidos en "Restaurar" para la misma receta (el segundo antes de que la lista
+  // de la papelera se actualizara) hacian que el segundo intento fallara con "No se
+  // pudo restaurar la receta" (ya no estaba en la papelera) — un error real, aunque
+  // inofensivo, en la consola. Este set bloquea un segundo clic mientras el primero
+  // todavia esta en curso.
+  const [restoringRecipeIds, setRestoringRecipeIds] = useState<Set<string>>(new Set())
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedClassification, setSelectedClassification] = useState("Todas")
   const [sortBy, setSortBy] = useState("recent")
@@ -375,6 +382,8 @@ export default function MisRecetasPage() {
   }
 
   const handleRestore = async (recipeId: string) => {
+    if (restoringRecipeIds.has(recipeId)) return
+    setRestoringRecipeIds((prev) => new Set(prev).add(recipeId))
     try {
       const success = await restoreRecipeFromTrash(recipeId, businessId)
       if (!success) throw new Error("No se pudo restaurar la receta")
@@ -385,6 +394,12 @@ export default function MisRecetasPage() {
     } catch (error) {
       console.error("Error restoring recipe:", error)
       showError(t("misrecetas_toast_restore_error_title"), t("misrecetas_toast_restore_error_desc"))
+    } finally {
+      setRestoringRecipeIds((prev) => {
+        const next = new Set(prev)
+        next.delete(recipeId)
+        return next
+      })
     }
   }
 
@@ -965,7 +980,12 @@ export default function MisRecetasPage() {
                         </p>
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
-                        <Button size="sm" variant="outline" onClick={() => handleRestore(recipe.id)}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRestore(recipe.id)}
+                          disabled={restoringRecipeIds.has(recipe.id)}
+                        >
                           {t("misrecetas_trash_restore_button")}
                         </Button>
                         <Button size="sm" variant="destructive" onClick={() => handlePermanentDelete(recipe.id)}>
