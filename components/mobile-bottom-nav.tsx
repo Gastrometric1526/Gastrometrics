@@ -4,22 +4,24 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Home, ChefHat, UtensilsCrossed, Package, BarChart3 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "@/contexts/language-context"
 
 // Barra de navegación inferior en móvil (ver docs/36, prioridad alta #2): antes el
 // drawer lateral era el único acceso a la navegación en teléfono, y su botón hamburguesa
 // se solapaba con el botón "Volver" de cada pantalla. Estos 5 destinos son los de mayor
 // uso — el resto (Ingredientes, Órdenes de Compra, Ficha Técnica, Ajustes...) sigue
 // disponible desde el drawer completo.
-const items = [
-  { href: "/dashboard", label: "Inicio", icon: Home },
-  { href: "/mis-recetas", label: "Recetas", icon: ChefHat },
-  { href: "/menus", label: "Menús", icon: UtensilsCrossed },
-  { href: "/inventario", label: "Inventario", icon: Package },
-  { href: "/estadisticas", label: "Números", icon: BarChart3 },
-]
-
 export function MobileBottomNav() {
   const pathname = usePathname()
+  const { t } = useLanguage()
+
+  const items = [
+    { href: "/dashboard", label: t("mobile_nav_inicio"), icon: Home },
+    { href: "/mis-recetas", label: t("mobile_nav_recetas"), icon: ChefHat },
+    { href: "/menus", label: t("nav_menus"), icon: UtensilsCrossed },
+    { href: "/inventario", label: t("nav_inventario"), icon: Package },
+    { href: "/estadisticas", label: t("mobile_nav_numeros"), icon: BarChart3 },
+  ]
 
   return (
     <nav

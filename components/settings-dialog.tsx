@@ -112,7 +112,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
   const { active: previewActive, member: previewMember } = useActiveMembership()
   const isTeamPreview = previewActive && !!previewMember
   const [open, setOpen] = useState(false)
-  const [notificationPrefs, setNotificationPrefs] = useState({ email: true, push: true, sms: false })
+  const [notificationPrefs, setNotificationPrefs] = useState({ email: true, push: true })
   // A diferencia de los tres de arriba (solo localStorage), este sí es un campo real
   // de `profiles` — se guarda con el resto del perfil en performSave, no aparte.
   const [productUpdatesOptIn, setProductUpdatesOptIn] = useState(false)
@@ -765,21 +765,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
 
                     <Separator />
 
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="notif-sms">{t("settings_sms_notifications")}</Label>
-                        <p className="text-sm text-muted-foreground">{t("settings_sms_notifications_desc")}</p>
-                      </div>
-                      <Switch
-                        id="notif-sms"
-                        checked={notificationPrefs.sms}
-                        onCheckedChange={(checked) => setNotificationPrefs((prev) => ({ ...prev, sms: checked }))}
-                      />
-                    </div>
-
-                    <Separator />
-
-                    {/* A diferencia de los tres de arriba, este SÍ viaja a Supabase con
+                    {/* A diferencia de los dos de arriba, este SÍ viaja a Supabase con
                         el resto del perfil (ver performSave) — es el mismo campo que la
                         casilla del paso 4 del registro. */}
                     <div className="flex items-center justify-between">

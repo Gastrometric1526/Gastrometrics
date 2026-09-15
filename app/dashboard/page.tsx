@@ -699,7 +699,7 @@ export default function DashboardPage() {
   // acceso configurado es "Dashboard principal" — si es a un negocio específico, ni
   // siquiera debería poder aterrizar acá.
   if (previewActive && previewMember && previewMember.scope !== "dashboard") {
-    return <AdminRestrictedPage sectionName="El dashboard principal" />
+    return <AdminRestrictedPage sectionName={t("equipo_scope_dashboard_badge")} />
   }
 
   return (
@@ -990,7 +990,7 @@ export default function DashboardPage() {
                               {formatActivityEntry(activity, t)}
                             </p>
                             <p className="text-xs text-text-4 mt-0.5">
-                              {ActivityTracker.formatTimeAgo(activity.createdAt)}
+                              {ActivityTracker.formatTimeAgo(activity.createdAt, t)}
                             </p>
                           </div>
                         </div>
@@ -1029,7 +1029,7 @@ export default function DashboardPage() {
                           <span className="h-1.5 w-1.5 rounded-full shrink-0 mt-1.5 bg-primary" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground">{formatActivityEntry(alert, t)}</p>
-                            <p className="text-xs text-text-4 mt-0.5">{ActivityTracker.formatTimeAgo(alert.createdAt)}</p>
+                            <p className="text-xs text-text-4 mt-0.5">{ActivityTracker.formatTimeAgo(alert.createdAt, t)}</p>
                           </div>
                         </div>
                       ))}
@@ -1056,9 +1056,9 @@ export default function DashboardPage() {
             {/* Footer */}
             <div className="text-center py-6">
               <p className="text-sm text-text-4">
-                ¿Tienes sugerencias?{" "}
+                {t("dashboard_feedback_question")}{" "}
                 <Link href="/contacto" className="text-primary hover:text-primary/80 font-medium">
-                  Compártelas con nosotros
+                  {t("dashboard_feedback_cta")}
                 </Link>
               </p>
             </div>

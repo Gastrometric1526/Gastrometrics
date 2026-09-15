@@ -256,7 +256,7 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
 
       onMenuSaved(savedMenu)
       ActivityTracker.addActivity(
-        menu ? `Menú actualizado: ${savedMenu.name}` : `Menú creado: ${savedMenu.name}`,
+        (menu ? t("menu_activity_updated") : t("menu_activity_created")).replace("{name}", savedMenu.name),
         "recipe",
         businessId,
         { menuId: savedMenu.id },

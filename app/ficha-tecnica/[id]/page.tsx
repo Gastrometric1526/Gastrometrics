@@ -126,7 +126,7 @@ export default function FichaTecnicaEditPage({
   }
 
   if (!canAccessRecipes) {
-    return <AdminRestrictedPage sectionName="Ficha Técnica" />
+    return <AdminRestrictedPage sectionName={t("nav_ficha_tecnica")} />
   }
 
   if (isLoading) {

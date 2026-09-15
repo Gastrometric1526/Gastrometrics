@@ -142,7 +142,7 @@ export default function LoginPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="tu@email.com"
+                    placeholder={t("auth_email_placeholder")}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10 border-border focus:ring-2 focus:ring-primary"
@@ -232,7 +232,7 @@ export default function LoginPage() {
 
         {/* Additional Info */}
         <div className="text-center text-xs text-muted-foreground">
-          <p>Al iniciar sesión, aceptas nuestros términos de servicio y política de privacidad.</p>
+          <p>{t("login_terms_notice")}</p>
         </div>
       </div>
     </div>

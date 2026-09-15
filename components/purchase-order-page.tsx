@@ -252,7 +252,7 @@ export function PurchaseOrderPage() {
         subtotal,
         tax: 0,
         total: subtotal,
-        notes: `Generada a partir del menú "${menu.name}". Ya se restó lo que hay en inventario — revisa cantidades y proveedor antes de guardar.`,
+        notes: t("ordenes_notes_from_menu").replace("{menu}", menu.name),
       })
       setIsCreateDialogOpen(true)
       toast({
@@ -360,7 +360,7 @@ export function PurchaseOrderPage() {
       subtotal,
       tax: 0,
       total: subtotal,
-      notes: "Generada automáticamente a partir de ingredientes con stock bajo o crítico. Revisa cantidades y proveedor antes de guardar.",
+      notes: t("ordenes_notes_auto_suggested"),
     })
     setIsCreateDialogOpen(true)
     toast({

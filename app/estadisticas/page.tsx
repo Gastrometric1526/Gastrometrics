@@ -850,7 +850,13 @@ function EstadisticasContent() {
                         {inventoryValueByCategory.length === 0 ? (
                           <p className="text-sm text-muted-foreground">{t("estadisticas_register_stock_hint")}</p>
                         ) : (
-                          <CategoryPieChart data={inventoryValueByCategory} valueFormatter={formatCurrency} />
+                          <CategoryPieChart
+                            data={inventoryValueByCategory.map(([key, value]): [string, number] => [
+                              key === "Sin categoría" ? t("estadisticas_uncategorized") : getCategoryLabel(key, language),
+                              value,
+                            ])}
+                            valueFormatter={formatCurrency}
+                          />
                         )}
                       </CardContent>
                     </Card>

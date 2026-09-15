@@ -769,7 +769,10 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
       const savedRecipe = await saveRecipe(recipeToSave, businessId)
 
       ActivityTracker.addActivity(
-        mode === "edit" ? `Receta actualizada: ${savedRecipe.name}` : `Nueva receta: ${savedRecipe.name}`,
+        (mode === "edit" ? t("recipe_activity_updated") : t("recipe_activity_created")).replace(
+          "{name}",
+          savedRecipe.name,
+        ),
         "recipe",
         businessId,
         { action: mode === "edit" ? "update" : "create", recipeId: savedRecipe.id },

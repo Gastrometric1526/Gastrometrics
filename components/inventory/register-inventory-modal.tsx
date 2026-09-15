@@ -396,8 +396,16 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
       variant: "default",
     })
 
+    const inventoryTypeLabel =
+      inventoryType === "inicial"
+        ? t("inventario_register_type_initial")
+        : inventoryType === "final"
+          ? t("inventario_register_type_final")
+          : t("inventario_type_new_purchase")
     ActivityTracker.addActivity(
-      `Inventario registrado: ${ingredientsWithValues.length} producto${ingredientsWithValues.length !== 1 ? "s" : ""} (${inventoryType})`,
+      t("inventario_activity_registered")
+        .replace("{count}", String(ingredientsWithValues.length))
+        .replace("{type}", inventoryTypeLabel),
       "inventory",
       businessId ?? undefined,
       { snapshotId: newInventorySnapshot.id, itemCount: ingredientsWithValues.length },
@@ -1079,11 +1087,23 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                         <p className="text-xs font-medium text-muted-foreground">
                           {t("inventario_register_type_label")}
                         </p>
-                        <p className="font-medium text-sm capitalize text-foreground">{inventoryType}</p>
+                        <p className="font-medium text-sm capitalize text-foreground">
+                          {inventoryType === "inicial"
+                            ? t("inventario_register_type_initial")
+                            : inventoryType === "final"
+                              ? t("inventario_register_type_final")
+                              : t("inventario_type_new_purchase")}
+                        </p>
                       </div>
                       <div className="p-2 bg-muted rounded-md">
                         <p className="text-xs font-medium text-muted-foreground">{t("inventario_period_label")}</p>
-                        <p className="font-medium text-sm capitalize text-foreground">{period}</p>
+                        <p className="font-medium text-sm capitalize text-foreground">
+                          {period === "diario"
+                            ? t("inventario_period_daily")
+                            : period === "semanal"
+                              ? t("inventario_period_weekly")
+                              : t("inventario_period_monthly")}
+                        </p>
                       </div>
                     </div>
 

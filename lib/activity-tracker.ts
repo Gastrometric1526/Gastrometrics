@@ -1,3 +1,7 @@
+import type { useLanguage } from "@/contexts/language-context"
+
+type Translator = ReturnType<typeof useLanguage>["t"]
+
 export interface UserActivity {
   id: string
   action: string
@@ -137,19 +141,37 @@ export class ActivityTracker {
     return this.getAlerts(businessId).filter((alert) => !alert.read).length
   }
 
-  static formatTimeAgo(timestamp: string): string {
+  // `t` es la misma función de traducción de useLanguage() — se pasa como parámetro
+  // porque esta clase es un utilitario plano sin acceso a contexto de React. BUG
+  // CORREGIDO: antes devolvía siempre "Ahora mismo"/"Hace N minutos/horas/días" en
+  // español sin importar el idioma seleccionado (ver auditoría de i18n). Reutiliza
+  // las mismas claves de horas/días que ya usa app/menus/page.tsx (mismo significado,
+  // no específico de menús) y agrega las de minutos/"ahora mismo" que faltaban.
+  static formatTimeAgo(timestamp: string, t: Translator): string {
     const now = new Date()
     const time = new Date(timestamp)
     const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60))
 
-    if (diffInMinutes < 1) return "Ahora mismo"
-    if (diffInMinutes < 60) return `Hace ${diffInMinutes} minuto${diffInMinutes > 1 ? "s" : ""}`
+    if (diffInMinutes < 1) return t("activity_time_ago_just_now")
+    if (diffInMinutes < 60)
+      return t(diffInMinutes > 1 ? "activity_time_ago_minutes_plural" : "activity_time_ago_minutes_singular").replace(
+        "{count}",
+        String(diffInMinutes),
+      )
 
     const diffInHours = Math.floor(diffInMinutes / 60)
-    if (diffInHours < 24) return `Hace ${diffInHours} hora${diffInHours > 1 ? "s" : ""}`
+    if (diffInHours < 24)
+      return t(diffInHours > 1 ? "menus_time_ago_hours_plural" : "menus_time_ago_hours_singular").replace(
+        "{count}",
+        String(diffInHours),
+      )
 
     const diffInDays = Math.floor(diffInHours / 24)
-    if (diffInDays < 7) return `Hace ${diffInDays} día${diffInDays > 1 ? "s" : ""}`
+    if (diffInDays < 7)
+      return t(diffInDays > 1 ? "menus_time_ago_days_plural" : "menus_time_ago_days_singular").replace(
+        "{count}",
+        String(diffInDays),
+      )
 
     return time.toLocaleDateString()
   }

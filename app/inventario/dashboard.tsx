@@ -11,6 +11,7 @@ import { ChevronDown, AlertTriangle, Info, DollarSign, Package } from "lucide-re
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
+import { getCategoryLabel } from "@/lib/ingredient-labels"
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
 import { formatCurrency } from "@/lib/currency"
 
@@ -59,22 +60,22 @@ export function InventoryDashboard({ inventoryItems, inventoryHistory, isLoading
       })
 
       const categoryDistribution = Object.entries(categories).map(([name, value]) => ({
-        name,
+        name: getCategoryLabel(name, language),
         value,
       }))
 
       // Niveles de stock por estado
       const stockLevels = [
-        { name: "Normal", value: inventoryItems.filter((item) => item.status === "normal").length },
-        { name: "Bajo", value: inventoryItems.filter((item) => item.status === "low").length },
-        { name: "Crítico", value: inventoryItems.filter((item) => item.status === "critical").length },
+        { name: t("inventario_status_normal"), value: inventoryItems.filter((item) => item.status === "normal").length },
+        { name: t("inventario_status_low"), value: inventoryItems.filter((item) => item.status === "low").length },
+        { name: t("inventario_status_critical"), value: inventoryItems.filter((item) => item.status === "critical").length },
       ]
 
       // Distribución por ubicación simulada (puedes adaptarlo a tus datos reales)
       const locationDistribution = [
-        { name: "Bodega Principal", value: Math.floor(inventoryItems.length * 0.6) },
-        { name: "Almacén Secundario", value: Math.floor(inventoryItems.length * 0.25) },
-        { name: "Cocina", value: Math.floor(inventoryItems.length * 0.15) },
+        { name: t("inventario_location_main_warehouse"), value: Math.floor(inventoryItems.length * 0.6) },
+        { name: t("inventario_location_secondary_warehouse"), value: Math.floor(inventoryItems.length * 0.25) },
+        { name: t("inventario_location_kitchen"), value: Math.floor(inventoryItems.length * 0.15) },
       ]
 
       setChartData({

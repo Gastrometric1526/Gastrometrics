@@ -1346,7 +1346,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                               {formatActivityEntry(activity, t)}
                             </p>
                             <p className="text-xs text-foreground/70 font-medium mt-1">
-                              {ActivityTracker.formatTimeAgo(activity.createdAt)}
+                              {ActivityTracker.formatTimeAgo(activity.createdAt, t)}
                             </p>
                           </div>
                         </div>
@@ -1384,7 +1384,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                               {formatActivityEntry(alert, t)}
                             </p>
                             <p className="text-xs text-foreground/50 mt-1">
-                              {ActivityTracker.formatTimeAgo(alert.createdAt)}
+                              {ActivityTracker.formatTimeAgo(alert.createdAt, t)}
                             </p>
                           </div>
                         </div>

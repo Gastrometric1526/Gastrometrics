@@ -627,7 +627,7 @@ export default function IngredientesPage() {
               pricePerUnit: purchasePrice / netContent,
               lastUpdated: new Date().toISOString(),
             },
-            supplier: supplierRaw || "Proveedor General",
+            supplier: supplierRaw || t("ingredientes_default_supplier"),
             notes: "",
             metadata: {
               createdAt: new Date().toISOString(),
@@ -1233,7 +1233,7 @@ export default function IngredientesPage() {
   }
 
   if (!canAccessIngredients) {
-    return <AdminRestrictedPage sectionName="Ingredientes" />
+    return <AdminRestrictedPage sectionName={t("nav_ingredientes")} />
   }
 
   return (
@@ -2124,12 +2124,12 @@ export default function IngredientesPage() {
                 <div className="text-sm">
                   <strong>{t("ingredientes_recognized_columns_label")}</strong>
                   <ul className="list-disc list-inside mt-2 space-y-1">
-                    <li>Categoría / categoria / CATEGORIA (con lista desplegable en la plantilla descargada)</li>
-                    <li>Nombre / nombre / NOMBRE / Ingredientes</li>
-                    <li>Unidad / unidad / UNIDAD</li>
-                    <li>Precio de Compra / precio / PRECIO</li>
-                    <li>Contenido Neto / contenido / CONTENIDO</li>
-                    <li>Proveedor / proveedor / PROVEEDOR</li>
+                    <li>{t("ingredientes_import_col_category")}</li>
+                    <li>{t("ingredientes_import_col_name")}</li>
+                    <li>{t("ingredientes_import_col_unit")}</li>
+                    <li>{t("ingredientes_import_col_price")}</li>
+                    <li>{t("ingredientes_import_col_content")}</li>
+                    <li>{t("ingredientes_import_col_supplier")}</li>
                   </ul>
                 </div>
               </div>
