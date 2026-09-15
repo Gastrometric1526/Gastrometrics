@@ -331,12 +331,16 @@ export function ManualSalesEntryDialog({
                 {lines.map((l) => (
                   <div key={l.id} className="flex items-center justify-between px-3 py-2 text-sm">
                     <div className="min-w-0">
-                      <p className="font-medium truncate flex items-center gap-2">
+                      {/* BUG CORREGIDO: era un <p> envolviendo un <Badge> (que
+                      renderiza un <div>) — <div> dentro de <p> es HTML invalido,
+                      mismo error de hidratacion ya corregido en
+                      estadisticas-finanzas-tab.tsx para esta misma fila. */}
+                      <div className="font-medium truncate flex items-center gap-2">
                         {l.name}
                         <Badge variant="outline" className="text-[10px] shrink-0">
                           {l.sourceType === "menu" ? t("manual_sales_type_menu") : t("manual_sales_type_recipe")}
                         </Badge>
-                      </p>
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         {l.quantity} × {formatCurrency(l.unitPrice)} = {formatCurrency(l.quantity * l.unitPrice)}
                       </p>

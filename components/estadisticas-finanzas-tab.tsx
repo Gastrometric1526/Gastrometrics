@@ -626,14 +626,19 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
                   className="flex items-center justify-between text-sm bg-muted/20 rounded-lg px-3 py-2"
                 >
                   <div className="min-w-0">
-                    <p className="font-medium truncate flex items-center gap-2">
+                    {/* BUG CORREGIDO: esto era un <p> envolviendo un <Badge> (que
+                    renderiza un <div>) — <div> dentro de <p> es HTML invalido y
+                    causaba un error real de hidratacion en consola. Un <div> aqui
+                    cumple exactamente el mismo rol visual (flex row), sin la regla
+                    de anidado que <p> sí tiene. */}
+                    <div className="font-medium truncate flex items-center gap-2">
                       <span className="truncate">{imp.fileName}</span>
                       {imp.source === "manual" && (
                         <Badge variant="secondary" className="shrink-0 text-[10px]">
                           {t("finanzas_manual_entry_badge")}
                         </Badge>
                       )}
-                    </p>
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {new Date(imp.importedAt).toLocaleString()} · {imp.lineCount} {t("finanzas_import_rows_suffix")} ·{" "}
                       {formatCurrency(imp.totalRevenue)}
