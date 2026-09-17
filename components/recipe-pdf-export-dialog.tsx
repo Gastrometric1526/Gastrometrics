@@ -26,6 +26,10 @@ interface RecipePDFExportDialogProps {
   onOpenChange: (open: boolean) => void
   businessName?: string
   businessLogo?: string
+  // true cuando `recipe` es la versión escalada por PAX en memoria (ver
+  // onScaledPreviewChange en components/technical-sheet/index.tsx), no la receta
+  // realmente guardada — el aviso deja claro que este PDF no afecta lo guardado.
+  isScaledPreview?: boolean
 }
 
 export function RecipePDFExportDialog({
@@ -34,6 +38,7 @@ export function RecipePDFExportDialog({
   onOpenChange,
   businessName,
   businessLogo,
+  isScaledPreview,
 }: RecipePDFExportDialogProps) {
   const canExportAdministrative = useFeatureAccess("pdf_admin")
   const canExportAtAll = useFeatureAccess("pdf_export")
@@ -135,6 +140,14 @@ export function RecipePDFExportDialog({
           </div>
         ) : (
         <div className="space-y-4 py-4">
+          {isScaledPreview && (
+            <Alert>
+              <Users className="h-4 w-4" />
+              <AlertDescription>
+                {t("pdfexport_scaled_preview_notice").replace("{yield}", recipe.yieldAmount.toFixed(0))}
+              </AlertDescription>
+            </Alert>
+          )}
           <RadioGroup value={selectedType} onValueChange={(value) => setSelectedType(value as PDFExportType)}>
             {pdfTypes.map((type) => {
               const Icon = type.icon

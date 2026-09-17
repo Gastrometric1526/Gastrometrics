@@ -55,6 +55,14 @@ interface TechnicalSheetProps {
   mode: "new" | "view" | "edit"
   recipeId?: string
   businessId?: string
+  // Pedido explícito: exportar el PDF de cocina escalado al PAX sin tener que
+  // guardar primero (guardar ahora sobrescribe el rendimiento base de forma
+  // permanente, con confirmación — ver handleSaveRecipe/commitSaveRecipe más abajo).
+  // El botón "Exportar PDF" vive en la página contenedora
+  // (app/ficha-tecnica/[id]/page.tsx), que no tiene acceso al estado interno de PAX
+  // de este componente — este callback le avisa cuál es la versión escalada vigente
+  // (o null si el PAX no está activo, para que use la receta guardada tal cual).
+  onScaledPreviewChange?: (scaledRecipe: Recipe | null) => void
 }
 
 // Exportada (antes privada del componente) para poder cubrirla con una prueba
@@ -77,7 +85,7 @@ function parsePositiveOrUndefined(input: string): number | undefined {
   return parsed
 }
 
-export function TechnicalSheet({ mode, recipeId, businessId = "main" }: TechnicalSheetProps) {
+export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPreviewChange }: TechnicalSheetProps) {
   const router = useRouter()
   const { toast } = useToast()
   const { language, t } = useLanguage()
@@ -439,6 +447,38 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
     isv,
     customUnitProfitInput,
     customPriceInput,
+  ])
+
+  // Avisa a la página contenedora cuál es la versión escalada por PAX vigente (o
+  // null si el PAX no está activo) — así "Exportar PDF" puede usar las cantidades ya
+  // escaladas SIN que el usuario tenga que guardar primero (guardar con PAX activo
+  // sobrescribe el rendimiento base de forma permanente, ver commitSaveRecipe). Esta
+  // es la vía "temporal, solo para hoy" que pedía el análisis original — la fórmula de
+  // escalado es la misma que usa commitSaveRecipe, solo que acá nunca se persiste.
+  useEffect(() => {
+    if (!onScaledPreviewChange) return
+    const paxIsActive = paxModifier > 0 && calculations.paxMultiplier !== 1
+    if (!paxIsActive) {
+      onScaledPreviewChange(null)
+      return
+    }
+    const validIngredients = recipe.ingredients.filter((ing) => ing.ingredientId && ing.quantity > 0)
+    const effectiveYield = recipe.yieldAmount > 0 ? recipe.yieldAmount : calculations.yieldByWeight
+    const scaledIngredients = validIngredients.map((ing) => {
+      const scaledQuantity = Math.ceil(ing.quantity * calculations.paxMultiplier * 10) / 10
+      return { ...ing, quantity: scaledQuantity, extension: scaledQuantity * (ing.unitCost || 0) }
+    })
+    onScaledPreviewChange({
+      ...recipe,
+      yieldAmount: effectiveYield * calculations.paxMultiplier,
+      ingredients: scaledIngredients,
+    })
+  }, [
+    onScaledPreviewChange,
+    paxModifier,
+    calculations.paxMultiplier,
+    calculations.yieldByWeight,
+    recipe,
   ])
 
   const handlePopoverOpenChange = useCallback((index: number, open: boolean) => {
