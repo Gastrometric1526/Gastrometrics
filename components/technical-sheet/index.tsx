@@ -33,6 +33,16 @@ import type { Ingredient } from "@/types/ingredient"
 import { unitAbbreviations } from "@/types/ingredient"
 import { NumericInput } from "@/components/ui/numeric-input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog"
 import { formatCurrency } from "@/lib/currency"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
@@ -122,6 +132,12 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
   })
 
   const [paxModifier, setPaxModifier] = useState<number>(0)
+  // Confirmación explícita al guardar con el modificador de PAX activo — antes,
+  // guardar en ese estado sobrescribía el rendimiento base de la receta en
+  // silencio, sin que el usuario supiera que dejó de ser el tamaño "real" del
+  // plato hasta que notara el botón "Restaurar receta original". Ahora el guardado
+  // solo procede tras confirmar este diálogo; cancelar no guarda nada.
+  const [showPaxSaveConfirm, setShowPaxSaveConfirm] = useState(false)
   const [contributionMargin, setContributionMargin] = useState<number>(30)
   const [publicServices, setPublicServices] = useState<number>(10)
   const [marketing, setMarketing] = useState<number>(10)
@@ -664,49 +680,14 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
     [handleImageUpload],
   )
 
-  const handleSaveRecipe = useCallback(async () => {
+  // Contiene el guardado real (construir recipeToSave, persistir, actividad,
+  // navegar) — separado de handleSaveRecipe para que el modificador de PAX pueda
+  // interceptar el flujo con un diálogo de confirmación (ver más abajo) antes de
+  // llegar hasta aquí, sin duplicar la validación de arriba.
+  const commitSaveRecipe = useCallback(async () => {
     try {
-      if (!recipe.name || recipe.name.trim() === "") {
-        toast({
-          title: t("ficha_tecnica_toast_missing_name_title"),
-          description: t("ficha_tecnica_toast_missing_name_desc"),
-          variant: "destructive",
-        })
-        return
-      }
-
-      if (!recipe.classification) {
-        toast({
-          title: t("ficha_tecnica_toast_missing_classification_title"),
-          description: t("ficha_tecnica_toast_missing_classification_desc"),
-          variant: "destructive",
-        })
-        return
-      }
-
       const validIngredients = recipe.ingredients.filter((ing) => ing.ingredientId && ing.quantity > 0)
-
-      if (validIngredients.length === 0) {
-        toast({
-          title: t("ficha_tecnica_toast_missing_ingredient_title"),
-          description: t("ficha_tecnica_toast_missing_ingredient_desc"),
-          variant: "destructive",
-        })
-        return
-      }
-
-      const isSubRecipe = recipe.classification === SUBRECIPE_CLASSIFICATION
       const effectiveYield = recipe.yieldAmount > 0 ? recipe.yieldAmount : calculations.yieldByWeight
-
-      if (!isSubRecipe && effectiveYield <= 0) {
-        toast({
-          title: t("ficha_tecnica_toast_missing_yield_title"),
-          description: t("ficha_tecnica_toast_missing_yield_desc"),
-          variant: "destructive",
-        })
-        return
-      }
-
       const validProcedures = recipe.procedure.filter((step) => step.trim() !== "")
 
       const pricingConfig: any = {
@@ -814,10 +795,82 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
     laborCosts,
     isv,
     customUnitProfitInput,
+    customPriceInput,
     calculations.yieldByWeight,
     paxModifier,
     calculations.paxMultiplier,
   ])
+
+  // Validaciones de siempre + el nuevo paso: si el modificador de PAX está activo,
+  // guardar sobrescribiría el rendimiento base de la receta de forma permanente
+  // (ver comentario dentro de commitSaveRecipe) — en vez de hacerlo en silencio,
+  // pide confirmación explícita primero. Cancelar no guarda absolutamente nada.
+  const handleSaveRecipe = useCallback(async () => {
+    if (!recipe.name || recipe.name.trim() === "") {
+      toast({
+        title: t("ficha_tecnica_toast_missing_name_title"),
+        description: t("ficha_tecnica_toast_missing_name_desc"),
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!recipe.classification) {
+      toast({
+        title: t("ficha_tecnica_toast_missing_classification_title"),
+        description: t("ficha_tecnica_toast_missing_classification_desc"),
+        variant: "destructive",
+      })
+      return
+    }
+
+    const validIngredients = recipe.ingredients.filter((ing) => ing.ingredientId && ing.quantity > 0)
+
+    if (validIngredients.length === 0) {
+      toast({
+        title: t("ficha_tecnica_toast_missing_ingredient_title"),
+        description: t("ficha_tecnica_toast_missing_ingredient_desc"),
+        variant: "destructive",
+      })
+      return
+    }
+
+    const isSubRecipe = recipe.classification === SUBRECIPE_CLASSIFICATION
+    const effectiveYield = recipe.yieldAmount > 0 ? recipe.yieldAmount : calculations.yieldByWeight
+
+    if (!isSubRecipe && effectiveYield <= 0) {
+      toast({
+        title: t("ficha_tecnica_toast_missing_yield_title"),
+        description: t("ficha_tecnica_toast_missing_yield_desc"),
+        variant: "destructive",
+      })
+      return
+    }
+
+    const paxIsActive = paxModifier > 0 && calculations.paxMultiplier !== 1
+    if (paxIsActive) {
+      setShowPaxSaveConfirm(true)
+      return
+    }
+
+    await commitSaveRecipe()
+  }, [
+    recipe.name,
+    recipe.classification,
+    recipe.ingredients,
+    recipe.yieldAmount,
+    calculations.yieldByWeight,
+    calculations.paxMultiplier,
+    paxModifier,
+    toast,
+    t,
+    commitSaveRecipe,
+  ])
+
+  const handleConfirmPaxSave = useCallback(async () => {
+    setShowPaxSaveConfirm(false)
+    await commitSaveRecipe()
+  }, [commitSaveRecipe])
 
   // Restaura el rendimiento e ingredientes al tamaño original guardado en
   // originalSnapshot (ver handleSave) y limpia el modificador — el usuario debe
@@ -1675,6 +1728,25 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main" }: Technica
           </Button>
         </div>
       )}
+
+      <AlertDialog open={showPaxSaveConfirm} onOpenChange={setShowPaxSaveConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("ficha_tecnica_pax_save_confirm_title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("ficha_tecnica_pax_save_confirm_desc")
+                .replace("{oldYield}", (calculations.yieldAmount / calculations.paxMultiplier).toFixed(1))
+                .replace("{newYield}", calculations.yieldAmount.toFixed(1))}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common_cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmPaxSave}>
+              {t("ficha_tecnica_pax_save_confirm_button")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <CalculationInfoDialog
         open={showCalculationInfo}
