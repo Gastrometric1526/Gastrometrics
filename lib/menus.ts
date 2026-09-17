@@ -405,3 +405,35 @@ export function generateMenuIngredientList(businessId: string, menu: Menu): Purc
     inventorySnapshot,
   })
 }
+
+/**
+ * Genera la lista de ingredientes necesarios para UNA sola receta (usada por
+ * "Generar Orden de Compra" desde Ficha Técnica) — mismo mecanismo que
+ * generateMenuIngredientList arriba (buildPurchaseOrderData con el inventario actual
+ * ya restado, expansión de sub-recetas incluida), solo que con un único recipeId en
+ * vez de los de todo un menú. `compax` es el mismo multiplicador que ya usa el
+ * Modificador de PAX de Ficha Técnica (rendimiento deseado ÷ rendimiento base) — 1 si
+ * el PAX no está activo, para pedir exactamente lo que la receta guardada necesita.
+ */
+export function generateRecipeIngredientList(
+  businessId: string,
+  recipeId: string,
+  compax = 1,
+): PurchaseOrderComputationResult {
+  const ingredients = getIngredients(businessId)
+
+  const inventorySnapshot: Record<string, number> = {}
+  ingredients.forEach((ingredient) => {
+    const currentStock = (ingredient as any).currentStock
+    if (typeof currentStock === "number" && currentStock > 0) {
+      inventorySnapshot[ingredient.id] = currentStock
+    }
+  })
+
+  return buildPurchaseOrderData({
+    businessId,
+    selectedRecipeIds: [recipeId],
+    compaxByRecipeId: { [recipeId]: compax },
+    inventorySnapshot,
+  })
+}

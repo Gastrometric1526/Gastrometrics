@@ -38,7 +38,7 @@ import { getIngredients, updateIngredient, ensureIngredientsLoaded } from "@/lib
 import { getInventory, ensureInventoryLoaded } from "@/lib/storage/inventory"
 import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { getMenuById, ensureMenusLoaded } from "@/lib/menus"
-import { generateMenuIngredientList } from "@/lib/menus"
+import { generateMenuIngredientList, generateRecipeIngredientList } from "@/lib/menus"
 import { sortPurchaseOrderItemsBySupplier, sortPurchaseOrderItemsByCategory } from "@/lib/purchase-orders"
 import { computePresentationQuantity } from "@/lib/utils/presentation-quantity"
 import { ActivityTracker } from "@/lib/activity-tracker"
@@ -258,6 +258,86 @@ export function PurchaseOrderPage() {
       toast({
         title: t("ordenes_toast_generated_from_menu_title"),
         description: t("ordenes_toast_generated_from_menu_desc").replace("{count}", String(items.length)).replace("{menu}", menu.name),
+      })
+      return
+    }
+
+    // Deep-link desde Ficha Técnica ("Generar Orden de Compra" en el encabezado de una
+    // receta): ?fromRecipe={recipeId}&compax={n} arma una orden sugerida a partir de
+    // los ingredientes de esa receta (con inventario ya restado, ver
+    // lib/menus.ts generateRecipeIngredientList), y abre el diálogo ya lleno para
+    // revisar antes de guardar. `compax` es opcional — llega escalado si el
+    // Modificador de PAX estaba activo en la Ficha Técnica (ver docs/112), y se omite
+    // (equivalente a 1) si no.
+    const fromRecipeId = searchParams.get("fromRecipe")
+    if (fromRecipeId && businessId) {
+      if (!hasFeatureAccess("purchase_orders_auto")) {
+        toast({
+          title: t("ordenes_toast_plan_locked_title"),
+          description: t("ordenes_toast_plan_locked_auto_menu_desc"),
+          variant: "destructive",
+        })
+        return
+      }
+
+      const recipe = getRecipes(businessId).find((r) => r.id === fromRecipeId)
+      if (!recipe) {
+        toast({
+          title: t("ordenes_toast_recipe_not_found_title"),
+          description: t("ordenes_toast_recipe_not_found_desc"),
+          variant: "destructive",
+        })
+        return
+      }
+
+      const compaxParam = searchParams.get("compax")
+      const compax = compaxParam ? Number.parseFloat(compaxParam) : 1
+      const result = generateRecipeIngredientList(businessId, fromRecipeId, isNaN(compax) || compax <= 0 ? 1 : compax)
+      if (result.items.length === 0) {
+        toast({
+          title: t("ordenes_toast_nothing_to_buy_title"),
+          description: t("ordenes_toast_nothing_to_buy_recipe_desc"),
+        })
+        return
+      }
+
+      const items: PurchaseOrderFormItem[] = sortPurchaseOrderItemsByCategory(
+        result.items.map((item, index) => ({
+          id: `recipe-${fromRecipeId}-${item.ingredientId}-${index}`,
+          ingredientId: item.ingredientId,
+          ingredientName: item.ingredientName,
+          quantity: Math.round(item.quantity * 100) / 100,
+          unit: item.unit,
+          unitPrice: Math.round(item.unitPrice * 100) / 100,
+          totalPrice: Math.round(item.totalPrice * 100) / 100,
+          supplier: item.supplier || "",
+          category: item.category,
+          presentation: item.presentation,
+          presentationQuantity: item.presentationQuantity,
+        })),
+      )
+      const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0)
+
+      setEditingOrder(null)
+      setIsSuggestedFromMenu(true)
+      setSuggestedFormData({
+        orderNumber: `OC-${recipe.name}-${Date.now()}`,
+        supplier: "",
+        orderDate: new Date().toISOString().split("T")[0],
+        expectedDeliveryDate: "",
+        status: "pending",
+        items,
+        subtotal,
+        tax: 0,
+        total: subtotal,
+        notes: t("ordenes_notes_from_recipe").replace("{recipe}", recipe.name),
+      })
+      setIsCreateDialogOpen(true)
+      toast({
+        title: t("ordenes_toast_generated_from_recipe_title"),
+        description: t("ordenes_toast_generated_from_recipe_desc")
+          .replace("{count}", String(items.length))
+          .replace("{recipe}", recipe.name),
       })
     }
   }

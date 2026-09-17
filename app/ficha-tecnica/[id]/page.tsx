@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { ArrowLeft, FileDown, Pencil } from "lucide-react"
+import { ArrowLeft, FileDown, Pencil, ShoppingCart } from "lucide-react"
 import { Sidebar } from "@/components/sidebar"
 import { TechnicalSheet } from "@/components/technical-sheet"
 import { RecipePDFExportDialog } from "@/components/recipe-pdf-export-dialog"
@@ -212,6 +212,23 @@ export default function FichaTecnicaEditPage({
               <Button onClick={() => setShowPDFExport(true)} variant="outline" className="gap-2">
                 <FileDown className="h-4 w-4" />
                 {t("ficha_tecnica_export_pdf")}
+                {previewRecipe && (
+                  <span className="ml-1 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent-deep">
+                    {t("ficha_tecnica_export_pax_badge").replace("{yield}", previewRecipe.yieldAmount.toFixed(0))}
+                  </span>
+                )}
+              </Button>
+              <Button
+                onClick={() => {
+                  const compax = previewRecipe && recipe.yieldAmount > 0 ? previewRecipe.yieldAmount / recipe.yieldAmount : null
+                  const compaxParam = compax && compax !== 1 ? `&compax=${compax}` : ""
+                  router.push(`/business/${businessId}/ordenes-compra?fromRecipe=${recipeId}${compaxParam}`)
+                }}
+                variant="outline"
+                className="gap-2"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                {t("ficha_tecnica_generate_purchase_order")}
                 {previewRecipe && (
                   <span className="ml-1 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent-deep">
                     {t("ficha_tecnica_export_pax_badge").replace("{yield}", previewRecipe.yieldAmount.toFixed(0))}
