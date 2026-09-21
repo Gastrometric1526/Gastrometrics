@@ -14,6 +14,7 @@ import { LogIn, Mail, Lock, ArrowLeft } from "lucide-react"
 import { GastrometricsLogo } from "@/components/gastrometrics-logo"
 import { setCurrentPlanSlug } from "@/lib/plan-access"
 import { bootstrapPasswordHashIfMissing } from "@/lib/utils/password-hash"
+import { consumePendingSignupPlan } from "@/lib/pending-signup-plan"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -32,6 +33,15 @@ export default function LoginPage() {
       .catch(() => null)
     if (devAccountResult?.applied && devAccountResult.planSlug) {
       setCurrentPlanSlug(devAccountResult.planSlug)
+    }
+    // Pedido explícito: si eligió un plan pago al registrarse pero tuvo que confirmar
+    // el correo antes de poder iniciar sesión de verdad (el caso normal), este es el
+    // primer login real de la cuenta — acá es donde se retoma esa elección en vez de
+    // perderla, ver lib/pending-signup-plan.ts.
+    const pendingPlan = consumePendingSignupPlan()
+    if (pendingPlan) {
+      router.push(`/signup/payment?plan=${pendingPlan}`)
+      return
     }
     router.push("/dashboard")
   }

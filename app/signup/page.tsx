@@ -4,6 +4,8 @@ import { Suspense, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { setCurrentPlanSlug } from "@/lib/plan-access"
+import { getLocalizedPlans } from "@/lib/plans"
+import { setPendingSignupPlan, consumePendingSignupPlan } from "@/lib/pending-signup-plan"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -54,10 +56,23 @@ export default function SignupPage() {
 function SignupPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const selectedPlan = searchParams.get("plan")
   const { login, signUp } = useAuth()
   const { t, language } = useLanguage()
+  // Planes que se pueden elegir en el registro — "chef-ejecutivo" queda afuera a
+  // propósito, mismo criterio que /planes (components/plans-grid.tsx): tiene
+  // comingSoon=true, no es autoservicio, su único CTA en toda la app es "hablar con
+  // ventas". Si llegan con ?plan=chef-ejecutivo (o cualquier slug que no exista) desde
+  // afuera, cae a "foodie" en vez de dejar seleccionado algo no comprable.
+  const selectablePlans = getLocalizedPlans(language).filter((plan) => !plan.comingSoon)
+  const planFromUrl = searchParams.get("plan")
+  const initialPlanSlug = selectablePlans.some((plan) => plan.slug === planFromUrl) ? planFromUrl! : "foodie"
   const [currentStep, setCurrentStep] = useState(1)
+  // Pedido explícito del dueño del proyecto: "el cuestionario de crear cuenta debería
+  // preguntar a que plan quiere crear la cuenta" — antes esto solo se decidía por un
+  // ?plan= en la URL (llegando desde /planes), invisible para cualquiera que entrara
+  // directo a /signup; ahora siempre es una elección explícita y visible, con "foodie"
+  // como default sensato si no vienen de ningún lado con un plan ya elegido.
+  const [selectedPlanSlug, setSelectedPlanSlug] = useState(initialPlanSlug)
   const [isLoading, setIsLoading] = useState(false)
   const [showCheckEmail, setShowCheckEmail] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -79,7 +94,7 @@ function SignupPageInner() {
   })
   const [confirmPassword, setConfirmPassword] = useState("")
 
-  const totalSteps = 4
+  const totalSteps = 5
   const progress = (currentStep / totalSteps) * 100
 
   const updateFormData = (field: keyof UserRegistrationData, value: string) => {
@@ -142,6 +157,14 @@ function SignupPageInner() {
 
     setIsLoading(true)
 
+    // Se guarda ANTES de intentar el login — si la cuenta exige confirmar el correo
+    // (el caso normal, ver comentario de cabecera de lib/pending-signup-plan.ts), el
+    // intento de abajo va a fallar y la persona recién vuelve a tener sesión real más
+    // tarde desde /login, que también sabe leer esto (ver app/login/page.tsx).
+    if (selectedPlanSlug !== "foodie") {
+      setPendingSignupPlan(selectedPlanSlug)
+    }
+
     try {
       await signUp(
         formData.email!,
@@ -180,10 +203,14 @@ function SignupPageInner() {
         throw loginError
       }
 
-      // Los planes pagos pasan por un paso de método de pago antes del dashboard;
-      // el plan gratuito (o sin plan elegido, ej. entrando por "Comenzar Gratis") va directo.
-      if (selectedPlan && selectedPlan !== "foodie") {
-        router.push(`/signup/payment?plan=${selectedPlan}`)
+      // Los planes pagos pasan por un paso de método de pago antes del dashboard; el
+      // plan gratuito va directo. consumePendingSignupPlan() (no selectedPlanSlug
+      // directo) porque este login inmediato es el único punto donde SÍ hace falta
+      // consumirlo ahora — si en cambio la cuenta exigió confirmar el correo primero,
+      // este bloque nunca se ejecuta y queda pendiente para cuando entren por /login.
+      const pendingPlan = consumePendingSignupPlan()
+      if (pendingPlan) {
+        router.push(`/signup/payment?plan=${pendingPlan}`)
       } else {
         setCurrentPlanSlug("foodie")
         router.push("/dashboard")
@@ -281,12 +308,14 @@ function SignupPageInner() {
               {currentStep === 2 && t("signup_step2_title")}
               {currentStep === 3 && t("signup_step3_title")}
               {currentStep === 4 && t("signup_step4_title")}
+              {currentStep === 5 && t("signup_step5_title")}
             </CardTitle>
             <CardDescription className="text-muted-foreground">
               {currentStep === 1 && t("signup_step1_desc")}
               {currentStep === 2 && t("signup_step2_desc")}
               {currentStep === 3 && t("signup_step3_desc")}
               {currentStep === 4 && t("signup_step4_desc")}
+              {currentStep === 5 && t("signup_step5_desc")}
             </CardDescription>
           </CardHeader>
 
@@ -538,8 +567,49 @@ function SignupPageInner() {
               </div>
             )}
 
-            {/* Step 4: Confirmation */}
+            {/* Step 4: Plan selection */}
             {currentStep === 4 && (
+              <div className="space-y-3 animate-in fade-in-50 duration-300">
+                {selectablePlans.map((plan) => {
+                  const isSelected = selectedPlanSlug === plan.slug
+                  return (
+                    <button
+                      key={plan.slug}
+                      type="button"
+                      onClick={() => setSelectedPlanSlug(plan.slug)}
+                      className={`w-full text-left rounded-lg border-2 p-4 transition-all ${
+                        isSelected
+                          ? "border-primary bg-primary/5"
+                          : "border-muted bg-background hover:bg-accent hover:text-accent-foreground"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-foreground">{plan.name}</span>
+                            {plan.highlighted && (
+                              <span className="text-[10px] font-semibold uppercase tracking-wide bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                                {t("planes_most_chosen_badge")}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{plan.tagline}</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="font-semibold text-foreground">{plan.price}</p>
+                          {isSelected && (
+                            <p className="text-xs text-primary font-medium">{t("signup_plan_selected_label")}</p>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Step 5: Confirmation */}
+            {currentStep === 5 && (
               <div className="space-y-6 animate-in fade-in-50 duration-300">
                 <div className="text-center space-y-4">
                   <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto">
@@ -590,6 +660,12 @@ function SignupPageInner() {
                           const selectedSize = BUSINESS_SIZES.find((bs) => bs.value === formData.businessSize)
                           return selectedSize ? t(selectedSize.labelKey) : ""
                         })()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">{t("signup_review_plan_label")}</p>
+                      <p className="font-medium">
+                        {selectablePlans.find((p) => p.slug === selectedPlanSlug)?.name}
                       </p>
                     </div>
                   </div>

@@ -173,8 +173,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // No se reescribe la fila en Supabase acá (el cliente no puede, RLS bloquea
       // escrituras directas a account_plans) — es solo un cálculo de lectura, la fila
       // real se corrige la próxima vez que alguien la edite desde /admin.
+      // BUG CORREGIDO: esto antes era `if (planRow?.plan_slug) setCurrentPlanSlug(...)`
+      // — si la cuenta no tenía fila en account_plans (ver supabase/migrations/
+      // 0029_account_plans_signup_trigger_fix.sql para la causa real: el trigger de
+      // registro llevaba desde 0007_preferred_language.sql sin crear esa fila), el
+      // caché local de plan (lib/plan-access.ts) simplemente NO se tocaba — se quedaba
+      // con lo que hubiera antes en localStorage, de la cuenta anterior que haya usado
+      // ese mismo navegador (confirmado en vivo: una cuenta nueva mostró "Chef
+      // Ejecutivo" heredado de una sesión de prueba anterior). Ahora SIEMPRE se
+      // sincroniza, cayendo a "foodie" cuando no hay fila real — mismo criterio de
+      // seguridad que ya se usaba para un plan vencido.
       const isExpired = planRow?.plan_expires_at ? new Date(planRow.plan_expires_at).getTime() < Date.now() : false
-      if (planRow?.plan_slug) setCurrentPlanSlug(isExpired ? "foodie" : planRow.plan_slug)
+      setCurrentPlanSlug(planRow?.plan_slug && !isExpired ? planRow.plan_slug : "foodie")
       // Negocios/cupos de equipo extra cedidos a mano desde /admin (ver
       // lib/plan-overrides.ts) — independientes del vencimiento del plan, se
       // sincronizan siempre que la fila exista.
