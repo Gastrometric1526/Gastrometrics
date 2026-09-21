@@ -10,105 +10,68 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useLanguage } from "@/contexts/language-context"
+import {
+  type DemoDraft,
+  type DemoIngredient,
+  LANDING_DEMO_STORAGE_KEY,
+  LANDING_DEMO_EXPIRY_MS,
+  emptyLandingDemoDraft,
+  readLandingDemoDraft,
+  unitCostOf,
+} from "@/lib/landing-demo"
 
-interface DemoIngredient {
-  id: string
-  name: string
-  unitCost: number
-}
-
-interface DemoRecipeLine {
-  id: string
-  ingredientId: string
-  quantity: number
-}
-
-interface DemoDraft {
-  dishName: string
-  ingredients: DemoIngredient[]
-  recipeLines: DemoRecipeLine[]
-  salePrice: number
-  step: 1 | 2
-  startedAt: number
-}
-
-const MAX_INGREDIENTS = 6
+const MAX_INGREDIENTS = 5
 const MIN_INGREDIENTS = 1
-const STORAGE_KEY = "gm_landing_demo_v1"
-const EXPIRY_MS = 10 * 60 * 1000
-
-function emptyDraft(): DemoDraft {
-  return {
-    dishName: "",
-    ingredients: [{ id: "i1", name: "", unitCost: 0 }],
-    recipeLines: [],
-    salePrice: 0,
-    step: 1,
-    startedAt: Date.now(),
-  }
-}
-
-// Carga el borrador si existe y todavía no expiró (10 min desde que se empezó a llenar,
-// sin importar actividad — pedido explícito del dueño del proyecto: "si el usuario no
-// crea una cuenta el ejemplo llenado se borra después de 10 minutos"). Si expiró, lo
-// limpia y arranca de cero — es solo un ejemplo de prueba, nunca pertenece a una cuenta
-// real, así que no hay nada que migrar ni avisar más allá de este límite de tiempo.
-function loadDraft(): DemoDraft {
-  if (typeof window === "undefined") return emptyDraft()
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (!raw) return emptyDraft()
-    const parsed = JSON.parse(raw) as DemoDraft
-    if (Date.now() - parsed.startedAt > EXPIRY_MS) {
-      window.localStorage.removeItem(STORAGE_KEY)
-      return emptyDraft()
-    }
-    return parsed
-  } catch {
-    return emptyDraft()
-  }
-}
 
 function formatMoney(value: number) {
   return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 // Demo interactiva de 2 pasos (Ingredientes → Ficha Técnica), embebida en la landing sin
-// cuenta — pedido explícito del dueño del proyecto, segunda vuelta sobre este
-// componente: la versión anterior (un solo paso, precio y cantidad tipeados directo en
-// la fila de la receta) "no tiene sentido porque se ocupa una base de datos" — en la app
-// real un ingrediente vive aparte, con su propio costo, y la Ficha Técnica lo REFERENCIA
-// por cantidad, no lo tipea de nuevo. Esta versión refleja esa misma separación: Paso 1
-// crea una mini base de ingredientes (nombre + costo por unidad), Paso 2 arma la receta
-// eligiendo de esos ingredientes ya cargados — mismo flujo de 2 módulos que fuerza el
-// tour real al crear una cuenta (ver components/onboarding-tour.tsx / page-tours.tsx),
-// para que la demo y la app real cuenten la misma historia.
+// cuenta — pedido explícito del dueño del proyecto, tercera vuelta sobre este
+// componente:
+// 1) "no tiene sentido porque se ocupa una base de datos" → Paso 1 crea una mini base de
+//    ingredientes, Paso 2 arma la receta ELIGIENDO de esos ingredientes (no los tipea de
+//    nuevo) — un ingrediente vive aparte, con su propio costo, igual que en la app real.
+// 2) "debe ser mas como la seccion de ingredientes real que pida nombre, precio y
+//    contenido neto y el solo calcula por medida" → el Paso 1 ya NO pide un "costo por
+//    unidad" directo (eso no es cómo se compra nada en la vida real): pide precio de
+//    compra + contenido neto del paquete, mismos 2 campos y mismo cálculo
+//    (purchasePrice / netContent) que app/ingredientes/page.tsx — ver
+//    lib/landing-demo.ts#unitCostOf, compartido con el carry-over de abajo para que el
+//    número que ve la persona acá sea EXACTAMENTE el que va a quedar guardado.
+// 3) "garantiza que si se guarde en la cuenta creada... tanto en ingredientes como en
+//    mis recetas" → ver lib/landing-demo-carryover.ts, llamado desde
+//    app/signup/page.tsx justo después del login automático: si hay un borrador válido
+//    (no expirado) al crear la cuenta, se convierte en un ingrediente real + una receta
+//    real en el workspace por defecto ("main", el mismo que usa el tour forzado al
+//    redirigir a /ingredientes sin ?business=).
 //
-// Persistencia de 10 minutos: el borrador se guarda en localStorage (nunca en una
-// cuenta — no existe ninguna todavía) y se borra solo si pasan 10 minutos sin que la
-// persona haya creado una cuenta real, ver loadDraft()/EXPIRY_MS arriba.
+// Persistencia de 10 minutos: el borrador vive en localStorage (nunca en una cuenta —
+// no existe ninguna todavía) y se borra solo si pasan 10 minutos sin crear cuenta, ver
+// lib/landing-demo.ts.
 export function LandingRecipeDemo() {
   const { t } = useLanguage()
   const idPrefix = useId()
-  const [draft, setDraft] = useState<DemoDraft>(emptyDraft)
+  const [draft, setDraft] = useState<DemoDraft>(emptyLandingDemoDraft)
   const [hydrated, setHydrated] = useState(false)
   const [minutesLeft, setMinutesLeft] = useState(10)
   const expiryTimeout = useRef<ReturnType<typeof setTimeout>>()
 
   useEffect(() => {
-    setDraft(loadDraft())
+    setDraft(readLandingDemoDraft() || emptyLandingDemoDraft())
     setHydrated(true)
   }, [])
 
   useEffect(() => {
     if (!hydrated) return
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft))
+    window.localStorage.setItem(LANDING_DEMO_STORAGE_KEY, JSON.stringify(draft))
 
     const tick = () => {
-      const remainingMs = EXPIRY_MS - (Date.now() - draft.startedAt)
+      const remainingMs = LANDING_DEMO_EXPIRY_MS - (Date.now() - draft.startedAt)
       if (remainingMs <= 0) {
-        window.localStorage.removeItem(STORAGE_KEY)
-        setDraft(emptyDraft())
+        window.localStorage.removeItem(LANDING_DEMO_STORAGE_KEY)
+        setDraft(emptyLandingDemoDraft())
         setMinutesLeft(10)
         return
       }
@@ -128,9 +91,11 @@ export function LandingRecipeDemo() {
     patch({ ingredients: draft.ingredients.map((i) => (i.id === id ? { ...i, ...p } : i)) })
   }
 
-  const addIngredient = () => {
+  const addIngredientRow = () => {
     if (draft.ingredients.length >= MAX_INGREDIENTS) return
-    patch({ ingredients: [...draft.ingredients, { id: `${idPrefix}-${Date.now()}`, name: "", unitCost: 0 }] })
+    patch({
+      ingredients: [...draft.ingredients, { id: `${idPrefix}-${Date.now()}`, name: "", purchasePrice: 0, netContent: 1 }],
+    })
   }
 
   const removeIngredient = (id: string) => {
@@ -151,7 +116,7 @@ export function LandingRecipeDemo() {
     })
   }
 
-  const updateRecipeLine = (id: string, p: Partial<DemoRecipeLine>) => {
+  const updateRecipeLine = (id: string, p: Partial<DemoDraft["recipeLines"][number]>) => {
     patch({ recipeLines: draft.recipeLines.map((l) => (l.id === id ? { ...l, ...p } : l)) })
   }
 
@@ -159,10 +124,10 @@ export function LandingRecipeDemo() {
     patch({ recipeLines: draft.recipeLines.filter((l) => l.id !== id) })
   }
 
-  const namedIngredients = draft.ingredients.filter((i) => i.name.trim())
+  const namedIngredients = draft.ingredients.filter((i) => i.name.trim() && i.purchasePrice > 0)
   const totalCost = draft.recipeLines.reduce((sum, line) => {
     const ing = draft.ingredients.find((i) => i.id === line.ingredientId)
-    return sum + line.quantity * (ing?.unitCost || 0)
+    return sum + line.quantity * (ing ? unitCostOf(ing) : 0)
   }, 0)
   const foodCostPercent = draft.salePrice > 0 ? (totalCost / draft.salePrice) * 100 : 0
   const marginPercent = draft.salePrice > 0 ? 100 - foodCostPercent : 0
@@ -202,62 +167,67 @@ export function LandingRecipeDemo() {
                 <p className="text-sm text-text-3">{t("landing_calc_step1_desc")}</p>
               </div>
 
-              <div className="border border-hairline rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-canvas-alt hover:bg-canvas-alt">
-                      <TableHead className="text-[10px] uppercase tracking-[0.06em]">
-                        {t("landing_calc_ingredient_name_placeholder")}
-                      </TableHead>
-                      <TableHead className="text-[10px] uppercase tracking-[0.06em] text-right w-40">
-                        {t("landing_calc_step1_cost_label")}
-                      </TableHead>
-                      <TableHead className="w-10"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {draft.ingredients.map((ing) => (
-                      <TableRow key={ing.id}>
-                        <TableCell className="p-1.5">
-                          <Input
-                            value={ing.name}
-                            onChange={(e) => updateIngredient(ing.id, { name: e.target.value })}
-                            placeholder={t("landing_calc_ingredient_name_placeholder")}
-                            className="h-8 border-transparent bg-transparent hover:border-input focus-visible:border-input"
-                          />
-                        </TableCell>
-                        <TableCell className="p-1.5">
+              <div className="space-y-3">
+                {draft.ingredients.map((ing) => {
+                  const unitCost = ing.purchasePrice > 0 ? unitCostOf(ing) : 0
+                  return (
+                    <div key={ing.id} className="border border-hairline rounded-lg p-3 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={ing.name}
+                          onChange={(e) => updateIngredient(ing.id, { name: e.target.value })}
+                          placeholder={t("landing_calc_ingredient_name_placeholder")}
+                          className="h-9"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeIngredient(ing.id)}
+                          disabled={draft.ingredients.length <= MIN_INGREDIENTS}
+                          aria-label={t("landing_calc_remove_ingredient")}
+                          className="h-9 w-9 shrink-0 text-text-4 hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-medium uppercase tracking-[0.08em] text-text-4">
+                            {t("ingredientes_field_purchase_price_label")}
+                          </label>
                           <NumericInput
-                            value={ing.unitCost}
-                            onChange={(value) => updateIngredient(ing.id, { unitCost: value })}
+                            value={ing.purchasePrice}
+                            onChange={(value) => updateIngredient(ing.id, { purchasePrice: value })}
                             decimalPlaces={2}
-                            className="h-8 text-right border-transparent bg-transparent hover:border-input focus-visible:border-input"
+                            className="h-9"
                           />
-                        </TableCell>
-                        <TableCell className="p-1.5">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeIngredient(ing.id)}
-                            disabled={draft.ingredients.length <= MIN_INGREDIENTS}
-                            aria-label={t("landing_calc_remove_ingredient")}
-                            className="h-8 w-8 text-text-4 hover:text-destructive"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-medium uppercase tracking-[0.08em] text-text-4">
+                            {t("ingredientes_field_net_content_label")}
+                          </label>
+                          <NumericInput
+                            value={ing.netContent}
+                            onChange={(value) => updateIngredient(ing.id, { netContent: value })}
+                            decimalPlaces={2}
+                            className="h-9"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-text-4 tabular-nums">
+                        {t("ficha_tecnica_col_cost_per_measure")}: {unitCost > 0 ? formatMoney(unitCost) : "—"}
+                      </p>
+                    </div>
+                  )
+                })}
               </div>
 
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={addIngredient}
+                onClick={addIngredientRow}
                 disabled={draft.ingredients.length >= MAX_INGREDIENTS}
               >
                 <Plus className="h-3.5 w-3.5 mr-1.5" />
@@ -320,6 +290,7 @@ export function LandingRecipeDemo() {
                     <TableBody>
                       {draft.recipeLines.map((line) => {
                         const ing = draft.ingredients.find((i) => i.id === line.ingredientId)
+                        const unitCost = ing ? unitCostOf(ing) : 0
                         return (
                           <TableRow key={line.id}>
                             <TableCell className="p-1.5">
@@ -345,10 +316,10 @@ export function LandingRecipeDemo() {
                               />
                             </TableCell>
                             <TableCell className="text-right text-sm tabular-nums text-text-3 p-1.5">
-                              {formatMoney(ing?.unitCost || 0)}
+                              {formatMoney(unitCost)}
                             </TableCell>
                             <TableCell className="text-right text-sm tabular-nums text-foreground p-1.5 pr-3">
-                              {formatMoney(line.quantity * (ing?.unitCost || 0))}
+                              {formatMoney(line.quantity * unitCost)}
                             </TableCell>
                             <TableCell className="p-1.5">
                               <Button

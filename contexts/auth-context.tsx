@@ -11,6 +11,7 @@ import { setCurrentPlanSlug } from "@/lib/plan-access"
 import { setCurrentPlanOverrides } from "@/lib/plan-overrides"
 import { refreshBusinesses } from "@/lib/storage/businesses"
 import { ensureTeamMembersLoaded, ensureMyMembershipsLoaded } from "@/lib/storage/team"
+import { tryCarryLandingDemoIntoAccount } from "@/lib/landing-demo-carryover"
 
 interface User {
   name: string
@@ -226,6 +227,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabase = getSupabaseBrowserClient()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
+
+    // Pedido explícito del dueño del proyecto: "garantiza que si se guarde en la
+    // cuenta creada por el usuario tanto en ingredientes como en mis recetas" — el
+    // borrador de la demo de la landing (components/landing-recipe-demo.tsx) se
+    // convierte en datos reales acá, no en app/signup/page.tsx, a propósito: la
+    // mayoría de las cuentas reales exigen confirmar el correo antes de poder
+    // iniciar sesión (ver login_error_email_not_confirmed), así que el primer login
+    // que de verdad tiene éxito casi nunca es el intento inmediato de signup — puede
+    // ser un login normal más tarde, después de confirmar por correo. login() es el
+    // único punto por el que pasan ambos casos. La función es un no-op silencioso si
+    // no hay borrador vigente (ya se consumió, expiró, o nunca existió), así que
+    // llamarla en cada login real es seguro. Best-effort: nunca debe bloquear el login.
+    tryCarryLandingDemoIntoAccount().catch((carryOverError) => {
+      console.error("Error guardando el ejemplo de la landing en la cuenta:", carryOverError)
+    })
   }, [])
 
   const signUp = useCallback(async (email: string, password: string, profile: SignUpProfileData, options: SignUpOptions) => {
