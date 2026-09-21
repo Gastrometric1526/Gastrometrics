@@ -11,8 +11,13 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Sistema de gestión gastronómica: fichas técnicas, costeo, inventario y menús.",
     start_url: "/dashboard",
     display: "standalone",
-    background_color: "#0a0a0a",
-    theme_color: "#0a0a0a",
+    // BUG CORREGIDO: era "#0a0a0a" (casi negro) — la pantalla de carga que Android
+    // muestra con el logo mientras la PWA instalada arranca usa background_color, no
+    // el fondo real de la app. Reportado en vivo: el logo aparecía sobre fondo negro
+    // en vez de blanco. Ver también themeColor en app/layout.tsx (mismo fix, controla
+    // la barra de estado/status bar).
+    background_color: "#ffffff",
+    theme_color: "#ffffff",
     orientation: "portrait-primary",
     icons: [
       {

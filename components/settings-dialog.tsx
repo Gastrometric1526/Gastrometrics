@@ -35,6 +35,8 @@ import {
   Eye,
   EyeOff,
   ShieldAlert,
+  FileText,
+  ExternalLink,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { setCurrentCurrencyCode } from "@/lib/currency"
@@ -581,7 +583,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                           {countries.map((c) => (
                             <SelectItem key={c.code} value={c.code}>
                               <div className="flex items-center gap-2">
-                                <span>{c.name}</span>
+                                <span>{t(c.labelKey)}</span>
                                 <Badge variant="secondary" className="text-xs">
                                   {c.symbol}
                                 </Badge>
@@ -656,7 +658,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                         {countries.map((c) => (
                           <SelectItem key={c.code} value={c.code}>
                             <div className="flex items-center gap-2">
-                              <span>{c.name}</span>
+                              <span>{t(c.labelKey)}</span>
                               <Badge variant="secondary" className="text-xs">
                                 {c.symbol}
                               </Badge>
@@ -789,6 +791,45 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                    {t("settings_legal_docs_title")}
+                  </CardTitle>
+                  <CardDescription>{t("settings_legal_docs_desc")}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <a
+                    href="/terminos-de-uso"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
+                  >
+                    {t("terminos_page_title")}
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                  </a>
+                  <a
+                    href="/politica-privacidad"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
+                  >
+                    {t("privacidad_page_title")}
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                  </a>
+                  <a
+                    href="/aviso-de-responsabilidad"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
+                  >
+                    {t("aviso_page_title")}
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                  </a>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
                     <Trash2 className="h-5 w-5 text-destructive" />
                     {t("settings_delete_account_title")}
                   </CardTitle>
@@ -820,7 +861,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                             <h4 className="font-semibold text-destructive">{t("settings_confirm_title")}</h4>
                             <p className="text-sm text-muted-foreground">{t("settings_delete_account_confirm_intro")}</p>
                             <Badge variant="destructive" className="mt-2">
-                              {t("negocios_delete_confirm_irreversible")}
+                              {t("settings_delete_account_grace_notice")}
                             </Badge>
                           </div>
                         </div>

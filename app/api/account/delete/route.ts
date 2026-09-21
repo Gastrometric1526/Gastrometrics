@@ -1,20 +1,26 @@
 /**
- * Elimina la cuenta del usuario que hace la petición (self-service, ver Configuración
- * → "Eliminar cuenta" — pedido explícito: el reset de datos legado no borraba nada
- * real en Supabase y encima cerraba la sesión sin avisar; esto lo reemplaza con un
- * borrado real y una redirección esperada).
+ * Desactiva la cuenta del usuario que hace la petición (self-service, ver Configuración
+ * → "Eliminar cuenta").
  *
- * Mismo orden obligatorio que el borrado desde /admin (app/api/admin/accounts/route.ts
- * DELETE, ver docs/71) — reutiliza exactamente esa lógica: cancelar Stripe primero,
- * limpiar team_members.invited_user_id (el único FK hacia auth.users sin "on delete
- * cascade"), y por último admin.auth.admin.deleteUser() para la cascada automática de
- * todo lo demás (negocios, recetas, ingredientes, inventario, menús, órdenes de
- * compra, importaciones de POS, equipos que esta cuenta creó, profile, presence,
- * account_plans).
+ * BUG CORREGIDO (ver docs/118, Términos de Uso §5 / Política de Privacidad §6: "30 días
+ * de gracia para reactivar... tras la solicitud"): antes esta ruta borraba la cuenta de
+ * inmediato y sin vuelta atrás (admin.auth.admin.deleteUser(), cascada total en el mismo
+ * request) — contradecía la promesa explícita de los nuevos documentos legales. Ahora es
+ * un borrado suave: cancela Stripe de inmediato (deja de cobrar) y marca
+ * profiles.deletion_requested_at, pero NO llama a deleteUser(). El purgado real
+ * (deleteUser(), que dispara la cascada de negocios/recetas/etc.) lo hace el cron diario
+ * existente (app/api/cron/activation-emails/route.ts, ver lib/services/purge-deleted-
+ * accounts.ts) cuando deletion_requested_at ya tiene 30+ días. Reactivar dentro de esos
+ * 30 días es una acción manual desde /admin → Cuentas (limpiar el campo), tal como dice
+ * el texto legal ("contactando al soporte").
  *
- * Diferencia clave con la ruta de /admin: esta autentica contra la sesión real del
- * que llama (getSupabaseServerClient().auth.getUser()), nunca contra el passcode de
- * /admin, y jamás acepta un userId del cliente — solo se puede borrar a sí mismo.
+ * El borrado INMEDIATO de /admin (app/api/admin/accounts/route.ts DELETE, ver docs/71)
+ * se deja intacto a propósito — es una herramienta operativa del dueño del proyecto, no
+ * el flujo de autoservicio que describen los 30 días de gracia.
+ *
+ * Esta ruta autentica contra la sesión real del que llama
+ * (getSupabaseServerClient().auth.getUser()), nunca contra el passcode de /admin, y
+ * jamás acepta un userId del cliente — solo se puede desactivar a sí mismo.
  */
 
 import { NextResponse } from "next/server"
@@ -81,14 +87,14 @@ export async function POST(request: Request) {
       }
     }
 
-    const { error: teamCleanupError } = await admin.from("team_members").delete().eq("invited_user_id", userId)
-    if (teamCleanupError) {
-      console.error("[api/account/delete] Error limpiando team_members.invited_user_id:", teamCleanupError)
+    const { error: deletionRequestError } = await admin
+      .from("profiles")
+      .update({ deletion_requested_at: new Date().toISOString() })
+      .eq("id", userId)
+    if (deletionRequestError) {
+      console.error("[api/account/delete] Error marcando deletion_requested_at:", deletionRequestError)
       return NextResponse.json({ error: "No se pudo eliminar la cuenta. Intenta de nuevo." }, { status: 500 })
     }
-
-    const { error: deleteError } = await admin.auth.admin.deleteUser(userId)
-    if (deleteError) throw deleteError
 
     return NextResponse.json({ ok: true })
   } catch (error) {

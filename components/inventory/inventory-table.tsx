@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { NumericInput } from "@/components/ui/numeric-input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Edit, Trash2, Check, X } from "lucide-react"
 import type { InventoryItem } from "@/types/inventory"
@@ -245,15 +246,11 @@ export function InventoryTable({
                       <span className="text-xs text-text-4">
                         {item.currentStock !== null ? `${item.currentStock} ${item.unit}` : "-"}
                       </span>
-                      <Input
-                        type="number"
+                      <NumericInput
                         value={item.minStock}
-                        onChange={(e) => {
-                          const newValue = Number(e.target.value)
-                          handleInputChange(item.id, "minStock", newValue)
-                        }}
+                        onChange={(value) => handleInputChange(item.id, "minStock", value)}
                         className="text-center h-8 w-20"
-                        min="0"
+                        min={0}
                         aria-label={t("inventario_min_stock_label")}
                       />
                     </div>
@@ -282,10 +279,11 @@ export function InventoryTable({
                 <TableCell className="text-center">{item.unit}</TableCell>
                 <TableCell className="text-center">
                   {editedItemId === item.id ? (
-                    <Input
-                      type="number"
+                    <NumericInput
                       value={item.price || 0}
-                      onChange={(e) => handleInputChange(item.id, "price", Number(e.target.value))}
+                      onChange={(value) => handleInputChange(item.id, "price", value)}
+                      min={0}
+                      decimalPlaces={2}
                     />
                   ) : (
                     <span className="font-medium text-foreground tabular-nums">

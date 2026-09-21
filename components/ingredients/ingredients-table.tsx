@@ -387,7 +387,18 @@ export function IngredientsTable({
                   <td className="px-4 py-4 text-center">
                     <div className="flex flex-col items-center">
                       <span className="font-medium text-sm text-foreground">
-                        {ingredient.unit === "unidad" ? Math.round(netContent) : Number(netContent.toFixed(2))}
+                        {ingredient.unit === "unidad"
+                          ? Math.round(netContent)
+                          : // BUG REAL encontrado en vivo (ver docs de sesión): Number(netContent.toFixed(2))
+                            // convierte "0.00" de vuelta a texto vía el renderizado de React — un
+                            // ingrediente con contenido neto real pero menor a 0,005 (ej. una especia
+                            // premium vendida en paquetes de gramos, con el contenido convertido a la
+                            // unidad base) se mostraba literalmente como "0", indistinguible de un
+                            // ingrediente sin contenido neto configurado. El caso común (valores que sí
+                            // redondean a algo distinto de cero) se muestra igual que antes.
+                            netContent > 0 && Number(netContent.toFixed(2)) === 0
+                            ? netContent.toFixed(4).replace(/0+$/, "").replace(/\.$/, "")
+                            : Number(netContent.toFixed(2))}
                       </span>
                       <span className="text-xs text-muted-foreground">{getUnitLabel(ingredient.unit, language)}</span>
                     </div>

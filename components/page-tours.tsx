@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { PageTour, type TourStep } from "@/components/page-tour"
 import { useLanguage } from "@/contexts/language-context"
 
@@ -83,6 +84,7 @@ export function FichaTecnicaTour({ hasIngredients }: { hasIngredients: boolean }
 
 export function IngredientesTour() {
   const { t } = useLanguage()
+  const router = useRouter()
   const steps: TourStep[] = [
     {
       id: "header",
@@ -97,7 +99,19 @@ export function IngredientesTour() {
     { id: "table", title: t("tour_ing_table_title"), description: t("tour_ing_table_desc"), selector: '[data-tour="ing-table"]' },
   ]
 
-  return <PageTour steps={steps} storageKey="tour_completed_ingredientes" />
+  // Cierra el recorrido guiado que empieza en el Dashboard (OnboardingTour) → termina
+  // acá en Ingredientes: al terminar ESTE tour, un botón lleva directo a Ficha Técnica
+  // en vez de solo cerrarse — mismo patrón que OnboardingTour ya usaba para llegar
+  // hasta acá. Pedido explícito: que el usuario nuevo entienda que el siguiente paso,
+  // después de cargar ingredientes, es armar su primera ficha técnica.
+  return (
+    <PageTour
+      steps={steps}
+      storageKey="tour_completed_ingredientes"
+      finishLabel={t("tour_finish_go_ficha")}
+      onFinish={() => router.push("/ficha-tecnica")}
+    />
+  )
 }
 
 export function InventarioTour() {

@@ -10,12 +10,28 @@ import { units } from "@/types/ingredient"
 import { getIngredients, saveIngredients, getIngredientByRecipeId } from "../storage/ingredients"
 import { isSubRecipe } from "../storage/recipes"
 
-// recipe.yieldUnit es texto libre (el chef puede escribir "porciones", "bandejas",
-// etc.) mientras que Ingredient.unit está restringido a la lista real de unidades —
-// si el rendimiento de la receta no coincide con ninguna, cae a "unidad" en vez de
-// colar un valor que el resto de la app (selectores, conversiones) no reconoce.
+// recipe.yieldUnit se guarda ya abreviado (types/recipe.ts#yieldUnits: "g", "kg",
+// "porciones"...), no como la palabra completa que usa Ingredient.unit ("gramos",
+// "kilogramos"...) — BUG CORREGIDO: esta función comparaba yieldUnit directo contra
+// esa lista de palabras completas, así que nunca coincidía (ni con el default
+// histórico "g" ni con ningún valor real del selector) y todo sub-receta convertida a
+// ingrediente caía siempre a "unidad", sin importar el rendimiento real. Ahora se
+// traduce primero por la abreviatura conocida; "porciones" (sin equivalente de
+// ingrediente) y cualquier valor no reconocido siguen cayendo a "unidad".
+const YIELD_TO_INGREDIENT_UNIT: Record<string, Ingredient["unit"]> = {
+  g: "gramos",
+  kg: "kilogramos",
+  ml: "mililitros",
+  l: "litros",
+  oz: "onzas",
+  lb: "libras",
+  un: "unidad",
+}
+
 function toIngredientUnit(yieldUnit: string): Ingredient["unit"] {
-  const match = units.find((u) => u.toLowerCase() === yieldUnit.trim().toLowerCase())
+  const normalized = yieldUnit.trim().toLowerCase()
+  if (YIELD_TO_INGREDIENT_UNIT[normalized]) return YIELD_TO_INGREDIENT_UNIT[normalized]
+  const match = units.find((u) => u.toLowerCase() === normalized)
   return match || "unidad"
 }
 

@@ -4,6 +4,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { NumericInput } from "@/components/ui/numeric-input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
@@ -380,13 +381,11 @@ export function PurchaseOrderForm({
             </div>
             <div className="space-y-2">
               <Label>{t("pof_quantity_label")}</Label>
-              <Input
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={newItem.quantity || ""}
-                onChange={(e) => handleNewItemChange("quantity", Number.parseFloat(e.target.value) || 0)}
-              />
+              {/* BUG REAL corregido en la misma sesión que app/ingredientes/page.tsx: min="0.01" en
+                  un <input type="number"> nativo no bloquea escribir un negativo con el teclado —
+                  solo afecta las flechitas del spinner y la validación de <form>. NumericInput sí
+                  bloquea el guion al teclear (ver components/ui/numeric-input.tsx). */}
+              <NumericInput min={0.01} decimalPlaces={2} value={newItem.quantity || 0} onChange={(value) => handleNewItemChange("quantity", value)} />
             </div>
             <div className="space-y-2">
               <Label>{t("pof_unit_label")}</Label>
@@ -409,13 +408,7 @@ export function PurchaseOrderForm({
             </div>
             <div className="space-y-2">
               <Label>{t("pof_unit_price_label")}</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={newItem.unitPrice || ""}
-                onChange={(e) => handleNewItemChange("unitPrice", Number.parseFloat(e.target.value) || 0)}
-              />
+              <NumericInput min={0} decimalPlaces={2} value={newItem.unitPrice || 0} onChange={(value) => handleNewItemChange("unitPrice", value)} />
             </div>
             <Button
               type="button"

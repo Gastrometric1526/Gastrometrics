@@ -28,7 +28,7 @@ import {
 } from "@/types/business"
 import { syncSubRecipeToIngredient } from "@/lib/subrecipe/core"
 import type { Recipe, RecipeIngredient } from "@/types/recipe"
-import { classifications, recipeSteps, SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
+import { classifications, recipeSteps, yieldUnits, SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 import { unitAbbreviations } from "@/types/ingredient"
 import { NumericInput } from "@/components/ui/numeric-input"
@@ -50,6 +50,7 @@ import { logActivity } from "@/lib/services/activity-log"
 import { useLanguage } from "@/contexts/language-context"
 import { getClassificationLabel } from "@/lib/classification-labels"
 import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
+import { getYieldUnitLabel } from "@/lib/ingredient-labels"
 
 interface TechnicalSheetProps {
   mode: "new" | "view" | "edit"
@@ -1037,24 +1038,50 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                 <div>
                   <Label htmlFor="yieldAmount">{t("ficha_tecnica_field_yield")}</Label>
                   {isEditMode ? (
-                    <NumericInput
-                      id="yieldAmount"
-                      ref={yieldAmountInputRef}
-                      value={recipe.yieldAmount || ""}
-                      onChange={(value) => handleFieldUpdate("yieldAmount", value)}
-                      onKeyDown={handleEnterAdvance(focusAndSelectPaxModifier)}
-                      placeholder=""
-                      decimalPlaces={2}
-                      min={0}
-                    />
+                    <div className="flex gap-2">
+                      <NumericInput
+                        id="yieldAmount"
+                        ref={yieldAmountInputRef}
+                        value={recipe.yieldAmount || ""}
+                        onChange={(value) => handleFieldUpdate("yieldAmount", value)}
+                        onKeyDown={handleEnterAdvance(focusAndSelectPaxModifier)}
+                        placeholder=""
+                        decimalPlaces={2}
+                        min={0}
+                        className="flex-1 min-w-0"
+                      />
+                      <Select
+                        value={recipe.yieldUnit || "g"}
+                        onValueChange={(value) => handleFieldUpdate("yieldUnit", value)}
+                      >
+                        <SelectTrigger className="w-[8.5rem] shrink-0">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {yieldUnits.map((unit) => (
+                            <SelectItem key={unit} value={unit}>
+                              {getYieldUnitLabel(unit, language)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   ) : (
-                    <Input
-                      id="yieldAmount"
-                      type="text"
-                      value={recipe.yieldAmount > 0 ? recipe.yieldAmount : ""}
-                      disabled
-                      placeholder=""
-                    />
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="yieldAmount"
+                        type="text"
+                        value={recipe.yieldAmount > 0 ? recipe.yieldAmount : ""}
+                        disabled
+                        placeholder=""
+                        className="flex-1 min-w-0"
+                      />
+                      {recipe.yieldAmount > 0 && (
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">
+                          {getYieldUnitLabel(recipe.yieldUnit || "g", language)}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

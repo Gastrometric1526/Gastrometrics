@@ -1,4 +1,6 @@
-export type FeedbackType = "sugerencia" | "queja" | "bug"
+// "experiencia" = respuesta a la encuesta de satisfacción de las 4 horas (ver
+// docs/117) — mismo buzón de /admin que sugerencia/queja/bug, categoría propia.
+export type FeedbackType = "sugerencia" | "queja" | "bug" | "experiencia"
 
 export type FeedbackStatus = "nuevo" | "revisado" | "resuelto"
 

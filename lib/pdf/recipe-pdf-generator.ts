@@ -2,9 +2,10 @@ import { jsPDF } from "jspdf"
 import autoTable from "jspdf-autotable"
 import type { Recipe, PDFExportType, PDFExportOptions } from "@/types/recipe"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
-import { getPdfLabels } from "@/lib/i18n/pdf-labels"
+import { getPdfLabels, getCurrentPdfLanguage } from "@/lib/i18n/pdf-labels"
 import { drawBusinessLogo } from "./pdf-logo"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
+import { getYieldUnitLabel } from "@/lib/ingredient-labels"
 
 // ============== HELPERS ==============
 
@@ -19,6 +20,12 @@ const sanitizeText = (input: string | undefined | null): string =>
     .replace(/[\u0000-\u001F\u007F]/g, "")
     .replace(/\s+/g, " ")
     .trim()
+
+// Rendimiento traducido al idioma del PDF (ver types/recipe.ts#yieldUnits) — antes se
+// imprimía recipe.yieldUnit crudo; fallback a "g" para recetas guardadas antes de que
+// este selector existiera (el default histórico, ver docs/115).
+const yieldUnitLabel = (recipe: Recipe): string =>
+  sanitizeText(getYieldUnitLabel(recipe.yieldUnit || "g", getCurrentPdfLanguage()))
 
 /**
  * NOTA (ver documento de continuidad): existía aquí una copia local de formatCurrency
@@ -376,6 +383,14 @@ function generateAdministrativePDF(
   doc.text(labels.copiaAdministrativa, pageWidth - margin - 31, 7, { align: "center" })
   doc.setTextColor(...COLORS.text)
 
+  // Una línea explicativa además del badge — pedido explícito: que el tipo de copia
+  // "se explique solo" sin que quien lo recibe tenga que deducirlo del color.
+  doc.setFontSize(7)
+  doc.setFont("helvetica", "italic")
+  doc.setTextColor(...COLORS.secondary)
+  doc.text(labels.copiaAdministrativaSubtitle, margin + (options.businessLogo ? 15 : 0), 20)
+  doc.setTextColor(...COLORS.text)
+
   // Center: Title
   // BUG CORREGIDO (hallazgo de uso real: el titulo decia literalmente "Ficha Tecnica
   // - Plato"/"Ficha Tecnica - Subreceta", la misma palabra generica para cualquier
@@ -482,7 +497,7 @@ function generateAdministrativePDF(
   doc.text(labels.rendimiento, col3X, metaY)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(...COLORS.text)
-  doc.text(`${recipe.yieldAmount} ${sanitizeText(recipe.yieldUnit)}`, col3X + 24, metaY)
+  doc.text(`${recipe.yieldAmount} ${yieldUnitLabel(recipe)}`, col3X + 24, metaY)
 
   // Calculate yield by weight if applicable
   const yieldByWeight =
@@ -530,12 +545,12 @@ function generateAdministrativePDF(
   const summaryData = isSubRecipe
     ? [
         { label: labels.costoProduccion, value: formatCurrency2(totalCost) },
-        { label: labels.rendimiento.replace(":", ""), value: `${yieldAmount} ${sanitizeText(recipe.yieldUnit)}` },
+        { label: labels.rendimiento.replace(":", ""), value: `${yieldAmount} ${yieldUnitLabel(recipe)}` },
         { label: labels.costoDeUso, value: formatCurrency2(costPerUnit) },
       ]
     : [
         { label: labels.costoProduccion, value: formatCurrency2(totalCost) },
-        { label: labels.rendimiento.replace(":", ""), value: `${yieldAmount} ${sanitizeText(recipe.yieldUnit)}` },
+        { label: labels.rendimiento.replace(":", ""), value: `${yieldAmount} ${yieldUnitLabel(recipe)}` },
         { label: labels.costoUnitario, value: formatCurrency2(costPerUnit) },
         { label: labels.gananciaUnitaria, value: formatCurrency2(unitProfit) },
         { label: labels.precioUnitario, value: formatCurrency2(unitPrice) },
@@ -601,7 +616,7 @@ function generateAdministrativePDF(
       if (maxUnitIngredient.quantity >= recipe.yieldAmount * 20) {
         warnings.push(
           labels.advertenciaRendimientoBajo
-            .replace("{rendimiento}", `${recipe.yieldAmount} ${sanitizeText(recipe.yieldUnit)}`)
+            .replace("{rendimiento}", `${recipe.yieldAmount} ${yieldUnitLabel(recipe)}`)
             .replace("{ingrediente}", sanitizeText(maxUnitIngredient.name))
             .replace("{cantidad}", `${maxUnitIngredient.quantity} unidad`),
         )
@@ -1082,6 +1097,13 @@ function generateEmployeePDF(
   doc.setTextColor(255, 255, 255)
   doc.text(labels.copiaCocina, pageWidth - margin - 21, margin + 4, { align: "center" })
 
+  // Misma idea que la copia administrativa: una línea que explica el tipo de copia,
+  // no solo el color del badge.
+  doc.setFontSize(7)
+  doc.setFont("helvetica", "italic")
+  doc.setTextColor(...COLORS.secondary)
+  doc.text(labels.copiaCocinaSubtitle, margin + (options.businessLogo ? 18 : 0), margin + 16)
+
   yPosition = 42
 
   // ===== RECIPE NAME (Centered, tipografia serif para sensacion de receta impresa) =====
@@ -1103,7 +1125,7 @@ function generateEmployeePDF(
   yPosition += 8
 
   // ===== YIELD/SERVINGS (badge, no tabla) =====
-  const yieldServingsText = `${labels.rendimiento} ${recipe.yieldAmount} ${sanitizeText(recipe.yieldUnit)}   •   ${labels.porciones} ${recipe.servings}`
+  const yieldServingsText = `${labels.rendimiento} ${recipe.yieldAmount} ${yieldUnitLabel(recipe)}   •   ${labels.porciones} ${recipe.servings}`
   doc.setFontSize(10)
   doc.setFont("helvetica", "normal")
   const badgeWidth = doc.getTextWidth(yieldServingsText) + 10
@@ -1255,9 +1277,21 @@ function generateNormalPDF(
   )
   doc.text(`${labels.exportado}: ${new Date().toLocaleDateString(labels.locale)}`, margin + (options.businessLogo ? 22 : 0), 25)
 
-  doc.setFontSize(9)
+  // Badge blanco (en vez del color sólido de las otras dos copias, que ya iría sobre un
+  // fondo del mismo color primario acá) — mismo criterio de "identificarse de un
+  // vistazo" que las copias administrativa/cocina, más una línea explicativa.
+  doc.setFontSize(8)
   doc.setFont("helvetica", "bold")
-  doc.text(labels.pdfGeneral, pageWidth - margin, 15, { align: "right" })
+  const clientBadgeWidth = doc.getTextWidth(labels.pdfGeneral) + 8
+  doc.setFillColor(...COLORS.white)
+  doc.roundedRect(pageWidth - margin - clientBadgeWidth, 5, clientBadgeWidth, 6, 1, 1, "F")
+  doc.setTextColor(...COLORS.primary)
+  doc.text(labels.pdfGeneral, pageWidth - margin - clientBadgeWidth / 2, 9, { align: "center" })
+
+  doc.setFontSize(7)
+  doc.setFont("helvetica", "italic")
+  doc.setTextColor(...COLORS.white)
+  doc.text(labels.copiaClienteSubtitle, pageWidth - margin, 15, { align: "right" })
 
   yPosition = 38
 
@@ -1277,7 +1311,7 @@ function generateNormalPDF(
   // ===== YIELD/SERVINGS (Plain text) =====
   doc.setFontSize(10)
   doc.setTextColor(...COLORS.text)
-  doc.text(`Rendimiento: ${recipe.yieldAmount} ${sanitizeText(recipe.yieldUnit)} | Porciones: ${recipe.servings}`, margin, yPosition)
+  doc.text(`Rendimiento: ${recipe.yieldAmount} ${yieldUnitLabel(recipe)} | Porciones: ${recipe.servings}`, margin, yPosition)
   yPosition += 10
 
   // ===== IMAGE (Controlled size) =====

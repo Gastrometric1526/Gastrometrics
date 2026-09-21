@@ -45,7 +45,9 @@ import { AddBusinessDialog } from "@/components/add-business-dialog"
 import { OnboardingTour } from "@/components/onboarding-tour"
 import { WhatsNewDialog } from "@/components/whats-new-dialog"
 import { PlanChangeNoticeDialog } from "@/components/plan-change-notice-dialog"
-import { useFeatureAccess, useActiveMembership, setCurrentPlanSlug } from "@/lib/plan-access"
+import { useFeatureAccess, useActiveMembership, setCurrentPlanSlug, getMinimumPlanForFeature } from "@/lib/plan-access"
+import type { FeatureKey } from "@/lib/plans"
+import { Lock } from "lucide-react"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { getAllBusinesses, refreshBusinesses } from "@/lib/storage/businesses"
 import { getRecipes, ensureRecipesLoaded, isSubRecipe } from "@/lib/storage/recipes"
@@ -58,6 +60,16 @@ export default function DashboardPage() {
   const { t, language } = useLanguage()
   const canAccessTeam = useFeatureAccess("team")
   const canAccessManualSales = useFeatureAccess("manual_sales")
+  // Mismo candado visual por plan que components/sidebar.tsx (ver ese archivo para el
+  // porqué) — pedido explícito: las tarjetas grandes de "Acciones Rápidas" son lo
+  // primero que ve un usuario nuevo en el tour del Dashboard, así que deben verse
+  // "apagadas" igual que el ítem correspondiente del sidebar, no solo bloquearse
+  // después de hacer clic y aterrizar en /inventario, /menus, etc.
+  const canAccessInventory = useFeatureAccess("inventory")
+  const canAccessMenus = useFeatureAccess("menus")
+  const canAccessPurchaseOrdersManual = useFeatureAccess("purchase_orders_manual")
+  const canAccessPurchaseOrdersAuto = useFeatureAccess("purchase_orders_auto")
+  const canAccessStatsPanorama = useFeatureAccess("stats_panorama")
   const { active: previewActive, member: previewMember } = useActiveMembership()
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [businesses, setBusinesses] = useState<Business[]>([])
@@ -508,6 +520,8 @@ export default function DashboardPage() {
       description: t("nav_ingredientes_desc"),
       bgColor: "bg-chart-2/10 group-hover:bg-chart-2/20",
       textColor: "text-chart-2",
+      locked: false,
+      feature: null as FeatureKey | null,
     },
     {
       href: "/ficha-tecnica",
@@ -516,6 +530,8 @@ export default function DashboardPage() {
       description: t("nav_ficha_tecnica_desc"),
       bgColor: "bg-chart-1/10 group-hover:bg-chart-1/20",
       textColor: "text-chart-1",
+      locked: false,
+      feature: null as FeatureKey | null,
     },
     {
       href: "/mis-recetas",
@@ -524,6 +540,8 @@ export default function DashboardPage() {
       description: t("nav_mis_recetas_desc"),
       bgColor: "bg-chart-5/10 group-hover:bg-chart-5/20",
       textColor: "text-chart-5",
+      locked: false,
+      feature: null as FeatureKey | null,
     },
     {
       href: "/menus",
@@ -532,6 +550,8 @@ export default function DashboardPage() {
       description: t("nav_menus_desc"),
       bgColor: "bg-chart-3/10 group-hover:bg-chart-3/20",
       textColor: "text-chart-3",
+      locked: canAccessMenus === false,
+      feature: "menus" as FeatureKey | null,
     },
     {
       href: "/inventario",
@@ -540,6 +560,8 @@ export default function DashboardPage() {
       description: t("nav_inventario_desc"),
       bgColor: "bg-chart-6/10 group-hover:bg-chart-6/20",
       textColor: "text-chart-6",
+      locked: canAccessInventory === false,
+      feature: "inventory" as FeatureKey | null,
     },
     {
       href: "/ordenes-compra",
@@ -548,6 +570,8 @@ export default function DashboardPage() {
       description: t("nav_ordenes_compra_desc"),
       bgColor: "bg-chart-4/10 group-hover:bg-chart-4/20",
       textColor: "text-chart-4",
+      locked: canAccessPurchaseOrdersManual === false && canAccessPurchaseOrdersAuto === false,
+      feature: "purchase_orders_manual" as FeatureKey | null,
     },
     {
       href: "/estadisticas",
@@ -556,6 +580,8 @@ export default function DashboardPage() {
       description: t("nav_estadisticas_desc"),
       bgColor: "bg-chart-7/10 group-hover:bg-chart-7/20",
       textColor: "text-chart-7",
+      locked: canAccessStatsPanorama === false,
+      feature: "stats_panorama" as FeatureKey | null,
     },
     // Pedido explícito del dueño del proyecto: que sea obvio dónde está el registro
     // manual de ventas (docs/90) — antes solo se podía llegar entrando a Reportes y
@@ -570,6 +596,8 @@ export default function DashboardPage() {
             description: t("dashboard_quick_manual_sales_desc"),
             bgColor: "bg-chart-2/10 group-hover:bg-chart-2/20",
             textColor: "text-chart-2",
+            locked: false,
+            feature: null as FeatureKey | null,
           },
         ]
       : []),
@@ -582,6 +610,8 @@ export default function DashboardPage() {
             description: t("nav_equipo_desc"),
             bgColor: "bg-chart-1/10 group-hover:bg-chart-1/20",
             textColor: "text-chart-1",
+            locked: false,
+            feature: null as FeatureKey | null,
           },
         ]
       : []),
@@ -608,6 +638,10 @@ export default function DashboardPage() {
     if (!required) return true
     return required.some((f) => previewMember.allowedFeatures.includes(f as any))
   })
+    // El candado visual mide el plan de LA CUENTA — no aplica a una sesión de equipo
+    // (se rige por allowedFeatures, no por plan; lo no permitido ya quedó fuera del
+    // filtro de arriba). Mismo criterio que components/sidebar.tsx.
+    .map((item) => (previewActive && previewMember ? { ...item, locked: false } : item))
 
   const handleBusinessClick = useCallback(
     (businessId: string) => {
@@ -951,7 +985,43 @@ export default function DashboardPage() {
                 className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"
                 data-tour="dash-quick-actions"
               >
-                {menuItems.map((action, index) => (
+                {menuItems.map((action, index) => {
+                  if (action.locked) {
+                    const minPlan = action.feature ? getMinimumPlanForFeature(action.feature) : null
+                    return (
+                      <button
+                        key={index}
+                        type="button"
+                        aria-disabled="true"
+                        onClick={() =>
+                          toast({
+                            title: t("sidebar_locked_feature_toast_title"),
+                            description: minPlan
+                              ? t("sidebar_locked_feature_toast_desc").replace("{plan}", minPlan.name)
+                              : t("sidebar_locked_feature_toast_desc_generic"),
+                          })
+                        }
+                        className="flex flex-col items-start gap-3 rounded-2xl border border-hairline bg-card p-5 opacity-60 hover:opacity-90 cursor-not-allowed text-left"
+                      >
+                        <div className={`w-12 h-12 rounded-xl ${action.bgColor} flex items-center justify-center shrink-0`}>
+                          <action.icon className={`h-6 w-6 ${action.textColor}`} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                            {action.text}
+                            <Lock className="h-3 w-3 flex-shrink-0" />
+                          </p>
+                          <p className="text-xs text-text-3 mt-1 line-clamp-2">
+                            {minPlan
+                              ? t("sidebar_locked_feature_hint").replace("{plan}", minPlan.name)
+                              : t("sidebar_locked_feature_hint_generic")}
+                          </p>
+                        </div>
+                      </button>
+                    )
+                  }
+
+                  return (
                   <Link
                     key={index}
                     href={action.href}
@@ -966,7 +1036,8 @@ export default function DashboardPage() {
                     </div>
                     <ArrowRight className="h-4 w-4 text-text-4 shrink-0 mt-auto group-hover:translate-x-0.5 group-hover:text-primary transition-all" />
                   </Link>
-                ))}
+                  )
+                })}
               </div>
             </div>
 

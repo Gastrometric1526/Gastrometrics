@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { NumericInput } from "@/components/ui/numeric-input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
@@ -1817,18 +1818,26 @@ export default function IngredientesPage() {
                     <Label htmlFor="purchasePrice" className="text-foreground font-medium">
                       {t("ingredientes_field_purchase_price_label")}
                     </Label>
-                    <Input
+                    {/* BUG REAL encontrado en vivo: este campo usaba <Input type="number" min="0">
+                        en vez de <NumericInput> (el componente que ya usa el resto de la app para
+                        números — ver components/ui/numeric-input.tsx). El atributo HTML `min` de un
+                        input nativo solo se aplica a las flechitas del spinner y a la validación del
+                        <form>, NO bloquea escribir un número negativo con el teclado — se pudo
+                        escribir "-50" y quedaba aceptado en el campo. isStepValid() sí rechazaba el
+                        precio negativo, pero eso solo dejaba el botón "Siguiente" deshabilitado sin
+                        ninguna explicación — silencioso, sin mensaje. NumericInput bloquea el guion
+                        al teclear, así que ahora ni siquiera se puede escribir un precio negativo. */}
+                    <NumericInput
                       id="purchasePrice"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.pricing?.purchasePrice || ""}
-                      onChange={(e) =>
+                      min={0}
+                      decimalPlaces={2}
+                      value={formData.pricing?.purchasePrice ?? 0}
+                      onChange={(value) =>
                         setFormData((prev) => ({
                           ...prev,
                           pricing: {
                             ...prev.pricing!,
-                            purchasePrice: Number(e.target.value),
+                            purchasePrice: value,
                           },
                         }))
                       }
@@ -1843,18 +1852,17 @@ export default function IngredientesPage() {
                     <Label htmlFor="netContent" className="text-foreground font-medium">
                       {t("ingredientes_field_net_content_label")}
                     </Label>
-                    <Input
+                    <NumericInput
                       id="netContent"
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      value={formData.pricing?.netContent || ""}
-                      onChange={(e) =>
+                      min={0.01}
+                      decimalPlaces={2}
+                      value={formData.pricing?.netContent ?? 0}
+                      onChange={(value) =>
                         setFormData((prev) => ({
                           ...prev,
                           pricing: {
                             ...prev.pricing!,
-                            netContent: Number(e.target.value),
+                            netContent: value,
                           },
                         }))
                       }

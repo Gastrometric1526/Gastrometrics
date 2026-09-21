@@ -39,24 +39,39 @@ export async function POST(request: Request) {
   // Stripe — solo cambiaba plan_slug acá. Alguien con un plan pago activo que
   // volviera a "gratis" desde /planes (o le diera "Omitir por ahora" en el pago)
   // seguía siendo cobrado cada mes por Stripe en segundo plano, mientras la app le
-  // mostraba "Foodie" sin ningún aviso. Se cancela primero la suscripción real (si
-  // existe una activa) — si eso falla, se aborta el downgrade completo en vez de
-  // dejar a la cuenta mostrando gratis mientras Stripe le sigue cobrando en
-  // silencio (mismo criterio que el borrado de cuenta desde /admin, ver docs/71).
+  // mostraba "Foodie" sin ningún aviso.
   const { data: existingPlan } = await admin
     .from("account_plans")
     .select("stripe_subscription_id")
     .eq("account_id", user.id)
     .maybeSingle()
 
+  // BUG CORREGIDO (ver docs/118, Términos de Uso §4.1: "tras cancelar, mantiene el
+  // acceso del plan de pago hasta el final del periodo ya abonado"): esto cancelaba
+  // la suscripción de Stripe de inmediato (subscriptions.cancel) Y bajaba plan_slug a
+  // gratis en el mismo request — alguien que pagó por el mes perdía el acceso al plan
+  // pago ese mismo instante en vez de conservarlo hasta la fecha ya pagada. Ahora, si
+  // hay una suscripción real de Stripe, se programa la cancelación para el final del
+  // período (cancel_at_period_end) en vez de cancelar ya — eso además detiene la
+  // renovación futura, así que no hay cobro silencioso. El downgrade real de
+  // plan_slug a gratis lo dispara el webhook customer.subscription.deleted cuando
+  // Stripe cierra el período (ver app/api/webhooks/stripe/route.ts), igual que ya
+  // pasa cuando alguien cancela desde el Portal de Cliente.
   if (existingPlan?.stripe_subscription_id && isStripeConfigured()) {
     try {
-      await getStripeClient().subscriptions.cancel(existingPlan.stripe_subscription_id)
+      await getStripeClient().subscriptions.update(existingPlan.stripe_subscription_id, {
+        cancel_at_period_end: true,
+      })
+      // No se toca account_plans acá: el webhook customer.subscription.updated (que
+      // Stripe dispara por este mismo cambio) ya escribe cancel_at_period_end/
+      // current_period_end, y mi-plan/page.tsx ya sabe mostrar ese aviso.
+      return NextResponse.json({ scheduled: true })
     } catch (stripeError: any) {
       // "resource_missing" = ya no existe en Stripe (canceló por otro lado, o el id
-      // quedó viejo) — no es un motivo real para bloquear el downgrade.
+      // quedó viejo) — no es un motivo real para bloquear el downgrade; sigue abajo
+      // al downgrade inmediato normal, como si nunca hubiera tenido suscripción.
       if (stripeError?.code !== "resource_missing") {
-        console.error("[api/plan/set-free] Error cancelando la suscripción de Stripe:", stripeError)
+        console.error("[api/plan/set-free] Error programando la cancelación en Stripe:", stripeError)
         return NextResponse.json(
           { error: "No se pudo cancelar tu suscripción activa. Intenta de nuevo o hazlo desde el Portal de Cliente en Mi Plan." },
           { status: 500 },
@@ -69,6 +84,12 @@ export async function POST(request: Request) {
     account_id: user.id,
     plan_slug: plan.slug,
     stripe_subscription_id: null,
+    // Limpia también un vencimiento asignado a mano desde /admin (docs/116) — sin
+    // esto, una cuenta que cancela proactivamente ANTES de la fecha de vencimiento
+    // quedaba en "foodie" pero con plan_expires_at todavía apuntando al futuro, dato
+    // ya sin sentido una vez que el plan real ya es el gratuito.
+    plan_expires_at: null,
+    expiry_reminder_sent_for: null,
     updated_at: new Date().toISOString(),
   })
 

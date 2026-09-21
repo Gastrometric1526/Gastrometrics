@@ -44,6 +44,12 @@ async function getOwnStripeCustomerId(): Promise<string | null> {
  * decidir si mostrar el botón, sin exponer el id en sí. También manda el estado de
  * cancelación en curso (ver supabase/migrations/0023_plan_cancellation_status.sql)
  * para el aviso "cancelando, termina el [fecha]" en app/mi-plan/page.tsx.
+ *
+ * planExpiresAt: vencimiento de un plan asignado a mano desde /admin (ver
+ * supabase/migrations/0008_plan_expiry.sql y docs/116) — solo se manda cuando la
+ * cuenta NO tiene una suscripción real de Stripe (stripe_subscription_id null), para
+ * no mezclar ese aviso con el de cancelAtPeriodEnd de arriba, que ya cubre el caso de
+ * una suscripción real.
  */
 export async function GET() {
   const supabase = getSupabaseServerClient()
@@ -51,13 +57,18 @@ export async function GET() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.json({ hasStripeCustomer: false, cancelAtPeriodEnd: false, currentPeriodEnd: null })
+    return NextResponse.json({
+      hasStripeCustomer: false,
+      cancelAtPeriodEnd: false,
+      currentPeriodEnd: null,
+      planExpiresAt: null,
+    })
   }
 
   const admin = getSupabaseAdminClient()
   const { data } = await admin
     .from("account_plans")
-    .select("stripe_customer_id, cancel_at_period_end, current_period_end")
+    .select("stripe_customer_id, stripe_subscription_id, cancel_at_period_end, current_period_end, plan_expires_at")
     .eq("account_id", user.id)
     .maybeSingle()
 
@@ -65,6 +76,7 @@ export async function GET() {
     hasStripeCustomer: Boolean(data?.stripe_customer_id),
     cancelAtPeriodEnd: Boolean(data?.cancel_at_period_end),
     currentPeriodEnd: data?.current_period_end ?? null,
+    planExpiresAt: !data?.stripe_subscription_id ? (data?.plan_expires_at ?? null) : null,
   })
 }
 

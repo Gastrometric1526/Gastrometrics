@@ -15,46 +15,32 @@ export function PoliticaPrivacidadContent() {
         <div className="space-y-3">
           <h1 className="text-4xl font-bold text-foreground">{t("privacidad_page_title")}</h1>
           <p className="text-muted-foreground">{t("privacidad_last_updated")}</p>
-          <p className="text-sm text-muted-foreground italic">{t("privacidad_intro_italic")}</p>
+          <p className="text-sm font-medium text-foreground bg-muted/50 rounded-md px-3 py-2">{t("privacidad_gdpr_notice")}</p>
+          <p className="text-sm text-muted-foreground">
+            {t("terminos_read_also")}{" "}
+            <a href="/terminos-de-uso" className="text-primary hover:underline">
+              {t("terminos_page_title")}
+            </a>
+            {" · "}
+            <a href="/aviso-de-responsabilidad" className="text-primary hover:underline">
+              {t("aviso_page_title")}
+            </a>
+          </p>
         </div>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold text-foreground">{t("privacidad_summary_title")}</h2>
-          <p className="text-foreground">{t("privacidad_summary_body")}</p>
-        </section>
-
-        <section className="space-y-3">
           <h2 className="text-2xl font-semibold text-foreground">{t("privacidad_s1_title")}</h2>
-          <p className="text-muted-foreground">{t("privacidad_s1_body1")}</p>
-          <p className="text-muted-foreground">{t("privacidad_s1_body2")}</p>
+          <p className="text-muted-foreground">{t("privacidad_s1_body")}</p>
         </section>
 
         <section className="space-y-3">
           <h2 className="text-2xl font-semibold text-foreground">{t("privacidad_s2_title")}</h2>
-          <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-            <li>
-              <strong className="text-foreground">{t("privacidad_s2_item1_label")}</strong> {t("privacidad_s2_item1_body")}
-            </li>
-            <li>
-              <strong className="text-foreground">{t("privacidad_s2_item2_label")}</strong> {t("privacidad_s2_item2_body")}
-            </li>
-            <li>
-              <strong className="text-foreground">{t("privacidad_s2_item3_label")}</strong> {t("privacidad_s2_item3_body1")}{" "}
-              <strong className="text-foreground">{t("privacidad_s2_item3_bold")}</strong> {t("privacidad_s2_item3_body2")}
-            </li>
-            <li>
-              <strong className="text-foreground">{t("privacidad_s2_item4_label")}</strong> {t("privacidad_s2_item4_body")}
-            </li>
-          </ul>
+          <p className="text-muted-foreground">{t("privacidad_s2_body")}</p>
         </section>
 
         <section className="space-y-3">
           <h2 className="text-2xl font-semibold text-foreground">{t("privacidad_s3_title")}</h2>
-          <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-            <li>{t("privacidad_s3_item1")}</li>
-            <li>{t("privacidad_s3_item2")}</li>
-            <li>{t("privacidad_s3_item3")}</li>
-          </ul>
+          <p className="text-muted-foreground">{t("privacidad_s3_body")}</p>
         </section>
 
         <section className="space-y-3">
@@ -89,32 +75,7 @@ export function PoliticaPrivacidadContent() {
 
         <section className="space-y-3">
           <h2 className="text-2xl font-semibold text-foreground">{t("privacidad_s10_title")}</h2>
-          <p className="text-muted-foreground">{t("privacidad_s10_intro")}</p>
-          <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-            <li>{t("privacidad_s10_right1")}</li>
-            <li>{t("privacidad_s10_right2")}</li>
-            <li>{t("privacidad_s10_right3")}</li>
-            <li>{t("privacidad_s10_right4")}</li>
-            <li>{t("privacidad_s10_right5")}</li>
-            <li>{t("privacidad_s10_right6")}</li>
-            <li>{t("privacidad_s10_right7")}</li>
-          </ul>
-          <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-            <li>
-              <strong className="text-foreground">{t("privacidad_s10_gdpr_label")}</strong> {t("privacidad_s10_gdpr_body")}
-            </li>
-            <li>
-              <strong className="text-foreground">{t("privacidad_s10_ccpa_label")}</strong> {t("privacidad_s10_ccpa_body")}
-            </li>
-            <li>
-              <strong className="text-foreground">{t("privacidad_s10_lgpd_label")}</strong> {t("privacidad_s10_lgpd_and")}{" "}
-              <strong className="text-foreground">{t("privacidad_s10_pipeda_label")}</strong> {t("privacidad_s10_lgpd_body")}
-            </li>
-            <li>
-              <strong className="text-foreground">{t("privacidad_s10_ca_label")}</strong> {t("privacidad_s10_ca_body")}
-            </li>
-          </ul>
-          <p className="text-muted-foreground">{t("privacidad_s10_closing")}</p>
+          <p className="text-muted-foreground">{t("privacidad_s10_body")}</p>
         </section>
 
         <section className="space-y-3">
@@ -128,13 +89,12 @@ export function PoliticaPrivacidadContent() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold text-foreground">{t("privacidad_s13_title")}</h2>
+          <h2 className="text-2xl font-semibold text-foreground">{t("privacidad_contact_label")}</h2>
           <p className="text-muted-foreground">
-            {t("privacidad_s13_body1")}{" "}
             <a href="/contacto" className="text-primary hover:underline">
               /contacto
             </a>{" "}
-            {t("privacidad_s13_body2")} <span className="text-foreground">GastroMetrics@outlook.com</span>. {t("privacidad_s13_body3")}
+            · <span className="text-foreground">gastrometrics@outlook.com</span>
           </p>
         </section>
       </main>

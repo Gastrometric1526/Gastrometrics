@@ -288,3 +288,46 @@ export function updateInventoryStatus(items: InventoryItem[]): InventoryItem[] {
     }
   })
 }
+
+/**
+ * Suma stock real a los ítems de inventario que coincidan por nombre con cada línea de
+ * una orden de compra al marcarla como "recibida" (ver components/purchase-order-page.tsx,
+ * docs/119) — antes, marcar una orden como recibida no tocaba el inventario en absoluto,
+ * dos módulos que deberían estar conectados quedaban aislados. Mismo criterio de
+ * coincidencia por nombre exacto que ya usa app/inventario/page.tsx para vincular
+ * inventario con el catálogo de ingredientes (no hay un id de ingrediente confiable
+ * persistido en la orden — ver comentario en purchase-order-page.tsx).
+ */
+export async function receivePurchaseOrderIntoInventory(
+  items: { name: string; quantity: number }[],
+  businessId?: string | null,
+): Promise<{ matchedCount: number; unmatchedNames: string[] }> {
+  const inventory = getInventory(businessId)
+
+  // Suma cantidades cuando la misma orden repite el mismo ingrediente en más de una línea.
+  const totalsByName = new Map<string, number>()
+  for (const item of items) {
+    if (!item.name || !item.quantity) continue
+    totalsByName.set(item.name, (totalsByName.get(item.name) || 0) + item.quantity)
+  }
+
+  let matchedCount = 0
+  const unmatchedNames: string[] = []
+
+  for (const [name, quantity] of totalsByName.entries()) {
+    const match = inventory.find((inv) => inv.name === name)
+    if (!match) {
+      unmatchedNames.push(name)
+      continue
+    }
+    const newStock = (match.currentStock ?? 0) + quantity
+    // Mismos umbrales que updateInventoryStatus() de arriba — se recalcula acá porque
+    // status es un campo guardado, no derivado al leer.
+    const newStatus: InventoryItem["status"] =
+      newStock <= match.minStock ? "critical" : newStock <= match.minStock * 2 ? "low" : "normal"
+    await updateInventoryItem(match.id, { currentStock: newStock, status: newStatus }, businessId)
+    matchedCount++
+  }
+
+  return { matchedCount, unmatchedNames }
+}

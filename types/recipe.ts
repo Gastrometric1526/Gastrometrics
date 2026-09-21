@@ -66,6 +66,19 @@ export const plateTypes = ["INDIVIDUAL", "FAMILIAR", "BUFFET", "CATERING", "DEGU
 
 export type PlateType = (typeof plateTypes)[number]
 
+// Unidad del Rendimiento de una receta — independiente de types/ingredient.ts#units
+// (esas son unidades de INGREDIENTE, medibles/pesables; una receta también puede
+// rendir en "porciones", que no tiene sentido como unidad de ingrediente). El valor
+// canónico se guarda ya abreviado ("g", no "gramos") porque así quedó toda receta
+// existente antes de que este selector existiera (yieldUnit arrancaba fijo en "g",
+// sin ningún control en el formulario — ver docs/114) — mantener ese mismo formato
+// evita tener que migrar datos ya guardados. "porciones" es la única opción que sí
+// necesita traducción de etiqueta (ver lib/ingredient-labels.ts#getYieldUnitLabel);
+// el resto son símbolos ya neutros en cualquier idioma.
+export const yieldUnits = ["porciones", "g", "kg", "ml", "L", "oz", "lb", "un"] as const
+
+export type YieldUnit = (typeof yieldUnits)[number]
+
 export interface PricingConfig {
   publicServices: number // %
   marketing: number // %

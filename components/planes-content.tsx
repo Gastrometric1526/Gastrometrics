@@ -18,6 +18,34 @@ export function PlanesContent() {
           <p className="text-lg text-muted-foreground">{t("planes_page_subtitle")}</p>
         </div>
 
+        {/* Selector rápido por problema a resolver, en vez de solo comparar listas de
+            funciones — pedido explícito: "¿qué estás intentando resolver?" en vez de
+            "¿cuántas funciones trae?". Cada botón hace scroll a la tarjeta del plan
+            correspondiente (id="plan-{slug}" en plans-grid.tsx), no navega ni cambia
+            nada — es una guía, la decisión real sigue tomándose en la tarjeta. */}
+        <div className="max-w-3xl mx-auto mb-12">
+          <p className="text-sm font-medium text-muted-foreground text-center mb-3">{t("planes_finder_title")}</p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {(
+              [
+                ["foodie", "planes_finder_foodie"],
+                ["home-cook", "planes_finder_home_cook"],
+                ["chef-de-partie", "planes_finder_chef_de_partie"],
+                ["sous-chef", "planes_finder_sous_chef"],
+                ["chef-ejecutivo", "planes_finder_chef_ejecutivo"],
+              ] as const
+            ).map(([slug, key]) => (
+              <a
+                key={slug}
+                href={`#plan-${slug}`}
+                className="text-sm px-3.5 py-2 rounded-full border border-border bg-card hover:border-primary hover:text-primary transition-colors"
+              >
+                {t(key)}
+              </a>
+            ))}
+          </div>
+        </div>
+
         <PlansGrid />
 
         <div className="max-w-3xl mx-auto mt-16 text-center space-y-3">

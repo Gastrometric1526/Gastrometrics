@@ -12,7 +12,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
 import { useAllBusinesses } from "@/lib/storage/businesses"
 import { getPlanBySlug } from "@/lib/plans"
-import { useCurrentPlanSlug, getMaxBusinesses } from "@/lib/plan-access"
+import { useCurrentPlanSlug, setCurrentPlanSlug, getMaxBusinesses } from "@/lib/plan-access"
 import { getDateLocale } from "@/lib/i18n/translations"
 
 // Página de plan dentro del dashboard — antes, "Plan: X" en el sidebar y el CTA de
@@ -30,6 +30,10 @@ export default function MiPlanPage() {
   // (customer.subscription.updated) y supabase/migrations/0023_plan_cancellation_status.sql.
   const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(false)
   const [currentPeriodEnd, setCurrentPeriodEnd] = useState<string | null>(null)
+  // Vencimiento de un plan asignado a mano desde /admin (docs/116) — distinto de
+  // cancelAtPeriodEnd de arriba, que es solo para una suscripción REAL de Stripe.
+  const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null)
+  const [isCancellingExpiring, setIsCancellingExpiring] = useState(false)
 
   // Barra de uso (docs/04 del paquete de diseño: "plan actual, barras de uso...").
   // Solo negocios — es el único de los tres (negocios/usuarios/recetas) con un tope
@@ -62,9 +66,38 @@ export default function MiPlanPage() {
         setHasStripeCustomer(Boolean(data?.hasStripeCustomer))
         setCancelAtPeriodEnd(Boolean(data?.cancelAtPeriodEnd))
         setCurrentPeriodEnd(data?.currentPeriodEnd ?? null)
+        setPlanExpiresAt(data?.planExpiresAt ?? null)
       })
       .catch(() => setHasStripeCustomer(false))
   }, [])
+
+  const handleCancelExpiringPlan = async () => {
+    setIsCancellingExpiring(true)
+    try {
+      const res = await fetch("/api/plan/set-free", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planSlug: "foodie" }),
+      })
+      const result = await res.json().catch(() => null)
+      if (!res.ok || !result?.planSlug) {
+        toast({
+          title: t("planes_downgrade_error_title"),
+          description: result?.error || t("planes_downgrade_error_desc"),
+          variant: "destructive",
+        })
+        return
+      }
+      setCurrentPlanSlug(result.planSlug)
+      setPlanExpiresAt(null)
+      toast({
+        title: t("mi_plan_expiring_cancel_success_title"),
+        description: t("mi_plan_expiring_cancel_success_desc"),
+      })
+    } finally {
+      setIsCancellingExpiring(false)
+    }
+  }
 
   const handleManageSubscription = async () => {
     setIsOpeningPortal(true)
@@ -144,6 +177,35 @@ export default function MiPlanPage() {
               </div>
             )}
 
+            {planExpiresAt && (
+              <div className="flex flex-col gap-3 rounded-xl border border-warning/40 bg-warning-soft p-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-medium text-foreground">
+                      {t("mi_plan_expiring_title").replace("{plan}", currentPlan.name)}
+                    </p>
+                    <p className="text-sm text-text-3">
+                      {t("mi_plan_expiring_desc").replace(
+                        "{date}",
+                        new Date(planExpiresAt).toLocaleDateString(getDateLocale(language), { dateStyle: "long" }),
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2 shrink-0 sm:pl-8">
+                  <a href="#planes-grid">
+                    <Button size="sm" variant="default">
+                      {t("mi_plan_expiring_add_payment")}
+                    </Button>
+                  </a>
+                  <Button size="sm" variant="outline" onClick={handleCancelExpiringPlan} disabled={isCancellingExpiring}>
+                    {t("mi_plan_expiring_cancel")}
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Barra de uso — solo negocios, ver nota junto a useAllBusinesses() arriba. */}
             <div className="max-w-xs border border-hairline rounded-xl p-4 space-y-2">
               <div className="flex items-center gap-2">
@@ -167,7 +229,7 @@ export default function MiPlanPage() {
               </div>
             </div>
 
-            <div data-tour="miplan-grid">
+            <div id="planes-grid" data-tour="miplan-grid">
               <PlansGrid freeRedirectTo="/mi-plan" />
             </div>
           </div>

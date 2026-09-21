@@ -12,6 +12,7 @@ import { NotificationProvider } from "@/contexts/notification-context"
 import { Toaster } from "@/components/ui/toaster"
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration"
 import { TeamPreviewBanner } from "@/components/team-preview-banner"
+import { LegalUpdateBanner } from "@/components/legal-update-banner"
 import { ThemeInitializer } from "@/components/theme-initializer"
 import { AnalyticsTracker } from "@/components/analytics-tracker"
 import { PresenceTracker } from "@/components/presence-tracker"
@@ -61,7 +62,11 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
-  themeColor: "#0a0a0a",
+  // BUG CORREGIDO: era "#0a0a0a" (casi negro) — al abrir la PWA instalada, tanto la
+  // pantalla de carga (Android, ver background_color en app/manifest.ts) como la
+  // barra de estado (iOS/Android) se veían negras detrás del logo, en vez de blancas
+  // como el resto de la marca. Reportado en vivo por el dueño del proyecto.
+  themeColor: "#ffffff",
 }
 
 export default function RootLayout({
@@ -94,6 +99,7 @@ export default function RootLayout({
                   </Suspense>
                   <ServiceWorkerRegistration />
                   <TeamPreviewBanner />
+                  <LegalUpdateBanner />
                   <AnalyticsTracker />
                   <PresenceTracker />
                   <Suspense fallback={null}>

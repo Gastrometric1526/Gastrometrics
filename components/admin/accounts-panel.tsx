@@ -78,6 +78,7 @@ interface AccountDetail {
   extraBusinesses: number
   extraTeamSeats: number
   businessCount: number
+  deletionRequestedAt: string | null
 }
 
 interface AccountBusiness {
@@ -152,6 +153,10 @@ export function AccountsPanel() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("")
   const [deletingAccount, setDeletingAccount] = useState(false)
+
+  // Reactivar una cuenta que pidió su propia eliminación y sigue dentro de los 30 días
+  // de gracia (ver app/api/account/delete/route.ts, docs/118).
+  const [reactivatingAccount, setReactivatingAccount] = useState(false)
 
   // Asistencia real a la cuenta (correo/contraseña) — pedido explícito del dueño del
   // proyecto: "debo poder dar full asistencia a cualquier usuario". Ver docs/86.
@@ -396,6 +401,30 @@ export function AccountsPanel() {
       toast({ title: t("admin_accounts_delete_error_toast"), variant: "destructive" })
     } finally {
       setDeletingAccount(false)
+    }
+  }
+
+  const handleReactivateAccount = async () => {
+    if (!selected) return
+    setReactivatingAccount(true)
+    try {
+      const res = await fetch("/api/admin/accounts", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: selected.userId, action: "reactivate" }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) {
+        toast({ title: t("admin_accounts_reactivate_error_toast"), description: data.error || undefined, variant: "destructive" })
+        return
+      }
+      toast({ title: t("admin_accounts_reactivate_success_toast") })
+      setDetail((prev) => (prev ? { ...prev, deletionRequestedAt: null } : prev))
+    } catch (error) {
+      console.error("Error reactivando la cuenta:", error)
+      toast({ title: t("admin_accounts_reactivate_error_toast"), variant: "destructive" })
+    } finally {
+      setReactivatingAccount(false)
     }
   }
 
@@ -736,6 +765,24 @@ export function AccountsPanel() {
                   </div>
                 )}
               </div>
+
+              {detail?.deletionRequestedAt && (
+                <div className="rounded-lg border border-warning/40 bg-warning-soft p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-warning" />
+                    <h3 className="text-sm font-semibold text-foreground">{t("admin_accounts_pending_deletion_title")}</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {t("admin_accounts_pending_deletion_desc").replace(
+                      "{date}",
+                      new Date(detail.deletionRequestedAt).toLocaleDateString(getDateLocale(language)),
+                    )}
+                  </p>
+                  <Button size="sm" onClick={handleReactivateAccount} disabled={reactivatingAccount}>
+                    {reactivatingAccount ? t("admin_accounts_applying") : t("admin_accounts_reactivate_button")}
+                  </Button>
+                </div>
+              )}
 
               <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 space-y-3">
                 <div className="flex items-center gap-2">

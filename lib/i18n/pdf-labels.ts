@@ -40,7 +40,10 @@ export interface PdfLabels {
   costosLaborales: string
   gananciaNeta: string
   copiaAdministrativa: string
+  copiaAdministrativaSubtitle: string
   copiaCocina: string
+  copiaCocinaSubtitle: string
+  copiaClienteSubtitle: string
   fecha: string
   creado: string
   locale: string
@@ -152,7 +155,10 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     costosLaborales: "Costos Laborales",
     gananciaNeta: "Ganancia Neta",
     copiaAdministrativa: "COPIA ADMINISTRATIVA - CONFIDENCIAL",
+    copiaAdministrativaSubtitle: "Incluye costos y márgenes — uso interno",
     copiaCocina: "COPIA DE COCINA",
+    copiaCocinaSubtitle: "Ingredientes y procedimiento — sin costos",
+    copiaClienteSubtitle: "Solo nombre y descripción — sin costos",
     fecha: "Fecha",
     creado: "Creado",
     locale: "es-HN",
@@ -262,7 +268,10 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     costosLaborales: "Labor Costs",
     gananciaNeta: "Net Profit",
     copiaAdministrativa: "ADMINISTRATIVE COPY - CONFIDENTIAL",
+    copiaAdministrativaSubtitle: "Includes costs and margins — internal use",
     copiaCocina: "KITCHEN COPY",
+    copiaCocinaSubtitle: "Ingredients and procedure — no costs",
+    copiaClienteSubtitle: "Name and description only — no costs",
     fecha: "Date",
     creado: "Created",
     locale: "en-US",
@@ -372,7 +381,10 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     costosLaborales: "Lønomkostninger",
     gananciaNeta: "Nettoresultat",
     copiaAdministrativa: "ADMINISTRATIV KOPI - FORTROLIGT",
+    copiaAdministrativaSubtitle: "Inkluderer omkostninger og marginer — intern brug",
     copiaCocina: "KØKKENKOPI",
+    copiaCocinaSubtitle: "Ingredienser og fremgangsmåde — uden omkostninger",
+    copiaClienteSubtitle: "Kun navn og beskrivelse — uden omkostninger",
     fecha: "Dato",
     creado: "Oprettet",
     locale: "da-DK",
@@ -482,7 +494,10 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     costosLaborales: "Coûts de main-d'œuvre",
     gananciaNeta: "Bénéfice net",
     copiaAdministrativa: "COPIE ADMINISTRATIVE - CONFIDENTIEL",
+    copiaAdministrativaSubtitle: "Inclut les coûts et marges — usage interne",
     copiaCocina: "COPIE CUISINE",
+    copiaCocinaSubtitle: "Ingrédients et procédure — sans coûts",
+    copiaClienteSubtitle: "Nom et description uniquement — sans coûts",
     fecha: "Date",
     creado: "Créé le",
     locale: "fr-FR",
@@ -592,7 +607,10 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     costosLaborales: "Custos Trabalhistas",
     gananciaNeta: "Lucro Líquido",
     copiaAdministrativa: "CÓPIA ADMINISTRATIVA - CONFIDENCIAL",
+    copiaAdministrativaSubtitle: "Inclui custos e margens — uso interno",
     copiaCocina: "CÓPIA DE COZINHA",
+    copiaCocinaSubtitle: "Ingredientes e modo de preparo — sem custos",
+    copiaClienteSubtitle: "Somente nome e descrição — sem custos",
     fecha: "Data",
     creado: "Criado",
     locale: "pt-BR",
@@ -702,7 +720,10 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     costosLaborales: "人工成本",
     gananciaNeta: "净利润",
     copiaAdministrativa: "管理版 - 保密",
+    copiaAdministrativaSubtitle: "包含成本和利润率——内部使用",
     copiaCocina: "厨房版",
+    copiaCocinaSubtitle: "食材和制作流程——不含成本",
+    copiaClienteSubtitle: "仅名称和描述——不含成本",
     fecha: "日期",
     creado: "创建于",
     locale: "zh-CN",

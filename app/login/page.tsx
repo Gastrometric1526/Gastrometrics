@@ -54,7 +54,18 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error("Login error:", error)
       const message = typeof error?.message === "string" ? error.message.toLowerCase() : ""
-      if (message.includes("invalid") || message.includes("credentials")) {
+      // BUG CORREGIDO: alguien que se registró, nunca hizo clic en el enlace de
+      // confirmación, y vuelve directo a /login (en vez de pasar por el flujo de
+      // /signup, que sí reconoce este caso y muestra "Confirma tu correo" — ver
+      // showCheckEmail más abajo en app/signup/page.tsx) veía el error genérico
+      // "No se pudo iniciar sesión. Intenta de nuevo.", sin ninguna pista de que la
+      // cuenta sí existe y solo falta confirmar el correo. Supabase Auth SÍ bloquea el
+      // inicio de sesión hasta confirmar (confirmado en vivo contra el proyecto real:
+      // signInWithPassword devuelve error_code "email_not_confirmed") — lo que faltaba
+      // era explicarlo.
+      if (message.includes("email not confirmed") || message.includes("confirm")) {
+        setLoginError(t("login_error_email_not_confirmed"))
+      } else if (message.includes("invalid") || message.includes("credentials")) {
         setLoginError(t("login_error_invalid_credentials"))
       } else {
         setLoginError(t("login_error_generic"))

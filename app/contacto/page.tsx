@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   },
 }
 
-export default function ContactoPage() {
-  return <ContactoContent />
+// searchParams llega como prop del servidor (Next.js se lo pasa directo a page.tsx) —
+// permite preseleccionar el tipo (?type=experiencia, ver docs/117) sin necesitar
+// useSearchParams() en el cliente ni envolver la página en <Suspense>.
+export default function ContactoPage({ searchParams }: { searchParams: { type?: string } }) {
+  return <ContactoContent initialType={searchParams.type} />
 }

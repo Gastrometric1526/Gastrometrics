@@ -17,6 +17,7 @@ import { AnalyticsPanel } from "@/components/admin/analytics-panel"
 import { BusinessHealthPanel } from "@/components/admin/business-health-panel"
 import { ActivationPanel } from "@/components/admin/activation-panel"
 import { ProductUpdatesPanel } from "@/components/admin/product-updates-panel"
+import { LegalUpdatePanel } from "@/components/admin/legal-update-panel"
 
 // Candado de acceso — pedido explícito: agregar algún control de acceso a /admin,
 // que hoy cualquiera con el link puede ver. SIN backend no existe un sistema de roles
@@ -241,8 +242,9 @@ export default function AdminPage() {
           <TabsContent value="activacion" className="mt-6">
             <ActivationPanel />
           </TabsContent>
-          <TabsContent value="novedades" className="mt-6">
+          <TabsContent value="novedades" className="mt-6 space-y-6">
             <ProductUpdatesPanel />
+            <LegalUpdatePanel />
           </TabsContent>
         </Tabs>
       </div>

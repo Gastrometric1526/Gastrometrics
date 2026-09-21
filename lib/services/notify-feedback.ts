@@ -27,12 +27,14 @@ const FEEDBACK_TYPE_KEYS = {
   sugerencia: "feedback_type_sugerencia",
   queja: "feedback_type_queja",
   bug: "feedback_type_bug",
+  experiencia: "feedback_type_experiencia",
 } as const
 
 const FEEDBACK_REPLY_TITLE_KEYS = {
   sugerencia: "feedback_reply_title_sugerencia",
   queja: "feedback_reply_title_queja",
   bug: "feedback_reply_title_bug",
+  experiencia: "feedback_reply_title_experiencia",
 } as const
 
 /**

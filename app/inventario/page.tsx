@@ -324,7 +324,14 @@ export default function InventoryPage() {
     const allIngredients = getIngredients(businessId)
     const syncedItems = syncInventoryWithDatabase(items, allIngredients, false)
 
+    // BUG CORREGIDO: esta función es el destino de handleInputChange -> debouncedSave
+    // en InventoryTable, disparado 500ms después de editar categoría/nombre/mínimo/precio
+    // en línea. Antes solo hacía setItems (estado local) sin llamar a saveInventory, así
+    // que cualquier edición en línea de esos 4 campos se veía guardada en la UI pero se
+    // perdía en silencio al recargar la página o cambiar de negocio — nunca llegaba a la
+    // base de datos.
     setItems(syncedItems)
+    saveInventory(syncedItems, businessId)
   }
 
   const handleSubmit = (data: any) => {

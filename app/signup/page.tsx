@@ -27,7 +27,6 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
-  FileText,
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
@@ -40,14 +39,6 @@ import {
   type UserRegistrationData,
 } from "@/lib/types/user"
 import { registrationStep1Schema, registrationStep2Schema, registrationStep3Schema } from "@/lib/validations/auth"
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 
 // BUG CORREGIDO: useSearchParams() (para leer ?plan=) exige un límite de Suspense
 // por encima para poder pre-renderizarse estáticamente — sin él, `next build` fallaba
@@ -74,8 +65,6 @@ function SignupPageInner() {
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [productUpdatesOptIn, setProductUpdatesOptIn] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [showTermsDialog, setShowTermsDialog] = useState(false)
-  const [showPrivacyDialog, setShowPrivacyDialog] = useState(false)
 
   // Form data
   const [formData, setFormData] = useState<Partial<UserRegistrationData>>({
@@ -165,7 +154,7 @@ function SignupPageInner() {
           businessSize: formData.businessSize!,
           industryExperience: formData.industryExperience!,
         },
-        { preferredLanguage: language, productUpdatesOptIn },
+        { preferredLanguage: language, productUpdatesOptIn, acceptedTerms },
       )
 
       // Contraseña local (ver lib/utils/password-hash.ts) para el chequeo de "confirma
@@ -408,7 +397,7 @@ function SignupPageInner() {
                     <SelectContent>
                       {COUNTRIES.map((country) => (
                         <SelectItem key={country.code} value={country.code}>
-                          {country.name}
+                          {t(country.labelKey)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -446,7 +435,10 @@ function SignupPageInner() {
                       <div>
                         <span className="text-muted-foreground">{t("settings_country")}:</span>
                         <span className="ml-2 font-medium">
-                          {COUNTRIES.find((c) => c.code === formData.nationality)?.name}
+                          {(() => {
+                            const selected = COUNTRIES.find((c) => c.code === formData.nationality)
+                            return selected ? t(selected.labelKey) : null
+                          })()}
                         </span>
                       </div>
                       <div>
@@ -571,7 +563,12 @@ function SignupPageInner() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">{t("settings_country")}</p>
-                      <p className="font-medium">{COUNTRIES.find((c) => c.code === formData.nationality)?.name}</p>
+                      <p className="font-medium">
+                        {(() => {
+                          const selected = COUNTRIES.find((c) => c.code === formData.nationality)
+                          return selected ? t(selected.labelKey) : null
+                        })()}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">{t("settings_currency")}</p>
@@ -617,21 +614,32 @@ function SignupPageInner() {
                     </Label>
                     <p className="text-xs text-muted-foreground">
                       {t("signup_terms_intro")}{" "}
-                      <button
-                        type="button"
-                        onClick={() => setShowTermsDialog(true)}
+                      <Link
+                        href="/terminos-de-uso"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-primary hover:underline"
                       >
                         {t("signup_terms_link")}
-                      </button>{" "}
-                      {t("signup_terms_and")}{" "}
-                      <button
-                        type="button"
-                        onClick={() => setShowPrivacyDialog(true)}
+                      </Link>
+                      {", "}
+                      <Link
+                        href="/politica-privacidad"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-primary hover:underline"
                       >
                         {t("signup_privacy_link")}
-                      </button>
+                      </Link>{" "}
+                      {t("signup_terms_and")}{" "}
+                      <Link
+                        href="/aviso-de-responsabilidad"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        {t("signup_liability_link")}
+                      </Link>
                       .
                     </p>
                   </div>
@@ -712,52 +720,6 @@ function SignupPageInner() {
           </p>
         </div>
       </div>
-
-      {/* Terms Dialog */}
-      <AlertDialog open={showTermsDialog} onOpenChange={setShowTermsDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("signup_terms_dialog_title")}</AlertDialogTitle>
-            <AlertDialogDescription className="text-center py-8">
-              <div className="space-y-4">
-                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
-                  <FileText className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <p className="text-base font-medium text-foreground">{t("signup_terms_not_implemented")}</p>
-                <p className="text-sm text-muted-foreground">{t("signup_feature_coming_soon")}</p>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <Button onClick={() => setShowTermsDialog(false)} className="w-full">
-              {t("tour_done_default")}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Privacy Dialog */}
-      <AlertDialog open={showPrivacyDialog} onOpenChange={setShowPrivacyDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("signup_privacy_dialog_title")}</AlertDialogTitle>
-            <AlertDialogDescription className="text-center py-8">
-              <div className="space-y-4">
-                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
-                  <FileText className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <p className="text-base font-medium text-foreground">{t("signup_privacy_not_implemented")}</p>
-                <p className="text-sm text-muted-foreground">{t("signup_feature_coming_soon")}</p>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <Button onClick={() => setShowPrivacyDialog(false)} className="w-full">
-              {t("tour_done_default")}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

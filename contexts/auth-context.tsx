@@ -39,6 +39,10 @@ export interface SignUpOptions {
   // registro (ver app/signup/page.tsx) — opcional y default false en el trigger
   // (supabase/migrations/0022_product_updates_optin.sql) si no se manda.
   productUpdatesOptIn?: boolean
+  // Casilla obligatoria de "acepto los Términos de Uso, la Política de Privacidad y el
+  // Aviso de Responsabilidad" del paso 4 del registro — app/api/auth/signup/route.ts
+  // rechaza la creación de la cuenta si esto no llega como true (ver docs/118).
+  acceptedTerms: boolean
 }
 
 interface AuthContextType {
@@ -79,6 +83,7 @@ function rowToProfile(row: ProfileRow, email: string): UserProfile {
     onboardingCompleted: row.onboarding_completed,
     preferredLanguage: row.preferred_language,
     productUpdatesOptIn: row.product_updates_opt_in,
+    termsVersion: row.terms_version,
   }
 }
 
@@ -235,6 +240,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({
         email,
         password,
+        acceptedTerms: options.acceptedTerms === true,
         profile: {
           fullName: profile.fullName,
           nationality: profile.nationality,

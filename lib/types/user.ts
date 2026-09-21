@@ -25,6 +25,12 @@ export interface UserProfile {
   // cambiada después en Configuración → Notificaciones). Default false — ver
   // supabase/migrations/0022_product_updates_optin.sql.
   productUpdatesOptIn: boolean
+  // Versión de los Términos de Uso/Política de Privacidad/Aviso de Responsabilidad que
+  // esta cuenta aceptó por última vez (ver lib/legal.ts CURRENT_LEGAL_VERSION,
+  // supabase/migrations/0028). null en cuentas creadas antes de que existiera este
+  // campo — components/legal-update-banner.tsx usa esto para mostrar el aviso de
+  // "leíste la nueva versión" a cuentas existentes, no solo a las nuevas.
+  termsVersion: string | null
 }
 
 export interface UserRegistrationData {
@@ -38,33 +44,39 @@ export interface UserRegistrationData {
   industryExperience: string
 }
 
-export const COUNTRIES = [
-  { code: "MX", name: "México", currency: "MXN", symbol: "$" },
-  { code: "US", name: "Estados Unidos", currency: "USD", symbol: "$" },
-  { code: "ES", name: "España", currency: "EUR", symbol: "€" },
-  { code: "AR", name: "Argentina", currency: "ARS", symbol: "$" },
-  { code: "CO", name: "Colombia", currency: "COP", symbol: "$" },
-  { code: "CL", name: "Chile", currency: "CLP", symbol: "$" },
-  { code: "PE", name: "Perú", currency: "PEN", symbol: "S/" },
-  { code: "EC", name: "Ecuador", currency: "USD", symbol: "$" },
-  { code: "VE", name: "Venezuela", currency: "VES", symbol: "Bs" },
-  { code: "BR", name: "Brasil", currency: "BRL", symbol: "R$" },
-  { code: "UY", name: "Uruguay", currency: "UYU", symbol: "$" },
-  { code: "PY", name: "Paraguay", currency: "PYG", symbol: "₲" },
-  { code: "BO", name: "Bolivia", currency: "BOB", symbol: "Bs" },
-  { code: "CR", name: "Costa Rica", currency: "CRC", symbol: "₡" },
-  { code: "PA", name: "Panamá", currency: "PAB", symbol: "B/." },
-  { code: "GT", name: "Guatemala", currency: "GTQ", symbol: "Q" },
-  { code: "HN", name: "Honduras", currency: "HNL", symbol: "L" },
-  { code: "SV", name: "El Salvador", currency: "USD", symbol: "$" },
-  { code: "NI", name: "Nicaragua", currency: "NIO", symbol: "C$" },
-  { code: "DO", name: "República Dominicana", currency: "DOP", symbol: "RD$" },
-  { code: "BZ", name: "Belice", currency: "BZD", symbol: "BZ$" },
+// `name` es el nombre en español, usado como fallback y por consumidores internos
+// (admin, exportes) que no pasan por i18n. `labelKey` es la clave de traducción
+// (lib/i18n/translations.ts) que los componentes de cara al usuario (Configuración
+// → Regional, registro) deben usar con t() para mostrar el país en el idioma activo
+// — antes solo existía `name` y el país seleccionado se veía siempre en español sin
+// importar el idioma de la interfaz.
+export const COUNTRIES: { code: string; name: string; labelKey: TranslationKey; currency: string; symbol: string }[] = [
+  { code: "MX", name: "México", labelKey: "country_mx", currency: "MXN", symbol: "$" },
+  { code: "US", name: "Estados Unidos", labelKey: "country_us", currency: "USD", symbol: "$" },
+  { code: "ES", name: "España", labelKey: "country_es", currency: "EUR", symbol: "€" },
+  { code: "AR", name: "Argentina", labelKey: "country_ar", currency: "ARS", symbol: "$" },
+  { code: "CO", name: "Colombia", labelKey: "country_co", currency: "COP", symbol: "$" },
+  { code: "CL", name: "Chile", labelKey: "country_cl", currency: "CLP", symbol: "$" },
+  { code: "PE", name: "Perú", labelKey: "country_pe", currency: "PEN", symbol: "S/" },
+  { code: "EC", name: "Ecuador", labelKey: "country_ec", currency: "USD", symbol: "$" },
+  { code: "VE", name: "Venezuela", labelKey: "country_ve", currency: "VES", symbol: "Bs" },
+  { code: "BR", name: "Brasil", labelKey: "country_br", currency: "BRL", symbol: "R$" },
+  { code: "UY", name: "Uruguay", labelKey: "country_uy", currency: "UYU", symbol: "$" },
+  { code: "PY", name: "Paraguay", labelKey: "country_py", currency: "PYG", symbol: "₲" },
+  { code: "BO", name: "Bolivia", labelKey: "country_bo", currency: "BOB", symbol: "Bs" },
+  { code: "CR", name: "Costa Rica", labelKey: "country_cr", currency: "CRC", symbol: "₡" },
+  { code: "PA", name: "Panamá", labelKey: "country_pa", currency: "PAB", symbol: "B/." },
+  { code: "GT", name: "Guatemala", labelKey: "country_gt", currency: "GTQ", symbol: "Q" },
+  { code: "HN", name: "Honduras", labelKey: "country_hn", currency: "HNL", symbol: "L" },
+  { code: "SV", name: "El Salvador", labelKey: "country_sv", currency: "USD", symbol: "$" },
+  { code: "NI", name: "Nicaragua", labelKey: "country_ni", currency: "NIO", symbol: "C$" },
+  { code: "DO", name: "República Dominicana", labelKey: "country_do", currency: "DOP", symbol: "RD$" },
+  { code: "BZ", name: "Belice", labelKey: "country_bz", currency: "BZD", symbol: "BZ$" },
   // Dinamarca y China continental: la lista de países quedaba corta contra los 6
   // idiomas soportados (lib/i18n/translations.ts incluye danés y chino, pero no
   // había ningún país correspondiente para elegir en el registro).
-  { code: "DK", name: "Dinamarca", currency: "DKK", symbol: "kr" },
-  { code: "CN", name: "China", currency: "CNY", symbol: "¥" },
+  { code: "DK", name: "Dinamarca", labelKey: "country_dk", currency: "DKK", symbol: "kr" },
+  { code: "CN", name: "China", labelKey: "country_cn", currency: "CNY", symbol: "¥" },
 ]
 
 // labelKey/descriptionKey son claves del diccionario de i18n (lib/i18n/translations.ts),

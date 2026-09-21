@@ -196,6 +196,35 @@ export async function GET(request: Request) {
  *    recetas, ingredientes, inventario, menús, órdenes de compra, importaciones de
  *    POS, equipos que esta cuenta creó, profiles, user_presence, account_plans).
  */
+/**
+ * Reactiva una cuenta que pidió su propia eliminación y todavía está dentro de los 30
+ * días de gracia (ver app/api/account/delete/route.ts, docs/118) — limpia
+ * profiles.deletion_requested_at para que runAccountDeletionPurge() ya no la considere
+ * candidata. Es la única forma de reactivar: los nuevos Términos de Uso/Política de
+ * Privacidad prometen esto "contactando al soporte", no vía autoservicio.
+ */
+export async function PATCH(request: Request) {
+  if (!(await hasAdminSession())) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 401 })
+  }
+
+  const body = await request.json().catch(() => null)
+  const userId = typeof body?.userId === "string" ? body.userId : ""
+  if (!userId || body?.action !== "reactivate") {
+    return NextResponse.json({ error: "Falta el userId o la acción no es válida." }, { status: 400 })
+  }
+
+  try {
+    const admin = getSupabaseAdminClient()
+    const { error } = await admin.from("profiles").update({ deletion_requested_at: null }).eq("id", userId)
+    if (error) throw error
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error("[api/admin/accounts PATCH] Error reactivando la cuenta:", error)
+    return NextResponse.json({ error: "No se pudo reactivar la cuenta." }, { status: 500 })
+  }
+}
+
 export async function DELETE(request: Request) {
   if (!(await hasAdminSession())) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 })

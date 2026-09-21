@@ -18,7 +18,11 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { renderEmailTemplate } from "./email-templates"
 import { getEmailLabels, normalizeEmailLang } from "@/lib/i18n/email-labels"
 
-type ActivationEmailType = "first_recipe_reminder" | "day7_margin_checkin" | "first_sale_reinforcement"
+type ActivationEmailType =
+  | "first_recipe_reminder"
+  | "day7_margin_checkin"
+  | "first_sale_reinforcement"
+  | "four_hour_experience"
 
 async function getAccountEmailAndLanguage(accountId: string): Promise<{ email: string; language: string } | null> {
   const admin = getSupabaseAdminClient()
@@ -134,4 +138,57 @@ export async function sendFirstSaleReinforcement(accountId: string): Promise<voi
     ctaKey: "e07_firstsale_cta",
     actionPath: "/estadisticas?tab=ventas",
   })
+}
+
+// Placeholder real (mismo link que ya usa la sección Trustpilot de la landing,
+// components/home-content.tsx) — no hay todavía una página de negocio real en
+// Trustpilot configurada en ningún lado del proyecto. TRUSTPILOT_URL permite
+// pegarla en Vercel el día que exista, sin tocar código.
+const DEFAULT_TRUSTPILOT_URL = "https://www.trustpilot.com"
+
+/**
+ * Encuesta de satisfacción a las 4 horas de uso REAL (user_presence.total_active_seconds
+ * ≥ 14400, ver supabase/migrations/0016_presence_time_tracking.sql — tiempo activo de
+ * verdad, no tiempo desde el registro), pedido explícito del dueño del proyecto. Dos
+ * CTA en vez de uno (por eso no reutiliza sendActivationEmail/07-activacion.html):
+ * dejar un comentario (queda en el mismo buzón de /admin que sugerencia/queja/bug, ver
+ * supabase/migrations/0026_feedback_experiencia_type.sql) o dejar una reseña en
+ * Trustpilot.
+ */
+export async function sendFourHourExperienceSurvey(accountId: string): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return
+
+  const claimed = await claimSend(accountId, "four_hour_experience")
+  if (!claimed) return
+
+  const account = await getAccountEmailAndLanguage(accountId)
+  if (!account) return
+  const { email, language } = account
+  const normalizedLang = normalizeEmailLang(language)
+  const labels = getEmailLabels(language)
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+
+  const html = renderEmailTemplate("10-encuesta-experiencia.html", {
+    htmlLang: normalizedLang,
+    title: labels.e10_title,
+    preheader: labels.e10_preheader,
+    heading: labels.e10_heading,
+    body: labels.e10_body,
+    cta1: labels.e10_cta1,
+    cta2: labels.e10_cta2,
+    footnote: labels.e10_footnote,
+    footerAddress: labels.footer_address,
+    footer2: labels.e10_footer2,
+    commentUrl: `${siteUrl}/contacto?type=experiencia`,
+    trustpilotUrl: process.env.TRUSTPILOT_URL || DEFAULT_TRUSTPILOT_URL,
+  })
+
+  const resend = new Resend(process.env.RESEND_API_KEY)
+  const { error } = await resend.emails.send({
+    from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
+    to: [email],
+    subject: labels.e10_subject,
+    html,
+  })
+  if (error) console.error("[notify-activation] Error mandando la encuesta de experiencia:", error)
 }

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { NumericInput } from "@/components/ui/numeric-input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
@@ -372,13 +373,12 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
               </div>
               <div className="space-y-2">
                 <Label htmlFor="plannedServings">{t("mw_servings_label")}</Label>
-                <Input
+                <NumericInput
                   id="plannedServings"
-                  type="number"
-                  min="1"
-                  step="1"
+                  min={1}
+                  allowDecimals={false}
                   value={plannedServings}
-                  onChange={(e) => setPlannedServings(e.target.value)}
+                  onValueChange={setPlannedServings}
                   placeholder={t("mw_servings_placeholder")}
                   className="max-w-[160px]"
                 />
@@ -572,12 +572,11 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
                               ) : null}
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
-                              <Input
-                                type="number"
-                                min="0"
-                                step="1"
+                              <NumericInput
+                                min={0}
+                                allowDecimals={false}
                                 value={item.plannedQuantity ?? ""}
-                                onChange={(e) => updateItemPlannedQuantity(item.id, e.target.value)}
+                                onValueChange={(value) => updateItemPlannedQuantity(item.id, value)}
                                 placeholder={plannedServings || "0"}
                                 className="w-20 h-8 text-right"
                               />

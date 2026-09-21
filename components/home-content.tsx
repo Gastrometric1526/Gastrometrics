@@ -12,6 +12,7 @@ import { getLocalizedPlans } from "@/lib/plans"
 import { useLanguage } from "@/contexts/language-context"
 import { AnimatedNumber } from "@/components/animated-number"
 import { LandingAdminPdfPreview } from "@/components/landing-admin-pdf-preview"
+import { LandingCostCalculator } from "@/components/landing-cost-calculator"
 import { ChefHat, Calculator, BarChart3, ArrowRight, Star, CheckCircle2 } from "lucide-react"
 
 // Landing recortada — docs/80-rediseno-visual-y-logo-oficial.md fue el diseño
@@ -94,9 +95,14 @@ export function HomeContent() {
             {/* CTA único (hallazgo de auditoría externa, ver docs/98: "vende módulos
                 en vez de un resultado claro"; PDF 3.2 pide "CTA único"). "Ver planes"
                 pasa de botón a link de texto — sigue accesible, pero ya no compite
-                visualmente con la acción principal. */}
+                visualmente con la acción principal.
+                BUG CORREGIDO: el botón decía "Calcular mi primer plato" pero llevaba
+                directo a /signup sin calcular nada — promesa rota, señalada por una
+                auditoría externa. Ahora baja a la calculadora real (#calculadora,
+                ver LandingCostCalculator), que sí calcula, y desde ahí es donde se
+                invita a crear cuenta para guardar el resultado. */}
             <div className="flex flex-col items-center gap-3">
-              <Link href="/signup">
+              <Link href="#calculadora">
                 <Button size="lg" className="text-base px-6 py-3 bg-primary text-primary-foreground hover:bg-primary/90">
                   {t("landing_hero_cta_primary")}
                 </Button>
@@ -112,6 +118,8 @@ export function HomeContent() {
               <span>{t("landing_hero_micro_nocard")}</span>
               <span aria-hidden="true">·</span>
               <span>{t("landing_hero_micro_langs")}</span>
+              <span aria-hidden="true">·</span>
+              <span>{t("landing_hero_micro_app")}</span>
             </p>
           </div>
 
@@ -123,6 +131,8 @@ export function HomeContent() {
             <LandingAdminPdfPreview />
           </div>
         </section>
+
+        <LandingCostCalculator />
 
         {/* La fuga invisible — el mejor gancho (docs/03), ahora con la cifra más fuerte
             de la ex-sección "Investigación" incrustada como dato de apoyo en vez de

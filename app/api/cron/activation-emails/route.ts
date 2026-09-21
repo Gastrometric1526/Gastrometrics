@@ -18,11 +18,36 @@
  * Mismo patrón de autenticación que app/api/cron/keep-alive/route.ts (CRON_SECRET,
  * validado solo si está configurada) y mismo patrón de paginación de listUsers() que
  * app/api/admin/accounts/route.ts.
+ *
+ * También corre acá (no en su propio cron) el recordatorio de vencimiento de plan
+ * asignado a mano desde /admin (runPlanExpiryReminders(), ver
+ * lib/services/notify-plan-expiry.ts) — Vercel Hobby (el plan real de este proyecto)
+ * tiene un tope duro de 2 cron jobs y vercel.json ya usa las dos entradas disponibles,
+ * así que ese chequeo se suma a este cron diario en vez de pedir una entrada nueva.
+ *
+ * 4. Encuesta de experiencia a las 4 horas de uso REAL (docs/117) —
+ *    user_presence.total_active_seconds ≥ 14400 (tiempo activo real acumulado, ver
+ *    supabase/migrations/0016_presence_time_tracking.sql, NO tiempo desde el
+ *    registro). Misma idempotencia por activation_emails_sent que los otros 3.
+ *
+ * También corre acá, mismo motivo que el punto de vencimiento de plan de arriba
+ * (Vercel Hobby, tope de 2 cron jobs), la purga real de cuentas que ya cumplieron los
+ * 30 días de gracia tras pedir su eliminación (runAccountDeletionPurge(), ver
+ * lib/services/purge-deleted-accounts.ts y docs/118).
  */
 
 import { NextResponse } from "next/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
-import { sendFirstRecipeReminder, sendDay7MarginCheckin, sendFirstSaleReinforcement } from "@/lib/services/notify-activation"
+import {
+  sendFirstRecipeReminder,
+  sendDay7MarginCheckin,
+  sendFirstSaleReinforcement,
+  sendFourHourExperienceSurvey,
+} from "@/lib/services/notify-activation"
+import { runPlanExpiryReminders } from "@/lib/services/notify-plan-expiry"
+import { runAccountDeletionPurge } from "@/lib/services/purge-deleted-accounts"
+
+const FOUR_HOURS_IN_SECONDS = 4 * 60 * 60
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -100,6 +125,22 @@ export async function GET(request: Request) {
       }
     }
 
+    const planExpiry = await runPlanExpiryReminders()
+
+    const { data: presenceRows, error: presenceError } = await admin
+      .from("user_presence")
+      .select("user_id")
+      .gte("total_active_seconds", FOUR_HOURS_IN_SECONDS)
+    if (presenceError) throw presenceError
+
+    let experienceSurveySent = 0
+    for (const row of presenceRows ?? []) {
+      await sendFourHourExperienceSurvey(row.user_id)
+      experienceSurveySent++
+    }
+
+    const deletionPurge = await runAccountDeletionPurge()
+
     return NextResponse.json({
       ok: true,
       checkedAt: new Date().toISOString(),
@@ -108,6 +149,12 @@ export async function GET(request: Request) {
       day7Candidates: day7Candidates.length,
       day7Sent,
       firstSaleSent,
+      planExpiryCandidates: planExpiry.candidates,
+      planExpirySent: planExpiry.sent,
+      experienceSurveyCandidates: presenceRows?.length ?? 0,
+      experienceSurveySent,
+      deletionPurgeCandidates: deletionPurge.candidates,
+      deletionPurged: deletionPurge.purged,
     })
   } catch (error) {
     console.error("[api/cron/activation-emails] Error:", error)

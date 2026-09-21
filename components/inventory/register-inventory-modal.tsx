@@ -468,7 +468,16 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
           }
         })
         .catch((error) => {
+          // BUG CORREGIDO: esta vía nunca avisaba si el recálculo fallaba — el precio del
+          // ingrediente ya había quedado guardado (arriba), pero el costo de las recetas
+          // afectadas podía quedar desactualizado en silencio. Mismas claves de traducción
+          // que ya usa app/ingredientes/page.tsx para el mismo error.
           console.error("Error al recalcular recetas afectadas por cambio de precio:", error)
+          toast({
+            title: t("ingredientes_toast_recalc_error_title"),
+            description: t("ingredientes_toast_recalc_error_desc"),
+            variant: "destructive",
+          })
         })
     }
   }

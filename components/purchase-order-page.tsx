@@ -35,7 +35,7 @@ import { OrdenesCompraTour } from "@/components/page-tours"
 import { Sidebar } from "@/components/sidebar"
 import { Flame, DollarSign, Boxes } from "lucide-react"
 import { getIngredients, updateIngredient, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
-import { getInventory, ensureInventoryLoaded } from "@/lib/storage/inventory"
+import { getInventory, ensureInventoryLoaded, receivePurchaseOrderIntoInventory } from "@/lib/storage/inventory"
 import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { getMenuById, ensureMenusLoaded } from "@/lib/menus"
 import { generateMenuIngredientList, generateRecipeIngredientList } from "@/lib/menus"
@@ -517,8 +517,14 @@ export function PurchaseOrderPage() {
   // del formulario estaba siempre vacío. Se conecta correctamente aquí, mapeando
   // entre la forma que persiste lib/storage/purchase-orders.ts (types/purchase-order.ts)
   // y la forma que usa el formulario internamente (PurchaseOrderFormData).
-  const handleFormSubmit = (data: PurchaseOrderFormData) => {
+  const handleFormSubmit = async (data: PurchaseOrderFormData) => {
     if (!businessId) return
+
+    // NUEVO (ver docs/119): si esta orden pasa a "recibida" (y no lo estaba ya antes —
+    // re-guardar una orden ya recibida no debe sumar stock de nuevo), cada línea suma su
+    // cantidad al inventario real. Se detecta ANTES de sobreescribir editingOrder abajo.
+    const wasAlreadyReceived = editingOrder?.status === "received"
+    const isNowReceived = data.status === "received"
 
     const order: PurchaseOrder = {
       id: editingOrder?.id || `OC-${Date.now()}`,
@@ -573,6 +579,23 @@ export function PurchaseOrderPage() {
       title: editingOrder ? t("ordenes_toast_updated_title") : t("ordenes_toast_created_title"),
       description: t("ordenes_toast_saved_desc").replace("{name}", order.name),
     })
+
+    if (isNowReceived && !wasAlreadyReceived) {
+      const { matchedCount, unmatchedNames } = await receivePurchaseOrderIntoInventory(
+        order.items.map((item) => ({ name: item.name, quantity: item.totalQuantity })),
+        businessId,
+      )
+      if (unmatchedNames.length > 0) {
+        console.warn("[ordenes-compra] Ingredientes de la orden sin ítem de inventario correspondiente:", unmatchedNames)
+      }
+      if (matchedCount > 0) {
+        setInventoryItems(getInventory(businessId))
+        toast({
+          title: t("ordenes_toast_stock_updated_title"),
+          description: t("ordenes_toast_stock_updated_desc").replace("{count}", String(matchedCount)),
+        })
+      }
+    }
   }
 
   // Traduce la orden guardada (forma de types/purchase-order.ts) a la forma que espera

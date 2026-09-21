@@ -73,12 +73,25 @@ export function PlansGrid({ freeRedirectTo = "/dashboard" }: PlansGridProps) {
         body: JSON.stringify({ planSlug }),
       }).catch(() => null)
       const result = await res?.json().catch(() => null)
-      if (!res?.ok || !result?.planSlug) {
+      if (!res?.ok || (!result?.planSlug && !result?.scheduled)) {
         toast({
           title: t("planes_downgrade_error_title"),
           description: result?.error || t("planes_downgrade_error_desc"),
           variant: "destructive",
         })
+        return
+      }
+      // Suscripción real de Stripe: la cancelación queda programada para el final del
+      // período ya pagado (ver docs/118) — el plan pago sigue activo hasta esa fecha,
+      // así que acá no se toca currentPlanSlug ni se redirige a "gratis" todavía.
+      // mi-plan/page.tsx ya muestra el aviso "cancelando, termina el [fecha]" apenas
+      // el webhook de Stripe escribe cancel_at_period_end (puede tardar unos segundos).
+      if (result.scheduled) {
+        toast({
+          title: t("planes_downgrade_scheduled_title"),
+          description: t("planes_downgrade_scheduled_desc"),
+        })
+        router.push(freeRedirectTo)
         return
       }
       setCurrentPlanSlug(result.planSlug)
@@ -99,7 +112,8 @@ export function PlansGrid({ freeRedirectTo = "/dashboard" }: PlansGridProps) {
       {plans.map((plan) => (
         <Card
           key={plan.slug}
-          className={`flex flex-col relative ${
+          id={`plan-${plan.slug}`}
+          className={`flex flex-col relative scroll-mt-24 ${
             plan.highlighted ? "border-primary ring-1 ring-primary/30" : "border-border"
           }`}
         >

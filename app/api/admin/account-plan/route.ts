@@ -58,13 +58,17 @@ export async function GET(request: Request) {
     }
 
     const admin = getSupabaseAdminClient()
-    const [planResult, { count: businessCount }] = await Promise.all([
+    const [planResult, { count: businessCount }, { data: profileRow }] = await Promise.all([
       admin
         .from("account_plans")
         .select("plan_slug, updated_at, stripe_customer_id, plan_expires_at, extra_businesses, extra_team_seats")
         .eq("account_id", user.id)
         .maybeSingle(),
       admin.from("businesses").select("id", { count: "exact", head: true }).eq("owner_id", user.id),
+      // deletion_requested_at: borrado suave con 30 días de gracia (ver docs/118,
+      // app/api/account/delete/route.ts) — se muestra acá para que el panel de /admin
+      // pueda reactivar la cuenta dentro de ese plazo.
+      admin.from("profiles").select("deletion_requested_at").eq("id", user.id).maybeSingle(),
     ])
     // Tolera que supabase/migrations/0008_plan_expiry.sql y/o 0019_account_overrides.sql
     // todavía no se hayan corrido (columnas nuevas, ver docs/59) — sin esto, este panel
@@ -118,6 +122,7 @@ export async function GET(request: Request) {
       extraTeamSeats: planRow?.extra_team_seats || 0,
       hasStripeCustomer: Boolean(planRow?.stripe_customer_id),
       businessCount: businessCount || 0,
+      deletionRequestedAt: profileRow?.deletion_requested_at || null,
     })
   } catch (error) {
     console.error("[api/admin/account-plan] Error buscando la cuenta:", error)

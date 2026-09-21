@@ -175,7 +175,7 @@ export async function getOrSeedExampleRecipe(
     plate: "INDIVIDUAL",
     servings: 1,
     yieldAmount: 1,
-    yieldUnit: "unidad",
+    yieldUnit: "un",
     ingredients: recipeIngredients,
     procedure: content.steps,
     totalCost: ingredientsCost,

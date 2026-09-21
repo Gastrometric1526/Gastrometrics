@@ -1,5 +1,6 @@
 import type { LanguageCode } from "@/lib/i18n/translations"
 import { categories, units, type Category, type Unit, type Presentation } from "@/types/ingredient"
+import { yieldUnits, type YieldUnit } from "@/types/recipe"
 
 /**
  * Mismo patrón no invasivo que lib/classification-labels.ts: las categorías, unidades y
@@ -265,6 +266,17 @@ const UNIT_LABELS: Partial<Record<LanguageCode, Record<Unit, string>>> = {
   },
 }
 
+// Unidad de Rendimiento de receta (types/recipe.ts#yieldUnits) — solo "porciones"
+// necesita traducción real; el resto (g/kg/ml/L/oz/lb/un) son símbolos ya neutros en
+// cualquier idioma, así que no tienen entrada aquí y getYieldUnitLabel los deja tal cual.
+const YIELD_UNIT_LABELS: Partial<Record<LanguageCode, Partial<Record<YieldUnit, string>>>> = {
+  en: { porciones: "servings" },
+  da: { porciones: "portioner" },
+  fr: { porciones: "portions" },
+  pt: { porciones: "porções" },
+  zh: { porciones: "份" },
+}
+
 const PRESENTATION_LABELS: Partial<Record<LanguageCode, Record<Presentation, string>>> = {
   en: {
     Lata: "Can",
@@ -366,6 +378,11 @@ export function getCategoryLabel(category: string, language: LanguageCode): stri
 export function getUnitLabel(unit: string, language: LanguageCode): string {
   if (language === "es") return unit
   return UNIT_LABELS[language]?.[unit as Unit] ?? unit
+}
+
+export function getYieldUnitLabel(unit: string, language: LanguageCode): string {
+  if (language === "es") return unit
+  return YIELD_UNIT_LABELS[language]?.[unit as YieldUnit] ?? unit
 }
 
 export function getPresentationLabel(presentation: string, language: LanguageCode): string {

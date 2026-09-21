@@ -46,38 +46,73 @@ import { useTheme } from "next-themes"
 import { useToast } from "@/hooks/use-toast"
 import type { Business } from "@/types/business"
 import { useAllBusinesses } from "@/lib/storage/businesses"
-import { getCurrentPlan, useFeatureAccess, useActiveMembership, useTeamPreview } from "@/lib/plan-access"
+import {
+  getCurrentPlan,
+  useFeatureAccess,
+  useActiveMembership,
+  useTeamPreview,
+  getMinimumPlanForFeature,
+} from "@/lib/plan-access"
 import type { FeatureKey } from "@/lib/plans"
+import { Lock } from "lucide-react"
 
 function useNavigationItems() {
   const { t } = useLanguage()
   const canAccessTeam = useFeatureAccess("team")
   const { active: previewActive, member: previewMember } = useActiveMembership()
+
+  // Candados por plan visibles en el propio sidebar (a diferencia del resto del
+  // gating, que hasta ahora solo bloqueaba DESPUÉS de navegar — ver FeatureLockedPage
+  // en cada página). Un booleano por feature, con el mismo patrón "null hasta montar"
+  // ya usado por canAccessTeam para no arriesgar un mismatch de hidratación en un
+  // plan pago (ver lib/plan-access.ts). Mientras sea null, el ítem se trata como NO
+  // bloqueado (evita el parpadeo "candado que desaparece" en el primer render).
+  const canAccessInventory = useFeatureAccess("inventory")
+  const canAccessMenus = useFeatureAccess("menus")
+  const canAccessPurchaseOrdersManual = useFeatureAccess("purchase_orders_manual")
+  const canAccessPurchaseOrdersAuto = useFeatureAccess("purchase_orders_auto")
+  const canAccessStatsPanorama = useFeatureAccess("stats_panorama")
+
+  const lockedByHref: Record<string, { locked: boolean; feature: FeatureKey }> = {
+    "/inventario": { locked: canAccessInventory === false, feature: "inventory" },
+    "/menus": { locked: canAccessMenus === false, feature: "menus" },
+    "/menu-y-compras": {
+      locked: canAccessPurchaseOrdersManual === false && canAccessPurchaseOrdersAuto === false,
+      feature: "purchase_orders_manual",
+    },
+    "/estadisticas": { locked: canAccessStatsPanorama === false, feature: "stats_panorama" },
+  }
+
   const items = [
-    { title: t("nav_dashboard"), href: "/dashboard", icon: Home, description: t("nav_dashboard_desc") },
-    { title: t("nav_ficha_tecnica"), href: "/ficha-tecnica", icon: ChefHat, description: t("nav_ficha_tecnica_desc") },
-    { title: t("nav_mis_recetas"), href: "/mis-recetas", icon: FileText, description: t("nav_mis_recetas_desc") },
-    { title: t("nav_ingredientes"), href: "/ingredientes", icon: Package, description: t("nav_ingredientes_desc") },
-    { title: t("nav_inventario"), href: "/inventario", icon: Boxes, description: t("nav_inventario_desc") },
+    { title: t("nav_dashboard"), href: "/dashboard", icon: Home, description: t("nav_dashboard_desc"), locked: false, feature: null as FeatureKey | null },
+    { title: t("nav_ficha_tecnica"), href: "/ficha-tecnica", icon: ChefHat, description: t("nav_ficha_tecnica_desc"), locked: false, feature: null as FeatureKey | null },
+    { title: t("nav_mis_recetas"), href: "/mis-recetas", icon: FileText, description: t("nav_mis_recetas_desc"), locked: false, feature: null as FeatureKey | null },
+    { title: t("nav_ingredientes"), href: "/ingredientes", icon: Package, description: t("nav_ingredientes_desc"), locked: false, feature: null as FeatureKey | null },
+    { title: t("nav_inventario"), href: "/inventario", icon: Boxes, description: t("nav_inventario_desc"), locked: lockedByHref["/inventario"].locked, feature: lockedByHref["/inventario"].feature as FeatureKey | null },
   ]
 
   // Equipo va justo después de Inventario, y solo aparece una vez confirmado (tras
   // montar, ver useFeatureAccess) que el plan de la cuenta lo incluye — mismo patrón
   // de hidratación que el resto del gating de features (ver lib/plan-access.ts).
+  // No lleva candado visual (a diferencia de los otros): "team" hoy solo lo desbloquea
+  // Chef Ejecutivo, que además está marcado comingSoon — mostrarlo "apagado, actualiza
+  // tu plan" sería ofrecer una actualización que todavía no se puede comprar.
   if (canAccessTeam) {
-    items.push({ title: t("nav_equipo"), href: "/equipo", icon: Users, description: t("nav_equipo_desc") })
+    items.push({ title: t("nav_equipo"), href: "/equipo", icon: Users, description: t("nav_equipo_desc"), locked: false, feature: null })
   }
 
   items.push(
-    { title: t("nav_menus"), href: "/menus", icon: UtensilsCrossed, description: t("nav_menus_desc") },
+    { title: t("nav_menus"), href: "/menus", icon: UtensilsCrossed, description: t("nav_menus_desc"), locked: lockedByHref["/menus"].locked, feature: lockedByHref["/menus"].feature as FeatureKey | null },
     {
       title: t("nav_ordenes_compra"),
       href: "/menu-y-compras",
       icon: ShoppingCart,
       description: t("nav_ordenes_compra_desc"),
+      locked: lockedByHref["/menu-y-compras"].locked,
+      feature: lockedByHref["/menu-y-compras"].feature as FeatureKey | null,
     },
-    { title: t("nav_estadisticas"), href: "/estadisticas", icon: BarChart3, description: t("nav_estadisticas_desc") },
-    { title: t("nav_negocios"), href: "/negocios", icon: Building2, description: t("nav_negocios_desc") },
+    { title: t("nav_estadisticas"), href: "/estadisticas", icon: BarChart3, description: t("nav_estadisticas_desc"), locked: lockedByHref["/estadisticas"].locked, feature: lockedByHref["/estadisticas"].feature as FeatureKey | null },
+    { title: t("nav_negocios"), href: "/negocios", icon: Building2, description: t("nav_negocios_desc"), locked: false, feature: null },
   )
 
   // Vista previa de Equipo del dueño, o sesión real de un invitado (ver
@@ -104,12 +139,18 @@ function useNavigationItems() {
       // no solo esto).
       "/equipo": ["team"],
     }
-    return items.filter((item) => {
-      if (item.href === "/dashboard" || item.href === "/negocios") return hasScopeDashboard
-      const required = hrefFeatureMap[item.href]
-      if (!required) return true
-      return required.some((f) => allowed.has(f))
-    })
+    return items
+      .filter((item) => {
+        if (item.href === "/dashboard" || item.href === "/negocios") return hasScopeDashboard
+        const required = hrefFeatureMap[item.href]
+        if (!required) return true
+        return required.some((f) => allowed.has(f))
+      })
+      // El candado visual de arriba mide el plan de LA CUENTA — no aplica a una
+      // sesión de equipo (esa se rige por allowedFeatures, no por plan; lo que no
+      // le está permitido a esta persona ya quedó fuera del filtro de arriba, no
+      // se le muestra "apagado").
+      .map((item) => ({ ...item, locked: false }))
   }
 
   return items
@@ -375,6 +416,60 @@ function SidebarInner() {
               pathname.startsWith(item.href + "/") ||
               (item.href === "/menu-y-compras" && (pathname === "/ordenes-compra" || pathname.includes("/ordenes-compra")))
             const contextualHref = getContextualHref(item.href, currentBusinessId)
+
+            // Candado visual: antes, un módulo que el plan no incluye se veía
+            // idéntico a uno desbloqueado en el sidebar — el bloqueo real solo
+            // aparecía DESPUÉS de navegar (FeatureLockedPage en la página de
+            // destino). Pedido explícito del dueño del proyecto: que el botón se
+            // vea "apagado" y explique por qué, sin tener que hacer clic primero.
+            if (item.locked) {
+              const minPlan = item.feature ? getMinimumPlanForFeature(item.feature) : null
+              const handleLockedClick = () => {
+                toast({
+                  title: t("sidebar_locked_feature_toast_title"),
+                  description: minPlan
+                    ? t("sidebar_locked_feature_toast_desc").replace("{plan}", minPlan.name)
+                    : t("sidebar_locked_feature_toast_desc_generic"),
+                })
+              }
+              return (
+                <button
+                  key={item.href}
+                  type="button"
+                  aria-disabled="true"
+                  onClick={handleLockedClick}
+                  className={cn(
+                    "w-full flex items-center gap-3 py-2 rounded-r-lg group relative border-l-[3px] border-transparent text-text-4/70 opacity-60 hover:opacity-90 cursor-not-allowed pl-[9px] pr-3",
+                    effectiveCollapsed && "justify-center pl-2 pr-2",
+                  )}
+                >
+                  <item.icon className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+
+                  {!effectiveCollapsed && (
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="font-medium truncate text-sm flex items-center gap-1.5">
+                        {item.title}
+                        <Lock className="h-3 w-3 flex-shrink-0" />
+                      </p>
+                      <p className="text-xs text-text-4/70 truncate hidden sm:block">
+                        {minPlan
+                          ? t("sidebar_locked_feature_hint").replace("{plan}", minPlan.name)
+                          : t("sidebar_locked_feature_hint_generic")}
+                      </p>
+                    </div>
+                  )}
+
+                  {effectiveCollapsed && (
+                    <>
+                      <Lock className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 text-text-4" />
+                      <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-foreground text-background text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                        {item.title} — {minPlan ? t("sidebar_locked_feature_hint").replace("{plan}", minPlan.name) : t("sidebar_locked_feature_hint_generic")}
+                      </div>
+                    </>
+                  )}
+                </button>
+              )
+            }
 
             return (
               <Link key={item.href} href={contextualHref}>

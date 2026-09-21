@@ -20,6 +20,9 @@ export function MarketingFooter() {
           <Link href="/terminos-de-uso" className="hover:text-foreground transition-colors">
             {t("marketing_footer_terms")}
           </Link>
+          <Link href="/aviso-de-responsabilidad" className="hover:text-foreground transition-colors">
+            {t("marketing_footer_liability")}
+          </Link>
           <Link href="/contacto" className="hover:text-foreground transition-colors">
             {t("marketing_footer_suggestions")}
           </Link>

@@ -18,6 +18,7 @@ import { NextResponse } from "next/server"
 import { Resend } from "resend"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getPlanBySlug } from "@/lib/plans"
+import { CURRENT_LEGAL_VERSION } from "@/lib/legal"
 import { renderEmailTemplate, escapeHtml } from "@/lib/services/email-templates"
 import { getEmailLabels, fillLabel, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
@@ -38,11 +39,20 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
   const email = typeof body?.email === "string" ? body.email.trim() : ""
   const password = typeof body?.password === "string" ? body.password : ""
+  const acceptedTerms = body?.acceptedTerms === true
   const profile = body?.profile || {}
   const preferredLanguage = normalizeEmailLang(profile.preferredLanguage)
 
   if (!email || !password) {
     return NextResponse.json({ error: "Falta el correo o la contraseña." }, { status: 400 })
+  }
+  // Igual que el mínimo de 8 caracteres de la contraseña (ver comentario abajo): la
+  // casilla de términos también se revisaba solo en el formulario — alguien podía
+  // llamar esta ruta directo y crear una cuenta sin haberla aceptado nunca. Los nuevos
+  // Términos de Uso/Política de Privacidad/Aviso de Responsabilidad (ver docs/118)
+  // exigen que el registro quede condicionado a esta aceptación.
+  if (!acceptedTerms) {
+    return NextResponse.json({ error: "Debes aceptar los Términos de Uso, la Política de Privacidad y el Aviso de Responsabilidad." }, { status: 400 })
   }
   // El mínimo de 8 caracteres antes solo se revisaba en el formulario (Zod, ver
   // lib/validations/auth.ts) — alguien podía llamar esta ruta directo, sin pasar por
@@ -89,6 +99,8 @@ export async function POST(request: Request) {
         industry_experience: profile.industryExperience || "",
         preferred_language: preferredLanguage,
         product_updates_opt_in: profile.productUpdatesOptIn === true,
+        terms_accepted_at: new Date().toISOString(),
+        terms_version: CURRENT_LEGAL_VERSION,
       },
     },
   })

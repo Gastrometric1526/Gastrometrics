@@ -17,7 +17,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
 import { compressImageToDataUrl } from "@/lib/utils/image-compress"
 import type { FeedbackType } from "@/types/feedback"
-import { CheckCircle2, Lightbulb, MessageCircleWarning, Bug, ArrowLeft, Mail, Clock, ImagePlus, X } from "lucide-react"
+import { CheckCircle2, Lightbulb, MessageCircleWarning, Bug, Smile, ArrowLeft, Mail, Clock, ImagePlus, X } from "lucide-react"
 
 // Tamaño máximo del archivo ORIGINAL que se acepta antes de comprimir — un límite
 // generoso (10MB) solo para descartar de una vez algo descomunal antes de gastar tiempo
@@ -38,13 +38,21 @@ const MAX_IMAGE_FILE_BYTES = 10 * 1024 * 1024
 // en vez de su propia navegación, lo cual se sentía como si lo hubieran deslogueado.
 // Ahora el layout se elige según el estado de sesión: con sesión iniciada usa el mismo
 // <Sidebar/> que el resto de la app; sin sesión, sigue usando el header/footer públicos.
-const typeOptionDefs: { value: FeedbackType; labelKey: "contacto_type_sugerencia_label" | "contacto_type_queja_label" | "contacto_type_bug_label"; descKey: "contacto_type_sugerencia_desc" | "contacto_type_queja_desc" | "contacto_type_bug_desc"; icon: typeof Lightbulb }[] = [
+const typeOptionDefs: { value: FeedbackType; labelKey: "contacto_type_sugerencia_label" | "contacto_type_queja_label" | "contacto_type_bug_label" | "contacto_type_experiencia_label"; descKey: "contacto_type_sugerencia_desc" | "contacto_type_queja_desc" | "contacto_type_bug_desc" | "contacto_type_experiencia_desc"; icon: typeof Lightbulb }[] = [
   { value: "sugerencia", labelKey: "contacto_type_sugerencia_label", descKey: "contacto_type_sugerencia_desc", icon: Lightbulb },
   { value: "queja", labelKey: "contacto_type_queja_label", descKey: "contacto_type_queja_desc", icon: MessageCircleWarning },
   { value: "bug", labelKey: "contacto_type_bug_label", descKey: "contacto_type_bug_desc", icon: Bug },
+  { value: "experiencia", labelKey: "contacto_type_experiencia_label", descKey: "contacto_type_experiencia_desc", icon: Smile },
 ]
 
-export function ContactoContent() {
+const VALID_TYPES: FeedbackType[] = ["sugerencia", "queja", "bug", "experiencia"]
+
+// initialType llega como prop desde app/contacto/page.tsx (searchParams del lado del
+// servidor, ver docs/117) — nunca useSearchParams() en este componente cliente, que
+// exigiría envolver la página en <Suspense> (ver CLAUDE.md: ya rompió el build 3 veces
+// en este proyecto). Así, el link "Déjanos un comentario" del correo de la encuesta de
+// 4 horas puede abrir /contacto?type=experiencia con esa categoría ya seleccionada.
+export function ContactoContent({ initialType }: { initialType?: string }) {
   const { isLoggedIn, authChecked, user } = useAuth()
   const { t, language } = useLanguage()
   const { toast } = useToast()
@@ -57,7 +65,9 @@ export function ContactoContent() {
     icon: def.icon,
   }))
 
-  const [type, setType] = useState<FeedbackType>("sugerencia")
+  const [type, setType] = useState<FeedbackType>(
+    VALID_TYPES.includes(initialType as FeedbackType) ? (initialType as FeedbackType) : "sugerencia",
+  )
   const [message, setMessage] = useState("")
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")

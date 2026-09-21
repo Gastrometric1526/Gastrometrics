@@ -21,6 +21,77 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-09-21",
+    content: {
+      es: {
+        title: "Novedades en GastroMetrics",
+        items: [
+          "Ahora se ve claramente qué partes de la app están disponibles en tu plan: los módulos que tu plan no incluye aparecen \"apagados\" en el menú, con un mensaje que explica desde qué plan se desbloquean — en vez de descubrirlo recién al entrar.",
+          "El tutorial de bienvenida ahora te guía paso a paso la primera vez: te lleva a cargar tus ingredientes y, al terminar, un botón te lleva directo a crear tu primera Ficha Técnica.",
+          "Corregimos un error real en Inventario: editar un producto directo en la tabla (categoría, nombre, stock mínimo, precio) parecía guardarse pero el cambio se perdía en silencio. Ahora sí se guarda.",
+          "Los campos de precio y cantidad de Ingredientes, Órdenes de Compra y Menús ya no aceptan números negativos por error.",
+          "Si usas la app en otro idioma, el nombre de tu país en Configuración → Regional ahora se traduce de verdad (antes siempre aparecía en español).",
+          "Corregimos la pantalla negra al abrir la app instalada en tu celular — ahora abre en blanco, como el resto de la marca. También aclaramos en la portada que GastroMetrics se puede instalar como app en tu celular.",
+        ],
+      },
+      en: {
+        title: "What's new in GastroMetrics",
+        items: [
+          "It's now clear which parts of the app your plan includes: modules your plan doesn't cover show up \"dimmed\" in the menu, with a message explaining which plan unlocks them — instead of finding out only after clicking in.",
+          "The welcome tutorial now guides you step by step the first time: it takes you to load your ingredients, and when you finish, a button takes you straight to creating your first Recipe Sheet.",
+          "Fixed a real bug in Inventory: editing a product directly in the table (category, name, minimum stock, price) looked like it saved, but the change was silently lost. It now saves correctly.",
+          "Price and quantity fields in Ingredients, Purchase Orders, and Menus no longer accept negative numbers by mistake.",
+          "If you use the app in another language, your country's name in Settings → Regional is now actually translated (it used to always show in Spanish).",
+          "Fixed the black screen when opening the installed app on your phone — it now opens on white, matching the rest of the brand. We also made it clearer on the homepage that GastroMetrics can be installed as an app on your phone.",
+        ],
+      },
+      da: {
+        title: "Nyheder i GastroMetrics",
+        items: [
+          "Det er nu tydeligt, hvilke dele af appen din plan inkluderer: moduler din plan ikke dækker, vises \"nedtonet\" i menuen, med en besked, der forklarer hvilken plan der låser dem op — i stedet for først at opdage det efter at have klikket ind.",
+          "Velkomst-tutorialen guider dig nu trin for trin første gang: den fører dig til at indlæse dine ingredienser, og når du er færdig, fører en knap dig direkte til at oprette dit første Opskriftsark.",
+          "Rettet en reel fejl i Lager: at redigere et produkt direkte i tabellen (kategori, navn, minimumslager, pris) så ud til at gemme, men ændringen gik tabt i stilhed. Det gemmes nu korrekt.",
+          "Pris- og mængdefelter i Ingredienser, Indkøbsordrer og Menuer accepterer ikke længere negative tal ved en fejl.",
+          "Hvis du bruger appen på et andet sprog, bliver dit lands navn i Indstillinger → Regional nu rent faktisk oversat (det viste tidligere altid på spansk).",
+          "Rettet den sorte skærm, når du åbner den installerede app på din telefon — den åbner nu i hvidt, ligesom resten af brandet. Vi har også gjort det tydeligere på forsiden, at GastroMetrics kan installeres som en app på din telefon.",
+        ],
+      },
+      fr: {
+        title: "Nouveautés de GastroMetrics",
+        items: [
+          "On voit désormais clairement quelles parties de l'application votre plan inclut : les modules que votre plan ne couvre pas apparaissent \"grisés\" dans le menu, avec un message expliquant à partir de quel plan ils se débloquent — au lieu de le découvrir seulement en cliquant dessus.",
+          "Le tutoriel de bienvenue vous guide maintenant pas à pas la première fois : il vous amène à charger vos ingrédients, puis, à la fin, un bouton vous mène directement à la création de votre première Fiche Technique.",
+          "Correction d'un vrai bug dans Inventaire : modifier un produit directement dans le tableau (catégorie, nom, stock minimum, prix) semblait s'enregistrer, mais le changement était perdu silencieusement. Cela s'enregistre maintenant correctement.",
+          "Les champs de prix et de quantité dans Ingrédients, Commandes d'achat et Menus n'acceptent plus les nombres négatifs par erreur.",
+          "Si vous utilisez l'application dans une autre langue, le nom de votre pays dans Paramètres → Régional est maintenant vraiment traduit (il s'affichait toujours en espagnol auparavant).",
+          "Correction de l'écran noir à l'ouverture de l'application installée sur votre téléphone — elle s'ouvre maintenant en blanc, comme le reste de la marque. Nous avons aussi précisé sur la page d'accueil que GastroMetrics peut être installée comme application sur votre téléphone.",
+        ],
+      },
+      pt: {
+        title: "Novidades no GastroMetrics",
+        items: [
+          "Agora fica claro quais partes do app o seu plano inclui: os módulos que seu plano não cobre aparecem \"apagados\" no menu, com uma mensagem explicando a partir de qual plano eles são desbloqueados — em vez de descobrir isso só depois de clicar.",
+          "O tutorial de boas-vindas agora te guia passo a passo na primeira vez: ele te leva a cadastrar seus ingredientes e, ao terminar, um botão te leva direto para criar sua primeira Ficha Técnica.",
+          "Corrigimos um bug real no Inventário: editar um produto direto na tabela (categoria, nome, estoque mínimo, preço) parecia salvar, mas a mudança era perdida em silêncio. Agora salva corretamente.",
+          "Os campos de preço e quantidade em Ingredientes, Ordens de Compra e Menus não aceitam mais números negativos por engano.",
+          "Se você usa o app em outro idioma, o nome do seu país em Configurações → Regional agora é traduzido de verdade (antes sempre aparecia em espanhol).",
+          "Corrigimos a tela preta ao abrir o app instalado no seu celular — agora ele abre em branco, como o resto da marca. Também deixamos mais claro na página inicial que o GastroMetrics pode ser instalado como app no seu celular.",
+        ],
+      },
+      zh: {
+        title: "GastroMetrics 更新内容",
+        items: [
+          "现在可以清楚地看到你的方案包含哪些功能：方案未包含的模块会在菜单中显示为“变暗”状态，并提示需要升级到哪个方案才能解锁——不用点进去才发现打不开。",
+          "首次使用时，欢迎教程现在会一步步引导你：先带你去录入食材，完成后有一个按钮直接带你创建第一份技术配方表。",
+          "修复了库存模块的一个真实问题：直接在表格中编辑产品（分类、名称、最低库存、价格）看起来保存了，但改动其实被悄悄丢失了。现在可以正确保存。",
+          "食材、采购订单和菜单中的价格与数量字段，不再会因误操作而接受负数。",
+          "如果你使用其他语言，现在“设置 → 地区”中的国家名称会真正被翻译（以前一直显示西班牙语）。",
+          "修复了打开手机上已安装的应用时出现黑屏的问题——现在会以白色背景打开，与品牌其余部分保持一致。我们还在首页更清楚地说明了 GastroMetrics 可以作为应用安装到手机上。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-09-15",
     content: {
       es: {

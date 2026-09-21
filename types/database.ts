@@ -313,6 +313,9 @@ export interface Database {
           // ver supabase/migrations/0023_plan_cancellation_status.sql.
           cancel_at_period_end: boolean
           current_period_end: string | null
+          // Para qué valor de plan_expires_at ya se mandó el recordatorio de 3 días —
+          // ver supabase/migrations/0025_plan_expiry_reminder.sql.
+          expiry_reminder_sent_for: string | null
         }
         Insert: Omit<
           Database["public"]["Tables"]["account_plans"]["Row"],
@@ -332,6 +335,7 @@ export interface Database {
           | "extra_team_seats"
           | "cancel_at_period_end"
           | "current_period_end"
+          | "expiry_reminder_sent_for"
         > & {
           updated_at?: string
           stripe_customer_id?: string | null
@@ -349,6 +353,7 @@ export interface Database {
           extra_team_seats?: number
           cancel_at_period_end?: boolean
           current_period_end?: string | null
+          expiry_reminder_sent_for?: string | null
         }
         Update: Partial<Database["public"]["Tables"]["account_plans"]["Row"]>
         Relationships: never[]
@@ -366,17 +371,29 @@ export interface Database {
           onboarding_completed: boolean
           preferred_language: string
           product_updates_opt_in: boolean
+          terms_accepted_at: string | null
+          terms_version: string | null
+          deletion_requested_at: string | null
           created_at: string
           updated_at: string
         }
         Insert: Omit<
           Database["public"]["Tables"]["profiles"]["Row"],
-          "created_at" | "updated_at" | "preferred_language" | "product_updates_opt_in"
+          | "created_at"
+          | "updated_at"
+          | "preferred_language"
+          | "product_updates_opt_in"
+          | "terms_accepted_at"
+          | "terms_version"
+          | "deletion_requested_at"
         > & {
           created_at?: string
           updated_at?: string
           preferred_language?: string
           product_updates_opt_in?: boolean
+          terms_accepted_at?: string | null
+          terms_version?: string | null
+          deletion_requested_at?: string | null
         }
         Update: Partial<Database["public"]["Tables"]["profiles"]["Row"]>
         Relationships: never[]
@@ -385,7 +402,12 @@ export interface Database {
         Row: {
           id: number
           account_id: string
-          email_type: "first_recipe_reminder" | "day7_margin_checkin" | "first_sale_reinforcement"
+          email_type:
+            | "first_recipe_reminder"
+            | "day7_margin_checkin"
+            | "first_sale_reinforcement"
+            | "four_hour_experience"
+            | "legal_update_notice"
           sent_at: string
         }
         Insert: Omit<Database["public"]["Tables"]["activation_emails_sent"]["Row"], "id" | "sent_at"> & {

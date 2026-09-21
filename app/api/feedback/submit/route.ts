@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   const type = body?.type as string | undefined
   const message = (body?.message as string | undefined)?.trim()
 
-  if (!type || !["sugerencia", "queja", "bug"].includes(type) || !message) {
+  if (!type || !["sugerencia", "queja", "bug", "experiencia"].includes(type) || !message) {
     return NextResponse.json({ error: "Falta type o message válidos." }, { status: 400 })
   }
 

@@ -21,12 +21,13 @@ import { Textarea } from "@/components/ui/textarea"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
 import type { Feedback, FeedbackStatus, FeedbackType } from "@/types/feedback"
-import { Bug, Lightbulb, MessageCircleWarning, Trash2 } from "lucide-react"
+import { Bug, Lightbulb, MessageCircleWarning, Smile, Trash2 } from "lucide-react"
 
-const typeConfigDefs: Record<FeedbackType, { labelKey: "admin_type_suggestion" | "admin_type_complaint" | "admin_type_bug"; icon: typeof Lightbulb; color: string }> = {
+const typeConfigDefs: Record<FeedbackType, { labelKey: "admin_type_suggestion" | "admin_type_complaint" | "admin_type_bug" | "admin_type_experience"; icon: typeof Lightbulb; color: string }> = {
   sugerencia: { labelKey: "admin_type_suggestion", icon: Lightbulb, color: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
   queja: { labelKey: "admin_type_complaint", icon: MessageCircleWarning, color: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
   bug: { labelKey: "admin_type_bug", icon: Bug, color: "bg-red-500/10 text-red-600 dark:text-red-400" },
+  experiencia: { labelKey: "admin_type_experience", icon: Smile, color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
 }
 
 const statusLabelKeys: Record<FeedbackStatus, "admin_status_new" | "admin_status_reviewed" | "admin_status_resolved"> = {
@@ -60,6 +61,7 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
     sugerencia: { ...typeConfigDefs.sugerencia, label: t(typeConfigDefs.sugerencia.labelKey) },
     queja: { ...typeConfigDefs.queja, label: t(typeConfigDefs.queja.labelKey) },
     bug: { ...typeConfigDefs.bug, label: t(typeConfigDefs.bug.labelKey) },
+    experiencia: { ...typeConfigDefs.experiencia, label: t(typeConfigDefs.experiencia.labelKey) },
   }
 
   const statusLabels = {
@@ -95,6 +97,7 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
     sugerencia: feedback.filter((f) => f.type === "sugerencia").length,
     queja: feedback.filter((f) => f.type === "queja").length,
     bug: feedback.filter((f) => f.type === "bug").length,
+    experiencia: feedback.filter((f) => f.type === "experiencia").length,
   }
 
   useEffect(() => {
@@ -163,6 +166,7 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
             <TabsTrigger value="sugerencia">{t("admin_tab_suggestions")} ({counts.sugerencia})</TabsTrigger>
             <TabsTrigger value="queja">{t("admin_tab_complaints")} ({counts.queja})</TabsTrigger>
             <TabsTrigger value="bug">{t("admin_tab_bugs")} ({counts.bug})</TabsTrigger>
+            <TabsTrigger value="experiencia">{t("admin_tab_experience")} ({counts.experiencia})</TabsTrigger>
           </TabsList>
         </Tabs>
 
