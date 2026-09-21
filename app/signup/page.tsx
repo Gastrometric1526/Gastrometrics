@@ -58,13 +58,17 @@ function SignupPageInner() {
   const searchParams = useSearchParams()
   const { login, signUp } = useAuth()
   const { t, language } = useLanguage()
-  // Planes que se pueden elegir en el registro — "chef-ejecutivo" queda afuera a
-  // propósito, mismo criterio que /planes (components/plans-grid.tsx): tiene
-  // comingSoon=true, no es autoservicio, su único CTA en toda la app es "hablar con
-  // ventas". Si llegan con ?plan=chef-ejecutivo (o cualquier slug que no exista) desde
-  // afuera, cae a "foodie" en vez de dejar seleccionado algo no comprable.
-  const selectablePlans = getLocalizedPlans(language).filter((plan) => !plan.comingSoon)
+  // Planes que se muestran en el registro — TODOS, incluido "chef-ejecutivo", pero
+  // ese se ve igual que en /planes (components/plans-grid.tsx): una tarjeta
+  // deshabilitada con "Disponible para empresas" en vez de precio, nunca
+  // seleccionable — tiene comingSoon=true, no es autoservicio, su único CTA en toda la
+  // app es "hablar con ventas". Pedido explícito del dueño del proyecto: que aparezca
+  // en la lista (por consistencia con /planes), no que se vuelva comprable acá.
+  const allSignupPlans = getLocalizedPlans(language)
+  const selectablePlans = allSignupPlans.filter((plan) => !plan.comingSoon)
   const planFromUrl = searchParams.get("plan")
+  // Si llegan con ?plan=chef-ejecutivo (o cualquier slug que no exista) desde afuera,
+  // cae a "foodie" en vez de dejar seleccionado algo no comprable.
   const initialPlanSlug = selectablePlans.some((plan) => plan.slug === planFromUrl) ? planFromUrl! : "foodie"
   const [currentStep, setCurrentStep] = useState(1)
   // Pedido explícito del dueño del proyecto: "el cuestionario de crear cuenta debería
@@ -570,8 +574,28 @@ function SignupPageInner() {
             {/* Step 4: Plan selection */}
             {currentStep === 4 && (
               <div className="space-y-3 animate-in fade-in-50 duration-300">
-                {selectablePlans.map((plan) => {
+                {allSignupPlans.map((plan) => {
                   const isSelected = selectedPlanSlug === plan.slug
+                  // Chef Ejecutivo se ve, pero no se elige acá — mismo criterio que
+                  // /planes, ver comentario junto a allSignupPlans más arriba.
+                  if (plan.comingSoon) {
+                    return (
+                      <div
+                        key={plan.slug}
+                        className="w-full text-left rounded-lg border-2 border-muted bg-background p-4 opacity-60"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <span className="font-semibold text-foreground">{plan.name}</span>
+                            <p className="text-sm text-muted-foreground">{plan.tagline}</p>
+                          </div>
+                          <p className="text-xs font-medium text-muted-foreground shrink-0">
+                            {t("planes_available_for_businesses")}
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  }
                   return (
                     <button
                       key={plan.slug}
