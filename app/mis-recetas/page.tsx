@@ -498,7 +498,7 @@ export default function MisRecetasPage() {
           <div className="flex flex-col gap-4 md:gap-6 mb-6 md:mb-8">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 md:gap-4">
               <div className="flex items-center gap-2 md:gap-4 w-full sm:w-auto">
-                <Link href={businessId ? `/business/${businessId}` : "/dashboard"}>
+                <Link href={businessId !== "main" ? `/business/${businessId}` : "/dashboard"}>
                   <Button
                     variant="ghost"
                     size="sm"

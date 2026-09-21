@@ -646,7 +646,7 @@ export function PurchaseOrderPage() {
         <OrdenesCompraTour />
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3" data-tour="ordenes-header">
           <div className="flex items-center gap-2 md:gap-4">
-            <Link href={businessId ? `/business/${businessId}` : "/dashboard"}>
+            <Link href={businessId && businessId !== "main" ? `/business/${businessId}` : "/dashboard"}>
               <Button
                 variant="ghost"
                 size="sm"
