@@ -15,6 +15,20 @@ interface AnalyticsData {
   topPaths: { path: string; count: number }[]
   languageBreakdown: { language: string; count: number }[]
   viewsByDay: { day: string; count: number }[]
+  productEvents: { event: string; count: number }[]
+}
+
+// Mismo orden que el embudo real: llegó → creó cuenta → creó su primer ingrediente →
+// creó su primera receta → exportó su primer PDF → hizo clic en actualizar → empezó a
+// pagar. Nombres legibles acá en vez de en la base — ver
+// supabase/migrations/0029_product_events.sql para el nombre real de cada evento.
+const EVENT_LABELS: Record<string, string> = {
+  signup_completed: "Cuentas creadas",
+  first_ingredient_created: "Ingredientes creados",
+  first_recipe_created: "Recetas creadas",
+  first_pdf_exported: "PDFs exportados",
+  upgrade_clicked: "Clics en \"actualizar plan\"",
+  checkout_started: "Pagos iniciados (Stripe)",
 }
 
 const STAT_CARDS = [
@@ -60,6 +74,38 @@ export function AnalyticsPanel() {
           </Card>
         ))}
       </div>
+
+      {/* Embudo de activación (ver supabase/migrations/0029_product_events.sql) —
+          conteos agregados de los últimos 30 días, no un embudo por-persona (esta app
+          no guarda ningún identificador persistente de visitante, a propósito, ver el
+          comentario de la migración). Si la lista sale vacía con `data` ya cargado, lo
+          más probable es que la migración 0029 todavía no se corrió en el SQL Editor
+          de Supabase, no que de verdad no pasó nada. */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Embudo de activación (últimos 30 días)</CardTitle>
+          <CardDescription>Cuántas veces pasó cada paso — no es por-persona, son conteos totales.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!data ? (
+            <Skeleton className="h-24 w-full" />
+          ) : data.productEvents.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Todavía no hay eventos registrados. Si esperabas ver algo acá, confirma que la migración
+              0029_product_events.sql ya se corrió en el SQL Editor de Supabase.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {data.productEvents.map((e) => (
+                <div key={e.event} className="flex items-center justify-between rounded-lg border p-3">
+                  <span className="text-sm text-foreground">{EVENT_LABELS[e.event] || e.event}</span>
+                  <span className="text-lg font-bold text-foreground tabular-nums">{e.count}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {!hasData ? (
         <Card>

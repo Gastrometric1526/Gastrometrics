@@ -71,6 +71,7 @@ import { IngredientesTour } from "@/components/page-tours"
 import { convertAllIngredientsToSystem } from "@/lib/utils/calculations"
 import { updateIngredientPriceAndRecalculate } from "@/lib/recalculate"
 import { ActivityTracker } from "@/lib/activity-tracker"
+import { trackEvent } from "@/lib/analytics/track-event"
 import { logActivity } from "@/lib/services/activity-log"
 
 // Helper function for generating unique IDs
@@ -923,6 +924,7 @@ export default function IngredientesPage() {
 
         showSuccess(t("ingredientes_toast_created_title"), t("ingredientes_toast_created_desc"))
         setShowAddDialog(false)
+        trackEvent("first_ingredient_created", businessId)
       }
 
       // Reset form

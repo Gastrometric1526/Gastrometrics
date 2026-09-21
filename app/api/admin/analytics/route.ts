@@ -23,9 +23,13 @@ export async function GET() {
     const since30d = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString()
     const since7d = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString()
 
-    const [{ count: totalAllTime }, last30dRows] = await Promise.all([
+    const [{ count: totalAllTime }, last30dRows, eventRows] = await Promise.all([
       admin.from("page_views").select("id", { count: "exact", head: true }),
       admin.from("page_views").select("path, created_at, language").gte("created_at", since30d),
+      // Eventos de embudo (ver supabase/migrations/0029_product_events.sql) — no falla
+      // toda la ruta si la tabla todavía no existe (migración sin correr): se pide
+      // aparte y se ignora el error acá, no en el Promise.all de arriba.
+      admin.from("product_events").select("event_name").gte("created_at", since30d),
     ])
 
     const rows = last30dRows.data ?? []
@@ -56,6 +60,17 @@ export async function GET() {
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([day, count]) => ({ day, count }))
 
+    // eventRows.error !== null cuando la migración 0029 todavía no se corrió en el SQL
+    // Editor (tabla inexistente) — se degrada a "sin eventos" en vez de romper toda la
+    // respuesta, mismo criterio que el resto de esta ruta.
+    const eventCounts = new Map<string, number>()
+    for (const row of eventRows.data ?? []) {
+      eventCounts.set(row.event_name, (eventCounts.get(row.event_name) || 0) + 1)
+    }
+    const productEvents = [...eventCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([event, count]) => ({ event, count }))
+
     return NextResponse.json({
       totalAllTime: totalAllTime || 0,
       total30d,
@@ -63,6 +78,7 @@ export async function GET() {
       topPaths,
       languageBreakdown,
       viewsByDay,
+      productEvents,
     })
   } catch (error) {
     console.error("[api/admin/analytics] Error calculando analíticas:", error)

@@ -6,6 +6,7 @@ import { getPdfLabels, getCurrentPdfLanguage } from "@/lib/i18n/pdf-labels"
 import { drawBusinessLogo } from "./pdf-logo"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
 import { getYieldUnitLabel } from "@/lib/ingredient-labels"
+import { trackEvent } from "@/lib/analytics/track-event"
 
 // ============== HELPERS ==============
 
@@ -1444,6 +1445,7 @@ export function downloadRecipePDF(recipe: Recipe, options: PDFExportOptions): vo
     const doc = generateRecipePDF(recipe, options)
     const filename = generatePDFFilename(recipe, options.type)
     doc.save(filename)
+    trackEvent("first_pdf_exported")
   } catch (error) {
     console.error("Error generating PDF:", error)
     throw new Error("No se pudo generar el PDF")

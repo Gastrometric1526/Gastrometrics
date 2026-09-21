@@ -150,5 +150,16 @@ export async function POST(request: Request) {
     console.error("[api/auth/signup] Error inesperado notificando la nueva cuenta:", notifyError)
   })
 
+  // Evento de embudo (ver supabase/migrations/0029_product_events.sql) — server-side
+  // acá en vez de un trackEvent() de cliente en app/signup/page.tsx: esta ruta ya sabe
+  // con certeza que la cuenta se creó de verdad, sin depender de que el navegador
+  // siga vivo para mandar el evento después.
+  admin
+    .from("product_events")
+    .insert({ event_name: "signup_completed" })
+    .then(({ error: eventError }) => {
+      if (eventError) console.error("[api/auth/signup] Error registrando evento signup_completed:", eventError)
+    })
+
   return NextResponse.json({ ok: true })
 }

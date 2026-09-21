@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useCurrentPlanSlug, setCurrentPlanSlug } from "@/lib/plan-access"
 import { useToast } from "@/hooks/use-toast"
+import { trackEvent } from "@/lib/analytics/track-event"
 import { Check, X } from "lucide-react"
 
 // Grilla de planes compartida entre /planes (pública, para visitantes sin sesión) y
@@ -57,6 +58,7 @@ export function PlansGrid({ freeRedirectTo = "/dashboard" }: PlansGridProps) {
   }, [isLoggedIn])
 
   const handleSelectPlan = async (planSlug: string, isFree: boolean) => {
+    if (!isFree) trackEvent("upgrade_clicked")
     if (isTester) {
       setShowTesterDialog(true)
       return

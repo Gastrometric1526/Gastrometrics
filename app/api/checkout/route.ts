@@ -162,6 +162,16 @@ export async function POST(request: Request) {
       subscription_data: { metadata: { planSlug: plan.slug, accountId: user.id } },
     })
 
+    // Evento de embudo (ver supabase/migrations/0029_product_events.sql) — server-side
+    // acá porque esta ruta ya confirmó que Stripe de verdad creó la sesión de pago
+    // (no un intento de "vi el botón y no pasó nada").
+    getSupabaseAdminClient()
+      .from("product_events")
+      .insert({ event_name: "checkout_started" })
+      .then(({ error: eventError }) => {
+        if (eventError) console.error("[api/checkout] Error registrando evento checkout_started:", eventError)
+      })
+
     return NextResponse.json({ url: session.url })
   } catch (error) {
     console.error("[api/checkout] Error creando sesión de Stripe:", error)

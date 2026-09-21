@@ -18,6 +18,7 @@ import { CalculationInfoDialog } from "./calculation-info-dialog"
 import { cn } from "@/lib/utils"
 import { getRecipeById, saveRecipe, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { ActivityTracker } from "@/lib/activity-tracker"
+import { trackEvent } from "@/lib/analytics/track-event"
 import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 import { getBusinessById, getEffectivePricingDefaults, setEffectivePricingDefaults } from "@/lib/storage/businesses"
 import {
@@ -799,6 +800,8 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
         businessId,
         { action: mode === "edit" ? "update" : "create", recipeId: savedRecipe.id },
       )
+
+      if (mode !== "edit") trackEvent("first_recipe_created", businessId)
 
       if (savedRecipe.classification === SUBRECIPE_CLASSIFICATION) {
         await syncSubRecipeToIngredient(savedRecipe, businessId)
@@ -1729,12 +1732,12 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                       />
                       {customPriceInput !== "" && (
                         <p className="text-xs text-muted-foreground whitespace-nowrap">
-                          {t("ficha_tecnica_suggested_label")}: L{calculations.recommendedPrice.toFixed(2)}
+                          {t("ficha_tecnica_suggested_label")}: {formatCurrency(calculations.recommendedPrice)}
                         </p>
                       )}
                     </div>
                   ) : calculations.finalPrice > 0 ? (
-                    <span className="font-mono">L{calculations.finalPrice.toFixed(2)}</span>
+                    <span className="font-mono">{formatCurrency(calculations.finalPrice)}</span>
                   ) : (
                     ""
                   )}
