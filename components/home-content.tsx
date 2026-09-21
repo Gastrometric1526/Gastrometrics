@@ -12,7 +12,7 @@ import { getLocalizedPlans } from "@/lib/plans"
 import { useLanguage } from "@/contexts/language-context"
 import { AnimatedNumber } from "@/components/animated-number"
 import { LandingAdminPdfPreview } from "@/components/landing-admin-pdf-preview"
-import { LandingCostCalculator } from "@/components/landing-cost-calculator"
+import { LandingRecipeDemo } from "@/components/landing-recipe-demo"
 import { ChefHat, Calculator, BarChart3, ArrowRight, Star, CheckCircle2, Smartphone, Download } from "lucide-react"
 
 // Landing recortada — docs/80-rediseno-visual-y-logo-oficial.md fue el diseño
@@ -98,9 +98,9 @@ export function HomeContent() {
                 visualmente con la acción principal.
                 BUG CORREGIDO: el botón decía "Calcular mi primer plato" pero llevaba
                 directo a /signup sin calcular nada — promesa rota, señalada por una
-                auditoría externa. Ahora baja a la calculadora real (#calculadora,
-                ver LandingCostCalculator), que sí calcula, y desde ahí es donde se
-                invita a crear cuenta para guardar el resultado. */}
+                auditoría externa. Ahora baja a la demo real (#calculadora, ver
+                LandingRecipeDemo), que sí calcula, y desde ahí es donde se invita a
+                crear cuenta para guardar el resultado. */}
             <div className="flex flex-col items-center gap-3">
               <Link href="#calculadora">
                 <Button size="lg" className="text-base px-6 py-3 bg-primary text-primary-foreground hover:bg-primary/90">
@@ -132,7 +132,7 @@ export function HomeContent() {
           </div>
         </section>
 
-        <LandingCostCalculator />
+        <LandingRecipeDemo />
 
         {/* La fuga invisible — el mejor gancho (docs/03), ahora con la cifra más fuerte
             de la ex-sección "Investigación" incrustada como dato de apoyo en vez de
