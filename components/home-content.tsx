@@ -13,7 +13,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { AnimatedNumber } from "@/components/animated-number"
 import { LandingAdminPdfPreview } from "@/components/landing-admin-pdf-preview"
 import { LandingCostCalculator } from "@/components/landing-cost-calculator"
-import { ChefHat, Calculator, BarChart3, ArrowRight, Star, CheckCircle2 } from "lucide-react"
+import { ChefHat, Calculator, BarChart3, ArrowRight, Star, CheckCircle2, Smartphone, Download } from "lucide-react"
 
 // Landing recortada — docs/80-rediseno-visual-y-logo-oficial.md fue el diseño
 // original (hero + investigación + fuga invisible + tres pasos + seis módulos + un
@@ -248,6 +248,35 @@ export function HomeContent() {
                   <p className="text-sm text-text-3 leading-relaxed">{t(benefit.descKey)}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Sección propia y visible de la app instalable — pedido explícito del dueño
+            del proyecto: antes esto solo vivía en un punto chico del hero ("Instalable
+            en tu celular") y en una respuesta de FAQ colapsada por default, ninguna de
+            las dos lo suficientemente explícita. */}
+        <section className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-20">
+          <div className="rounded-2xl border border-hairline bg-canvas-alt px-6 py-8 md:px-10 md:py-10 grid grid-cols-1 md:grid-cols-[auto_1fr] gap-6 md:gap-10 items-center">
+            <div className="w-14 h-14 rounded-2xl bg-primary-soft flex items-center justify-center shrink-0">
+              <Smartphone className="h-7 w-7 text-primary" />
+            </div>
+            <div className="space-y-3">
+              <p className="text-xs font-medium uppercase tracking-[0.14em] text-primary">{t("landing_mobile_kicker")}</p>
+              <h2 className="text-2xl md:text-3xl font-semibold tracking-[-0.02em] text-foreground leading-[1.15]">
+                {t("landing_mobile_title")}
+              </h2>
+              <p className="text-text-3 max-w-xl">{t("landing_mobile_desc")}</p>
+              <ul className="text-sm text-text-3 space-y-1.5 pt-1">
+                <li className="flex items-start gap-2">
+                  <Download className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <span>{t("landing_mobile_step_android")}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Download className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <span>{t("landing_mobile_step_ios")}</span>
+                </li>
+              </ul>
             </div>
           </div>
         </section>

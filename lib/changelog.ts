@@ -21,6 +21,53 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-09-21b",
+    content: {
+      es: {
+        title: "Novedades en GastroMetrics",
+        items: [
+          "El manual de usuario (Configuración → Manual de usuario) se rehízo por completo, con capturas reales de la app tal como se ve hoy — antes tenía pantallas viejas de hace varias actualizaciones.",
+          "El manual ahora también explica el candado por plan en el menú y cómo instalar GastroMetrics como app en tu celular, dos cosas que no existían cuando se escribió la versión anterior.",
+        ],
+      },
+      en: {
+        title: "What's new in GastroMetrics",
+        items: [
+          "The user manual (Settings → User manual) was completely rebuilt, with real screenshots of the app as it looks today — the old version had screens from several updates ago.",
+          "The manual now also explains the plan lock in the menu and how to install GastroMetrics as an app on your phone, two things that didn't exist when the previous version was written.",
+        ],
+      },
+      da: {
+        title: "Nyheder i GastroMetrics",
+        items: [
+          "Brugermanualen (Indstillinger → Brugermanual) blev bygget helt om, med rigtige skærmbilleder af appen, som den ser ud i dag — den gamle version havde skærme fra flere opdateringer siden.",
+          "Manualen forklarer nu også hængelåsen pr. plan i menuen, og hvordan du installerer GastroMetrics som en app på din telefon — to ting, der ikke fandtes, da den forrige version blev skrevet.",
+        ],
+      },
+      fr: {
+        title: "Nouveautés de GastroMetrics",
+        items: [
+          "Le manuel de l'utilisateur (Paramètres → Manuel utilisateur) a été entièrement refait, avec de vraies captures d'écran de l'application telle qu'elle est aujourd'hui — l'ancienne version montrait des écrans datant de plusieurs mises à jour.",
+          "Le manuel explique maintenant aussi le cadenas par forfait dans le menu et comment installer GastroMetrics comme application sur votre téléphone, deux choses qui n'existaient pas quand la version précédente a été écrite.",
+        ],
+      },
+      pt: {
+        title: "Novidades no GastroMetrics",
+        items: [
+          "O manual do usuário (Configurações → Manual do usuário) foi totalmente refeito, com capturas reais do app como ele é hoje — a versão antiga tinha telas de várias atualizações atrás.",
+          "O manual agora também explica o cadeado por plano no menu e como instalar o GastroMetrics como app no seu celular, duas coisas que não existiam quando a versão anterior foi escrita.",
+        ],
+      },
+      zh: {
+        title: "GastroMetrics 更新内容",
+        items: [
+          "用户手册（设置 → 用户手册）已经完全重做，使用了应用当前真实界面的截图——旧版本里的截图还是好几次更新之前的。",
+          "手册现在还说明了菜单中按方案显示的锁定状态，以及如何将 GastroMetrics 安装到手机上作为应用使用——这两项功能在上一版手册编写时还不存在。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-09-21",
     content: {
       es: {
