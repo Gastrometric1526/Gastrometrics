@@ -47,11 +47,20 @@ export function OnboardingTour() {
       storageKey={ONBOARDING_KEY}
       finishLabel={t("tour_finish_go_ingredients")}
       onStart={() => window.dispatchEvent(new CustomEvent("gm:tour", { detail: { active: true } }))}
-      onClose={() => window.dispatchEvent(new CustomEvent("gm:tour", { detail: { active: false } }))}
+      // BUG CORREGIDO (pedido explícito: "forzar al usuario de llevarlo de la mano al
+      // ingredientes"): antes el redirect a /ingredientes vivía en onFinish, que
+      // page-tour.tsx SOLO dispara al terminar el último paso — si alguien saltaba el
+      // tour con Escape o el botón (✕) en cualquier paso anterior, `onFinish` nunca se
+      // llamaba y la persona se quedaba en el Dashboard sin ninguna guía. `onClose` en
+      // cambio se dispara siempre que el tour se cierra, sea por salto o por fin
+      // (ver close() en page-tour.tsx) — mismo destino sin importar cómo se cierre.
+      onClose={() => {
+        window.dispatchEvent(new CustomEvent("gm:tour", { detail: { active: false } }))
+        router.push("/ingredientes")
+      }}
       onStepChange={(step) =>
         window.dispatchEvent(new CustomEvent("gm:tour:step", { detail: { selector: step.selector } }))
       }
-      onFinish={() => router.push("/ingredientes")}
     />
   )
 }

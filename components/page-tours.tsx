@@ -100,16 +100,18 @@ export function IngredientesTour() {
   ]
 
   // Cierra el recorrido guiado que empieza en el Dashboard (OnboardingTour) → termina
-  // acá en Ingredientes: al terminar ESTE tour, un botón lleva directo a Ficha Técnica
-  // en vez de solo cerrarse — mismo patrón que OnboardingTour ya usaba para llegar
-  // hasta acá. Pedido explícito: que el usuario nuevo entienda que el siguiente paso,
-  // después de cargar ingredientes, es armar su primera ficha técnica.
+  // acá en Ingredientes: al cerrar ESTE tour, ya sea terminándolo o saltándolo, lleva
+  // directo a Ficha Técnica en vez de solo cerrarse — mismo patrón que OnboardingTour
+  // usa para llegar hasta acá. Pedido explícito del dueño del proyecto: "forzar al
+  // usuario de llevarlo de la mano al ingredientes y luego a ficha técnica" — por eso
+  // el redirect vive en onClose (se dispara siempre, saltando o terminando el tour),
+  // no en onFinish (que page-tour.tsx solo dispara al terminar el último paso).
   return (
     <PageTour
       steps={steps}
       storageKey="tour_completed_ingredientes"
       finishLabel={t("tour_finish_go_ficha")}
-      onFinish={() => router.push("/ficha-tecnica")}
+      onClose={() => router.push("/ficha-tecnica")}
     />
   )
 }

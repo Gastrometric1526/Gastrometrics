@@ -308,7 +308,16 @@ function SidebarInner() {
   // Reactiva el tutorial de la página actual — el tour normal solo se muestra una vez
   // (bandera en localStorage, ver components/page-tour.tsx), este botón la borra y
   // fuerza a reabrirse desde el paso 1, sin importar si ya se vio antes.
+  //
+  // BUG CORREGIDO (pedido explícito: que al reactivar el tutorial desde acá "se cierre
+  // el sidebar para que se vea lo que está haciendo"): en móvil el sidebar es un drawer
+  // a pantalla completa (ver isMobileOpen), y este botón vive adentro de ese drawer —
+  // al reiniciar el tour el drawer se quedaba abierto, tapando por completo el
+  // resaltado del primer paso hasta que alguien lo cerraba a mano. La coordinación
+  // gm:tour/gm:tour:step de arriba solo cubre el tour del Dashboard (el único que la
+  // dispara); este cierre explícito aplica sin importar qué tour se esté reiniciando.
   const handleRestartTour = () => {
+    setIsMobileOpen(false)
     window.dispatchEvent(new CustomEvent("gm:tour:restart"))
     toast({ title: t("sidebar_restart_tour_toast") })
   }
