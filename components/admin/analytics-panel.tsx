@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useLanguage } from "@/contexts/language-context"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts"
 import { Eye, CalendarDays, CalendarRange } from "lucide-react"
+import { BUSINESS_TYPES, BUSINESS_SIZES, EXPERIENCE_LEVELS, COUNTRIES } from "@/lib/types/user"
 
 interface AnalyticsData {
   totalAllTime: number
@@ -16,6 +17,12 @@ interface AnalyticsData {
   languageBreakdown: { language: string; count: number }[]
   viewsByDay: { day: string; count: number }[]
   productEvents: { event: string; count: number }[]
+  businessProfile: {
+    types: { value: string; count: number }[]
+    sizes: { value: string; count: number }[]
+    experience: { value: string; count: number }[]
+    countries: { value: string; count: number }[]
+  }
 }
 
 // Mismo orden que el embudo real: llegó → creó cuenta → creó su primer ingrediente →
@@ -29,6 +36,25 @@ const EVENT_LABELS: Record<string, string> = {
   first_pdf_exported: "PDFs exportados",
   upgrade_clicked: "Clics en \"actualizar plan\"",
   checkout_started: "Pagos iniciados (Stripe)",
+}
+
+// Perfil de negocios — mismos catálogos que app/signup/page.tsx paso 3, para que la
+// etiqueta que ve el admin sea idéntica a la que vio la persona al registrarse.
+function businessTypeLabel(t: (key: any) => string, value: string): string {
+  const found = BUSINESS_TYPES.find((b) => b.value === value)
+  return found ? t(found.labelKey) : value
+}
+function businessSizeLabel(t: (key: any) => string, value: string): string {
+  const found = BUSINESS_SIZES.find((b) => b.value === value)
+  return found ? t(found.labelKey) : value
+}
+function experienceLabel(t: (key: any) => string, value: string): string {
+  const found = EXPERIENCE_LEVELS.find((e) => e.value === value)
+  return found ? t(found.labelKey) : value
+}
+function countryLabel(t: (key: any) => string, code: string): string {
+  const found = COUNTRIES.find((c) => c.code === code)
+  return found ? t(found.labelKey) : code
 }
 
 const STAT_CARDS = [
@@ -102,6 +128,63 @@ export function AnalyticsPanel() {
                   <span className="text-lg font-bold text-foreground tabular-nums">{e.count}</span>
                 </div>
               ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Perfil de negocios — pedido explícito del dueño del proyecto: ver en admin
+          qué contestó la gente en el cuestionario del registro (paso 3 de
+          app/signup/page.tsx). Todas las cuentas reales tienen esto, obligatorio
+          desde el principio del registro — a diferencia del embudo de arriba, esto
+          no depende de ninguna migración nueva. */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Perfil de negocios</CardTitle>
+          <CardDescription>Lo que la gente contestó al registrarse — todas las cuentas reales.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!data ? (
+            <Skeleton className="h-32 w-full" />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {(
+                [
+                  { title: "Tipo de negocio", rows: data.businessProfile.types, label: businessTypeLabel },
+                  { title: "Tamaño", rows: data.businessProfile.sizes, label: businessSizeLabel },
+                  { title: "Experiencia", rows: data.businessProfile.experience, label: experienceLabel },
+                  { title: "País", rows: data.businessProfile.countries, label: countryLabel },
+                ] as const
+              ).map((group) => {
+                const total = group.rows.reduce((sum, r) => sum + r.count, 0) || 1
+                return (
+                  <div key={group.title} className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{group.title}</p>
+                    {group.rows.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">—</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {group.rows.slice(0, 5).map((row) => (
+                          <div key={row.value} className="space-y-0.5">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-foreground truncate pr-2">
+                                {row.value === "—" ? "—" : group.label(t, row.value)}
+                              </span>
+                              <span className="text-muted-foreground tabular-nums shrink-0">{row.count}</span>
+                            </div>
+                            <div className="h-1 rounded-full bg-hairline overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-primary"
+                                style={{ width: `${(row.count / total) * 100}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
         </CardContent>

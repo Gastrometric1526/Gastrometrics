@@ -26,6 +26,8 @@ import { getCurrentCurrencyOption } from "@/lib/currency"
 import { getAllBusinesses, addBusiness } from "@/lib/storage/businesses"
 import Link from "next/link"
 import { useLanguage } from "@/contexts/language-context"
+import { compressLogoToDataUrl } from "@/lib/utils/logo-compress"
+import { Image as ImageIcon, X } from "lucide-react"
 
 interface AddBusinessDialogProps {
   open: boolean
@@ -50,6 +52,13 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
   })
   const [pricingMethod, setPricingMethod] = useState<PricingMethod>(DEFAULT_PRICING_METHOD)
   const [targetFoodCostPercent, setTargetFoodCostPercent] = useState(DEFAULT_TARGET_FOOD_COST_PERCENT)
+  // Pedido explícito del dueño del proyecto: "lo de agregar logo de negocio... puede
+  // estar en el cuestionario al crear un negocio" — antes solo se podía agregar
+  // DESPUÉS, desde el menú de /business/[id] (ver ese archivo, openLogoDialog). Mismo
+  // helper de compresión (lib/utils/logo-compress.ts) y mismas claves de traducción
+  // que ese diálogo, para que sea una sola conversación de "logo" en toda la app.
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [isCompressingLogo, setIsCompressingLogo] = useState(false)
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
   const { t } = useLanguage()
@@ -67,6 +76,24 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleLogoFileChange = async (file: File | undefined) => {
+    if (!file) return
+    setIsCompressingLogo(true)
+    try {
+      const dataUrl = await compressLogoToDataUrl(file)
+      setLogoPreview(dataUrl)
+    } catch (error) {
+      console.error("Error compressing logo:", error)
+      toast({
+        title: t("business_toast_logo_process_error_title"),
+        description: t("business_toast_logo_process_error_desc"),
+        variant: "destructive",
+      })
+    } finally {
+      setIsCompressingLogo(false)
+    }
   }
 
   const handleNext = () => {
@@ -129,6 +156,7 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
         isActive: true,
         pricingMethod,
         targetFoodCostPercent: pricingMethod === "food_cost" ? targetFoodCostPercent : undefined,
+        logo: logoPreview || undefined,
       }
 
       await addBusiness(newBusiness)
@@ -149,6 +177,7 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
       })
       setPricingMethod(DEFAULT_PRICING_METHOD)
       setTargetFoodCostPercent(DEFAULT_TARGET_FOOD_COST_PERCENT)
+      setLogoPreview(null)
       setStep(1)
       onOpenChange(false)
 
@@ -249,6 +278,7 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
   const handleDialogOpenChange = (next: boolean) => {
     if (!next) {
       setStep(1)
+      setLogoPreview(null)
     }
     onOpenChange(next)
   }
@@ -319,6 +349,44 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("business_logo_dialog_title")}</Label>
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-lg border border-border bg-muted/30 flex items-center justify-center overflow-hidden shrink-0">
+                    {logoPreview ? (
+                      <img src={logoPreview} alt={t("business_logo_preview_alt")} className="w-full h-full object-contain" />
+                    ) : (
+                      <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <Label htmlFor="business-logo-input-wizard" className="flex-1">
+                    <div className="cursor-pointer border border-input rounded-md px-3 py-2 text-sm text-center hover:bg-accent transition-colors">
+                      {isCompressingLogo ? t("business_logo_processing_label") : t("business_logo_choose_button")}
+                    </div>
+                    <input
+                      id="business-logo-input-wizard"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={isCompressingLogo}
+                      onChange={(e) => handleLogoFileChange(e.target.files?.[0])}
+                    />
+                  </Label>
+                  {logoPreview && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setLogoPreview(null)}
+                      title={t("business_logo_remove_title")}
+                      className="shrink-0 text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           )}

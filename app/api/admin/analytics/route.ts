@@ -23,13 +23,20 @@ export async function GET() {
     const since30d = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString()
     const since7d = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString()
 
-    const [{ count: totalAllTime }, last30dRows, eventRows] = await Promise.all([
+    const [{ count: totalAllTime }, last30dRows, eventRows, profileRows] = await Promise.all([
       admin.from("page_views").select("id", { count: "exact", head: true }),
       admin.from("page_views").select("path, created_at, language").gte("created_at", since30d),
       // Eventos de embudo (ver supabase/migrations/0029_product_events.sql) — no falla
       // toda la ruta si la tabla todavía no existe (migración sin correr): se pide
       // aparte y se ignora el error acá, no en el Promise.all de arriba.
       admin.from("product_events").select("event_name").gte("created_at", since30d),
+      // Perfil de negocios — pedido explícito del dueño del proyecto: ver en /admin
+      // qué contestó la gente en el cuestionario del registro (paso 3 de
+      // app/signup/page.tsx: tipo/tamaño de negocio, experiencia) y de dónde son
+      // (nationality). Todas las cuentas reales tienen esto (obligatorio en el
+      // registro desde el principio), así que se trae completo, no solo 30 días —
+      // es la composición actual de la base, no una tendencia reciente.
+      admin.from("profiles").select("business_type, business_size, industry_experience, nationality"),
     ])
 
     const rows = last30dRows.data ?? []
@@ -71,6 +78,23 @@ export async function GET() {
       .sort((a, b) => b[1] - a[1])
       .map(([event, count]) => ({ event, count }))
 
+    function countBy(rows: { value: string | null }[]): { value: string; count: number }[] {
+      const counts = new Map<string, number>()
+      for (const row of rows) {
+        const key = row.value?.trim() || "—"
+        counts.set(key, (counts.get(key) || 0) + 1)
+      }
+      return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([value, count]) => ({ value, count }))
+    }
+
+    const profiles = profileRows.data ?? []
+    const businessProfile = {
+      types: countBy(profiles.map((p) => ({ value: p.business_type }))),
+      sizes: countBy(profiles.map((p) => ({ value: p.business_size }))),
+      experience: countBy(profiles.map((p) => ({ value: p.industry_experience }))),
+      countries: countBy(profiles.map((p) => ({ value: p.nationality }))),
+    }
+
     return NextResponse.json({
       totalAllTime: totalAllTime || 0,
       total30d,
@@ -79,6 +103,7 @@ export async function GET() {
       languageBreakdown,
       viewsByDay,
       productEvents,
+      businessProfile,
     })
   } catch (error) {
     console.error("[api/admin/analytics] Error calculando analíticas:", error)
