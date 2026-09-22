@@ -74,10 +74,11 @@ import type { Business } from "@/types/business"
 // (Ficha Técnica/Mis Recetas/Ingredientes están en todos los planes, incluido Foodie)
 // — existen como FeatureKey solo para poder restringirlas por persona acá mismo (ver
 // lib/plan-access.ts, DEFAULT_ALWAYS_ON_FEATURES).
-const ASSIGNABLE_FEATURE_DEFS: { key: FeatureKey; labelKey: "equipo_feature_recipes" | "equipo_feature_ingredients" | "equipo_feature_merma" | "equipo_feature_purchase_orders_manual" | "equipo_feature_purchase_orders_auto" | "equipo_feature_inventory" | "equipo_feature_menus" | "equipo_feature_stats_panorama" | "equipo_feature_manual_sales" | "equipo_feature_stats_finance" | "equipo_feature_team" }[] = [
+const ASSIGNABLE_FEATURE_DEFS: { key: FeatureKey; labelKey: "equipo_feature_recipes" | "equipo_feature_ingredients" | "equipo_feature_merma" | "equipo_feature_invoices" | "equipo_feature_purchase_orders_manual" | "equipo_feature_purchase_orders_auto" | "equipo_feature_inventory" | "equipo_feature_menus" | "equipo_feature_stats_panorama" | "equipo_feature_manual_sales" | "equipo_feature_stats_finance" | "equipo_feature_team" }[] = [
   { key: "recipes", labelKey: "equipo_feature_recipes" },
   { key: "ingredients", labelKey: "equipo_feature_ingredients" },
   { key: "merma", labelKey: "equipo_feature_merma" },
+  { key: "invoices", labelKey: "equipo_feature_invoices" },
   { key: "purchase_orders_manual", labelKey: "equipo_feature_purchase_orders_manual" },
   { key: "purchase_orders_auto", labelKey: "equipo_feature_purchase_orders_auto" },
   { key: "inventory", labelKey: "equipo_feature_inventory" },

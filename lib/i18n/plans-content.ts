@@ -34,6 +34,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       locked: [
         "Sistema de merma",
         "PDF administrativo (con costos y rentabilidad)",
+        "Facturación a clientes",
         "Órdenes de compra",
         "Inventario",
         "Menús",
@@ -43,10 +44,11 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     "home-cook": {
       price: "$15/mes",
       tagline: "Para quien ya calcula costos en serio",
-      description: "Todo lo de Foodie, más sistema de merma, órdenes de compra manuales y PDF administrativo.",
+      description: "Todo lo de Foodie, más sistema de merma, facturación, órdenes de compra manuales y PDF administrativo.",
       features: [
         "Todo lo del plan Foodie",
         "Sistema de merma",
+        "Facturación a clientes",
         "Órdenes de compra manuales",
         "PDF administrativo (con costos y rentabilidad)",
       ],
@@ -112,6 +114,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       locked: [
         "Waste system",
         "Administrative PDF (with costs and profitability)",
+        "Client invoicing",
         "Purchase orders",
         "Inventory",
         "Menus",
@@ -121,10 +124,11 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     "home-cook": {
       price: "$15/mo",
       tagline: "For those already calculating costs seriously",
-      description: "Everything in Foodie, plus a waste system, manual purchase orders, and administrative PDF.",
+      description: "Everything in Foodie, plus a waste system, invoicing, manual purchase orders, and administrative PDF.",
       features: [
         "Everything in the Foodie plan",
         "Waste system",
+        "Client invoicing",
         "Manual purchase orders",
         "Administrative PDF (with costs and profitability)",
       ],
@@ -190,6 +194,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       locked: [
         "Spildsystem",
         "Administrativ PDF (med omkostninger og rentabilitet)",
+        "Fakturering til kunder",
         "Indkøbsordrer",
         "Lager",
         "Menuer",
@@ -199,10 +204,11 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     "home-cook": {
       price: "$15/md",
       tagline: "For dig der allerede beregner omkostninger seriøst",
-      description: "Alt fra Foodie, plus spildsystem, manuelle indkøbsordrer og administrativ PDF.",
+      description: "Alt fra Foodie, plus spildsystem, fakturering, manuelle indkøbsordrer og administrativ PDF.",
       features: [
         "Alt fra Foodie-planen",
         "Spildsystem",
+        "Fakturering til kunder",
         "Manuelle indkøbsordrer",
         "Administrativ PDF (med omkostninger og rentabilitet)",
       ],
@@ -268,6 +274,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       locked: [
         "Système de pertes",
         "PDF administratif (avec coûts et rentabilité)",
+        "Facturation client",
         "Bons de commande",
         "Inventaire",
         "Menus",
@@ -277,10 +284,11 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     "home-cook": {
       price: "15 $/mois",
       tagline: "Pour ceux qui calculent déjà les coûts sérieusement",
-      description: "Tout ce qu'offre Foodie, plus un système de pertes, des bons de commande manuels et le PDF administratif.",
+      description: "Tout ce qu'offre Foodie, plus un système de pertes, la facturation, des bons de commande manuels et le PDF administratif.",
       features: [
         "Tout ce qu'offre le plan Foodie",
         "Système de pertes",
+        "Facturation client",
         "Bons de commande manuels",
         "PDF administratif (avec coûts et rentabilité)",
       ],
@@ -346,6 +354,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       locked: [
         "Sistema de perdas",
         "PDF administrativo (com custos e rentabilidade)",
+        "Faturamento para clientes",
         "Pedidos de compra",
         "Estoque",
         "Cardápios",
@@ -355,10 +364,11 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     "home-cook": {
       price: "US$15/mês",
       tagline: "Para quem já calcula custos a sério",
-      description: "Tudo do Foodie, mais sistema de perdas, pedidos de compra manuais e PDF administrativo.",
+      description: "Tudo do Foodie, mais sistema de perdas, faturamento, pedidos de compra manuais e PDF administrativo.",
       features: [
         "Tudo do plano Foodie",
         "Sistema de perdas",
+        "Faturamento para clientes",
         "Pedidos de compra manuais",
         "PDF administrativo (com custos e rentabilidade)",
       ],
@@ -416,13 +426,13 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       tagline: "开始整理你的配方",
       description: "食材数据库、无限配方卡、厨房版配方PDF导出。",
       features: ["食材数据库", "无限配方卡", "从Excel导入", "导出厨房版PDF（食材和步骤，不含成本）"],
-      locked: ["损耗系统", "管理版PDF（含成本和利润率）", "采购订单", "库存", "菜单", "统计与财务"],
+      locked: ["损耗系统", "管理版PDF（含成本和利润率）", "客户开票", "采购订单", "库存", "菜单", "统计与财务"],
     },
     "home-cook": {
       price: "$15/月",
       tagline: "适合已经认真核算成本的你",
-      description: "包含Foodie的全部功能，另加损耗系统、手动采购订单和管理版PDF。",
-      features: ["Foodie套餐的全部功能", "损耗系统", "手动采购订单", "管理版PDF（含成本和利润率）"],
+      description: "包含Foodie的全部功能，另加损耗系统、开票功能、手动采购订单和管理版PDF。",
+      features: ["Foodie套餐的全部功能", "损耗系统", "客户开票", "手动采购订单", "管理版PDF（含成本和利润率）"],
       locked: ["库存及自动订单建议", "菜单", "高级统计与财务", "多商家"],
     },
     "chef-de-partie": {

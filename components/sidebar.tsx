@@ -25,6 +25,7 @@ import {
   FileText,
   BarChart3,
   ShoppingCart,
+  Receipt,
   Menu,
   X,
   Home,
@@ -72,6 +73,7 @@ function useNavigationItems() {
   const canAccessPurchaseOrdersManual = useFeatureAccess("purchase_orders_manual")
   const canAccessPurchaseOrdersAuto = useFeatureAccess("purchase_orders_auto")
   const canAccessStatsPanorama = useFeatureAccess("stats_panorama")
+  const canAccessInvoices = useFeatureAccess("invoices")
 
   const lockedByHref: Record<string, { locked: boolean; feature: FeatureKey }> = {
     "/inventario": { locked: canAccessInventory === false, feature: "inventory" },
@@ -81,6 +83,7 @@ function useNavigationItems() {
       feature: "purchase_orders_manual",
     },
     "/estadisticas": { locked: canAccessStatsPanorama === false, feature: "stats_panorama" },
+    "/facturas": { locked: canAccessInvoices === false, feature: "invoices" },
   }
 
   const items = [
@@ -111,6 +114,14 @@ function useNavigationItems() {
       locked: lockedByHref["/menu-y-compras"].locked,
       feature: lockedByHref["/menu-y-compras"].feature as FeatureKey | null,
     },
+    {
+      title: t("nav_facturas"),
+      href: "/facturas",
+      icon: Receipt,
+      description: t("nav_facturas_desc"),
+      locked: lockedByHref["/facturas"].locked,
+      feature: lockedByHref["/facturas"].feature as FeatureKey | null,
+    },
     { title: t("nav_estadisticas"), href: "/estadisticas", icon: BarChart3, description: t("nav_estadisticas_desc"), locked: lockedByHref["/estadisticas"].locked, feature: lockedByHref["/estadisticas"].feature as FeatureKey | null },
     { title: t("nav_negocios"), href: "/negocios", icon: Building2, description: t("nav_negocios_desc"), locked: false, feature: null },
   )
@@ -133,6 +144,7 @@ function useNavigationItems() {
       "/menus": ["menus"],
       "/menu-y-compras": ["purchase_orders_manual", "purchase_orders_auto"],
       "/estadisticas": ["stats_panorama", "stats_finance", "manual_sales"],
+      "/facturas": ["invoices"],
       // Delegable desde docs/75 — un miembro con la función 'team' habilitada
       // también puede gestionar el equipo (ver supabase/migrations/
       // 0015_team_delegate_management.sql para el porqué hacía falta una migración,
@@ -178,6 +190,7 @@ const getContextualHref = (baseHref: string, businessId: string | null) => {
     "/menus",
     "/menu-y-compras",
     "/estadisticas",
+    "/facturas",
   ]
   if (businessRoutes.includes(baseHref)) {
     return `${baseHref}?business=${businessId}`

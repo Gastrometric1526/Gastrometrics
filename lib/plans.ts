@@ -30,6 +30,10 @@ export type FeatureKey =
   | "manual_sales"
   | "stats_finance"
   | "team"
+  // Facturación a clientes (ver types/invoice.ts) — pedido explícito del dueño del
+  // proyecto tras una pregunta real de un usuario. Mismo nivel que el PDF
+  // administrativo y las órdenes de compra manuales: primer plan pago (Home Cook).
+  | "invoices"
   // "recipes"/"ingredients" no son parte de la matriz de planes de arriba — Ficha
   // Técnica/Mis Recetas/Ingredientes están disponibles en TODOS los planes, incluido
   // Foodie gratis (ver DEFAULT_ALWAYS_ON_FEATURES en lib/plan-access.ts). Existen como
@@ -79,6 +83,7 @@ export const plans: Plan[] = [
     locked: [
       "Sistema de merma",
       "PDF administrativo (con costos y rentabilidad)",
+      "Facturación a clientes",
       "Órdenes de compra",
       "Inventario",
       "Menús",
@@ -94,17 +99,18 @@ export const plans: Plan[] = [
     price: "$15/mes",
     priceUsdCents: 1500,
     tagline: "Para quien ya calcula costos en serio",
-    description: "Todo lo de Foodie, más sistema de merma, órdenes de compra manuales y PDF administrativo.",
+    description: "Todo lo de Foodie, más sistema de merma, facturación, órdenes de compra manuales y PDF administrativo.",
     features: [
       "Todo lo del plan Foodie",
       "Sistema de merma",
+      "Facturación a clientes",
       "Órdenes de compra manuales",
       "PDF administrativo (con costos y rentabilidad)",
     ],
     locked: ["Inventario y auto-sugerencia de órdenes", "Menús", "Estadísticas y Finanzas avanzadas", "Multi-negocio"],
     maxBusinesses: 1,
     maxUsers: 1,
-    unlockedFeatures: ["merma", "purchase_orders_manual", "pdf_admin"],
+    unlockedFeatures: ["merma", "purchase_orders_manual", "pdf_admin", "invoices"],
   },
   {
     slug: "chef-de-partie",
@@ -125,7 +131,7 @@ export const plans: Plan[] = [
     locked: ["Finanzas completas (P&L, importación de POS, Menu Engineering)", "Multi-negocio", "Usuarios extra"],
     maxBusinesses: 1,
     maxUsers: 1,
-    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "inventory", "menus", "stats_panorama", "manual_sales"],
+    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales"],
   },
   {
     slug: "sous-chef",
@@ -147,7 +153,7 @@ export const plans: Plan[] = [
     locked: ["Multi-negocio masivo (+5)", "Soporte prioritario", "Usuarios ilimitados"],
     maxBusinesses: 2,
     maxUsers: 2,
-    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance"],
+    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance"],
     highlighted: true,
   },
   {
@@ -168,7 +174,7 @@ export const plans: Plan[] = [
     locked: [],
     maxBusinesses: 5,
     maxUsers: 5,
-    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance", "team"],
+    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance", "team"],
     comingSoon: true,
   },
 ]

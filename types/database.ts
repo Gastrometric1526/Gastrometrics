@@ -199,6 +199,22 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["sales_imports"]["Row"]>
         Relationships: never[]
       }
+      invoices: {
+        Row: {
+          id: string
+          business_id: string | null
+          owner_id: string
+          number: string
+          created_at: string
+          data: Record<string, unknown>
+        }
+        Insert: Omit<Database["public"]["Tables"]["invoices"]["Row"], "created_at" | "data"> & {
+          created_at?: string
+          data?: Record<string, unknown>
+        }
+        Update: Partial<Database["public"]["Tables"]["invoices"]["Row"]>
+        Relationships: never[]
+      }
       pos_column_mappings: {
         Row: {
           id: string

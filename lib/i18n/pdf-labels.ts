@@ -120,6 +120,12 @@ export interface PdfLabels {
   advertenciaTitulo: string
   advertenciaCostoSuperaVenta: string
   advertenciaRendimientoBajo: string
+  factura: string
+  cliente: string
+  subtotal: string
+  impuesto: string
+  descripcion: string
+  sinCliente: string
 }
 
 const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
@@ -235,6 +241,12 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     advertenciaTitulo: "ADVERTENCIA: revisar datos",
     advertenciaCostoSuperaVenta: "El costo de produccion supera el precio de venta configurado.",
     advertenciaRendimientoBajo: "El rendimiento declarado ({rendimiento}) parece muy bajo frente a la cantidad de \"{ingrediente}\" ({cantidad}). Revisa que no sea un error antes de usar este documento.",
+    factura: "Factura",
+    cliente: "Cliente",
+    subtotal: "Subtotal",
+    impuesto: "Impuesto",
+    descripcion: "Descripcion",
+    sinCliente: "Sin datos de cliente",
   },
   en: {
     nombre: "Name:",
@@ -348,6 +360,12 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     advertenciaTitulo: "WARNING: check data",
     advertenciaCostoSuperaVenta: "Production cost exceeds the configured sale price.",
     advertenciaRendimientoBajo: "The declared yield ({rendimiento}) looks very low compared to the quantity of \"{ingrediente}\" ({cantidad}). Check it isn't a typo before using this document.",
+    factura: "Invoice",
+    cliente: "Client",
+    subtotal: "Subtotal",
+    impuesto: "Tax",
+    descripcion: "Description",
+    sinCliente: "No client details",
   },
   da: {
     nombre: "Navn:",
@@ -461,6 +479,12 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     advertenciaTitulo: "ADVARSEL: tjek data",
     advertenciaCostoSuperaVenta: "Produktionsomkostningen overstiger den fastsatte salgspris.",
     advertenciaRendimientoBajo: "Det angivne udbytte ({rendimiento}) virker meget lavt i forhold til mængden af \"{ingrediente}\" ({cantidad}). Tjek at det ikke er en fejl, før du bruger dette dokument.",
+    factura: "Faktura",
+    cliente: "Kunde",
+    subtotal: "Subtotal",
+    impuesto: "Moms",
+    descripcion: "Beskrivelse",
+    sinCliente: "Ingen kundeoplysninger",
   },
   fr: {
     nombre: "Nom :",
@@ -574,6 +598,12 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     advertenciaTitulo: "ATTENTION : verifier les donnees",
     advertenciaCostoSuperaVenta: "Le cout de production depasse le prix de vente configure.",
     advertenciaRendimientoBajo: "Le rendement declare ({rendimiento}) semble tres faible par rapport a la quantite de \"{ingrediente}\" ({cantidad}). Verifiez qu'il ne s'agit pas d'une erreur avant d'utiliser ce document.",
+    factura: "Facture",
+    cliente: "Client",
+    subtotal: "Sous-total",
+    impuesto: "Taxe",
+    descripcion: "Description",
+    sinCliente: "Sans informations client",
   },
   pt: {
     nombre: "Nome:",
@@ -687,6 +717,12 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     advertenciaTitulo: "ATENCAO: revisar dados",
     advertenciaCostoSuperaVenta: "O custo de producao supera o preco de venda configurado.",
     advertenciaRendimientoBajo: "O rendimento declarado ({rendimiento}) parece muito baixo em relacao a quantidade de \"{ingrediente}\" ({cantidad}). Verifique se nao e um erro antes de usar este documento.",
+    factura: "Fatura",
+    cliente: "Cliente",
+    subtotal: "Subtotal",
+    impuesto: "Imposto",
+    descripcion: "Descricao",
+    sinCliente: "Sem dados do cliente",
   },
   zh: {
     nombre: "名称：",
@@ -800,6 +836,12 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     advertenciaTitulo: "警告：请核实数据",
     advertenciaCostoSuperaVenta: "生产成本超过了设定的销售价格。",
     advertenciaRendimientoBajo: "申报的产量（{rendimiento}）相对于\"{ingrediente}\"的用量（{cantidad}）显得过低，使用本文档前请核实是否有误。",
+    factura: "发票",
+    cliente: "客户",
+    subtotal: "小计",
+    impuesto: "税费",
+    descripcion: "描述",
+    sinCliente: "无客户信息",
   },
 }
 
