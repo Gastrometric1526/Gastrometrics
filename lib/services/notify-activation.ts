@@ -136,7 +136,7 @@ export async function sendFirstSaleReinforcement(accountId: string): Promise<voi
     headingKey: "e07_firstsale_heading",
     bodyKey: "e07_firstsale_body",
     ctaKey: "e07_firstsale_cta",
-    actionPath: "/estadisticas?tab=ventas",
+    actionPath: "/ventas",
   })
 }
 

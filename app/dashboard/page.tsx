@@ -584,13 +584,12 @@ export default function DashboardPage() {
       feature: "stats_panorama" as FeatureKey | null,
     },
     // Pedido explícito del dueño del proyecto: que sea obvio dónde está el registro
-    // manual de ventas (docs/90) — antes solo se podía llegar entrando a Reportes y
-    // encontrando la pestaña "Ventas" por cuenta propia. Enlace directo con ?tab=ventas
-    // (ver app/estadisticas/page.tsx, defaultValue del Tabs lee ese query param).
+    // manual de ventas (docs/90) — enlace directo a su propio módulo (docs/124, separado
+    // de Reportes; antes de eso era una pestaña dentro de /estadisticas).
     ...(canAccessManualSales
       ? [
           {
-            href: "/estadisticas?tab=ventas",
+            href: "/ventas",
             text: t("dashboard_quick_manual_sales"),
             icon: Receipt,
             description: t("dashboard_quick_manual_sales_desc"),
@@ -629,8 +628,8 @@ export default function DashboardPage() {
       "/inventario": ["inventory"],
       "/menus": ["menus"],
       "/ordenes-compra": ["purchase_orders_manual", "purchase_orders_auto"],
-      "/estadisticas": ["stats_panorama", "stats_finance", "manual_sales"],
-      "/estadisticas?tab=ventas": ["manual_sales"],
+      "/estadisticas": ["stats_panorama", "stats_finance"],
+      "/ventas": ["manual_sales", "stats_finance"],
       // Delegable desde docs/75 — ver components/sidebar.tsx para el mismo mapeo.
       "/equipo": ["team"],
     }

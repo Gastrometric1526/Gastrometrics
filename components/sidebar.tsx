@@ -158,7 +158,7 @@ function useNavigationItems() {
       "/inventario": ["inventory"],
       "/menus": ["menus"],
       "/menu-y-compras": ["purchase_orders_manual", "purchase_orders_auto"],
-      "/estadisticas": ["stats_panorama", "stats_finance", "manual_sales"],
+      "/estadisticas": ["stats_panorama", "stats_finance"],
       "/facturas": ["invoices"],
       "/ventas": ["manual_sales", "stats_finance"],
       // Delegable desde docs/75 — un miembro con la función 'team' habilitada
