@@ -53,7 +53,22 @@ export function generateInvoicePDF(invoice: Invoice, options: InvoicePDFOptions 
   const contentWidth = pageWidth - 2 * margin
   let yPosition = margin
 
+  // Aviso de que esto no es una factura fiscal oficial por país (CAI, CUFE, folio
+  // fiscal, etc.) — pedido explícito del dueño del proyecto tras identificar el riesgo
+  // real: el módulo genera un documento de cobro real, pero GastroMetrics no integra
+  // ningún sistema de facturación fiscal específico de ningún país. En cada página, no
+  // solo la primera, para que sea visible sin importar cuál se imprima o comparta.
+  const addFiscalDisclaimer = () => {
+    doc.setFontSize(6.5)
+    doc.setTextColor(...COLORS.secondary)
+    doc.text(sanitizeText(labels.facturaAvisoNoFiscal), pageWidth / 2, pageHeight - 12, {
+      align: "center",
+      maxWidth: contentWidth,
+    })
+  }
+
   const addPageNumber = (pageNum: number, totalPages: number) => {
+    addFiscalDisclaimer()
     doc.setFontSize(8)
     doc.setTextColor(...COLORS.secondary)
     doc.text(`GastroMetrics | ${labels.pagina} ${pageNum} ${labels.de} ${totalPages}`, pageWidth / 2, pageHeight - 8, {

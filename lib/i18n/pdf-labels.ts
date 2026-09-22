@@ -126,6 +126,7 @@ export interface PdfLabels {
   impuesto: string
   descripcion: string
   sinCliente: string
+  facturaAvisoNoFiscal: string
 }
 
 const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
@@ -247,6 +248,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     impuesto: "Impuesto",
     descripcion: "Descripcion",
     sinCliente: "Sin datos de cliente",
+    facturaAvisoNoFiscal: "Este documento no constituye una factura fiscal oficial — verifica los requisitos de facturación de tu país.",
   },
   en: {
     nombre: "Name:",
@@ -366,6 +368,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     impuesto: "Tax",
     descripcion: "Description",
     sinCliente: "No client details",
+    facturaAvisoNoFiscal: "This document is not an official tax invoice — check your country's invoicing requirements.",
   },
   da: {
     nombre: "Navn:",
@@ -485,6 +488,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     impuesto: "Moms",
     descripcion: "Beskrivelse",
     sinCliente: "Ingen kundeoplysninger",
+    facturaAvisoNoFiscal: "Dette dokument er ikke en officiel skattefaktura — tjek dit lands fakturakrav.",
   },
   fr: {
     nombre: "Nom :",
@@ -604,6 +608,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     impuesto: "Taxe",
     descripcion: "Description",
     sinCliente: "Sans informations client",
+    facturaAvisoNoFiscal: "Ce document ne constitue pas une facture fiscale officielle — vérifiez les exigences de facturation de votre pays.",
   },
   pt: {
     nombre: "Nome:",
@@ -723,6 +728,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     impuesto: "Imposto",
     descripcion: "Descricao",
     sinCliente: "Sem dados do cliente",
+    facturaAvisoNoFiscal: "Este documento não constitui uma fatura fiscal oficial — verifique os requisitos de faturamento do seu país.",
   },
   zh: {
     nombre: "名称：",
@@ -842,6 +848,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     impuesto: "税费",
     descripcion: "描述",
     sinCliente: "无客户信息",
+    facturaAvisoNoFiscal: "本文件不是官方税务发票——请查阅您所在国家/地区的开票要求。",
   },
 }
 

@@ -2421,6 +2421,8 @@ const translations = {
     facturas_locked_desc: "Actualiza tu plan para generar facturas para tus clientes.",
     facturas_header_title: "Facturas",
     facturas_header_subtitle: "Generá facturas para tus clientes con los precios que ya cargaste en Ficha Técnica y Menús.",
+    facturas_not_fiscal_notice:
+      "Este documento es un cobro para tu cliente, no una factura fiscal oficial — no incluye CAI, CUFE, folio fiscal ni ninguna otra numeración de una autoridad tributaria. Verifica los requisitos de facturación de tu país antes de usarlo como comprobante fiscal.",
     facturas_new_button: "Nueva Factura",
     facturas_stat_total_label: "Total de facturas",
     facturas_stat_amount_label: "Total facturado",
@@ -5569,6 +5571,8 @@ const translations = {
     facturas_locked_desc: "Upgrade your plan to generate invoices for your customers.",
     facturas_header_title: "Invoices",
     facturas_header_subtitle: "Generate invoices for your customers using the prices you already set in Recipe Sheets and Menus.",
+    facturas_not_fiscal_notice:
+      "This document is a bill for your customer, not an official tax invoice — it doesn't include a tax authority number or fiscal registration of any kind. Check your country's invoicing requirements before using it as a tax receipt.",
     facturas_new_button: "New Invoice",
     facturas_stat_total_label: "Total invoices",
     facturas_stat_amount_label: "Total invoiced",
@@ -8698,6 +8702,8 @@ const translations = {
     facturas_locked_desc: "Opgrader din plan for at oprette fakturaer til dine kunder.",
     facturas_header_title: "Fakturaer",
     facturas_header_subtitle: "Opret fakturaer til dine kunder med de priser, du allerede har angivet i Opskriftsark og Menuer.",
+    facturas_not_fiscal_notice:
+      "Dette dokument er en regning til din kunde, ikke en officiel skattefaktura — det indeholder intet skattemyndighedsnummer eller nogen form for skatteregistrering. Tjek dit lands fakturakrav, før du bruger det som skattebilag.",
     facturas_new_button: "Ny faktura",
     facturas_stat_total_label: "Fakturaer i alt",
     facturas_stat_amount_label: "Faktureret i alt",
@@ -11831,6 +11837,8 @@ const translations = {
     facturas_locked_desc: "Mettez à niveau votre forfait pour créer des factures pour vos clients.",
     facturas_header_title: "Factures",
     facturas_header_subtitle: "Créez des factures pour vos clients avec les prix déjà définis dans les Fiches Techniques et les Menus.",
+    facturas_not_fiscal_notice:
+      "Ce document est une note pour votre client, pas une facture fiscale officielle — il n'inclut aucun numéro d'autorité fiscale ni immatriculation fiscale. Vérifiez les exigences de facturation de votre pays avant de l'utiliser comme justificatif fiscal.",
     facturas_new_button: "Nouvelle facture",
     facturas_stat_total_label: "Total des factures",
     facturas_stat_amount_label: "Total facturé",
@@ -14963,6 +14971,8 @@ const translations = {
     facturas_locked_desc: "Atualize seu plano para gerar faturas para seus clientes.",
     facturas_header_title: "Faturas",
     facturas_header_subtitle: "Gere faturas para seus clientes com os preços que você já cadastrou em Fichas Técnicas e Cardápios.",
+    facturas_not_fiscal_notice:
+      "Este documento é uma cobrança para o seu cliente, não uma fatura fiscal oficial — não inclui número de autoridade fiscal nem registro fiscal de nenhum tipo. Verifique os requisitos de faturamento do seu país antes de usá-lo como comprovante fiscal.",
     facturas_new_button: "Nova Fatura",
     facturas_stat_total_label: "Total de faturas",
     facturas_stat_amount_label: "Total faturado",
@@ -18062,6 +18072,7 @@ const translations = {
     facturas_locked_desc: "升级套餐以便为客户开具发票。",
     facturas_header_title: "发票",
     facturas_header_subtitle: "使用你在技术配方表和菜单中已设置的价格为客户开具发票。",
+    facturas_not_fiscal_notice: "此文件是向客户收款的单据，并非官方税务发票——不包含任何税务机关编号或税务登记信息。在作为报税凭证使用前，请先查阅你所在国家/地区的开票要求。",
     facturas_new_button: "新建发票",
     facturas_stat_total_label: "发票总数",
     facturas_stat_amount_label: "开票总额",

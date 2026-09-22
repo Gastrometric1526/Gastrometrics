@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { v4 as uuidv4 } from "uuid"
-import { ArrowLeft, Plus, Receipt, Search, Trash2, Pencil, Download, DollarSign, FileText } from "lucide-react"
+import { ArrowLeft, Plus, Receipt, Search, Trash2, Pencil, Download, DollarSign, FileText, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -434,6 +434,17 @@ function FacturasPageInner() {
                   <Plus className="h-4 w-4" />
                   {t("facturas_new_button")}
                 </Button>
+              </div>
+
+              {/* Aviso legal real: este documento es un cobro al cliente, no una factura
+                  fiscal oficial de ningún país (sin CAI/CUFE/folio fiscal ni integración
+                  con ninguna autoridad tributaria) — pedido explícito del dueño del
+                  proyecto, para no generar una expectativa que el producto no cumple.
+                  Mismo aviso, más corto, se imprime en el propio PDF (ver
+                  lib/pdf/invoice-pdf-generator.ts). */}
+              <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-xs text-muted-foreground">
+                <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                <span>{t("facturas_not_fiscal_notice")}</span>
               </div>
 
               {/* Stats */}
