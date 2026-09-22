@@ -127,6 +127,16 @@ export interface PdfLabels {
   descripcion: string
   sinCliente: string
   facturaAvisoNoFiscal: string
+  historialVentas: string
+  periodo: string
+  ingresos: string
+  unidadesVendidas: string
+  costoTeorico: string
+  agrupadoPor: string
+  granDia: string
+  granSemana: string
+  granMes: string
+  granAnio: string
 }
 
 const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
@@ -249,6 +259,16 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     descripcion: "Descripcion",
     sinCliente: "Sin datos de cliente",
     facturaAvisoNoFiscal: "Este documento no constituye una factura fiscal oficial — verifica los requisitos de facturación de tu país.",
+    historialVentas: "Historial de ventas",
+    periodo: "Periodo",
+    ingresos: "Ingresos",
+    unidadesVendidas: "Unidades vendidas",
+    costoTeorico: "Costo teorico",
+    agrupadoPor: "Agrupado por",
+    granDia: "Dia",
+    granSemana: "Semana",
+    granMes: "Mes",
+    granAnio: "Ano",
   },
   en: {
     nombre: "Name:",
@@ -369,6 +389,16 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     descripcion: "Description",
     sinCliente: "No client details",
     facturaAvisoNoFiscal: "This document is not an official tax invoice — check your country's invoicing requirements.",
+    historialVentas: "Sales history",
+    periodo: "Period",
+    ingresos: "Revenue",
+    unidadesVendidas: "Units sold",
+    costoTeorico: "Theoretical cost",
+    agrupadoPor: "Grouped by",
+    granDia: "Day",
+    granSemana: "Week",
+    granMes: "Month",
+    granAnio: "Year",
   },
   da: {
     nombre: "Navn:",
@@ -489,6 +519,16 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     descripcion: "Beskrivelse",
     sinCliente: "Ingen kundeoplysninger",
     facturaAvisoNoFiscal: "Dette dokument er ikke en officiel skattefaktura — tjek dit lands fakturakrav.",
+    historialVentas: "Salgshistorik",
+    periodo: "Periode",
+    ingresos: "Omsaetning",
+    unidadesVendidas: "Solgte enheder",
+    costoTeorico: "Teoretisk omkostning",
+    agrupadoPor: "Grupperet efter",
+    granDia: "Dag",
+    granSemana: "Uge",
+    granMes: "Maaned",
+    granAnio: "Aar",
   },
   fr: {
     nombre: "Nom :",
@@ -609,6 +649,16 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     descripcion: "Description",
     sinCliente: "Sans informations client",
     facturaAvisoNoFiscal: "Ce document ne constitue pas une facture fiscale officielle — vérifiez les exigences de facturation de votre pays.",
+    historialVentas: "Historique des ventes",
+    periodo: "Periode",
+    ingresos: "Revenus",
+    unidadesVendidas: "Unites vendues",
+    costoTeorico: "Cout theorique",
+    agrupadoPor: "Groupe par",
+    granDia: "Jour",
+    granSemana: "Semaine",
+    granMes: "Mois",
+    granAnio: "Annee",
   },
   pt: {
     nombre: "Nome:",
@@ -729,6 +779,16 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     descripcion: "Descricao",
     sinCliente: "Sem dados do cliente",
     facturaAvisoNoFiscal: "Este documento não constitui uma fatura fiscal oficial — verifique os requisitos de faturamento do seu país.",
+    historialVentas: "Historico de vendas",
+    periodo: "Periodo",
+    ingresos: "Receita",
+    unidadesVendidas: "Unidades vendidas",
+    costoTeorico: "Custo teorico",
+    agrupadoPor: "Agrupado por",
+    granDia: "Dia",
+    granSemana: "Semana",
+    granMes: "Mes",
+    granAnio: "Ano",
   },
   zh: {
     nombre: "名称：",
@@ -849,6 +909,16 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     descripcion: "描述",
     sinCliente: "无客户信息",
     facturaAvisoNoFiscal: "本文件不是官方税务发票——请查阅您所在国家/地区的开票要求。",
+    historialVentas: "销售历史",
+    periodo: "周期",
+    ingresos: "收入",
+    unidadesVendidas: "销售数量",
+    costoTeorico: "理论成本",
+    agrupadoPor: "分组方式",
+    granDia: "日",
+    granSemana: "周",
+    granMes: "月",
+    granAnio: "年",
   },
 }
 

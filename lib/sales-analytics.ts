@@ -113,6 +113,103 @@ function resolveLineDate(imp: SalesImport, line: SalesImportLine): string {
   return raw.slice(0, 10)
 }
 
+// ============== DESGLOSE POR PERÍODO (día / semana / mes / año) ==============
+// Generalización de aggregateSalesByDay de abajo — pedido explícito del dueño del
+// proyecto: poder ver (y exportar a PDF) el desglose agrupado por semana, mes o año,
+// no solo por día, para un negocio con meses/años de historial de ventas ("siempre
+// crea y desarrolla asumiendo que el usuario hará mucho de algo"). aggregateSalesByDay
+// se deja intacta (ya la consume SalesHistoryBreakdown) — esto es una función nueva,
+// no un reemplazo, para no arriesgar el desglose por día ya verificado en vivo.
+
+export type SalesGranularity = "day" | "week" | "month" | "year"
+
+export interface PeriodSalesSummary {
+  periodKey: string // clave de orden/agrupación (YYYY-MM-DD / YYYY-Wxx vía lunes de esa semana / YYYY-MM / YYYY)
+  startDate: string // YYYY-MM-DD, inicio real del período (lunes de la semana, día 1 del mes, etc.)
+  endDate: string // YYYY-MM-DD, fin real del período
+  revenue: number
+  theoreticalCost: number
+  quantitySold: number
+  contributionMargin: number
+  contributionMarginPercent: number
+  dishes: DishPerformance[]
+}
+
+function mondayOf(date: Date): Date {
+  const d = new Date(date)
+  const day = d.getDay() // 0=domingo..6=sábado
+  const diff = (day === 0 ? -6 : 1) - day // días a restar para llegar al lunes de esa semana
+  d.setDate(d.getDate() + diff)
+  return d
+}
+
+function periodBounds(dateStr: string, granularity: SalesGranularity): { key: string; start: string; end: string } {
+  if (granularity === "day") return { key: dateStr, start: dateStr, end: dateStr }
+
+  const d = new Date(`${dateStr}T00:00:00`)
+
+  if (granularity === "week") {
+    const monday = mondayOf(d)
+    const sunday = new Date(monday)
+    sunday.setDate(sunday.getDate() + 6)
+    const start = monday.toISOString().slice(0, 10)
+    const end = sunday.toISOString().slice(0, 10)
+    return { key: start, start, end }
+  }
+
+  if (granularity === "month") {
+    const y = d.getFullYear()
+    const m = d.getMonth()
+    const start = new Date(y, m, 1).toISOString().slice(0, 10)
+    const end = new Date(y, m + 1, 0).toISOString().slice(0, 10)
+    return { key: `${y}-${String(m + 1).padStart(2, "0")}`, start, end }
+  }
+
+  // year
+  const y = d.getFullYear()
+  return { key: String(y), start: `${y}-01-01`, end: `${y}-12-31` }
+}
+
+export function aggregateSalesByPeriod(
+  salesImports: SalesImport[],
+  recipes: Recipe[],
+  menus: Menu[] = [],
+  granularity: SalesGranularity = "day",
+): PeriodSalesSummary[] {
+  const byPeriod = new Map<string, { start: string; end: string; lines: SalesImportLine[] }>()
+
+  salesImports.forEach((imp) => {
+    imp.lines.forEach((line) => {
+      const date = resolveLineDate(imp, line)
+      const { key, start, end } = periodBounds(date, granularity)
+      const existing = byPeriod.get(key)
+      if (existing) existing.lines.push(line)
+      else byPeriod.set(key, { start, end, lines: [line] })
+    })
+  })
+
+  return Array.from(byPeriod.entries())
+    .map(([periodKey, { start, end, lines }]) => {
+      const dishes = aggregateLines(lines, recipes, menus)
+      const revenue = dishes.reduce((sum, d) => sum + d.revenue, 0)
+      const theoreticalCost = dishes.reduce((sum, d) => sum + d.theoreticalCost, 0)
+      const quantitySold = dishes.reduce((sum, d) => sum + d.quantitySold, 0)
+      const contributionMargin = revenue - theoreticalCost
+      return {
+        periodKey,
+        startDate: start,
+        endDate: end,
+        revenue,
+        theoreticalCost,
+        quantitySold,
+        contributionMargin,
+        contributionMarginPercent: revenue > 0 ? (contributionMargin / revenue) * 100 : 0,
+        dishes,
+      }
+    })
+    .sort((a, b) => (a.periodKey < b.periodKey ? 1 : -1)) // más reciente primero
+}
+
 export function aggregateSalesByDay(salesImports: SalesImport[], recipes: Recipe[], menus: Menu[] = []): DailySalesSummary[] {
   const byDate = new Map<string, SalesImportLine[]>()
 

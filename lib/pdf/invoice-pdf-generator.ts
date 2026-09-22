@@ -100,7 +100,13 @@ export function generateInvoicePDF(invoice: Invoice, options: InvoicePDFOptions 
   doc.setFontSize(8)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(...COLORS.secondary)
-  doc.text(labels.fecha + " " + new Date(invoice.issueDate).toLocaleDateString(labels.locale), headerTextX, 18)
+  // BUG REAL CORREGIDO: "new Date(invoice.issueDate)" sobre un string plano "YYYY-MM-DD"
+  // lo parsea como medianoche UTC — en cualquier huso horario detrás de UTC (todo
+  // Centroamérica, todo el continente americano), toLocaleDateString() lo muestra un día
+  // antes del real. Agregar "T00:00:00" fuerza a que se interprete como medianoche LOCAL,
+  // mismo patrón ya usado en el resto del proyecto para evitar este error (ver
+  // components/manual-sales-entry-dialog.tsx, lib/sales-analytics.ts).
+  doc.text(labels.fecha + " " + new Date(`${invoice.issueDate}T00:00:00`).toLocaleDateString(labels.locale), headerTextX, 18)
 
   doc.setFontSize(16)
   doc.setFont("helvetica", "bold")

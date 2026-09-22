@@ -25,7 +25,6 @@ import {
   FileText,
   BarChart3,
   ShoppingCart,
-  Receipt,
   ShoppingBag,
   Menu,
   X,
@@ -86,10 +85,16 @@ function useNavigationItems() {
       feature: "purchase_orders_manual",
     },
     "/estadisticas": { locked: canAccessStatsPanorama === false, feature: "stats_panorama" },
-    "/facturas": { locked: canAccessInvoices === false, feature: "invoices" },
+    // Facturas ya no es su propia entrada de navegación (pedido explícito del dueño
+    // del proyecto: "creo que lo de invoice debería estar en lo de ventas") — ahora
+    // vive como pestaña dentro de /ventas (ver app/ventas/page.tsx), así que su
+    // candado se fusiona acá: la página está bloqueada solo si la cuenta no tiene
+    // NINGUNA de las tres funciones que puede desbloquear algo ahí adentro.
+    // "invoices" es la representativa para el mensaje de "disponible desde tal plan"
+    // porque es la que desbloquea con el plan más bajo (Home Cook).
     "/ventas": {
-      locked: canAccessManualSalesNav === false && canAccessFinanceNav === false,
-      feature: "manual_sales",
+      locked: canAccessManualSalesNav === false && canAccessFinanceNav === false && canAccessInvoices === false,
+      feature: "invoices",
     },
   }
 
@@ -129,14 +134,6 @@ function useNavigationItems() {
       locked: lockedByHref["/ventas"].locked,
       feature: lockedByHref["/ventas"].feature as FeatureKey | null,
     },
-    {
-      title: t("nav_facturas"),
-      href: "/facturas",
-      icon: Receipt,
-      description: t("nav_facturas_desc"),
-      locked: lockedByHref["/facturas"].locked,
-      feature: lockedByHref["/facturas"].feature as FeatureKey | null,
-    },
     { title: t("nav_estadisticas"), href: "/estadisticas", icon: BarChart3, description: t("nav_estadisticas_desc"), locked: lockedByHref["/estadisticas"].locked, feature: lockedByHref["/estadisticas"].feature as FeatureKey | null },
     { title: t("nav_negocios"), href: "/negocios", icon: Building2, description: t("nav_negocios_desc"), locked: false, feature: null },
   )
@@ -159,8 +156,7 @@ function useNavigationItems() {
       "/menus": ["menus"],
       "/menu-y-compras": ["purchase_orders_manual", "purchase_orders_auto"],
       "/estadisticas": ["stats_panorama", "stats_finance"],
-      "/facturas": ["invoices"],
-      "/ventas": ["manual_sales", "stats_finance"],
+      "/ventas": ["manual_sales", "stats_finance", "invoices"],
       // Delegable desde docs/75 — un miembro con la función 'team' habilitada
       // también puede gestionar el equipo (ver supabase/migrations/
       // 0015_team_delegate_management.sql para el porqué hacía falta una migración,
@@ -206,7 +202,6 @@ const getContextualHref = (baseHref: string, businessId: string | null) => {
     "/menus",
     "/menu-y-compras",
     "/estadisticas",
-    "/facturas",
     "/ventas",
   ]
   if (businessRoutes.includes(baseHref)) {

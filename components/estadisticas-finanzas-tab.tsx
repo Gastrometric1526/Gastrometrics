@@ -693,7 +693,7 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
                         </Badge>
                       )}
                       {imp.source === "invoice" && (
-                        <Link href={`/facturas?business=${businessId}`}>
+                        <Link href={`/ventas?tab=facturas&business=${businessId}`}>
                           <Badge variant="secondary" className="shrink-0 text-[10px] hover:bg-primary/10 cursor-pointer">
                             {t("finanzas_invoice_badge")}
                           </Badge>
