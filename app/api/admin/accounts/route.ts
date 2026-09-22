@@ -95,32 +95,73 @@ export async function GET(request: Request) {
     const pageUsers = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
     const ids = pageUsers.map((u) => u.id)
 
-    const [businessRows, teamRows, recipeRows, ingredientRows, salesImportRows] = await Promise.all([
-      ids.length ? admin.from("businesses").select("owner_id").in("owner_id", ids) : Promise.resolve({ data: [] as { owner_id: string }[] }),
+    const [businessRows, teamRows, ownedRecipeRows, ownedIngredientRows, salesImportRows] = await Promise.all([
+      ids.length ? admin.from("businesses").select("id, owner_id").in("owner_id", ids) : Promise.resolve({ data: [] as { id: string; owner_id: string }[] }),
       ids.length ? admin.from("team_members").select("owner_id").in("owner_id", ids) : Promise.resolve({ data: [] as { owner_id: string }[] }),
-      ids.length ? admin.from("recipes").select("owner_id").in("owner_id", ids) : Promise.resolve({ data: [] as { owner_id: string }[] }),
-      ids.length ? admin.from("ingredients").select("owner_id").in("owner_id", ids) : Promise.resolve({ data: [] as { owner_id: string }[] }),
+      ids.length ? admin.from("recipes").select("id, owner_id, business_id").in("owner_id", ids) : Promise.resolve({ data: [] as { id: string; owner_id: string; business_id: string | null }[] }),
+      ids.length ? admin.from("ingredients").select("id, owner_id, business_id").in("owner_id", ids) : Promise.resolve({ data: [] as { id: string; owner_id: string; business_id: string | null }[] }),
       ids.length
         ? admin.from("sales_imports").select("owner_id, data").in("owner_id", ids)
         : Promise.resolve({ data: [] as { owner_id: string; data: Record<string, unknown> }[] }),
     ])
 
     const businessCountByUser = new Map<string, number>()
+    // Qué cuenta de la página actual es dueña de cada negocio real — necesario para
+    // atribuir bien las recetas/ingredientes de abajo, ver el comentario grande más
+    // adelante.
+    const ownerByBusinessId = new Map<string, string>()
+    const businessIdsInPage: string[] = []
     for (const row of businessRows.data ?? []) {
       businessCountByUser.set(row.owner_id, (businessCountByUser.get(row.owner_id) || 0) + 1)
+      ownerByBusinessId.set(row.id, row.owner_id)
+      businessIdsInPage.push(row.id)
     }
     const teamCountByUser = new Map<string, number>()
     for (const row of teamRows.data ?? []) {
       teamCountByUser.set(row.owner_id, (teamCountByUser.get(row.owner_id) || 0) + 1)
     }
-    const recipeCountByUser = new Map<string, number>()
-    for (const row of recipeRows.data ?? []) {
-      recipeCountByUser.set(row.owner_id, (recipeCountByUser.get(row.owner_id) || 0) + 1)
+
+    // BUG CORREGIDO (pedido explícito del dueño del proyecto): el conteo de
+    // recetas/ingredientes por cuenta solo miraba owner_id, que en las tablas de
+    // negocio SIEMPRE es quien ESCRIBIÓ la fila, no necesariamente el dueño real del
+    // negocio (ver el comentario de cabecera de lib/storage/ingredients.ts/recipes.ts
+    // y supabase/migrations/0011_team_write_access.sql, punto 3) — una receta o
+    // ingrediente que un miembro de equipo invitado carga dentro de un negocio real
+    // del dueño de la cuenta queda con owner_id = el UID del miembro, no el del dueño,
+    // así que /admin subestimaba el total de cualquier cuenta con equipo activo. Se
+    // trae también recipes/ingredients por business_id (los negocios reales de esta
+    // página, ya resueltos arriba) y se atribuye cada fila al DUEÑO REAL del negocio
+    // (no a quien la escribió) — con "main"/sin negocio, sigue siendo owner_id
+    // directo, que ahí sí es siempre correcto (no hay ambigüedad de negocio).
+    const [bizRecipeRows, bizIngredientRows] = await Promise.all([
+      businessIdsInPage.length
+        ? admin.from("recipes").select("id, owner_id, business_id").in("business_id", businessIdsInPage)
+        : Promise.resolve({ data: [] as { id: string; owner_id: string; business_id: string | null }[] }),
+      businessIdsInPage.length
+        ? admin.from("ingredients").select("id, owner_id, business_id").in("business_id", businessIdsInPage)
+        : Promise.resolve({ data: [] as { id: string; owner_id: string; business_id: string | null }[] }),
+    ])
+
+    function countByOwningAccount(
+      ownRows: { id: string; owner_id: string; business_id: string | null }[],
+      bizRows: { id: string; owner_id: string; business_id: string | null }[],
+    ): Map<string, number> {
+      const seenIds = new Set<string>()
+      const countByAccount = new Map<string, number>()
+      const attribute = (row: { id: string; owner_id: string; business_id: string | null }) => {
+        if (seenIds.has(row.id)) return
+        seenIds.add(row.id)
+        const owningAccount = row.business_id ? ownerByBusinessId.get(row.business_id) : row.owner_id
+        if (!owningAccount) return
+        countByAccount.set(owningAccount, (countByAccount.get(owningAccount) || 0) + 1)
+      }
+      ownRows.forEach(attribute)
+      bizRows.forEach(attribute)
+      return countByAccount
     }
-    const ingredientCountByUser = new Map<string, number>()
-    for (const row of ingredientRows.data ?? []) {
-      ingredientCountByUser.set(row.owner_id, (ingredientCountByUser.get(row.owner_id) || 0) + 1)
-    }
+
+    const recipeCountByUser = countByOwningAccount(ownedRecipeRows.data ?? [], bizRecipeRows.data ?? [])
+    const ingredientCountByUser = countByOwningAccount(ownedIngredientRows.data ?? [], bizIngredientRows.data ?? [])
     // Separa POS ("pos_import"/ausente, ver types/sales-import.ts) de registro manual
     // ("manual", docs/90) — antes se mezclaban bajo un solo conteo, y no había forma de
     // saber desde /admin si la función nueva de ventas manuales estaba aterrizando.
