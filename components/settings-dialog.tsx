@@ -37,6 +37,8 @@ import {
   ShieldAlert,
   FileText,
   ExternalLink,
+  Download,
+  Eraser,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { setCurrentCurrencyCode } from "@/lib/currency"
@@ -139,6 +141,22 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
   const [deleteAccountConfirmEmail, setDeleteAccountConfirmEmail] = useState("")
   const [deleteAccountError, setDeleteAccountError] = useState("")
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+
+  // Borrar todo el contenido (mantiene la cuenta) — mismo patrón de confirmación por
+  // correo que "Eliminar cuenta", pero es una acción separada e independiente (ver
+  // app/api/account/wipe-content/route.ts).
+  const [showWipeContentConfirm, setShowWipeContentConfirm] = useState(false)
+  const [wipeContentConfirmEmail, setWipeContentConfirmEmail] = useState("")
+  const [wipeContentError, setWipeContentError] = useState("")
+  const [isWipingContent, setIsWipingContent] = useState(false)
+  const [wipeContentDone, setWipeContentDone] = useState(false)
+
+  // Descargar respaldo completo — corre en el navegador (lib/backup/export-account-
+  // backup.ts), puede tardar varios segundos si hay muchas recetas/menús (genera un PDF
+  // por cada uno), por eso el estado de progreso.
+  const [isExportingBackup, setIsExportingBackup] = useState(false)
+  const [exportBackupError, setExportBackupError] = useState("")
+  const [exportBackupStage, setExportBackupStage] = useState("")
 
   // Confirmación + contraseña actual antes de aplicar un cambio de correo (pedido
   // explícito del dueño del proyecto). showEmailConfirm reemplaza TODO el contenido
@@ -347,6 +365,55 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
       console.error("Error eliminando la cuenta:", error)
       setDeleteAccountError(t("settings_delete_account_generic_error"))
       setIsDeletingAccount(false)
+    }
+  }
+
+  const handleWipeContent = async () => {
+    if (!user?.email || wipeContentConfirmEmail.trim().toLowerCase() !== user.email.toLowerCase()) {
+      setWipeContentError(t("settings_delete_account_error_mismatch"))
+      return
+    }
+    setWipeContentError("")
+    setIsWipingContent(true)
+    try {
+      const res = await fetch("/api/account/wipe-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmEmail: wipeContentConfirmEmail.trim() }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setWipeContentError(json.error || t("settings_delete_account_generic_error"))
+        setIsWipingContent(false)
+        return
+      }
+      // Navegación dura, mismo criterio que "Eliminar cuenta": todas las cachés
+      // reactivas en memoria (recetas, ingredientes, negocios, etc.) quedan apuntando
+      // a datos que ya no existen — un router.push normal las dejaría desactualizadas
+      // hasta un refresh manual.
+      window.location.href = "/dashboard"
+    } catch (error) {
+      console.error("Error borrando el contenido de la cuenta:", error)
+      setWipeContentError(t("settings_delete_account_generic_error"))
+      setIsWipingContent(false)
+    }
+  }
+
+  const handleExportBackup = async () => {
+    setExportBackupError("")
+    setIsExportingBackup(true)
+    setExportBackupStage("")
+    try {
+      const { exportAccountBackup, downloadBlob } = await import("@/lib/backup/export-account-backup")
+      const blob = await exportAccountBackup((p) => setExportBackupStage(p.stage))
+      const today = new Date().toISOString().slice(0, 10)
+      downloadBlob(blob, `gastrometrics-respaldo-${today}.zip`)
+    } catch (error) {
+      console.error("Error generando el respaldo:", error)
+      setExportBackupError(t("settings_export_backup_error"))
+    } finally {
+      setIsExportingBackup(false)
+      setExportBackupStage("")
     }
   }
 
@@ -824,6 +891,102 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                     {t("aviso_page_title")}
                     <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
                   </a>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Download className="h-5 w-5 text-muted-foreground" />
+                    {t("settings_export_backup_title")}
+                  </CardTitle>
+                  <CardDescription>{t("settings_export_backup_desc")}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button variant="outline" onClick={handleExportBackup} disabled={isExportingBackup} className="gap-2">
+                    {isExportingBackup ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                    {isExportingBackup ? t("settings_export_backup_generating") : t("settings_export_backup_button")}
+                  </Button>
+                  {isExportingBackup && exportBackupStage && (
+                    <p className="text-xs text-muted-foreground">{exportBackupStage}</p>
+                  )}
+                  {exportBackupError && <p className="text-sm text-destructive">{exportBackupError}</p>}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Eraser className="h-5 w-5 text-destructive" />
+                    {t("settings_wipe_content_title")}
+                  </CardTitle>
+                  <CardDescription>{t("settings_wipe_content_desc")}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {wipeContentDone ? (
+                    <p className="text-sm text-foreground">{t("settings_wipe_content_done")}</p>
+                  ) : !showWipeContentConfirm ? (
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground">{t("settings_wipe_content_body")}</p>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          setWipeContentError("")
+                          setWipeContentConfirmEmail("")
+                          setShowWipeContentConfirm(true)
+                        }}
+                        className="gap-2"
+                      >
+                        <Eraser className="h-4 w-4" />
+                        {t("settings_wipe_content_button")}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 space-y-3">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
+                          <div className="space-y-2 flex-1">
+                            <h4 className="font-semibold text-destructive">{t("settings_confirm_title")}</h4>
+                            <p className="text-sm text-muted-foreground">{t("settings_wipe_content_confirm_intro")}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="wipe-content-email" className="text-sm">
+                          {t("settings_delete_account_confirm_input_label").replace("{email}", user?.email || "")}
+                        </Label>
+                        <Input
+                          id="wipe-content-email"
+                          type="email"
+                          autoComplete="off"
+                          value={wipeContentConfirmEmail}
+                          onChange={(e) => setWipeContentConfirmEmail(e.target.value)}
+                          placeholder={user?.email || ""}
+                        />
+                        {wipeContentError && <p className="text-sm text-destructive">{wipeContentError}</p>}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowWipeContentConfirm(false)}
+                          disabled={isWipingContent}
+                          className="flex-1"
+                        >
+                          {t("common_cancel")}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={handleWipeContent}
+                          disabled={isWipingContent || !wipeContentConfirmEmail}
+                          className="flex-1 gap-2"
+                        >
+                          {isWipingContent && <Loader2 className="h-4 w-4 animate-spin" />}
+                          {isWipingContent ? t("settings_wipe_content_wiping") : t("settings_wipe_content_confirm_button")}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
