@@ -21,6 +21,71 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-09-22",
+    content: {
+      es: {
+        title: "Novedades en GastroMetrics",
+        items: [
+          "En la ventana de Ventas ahora hay un historial completo de tus ventas — agrupado por día, semana, mes o año, con un rango de fechas personalizable, y con un botón para exportarlo a PDF.",
+          "Facturación a clientes ahora vive dentro de Ventas (pestaña \"Facturas\"), junto al registro manual y la importación de tu POS — antes era una pantalla aparte.",
+          "Los números siempre se muestran con punto decimal en toda la app, sin importar la moneda que uses.",
+          "Nuevo en Configuración: puedes descargar un respaldo completo de todo tu contenido (recetas, ingredientes, menús, y más) como un solo archivo, o borrar todo el contenido de tu cuenta si lo necesitas.",
+          "Las facturas ahora incluyen un aviso claro de que no son un comprobante fiscal oficial, para que sepas exactamente qué es y qué no es este documento.",
+        ],
+      },
+      en: {
+        title: "What's new in GastroMetrics",
+        items: [
+          "The Sales screen now has a full history of your sales — grouped by day, week, month or year, with a customizable date range, and a button to export it to PDF.",
+          "Customer invoicing now lives inside Sales (the \"Invoices\" tab), next to manual entry and POS import — it used to be a separate screen.",
+          "Numbers always show a decimal point throughout the app, no matter which currency you use.",
+          "New in Settings: you can download a complete backup of all your content (recipes, ingredients, menus, and more) as a single file, or delete all your account's content if you need to.",
+          "Invoices now include a clear notice that they're not an official tax document, so you know exactly what this document is and isn't.",
+        ],
+      },
+      da: {
+        title: "Nyheder i GastroMetrics",
+        items: [
+          "Salg-skærmen har nu en fuld historik over dine salg — grupperet efter dag, uge, måned eller år, med et brugerdefinerbart datointerval, og en knap til at eksportere det til PDF.",
+          "Fakturering til kunder findes nu inde i Salg (fanen \"Fakturering\"), ved siden af manuel registrering og POS-import — det var tidligere en separat skærm.",
+          "Tal viser altid punktum som decimaltegn i hele appen, uanset hvilken valuta du bruger.",
+          "Nyt i Indstillinger: du kan downloade en komplet sikkerhedskopi af alt dit indhold (opskrifter, ingredienser, menuer og mere) som én fil, eller slette alt indhold på din konto, hvis du har brug for det.",
+          "Fakturaer indeholder nu en tydelig besked om, at de ikke er et officielt skattebilag, så du ved præcis, hvad dokumentet er — og ikke er.",
+        ],
+      },
+      fr: {
+        title: "Nouveautés de GastroMetrics",
+        items: [
+          "L'écran Ventes affiche maintenant un historique complet de vos ventes — regroupé par jour, semaine, mois ou année, avec une période personnalisable, et un bouton pour l'exporter en PDF.",
+          "La facturation aux clients vit maintenant dans Ventes (onglet \"Factures\"), à côté de la saisie manuelle et de l'import POS — c'était auparavant un écran séparé.",
+          "Les nombres affichent toujours un point comme séparateur décimal dans toute l'application, quelle que soit la devise utilisée.",
+          "Nouveau dans Paramètres : vous pouvez télécharger une sauvegarde complète de tout votre contenu (recettes, ingrédients, menus, et plus) en un seul fichier, ou supprimer tout le contenu de votre compte si besoin.",
+          "Les factures incluent désormais un avis clair indiquant qu'elles ne sont pas un document fiscal officiel, pour que vous sachiez exactement ce qu'est ce document — et ce qu'il n'est pas.",
+        ],
+      },
+      pt: {
+        title: "Novidades no GastroMetrics",
+        items: [
+          "A tela de Vendas agora tem um histórico completo das suas vendas — agrupado por dia, semana, mês ou ano, com um período personalizável, e um botão para exportar em PDF.",
+          "O faturamento a clientes agora vive dentro de Vendas (aba \"Faturas\"), junto ao registro manual e à importação do seu PDV — antes era uma tela separada.",
+          "Os números sempre mostram ponto decimal em todo o app, não importa qual moeda você use.",
+          "Novo em Configurações: você pode baixar um backup completo de todo o seu conteúdo (receitas, ingredientes, cardápios e mais) em um único arquivo, ou apagar todo o conteúdo da sua conta se precisar.",
+          "As faturas agora incluem um aviso claro de que não são um comprovante fiscal oficial, para que você saiba exatamente o que este documento é — e o que não é.",
+        ],
+      },
+      zh: {
+        title: "GastroMetrics 更新内容",
+        items: [
+          "销售界面现在有完整的销售历史记录——可以按日、周、月或年分组，支持自定义日期范围，还可以一键导出为PDF。",
+          "客户开票功能现已并入销售模块（\"发票\"标签页），和手动登记、POS导入放在一起——以前是单独的一个页面。",
+          "无论使用哪种货币，全应用的数字始终使用小数点显示。",
+          "设置中的新功能：你可以将全部内容（食谱、食材、菜单等）一键下载为一个完整的备份文件，也可以在需要时删除账户中的全部内容。",
+          "发票现在会清楚提示这不是官方税务凭证，让你准确了解这份文件是什么、不是什么。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-09-21b",
     content: {
       es: {
