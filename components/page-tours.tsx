@@ -184,18 +184,18 @@ export function MenusTour() {
   return <PageTour steps={steps} storageKey="tour_completed_menus" />
 }
 
-// canAccessManualSales/canAccessFinance vienen de useFeatureAccess("manual_sales"/"stats_finance")
-// en app/estadisticas/page.tsx — sin esto, el tour mencionaba y apuntaba a la pestaña
-// Finanzas (import de POS) para CUALQUIER plan, incluido Chef de Partie, que no la tiene
-// todavía: el paso caía a un recuadro centrado sin nada que resaltar (page-tour.tsx ya
-// tolera un selector que no existe), pero seguía describiendo una función bloqueada, y
-// el tour nunca mencionaba la pestaña "Ventas" (registro manual) en absoluto — pedido
-// explícito del dueño del proyecto: que sea obvio dónde está.
+// canAccessFinance viene de useFeatureAccess("stats_finance") en app/estadisticas/page.tsx —
+// sin esto, el tour mencionaba y apuntaba a la pestaña Finanzas (import de POS) para
+// CUALQUIER plan, incluido Chef de Partie, que no la tiene todavía: el paso caía a un
+// recuadro centrado sin nada que resaltar (page-tour.tsx ya tolera un selector que no
+// existe), pero seguía describiendo una función bloqueada.
+//
+// El paso de la pestaña "Ventas" (registro manual dentro de Estadísticas) se quitó de
+// este tour cuando ese registro se separó a su propio módulo (/ventas, ver docs/124) —
+// la pestaña que este paso resaltaba ya no existe en esta página.
 export function EstadisticasTour({
-  canAccessManualSales,
   canAccessFinance,
 }: {
-  canAccessManualSales: boolean
   canAccessFinance: boolean
 }) {
   const { t } = useLanguage()
@@ -226,23 +226,6 @@ export function EstadisticasTour({
       description: t("tour_stats_price_history_desc"),
       selector: '[data-tour="stats-price-history"]',
     },
-    ...(canAccessManualSales
-      ? [
-          {
-            id: "ventas-tab",
-            title: t("tour_stats_ventas_title"),
-            description: t("tour_stats_ventas_desc"),
-            selector: '[data-tour="stats-tab-ventas-trigger"]',
-            beforeShow: clickTab("stats-tab-ventas"),
-          } as TourStep,
-          {
-            id: "ventas-register",
-            title: t("tour_stats_ventas_register_title"),
-            description: t("tour_stats_ventas_register_desc"),
-            selector: '[data-tour="ventas-register-button"]',
-          } as TourStep,
-        ]
-      : []),
     ...(canAccessFinance
       ? [
           {

@@ -13,7 +13,6 @@ import { GastrometricsLogo } from "@/components/gastrometrics-logo"
 import { EstadisticasTour } from "@/components/page-tours"
 import { AuthGuard } from "@/components/auth-guard"
 import { EstadisticasFinanzasTab } from "@/components/estadisticas-finanzas-tab"
-import { ManualSalesTab } from "@/components/manual-sales-tab"
 import { useFeatureAccess } from "@/lib/plan-access"
 import { FeatureLockedPage, FeatureLockedInline } from "@/components/feature-locked"
 import { AdminRestrictedPage, AdminRestrictedInline } from "@/components/admin-restricted"
@@ -37,7 +36,6 @@ import {
   Wallet,
   History,
   Info,
-  Receipt,
 } from "lucide-react"
 import { EstadisticasPanoramaInfoDialog } from "@/components/estadisticas-panorama-info-dialog"
 import {
@@ -193,7 +191,6 @@ function EstadisticasContent() {
   const searchParams = useSearchParams()
   const businessId = searchParams.get("business") || "main"
   const canAccessPanorama = useFeatureAccess("stats_panorama")
-  const canAccessManualSales = useFeatureAccess("manual_sales")
   const canAccessFinance = useFeatureAccess("stats_finance")
   const { t, language } = useLanguage()
   const { showError } = useNotification()
@@ -461,7 +458,7 @@ function EstadisticasContent() {
         <div className="flex-1 overflow-hidden">
           <div className="h-full overflow-y-auto">
             <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
-              <EstadisticasTour canAccessManualSales={!!canAccessManualSales} canAccessFinance={!!canAccessFinance} />
+              <EstadisticasTour canAccessFinance={!!canAccessFinance} />
               {/* Header */}
               <div className="flex items-center gap-2 md:gap-4">
                 <Link href={businessId !== "main" ? `/business/${businessId}` : "/dashboard"}>
@@ -496,17 +493,13 @@ function EstadisticasContent() {
                 </Card>
               ) : (
                 <Tabs
-                  defaultValue={["panorama", "ventas", "finanzas"].includes(searchParams.get("tab") || "") ? searchParams.get("tab")! : "panorama"}
+                  defaultValue={["panorama", "finanzas"].includes(searchParams.get("tab") || "") ? searchParams.get("tab")! : "panorama"}
                   className="w-full"
                 >
                   <TabsList className="bg-card border border-border">
                     <TabsTrigger id="stats-tab-panorama" value="panorama" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       <BarChart3 className="h-4 w-4" />
                       {t("estadisticas_tab_panorama")}
-                    </TabsTrigger>
-                    <TabsTrigger id="stats-tab-ventas" value="ventas" data-tour="stats-tab-ventas-trigger" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                      <Receipt className="h-4 w-4" />
-                      {t("estadisticas_tab_ventas")}
                     </TabsTrigger>
                     <TabsTrigger id="stats-tab-finanzas" value="finanzas" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       <Wallet className="h-4 w-4" />
@@ -976,20 +969,6 @@ function EstadisticasContent() {
                       )}
                     </CardContent>
                   </Card>
-                  </TabsContent>
-
-                  <TabsContent value="ventas" className="mt-4">
-                    {canAccessManualSales ? (
-                      <ManualSalesTab businessId={businessId} />
-                    ) : getAccessBlockReason("manual_sales") === "admin" ? (
-                      <AdminRestrictedInline sectionName={t("estadisticas_ventas_section_name")} />
-                    ) : (
-                      <FeatureLockedInline
-                        feature="manual_sales"
-                        title={t("estadisticas_ventas_locked_title")}
-                        description={t("estadisticas_ventas_locked_desc")}
-                      />
-                    )}
                   </TabsContent>
 
                   <TabsContent value="finanzas" className="mt-4">
