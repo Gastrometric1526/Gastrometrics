@@ -555,7 +555,8 @@ export function IngredientsTable({
                 {t("ingredientes_per_prefix")} {unitAbbreviations[wacInfoIngredient.unit] || wacInfoIngredient.unit}
                 {typeof wacInfoIngredient.pricing?.weightedAverageQuantity === "number" && (
                   <>
-                    {""}({wacInfoIngredient.pricing.weightedAverageQuantity} {wacInfoIngredient.unit})
+                    {""}({wacInfoIngredient.pricing.weightedAverageQuantity}{" "}
+                    {unitAbbreviations[wacInfoIngredient.unit] || wacInfoIngredient.unit})
                   </>
                 )}
               </div>

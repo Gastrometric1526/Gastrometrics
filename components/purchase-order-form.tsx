@@ -458,12 +458,13 @@ export function PurchaseOrderForm({
                         {item.presentation && item.presentationQuantity ? (
                           <p className="text-sm text-muted-foreground">
                             {item.presentationQuantity} {getPresentationLabel(item.presentation, language)}
-                            {item.presentationQuantity !== 1 ? "s" : ""} ({item.quantity} {item.unit}) ×{""}
+                            {item.presentationQuantity !== 1 ? "s" : ""} ({item.quantity}{" "}
+                            {getUnitLabel(item.unit, language)}) ×{""}
                             {formatCurrency(item.unitPrice)}
                           </p>
                         ) : (
                           <p className="text-sm text-muted-foreground">
-                            {item.quantity} {item.unit} × {formatCurrency(item.unitPrice)}
+                            {item.quantity} {getUnitLabel(item.unit, language)} × {formatCurrency(item.unitPrice)}
                           </p>
                         )}
                         {hideSupplierField && item.category ? (

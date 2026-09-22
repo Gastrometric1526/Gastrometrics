@@ -1873,7 +1873,10 @@ export default function IngredientesPage() {
                       required
                     />
                     <p className="text-xs text-muted-foreground">
-                      {t("ingredientes_field_net_content_hint").replace("{unit}", formData.unit || "unidades")}
+                      {t("ingredientes_field_net_content_hint").replace(
+                        "{unit}",
+                        formData.unit ? getUnitLabel(formData.unit, language) : "unidades",
+                      )}
                     </p>
                   </div>
                 </div>
@@ -1884,7 +1887,7 @@ export default function IngredientesPage() {
                   <p className="text-muted-foreground">
                     {t("ingredientes_example_calc_text")
                       .replace("{netContent}", String(formData.pricing?.netContent || 1))
-                      .replace(/\{unit\}/g, formData.unit || "unidades")
+                      .replace(/\{unit\}/g, formData.unit ? getUnitLabel(formData.unit, language) : "unidades")
                       .replace("{price}", formatCurrency(formData.pricing?.purchasePrice || 0))
                       .replace(
                         "{perUnit}",
@@ -1958,7 +1961,8 @@ export default function IngredientesPage() {
                     <div className="flex justify-between">
                       <span>{t("ingredientes_summary_net_content_label")}</span>
                       <span className="font-medium">
-                        {formData.pricing?.netContent || 0} {formData.unit}
+                        {formData.pricing?.netContent || 0}{" "}
+                        {formData.unit ? getUnitLabel(formData.unit, language) : ""}
                       </span>
                     </div>
                     <div className="flex justify-between">

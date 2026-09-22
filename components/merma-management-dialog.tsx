@@ -16,6 +16,7 @@ import { setDashboardData } from "@/utils/dashboard-data"
 import { MermaInfoDialog } from "./merma-info-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
+import { getCategoryLabel, getUnitLabel } from "@/lib/ingredient-labels"
 import { useAuth } from "@/contexts/auth-context"
 import { logActivity } from "@/lib/services/activity-log"
 import type { Ingredient } from "@/types/ingredient"
@@ -43,7 +44,7 @@ export function MermaManagementDialog({
     {},
   )
   const { toast } = useToast()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const { user } = useAuth()
 
   useEffect(() => {
@@ -421,11 +422,13 @@ export function MermaManagementDialog({
                           <TableCell className="font-medium">
                             <div>
                               <div className="font-medium">{ingredient.name}</div>
-                              <div className="text-sm text-muted-foreground">{ingredient.unit}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {getUnitLabel(ingredient.unit, language)}
+                              </div>
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
-                            <Badge variant="outline">{ingredient.category}</Badge>
+                            <Badge variant="outline">{getCategoryLabel(ingredient.category, language)}</Badge>
                           </TableCell>
                           <TableCell className="text-center">
                             <div className="flex flex-col items-center gap-1">
@@ -505,12 +508,12 @@ export function MermaManagementDialog({
                           </TableCell>
                           <TableCell className="text-center">
                             <div className="font-medium">
-                              {Number(originalContent.toFixed(2))} {ingredient.unit}
+                              {Number(originalContent.toFixed(2))} {getUnitLabel(ingredient.unit, language)}
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
                             <div className={`font-medium ${isAdjusted ? "text-green-600 dark:text-green-300" : ""}`}>
-                              {Number(currentContent.toFixed(2))} {ingredient.unit}
+                              {Number(currentContent.toFixed(2))} {getUnitLabel(ingredient.unit, language)}
                             </div>
                             {isAdjusted && (
                               <div className="text-xs text-green-600 dark:text-green-300">

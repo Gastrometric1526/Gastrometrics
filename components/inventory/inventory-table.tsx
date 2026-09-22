@@ -11,6 +11,7 @@ import { useDebouncedCallback } from "@/lib/hooks/useDebounce"
 import { getIngredients } from "@/lib/storage/ingredients"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
+import { getCategoryLabel, getUnitLabel } from "@/lib/ingredient-labels"
 
 // Modificar la interfaz InventoryTableProps para incluir una nueva prop para manejar cambios en el stock mínimo
 interface InventoryTableProps {
@@ -35,7 +36,7 @@ export function InventoryTable({
   onMinStockChange,
   availablePresentations = [],
 }: InventoryTableProps) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const [editedItemId, setEditedItemId] = useState<string | null>(null)
   const [editedItems, setEditedItems] = useState([...items])
   const [ingredientsData, setIngredientsData] = useState<any[]>([])
@@ -201,7 +202,7 @@ export function InventoryTable({
                       onChange={(e) => handleInputChange(item.id, "category", e.target.value)}
                     />
                   ) : (
-                    item.category
+                    getCategoryLabel(item.category, language)
                   )}
                 </TableCell>
                 <TableCell className="text-center">
@@ -244,7 +245,7 @@ export function InventoryTable({
                   {editedItemId === item.id ? (
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-xs text-text-4">
-                        {item.currentStock !== null ? `${item.currentStock} ${item.unit}` : "-"}
+                        {item.currentStock !== null ? `${item.currentStock} ${getUnitLabel(item.unit, language)}` : "-"}
                       </span>
                       <NumericInput
                         value={item.minStock}
@@ -264,7 +265,7 @@ export function InventoryTable({
                       return (
                         <div className="flex flex-col items-center gap-1 w-[110px] mx-auto">
                           <span className={`text-sm font-medium tabular-nums ${textColor}`}>
-                            {item.currentStock} / {item.minStock} {item.unit}
+                            {item.currentStock} / {item.minStock} {getUnitLabel(item.unit, language)}
                           </span>
                           <div className="relative h-1 w-full rounded-full bg-secondary overflow-hidden">
                             <div className={`absolute inset-y-0 left-0 rounded-full ${barColor}`} style={{ width: `${barPct}%` }} />
@@ -276,7 +277,7 @@ export function InventoryTable({
                     "-"
                   )}
                 </TableCell>
-                <TableCell className="text-center">{item.unit}</TableCell>
+                <TableCell className="text-center">{getUnitLabel(item.unit, language)}</TableCell>
                 <TableCell className="text-center">
                   {editedItemId === item.id ? (
                     <NumericInput

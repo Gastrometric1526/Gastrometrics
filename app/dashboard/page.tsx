@@ -903,7 +903,7 @@ export default function DashboardPage() {
                       {stat.title}
                     </p>
                   </div>
-                  <p className="text-3xl font-semibold text-foreground tabular-nums truncate">{stat.value}</p>
+                  <p className="text-xl sm:text-3xl font-semibold text-foreground tabular-nums truncate">{stat.value}</p>
                 </div>
               ))}
             </div>

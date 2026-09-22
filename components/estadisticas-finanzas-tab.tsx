@@ -231,7 +231,7 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
           <h2 className="text-lg font-bold">{t("finanzas_title")}</h2>
           <p className="text-sm text-muted-foreground">{t("finanzas_subtitle")}</p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           {salesImports.length > 0 && (
             <Button variant="outline" onClick={() => setIsCalcInfoOpen(true)} className="gap-2">
               <Calculator className="h-4 w-4" />

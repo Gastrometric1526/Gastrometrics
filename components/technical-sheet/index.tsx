@@ -51,7 +51,7 @@ import { logActivity } from "@/lib/services/activity-log"
 import { useLanguage } from "@/contexts/language-context"
 import { getClassificationLabel } from "@/lib/classification-labels"
 import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
-import { getYieldUnitLabel } from "@/lib/ingredient-labels"
+import { getYieldUnitLabel, getCategoryLabel } from "@/lib/ingredient-labels"
 
 interface TechnicalSheetProps {
   mode: "new" | "view" | "edit"
@@ -1277,7 +1277,9 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                 {recipe.ingredients.map((ingredient, index) => (
                   <TableRow key={ingredient.id}>
                     <TableCell className="text-center">{index + 1}</TableCell>
-                    <TableCell className="text-center">{ingredient.category || ""}</TableCell>
+                    <TableCell className="text-center">
+                      {ingredient.category ? getCategoryLabel(ingredient.category, language) : ""}
+                    </TableCell>
                     <TableCell>
                       {isEditMode ? (
                         <Popover
@@ -1319,7 +1321,9 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                                       />
                                       <div>
                                         <div className="font-medium">{ing.name}</div>
-                                        <div className="text-xs text-muted-foreground">{ing.category}</div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {getCategoryLabel(ing.category, language)}
+                                        </div>
                                       </div>
                                     </CommandItem>
                                   ))}

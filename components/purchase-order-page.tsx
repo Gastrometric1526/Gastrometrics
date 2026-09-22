@@ -50,6 +50,8 @@ import { FeatureLockedPage } from "@/components/feature-locked"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { getAccessBlockReason } from "@/lib/plan-access"
 import type { Ingredient } from "@/types/ingredient"
+import { unitAbbreviations } from "@/types/ingredient"
+import { getUnitLabel } from "@/lib/ingredient-labels"
 import type { PurchaseOrder } from "@/types/purchase-order"
 
 export function PurchaseOrderPage() {
@@ -658,7 +660,7 @@ export function PurchaseOrderPage() {
             </Link>
             <h1 className="text-3xl font-bold">{t("ordenes_title")}</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               data-tour="ordenes-auto-suggest"
               variant="outline"
@@ -781,7 +783,7 @@ export function PurchaseOrderPage() {
                   <div key={ing.id} className="flex items-center justify-between text-xs">
                     <span className="truncate pr-2">{ing.name}</span>
                     <span className="font-semibold text-foreground shrink-0">
-                      {formatCurrency(ing.pricing?.pricePerUnit || 0)}/{ing.unit}
+                      {formatCurrency(ing.pricing?.pricePerUnit || 0)}/{unitAbbreviations[ing.unit] || ing.unit}
                     </span>
                   </div>
                 ))
@@ -906,7 +908,7 @@ export function PurchaseOrderPage() {
                       <p className="font-medium mb-1">{t("ordenes_suggest_info_example_prefix").replace("{name}", example.name)}</p>
                       <p className="font-mono text-xs">
                         máx(2 × {example.minStock} − {example.currentStock || 0}, {example.minStock}) = {Math.round(suggested * 100) / 100}{" "}
-                        {example.unit}
+                        {getUnitLabel(example.unit, language)}
                       </p>
                     </div>
                   )

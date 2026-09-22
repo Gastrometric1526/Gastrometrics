@@ -35,6 +35,7 @@ import type { InventorySnapshot } from "@/types/inventory"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
+import { getCategoryLabel, getUnitLabel } from "@/lib/ingredient-labels"
 
 interface HistoryViewProps {
   inventoryHistory: InventorySnapshot[]
@@ -421,9 +422,9 @@ export function HistoryView({ inventoryHistory, exportInventory, isLoading }: Hi
                         {selectedSnapshot.items.map((item) => (
                           <TableRow key={item.id}>
                             <TableCell className="font-medium">{item.name}</TableCell>
-                            <TableCell>{item.category}</TableCell>
+                            <TableCell>{getCategoryLabel(item.category, language)}</TableCell>
                             <TableCell>
-                              {item.quantity} {item.unit}
+                              {item.quantity} {getUnitLabel(item.unit, language)}
                               {selectedSnapshot.inventoryMode === "presentation" &&
                                 item.presentation &&
                                 item.netContent &&

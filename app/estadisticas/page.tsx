@@ -66,6 +66,7 @@ import { formatCurrency } from "@/lib/currency"
 import type { Recipe, Classification } from "@/types/recipe"
 import { SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
+import { unitAbbreviations } from "@/types/ingredient"
 import type { InventoryItem } from "@/types/inventory"
 import { getClassificationLabel } from "@/lib/classification-labels"
 import { getCategoryLabel, getUnitLabel } from "@/lib/ingredient-labels"
@@ -829,7 +830,7 @@ function EstadisticasContent() {
                             <div key={ing.id} className="flex items-center justify-between text-sm bg-muted/20 rounded-lg px-3 py-2">
                               <span className="truncate pr-2">{ing.name}</span>
                               <span className="font-semibold text-foreground tabular-nums shrink-0">
-                                {formatCurrency(ing.pricing?.pricePerUnit || 0)}/{ing.unit}
+                                {formatCurrency(ing.pricing?.pricePerUnit || 0)}/{unitAbbreviations[ing.unit] || ing.unit}
                               </span>
                             </div>
                           ))

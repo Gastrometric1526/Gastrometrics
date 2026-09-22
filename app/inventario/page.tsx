@@ -25,6 +25,7 @@ import { GastrometricsLogo } from "@/components/gastrometrics-logo"
 import { InventarioTour } from "@/components/page-tours"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
+import { getUnitLabel } from "@/lib/ingredient-labels"
 import { getDateLocale } from "@/lib/i18n/translations"
 import {
   getInventory,
@@ -902,13 +903,13 @@ export default function InventoryPage() {
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{item.name}</TableCell>
                         <TableCell>
-                          {item.minStock} {item.unit}
+                          {item.minStock} {getUnitLabel(item.unit, language)}
                         </TableCell>
                         <TableCell className="text-destructive dark:text-red-300 font-medium">
-                          {item.currentStock} {item.unit}
+                          {item.currentStock} {getUnitLabel(item.unit, language)}
                         </TableCell>
                         <TableCell>
-                          {(item.minStock - (item.currentStock ?? 0)).toFixed(2)} {item.unit}
+                          {(item.minStock - (item.currentStock ?? 0)).toFixed(2)} {getUnitLabel(item.unit, language)}
                         </TableCell>
                       </TableRow>
                     ))}
