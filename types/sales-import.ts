@@ -31,9 +31,17 @@ export interface SalesImport {
   unmatchedDishNames: string[]
   lines: SalesImportLine[]
   // "manual" = registrado a mano desde /estadisticas → Ventas (docs/90, sin POS).
-  // Ausente/"pos_import" en todo lo importado antes de esto — se trata como
-  // "pos_import" en cualquier lugar que lo lea, para no romper datos ya guardados.
-  source?: "pos_import" | "manual"
+  // "invoice" = generado solo al guardar una Factura (app/facturas/page.tsx,
+  // docs/123) — una factura a un cliente ES una venta, y por eso también aparece acá:
+  // sin esto, facturar catering/mayoreo quedaría invisible para Finanzas/Menu
+  // Engineering/food cost real vs. teórico. Ausente/"pos_import" en todo lo
+  // importado antes de esto — se trata como "pos_import" en cualquier lugar que lo
+  // lea, para no romper datos ya guardados.
+  source?: "pos_import" | "manual" | "invoice"
+  // Presente solo cuando source === "invoice" — id de la factura de origen, para
+  // poder llevar de vuelta a su PDF desde Estadísticas → Ventas sin tener que
+  // adivinar el vínculo por nombre.
+  invoiceId?: string
 }
 
 // Formato de fecha del archivo del POS — necesario porque "03/04/2026" es ambiguo

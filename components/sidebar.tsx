@@ -26,6 +26,7 @@ import {
   BarChart3,
   ShoppingCart,
   Receipt,
+  ShoppingBag,
   Menu,
   X,
   Home,
@@ -74,6 +75,8 @@ function useNavigationItems() {
   const canAccessPurchaseOrdersAuto = useFeatureAccess("purchase_orders_auto")
   const canAccessStatsPanorama = useFeatureAccess("stats_panorama")
   const canAccessInvoices = useFeatureAccess("invoices")
+  const canAccessManualSalesNav = useFeatureAccess("manual_sales")
+  const canAccessFinanceNav = useFeatureAccess("stats_finance")
 
   const lockedByHref: Record<string, { locked: boolean; feature: FeatureKey }> = {
     "/inventario": { locked: canAccessInventory === false, feature: "inventory" },
@@ -84,6 +87,10 @@ function useNavigationItems() {
     },
     "/estadisticas": { locked: canAccessStatsPanorama === false, feature: "stats_panorama" },
     "/facturas": { locked: canAccessInvoices === false, feature: "invoices" },
+    "/ventas": {
+      locked: canAccessManualSalesNav === false && canAccessFinanceNav === false,
+      feature: "manual_sales",
+    },
   }
 
   const items = [
@@ -113,6 +120,14 @@ function useNavigationItems() {
       description: t("nav_ordenes_compra_desc"),
       locked: lockedByHref["/menu-y-compras"].locked,
       feature: lockedByHref["/menu-y-compras"].feature as FeatureKey | null,
+    },
+    {
+      title: t("nav_ventas"),
+      href: "/ventas",
+      icon: ShoppingBag,
+      description: t("nav_ventas_desc"),
+      locked: lockedByHref["/ventas"].locked,
+      feature: lockedByHref["/ventas"].feature as FeatureKey | null,
     },
     {
       title: t("nav_facturas"),
@@ -145,6 +160,7 @@ function useNavigationItems() {
       "/menu-y-compras": ["purchase_orders_manual", "purchase_orders_auto"],
       "/estadisticas": ["stats_panorama", "stats_finance", "manual_sales"],
       "/facturas": ["invoices"],
+      "/ventas": ["manual_sales", "stats_finance"],
       // Delegable desde docs/75 — un miembro con la función 'team' habilitada
       // también puede gestionar el equipo (ver supabase/migrations/
       // 0015_team_delegate_management.sql para el porqué hacía falta una migración,
@@ -191,6 +207,7 @@ const getContextualHref = (baseHref: string, businessId: string | null) => {
     "/menu-y-compras",
     "/estadisticas",
     "/facturas",
+    "/ventas",
   ]
   if (businessRoutes.includes(baseHref)) {
     return `${baseHref}?business=${businessId}`

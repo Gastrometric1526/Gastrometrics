@@ -92,8 +92,29 @@ export function getCurrentCurrencyOption(): CurrencyOption {
   return CURRENCY_OPTIONS.find((c) => c.code === code) || CURRENCY_OPTIONS[0]
 }
 
+// BUG REAL CORREGIDO (reportado en vivo): "Costo Promedio" mostraba coma como
+// separador decimal ("₡21 352,46") cuando debía ser punto. Verificado probando las 21
+// monedas soportadas con el mismo Intl.NumberFormat de abajo: el colón costarricense
+// (CRC) es la única cuyo dato de CLDR para "es-CR" lo formatea al estilo europeo (coma
+// decimal, espacio de miles) — el resto de Centroamérica con la misma familia de
+// locale ("es-HN", "es-GT", "es-NI", "es-PA") ya formatea correctamente con punto
+// decimal y coma de miles, que es la convención real centroamericana (no es un
+// capricho: DKK/EUR/ARS/COP/etc. sí usan coma decimal de verdad en sus países, y ESO
+// se deja intacto — ver docs/123, el "Costo Promedio" con DKK de esa sesión era
+// correcto). No hay ningún locale que dé a la vez el símbolo real "₡" Y punto decimal
+// para CRC (los que sí dan punto decimal caen a mostrar "CRC" en vez de "₡"), así que
+// para esta única moneda se arma el número a mano en vez de confiar en el locale.
+const CRC_DECIMAL_QUIRK_CODE = "CRC"
+
 export function formatCurrency(amount: number): string {
   const option = getCurrentCurrencyOption()
+  if (option.code === CRC_DECIMAL_QUIRK_CODE) {
+    const grouped = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount)
+    return `${option.symbol} ${grouped}`
+  }
   try {
     return new Intl.NumberFormat(option.locale, {
       style: "currency",

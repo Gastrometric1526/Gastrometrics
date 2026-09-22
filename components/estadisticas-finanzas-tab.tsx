@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { GastrometricsLogo } from "@/components/gastrometrics-logo"
 import { Button } from "@/components/ui/button"
@@ -638,6 +639,13 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
                           {t("finanzas_manual_entry_badge")}
                         </Badge>
                       )}
+                      {imp.source === "invoice" && (
+                        <Link href={`/facturas?business=${businessId}`}>
+                          <Badge variant="secondary" className="shrink-0 text-[10px] hover:bg-primary/10 cursor-pointer">
+                            {t("finanzas_invoice_badge")}
+                          </Badge>
+                        </Link>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {new Date(imp.importedAt).toLocaleString()} · {imp.lineCount} {t("finanzas_import_rows_suffix")} ·{" "}
@@ -646,9 +654,14 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
                         ` · ${imp.unmatchedDishNames.length} ${t("finanzas_unlinked_badge")}`}
                     </p>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => handleDeleteImport(imp.id)} className="shrink-0">
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  {/* Una fila que vino de una factura se borra borrando la factura (ver
+                      app/facturas/page.tsx), no desde acá — borrarla solo de este
+                      lado dejaría la factura viva pero invisible para Finanzas. */}
+                  {imp.source !== "invoice" && (
+                    <Button variant="ghost" size="sm" onClick={() => handleDeleteImport(imp.id)} className="shrink-0">
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
                 </div>
               ))}
             </CardContent>

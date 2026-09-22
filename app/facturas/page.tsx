@@ -50,9 +50,11 @@ import {
   getNextInvoiceNumber,
 } from "@/lib/storage/invoices"
 import { downloadInvoicePDF } from "@/lib/pdf/invoice-pdf-generator"
+import { addSalesImport, updateSalesImport, deleteSalesImport } from "@/lib/storage/sales-imports"
 import type { Invoice, InvoiceLineItem } from "@/types/invoice"
 import type { Recipe } from "@/types/recipe"
 import type { Menu } from "@/lib/types/menus"
+import type { SalesImport, SalesImportLine } from "@/types/sales-import"
 
 const NONE_VALUE = "__none__"
 
@@ -228,6 +230,72 @@ function FacturasPageInner() {
     return { subtotal, taxPercent, taxAmount, total: subtotal + taxAmount }
   }, [draftItems, draftTaxPercent])
 
+  // Una factura ES una venta — pedido explícito del dueño del proyecto tras el
+  // análisis de docs/123 (Fase 1): sin esto, facturar un catering quedaba invisible
+  // para Estadísticas → Finanzas/Menu Engineering/food cost real vs. teórico, porque
+  // esos paneles solo leen de sales_imports, nunca de invoices. id determinístico
+  // ("invoice_" + id de la factura) para que editar/borrar la factura actualice/borre
+  // la MISMA fila de venta en vez de ir acumulando duplicados. totalRevenue usa el
+  // SUBTOTAL, nunca el total con impuesto — el impuesto es plata del cliente para el
+  // fisco, no ingreso real del negocio, y mezclarlo infla el food cost % de mentira.
+  const buildSalesImportFromInvoice = (invoice: Invoice): SalesImport => {
+    const lines: SalesImportLine[] = invoice.items.map((item) => {
+      const recipeId = item.sourceId?.startsWith("recipe:") ? item.sourceId.slice("recipe:".length) : null
+      const menuId = item.sourceId?.startsWith("menu:") ? item.sourceId.slice("menu:".length) : null
+      const recipe = recipeId ? recipes.find((r) => r.id === recipeId) : undefined
+      const menu = menuId ? menus.find((m) => m.id === menuId) : undefined
+      const unitCost = recipe
+        ? recipe.costPerServing || 0
+        : menu
+          ? getMenuUnitPriceAndCost(menu, recipes)?.cost || 0
+          : 0
+      return {
+        id: item.id,
+        rawDishName: item.description,
+        recipeId,
+        menuId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        revenue: item.amount,
+        theoreticalCost: item.quantity * unitCost,
+      }
+    })
+    const isoDate = new Date(`${invoice.issueDate}T00:00:00`).toISOString()
+    return {
+      id: `invoice_${invoice.id}`,
+      businessId,
+      fileName: `${t("facturas_header_title")} #${invoice.number} — ${invoice.clientName}`,
+      importedAt: invoice.metadata.createdAt,
+      periodStart: isoDate,
+      periodEnd: isoDate,
+      totalRevenue: invoice.subtotal,
+      totalTheoreticalCost: lines.reduce((sum, l) => sum + l.theoreticalCost, 0),
+      lineCount: lines.length,
+      unmatchedDishNames: lines.filter((l) => !l.recipeId && !l.menuId).map((l) => l.rawDishName),
+      lines,
+      source: "invoice",
+      invoiceId: invoice.id,
+    }
+  }
+
+  const syncSalesImportForInvoice = async (invoice: Invoice, isNew: boolean) => {
+    try {
+      const salesImport = buildSalesImportFromInvoice(invoice)
+      if (isNew) {
+        await addSalesImport(salesImport, businessId)
+      } else {
+        await updateSalesImport(salesImport, businessId)
+      }
+    } catch (error) {
+      // Best-effort: nunca debe deshacer o bloquear el guardado de la factura, que ya
+      // se confirmó. Un miembro de equipo con "invoices" pero sin "stats_finance"
+      // puede caer acá (RLS de sales_imports, ver 0011_team_write_access.sql) — la
+      // factura igual queda guardada, solo no se refleja en Finanzas hasta que el
+      // dueño la abra y la vuelva a guardar.
+      console.error("[Facturas] Error sincronizando la venta en Estadísticas:", error)
+    }
+  }
+
   const handleSave = async () => {
     setDraftError(null)
     if (!draftClientName.trim()) {
@@ -292,6 +360,7 @@ function FacturasPageInner() {
       } else {
         await addInvoice(businessId, invoice)
       }
+      await syncSalesImportForInvoice(invoice, !editingInvoice)
       toast({ title: t("facturas_toast_saved_title"), description: t("facturas_toast_saved_desc") })
       setIsDialogOpen(false)
     } catch (error) {
@@ -309,6 +378,11 @@ function FacturasPageInner() {
   const handleDelete = async () => {
     if (!invoiceToDelete) return
     await deleteInvoice(businessId, invoiceToDelete.id)
+    try {
+      await deleteSalesImport(`invoice_${invoiceToDelete.id}`, businessId)
+    } catch (error) {
+      console.error("[Facturas] Error borrando la venta vinculada en Estadísticas:", error)
+    }
     toast({ title: t("facturas_toast_deleted_title") })
     setInvoiceToDelete(null)
   }
