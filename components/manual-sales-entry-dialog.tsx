@@ -174,6 +174,9 @@ export function ManualSalesEntryDialog({
     if (lines.length === 0) return
     setIsSaving(true)
 
+    const saleDateObj = new Date(`${saleDate}T00:00:00`)
+    const isoDate = saleDateObj.toISOString()
+
     const importLines: SalesImportLine[] = lines.map((l) => ({
       id: l.id,
       rawDishName: l.name,
@@ -183,10 +186,8 @@ export function ManualSalesEntryDialog({
       unitPrice: l.unitPrice,
       revenue: l.quantity * l.unitPrice,
       theoreticalCost: l.quantity * l.unitCost,
+      date: isoDate,
     }))
-
-    const saleDateObj = new Date(`${saleDate}T00:00:00`)
-    const isoDate = saleDateObj.toISOString()
     const displayDate = saleDateObj.toLocaleDateString(EMAIL_DATE_LOCALES[normalizeEmailLang(language)], {
       day: "numeric",
       month: "short",

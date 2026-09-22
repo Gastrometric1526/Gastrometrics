@@ -6,7 +6,7 @@ Sistema de gestión gastronómica (fichas técnicas, costeo, inventario, menús,
 
 Lee, en este orden:
 1. `docs/00-README-EMPIEZA-AQUI.md`
-2. El documento de auditoría con el número más alto en `docs/` (a la fecha de este commit: `docs/128-respaldo-y-borrado-de-contenido-aviso-fiscal-y-enlaces-rotos-de-ventas.md`) — es la fuente de verdad sobre qué está hecho, qué falta, y dónde. **No confíes en él sin verificar contra el código real** — es la regla que se ha seguido en todo el proyecto.
+2. El documento de auditoría con el número más alto en `docs/` (a la fecha de este commit: `docs/129-decimal-siempre-con-punto-y-desglose-historial-de-ventas-por-dia.md`) — es la fuente de verdad sobre qué está hecho, qué falta, y dónde. **No confíes en él sin verificar contra el código real** — es la regla que se ha seguido en todo el proyecto.
 3. `docs/12-guia-backend.md` es histórico (de antes de conectar el backend) — para su estado real, ver el punto 4.
 4. Para arquitectura/diseño técnico consolidado (no cronológico): `docs/mapa-de-documentacion.md` (índice por tema de todo `docs/`) y `docs/referencia-arquitectura-tecnica.md` (storage, recálculo de precios, sub-recetas, PDF, i18n, PWA, backend, admin, rutas). Se actualizan in-place cuando algo cambia — si tu cambio toca algo que describen, actualízalos ahí además del documento de sesión numerado.
 5. Para **operar** la app (no cómo está construida, sino cómo se administra en el mundo real: servicios externos, variables de entorno, despliegue/rollback, `/admin`, y qué hacer en caso de incidente): `docs/referencia-manual-de-operaciones.md`.
@@ -40,6 +40,7 @@ Si el build falla, revisa primero `package.json`: `react`/`react-dom` deben esta
 - Papelera de recetas: 30 días antes de purgar automáticamente.
 - Multiusuario: cada quien crea su propia cuenta; el dueño del negocio comparte la suscripción vía link de invitación (pendiente de backend real para implementarse).
 - Monedas soportadas: todas las centroamericanas + China + USD + Euro (`lib/currency.ts`).
+- Separador decimal: siempre punto, nunca coma, en TODA la app, sin excepción por moneda/país — reemplaza la decisión anterior de `docs/123` (que dejaba coma decimal para EUR/DKK/ARS/COP/CLP/VES/BRL/UYU/PYG/BOB por ser la convención real de esos países). Ver `docs/129`.
 - Idiomas soportados: español, inglés, danés, francés, portugués, chino — solo texto visible al usuario, no traducción completa de código/datos (`lib/i18n/`).
 - Planes de suscripción con bloqueo real de funciones (5 tiers: Foodie/Home Cook/Chef de Partie/Sous Chef/Chef Ejecutivo, ver `docs/33`): catálogo en `lib/plans.ts`, control de acceso en `lib/plan-access.ts`. Un plan por cuenta, ahora real vía Supabase (`account_plans`) y Stripe — ver `docs/52`. `localStorage` solo guarda un caché local de lectura instantánea, ya no es la fuente de verdad. No modificar los límites/features de cada plan sin confirmar con el dueño del proyecto — es tabla de precios de negocio, no un detalle técnico. Hasta 10 correos en `TESTER_ALLOWLIST_EMAILS` (variable de entorno, nunca en el código) reciben plan Chef Ejecutivo gratis al iniciar sesión, sin pasar por Stripe — ver `app/api/plan/dev-account/route.ts`.
 

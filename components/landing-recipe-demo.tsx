@@ -24,7 +24,9 @@ const MAX_INGREDIENTS = 5
 const MIN_INGREDIENTS = 1
 
 function formatMoney(value: number) {
-  return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  // Locale explícito ("en-US"): "undefined" usa el locale del navegador del visitante,
+  // que puede formatear con coma decimal — el proyecto exige punto decimal siempre.
+  return value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 // Demo interactiva de 2 pasos (Ingredientes → Ficha Técnica), embebida en la landing sin

@@ -14,8 +14,12 @@ import { FeatureLockedPage } from "@/components/feature-locked"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { ManualSalesTab } from "@/components/manual-sales-tab"
 import { POSSalesImportDialog } from "@/components/pos-sales-import-dialog"
+import { SalesHistoryBreakdown } from "@/components/sales-history-breakdown"
 import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
+import { getMenus, ensureMenusLoaded } from "@/lib/menus"
+import { getSalesImports, ensureSalesImportsLoaded } from "@/lib/storage/sales-imports"
 import type { Recipe } from "@/types/recipe"
+import type { Menu } from "@/lib/types/menus"
 import type { SalesImport } from "@/types/sales-import"
 
 // Ventas como módulo propio — pedido explícito del dueño del proyecto: "lo de pos
@@ -43,14 +47,19 @@ function VentasPageInner() {
   const canAccessFinance = useFeatureAccess("stats_finance")
 
   const [recipes, setRecipes] = useState<Recipe[]>([])
+  const [menus, setMenus] = useState<Menu[]>([])
+  const [salesImports, setSalesImports] = useState<SalesImport[]>([])
   const [isImportOpen, setIsImportOpen] = useState(false)
 
   useEffect(() => {
     ensureRecipesLoaded(businessId).then(() => setRecipes(getRecipes(businessId)))
+    ensureMenusLoaded(businessId).then(() => setMenus(getMenus(businessId)))
+    ensureSalesImportsLoaded(businessId).then(() => setSalesImports(getSalesImports(businessId)))
   }, [businessId])
 
-  const handleImported = (_imp: SalesImport) => {
+  const handleImported = (imp: SalesImport) => {
     setIsImportOpen(false)
+    setSalesImports((prev) => [imp, ...prev])
   }
 
   if (canAccessManualSales === null || canAccessFinance === null) {
@@ -110,7 +119,7 @@ function VentasPageInner() {
               )}
 
               {canAccessManualSales ? (
-                <ManualSalesTab businessId={businessId} />
+                <ManualSalesTab businessId={businessId} onSalesChanged={setSalesImports} />
               ) : (
                 getAccessBlockReason("manual_sales") !== "admin" && (
                   <Card>
@@ -120,6 +129,10 @@ function VentasPageInner() {
                     </CardContent>
                   </Card>
                 )
+              )}
+
+              {(canAccessManualSales || canAccessFinance) && (
+                <SalesHistoryBreakdown salesImports={salesImports} recipes={recipes} menus={menus} />
               )}
             </div>
           </div>

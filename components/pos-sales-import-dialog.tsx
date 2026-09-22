@@ -428,15 +428,19 @@ export function POSSalesImportDialog({
         ),
     )
 
-    const lines: SalesImportLine[] = parsedLines.map((l) => ({
-      id: uuidv4(),
-      rawDishName: l.rawDishName,
-      recipeId: l.recipeId,
-      quantity: l.quantity,
-      unitPrice: l.unitPrice,
-      revenue: l.revenue,
-      theoreticalCost: l.theoreticalCost,
-    }))
+    const lines: SalesImportLine[] = parsedLines.map((l) => {
+      const lineDate = l.dateRaw ? parseLocaleDate(l.dateRaw, effectiveDateFormat) : null
+      return {
+        id: uuidv4(),
+        rawDishName: l.rawDishName,
+        recipeId: l.recipeId,
+        quantity: l.quantity,
+        unitPrice: l.unitPrice,
+        revenue: l.revenue,
+        theoreticalCost: l.theoreticalCost,
+        date: lineDate ? lineDate.toISOString() : null,
+      }
+    })
 
     const dates = parsedLines.map((l) => l.dateRaw).filter(Boolean) as string[]
     const parsedDates = dates

@@ -33,7 +33,7 @@ import {
   ensureInventoryHistoryLoaded,
 } from "@/lib/storage/inventory"
 import { getPurchaseOrders, ensurePurchaseOrdersLoaded } from "@/lib/storage/purchase-orders"
-import { getBusinessById, refreshBusinesses } from "@/lib/storage/businesses"
+import { getBusinessById, getAllBusinesses, refreshBusinesses } from "@/lib/storage/businesses"
 import { getSalesImports, deleteSalesImport, ensureSalesImportsLoaded } from "@/lib/storage/sales-imports"
 import {
   aggregateSalesByDish,
@@ -49,8 +49,11 @@ import {
 } from "@/lib/sales-analytics"
 import { POSSalesImportDialog } from "@/components/pos-sales-import-dialog"
 import { FinanzasCalculationDialog } from "@/components/finanzas-calculation-dialog"
+import { SalesHistoryBreakdown } from "@/components/sales-history-breakdown"
 import { useLanguage } from "@/contexts/language-context"
 import type { SalesImport } from "@/types/sales-import"
+import type { Recipe } from "@/types/recipe"
+import type { Menu } from "@/lib/types/menus"
 
 export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) {
   const { t } = useLanguage()
@@ -137,6 +140,39 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
     setSalesImports((prev) => [imp, ...prev])
     setRefreshKey((k) => k + 1)
   }
+
+  // Datos combinados para el Historial de ventas (ver el bloque en el JSX de abajo):
+  // a nivel Dashboard (businessId === "main") se combinan main + todos los negocios
+  // reales de la cuenta; dentro de un negocio específico se comporta igual que el
+  // resto del panel (un solo negocio). Independiente del efecto de arriba (que solo
+  // carga el negocio actual) para no acoplar timing/carreras entre ambos — ensureX
+  // ya cachea, así que volver a pedir el mismo negocio acá no cuesta una carga extra.
+  const [combinedSalesImports, setCombinedSalesImports] = useState<SalesImport[]>([])
+  const [combinedRecipes, setCombinedRecipes] = useState<Recipe[]>([])
+  const [combinedMenus, setCombinedMenus] = useState<Menu[]>([])
+  const [combinedBusinessCount, setCombinedBusinessCount] = useState(1)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      let scopeIds = [businessId]
+      if (businessId === "main") {
+        await refreshBusinesses()
+        scopeIds = ["main", ...getAllBusinesses().map((b) => b.id)]
+      }
+      await Promise.all(
+        scopeIds.flatMap((id) => [ensureSalesImportsLoaded(id), ensureRecipesLoaded(id), ensureMenusLoaded(id)]),
+      )
+      if (cancelled) return
+      setCombinedSalesImports(scopeIds.flatMap((id) => getSalesImports(id)))
+      setCombinedRecipes(scopeIds.flatMap((id) => getRecipes(id)))
+      setCombinedMenus(scopeIds.flatMap((id) => getMenus(id)))
+      setCombinedBusinessCount(scopeIds.length)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [businessId, refreshKey])
 
   const handleDeleteImport = async (id: string) => {
     setSalesImports((prev) => prev.filter((i) => i.id !== id))
@@ -244,6 +280,23 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
           </Button>
         </div>
       </div>
+
+      {/* Historial de ventas por día — pedido explícito del dueño del proyecto: "esos
+      datos el usuario lo debería poder ver en reportes y demás". A diferencia del
+      resto de este panel (que sigue escopeado a un solo negocio, como siempre),
+      este bloque en particular SÍ se combina entre "main" + todos los negocios
+      reales cuando se ve a nivel Dashboard (businessId === "main") — ver el efecto
+      de combinedSalesImports/combinedRecipes/combinedMenus más abajo. Al entrar
+      desde un negocio específico (/business/[id] → Reportes) sigue mostrando solo
+      los datos de ESE negocio, igual que el resto del panel. Fuera del bloque
+      "salesImports.length === 0" de abajo a propósito: el negocio "main" puede no
+      tener ventas propias y aun así tener datos combinados que mostrar. */}
+      <SalesHistoryBreakdown
+        salesImports={combinedSalesImports}
+        recipes={combinedRecipes}
+        menus={combinedMenus}
+        combinedBusinessCount={combinedBusinessCount}
+      />
 
       {salesImports.length === 0 ? (
         <Card className="border-2 border-dashed border-border bg-card">

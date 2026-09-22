@@ -51,7 +51,9 @@ export function StatsPanel({ feedbackCounts }: { feedbackCounts: { total: number
       .catch((error) => console.error("Error cargando estadísticas:", error))
   }, [])
 
-  const mrr = stats ? (stats.estimatedMrrUsdCents / 100).toLocaleString(undefined, { style: "currency", currency: "USD" }) : "—"
+  const mrr = stats
+    ? (stats.estimatedMrrUsdCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })
+    : "—"
   const maxPlanCount = stats ? Math.max(1, ...stats.planDistribution.map((p) => p.count)) : 1
   const maxCountryCount = stats ? Math.max(1, ...stats.countryDistribution.map((c) => c.count)) : 1
   const values: Record<string, number> = {

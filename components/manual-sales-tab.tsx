@@ -16,6 +16,11 @@ import type { SalesImport } from "@/types/sales-import"
 
 interface ManualSalesTabProps {
   businessId: string
+  // Notifica al padre cada vez que la lista de ventas manuales cambia (carga inicial,
+  // guardado, edición o borrado) — sin esto, el desglose/historial por día de
+  // app/ventas/page.tsx (que carga su propia copia de sales_imports una sola vez al
+  // montar) no se enteraría de una venta manual nueva hasta recargar la página.
+  onSalesChanged?: (imports: SalesImport[]) => void
 }
 
 /**
@@ -26,11 +31,15 @@ interface ManualSalesTabProps {
  * Prime Cost, Menu Engineering, P&L) — acá solo se registra y se lista lo cargado,
  * sin ese análisis, que sigue exclusivo de Finanzas.
  */
-export function ManualSalesTab({ businessId }: ManualSalesTabProps) {
+export function ManualSalesTab({ businessId, onSalesChanged }: ManualSalesTabProps) {
   const { toast } = useToast()
   const { t } = useLanguage()
 
-  const [salesImports, setSalesImports] = useState<SalesImport[]>([])
+  const [salesImports, setSalesImportsState] = useState<SalesImport[]>([])
+  const setSalesImports = (imports: SalesImport[]) => {
+    setSalesImportsState(imports)
+    onSalesChanged?.(imports)
+  }
   const [refreshKey, setRefreshKey] = useState(0)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingImport, setEditingImport] = useState<SalesImport | null>(null)

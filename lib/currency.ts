@@ -92,36 +92,34 @@ export function getCurrentCurrencyOption(): CurrencyOption {
   return CURRENCY_OPTIONS.find((c) => c.code === code) || CURRENCY_OPTIONS[0]
 }
 
-// BUG REAL CORREGIDO (reportado en vivo): "Costo Promedio" mostraba coma como
-// separador decimal ("₡21 352,46") cuando debía ser punto. Verificado probando las 21
-// monedas soportadas con el mismo Intl.NumberFormat de abajo: el colón costarricense
-// (CRC) es la única cuyo dato de CLDR para "es-CR" lo formatea al estilo europeo (coma
-// decimal, espacio de miles) — el resto de Centroamérica con la misma familia de
-// locale ("es-HN", "es-GT", "es-NI", "es-PA") ya formatea correctamente con punto
-// decimal y coma de miles, que es la convención real centroamericana (no es un
-// capricho: DKK/EUR/ARS/COP/etc. sí usan coma decimal de verdad en sus países, y ESO
-// se deja intacto — ver docs/123, el "Costo Promedio" con DKK de esa sesión era
-// correcto). No hay ningún locale que dé a la vez el símbolo real "₡" Y punto decimal
-// para CRC (los que sí dan punto decimal caen a mostrar "CRC" en vez de "₡"), así que
-// para esta única moneda se arma el número a mano en vez de confiar en el locale.
-const CRC_DECIMAL_QUIRK_CODE = "CRC"
-
+// DECISIÓN DE NEGOCIO (pedido explícito del dueño del proyecto, reemplaza la decisión
+// anterior registrada en docs/123): en TODO el proyecto el separador decimal debe ser
+// punto, nunca coma — sin excepción por moneda/país. Antes se dejaba coma decimal para
+// las monedas cuyo CLDR real la usa (EUR, DKK, ARS, COP, CLP, VES, BRL, UYU, PYG, BOB,
+// y CRC como caso especial ya corregido a mano) porque así se escribe en esos países,
+// pero esa distinción quedó revertida a propósito acá: se usa Intl.NumberFormat solo
+// para obtener el símbolo real de cada moneda y su posición (prefijo/sufijo, con o sin
+// espacio) — que sí varía correctamente por locale — y luego se reconstruye el número
+// mismo forzando coma de miles y punto decimal (estilo US) sin importar qué separador
+// use el locale original. Verificado con las 21 monedas soportadas: da p.ej.
+// "₡21,352.46", "21,352.46 kr.", "$ 21,352.46", "R$ 21,352.46" — símbolo/posición
+// intactos, decimal siempre punto.
 export function formatCurrency(amount: number): string {
   const option = getCurrentCurrencyOption()
-  if (option.code === CRC_DECIMAL_QUIRK_CODE) {
-    const grouped = new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount)
-    return `${option.symbol} ${grouped}`
-  }
   try {
-    return new Intl.NumberFormat(option.locale, {
+    const parts = new Intl.NumberFormat(option.locale, {
       style: "currency",
       currency: option.code,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(amount)
+    }).formatToParts(amount)
+    return parts
+      .map((part) => {
+        if (part.type === "group") return ","
+        if (part.type === "decimal") return "."
+        return part.value
+      })
+      .join("")
   } catch {
     // Respaldo si Intl no reconoce la combinación locale/moneda en el navegador del usuario.
     return `${option.symbol}${amount.toFixed(2)}`

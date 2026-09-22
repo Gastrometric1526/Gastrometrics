@@ -776,7 +776,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                       <p className="text-xs text-muted-foreground">{t("business_summary_plates_label")}</p>
                       <p className="text-sm font-semibold text-foreground tabular-nums">
                         {business?.estimatedMonthlyPlates
-                          ? business.estimatedMonthlyPlates.toLocaleString()
+                          ? business.estimatedMonthlyPlates.toLocaleString("en-US")
                           : t("business_summary_not_set")}
                       </p>
                     </div>
@@ -1266,7 +1266,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                                 </span>
                               </div>
                               <div className="text-lg font-bold text-orange-800 dark:text-orange-300">
-                                {currentScenario.PE_plates.toLocaleString()} {t("business_scenario_plates_suffix")}
+                                {currentScenario.PE_plates.toLocaleString("en-US")} {t("business_scenario_plates_suffix")}
                               </div>
                               <div className="text-sm text-orange-700 dark:text-orange-300">
                                 {formatCurrency(currentScenario.PE_revenue)}
@@ -1553,7 +1553,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                       </div>
                       <div>
                         <strong>{t("business_scenario_mix_capacity")}:</strong>{" "}
-                        {currentScenario.PVm_est?.toLocaleString()} {t("business_scenario_plates_suffix")}
+                        {currentScenario.PVm_est?.toLocaleString("en-US")} {t("business_scenario_plates_suffix")}
                       </div>
                       <div>
                         <strong>{t("business_scenario_confidence_label")}:</strong> {currentScenario.confidence}
@@ -1575,7 +1575,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                         <div>
                           {t("business_scenario_formula_pe_plates").replace(
                             "{value}",
-                            currentScenario.PE_plates.toLocaleString(),
+                            currentScenario.PE_plates.toLocaleString("en-US"),
                           )}
                         </div>
                         <div>

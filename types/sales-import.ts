@@ -16,6 +16,15 @@ export interface SalesImportLine {
   unitPrice: number | null // precio de venta si el archivo lo trae; si no, se usa el de la receta
   revenue: number // quantity * (unitPrice ?? recipe.unitPrice ?? 0)
   theoreticalCost: number // quantity * recipe.costPerServing (0 si no hay receta vinculada)
+  // Fecha real de ESTA línea (ISO), no la del lote. En un registro manual es siempre
+  // la fecha única elegida (periodStart === periodEnd). En una importación de POS
+  // multi-día, antes se parseaba la columna de fecha por fila solo para calcular el
+  // periodStart/periodEnd del lote y luego se descartaba — sin esto no había forma de
+  // saber en qué día se vendió cada línea, y por lo tanto no se podía armar un
+  // desglose/historial por día. Ausente en datos guardados antes de este campo, o si
+  // el POS no traía columna de fecha: el desglose por día cae a periodStart del lote
+  // (o importedAt) como aproximación — ver resolveLineDate en lib/sales-analytics.ts.
+  date?: string | null
 }
 
 export interface SalesImport {

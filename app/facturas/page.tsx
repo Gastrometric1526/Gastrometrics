@@ -239,6 +239,7 @@ function FacturasPageInner() {
   // SUBTOTAL, nunca el total con impuesto — el impuesto es plata del cliente para el
   // fisco, no ingreso real del negocio, y mezclarlo infla el food cost % de mentira.
   const buildSalesImportFromInvoice = (invoice: Invoice): SalesImport => {
+    const invoiceIsoDate = new Date(`${invoice.issueDate}T00:00:00`).toISOString()
     const lines: SalesImportLine[] = invoice.items.map((item) => {
       const recipeId = item.sourceId?.startsWith("recipe:") ? item.sourceId.slice("recipe:".length) : null
       const menuId = item.sourceId?.startsWith("menu:") ? item.sourceId.slice("menu:".length) : null
@@ -258,9 +259,10 @@ function FacturasPageInner() {
         unitPrice: item.unitPrice,
         revenue: item.amount,
         theoreticalCost: item.quantity * unitCost,
+        date: invoiceIsoDate,
       }
     })
-    const isoDate = new Date(`${invoice.issueDate}T00:00:00`).toISOString()
+    const isoDate = invoiceIsoDate
     return {
       id: `invoice_${invoice.id}`,
       businessId,

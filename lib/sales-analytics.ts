@@ -5,7 +5,7 @@
 // Rotacion de Inventario, Varianza de Precios de Proveedores, P&L simplificado,
 // Menu Engineering.
 
-import type { SalesImport } from "@/types/sales-import"
+import type { SalesImport, SalesImportLine } from "@/types/sales-import"
 import type { Recipe } from "@/types/recipe"
 import type { InventorySnapshot } from "@/types/inventory"
 import type { PurchaseOrder } from "@/types/purchase-order"
@@ -32,36 +32,36 @@ export interface DishPerformance {
 // recetas). Sin menus, una línea de menú simplemente cae al mismo bucket "unmatched"
 // que tenía antes, en vez de romper la llamada — mantiene compatible cualquier
 // llamador viejo que todavía no le pase el arreglo de menús.
-export function aggregateSalesByDish(salesImports: SalesImport[], recipes: Recipe[], menus: Menu[] = []): DishPerformance[] {
+// Extraida de aggregateSalesByDish para poder reusarla por-día en aggregateSalesByDay
+// de abajo sin duplicar la logica de agrupacion/calculo de margen.
+function aggregateLines(lines: SalesImportLine[], recipes: Recipe[], menus: Menu[]): DishPerformance[] {
   const map = new Map<string, DishPerformance>()
 
-  salesImports.forEach((imp) => {
-    imp.lines.forEach((line) => {
-      const key =
-        line.recipeId || (line.menuId ? `menu:${line.menuId}` : `unmatched:${line.rawDishName.trim().toLowerCase()}`)
-      const recipe = line.recipeId ? recipes.find((r) => r.id === line.recipeId) : undefined
-      const menu = !line.recipeId && line.menuId ? menus.find((m) => m.id === line.menuId) : undefined
-      const name = recipe?.name || menu?.name || line.rawDishName
+  lines.forEach((line) => {
+    const key =
+      line.recipeId || (line.menuId ? `menu:${line.menuId}` : `unmatched:${line.rawDishName.trim().toLowerCase()}`)
+    const recipe = line.recipeId ? recipes.find((r) => r.id === line.recipeId) : undefined
+    const menu = !line.recipeId && line.menuId ? menus.find((m) => m.id === line.menuId) : undefined
+    const name = recipe?.name || menu?.name || line.rawDishName
 
-      const existing = map.get(key)
-      if (existing) {
-        existing.quantitySold += line.quantity
-        existing.revenue += line.revenue
-        existing.theoreticalCost += line.theoreticalCost
-      } else {
-        map.set(key, {
-          recipeId: line.recipeId,
-          name,
-          quantitySold: line.quantity,
-          revenue: line.revenue,
-          theoreticalCost: line.theoreticalCost,
-          contributionMargin: 0,
-          contributionMarginPercent: 0,
-          unitPrice: 0,
-          unitCost: 0,
-        })
-      }
-    })
+    const existing = map.get(key)
+    if (existing) {
+      existing.quantitySold += line.quantity
+      existing.revenue += line.revenue
+      existing.theoreticalCost += line.theoreticalCost
+    } else {
+      map.set(key, {
+        recipeId: line.recipeId,
+        name,
+        quantitySold: line.quantity,
+        revenue: line.revenue,
+        theoreticalCost: line.theoreticalCost,
+        contributionMargin: 0,
+        contributionMarginPercent: 0,
+        unitPrice: 0,
+        unitCost: 0,
+      })
+    }
   })
 
   return Array.from(map.values())
@@ -76,6 +76,73 @@ export function aggregateSalesByDish(salesImports: SalesImport[], recipes: Recip
       }
     })
     .sort((a, b) => b.revenue - a.revenue)
+}
+
+export function aggregateSalesByDish(salesImports: SalesImport[], recipes: Recipe[], menus: Menu[] = []): DishPerformance[] {
+  return aggregateLines(
+    salesImports.flatMap((imp) => imp.lines),
+    recipes,
+    menus,
+  )
+}
+
+// ============== DESGLOSE E HISTORIAL POR DÍA ==============
+// Pedido explícito del dueño del proyecto: "en la ventana de ventas debería de haber
+// todo un breakdown también e historial según días". Agrupa cada línea de venta por
+// su fecha real (line.date) — campo agregado junto con esta función; antes se
+// descartaba la fecha por fila de una importación de POS multi-día, y un registro
+// manual siempre cubre un solo día, así que no había forma de bajar de "todo el
+// periodo" a "un día en particular".
+
+export interface DailySalesSummary {
+  date: string // YYYY-MM-DD
+  revenue: number
+  theoreticalCost: number
+  quantitySold: number
+  contributionMargin: number
+  contributionMarginPercent: number
+  dishes: DishPerformance[]
+}
+
+// Resuelve la fecha de una línea: su propia fecha si la tiene (dato nuevo), si no la
+// del lote completo (periodStart, o importedAt como último recurso) — así datos
+// guardados antes de este campo siguen apareciendo en el historial, solo que
+// agrupados por la fecha del lote entero en vez de por línea individual.
+function resolveLineDate(imp: SalesImport, line: SalesImportLine): string {
+  const raw = line.date || imp.periodStart || imp.importedAt
+  return raw.slice(0, 10)
+}
+
+export function aggregateSalesByDay(salesImports: SalesImport[], recipes: Recipe[], menus: Menu[] = []): DailySalesSummary[] {
+  const byDate = new Map<string, SalesImportLine[]>()
+
+  salesImports.forEach((imp) => {
+    imp.lines.forEach((line) => {
+      const date = resolveLineDate(imp, line)
+      const existing = byDate.get(date)
+      if (existing) existing.push(line)
+      else byDate.set(date, [line])
+    })
+  })
+
+  return Array.from(byDate.entries())
+    .map(([date, lines]) => {
+      const dishes = aggregateLines(lines, recipes, menus)
+      const revenue = dishes.reduce((sum, d) => sum + d.revenue, 0)
+      const theoreticalCost = dishes.reduce((sum, d) => sum + d.theoreticalCost, 0)
+      const quantitySold = dishes.reduce((sum, d) => sum + d.quantitySold, 0)
+      const contributionMargin = revenue - theoreticalCost
+      return {
+        date,
+        revenue,
+        theoreticalCost,
+        quantitySold,
+        contributionMargin,
+        contributionMarginPercent: revenue > 0 ? (contributionMargin / revenue) * 100 : 0,
+        dishes,
+      }
+    })
+    .sort((a, b) => (a.date < b.date ? 1 : -1)) // más reciente primero
 }
 
 // ============== MENU ENGINEERING (estrella / vaca / puzzle / perro) ==============
