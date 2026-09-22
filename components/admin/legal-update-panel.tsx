@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Scale, Send, Loader2, CheckCircle2, AlertTriangle } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 /**
  * Único punto donde se dispara el correo de aviso legal a usuarios EXISTENTES sobre
@@ -25,6 +26,7 @@ import { Scale, Send, Loader2, CheckCircle2, AlertTriangle } from "lucide-react"
  * una vez nunca duplica un envío ya hecho (ver activation_emails_sent).
  */
 export function LegalUpdatePanel() {
+  const { t } = useLanguage()
   const [count, setCount] = useState<number | null>(null)
   const [pendingCount, setPendingCount] = useState<number | null>(null)
   const [loadingCount, setLoadingCount] = useState(true)
@@ -66,13 +68,13 @@ export function LegalUpdatePanel() {
       })
       const json = await res.json()
       if (!res.ok) {
-        setError(json.error || "No se pudo enviar.")
+        setError(json.error || t("admin_legal_update_error_default"))
       } else {
         setResult({ sentCount: json.sentCount, skippedCount: json.skippedCount, failedCount: json.failedCount })
         loadCount()
       }
     } catch {
-      setError("No se pudo enviar. Revisa la conexión.")
+      setError(t("admin_product_updates_error_network"))
     } finally {
       setSending(false)
     }
@@ -84,28 +86,26 @@ export function LegalUpdatePanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Scale className="h-5 w-5 text-primary" />
-            Aviso legal: nuevos Términos, Política de Privacidad y Aviso de Responsabilidad
+            {t("admin_legal_update_title")}
           </CardTitle>
-          <CardDescription>
-            Se manda a TODAS las cuentas existentes con correo real (no depende de la casilla de novedades) —
-            avisa sobre la versión 1.2 de los 3 documentos legales. Como máximo un envío por cuenta, para
-            siempre: volver a apretar el botón nunca duplica un correo ya mandado.
-          </CardDescription>
+          <CardDescription>{t("admin_legal_update_desc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Pendientes de recibirlo</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {t("admin_legal_update_pending_label")}
+              </p>
               <p className="text-2xl font-bold text-foreground">
                 {loadingCount ? "…" : pendingCount ?? "—"}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                de {loadingCount ? "…" : count ?? "—"} cuentas totales con correo real
+                {t("admin_legal_update_pending_desc").replace("{count}", loadingCount ? "…" : String(count ?? "—"))}
               </p>
             </div>
             <Button onClick={() => setConfirmOpen(true)} disabled={sending || loadingCount || !pendingCount}>
               {sending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
-              Enviar aviso legal
+              {t("admin_legal_update_send_button")}
             </Button>
           </div>
 
@@ -113,9 +113,13 @@ export function LegalUpdatePanel() {
             <div className="flex items-start gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
               <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
               <span>
-                Enviado a {result.sentCount} cuenta{result.sentCount === 1 ? "" : "s"}
-                {result.skippedCount > 0 ? ` — ${result.skippedCount} ya lo había recibido antes.` : "."}
-                {result.failedCount > 0 ? ` Falló para ${result.failedCount}.` : ""}
+                {t("admin_legal_update_sent_result_prefix").replace("{count}", String(result.sentCount))}
+                {result.skippedCount > 0
+                  ? t("admin_legal_update_sent_result_skipped").replace("{count}", String(result.skippedCount))
+                  : "."}
+                {result.failedCount > 0
+                  ? t("admin_legal_update_sent_result_failed").replace("{count}", String(result.failedCount))
+                  : ""}
               </span>
             </div>
           )}
@@ -131,15 +135,14 @@ export function LegalUpdatePanel() {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Enviar el aviso legal ahora?</AlertDialogTitle>
+            <AlertDialogTitle>{t("admin_legal_update_confirm_title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Le llegará a {pendingCount ?? 0} cuenta{pendingCount === 1 ? "" : "s"} que todavía no lo recibió, de
-              inmediato. No se puede deshacer un correo ya enviado.
+              {t("admin_legal_update_confirm_desc").replace("{count}", String(pendingCount ?? 0))}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSend}>Sí, enviar</AlertDialogAction>
+            <AlertDialogCancel>{t("common_cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSend}>{t("admin_legal_update_confirm_action")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

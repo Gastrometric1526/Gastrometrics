@@ -16,8 +16,10 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Mail, Send, Loader2, CheckCircle2, AlertTriangle, RotateCw } from "lucide-react"
 import { CHANGELOG, LATEST_CHANGELOG_VERSION } from "@/lib/changelog"
+import { useLanguage } from "@/contexts/language-context"
 
 export function ProductUpdatesPanel() {
+  const { t } = useLanguage()
   const [count, setCount] = useState<number | null>(null)
   const [loadingCount, setLoadingCount] = useState(true)
   const [sending, setSending] = useState(false)
@@ -58,12 +60,12 @@ export function ProductUpdatesPanel() {
       })
       const json = await res.json()
       if (!res.ok) {
-        setError(json.error || "No se pudo enviar.")
+        setError(json.error || t("admin_product_updates_error_default"))
       } else {
         setResult({ sentCount: json.sentCount, failedCount: json.failedCount })
       }
     } catch {
-      setError("No se pudo enviar. Revisa la conexión.")
+      setError(t("admin_product_updates_error_network"))
     } finally {
       setSending(false)
     }
@@ -82,12 +84,12 @@ export function ProductUpdatesPanel() {
       })
       const json = await res.json()
       if (!res.ok) {
-        setResendError(json.error || "No se pudo reenviar.")
+        setResendError(json.error || t("admin_product_updates_resend_error_default"))
       } else {
         setResendResult(json.resentTo || targetEmail.trim())
       }
     } catch {
-      setResendError("No se pudo reenviar. Revisa la conexión.")
+      setResendError(t("admin_product_updates_resend_error_network"))
     } finally {
       setResending(false)
     }
@@ -103,17 +105,14 @@ export function ProductUpdatesPanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5 text-primary" />
-            Correo de novedades del producto
+            {t("admin_product_updates_title")}
           </CardTitle>
-          <CardDescription>
-            Se manda solo a cuentas que marcaron la casilla de novedades (al registrarse, o después en
-            Configuración → Notificaciones). Nunca se dispara solo — hace falta este botón.
-          </CardDescription>
+          <CardDescription>{t("admin_product_updates_desc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="rounded-lg border p-4 bg-muted/30">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
-              Versión actual del changelog
+              {t("admin_product_updates_changelog_version_label")}
             </p>
             <p className="text-sm font-semibold text-foreground">{latestEntry?.version}</p>
             {preview && (
@@ -127,15 +126,17 @@ export function ProductUpdatesPanel() {
 
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Destinatarios</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {t("admin_product_updates_recipients_label")}
+              </p>
               <p className="text-2xl font-bold text-foreground">
                 {loadingCount ? "…" : count ?? "—"}
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5">cuentas con la casilla marcada</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("admin_product_updates_recipients_desc")}</p>
             </div>
             <Button onClick={() => setConfirmOpen(true)} disabled={sending || loadingCount || !count}>
               {sending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
-              Enviar correo de novedades
+              {t("admin_product_updates_send_button")}
             </Button>
           </div>
 
@@ -143,8 +144,10 @@ export function ProductUpdatesPanel() {
             <div className="flex items-start gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
               <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
               <span>
-                Enviado a {result.sentCount} cuenta{result.sentCount === 1 ? "" : "s"}
-                {result.failedCount > 0 ? ` — falló para ${result.failedCount}.` : "."}
+                {t("admin_product_updates_sent_result_prefix").replace("{count}", String(result.sentCount))}
+                {result.failedCount > 0
+                  ? t("admin_product_updates_sent_result_failed").replace("{count}", String(result.failedCount))
+                  : "."}
               </span>
             </div>
           )}
@@ -160,16 +163,13 @@ export function ProductUpdatesPanel() {
               la casilla de "novedades" — ver comentario en la API. */}
           <div className="rounded-lg border p-4 space-y-3">
             <div>
-              <p className="text-sm font-medium text-foreground">Reenviar a una cuenta específica</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Para cuando a alguien no le llegó el correo — manda solo la versión actual del changelog a esa
-                cuenta, sin importar si tiene marcada la casilla de novedades.
-              </p>
+              <p className="text-sm font-medium text-foreground">{t("admin_product_updates_resend_title")}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("admin_product_updates_resend_desc")}</p>
             </div>
             <div className="flex items-center gap-2">
               <Input
                 type="email"
-                placeholder="correo@ejemplo.com"
+                placeholder={t("admin_product_updates_resend_placeholder")}
                 value={targetEmail}
                 onChange={(e) => setTargetEmail(e.target.value)}
                 className="max-w-xs"
@@ -180,13 +180,13 @@ export function ProductUpdatesPanel() {
                 disabled={resending || !canResend}
               >
                 {resending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RotateCw className="h-4 w-4 mr-2" />}
-                Reenviar
+                {t("admin_product_updates_resend_button")}
               </Button>
             </div>
             {resendResult && (
               <div className="flex items-start gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>Reenviado a {resendResult}.</span>
+                <span>{t("admin_product_updates_resend_result").replace("{email}", resendResult)}</span>
               </div>
             )}
             {resendError && (
@@ -202,15 +202,16 @@ export function ProductUpdatesPanel() {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Enviar el correo de novedades ahora?</AlertDialogTitle>
+            <AlertDialogTitle>{t("admin_product_updates_confirm_send_title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Le llegará a {count ?? 0} cuenta{count === 1 ? "" : "s"} de inmediato, con la versión "
-              {LATEST_CHANGELOG_VERSION}" del changelog. No se puede deshacer un correo ya enviado.
+              {t("admin_product_updates_confirm_send_desc")
+                .replace("{count}", String(count ?? 0))
+                .replace("{version}", LATEST_CHANGELOG_VERSION)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSend}>Sí, enviar</AlertDialogAction>
+            <AlertDialogCancel>{t("common_cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSend}>{t("admin_product_updates_confirm_send_action")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -218,16 +219,16 @@ export function ProductUpdatesPanel() {
       <AlertDialog open={resendConfirmOpen} onOpenChange={setResendConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Reenviar el correo a esta cuenta?</AlertDialogTitle>
+            <AlertDialogTitle>{t("admin_product_updates_confirm_resend_title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Le llegará a <strong>{targetEmail.trim()}</strong> de inmediato, con la versión "{LATEST_CHANGELOG_VERSION}"
-              del changelog — sin importar si esa cuenta tiene marcada la casilla de novedades. No se puede deshacer un
-              correo ya enviado.
+              {t("admin_product_updates_confirm_resend_desc")
+                .replace("{email}", targetEmail.trim())
+                .replace("{version}", LATEST_CHANGELOG_VERSION)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleResend}>Sí, reenviar</AlertDialogAction>
+            <AlertDialogCancel>{t("common_cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResend}>{t("admin_product_updates_confirm_resend_action")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

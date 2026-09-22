@@ -27,15 +27,15 @@ interface AnalyticsData {
 
 // Mismo orden que el embudo real: llegó → creó cuenta → creó su primer ingrediente →
 // creó su primera receta → exportó su primer PDF → hizo clic en actualizar → empezó a
-// pagar. Nombres legibles acá en vez de en la base — ver
+// pagar. Claves de traducción acá en vez de en la base — ver
 // supabase/migrations/0029_product_events.sql para el nombre real de cada evento.
-const EVENT_LABELS: Record<string, string> = {
-  signup_completed: "Cuentas creadas",
-  first_ingredient_created: "Ingredientes creados",
-  first_recipe_created: "Recetas creadas",
-  first_pdf_exported: "PDFs exportados",
-  upgrade_clicked: "Clics en \"actualizar plan\"",
-  checkout_started: "Pagos iniciados (Stripe)",
+const EVENT_LABEL_KEYS: Record<string, string> = {
+  signup_completed: "admin_analytics_event_signup",
+  first_ingredient_created: "admin_analytics_event_first_ingredient",
+  first_recipe_created: "admin_analytics_event_first_recipe",
+  first_pdf_exported: "admin_analytics_event_first_pdf",
+  upgrade_clicked: "admin_analytics_event_upgrade_clicked",
+  checkout_started: "admin_analytics_event_checkout_started",
 }
 
 // Perfil de negocios — mismos catálogos que app/signup/page.tsx paso 3, para que la
@@ -109,22 +109,21 @@ export function AnalyticsPanel() {
           de Supabase, no que de verdad no pasó nada. */}
       <Card>
         <CardHeader>
-          <CardTitle>Embudo de activación (últimos 30 días)</CardTitle>
-          <CardDescription>Cuántas veces pasó cada paso — no es por-persona, son conteos totales.</CardDescription>
+          <CardTitle>{t("admin_analytics_funnel_title")}</CardTitle>
+          <CardDescription>{t("admin_analytics_funnel_desc")}</CardDescription>
         </CardHeader>
         <CardContent>
           {!data ? (
             <Skeleton className="h-24 w-full" />
           ) : data.productEvents.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Todavía no hay eventos registrados. Si esperabas ver algo acá, confirma que la migración
-              0029_product_events.sql ya se corrió en el SQL Editor de Supabase.
-            </p>
+            <p className="text-sm text-muted-foreground">{t("admin_analytics_funnel_empty")}</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {data.productEvents.map((e) => (
                 <div key={e.event} className="flex items-center justify-between rounded-lg border p-3">
-                  <span className="text-sm text-foreground">{EVENT_LABELS[e.event] || e.event}</span>
+                  <span className="text-sm text-foreground">
+                    {EVENT_LABEL_KEYS[e.event] ? t(EVENT_LABEL_KEYS[e.event] as any) : e.event}
+                  </span>
                   <span className="text-lg font-bold text-foreground tabular-nums">{e.count}</span>
                 </div>
               ))}
@@ -140,8 +139,8 @@ export function AnalyticsPanel() {
           no depende de ninguna migración nueva. */}
       <Card>
         <CardHeader>
-          <CardTitle>Perfil de negocios</CardTitle>
-          <CardDescription>Lo que la gente contestó al registrarse — todas las cuentas reales.</CardDescription>
+          <CardTitle>{t("admin_analytics_business_profile_title")}</CardTitle>
+          <CardDescription>{t("admin_analytics_business_profile_desc")}</CardDescription>
         </CardHeader>
         <CardContent>
           {!data ? (
@@ -150,10 +149,10 @@ export function AnalyticsPanel() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {(
                 [
-                  { title: "Tipo de negocio", rows: data.businessProfile.types, label: businessTypeLabel },
-                  { title: "Tamaño", rows: data.businessProfile.sizes, label: businessSizeLabel },
-                  { title: "Experiencia", rows: data.businessProfile.experience, label: experienceLabel },
-                  { title: "País", rows: data.businessProfile.countries, label: countryLabel },
+                  { title: t("admin_analytics_business_type_label"), rows: data.businessProfile.types, label: businessTypeLabel },
+                  { title: t("admin_analytics_business_size_label"), rows: data.businessProfile.sizes, label: businessSizeLabel },
+                  { title: t("admin_analytics_business_experience_label"), rows: data.businessProfile.experience, label: experienceLabel },
+                  { title: t("admin_analytics_business_country_label"), rows: data.businessProfile.countries, label: countryLabel },
                 ] as const
               ).map((group) => {
                 const total = group.rows.reduce((sum, r) => sum + r.count, 0) || 1
