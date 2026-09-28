@@ -12,10 +12,21 @@ export interface InventoryItem {
   supplier?: string
   lastUpdated: string
   status: "normal" | "low" | "critical"
+  // Momento (ISO) en que se fijó currentStock a mano o con un registro — punto de partida
+  // del stock teórico (lib/theoretical-stock.ts, docs/134). lastUpdated es texto
+  // localizado (toLocaleDateString) y no sirve para comparar fechas.
+  stockCountedAt?: string
+  // Mercadería sumada al stock desde el último conteo al marcar una orden de compra como
+  // «Recibida» (receivePurchaseOrderIntoInventory). El stock teórico la suma; un conteo
+  // nuevo la limpia.
+  stockReceipts?: { quantity: number; at: string }[]
 }
 
 export interface InventorySnapshotItem {
   id: string
+  // Mercadería recibida (órdenes «Recibida») entre el conteo anterior y este — para que
+  // la diferencia vs. el stock teórico no la cuente como sobrante (docs/134).
+  receivedSincePrevious?: number
   name: string
   category: string
   quantity: number

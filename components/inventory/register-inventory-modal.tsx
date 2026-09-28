@@ -266,6 +266,11 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
       return
     }
 
+    // Recepciones de órdenes de compra desde el último conteo, por producto (docs/134).
+    const receivedById = new Map(
+      getInventory(businessId).map((inv) => [inv.id, (inv.stockReceipts ?? []).reduce((sum, r) => sum + r.quantity, 0)]),
+    )
+
     // Create a new inventory snapshot for history
     const newInventorySnapshot: InventorySnapshot = {
       id: uuidv4(),
@@ -294,6 +299,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
         priceAtDate: item.price || 0,
         previousPrice: item.previousPrice || item.price || 0,
         supplier: item.supplier || "No especificado", // Guardar el proveedor
+        receivedSincePrevious: receivedById.get(item.id) || 0,
       })),
       createdAt: new Date().toISOString(),
       createdBy: "Usuario Actual",
@@ -316,6 +322,9 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
               ? matchingItem.calculatedQuantity || matchingItem.quantity
               : matchingItem.quantity, // Asegurar que se guarde la cantidad correcta
           lastUpdated: new Date().toLocaleDateString(),
+          // Punto de partida del stock teórico (docs/134): este registro es un conteo real.
+          stockCountedAt: newInventorySnapshot.date,
+          stockReceipts: [],
           price: matchingItem.price, // Update purchase price
           presentation: matchingItem.presentation, // Asegurar que se actualice la presentación
           status:

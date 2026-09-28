@@ -146,9 +146,13 @@ export function PlansGrid({ freeRedirectTo = "/dashboard" }: PlansGridProps) {
             </ul>
             <div className="pt-6 mt-auto">
               {plan.comingSoon ? (
-                <Button className="w-full" variant="outline" disabled>
-                  {t("planes_available_for_businesses")}
-                </Button>
+                // Antes: botón desactivado sin salida, mientras la landing ya llevaba este
+                // plan a /contacto (docs/134). Ahora ambos llevan al mismo formulario.
+                <Link href={`/contacto?plan=${plan.slug}`}>
+                  <Button className="w-full" variant="outline">
+                    {t("landing_plans_cta_sales")}
+                  </Button>
+                </Link>
               ) : knowsLoginState && isLoggedIn ? (
                 currentPlanSlug === plan.slug ? (
                   <Button className="w-full" variant="outline" disabled>

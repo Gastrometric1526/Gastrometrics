@@ -2,7 +2,7 @@
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { v4 as uuidv4 } from "uuid"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -65,6 +65,12 @@ import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { getAccessBlockReason } from "@/lib/plan-access"
 import { formatCurrency } from "@/lib/currency"
 import type { Ingredient } from "@/types/ingredient"
+import { useRecipes } from "@/lib/storage/recipes"
+import { useMenus } from "@/lib/menus"
+import { useInventoryHistory } from "@/lib/storage/inventory"
+import { ensureSalesImportsLoaded, getSalesImports } from "@/lib/storage/sales-imports"
+import { computeTheoreticalStock } from "@/lib/theoretical-stock"
+import type { SalesImport } from "@/types/sales-import"
 
 // Algunos ingredientes guardados antes de que el precio/contenido neto vivieran bajo
 // `pricing` pudieron quedar con esos campos"planos"en la fila real — por eso el código
@@ -95,6 +101,34 @@ export default function InventoryPage() {
   const [statusFilter, setStatusFilter] = useState("")
 
   const [customMinStocks, setCustomMinStocks] = useState<Record<string, number>>({})
+
+  // Stock teórico (docs/134): último conteo + compras recibidas − consumo de las ventas
+  // registradas después, según las recetas. Se calcula al vuelo, sin modificar datos.
+  const recipesForStock = useRecipes(businessId)
+  const menusForStock = useMenus(businessId || "main")
+  const historyForStock = useInventoryHistory(businessId)
+  const [salesForStock, setSalesForStock] = useState<SalesImport[]>([])
+  useEffect(() => {
+    let cancelled = false
+    ensureSalesImportsLoaded(businessId).then(() => {
+      if (!cancelled) setSalesForStock(getSalesImports(businessId))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [businessId])
+  const theoreticalStock = useMemo(
+    () =>
+      computeTheoreticalStock({
+        items,
+        snapshots: historyForStock,
+        salesImports: salesForStock,
+        recipes: recipesForStock,
+        ingredients,
+        menus: menusForStock,
+      }),
+    [items, historyForStock, salesForStock, recipesForStock, ingredients, menusForStock],
+  )
   const [isCriticalItemsDialogOpen, setIsCriticalItemsDialogOpen] = useState(false)
 
   const handleMinStockChange = (itemId: string, minStock: number) => {
@@ -364,6 +398,11 @@ export default function InventoryPage() {
       location: data.location,
       supplier: data.supplier,
       lastUpdated: new Date().toLocaleDateString(),
+      // Editar el stock a mano cuenta como conteo real para el stock teórico (docs/134);
+      // si el stock no cambió, se conserva el punto de partida anterior.
+      ...(existingItem && existingItem.currentStock === data.currentStock
+        ? { stockCountedAt: existingItem.stockCountedAt, stockReceipts: existingItem.stockReceipts }
+        : { stockCountedAt: new Date().toISOString(), stockReceipts: [] }),
       // BUG CORREGIDO: comparaba data.currentStock (que InventoryForm puede dejar en
       // null si no se ingresa nada) directo contra minStock — `null <= minStock`
       // coerce null a 0, así que un ítem recién creado sin stock ingresado quedaba
@@ -776,6 +815,7 @@ export default function InventoryPage() {
                         onPresentationChange={handlePresentationChange}
                         onMinStockChange={handleMinStockChange}
                         availablePresentations={[...presentations]}
+                        theoreticalStock={theoreticalStock}
                       />
                     )}
                   </CardContent>

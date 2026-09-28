@@ -1,5 +1,5 @@
 import { getRecipes } from "./storage/recipes"
-import { getIngredients } from "./storage/ingredients"
+import { getInventory } from "./storage/inventory"
 import { buildPurchaseOrderData, type PurchaseOrderComputationResult } from "./purchase-orders"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { createBusinessScopedCache } from "./storage/supabase-cache"
@@ -353,6 +353,22 @@ export async function duplicateMenu(businessId: string, menuId: string, newName?
 }
 
 /**
+ * Stock actual por ingrediente, para restar de lo que hay que comprar. BUG CORREGIDO
+ * (docs/134): antes se leía `currentStock` de los INGREDIENTES, campo que no existe ahí
+ * (vive en inventory_items, que usa el mismo id que su ingrediente) — así que las
+ * órdenes generadas desde un menú o una receta nunca descontaban lo que ya había en
+ * bodega, aunque el código y el manual decían que sí. Requiere el inventario cargado
+ * (ensureInventoryLoaded), cosa que ya hace components/purchase-order-page.tsx al abrir.
+ */
+function currentStockByIngredientId(businessId: string): Record<string, number> {
+  const stock: Record<string, number> = {}
+  for (const item of getInventory(businessId)) {
+    if (typeof item.currentStock === "number" && item.currentStock > 0) stock[item.id] = item.currentStock
+  }
+  return stock
+}
+
+/**
  * Genera la lista de ingredientes necesarios para armar este menú (usada por
  * "Generar Orden de Compra" desde /menus). Antes esta función ignoraba por completo
  * cuánto se planeaba servir de cada plato (compaxByRecipeId siempre vacío) y el
@@ -369,7 +385,6 @@ export async function duplicateMenu(businessId: string, menuId: string, newName?
  */
 export function generateMenuIngredientList(businessId: string, menu: Menu): PurchaseOrderComputationResult {
   const recipes = getRecipes(businessId)
-  const ingredients = getIngredients(businessId)
 
   const plannedQuantityByRecipeId: Record<string, number> = {}
   menu.items
@@ -390,13 +405,7 @@ export function generateMenuIngredientList(businessId: string, menu: Menu): Purc
     compaxByRecipeId[recipeId] = planned !== undefined ? planned / baseYield : 1
   })
 
-  const inventorySnapshot: Record<string, number> = {}
-  ingredients.forEach((ingredient) => {
-    const currentStock = (ingredient as any).currentStock
-    if (typeof currentStock === "number" && currentStock > 0) {
-      inventorySnapshot[ingredient.id] = currentStock
-    }
-  })
+  const inventorySnapshot = currentStockByIngredientId(businessId)
 
   return buildPurchaseOrderData({
     businessId,
@@ -420,15 +429,8 @@ export function generateRecipeIngredientList(
   recipeId: string,
   compax = 1,
 ): PurchaseOrderComputationResult {
-  const ingredients = getIngredients(businessId)
 
-  const inventorySnapshot: Record<string, number> = {}
-  ingredients.forEach((ingredient) => {
-    const currentStock = (ingredient as any).currentStock
-    if (typeof currentStock === "number" && currentStock > 0) {
-      inventorySnapshot[ingredient.id] = currentStock
-    }
-  })
+  const inventorySnapshot = currentStockByIngredientId(businessId)
 
   return buildPurchaseOrderData({
     businessId,

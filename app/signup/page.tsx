@@ -589,9 +589,19 @@ function SignupPageInner() {
                             <span className="font-semibold text-foreground">{plan.name}</span>
                             <p className="text-sm text-muted-foreground">{plan.tagline}</p>
                           </div>
-                          <p className="text-xs font-medium text-muted-foreground shrink-0">
-                            {t("planes_available_for_businesses")}
-                          </p>
+                          <div className="text-right shrink-0">
+                            <p className="text-xs font-medium text-muted-foreground">
+                              {t("planes_available_for_businesses")}
+                            </p>
+                            <a
+                              href={`/contacto?plan=${plan.slug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-medium text-primary hover:underline"
+                            >
+                              {t("landing_plans_cta_sales")}
+                            </a>
+                          </div>
                         </div>
                       </div>
                     )

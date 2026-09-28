@@ -12,6 +12,7 @@ import { getIngredients } from "@/lib/storage/ingredients"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
 import { getCategoryLabel, getUnitLabel } from "@/lib/ingredient-labels"
+import type { TheoreticalStockEntry } from "@/lib/theoretical-stock"
 
 // Modificar la interfaz InventoryTableProps para incluir una nueva prop para manejar cambios en el stock mínimo
 interface InventoryTableProps {
@@ -23,6 +24,8 @@ interface InventoryTableProps {
   onPresentationChange?: (itemId: string, presentation: string) => void
   onMinStockChange?: (itemId: string, minStock: number) => void
   availablePresentations: string[]
+  // Stock teórico por producto (lib/theoretical-stock.ts, docs/134). Opcional.
+  theoreticalStock?: Map<string, TheoreticalStockEntry>
 }
 
 // Actualizar la desestructuración de props para incluir onMinStockChange
@@ -35,6 +38,7 @@ export function InventoryTable({
   onPresentationChange,
   onMinStockChange,
   availablePresentations = [],
+  theoreticalStock,
 }: InventoryTableProps) {
   const { t, language } = useLanguage()
   const [editedItemId, setEditedItemId] = useState<string | null>(null)
@@ -270,6 +274,7 @@ export function InventoryTable({
                           <div className="relative h-1 w-full rounded-full bg-secondary overflow-hidden">
                             <div className={`absolute inset-y-0 left-0 rounded-full ${barColor}`} style={{ width: `${barPct}%` }} />
                           </div>
+                          <TheoreticalStockLine entry={theoreticalStock?.get(item.id)} item={item} />
                         </div>
                       )
                     })()
@@ -376,3 +381,48 @@ export function InventoryTable({
     </div>
   )
 }
+
+// Punto decimal siempre (decisión de docs/129), sin decimales de más.
+function formatStockQuantity(value: number): string {
+  const rounded = Math.round(value * 10) / 10
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
+}
+
+/**
+ * Línea de stock teórico bajo la barra de stock (docs/134): cuánto debería quedar según
+ * las ventas registradas desde el último conteo, y cuánto se desvió el último conteo de
+ * lo esperado. Solo aparece cuando hay un conteo real de partida.
+ */
+function TheoreticalStockLine({ entry, item }: { entry?: TheoreticalStockEntry; item: InventoryItem }) {
+  const { t, language } = useLanguage()
+  if (!entry) return null
+  const unit = getUnitLabel(item.unit, language)
+  const theoretical = Math.max(entry.theoretical, 0)
+  const theoreticalLow = item.minStock > 0 && theoretical <= item.minStock
+  const showTheoretical = entry.consumed > 0 || entry.received > 0
+  const variance = entry.lastCountVariance
+  const showVariance = variance !== null && Math.abs(variance) >= 0.05
+  if (!showTheoretical && !showVariance) return null
+  return (
+    <div className="flex flex-col items-center gap-0.5 text-[11px] leading-tight">
+      {showTheoretical && (
+        <span
+          title={t("inventario_theoretical_tooltip")}
+          className={`tabular-nums cursor-help ${theoreticalLow ? "text-warning font-medium" : "text-muted-foreground"}`}
+        >
+          {t("inventario_theoretical_label")}: {formatStockQuantity(theoretical)} {unit}
+        </span>
+      )}
+      {showVariance && variance !== null && (
+        <span
+          title={t("inventario_variance_tooltip")}
+          className={`tabular-nums cursor-help ${variance < 0 ? "text-destructive" : "text-muted-foreground"}`}
+        >
+          {t("inventario_variance_label")}: {variance > 0 ? "+" : "−"}
+          {formatStockQuantity(Math.abs(variance))} {unit}
+        </span>
+      )}
+    </div>
+  )
+}
+

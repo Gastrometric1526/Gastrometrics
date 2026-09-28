@@ -325,7 +325,8 @@ export async function receivePurchaseOrderIntoInventory(
     // status es un campo guardado, no derivado al leer.
     const newStatus: InventoryItem["status"] =
       newStock <= match.minStock ? "critical" : newStock <= match.minStock * 2 ? "low" : "normal"
-    await updateInventoryItem(match.id, { currentStock: newStock, status: newStatus }, businessId)
+    const receipts = [...(match.stockReceipts ?? []), { quantity, at: new Date().toISOString() }]
+    await updateInventoryItem(match.id, { currentStock: newStock, status: newStatus, stockReceipts: receipts }, businessId)
     matchedCount++
   }
 

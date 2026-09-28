@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
+import { plans } from "@/lib/plans"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { MarketingHeader } from "@/components/marketing-header"
@@ -52,7 +53,7 @@ const VALID_TYPES: FeedbackType[] = ["sugerencia", "queja", "bug", "experiencia"
 // exigiría envolver la página en <Suspense> (ver CLAUDE.md: ya rompió el build 3 veces
 // en este proyecto). Así, el link "Déjanos un comentario" del correo de la encuesta de
 // 4 horas puede abrir /contacto?type=experiencia con esa categoría ya seleccionada.
-export function ContactoContent({ initialType }: { initialType?: string }) {
+export function ContactoContent({ initialType, initialPlan }: { initialType?: string; initialPlan?: string }) {
   const { isLoggedIn, authChecked, user } = useAuth()
   const { t, language } = useLanguage()
   const { toast } = useToast()
@@ -69,6 +70,20 @@ export function ContactoContent({ initialType }: { initialType?: string }) {
     VALID_TYPES.includes(initialType as FeedbackType) ? (initialType as FeedbackType) : "sugerencia",
   )
   const [message, setMessage] = useState("")
+
+  // /contacto?plan=chef-ejecutivo (docs/134): el plan que no es de autoservicio llega acá
+  // desde /planes, la landing y el registro — el mensaje viene prellenado en el idioma
+  // activo, y se re-traduce si el usuario cambia de idioma sin haberlo editado.
+  const planInterest = initialPlan ? plans.find((p) => p.slug === initialPlan) : undefined
+  const autoMessageRef = useRef("")
+  useEffect(() => {
+    if (!planInterest) return
+    const auto = t("contacto_plan_interest_message").replace("{plan}", planInterest.name)
+    const previousAuto = autoMessageRef.current
+    autoMessageRef.current = auto
+    setMessage((current) => (current === "" || current === previousAuto ? auto : current))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language, planInterest?.slug])
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [submitted, setSubmitted] = useState(false)

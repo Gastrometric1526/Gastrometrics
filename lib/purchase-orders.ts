@@ -12,6 +12,7 @@ import {
   savePurchaseOrders as savePurchaseOrdersToStorage,
 } from "./storage/purchase-orders"
 import { computePresentationQuantity } from "./utils/presentation-quantity"
+import { accumulateRecipeConsumption, indexById, type ConsumptionMap } from "./recipe-consumption"
 
 export interface PurchaseOrderItem {
   ingredientId: string
@@ -105,15 +106,13 @@ export function buildPurchaseOrderData({
   const ingredients = getIngredients(businessId)
   const warnings: string[] = []
 
-  // Accumulator for ingredient quantities
-  const ingredientAccumulator: Record<
-    string,
-    {
-      quantity: number
-      unit: string
-      sourceRecipes: Set<string>
-    }
-  > = {}
+  // Expansión a ingredientes base con la regla única de lib/recipe-consumption.ts
+  // (docs/134): sub-recetas escaladas por su rendimiento y merma convertida a cantidad
+  // bruta — antes las sub-recetas se multiplicaban por la cantidad usada sin dividir por
+  // su rendimiento (150 g de una salsa pedía 150 veces la receta completa).
+  const recipesById = indexById(recipes)
+  const ingredientsById = indexById(ingredients)
+  const accumulator: ConsumptionMap = new Map()
 
   const recipesSummary: {
     recipeId: string
@@ -121,61 +120,20 @@ export function buildPurchaseOrderData({
     compax: number
   }[] = []
 
-  // Process each selected recipe
   selectedRecipeIds.forEach((recipeId) => {
-    const recipe = recipes.find((r) => r.id === recipeId)
+    const recipe = recipesById.get(recipeId)
     if (!recipe) {
       warnings.push(`Recipe not found: ${recipeId}`)
       return
     }
-
     const compax = compaxByRecipeId[recipeId] || 1
-    recipesSummary.push({
-      recipeId: recipe.id,
-      recipeName: recipe.name,
-      compax,
-    })
-
-    console.log(`[PurchaseOrders] Processing recipe: ${recipe.name} (COMPAX: ${compax})`)
-
-    // Process each ingredient in the recipe
-    recipe.ingredients?.forEach((item) => {
-      const ingredient = ingredients.find((i) => i.id === item.ingredientId)
-      if (!ingredient) {
-        warnings.push(`Ingredient not found: ${item.ingredientId} in recipe ${recipe.name}`)
-        return
-      }
-
-      // Check if this ingredient is linked to a sub-recipe
-      if (ingredient.recipeId || ingredient.recipeData?.originalRecipeId) {
-        // This is a sub-recipe ingredient - expand it
-        const subRecipeId = ingredient.recipeId || ingredient.recipeData?.originalRecipeId
-        const subRecipe = recipes.find((r) => r.id === subRecipeId)
-
-        if (subRecipe) {
-          console.log(`[PurchaseOrders] Expanding sub-recipe: ${subRecipe.name}`)
-          expandSubRecipe(subRecipe, item.quantity * compax, ingredientAccumulator, recipes, ingredients, warnings)
-        } else {
-          warnings.push(`Sub-recipe not found: ${subRecipeId}`)
-        }
-      } else {
-        // Normal ingredient - add to accumulator. Se usa ingredient.id (no
-        // item.ingredientId) porque ya sabemos que coinciden — ingredient salió de
-        // buscar por item.ingredientId arriba — y a diferencia de item.ingredientId,
-        // ingredient.id nunca es null.
-        const key = ingredient.id
-        if (!ingredientAccumulator[key]) {
-          ingredientAccumulator[key] = {
-            quantity: 0,
-            unit: ingredient.unit,
-            sourceRecipes: new Set(),
-          }
-        }
-        ingredientAccumulator[key].quantity += item.quantity * compax
-        ingredientAccumulator[key].sourceRecipes.add(recipe.name)
-      }
+    recipesSummary.push({ recipeId: recipe.id, recipeName: recipe.name, compax })
+    accumulateRecipeConsumption(recipe, compax, recipesById, ingredientsById, accumulator, {
+      grossUpMerma: true,
+      warnings,
     })
   })
+  const ingredientAccumulator = Object.fromEntries(accumulator)
 
   // Convert accumulator to items array
   const items: PurchaseOrderItem[] = []
@@ -236,71 +194,6 @@ export function buildPurchaseOrderData({
   }
 }
 
-/**
- * Recursively expand a sub-recipe into base ingredients
- */
-function expandSubRecipe(
-  subRecipe: Recipe,
-  multiplier: number,
-  accumulator: Record<string, { quantity: number; unit: string; sourceRecipes: Set<string> }>,
-  allRecipes: Recipe[],
-  allIngredients: Ingredient[],
-  warnings: string[],
-  depth = 0,
-): void {
-  if (depth > 10) {
-    warnings.push(`Maximum recursion depth reached for sub-recipe: ${subRecipe.name}`)
-    return
-  }
-
-  console.log(`${"  ".repeat(depth)}[PurchaseOrders] Expanding sub-recipe: ${subRecipe.name} (x${multiplier})`)
-
-  subRecipe.ingredients?.forEach((item) => {
-    const ingredient = allIngredients.find((i) => i.id === item.ingredientId)
-    if (!ingredient) {
-      warnings.push(`Ingredient not found: ${item.ingredientId} in sub-recipe ${subRecipe.name}`)
-      return
-    }
-
-    // Check if this ingredient is also a sub-recipe (nested)
-    if (ingredient.recipeId || ingredient.recipeData?.originalRecipeId) {
-      const nestedSubRecipeId = ingredient.recipeId || ingredient.recipeData?.originalRecipeId
-      const nestedSubRecipe = allRecipes.find((r) => r.id === nestedSubRecipeId)
-
-      if (nestedSubRecipe) {
-        // Recursively expand nested sub-recipe
-        expandSubRecipe(
-          nestedSubRecipe,
-          item.quantity * multiplier,
-          accumulator,
-          allRecipes,
-          allIngredients,
-          warnings,
-          depth + 1,
-        )
-      } else {
-        warnings.push(`Nested sub-recipe not found: ${nestedSubRecipeId}`)
-      }
-    } else {
-      // Base ingredient - add to accumulator. Se usa ingredient.id (no item.ingredientId)
-      // por la misma razón que en buildPurchaseOrderData: ingredient.id nunca es null.
-      const key = ingredient.id
-      if (!accumulator[key]) {
-        accumulator[key] = {
-          quantity: 0,
-          unit: ingredient.unit,
-          sourceRecipes: new Set(),
-        }
-      }
-      accumulator[key].quantity += item.quantity * multiplier
-      accumulator[key].sourceRecipes.add(subRecipe.name)
-    }
-  })
-}
-
-/**
- * Get purchase orders for a business
- */
 export function getPurchaseOrders(businessId: string): any[] {
   return getPurchaseOrdersFromStorage(businessId)
 }

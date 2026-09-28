@@ -311,7 +311,7 @@ export function HomeContent() {
                     <p className={"text-xs leading-relaxed flex-1 " + (isHighlighted ? "text-background/80" : "text-text-3")}>
                       {plan.description}
                     </p>
-                    <Link href={plan.comingSoon ? "/contacto" : plan.slug === "foodie" ? "/signup" : `/planes`} className="block">
+                    <Link href={plan.comingSoon ? `/contacto?plan=${plan.slug}` : plan.slug === "foodie" ? "/signup" : `/planes`} className="block">
                       <Button
                         size="sm"
                         className={

@@ -30,7 +30,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import { PurchaseOrderForm, type PurchaseOrderFormData, type PurchaseOrderFormItem } from "./purchase-order-form"
-import { PackageSearch, ChefHat, Info } from "lucide-react"
+import { PackageSearch, ChefHat, Info, FileUp } from "lucide-react"
 import { OrdenesCompraTour } from "@/components/page-tours"
 import { Sidebar } from "@/components/sidebar"
 import { Flame, DollarSign, Boxes } from "lucide-react"
@@ -686,6 +686,13 @@ export function PurchaseOrderPage() {
                 <Info className="h-4 w-4" />
               </Button>
             )}
+            {/* La pantalla de PDFs de proveedores existía pero no tenía ningún enlace (docs/134). */}
+            <Link href={`/procesar-ordenes${businessId && businessId !== "main" ? `?business=${businessId}` : ""}`}>
+              <Button variant="outline" className="gap-2">
+                <FileUp className="h-4 w-4" />
+                {t("ordenes_import_pdf_button")}
+              </Button>
+            </Link>
             <Button data-tour="ordenes-new" onClick={handleCreateOrder}>{t("ordenes_new_button")}</Button>
           </div>
         </div>
