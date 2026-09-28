@@ -11,6 +11,10 @@
  *    module="estadisticas", action="imported" (ver components/manual-sales-entry-dialog.tsx)
  *    de esa cuenta ocurrió en las últimas 48 horas.
  *
+ * Desde docs/133 los 4 correos de activación solo salen a cuentas con la casilla
+ * «Novedades y recordatorios» activa (profiles.product_updates_opt_in, chequeado en
+ * lib/services/notify-activation.ts antes de reservar el envío).
+ *
  * Cada envío es idempotente por cuenta vía activation_emails_sent (unique
  * account_id+email_type, ver supabase/migrations/0020) — correr este cron más de una
  * vez el mismo día, o que Vercel reintente una ejecución, nunca duplica un correo.

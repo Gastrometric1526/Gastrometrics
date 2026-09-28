@@ -3,7 +3,7 @@ export default {
   ui: {
     manualName: "User manual",
     contents: "Contents",
-    contentsLede: "Every chapter starts on its own page. If this is your first time, read chapter 1 and then jump straight to what you need.",
+    contentsLede: "If this is your first time, read chapter 1 and then jump straight to what you need: every chapter stands on its own.",
     inThisChapter: "In this chapter",
     figure: "Figure",
     coverKicker: "User manual",
@@ -330,11 +330,11 @@ export default {
     {
       id: "equipo",
       title: "Team",
-      plan: "Chef Ejecutivo plan",
+      plan: "Sous Chef plan or higher",
       intro: "Invite your team to work with you in Gastrometrics, each person with access only to what they need.",
       blocks: [
         ["h3", "Inviting someone"],
-        ["p", "In <strong>Team</strong> you enter the person's email. They receive an invitation and create their own account; your subscription covers their access. There are no fixed roles: you set three things separately for each person."],
+        ["p", "In <strong>Team</strong> you enter the person's email. They receive an invitation and create their own account; your subscription covers their access. With Sous Chef you can add 1 person and with Chef Ejecutivo up to 4 (each plan's users include you). There are no fixed roles: you set three things separately for each person."],
         ["table", ["Setting", "Options"], [
           ["Scope", "All your businesses, or just one."],
           ["Tools", "Independent boxes: recipes, ingredients, shrinkage, manual and automatic orders, inventory, menus, reports, sales, finance and managing the team."],
@@ -349,12 +349,12 @@ export default {
       title: "Plans and subscription",
       intro: "Start for free and move up when you need to. Your data is never lost when you change plans.",
       blocks: [
-        ["table", ["Plan", "Price", "Businesses", "Users", "Adds"], [
+        ["table", ["Plan", "Price", "Businesses", "Users (incl. you)", "Adds"], [
           ["Foodie", "Free", "1", "1", "Recipes, ingredients and kitchen recipe sheet PDF (included in every plan)."],
           ["Home Cook", "$15 / month", "1", "1", "Shrinkage, manual purchase orders, administrative sheet and invoices."],
           ["Chef de Partie", "$35 / month", "1", "1", "Inventory, menus, suggested orders, Reports · Overview and manual sales entry."],
-          ["Sous Chef", "$70 / month", "2", "2", "Reports · Finance, P&L, Menu Engineering and POS import."],
-          ["Chef Ejecutivo", "$120 / month", "5", "5", "Team with per-person permissions."],
+          ["Sous Chef", "$70 / month", "2", "2", "Reports · Finance, P&L, Menu Engineering, POS import and Team (you + 1 person)."],
+          ["Chef Ejecutivo", "$120 / month", "5", "5", "Team of up to 4 people besides you. Available for businesses on request."],
         ]],
         ["figure", "12-mi-plan.jpg", "My Plan: your current plan, what it includes and how to manage your subscription."],
         ["h3", "Paying, changing or cancelling"],
@@ -374,7 +374,7 @@ export default {
           "<strong>Profile</strong>: name, email (changing it asks for your current password), country and business type.",
           "<strong>Appearance</strong>: light, dark or follow your system.",
           "<strong>Regional</strong>: country, currency and language.",
-          "<strong>Notifications</strong>: the emails and alerts you want to receive.",
+          "<strong>Notifications</strong>: whether you want product updates and reminders by email.",
           "<strong>Account</strong>: data backup, legal documents, delete content and delete the account.",
         ]],
         ["h3", "Language and currency"],

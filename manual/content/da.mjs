@@ -3,7 +3,7 @@ export default {
   ui: {
     manualName: "Brugermanual",
     contents: "Indhold",
-    contentsLede: "Hvert kapitel starter på sin egen side. Er det første gang, så læs kapitel 1 og hop derefter direkte til det, du har brug for.",
+    contentsLede: "Er det første gang, så læs kapitel 1 og hop derefter direkte til det, du har brug for: hvert kapitel kan læses for sig.",
     inThisChapter: "I dette kapitel",
     figure: "Figur",
     coverKicker: "Brugermanual",
@@ -330,11 +330,11 @@ export default {
     {
       id: "equipo",
       title: "Team",
-      plan: "Plan Chef Ejecutivo",
+      plan: "Plan Sous Chef eller højere",
       intro: "Invitér dit team til at arbejde sammen med dig i Gastrometrics, hver med adgang til kun det, de har brug for.",
       blocks: [
         ["h3", "Invitér en person"],
-        ["p", "Under <strong>Team</strong> skriver du personens e-mail. Vedkommende får en invitation og opretter sin egen konto; dit abonnement dækker adgangen. Der er ingen faste roller: for hver person indstiller du tre ting hver for sig."],
+        ["p", "Under <strong>Team</strong> skriver du personens e-mail. Vedkommende får en invitation og opretter sin egen konto; dit abonnement dækker adgangen. Med Sous Chef kan du tilføje 1 person og med Chef Ejecutivo op til 4 (hver plans brugere inkluderer dig). Der er ingen faste roller: for hver person indstiller du tre ting hver for sig."],
         ["table", ["Indstilling", "Muligheder"], [
           ["Omfang", "Alle dine virksomheder eller kun én bestemt."],
           ["Værktøjer", "Uafhængige felter: opskrifter, ingredienser, svind, manuelle og automatiske ordrer, lager, menuer, rapporter, salg, økonomi og administration af teamet."],
@@ -349,12 +349,12 @@ export default {
       title: "Planer og abonnement",
       intro: "Du starter gratis og opgraderer, når du har brug for det. Dine data går aldrig tabt, når du skifter plan.",
       blocks: [
-        ["table", ["Plan", "Pris", "Virksomheder", "Brugere", "Tilføjer"], [
+        ["table", ["Plan", "Pris", "Virksomheder", "Brugere (inkl. dig)", "Tilføjer"], [
           ["Foodie", "Gratis", "1", "1", "Opskrifter, ingredienser og køkkenark som PDF (med i alle planer)."],
           ["Home Cook", "$15 / md.", "1", "1", "Svind, manuelle indkøbsordrer, administrativt ark og fakturaer."],
           ["Chef de Partie", "$35 / md.", "1", "1", "Lager, menuer, foreslåede ordrer, Rapporter · Overblik og manuel salgsregistrering."],
-          ["Sous Chef", "$70 / md.", "2", "2", "Rapporter · Økonomi, P&L, Menu Engineering og POS-import."],
-          ["Chef Ejecutivo", "$120 / md.", "5", "5", "Team med rettigheder pr. person."],
+          ["Sous Chef", "$70 / md.", "2", "2", "Rapporter · Økonomi, P&L, Menu Engineering, POS-import og Team (dig + 1 person)."],
+          ["Chef Ejecutivo", "$120 / md.", "5", "5", "Team på op til 4 personer ud over dig. Tilgængelig for virksomheder efter aftale."],
         ]],
         ["figure", "12-mi-plan.jpg", "Min plan: din nuværende plan, hvad den indeholder, og hvordan du administrerer dit abonnement."],
         ["h3", "Betal, skift eller opsig"],
@@ -374,7 +374,7 @@ export default {
           "<strong>Profil</strong>: navn, e-mail (ændring kræver din nuværende adgangskode), land og virksomhedstype.",
           "<strong>Udseende</strong>: lyst, mørkt eller efter dit system.",
           "<strong>Regional</strong>: land, valuta og sprog.",
-          "<strong>Notifikationer</strong>: de e-mails og beskeder, du vil modtage.",
+          "<strong>Notifikationer</strong>: om du vil modtage nyheder og påmindelser via e-mail.",
           "<strong>Konto</strong>: sikkerhedskopi af dine data, juridiske dokumenter, slet indhold og slet kontoen.",
         ]],
         ["h3", "Sprog og valuta"],

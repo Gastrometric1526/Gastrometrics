@@ -17,6 +17,7 @@ import { Resend } from "resend"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { renderEmailTemplate } from "./email-templates"
 import { getEmailLabels, normalizeEmailLang } from "@/lib/i18n/email-labels"
+import { buildUnsubscribeUrl } from "@/lib/email-unsubscribe"
 
 type ActivationEmailType =
   | "first_recipe_reminder"
@@ -32,6 +33,25 @@ async function getAccountEmailAndLanguage(accountId: string): Promise<{ email: s
   ])
   if (error || !data.user?.email) return null
   return { email: data.user.email, language: profileRow?.preferred_language || "es" }
+}
+
+/**
+ * Decisión del dueño del proyecto (docs/133): estos correos de activación son
+ * recordatorios, así que —igual que los de notify-reengagement.ts— solo se mandan a
+ * quien tenga activa la casilla «Novedades y recordatorios» (profiles.
+ * product_updates_opt_in). Se chequea ANTES de reservar el envío en
+ * activation_emails_sent: si la persona activa la casilla más tarde y todavía está en
+ * la ventana del correo, lo recibe.
+ */
+async function hasOptedIn(accountId: string): Promise<boolean> {
+  const admin = getSupabaseAdminClient()
+  const { data } = await admin.from("profiles").select("product_updates_opt_in").eq("id", accountId).maybeSingle()
+  return data?.product_updates_opt_in === true
+}
+
+function unsubscribeHeaders(accountId: string): Record<string, string> {
+  const url = buildUnsubscribeUrl(accountId)
+  return { "List-Unsubscribe": `<${url}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" }
 }
 
 /** Reserva el envío para esta cuenta+tipo. Devuelve true solo si esta llamada fue la primera. */
@@ -64,6 +84,7 @@ async function sendActivationEmail(input: {
   actionPath: string
 }): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
+  if (!(await hasOptedIn(input.accountId))) return
 
   const claimed = await claimSend(input.accountId, input.emailType)
   if (!claimed) return
@@ -94,6 +115,7 @@ async function sendActivationEmail(input: {
     to: [email],
     subject: labels[input.subjectKey],
     html,
+    headers: unsubscribeHeaders(input.accountId),
   })
   if (error) console.error(`[notify-activation] Error mandando correo (${input.emailType}):`, error)
 }
@@ -157,6 +179,7 @@ const DEFAULT_TRUSTPILOT_URL = "https://www.trustpilot.com"
  */
 export async function sendFourHourExperienceSurvey(accountId: string): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
+  if (!(await hasOptedIn(accountId))) return
 
   const claimed = await claimSend(accountId, "four_hour_experience")
   if (!claimed) return
@@ -189,6 +212,7 @@ export async function sendFourHourExperienceSurvey(accountId: string): Promise<v
     to: [email],
     subject: labels.e10_subject,
     html,
+    headers: unsubscribeHeaders(accountId),
   })
   if (error) console.error("[notify-activation] Error mandando la encuesta de experiencia:", error)
 }

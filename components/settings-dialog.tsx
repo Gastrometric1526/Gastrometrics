@@ -116,7 +116,6 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
   const { active: previewActive, member: previewMember } = useActiveMembership()
   const isTeamPreview = previewActive && !!previewMember
   const [open, setOpen] = useState(false)
-  const [notificationPrefs, setNotificationPrefs] = useState({ email: true, push: true })
   // A diferencia de los tres de arriba (solo localStorage), este sí es un campo real
   // de `profiles` — se guarda con el resto del perfil en performSave, no aparte.
   const [productUpdatesOptIn, setProductUpdatesOptIn] = useState(false)
@@ -201,14 +200,6 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
       setEmail(user.email || "")
       setOriginalEmail(user.email || "")
     }
-    const savedNotifPrefs = localStorage.getItem("notification_prefs")
-    if (savedNotifPrefs) {
-      try {
-        setNotificationPrefs(JSON.parse(savedNotifPrefs))
-      } catch {
-        // valores por defecto si el JSON guardado está corrupto
-      }
-    }
   }, [open, realUserProfile, user])
 
   // BUG CORREGIDO: la base para fusionar los cambios (id, createdAt, etc.) se leía de
@@ -254,7 +245,6 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
       const selectedCountry = countries.find((c) => c.code === country)
       localStorage.setItem("currency_symbol", selectedCountry?.symbol || "L")
       setCurrentCurrencyCode(selectedCountry?.currency || currency || "HNL")
-      localStorage.setItem("notification_prefs", JSON.stringify(notificationPrefs))
 
       setShowEmailConfirm(false)
       setEmailConfirmPassword("")
@@ -801,42 +791,11 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div data-tour="settings-notifications-toggles" className="space-y-3">
-                    {/* BUG CORREGIDO: estos 3 toggles usaban <input type="checkbox"> crudo
-                        (sin id/htmlFor emparejados, así que hacer clic en el texto no
-                        marcaba el checkbox) mientras la pestaña Developer, unas pantallas
-                        más abajo, usa el componente Switch de la app para el mismo tipo de
-                        control. Ahora los tres son Switch, consistentes entre sí. */}
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="notif-email">{t("settings_email_notifications")}</Label>
-                        <p className="text-sm text-muted-foreground">{t("settings_email_notifications_desc")}</p>
-                      </div>
-                      <Switch
-                        id="notif-email"
-                        checked={notificationPrefs.email}
-                        onCheckedChange={(checked) => setNotificationPrefs((prev) => ({ ...prev, email: checked }))}
-                      />
-                    </div>
-
-                    <Separator />
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="notif-push">{t("settings_push_notifications")}</Label>
-                        <p className="text-sm text-muted-foreground">{t("settings_push_notifications_desc")}</p>
-                      </div>
-                      <Switch
-                        id="notif-push"
-                        checked={notificationPrefs.push}
-                        onCheckedChange={(checked) => setNotificationPrefs((prev) => ({ ...prev, push: checked }))}
-                      />
-                    </div>
-
-                    <Separator />
-
-                    {/* A diferencia de los dos de arriba, este SÍ viaja a Supabase con
-                        el resto del perfil (ver performSave) — es el mismo campo que la
-                        casilla del paso 4 del registro. */}
+                    {/* Antes había también "Notificaciones por email" y "Notificaciones push":
+                        se guardaban solo en localStorage y ningún código los leía (la app no
+                        tiene notificaciones push, y apagar "email" no frenaba ningún correo).
+                        Se quitaron en docs/133 — este es el único control de correo real,
+                        el mismo campo que la casilla del registro (product_updates_opt_in). */}
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <Label htmlFor="notif-product-updates">{t("settings_product_updates")}</Label>
@@ -848,6 +807,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                         onCheckedChange={setProductUpdatesOptIn}
                       />
                     </div>
+                    <p className="text-xs text-muted-foreground">{t("settings_account_emails_note")}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -1076,8 +1036,10 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
             <Link href="/contacto" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               {t("settings_feedback_link")}
             </Link>
+            {/* ?v= cambia en cada despliegue (commit de Vercel): sin esto, algunos visores de
+                PDF seguían mostrando una copia vieja del manual tras regenerarlo (docs/133). */}
             <a
-              href="/api/manual"
+              href={`/api/manual?v=${(process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "dev").slice(0, 7)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"

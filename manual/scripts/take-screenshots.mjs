@@ -12,7 +12,7 @@
  */
 import puppeteer from "puppeteer-core"
 import path from "path"
-import { mkdirSync } from "fs"
+import { mkdirSync, statSync } from "fs"
 import { fileURLToPath } from "url"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -36,6 +36,8 @@ const TOURS = [
   "tour_completed_business-detail",
   "tour_completed_negocios",
 ]
+// MANUAL_ONLY=13-configuracion.jpg,05-borrador.jpg → retoma solo esas capturas.
+const ONLY = process.env.MANUAL_ONLY ? process.env.MANUAL_ONLY.split(",") : null
 const DRAFT_NAME = {
   es: "Salsa de tomate de la casa",
   en: "House tomato sauce",
@@ -100,8 +102,14 @@ for (const lang of LANGS) {
     TOURS,
   )
 
-  const visit = async (route, file, prep) => {
+  const visit = async (route, file, prep, attempt = 1) => {
+    if (ONLY && !ONLY.includes(file)) return
     await page.goto(`${BASE}${route}`, { waitUntil: "networkidle2" })
+    // Espera contenido real: con next dev la primera visita a una ruta puede tardar en
+    // compilar y la captura salía en blanco (docs/133).
+    await page
+      .waitForFunction(() => (document.querySelector("main")?.innerText || document.body.innerText).trim().length > 300, { timeout: 45000 })
+      .catch(() => {})
     // Novedades: la clave lleva el id del usuario, que recién se conoce al cargar.
     await page.evaluate(() => {
       for (const k of Object.keys(localStorage)) if (k.startsWith("changelog_seen_")) localStorage.setItem(k, "9999-12-31")
@@ -109,6 +117,12 @@ for (const lang of LANGS) {
     await settle(page)
     if (prep) await prep()
     await shot(page, dir, file)
+    // Una página en blanco pesa ~17 KB en JPG; una real, más de 90 KB.
+    if (statSync(path.join(dir, file)).size < 40000 && attempt < 4) {
+      console.log(`  ↻ ${file} salió en blanco, reintento ${attempt}`)
+      await sleep(2000)
+      await visit(route, file, prep, attempt + 1)
+    }
   }
 
   await visit("/dashboard", "01-dashboard.jpg")

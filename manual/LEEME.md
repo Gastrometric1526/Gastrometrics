@@ -38,4 +38,4 @@ dos veces y ubica cada capítulo con un marcador invisible leído con pdf.js.
 Notas de las capturas: el script escribe el correo de tester en el login y usa el botón
 «Entrar como…» (solo existe con `NODE_ENV=development`); termina en el idioma `en` porque el
 idioma de la pantalla se sincroniza al perfil de la cuenta — ordena los idiomas para terminar
-en el que la cuenta tenía. La ruta de la receta de ejemplo se cambia con `MANUAL_RECIPE_PATH`.
+en el que la cuenta tenía. La ruta de la receta de ejemplo se cambia con `MANUAL_RECIPE_PATH`; `MANUAL_ONLY=13-configuracion.jpg,…` retoma solo esas capturas. El script espera contenido real y reintenta capturas en blanco, y `build.mjs` falla si alguna pesa < 40 KB (docs/133). Diseño en flujo continuo: los capítulos no fuerzan página nueva.

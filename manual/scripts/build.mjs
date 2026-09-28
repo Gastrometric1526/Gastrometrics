@@ -17,7 +17,7 @@
  */
 import puppeteer from "puppeteer-core"
 import { PDFDocument } from "pdf-lib"
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs"
+import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from "fs"
 import path from "path"
 import { fileURLToPath, pathToFileURL } from "url"
 import { createRequire } from "module"
@@ -122,7 +122,8 @@ function renderBlock(rawBlock, ctx) {
     }
     case "table": {
       const [headers, rows] = a
-      return `<table class="tbl"><thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows
+      // Tablas cortas (≤ 8 filas) nunca se parten entre páginas; las largas sí, repitiendo el encabezado.
+      return `<table class="tbl${rows.length <= 8 ? " keep" : ""}"><thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows
         .map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`)
         .join("")}</tbody></table>`
     }
@@ -140,6 +141,8 @@ function renderBlock(rawBlock, ctx) {
       const shotPath = path.join(ROOT, "shots", ctx.lang, file)
       const fallback = path.join(ROOT, "shots", "es", file)
       const src = existsSync(shotPath) ? shotPath : fallback
+      // Una captura en blanco (página aún compilando) pesa ~17 KB: nunca publicarla.
+      if (statSync(src).size < 40000) throw new Error(`Captura en blanco: ${src} — vuelve a tomarla (ver LEEME.md).`)
       const data = `data:image/jpeg;base64,${readFileSync(src).toString("base64")}`
       return `<figure class="shot"><div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="${data}" alt=""></div><figcaption><b>${ctx.ui.figure} ${figureCounter}</b>${caption}</figcaption></figure>`
     }
@@ -199,6 +202,25 @@ function renderToc(content, pages) {
   return `<section class="toc"><div class="toc-kicker">${ui.manualName}</div><h1>${ui.contents}</h1><p class="toc-lede">${ui.contentsLede}</p><ol class="toc-list">${items}</ol></section>`
 }
 
+// Cada h3 se agrupa con el bloque que le sigue en un contenedor que no se parte, para
+// que un subtítulo nunca quede solo al pie de una página. Capturas y tablas no se agrupan
+// (empujarían bloques enormes a la página siguiente).
+function renderBlocksKeepingHeadings(blocks, ctx) {
+  const out = []
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i]
+    const next = blocks[i + 1]
+    const groupable = next && ["p", "list", "steps", "formula", "tip", "warn", "info", "chips", "example"].includes(next[0])
+    if (block[0] === "h3" && groupable) {
+      out.push(`<div class="keep-with-next">${renderBlock(block, ctx)}${renderBlock(next, ctx)}</div>`)
+      i++
+    } else {
+      out.push(renderBlock(block, ctx))
+    }
+  }
+  return out.join("\n")
+}
+
 function renderChapter(ch, index, ctx) {
   const num = ch.appendix ? ch.appendix : String(index + 1).padStart(2, "0")
   const subs = ch.blocks.filter((b) => b[0] === "h3").map((b) => b[1])
@@ -212,7 +234,7 @@ function renderChapter(ch, index, ctx) {
       <h2>${ch.title}</h2>
       <p class="chapter-intro">${ch.intro}</p>
     </div>${aside}</header>
-    ${ch.blocks.map((b) => renderBlock(b, ctx)).join("\n")}
+    ${renderBlocksKeepingHeadings(ch.blocks, ctx)}
   </section>`
 }
 

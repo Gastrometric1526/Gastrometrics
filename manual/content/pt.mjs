@@ -3,7 +3,7 @@ export default {
   ui: {
     manualName: "Manual do usuário",
     contents: "Sumário",
-    contentsLede: "Cada capítulo começa em uma página própria. Se é a sua primeira vez, leia o capítulo 1 e depois vá direto ao que precisar.",
+    contentsLede: "Se é a sua primeira vez, leia o capítulo 1 e depois vá direto ao que precisar: cada capítulo pode ser lido sozinho.",
     inThisChapter: "Neste capítulo",
     figure: "Figura",
     coverKicker: "Manual do usuário",
@@ -330,11 +330,11 @@ export default {
     {
       id: "equipo",
       title: "Equipe",
-      plan: "Plano Chef Ejecutivo",
+      plan: "Plano Sous Chef ou superior",
       intro: "Convide sua equipe para trabalhar com você na Gastrometrics, cada pessoa com acesso só ao que precisa.",
       blocks: [
         ["h3", "Convidar alguém"],
-        ["p", "Em <strong>Equipe</strong> você digita o e-mail da pessoa. Ela recebe um convite e cria a própria conta; a sua assinatura cobre o acesso dela. Não há funções fixas: para cada pessoa você configura três coisas separadamente."],
+        ["p", "Em <strong>Equipe</strong> você digita o e-mail da pessoa. Ela recebe um convite e cria a própria conta; a sua assinatura cobre o acesso dela. Com o Sous Chef você pode adicionar 1 pessoa e com o Chef Ejecutivo até 4 (os usuários de cada plano incluem você). Não há funções fixas: para cada pessoa você configura três coisas separadamente."],
         ["table", ["Ajuste", "Opções"], [
           ["Alcance", "Todos os seus negócios, ou apenas um em particular."],
           ["Ferramentas", "Caixas independentes: receitas, ingredientes, perdas, pedidos manuais e automáticos, estoque, cardápios, relatórios, vendas, finanças e administrar a equipe."],
@@ -349,12 +349,12 @@ export default {
       title: "Planos e assinatura",
       intro: "Você começa grátis e muda de plano quando precisar. Seus dados nunca se perdem ao trocar de plano.",
       blocks: [
-        ["table", ["Plano", "Preço", "Negócios", "Usuários", "Adiciona"], [
+        ["table", ["Plano", "Preço", "Negócios", "Usuários (com você)", "Adiciona"], [
           ["Foodie", "Grátis", "1", "1", "Receitas, ingredientes e ficha de cozinha em PDF (incluídos em todos os planos)."],
           ["Home Cook", "$15 / mês", "1", "1", "Perdas, pedidos de compra manuais, ficha administrativa e faturas."],
           ["Chef de Partie", "$35 / mês", "1", "1", "Estoque, cardápios, pedidos sugeridos, Relatórios · Panorama e registro manual de vendas."],
-          ["Sous Chef", "$70 / mês", "2", "2", "Relatórios · Finanças, DRE, Menu Engineering e importação do PDV."],
-          ["Chef Ejecutivo", "$120 / mês", "5", "5", "Equipe com permissões por pessoa."],
+          ["Sous Chef", "$70 / mês", "2", "2", "Relatórios · Finanças, DRE, Menu Engineering, importação do PDV e Equipe (você + 1 pessoa)."],
+          ["Chef Ejecutivo", "$120 / mês", "5", "5", "Equipe de até 4 pessoas além de você. Disponível para empresas, sob consulta."],
         ]],
         ["figure", "12-mi-plan.jpg", "Meu Plano: seu plano atual, o que ele inclui e como gerenciar sua assinatura."],
         ["h3", "Pagar, mudar ou cancelar"],
@@ -374,7 +374,7 @@ export default {
           "<strong>Perfil</strong>: nome, e-mail (mudar pede sua senha atual), país e tipo de negócio.",
           "<strong>Aparência</strong>: modo claro, escuro ou conforme o seu sistema.",
           "<strong>Regional</strong>: país, moeda e idioma.",
-          "<strong>Notificações</strong>: os e-mails e avisos que você quer receber.",
+          "<strong>Notificações</strong>: se você quer receber novidades e lembretes por e-mail.",
           "<strong>Conta</strong>: backup dos seus dados, documentos legais, apagar conteúdo e excluir a conta.",
         ]],
         ["h3", "Idioma e moeda"],

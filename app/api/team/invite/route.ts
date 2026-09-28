@@ -29,7 +29,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { renderEmailTemplate, escapeHtml } from "@/lib/services/email-templates"
 import { getEmailLabels, fillLabel, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { checkRateLimit } from "@/lib/rate-limit"
-import { MAX_TEAM_MEMBERS } from "@/types/team"
+import { getPlanBySlug, getTeamInviteLimit } from "@/lib/plans"
 import { resolveTeamOwnerId } from "@/lib/team/resolve-owner"
 
 export async function POST(request: Request) {
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No autenticado." }, { status: 401 })
   }
 
-  // Límite de intentos (ver docs/61) — más allá del tope de MAX_TEAM_MEMBERS de abajo,
+  // Límite de intentos (ver docs/61) — más allá del tope de invitaciones del plan (abajo),
   // protege contra alguien llamando esta ruta directo (sin pasar por /equipo) para
   // hacer que se creen cuentas y se manden correos reales en bucle.
   const rateLimit = checkRateLimit(`team-invite:${user.id}`, {
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
   // quedarían mal atribuidas a su propia cuenta en vez de a la que lo delegó.
   const ownerAccountId = await resolveTeamOwnerId(admin, user.id)
 
-  // MAX_TEAM_MEMBERS ya se revisaba en lib/storage/team.ts (inviteTeamMember), pero
+  // El tope de invitaciones ya se revisaba en lib/storage/team.ts (inviteTeamMember), pero
   // eso corre DESPUÉS de esta ruta en app/equipo/page.tsx y solo del lado del cliente
   // — alguien llamando esta ruta directo podía saltárselo por completo y crear más
   // cuentas/otorgar más accesos reales de los que el plan permite. Se revisa también
@@ -85,12 +85,34 @@ export async function POST(request: Request) {
   // no puede mandarlo él mismo (leído de la fila real, no del body de la request).
   // Tolera que esa columna todavía no exista (mismo patrón que el resto de este
   // proyecto para migraciones nuevas): sin fila o sin columna, extra = 0.
-  const { data: ownerPlanRow } = await admin
-    .from("account_plans")
-    .select("extra_team_seats")
-    .eq("account_id", ownerAccountId)
-    .maybeSingle()
-  const effectiveMaxTeamMembers = MAX_TEAM_MEMBERS + (ownerPlanRow?.extra_team_seats || 0)
+  // Desde docs/133 el tope sale del PLAN real de la cuenta dueña (usuarios del plan −
+  // el dueño, ver getTeamInviteLimit), no de una constante fija. Fallback por etapas
+  // (memoria del proyecto / docs/94): si extra_team_seats (0019) no existe, se reintenta
+  // sin esa columna en vez de perder también plan_slug/plan_expires_at.
+  let ownerPlanRow: { plan_slug?: string | null; plan_expires_at?: string | null; extra_team_seats?: number | null } | null = null
+  {
+    const full = await admin
+      .from("account_plans")
+      .select("plan_slug, plan_expires_at, extra_team_seats")
+      .eq("account_id", ownerAccountId)
+      .maybeSingle()
+    if (!full.error) {
+      ownerPlanRow = full.data
+    } else {
+      const base = await admin
+        .from("account_plans")
+        .select("plan_slug, plan_expires_at")
+        .eq("account_id", ownerAccountId)
+        .maybeSingle()
+      ownerPlanRow = base.data
+    }
+  }
+  const planExpired = !!ownerPlanRow?.plan_expires_at && new Date(ownerPlanRow.plan_expires_at).getTime() < Date.now()
+  const ownerPlan = getPlanBySlug(planExpired ? "foodie" : ownerPlanRow?.plan_slug)
+  const effectiveMaxTeamMembers = getTeamInviteLimit(ownerPlan, ownerPlanRow?.extra_team_seats || 0)
+  if (effectiveMaxTeamMembers <= 0) {
+    return NextResponse.json({ error: "Tu plan no incluye invitar personas a tu equipo." }, { status: 403 })
+  }
 
   const { count: currentMemberCount } = await admin
     .from("team_members")

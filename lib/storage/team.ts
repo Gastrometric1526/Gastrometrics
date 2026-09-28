@@ -19,13 +19,20 @@ import { createBusinessScopedCache } from "./supabase-cache"
 import { getAllBusinesses } from "./businesses"
 import type { Database } from "@/types/database"
 import type { TeamMember, TeamMemberScope, TeamMemberPdfAccess, TeamMemberActivityEntry } from "@/types/team"
-import { MAX_TEAM_MEMBERS } from "@/types/team"
 import { getCurrentPlanOverrides } from "@/lib/plan-overrides"
-import type { FeatureKey } from "@/lib/plans"
+import { getTeamInviteLimit, plans, type FeatureKey } from "@/lib/plans"
+import { getCurrentPlan } from "@/lib/plan-access"
 
-/** MAX_TEAM_MEMBERS + lo que /admin le haya cedido de más a esta cuenta (ver lib/plan-overrides.ts). */
+/** Invitados permitidos por el plan (usuarios del plan − el dueño) + asientos extra de /admin. Ver getTeamInviteLimit. */
 export function getEffectiveMaxTeamMembers(): number {
-  return MAX_TEAM_MEMBERS + getCurrentPlanOverrides().extraTeamSeats
+  // Un miembro delegado (función "team") administra el equipo de OTRA cuenta: acá solo
+  // se conoce su propio plan, no el del dueño. Se usa el tope más alto posible para no
+  // bloquearlo en la interfaz, y el límite real lo aplica app/api/team/invite/route.ts,
+  // que sí lee el plan del dueño.
+  if (getMyMemberships().length > 0) {
+    return Math.max(...plans.map((plan) => getTeamInviteLimit(plan))) + getCurrentPlanOverrides().extraTeamSeats
+  }
+  return getTeamInviteLimit(getCurrentPlan(), getCurrentPlanOverrides().extraTeamSeats)
 }
 
 type TeamMemberRow = Database["public"]["Tables"]["team_members"]["Row"]

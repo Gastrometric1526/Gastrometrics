@@ -148,12 +148,12 @@ export const plans: Plan[] = [
       "Varianza de precios de proveedores",
       "Dashboard financiero histórico",
       "Hasta 2 negocios sincronizados",
-      "Hasta 2 usuarios en la misma cuenta",
+      "Hasta 2 usuarios: tú y 1 persona de tu equipo",
     ],
-    locked: ["Multi-negocio masivo (+5)", "Soporte prioritario", "Usuarios ilimitados"],
+    locked: ["Multi-negocio masivo (+5)", "Soporte prioritario", "Más de 2 usuarios"],
     maxBusinesses: 2,
     maxUsers: 2,
-    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance"],
+    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance", "team"],
     highlighted: true,
   },
   {
@@ -162,11 +162,11 @@ export const plans: Plan[] = [
     price: "$120/mes",
     priceUsdCents: 12000,
     tagline: "Para grupos y cadenas",
-    description: "Todo lo anterior, más hasta 5 negocios, 5 usuarios, soporte prioritario y onboarding personalizado.",
+    description: "Todo lo anterior, más hasta 5 negocios, 5 usuarios (tú y 4 personas de tu equipo), soporte prioritario y onboarding personalizado.",
     features: [
       "Todo lo del plan Sous Chef",
       "Hasta 5 negocios sincronizados",
-      "Hasta 5 usuarios",
+      "Hasta 5 usuarios: tú y 4 personas de tu equipo",
       "Soporte prioritario",
       "Onboarding personalizado",
       "Importación de datos asistida",
@@ -181,6 +181,20 @@ export const plans: Plan[] = [
 
 export function getPlanBySlug(slug: string | null | undefined): Plan {
   return plans.find((plan) => plan.slug === slug) ?? plans[0]
+}
+
+/**
+ * Cuántas personas puede invitar a su equipo una cuenta con este plan. `maxUsers`
+ * CUENTA AL DUEÑO (decisión del dueño del proyecto, docs/133): "hasta 2 usuarios" =
+ * el dueño + 1 invitado, "hasta 5" = el dueño + 4. Más los asientos extra que /admin
+ * le haya cedido a esa cuenta (account_plans.extra_team_seats, 0019). Antes de docs/133
+ * el tope era una constante fija de 3 para cualquier plan, sin relación con maxUsers.
+ * Única fuente de la regla: la usan lib/storage/team.ts (cliente) y
+ * app/api/team/invite/route.ts (servidor).
+ */
+export function getTeamInviteLimit(plan: Plan, extraTeamSeats = 0): number {
+  if (!plan.unlockedFeatures.includes("team")) return Math.max(extraTeamSeats, 0)
+  return Math.max(plan.maxUsers - 1, 0) + Math.max(extraTeamSeats, 0)
 }
 
 // Combina un Plan (lógica de negocio, nunca traducida — unlockedFeatures/maxBusinesses/

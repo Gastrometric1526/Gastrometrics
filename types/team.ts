@@ -44,4 +44,3 @@ export interface TeamMember {
   invitedUserId?: string | null
 }
 
-export const MAX_TEAM_MEMBERS = 3

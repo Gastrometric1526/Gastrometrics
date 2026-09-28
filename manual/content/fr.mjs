@@ -3,7 +3,7 @@ export default {
   ui: {
     manualName: "Manuel utilisateur",
     contents: "Sommaire",
-    contentsLede: "Chaque chapitre commence sur sa propre page. Si c'est votre première fois, lisez le chapitre 1 puis allez directement à ce dont vous avez besoin.",
+    contentsLede: "Si c'est votre première fois, lisez le chapitre 1 puis allez directement à ce dont vous avez besoin : chaque chapitre se lit indépendamment.",
     inThisChapter: "Dans ce chapitre",
     figure: "Figure",
     coverKicker: "Manuel utilisateur",
@@ -330,11 +330,11 @@ export default {
     {
       id: "equipo",
       title: "Équipe",
-      plan: "Forfait Chef Ejecutivo",
+      plan: "Forfait Sous Chef ou supérieur",
       intro: "Invitez votre équipe à travailler avec vous dans Gastrometrics, chacun n'ayant accès qu'à ce dont il a besoin.",
       blocks: [
         ["h3", "Inviter quelqu'un"],
-        ["p", "Dans <strong>Équipe</strong>, saisissez l'e-mail de la personne. Elle reçoit une invitation et crée son propre compte ; votre abonnement couvre son accès. Il n'y a pas de rôles fixes : vous réglez trois éléments séparément pour chaque personne."],
+        ["p", "Dans <strong>Équipe</strong>, saisissez l'e-mail de la personne. Elle reçoit une invitation et crée son propre compte ; votre abonnement couvre son accès. Avec Sous Chef, vous pouvez ajouter 1 personne et avec Chef Ejecutivo jusqu'à 4 (les utilisateurs de chaque forfait vous incluent). Il n'y a pas de rôles fixes : vous réglez trois éléments séparément pour chaque personne."],
         ["table", ["Réglage", "Options"], [
           ["Portée", "Tous vos établissements, ou un seul en particulier."],
           ["Outils", "Cases indépendantes : recettes, ingrédients, pertes, commandes manuelles et automatiques, inventaire, menus, rapports, ventes, finances et gestion de l'équipe."],
@@ -349,12 +349,12 @@ export default {
       title: "Forfaits et abonnement",
       intro: "Vous commencez gratuitement et passez à un forfait supérieur quand vous en avez besoin. Vos données ne se perdent jamais en changeant de forfait.",
       blocks: [
-        ["table", ["Forfait", "Prix", "Établissements", "Utilisateurs", "Ajoute"], [
+        ["table", ["Forfait", "Prix", "Établissements", "Utilisateurs (vous inclus)", "Ajoute"], [
           ["Foodie", "Gratuit", "1", "1", "Recettes, ingrédients et fiche de cuisine en PDF (inclus dans tous les forfaits)."],
           ["Home Cook", "15 $ / mois", "1", "1", "Pertes, commandes d'achat manuelles, fiche administrative et factures."],
           ["Chef de Partie", "35 $ / mois", "1", "1", "Inventaire, menus, commandes suggérées, Rapports · Vue d'ensemble et saisie manuelle des ventes."],
-          ["Sous Chef", "70 $ / mois", "2", "2", "Rapports · Finances, P&L, Menu Engineering et import de la caisse."],
-          ["Chef Ejecutivo", "120 $ / mois", "5", "5", "Équipe avec droits par personne."],
+          ["Sous Chef", "70 $ / mois", "2", "2", "Rapports · Finances, P&L, Menu Engineering, import de la caisse et Équipe (vous + 1 personne)."],
+          ["Chef Ejecutivo", "120 $ / mois", "5", "5", "Équipe jusqu'à 4 personnes en plus de vous. Disponible pour les entreprises, sur demande."],
         ]],
         ["figure", "12-mi-plan.jpg", "Mon forfait : votre forfait actuel, ce qu'il comprend et comment gérer votre abonnement."],
         ["h3", "Payer, changer ou résilier"],
@@ -374,7 +374,7 @@ export default {
           "<strong>Profil</strong> : nom, e-mail (le modifier demande votre mot de passe actuel), pays et type d'établissement.",
           "<strong>Apparence</strong> : mode clair, sombre ou selon votre système.",
           "<strong>Régional</strong> : pays, devise et langue.",
-          "<strong>Notifications</strong> : les e-mails et alertes que vous souhaitez recevoir.",
+          "<strong>Notifications</strong> : recevoir ou non les nouveautés et rappels par e-mail.",
           "<strong>Compte</strong> : sauvegarde de vos données, documents juridiques, suppression du contenu et du compte.",
         ]],
         ["h3", "Langue et devise"],

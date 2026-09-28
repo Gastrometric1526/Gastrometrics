@@ -106,15 +106,18 @@ function useNavigationItems() {
     { title: t("nav_inventario"), href: "/inventario", icon: Boxes, description: t("nav_inventario_desc"), locked: lockedByHref["/inventario"].locked, feature: lockedByHref["/inventario"].feature as FeatureKey | null },
   ]
 
-  // Equipo va justo después de Inventario, y solo aparece una vez confirmado (tras
-  // montar, ver useFeatureAccess) que el plan de la cuenta lo incluye — mismo patrón
-  // de hidratación que el resto del gating de features (ver lib/plan-access.ts).
-  // No lleva candado visual (a diferencia de los otros): "team" hoy solo lo desbloquea
-  // Chef Ejecutivo, que además está marcado comingSoon — mostrarlo "apagado, actualiza
-  // tu plan" sería ofrecer una actualización que todavía no se puede comprar.
-  if (canAccessTeam) {
-    items.push({ title: t("nav_equipo"), href: "/equipo", icon: Users, description: t("nav_equipo_desc"), locked: false, feature: null })
-  }
+  // Equipo va justo después de Inventario. Desde docs/133 lo desbloquea también Sous
+  // Chef (plan que sí se puede comprar), así que se muestra con candado como el resto
+  // de los módulos bloqueados en vez de ocultarse. Mientras canAccessTeam es null
+  // (antes de hidratar) no lleva candado, mismo criterio que lockedByHref arriba.
+  items.push({
+    title: t("nav_equipo"),
+    href: "/equipo",
+    icon: Users,
+    description: t("nav_equipo_desc"),
+    locked: canAccessTeam === false,
+    feature: "team" as FeatureKey | null,
+  })
 
   items.push(
     { title: t("nav_menus"), href: "/menus", icon: UtensilsCrossed, description: t("nav_menus_desc"), locked: lockedByHref["/menus"].locked, feature: lockedByHref["/menus"].feature as FeatureKey | null },

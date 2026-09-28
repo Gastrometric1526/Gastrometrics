@@ -81,8 +81,14 @@ p { margin: 0 0 9px; orphans: 3; widows: 3; }
 .toc-appendix .toc-num { color: var(--faint); }
 
 /* ───────────── Capítulos ───────────── */
-.chapter { break-before: page; position: relative; }
+/* Flujo continuo (docs/133): antes cada capítulo forzaba página nueva y, cuando sobraban
+   unas líneas, quedaban páginas casi vacías. Ahora el capítulo sigue en la misma página
+   con un encabezado fuerte que nunca queda solo al pie. */
+.chapter { position: relative; margin-top: 16mm; }
+.toc + .chapter { margin-top: 0; }
 .chapter-head {
+  break-inside: avoid;
+  break-after: avoid;
   display: grid;
   grid-template-columns: 1fr 58mm;
   gap: 8mm;
@@ -279,6 +285,10 @@ table.tbl thead th {
 }
 table.tbl td { padding: 6px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
 table.tbl tr { break-inside: avoid; }
+table.tbl.keep { break-inside: avoid; }
+table.tbl thead { display: table-header-group; }
+/* Un subtítulo va siempre junto con el bloque que le sigue. */
+.keep-with-next { break-inside: avoid; }
 table.tbl tbody tr:nth-child(even) td { background: var(--paper-2); }
 table.tbl td:first-child { font-weight: 700; color: var(--ink); }
 

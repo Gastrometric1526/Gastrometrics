@@ -6,7 +6,7 @@ Sistema de gestión gastronómica (fichas técnicas, costeo, inventario, menús,
 
 Lee, en este orden:
 1. `docs/00-README-EMPIEZA-AQUI.md`
-2. El documento de auditoría con el número más alto en `docs/` (a la fecha de este commit: `docs/132-manual-rediseñado-desde-cero-correos-y-fechas-en-el-idioma-del-usuario.md`) — es la fuente de verdad sobre qué está hecho, qué falta, y dónde. **No confíes en él sin verificar contra el código real** — es la regla que se ha seguido en todo el proyecto.
+2. El documento de auditoría con el número más alto en `docs/` (a la fecha de este commit: `docs/133-revision-de-coherencia-equipo-por-plan-correos-con-consentimiento-y-manual-sin-cortes.md`) — es la fuente de verdad sobre qué está hecho, qué falta, y dónde. **No confíes en él sin verificar contra el código real** — es la regla que se ha seguido en todo el proyecto.
 3. `docs/12-guia-backend.md` es histórico (de antes de conectar el backend) — para su estado real, ver el punto 4.
 4. Para arquitectura/diseño técnico consolidado (no cronológico): `docs/mapa-de-documentacion.md` (índice por tema de todo `docs/`) y `docs/referencia-arquitectura-tecnica.md` (storage, recálculo de precios, sub-recetas, PDF, i18n, PWA, backend, admin, rutas). Se actualizan in-place cuando algo cambia — si tu cambio toca algo que describen, actualízalos ahí además del documento de sesión numerado.
 5. Para **operar** la app (no cómo está construida, sino cómo se administra en el mundo real: servicios externos, variables de entorno, despliegue/rollback, `/admin`, y qué hacer en caso de incidente): `docs/referencia-manual-de-operaciones.md`.
@@ -23,7 +23,7 @@ Si el build falla, revisa primero `package.json`: `react`/`react-dom` deben esta
 
 **Nunca corras `npm run build` con `next dev` activo en la misma carpeta** — corrompe los artefactos que el servidor de dev tiene cargados (404/500 fantasma en el navegador hasta reiniciar). Detén el dev server primero, corre el build, y si vas a seguir probando en vivo después, borra `.next` y reinicia el dev server limpio (ver `docs/30`).
 
-`npm test` corre la suite de pruebas automatizadas (Vitest, ver `docs/29` sección 3) — 20 pruebas sobre aislamiento de storage por negocio, la cascada de recálculo de precios, el redondeo de precio de venta, y el costo promedio ponderado.
+`npm test` corre la suite de pruebas automatizadas (Vitest, ver `docs/29` sección 3) — 71 pruebas a la fecha de `docs/133` (aislamiento de storage por negocio, cascada de recálculo, redondeo de precio, costo promedio ponderado, análisis de ventas, menús, órdenes de compra, y la selección de recordatorios por correo de `docs/131`).
 
 ## Reglas del proyecto (no negociables, pedidas explícitamente por el dueño)
 
@@ -38,7 +38,7 @@ Si el build falla, revisa primero `package.json`: `react`/`react-dom` deben esta
 - ISV/impuesto: 0 por defecto, opcional, sin lógica de país específica.
 - Escalado de recetas/menús: cantidades de ingredientes siempre redondean hacia arriba.
 - Papelera de recetas: 30 días antes de purgar automáticamente.
-- Multiusuario: cada quien crea su propia cuenta; el dueño del negocio comparte la suscripción vía link de invitación (pendiente de backend real para implementarse).
+- Multiusuario: cada quien crea su propia cuenta; el dueño del negocio comparte la suscripción vía invitación por correo — real desde `docs/55`/`60`/`62` (feature `team`, solo Chef Ejecutivo). Ojo: el tope real de invitaciones es fijo (3 + asientos extra de `/admin`), NO `plan.maxUsers` — ver `docs/133`.
 - Monedas soportadas: todas las centroamericanas + China + USD + Euro (`lib/currency.ts`).
 - Separador decimal: siempre punto, nunca coma, en TODA la app, sin excepción por moneda/país — reemplaza la decisión anterior de `docs/123` (que dejaba coma decimal para EUR/DKK/ARS/COP/CLP/VES/BRL/UYU/PYG/BOB por ser la convención real de esos países). Ver `docs/129`.
 - Idiomas soportados: español, inglés, danés, francés, portugués, chino — solo texto visible al usuario, no traducción completa de código/datos (`lib/i18n/`).

@@ -39,12 +39,10 @@ export default function MiPlanPage() {
   // Solo negocios — es el único de los tres (negocios/usuarios/recetas) con un tope
   // real y de verdad exigido: lib/plan-access.ts getMaxBusinesses() SÍ se usa para
   // bloquear la creación de un negocio nuevo (ver components/add-business-dialog.tsx).
-  // getMaxUsers() existe con el mismo nombre pero no lo llama ningún otro archivo —
-  // el tope real de invitaciones de Equipo es MAX_TEAM_MEMBERS (types/team.ts, fijo
-  // en 3 para cualquier plan), no plan.maxUsers. Mostrar una barra de "usuarios" contra
-  // un número que no es el que en realidad se aplica sería un dato falso en pantalla;
-  // se deja fuera hasta que se decida si plan.maxUsers debe conectarse de verdad o
-  // borrarse. Recetas nunca tuvo tope en ningún plan, tampoco corresponde una barra.
+  // Desde docs/133 plan.maxUsers SÍ se aplica (cuenta al dueño: el tope de invitaciones
+  // es maxUsers − 1 + asientos extra, ver getTeamInviteLimit en lib/plans.ts). No se
+  // agregó una barra de usuarios acá: el conteo de miembros vive en /equipo, que ya lo
+  // muestra contra ese mismo tope. Recetas nunca tuvo tope en ningún plan.
   const businesses = useAllBusinesses()
   const currentPlanSlug = useCurrentPlanSlug()
   const currentPlan = getPlanBySlug(currentPlanSlug)

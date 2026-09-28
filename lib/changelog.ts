@@ -31,6 +31,7 @@ export const CHANGELOG: ChangelogEntry[] = [
           "Manual de usuario completamente rediseñado y reescrito en los 6 idiomas, con capturas nuevas, índice por capítulos y ejemplos paso a paso. Ábrelo desde Configuración → Manual de usuario (PDF).",
           "Recordatorios útiles por correo (opcionales): si llevas unos días sin entrar, te avisamos de una receta sin terminar, de tu próximo conteo de inventario, de revisar tus reportes o de actualizar precios. Nunca más de uno cada pocos días y con baja en un clic.",
           "Todos los correos y las fechas de la app ahora respetan siempre el idioma que tienes seleccionado.",
+          "El plan Sous Chef ahora incluye Equipo: invita a 1 persona con permisos por función (Chef Ejecutivo, hasta 4).",
         ],
       },
       en: {
@@ -41,6 +42,7 @@ export const CHANGELOG: ChangelogEntry[] = [
           "The user manual has been completely redesigned and rewritten in all 6 languages, with new screenshots, chapter index and step-by-step examples. Open it from Settings → User manual (PDF).",
           "Helpful email reminders (optional): if you haven't signed in for a few days, we'll remind you about an unfinished recipe, your next inventory count, checking your reports or updating prices. Never more than one every few days, with one-click unsubscribe.",
           "All emails and dates in the app now always follow the language you have selected.",
+          "The Sous Chef plan now includes Team: invite 1 person with per-tool permissions (Chef Ejecutivo, up to 4).",
         ],
       },
       da: {
@@ -51,6 +53,7 @@ export const CHANGELOG: ChangelogEntry[] = [
           "Brugermanualen er fuldstændig redesignet og omskrevet på alle 6 sprog med nye skærmbilleder, kapitelindeks og eksempler trin for trin. Åbn den fra Indstillinger → Brugermanual (PDF).",
           "Nyttige påmindelser via e-mail (valgfrit): har du ikke været logget ind i nogle dage, minder vi dig om en ufærdig opskrift, din næste lageroptælling, at se dine rapporter eller at opdatere priser. Aldrig mere end én med få dages mellemrum og med afmelding med ét klik.",
           "Alle e-mails og datoer i appen følger nu altid det sprog, du har valgt.",
+          "Sous Chef-planen inkluderer nu Team: invitér 1 person med rettigheder pr. værktøj (Chef Ejecutivo: op til 4).",
         ],
       },
       fr: {
@@ -61,6 +64,7 @@ export const CHANGELOG: ChangelogEntry[] = [
           "Le manuel utilisateur a été entièrement repensé et réécrit dans les 6 langues, avec de nouvelles captures, un sommaire par chapitres et des exemples pas à pas. Ouvrez-le depuis Paramètres → Manuel utilisateur (PDF).",
           "Des rappels utiles par e-mail (facultatifs) : si vous ne vous êtes pas connecté depuis quelques jours, nous vous rappelons une recette inachevée, votre prochain inventaire, la consultation de vos rapports ou la mise à jour de vos prix. Jamais plus d'un tous les quelques jours, avec désabonnement en un clic.",
           "Tous les e-mails et les dates de l'application respectent désormais toujours la langue que vous avez choisie.",
+          "Le forfait Sous Chef inclut désormais l'Équipe : invitez 1 personne avec des droits par outil (Chef Ejecutivo : jusqu'à 4).",
         ],
       },
       pt: {
@@ -71,6 +75,7 @@ export const CHANGELOG: ChangelogEntry[] = [
           "O manual do usuário foi totalmente redesenhado e reescrito nos 6 idiomas, com novas capturas de tela, sumário por capítulos e exemplos passo a passo. Abra em Configurações → Manual do usuário (PDF).",
           "Lembretes úteis por e-mail (opcionais): se você passar alguns dias sem entrar, avisamos sobre uma receita não finalizada, sua próxima contagem de estoque, revisar seus relatórios ou atualizar preços. Nunca mais de um a cada poucos dias, com cancelamento em um clique.",
           "Todos os e-mails e datas do app agora seguem sempre o idioma que você selecionou.",
+          "O plano Sous Chef agora inclui Equipe: convide 1 pessoa com permissões por ferramenta (Chef Ejecutivo: até 4).",
         ],
       },
       zh: {
@@ -81,6 +86,7 @@ export const CHANGELOG: ChangelogEntry[] = [
           "用户手册已全面重新设计，并用 6 种语言重写，配有全新截图、章节目录和分步示例。可在 设置 → 用户手册（PDF）中打开。",
           "实用的邮件提醒（可选）：如果你几天没有登录，我们会提醒你未完成的食谱、下一次库存盘点、查看报表或更新价格。每隔几天最多一封，并可一键退订。",
           "应用中的所有邮件和日期现在都会始终使用你所选择的语言。",
+          "Sous Chef 方案现已包含团队功能：可邀请 1 人并按工具分配权限（Chef Ejecutivo 方案最多 4 人）。",
         ],
       },
     },
