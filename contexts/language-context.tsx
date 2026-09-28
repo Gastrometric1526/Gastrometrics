@@ -24,7 +24,10 @@ function getBrowserDefaultLanguage(): LanguageCode {
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<LanguageCode>("es")
-  const { syncPreferredLanguage } = useAuth()
+  // false hasta leer localStorage/navegador: el "es" inicial es provisional y no debe
+  // sincronizarse al perfil.
+  const [languageReady, setLanguageReady] = useState(false)
+  const { syncPreferredLanguage, userProfile } = useAuth()
 
   useEffect(() => {
     const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY) as LanguageCode | null
@@ -47,6 +50,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       // y cualquier código que revise este atributo en vez del estado de React.
       document.documentElement.lang = detected
     }
+    setLanguageReady(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -62,6 +66,17 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     },
     [syncPreferredLanguage],
   )
+
+  // Los correos del servidor salen en profiles.preferred_language, pero ese campo solo
+  // se actualizaba al cambiar de idioma CON sesión iniciada. Si el idioma se eligió en
+  // la landing antes de entrar, en otro dispositivo, o lo detectó el navegador, la
+  // pantalla mostraba un idioma y los correos llegaban en otro (el del registro). Al
+  // cargar el perfil se alinea con el idioma que la persona realmente está viendo.
+  const profileLanguage = userProfile?.preferredLanguage
+  useEffect(() => {
+    if (!userProfile || !languageReady) return
+    if (profileLanguage !== language) syncPreferredLanguage(language)
+  }, [userProfile, profileLanguage, language, languageReady, syncPreferredLanguage])
 
   const t = useCallback((key: Parameters<typeof translate>[1]) => translate(language, key), [language])
 

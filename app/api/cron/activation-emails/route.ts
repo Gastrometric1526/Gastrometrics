@@ -34,6 +34,11 @@
  * (Vercel Hobby, tope de 2 cron jobs), la purga real de cuentas que ya cumplieron los
  * 30 días de gracia tras pedir su eliminación (runAccountDeletionPurge(), ver
  * lib/services/purge-deleted-accounts.ts y docs/118).
+ *
+ * También corre acá (mismo motivo) el sistema de recordatorios / re-enganche de
+ * docs/131 (runReengagementReminders(), ver lib/services/notify-reengagement.ts): un
+ * correo según lo último que hizo cada cuenta que tenga activada la casilla de recibir
+ * información. Con ?reengagementDryRun=1 no manda nada y devuelve qué se mandaría.
  */
 
 import { NextResponse } from "next/server"
@@ -46,6 +51,7 @@ import {
 } from "@/lib/services/notify-activation"
 import { runPlanExpiryReminders } from "@/lib/services/notify-plan-expiry"
 import { runAccountDeletionPurge } from "@/lib/services/purge-deleted-accounts"
+import { runReengagementReminders } from "@/lib/services/notify-reengagement"
 
 const FOUR_HOURS_IN_SECONDS = 4 * 60 * 60
 
@@ -62,6 +68,17 @@ export async function GET(request: Request) {
     const authHeader = request.headers.get("authorization")
     if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ ok: false, error: "No autorizado." }, { status: 401 })
+    }
+  }
+
+  // Modo de prueba: solo calcula a quién le tocaría qué recordatorio, sin mandar nada
+  // ni correr el resto del cron. Protegido por el mismo CRON_SECRET de arriba.
+  if (new URL(request.url).searchParams.get("reengagementDryRun") === "1") {
+    try {
+      return NextResponse.json({ ok: true, reengagement: await runReengagementReminders({ dryRun: true }) })
+    } catch (error) {
+      console.error("[api/cron/activation-emails] Error en dry run de recordatorios:", error)
+      return NextResponse.json({ ok: false, error: "Error calculando recordatorios." }, { status: 500 })
     }
   }
 
@@ -141,6 +158,16 @@ export async function GET(request: Request) {
 
     const deletionPurge = await runAccountDeletionPurge()
 
+    // Aislado en su propio try: un fallo acá no debe tirar abajo el resto del cron (que
+    // ya mandó sus correos arriba) ni hacer que Vercel lo reintente y duplique nada.
+    let reengagement: Awaited<ReturnType<typeof runReengagementReminders>> | { error: string }
+    try {
+      reengagement = await runReengagementReminders()
+    } catch (error) {
+      console.error("[api/cron/activation-emails] Error en recordatorios:", error)
+      reengagement = { error: "Error corriendo recordatorios." }
+    }
+
     return NextResponse.json({
       ok: true,
       checkedAt: new Date().toISOString(),
@@ -155,6 +182,7 @@ export async function GET(request: Request) {
       experienceSurveySent,
       deletionPurgeCandidates: deletionPurge.candidates,
       deletionPurged: deletionPurge.purged,
+      reengagement,
     })
   } catch (error) {
     console.error("[api/cron/activation-emails] Error:", error)

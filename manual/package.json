@@ -1,0 +1,15 @@
+{
+  "name": "gastrometrics-manual",
+  "private": true,
+  "type": "module",
+  "description": "Genera el manual de usuario en PDF (6 idiomas). Ver LEEME.md.",
+  "scripts": {
+    "shots": "node scripts/take-screenshots.mjs",
+    "build": "node scripts/build.mjs"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "3.11.174",
+    "puppeteer-core": "^23.11.1"
+  }
+}

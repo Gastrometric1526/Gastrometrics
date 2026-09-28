@@ -67,6 +67,7 @@ import {
 import type { TeamMember, TeamMemberPdfAccess } from "@/types/team"
 import type { FeatureKey } from "@/lib/plans"
 import type { Business } from "@/types/business"
+import { getDateLocale } from "@/lib/i18n/translations"
 
 // Herramientas asignables — se deja "team" fuera a propósito: una persona invitada no
 // puede a su vez invitar/gestionar el equipo, sin importar qué más se le habilite.
@@ -133,7 +134,7 @@ export default function EquipoPage() {
 function EquipoContent() {
   const { toast } = useToast()
   const { user } = useAuth()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const router = useRouter()
 
   const ASSIGNABLE_FEATURES = useMemo(
@@ -710,7 +711,7 @@ function EquipoContent() {
                         <ul className="space-y-1">
                           {member.activity.map((entry) => (
                             <li key={entry.id} className="text-xs text-text-4">
-                              {entry.description} · {new Date(entry.timestamp).toLocaleString()}
+                              {entry.description} · {new Date(entry.timestamp).toLocaleString(getDateLocale(language))}
                             </li>
                           ))}
                         </ul>

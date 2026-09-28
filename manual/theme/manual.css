@@ -1,0 +1,328 @@
+/* GastroMetrics — manual de usuario, diseño de impresión (A4).
+   Paleta y tipografía de la app: naranja de marca #F05324, DM Sans (app/layout.tsx). */
+
+:root {
+  --brand: #f05324;
+  --brand-deep: #c8390e;
+  --brand-soft: #fff1ea;
+  --brand-line: #fbd3c2;
+  --ink: #17120f;
+  --ink-2: #3d3531;
+  --muted: #7a706a;
+  --faint: #b5aca6;
+  --paper: #ffffff;
+  --paper-2: #faf7f5;
+  --line: #ece6e1;
+  --good: #1f7a52;
+  --good-soft: #eaf5ef;
+  --warn: #9a6512;
+  --warn-soft: #fdf3e1;
+  --radius: 10px;
+}
+
+@page {
+  size: A4;
+  margin: 18mm 18mm 20mm 18mm;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink-2);
+  font-family: "DM Sans", "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
+  font-size: 10.2pt;
+  line-height: 1.58;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+html[lang="zh"] body { font-family: "Noto Sans SC", "DM Sans", sans-serif; line-height: 1.75; }
+
+strong { color: var(--ink); font-weight: 700; }
+em { font-style: normal; color: var(--brand-deep); font-weight: 600; }
+p { margin: 0 0 9px; orphans: 3; widows: 3; }
+
+.marker { color: #fff; font-size: 1px; line-height: 0; position: absolute; }
+
+/* ───────────── Índice ───────────── */
+.toc { break-after: page; }
+.toc-kicker, .kicker {
+  font-size: 8pt;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--brand);
+  margin: 0 0 8px;
+}
+.toc h1 {
+  font-size: 26pt;
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 0 0 6px;
+  letter-spacing: -.02em;
+}
+.toc-lede { color: var(--muted); margin: 0 0 16px; max-width: 120mm; font-size: 9.6pt; }
+.toc-list { list-style: none; margin: 0; padding: 0; }
+.toc-list li {
+  display: grid;
+  grid-template-columns: 13mm 1fr auto;
+  align-items: baseline;
+  gap: 0 4mm;
+  padding: 4px 0 5px;
+  border-bottom: 1px solid var(--line);
+  break-inside: avoid;
+}
+.toc-num { font-size: 13pt; font-weight: 800; color: var(--brand); font-variant-numeric: tabular-nums; }
+.toc-title { font-size: 10.6pt; font-weight: 700; color: var(--ink); }
+.toc-subs { display: block; font-size: 7.6pt; font-weight: 400; color: var(--muted); margin-top: 1px; line-height: 1.4; }
+.toc-page { font-size: 11pt; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.toc-appendix .toc-num { color: var(--faint); }
+
+/* ───────────── Capítulos ───────────── */
+.chapter { break-before: page; position: relative; }
+.chapter-head {
+  display: grid;
+  grid-template-columns: 1fr 58mm;
+  gap: 8mm;
+  align-items: end;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+  border-bottom: 3px solid var(--brand);
+}
+.chapter-num {
+  font-size: 58pt;
+  font-weight: 800;
+  line-height: .9;
+  color: var(--brand);
+  letter-spacing: -.04em;
+  margin: 0 0 8px;
+}
+.chapter-head h2 {
+  font-size: 25pt;
+  line-height: 1.08;
+  letter-spacing: -.02em;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+.chapter-intro { font-size: 11.2pt; line-height: 1.5; color: var(--muted); margin: 0; }
+.chapter-aside {
+  background: var(--paper-2);
+  border-radius: var(--radius);
+  padding: 11px 13px;
+  font-size: 8.4pt;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.chapter-aside .kicker { margin-bottom: 5px; font-size: 7pt; }
+.chapter-aside ol { margin: 0; padding-left: 14px; }
+.chapter-aside li { margin: 1px 0; }
+.plan-badge {
+  display: inline-block;
+  font-size: 7.6pt;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--brand-deep);
+  background: var(--brand-soft);
+  border: 1px solid var(--brand-line);
+  border-radius: 999px;
+  padding: 2px 9px;
+  margin-bottom: 8px;
+}
+
+h3 {
+  font-size: 13.2pt;
+  line-height: 1.25;
+  color: var(--ink);
+  margin: 20px 0 7px;
+  letter-spacing: -.01em;
+  break-after: avoid;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+h3::before {
+  content: "";
+  flex: 0 0 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--brand);
+  transform: translateY(-1px);
+}
+h3 + p, h3 + ul, h3 + ol { break-before: avoid; }
+
+ul.list { margin: 0 0 10px; padding-left: 0; list-style: none; }
+ul.list li { position: relative; padding-left: 16px; margin: 3px 0; break-inside: avoid; }
+ul.list li::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: .62em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--brand);
+}
+
+ol.steps { counter-reset: step; list-style: none; margin: 6px 0 12px; padding: 0; }
+ol.steps { break-inside: avoid-page; }
+ol.steps li {
+  counter-increment: step;
+  position: relative;
+  padding: 0 0 0 34px;
+  margin: 0 0 9px;
+  min-height: 24px;
+  break-inside: avoid;
+}
+ol.steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: -1px;
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 800;
+  font-size: 9.5pt;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Avisos */
+.callout {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+  border-radius: var(--radius);
+  padding: 11px 14px;
+  margin: 12px 0 14px;
+  break-inside: avoid;
+  font-size: 9.6pt;
+}
+.callout .icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 10pt;
+  color: #fff;
+}
+.callout .title { display: block; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.callout p:last-child { margin-bottom: 0; }
+.callout.tip { background: var(--good-soft); }
+.callout.tip .icon { background: var(--good); }
+.callout.warn { background: var(--warn-soft); }
+.callout.warn .icon { background: #d38b17; }
+.callout.info { background: var(--brand-soft); }
+.callout.info .icon { background: var(--brand); }
+
+/* Fórmulas y ejemplos */
+.formula {
+  border: 1px solid var(--brand-line);
+  background: linear-gradient(180deg, var(--brand-soft), #fff 140%);
+  border-radius: var(--radius);
+  padding: 11px 15px 12px;
+  margin: 10px 0 14px;
+  break-inside: avoid;
+}
+.formula .label {
+  font-size: 7.4pt;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--brand-deep);
+  margin-bottom: 5px;
+}
+.formula .expr { font-size: 11.6pt; font-weight: 600; color: var(--ink); line-height: 1.55; }
+.formula .expr .op { color: var(--brand); font-weight: 700; padding: 0 3px; }
+.formula .explain { font-size: 9pt; color: var(--muted); margin-top: 6px; }
+
+.example {
+  border-left: 3px solid var(--ink);
+  background: var(--paper-2);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 10px 14px;
+  margin: 10px 0 14px;
+  break-inside: avoid;
+}
+.example .label { font-size: 7.4pt; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink); margin-bottom: 5px; }
+.example .row { display: grid; grid-template-columns: 1fr auto; gap: 12px; padding: 2px 0; font-variant-numeric: tabular-nums; font-size: 9.6pt; }
+.example .row + .row { border-top: 1px dashed var(--line); }
+.example .row.total { font-weight: 800; color: var(--ink); border-top: 1px solid var(--ink-2); }
+.example .row span:last-child { text-align: right; }
+
+/* Tablas */
+table.tbl {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 8px 0 14px;
+  font-size: 9pt;
+  break-inside: auto;
+}
+table.tbl thead th {
+  text-align: left;
+  font-size: 7.3pt;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--brand-deep);
+  padding: 7px 9px;
+  border-bottom: 2px solid var(--brand);
+}
+table.tbl td { padding: 6px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.tbl tr { break-inside: avoid; }
+table.tbl tbody tr:nth-child(even) td { background: var(--paper-2); }
+table.tbl td:first-child { font-weight: 700; color: var(--ink); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 14px; }
+.chips span {
+  font-size: 8.2pt;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+  color: var(--ink-2);
+}
+
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0 14px; }
+.cards.three { grid-template-columns: 1fr 1fr 1fr; }
+.card { border: 1px solid var(--line); border-radius: var(--radius); padding: 11px 13px; break-inside: avoid; }
+.card .card-title { font-weight: 700; color: var(--ink); margin-bottom: 3px; font-size: 10pt; }
+.card .card-tag { font-size: 7.4pt; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); margin-bottom: 4px; }
+.card p { font-size: 9pt; margin: 0; color: var(--muted); }
+
+/* Capturas */
+figure.shot { margin: 12px 0 16px; break-inside: avoid; }
+figure.shot .frame {
+  border: 1px solid #e3dcd6;
+  border-radius: 9px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(23, 18, 15, .05), 0 10px 24px -14px rgba(23, 18, 15, .25);
+}
+figure.shot .bar {
+  height: 16px;
+  background: #f4efeb;
+  border-bottom: 1px solid #e8e1db;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 8px;
+}
+figure.shot .bar i { width: 6px; height: 6px; border-radius: 50%; background: #d9d0c9; display: block; }
+figure.shot img { display: block; width: 100%; height: auto; max-height: 86mm; object-fit: cover; object-position: top left; }
+figure.shot.crop .frame { max-height: 108mm; }
+figure.shot figcaption { font-size: 8.4pt; color: var(--muted); margin-top: 6px; }
+figure.shot figcaption b { color: var(--brand-deep); font-weight: 700; margin-right: 4px; }
+
+/* Diagrama de flujo */
+.flow { margin: 10px 0 16px; break-inside: avoid; }
+.flow svg { width: 100%; height: auto; display: block; }

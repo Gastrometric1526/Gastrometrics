@@ -296,7 +296,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .update({ preferred_language: language })
         .eq("id", user.id)
         .then(({ error }) => {
-          if (error) console.error("No se pudo sincronizar el idioma preferido:", error)
+          if (error) {
+            console.error("No se pudo sincronizar el idioma preferido:", error)
+            return
+          }
+          setUserProfile((current) => (current ? { ...current, preferredLanguage: language } : current))
         })
     },
     [user],

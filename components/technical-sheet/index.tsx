@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Check, ChevronsUpDown, Upload, Settings, RotateCcw, Calculator, Info, AlertTriangle } from "lucide-react"
+import { Check, ChevronsUpDown, Upload, Settings, RotateCcw, Calculator, Info, AlertTriangle, Eraser, History, X } from "lucide-react"
 import { CalculationInfoDialog } from "./calculation-info-dialog"
 import { cn } from "@/lib/utils"
 import { getRecipeById, saveRecipe, ensureRecipesLoaded } from "@/lib/storage/recipes"
@@ -52,6 +52,15 @@ import { useLanguage } from "@/contexts/language-context"
 import { getClassificationLabel } from "@/lib/classification-labels"
 import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 import { getYieldUnitLabel, getCategoryLabel } from "@/lib/ingredient-labels"
+import { getDateLocale } from "@/lib/i18n/translations"
+import {
+  loadRecipeDraft,
+  saveRecipeDraftLocal,
+  saveRecipeDraftRemote,
+  clearRecipeDraft,
+  isRecipeDraftMeaningful,
+  type RecipeDraft,
+} from "@/lib/storage/recipe-draft"
 
 interface TechnicalSheetProps {
   mode: "new" | "view" | "edit"
@@ -87,6 +96,55 @@ function parsePositiveOrUndefined(input: string): number | undefined {
   return parsed
 }
 
+// Receta en blanco — estado inicial del formulario, y también a lo que vuelve el botón
+// "Limpiar ficha" (docs/131).
+function createEmptyRecipe(recipeId: string | undefined, businessId: string): Recipe {
+  const now = Date.now()
+  return {
+    id: recipeId || `recipe-${now}`,
+    name: "",
+    classification: "",
+    plate: "",
+    servings: 1,
+    yieldAmount: 0,
+    yieldUnit: "g",
+    ingredients: [
+      {
+        id: `ing-${now}`,
+        ingredientId: null,
+        name: "",
+        category: "",
+        quantity: 0,
+        unit: "",
+        measure: "",
+        cost: 0,
+        unitCost: 0,
+        costPerMeasure: 0,
+        extension: 0,
+      },
+    ],
+    procedure: [""],
+    totalCost: 0,
+    costPerServing: 0,
+    businessId,
+    metadata: {
+      createdAt: new Date(now).toISOString(),
+      updatedAt: new Date(now).toISOString(),
+      version: 1,
+    },
+  }
+}
+
+// Valores por defecto de los rubros de costeo — mismos que el useState inicial de abajo.
+const DEFAULT_PRICING_PERCENTAGES = {
+  contributionMargin: 30,
+  publicServices: 10,
+  marketing: 10,
+  operationalCosts: 30,
+  laborCosts: 25,
+  isv: 0,
+}
+
 export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPreviewChange }: TechnicalSheetProps) {
   const router = useRouter()
   const { toast } = useToast()
@@ -107,39 +165,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
   const [showCalculationInfo, setShowCalculationInfo] = useState(false)
   const quantityInputRefs = useRef<Record<number, HTMLInputElement | null>>({})
 
-  const [recipe, setRecipe] = useState<Recipe>({
-    id: recipeId || `recipe-${Date.now()}`,
-    name: "",
-    classification: "",
-    plate: "",
-    servings: 1,
-    yieldAmount: 0,
-    yieldUnit: "g",
-    ingredients: [
-      {
-        id: `ing-${Date.now()}`,
-        ingredientId: null,
-        name: "",
-        category: "",
-        quantity: 0,
-        unit: "",
-        measure: "",
-        cost: 0,
-        unitCost: 0,
-        costPerMeasure: 0,
-        extension: 0,
-      },
-    ],
-    procedure: [""],
-    totalCost: 0,
-    costPerServing: 0,
-    businessId,
-    metadata: {
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      version: 1,
-    },
-  })
+  const [recipe, setRecipe] = useState<Recipe>(() => createEmptyRecipe(recipeId, businessId))
 
   const [paxModifier, setPaxModifier] = useState<number>(0)
   // Confirmación explícita al guardar con el modificador de PAX activo — antes,
@@ -148,28 +174,172 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
   // plato hasta que notara el botón "Restaurar receta original". Ahora el guardado
   // solo procede tras confirmar este diálogo; cancelar no guarda nada.
   const [showPaxSaveConfirm, setShowPaxSaveConfirm] = useState(false)
-  const [contributionMargin, setContributionMargin] = useState<number>(30)
-  const [publicServices, setPublicServices] = useState<number>(10)
-  const [marketing, setMarketing] = useState<number>(10)
-  const [operationalCosts, setOperationalCosts] = useState<number>(30)
-  const [laborCosts, setLaborCosts] = useState<number>(25)
-  const [isv, setIsv] = useState<number>(0)
+  const [contributionMargin, setContributionMargin] = useState<number>(DEFAULT_PRICING_PERCENTAGES.contributionMargin)
+  const [publicServices, setPublicServices] = useState<number>(DEFAULT_PRICING_PERCENTAGES.publicServices)
+  const [marketing, setMarketing] = useState<number>(DEFAULT_PRICING_PERCENTAGES.marketing)
+  const [operationalCosts, setOperationalCosts] = useState<number>(DEFAULT_PRICING_PERCENTAGES.operationalCosts)
+  const [laborCosts, setLaborCosts] = useState<number>(DEFAULT_PRICING_PERCENTAGES.laborCosts)
+  const [isv, setIsv] = useState<number>(DEFAULT_PRICING_PERCENTAGES.isv)
   const [customUnitProfitInput, setCustomUnitProfitInput] = useState<string>("")
   const [customPriceInput, setCustomPriceInput] = useState<string>("")
   const [pricingMethod, setPricingMethod] = useState<PricingMethod>(DEFAULT_PRICING_METHOD)
   const [targetFoodCostPercent, setTargetFoodCostPercent] = useState<number>(DEFAULT_TARGET_FOOD_COST_PERCENT)
 
+  // ─── Borrador automático de receta nueva (docs/131, lib/storage/recipe-draft.ts) ───
+  // Solo en mode "new". draftReadyRef evita que el autoguardado pise el borrador con
+  // el formulario en blanco antes de haber intentado restaurarlo; draftDisabledRef lo
+  // apaga justo después de guardar la receta de verdad (para no re-crear el borrador
+  // que se acaba de borrar mientras se navega a /mis-recetas).
+  const isNewRecipe = mode === "new"
+  const userId = user?.id
+  const draftReadyRef = useRef(false)
+  const draftDisabledRef = useRef(false)
+  const draftBusinessRef = useRef<string | null>(null)
+  const [restoredDraftAt, setRestoredDraftAt] = useState<string | null>(null)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
+
+  const applyDraft = useCallback(
+    (draft: RecipeDraft) => {
+      const p = draft.pricing
+      setRecipe({ ...draft.recipe, businessId })
+      setContributionMargin(p.contributionMargin)
+      setPublicServices(p.publicServices)
+      setMarketing(p.marketing)
+      setOperationalCosts(p.operationalCosts)
+      setLaborCosts(p.laborCosts)
+      setIsv(p.isv)
+      setCustomUnitProfitInput(p.customUnitProfitInput || "")
+      setCustomPriceInput(p.customPriceInput || "")
+      setPaxModifier(p.paxModifier || 0)
+      if (p.pricingMethod) setPricingMethod(p.pricingMethod)
+      if (p.targetFoodCostPercent) setTargetFoodCostPercent(p.targetFoodCostPercent)
+      setRestoredDraftAt(draft.savedAt)
+    },
+    [businessId],
+  )
+
   useEffect(() => {
     let cancelled = false
+    draftReadyRef.current = false
     ;(async () => {
       await Promise.all([ensureIngredientsLoaded(businessId), ensureRecipesLoaded(businessId)])
       if (cancelled) return
       loadTechnicalSheetData()
+      if (isNewRecipe && userId) {
+        const draft = await loadRecipeDraft(userId, businessId)
+        if (cancelled) return
+        if (draft && isRecipeDraftMeaningful(draft.recipe)) {
+          applyDraft(draft)
+        } else if (draftBusinessRef.current !== null && draftBusinessRef.current !== businessId) {
+          // Cambió de negocio sin salir de la página: no arrastrar la receta del otro
+          // negocio (terminaría guardada como borrador de este).
+          setRecipe(createEmptyRecipe(undefined, businessId))
+          setRestoredDraftAt(null)
+        }
+        draftBusinessRef.current = businessId
+      }
+      draftReadyRef.current = true
     })()
     return () => {
       cancelled = true
     }
-  }, [recipeId, mode, businessId])
+  }, [recipeId, mode, businessId, userId])
+
+  const buildDraft = useCallback(
+    (): RecipeDraft => ({
+      recipe,
+      pricing: {
+        contributionMargin,
+        publicServices,
+        marketing,
+        operationalCosts,
+        laborCosts,
+        isv,
+        customUnitProfitInput,
+        customPriceInput,
+        paxModifier,
+        pricingMethod,
+        targetFoodCostPercent,
+      },
+      savedAt: new Date().toISOString(),
+    }),
+    [
+      recipe,
+      contributionMargin,
+      publicServices,
+      marketing,
+      operationalCosts,
+      laborCosts,
+      isv,
+      customUnitProfitInput,
+      customPriceInput,
+      paxModifier,
+      pricingMethod,
+      targetFoodCostPercent,
+    ],
+  )
+
+  // Siempre apunta al borrador vigente — lo usan el guardado al salir de la página y
+  // al desmontar, que no pueden depender de un closure viejo.
+  const latestDraftRef = useRef<() => RecipeDraft>(buildDraft)
+  latestDraftRef.current = buildDraft
+
+  // Autoguardado: copia local casi inmediata (0.8 s) y copia del servidor espaciada (4 s)
+  // para no mandar un upsert por cada tecla.
+  useEffect(() => {
+    if (!isNewRecipe || !userId || !draftReadyRef.current || draftDisabledRef.current) return
+    if (!isRecipeDraftMeaningful(recipe)) return
+    const localTimer = setTimeout(() => saveRecipeDraftLocal(userId, businessId, buildDraft()), 800)
+    const remoteTimer = setTimeout(() => saveRecipeDraftRemote(userId, businessId, buildDraft()), 4000)
+    return () => {
+      clearTimeout(localTimer)
+      clearTimeout(remoteTimer)
+    }
+  }, [isNewRecipe, userId, businessId, recipe, buildDraft])
+
+  // Salida "brusca" (cerrar pestaña, recargar, cambiar de app en el celular) o
+  // navegar a otro módulo: se guarda lo último al instante, sin esperar el debounce.
+  useEffect(() => {
+    if (!isNewRecipe || !userId) return
+    const flush = () => {
+      if (!draftReadyRef.current || draftDisabledRef.current) return
+      const draft = latestDraftRef.current()
+      if (!isRecipeDraftMeaningful(draft.recipe)) return
+      saveRecipeDraftLocal(userId, businessId, draft)
+      void saveRecipeDraftRemote(userId, businessId, draft)
+    }
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flush()
+    }
+    window.addEventListener("pagehide", flush)
+    document.addEventListener("visibilitychange", onVisibility)
+    return () => {
+      window.removeEventListener("pagehide", flush)
+      document.removeEventListener("visibilitychange", onVisibility)
+      flush()
+    }
+  }, [isNewRecipe, userId, businessId])
+
+  const handleClearSheet = useCallback(async () => {
+    setShowClearConfirm(false)
+    const pricingDefaults = getEffectivePricingDefaults(businessId)
+    setRecipe(createEmptyRecipe(undefined, businessId))
+    setContributionMargin(DEFAULT_PRICING_PERCENTAGES.contributionMargin)
+    setPublicServices(DEFAULT_PRICING_PERCENTAGES.publicServices)
+    setMarketing(DEFAULT_PRICING_PERCENTAGES.marketing)
+    setOperationalCosts(DEFAULT_PRICING_PERCENTAGES.operationalCosts)
+    setLaborCosts(DEFAULT_PRICING_PERCENTAGES.laborCosts)
+    setIsv(DEFAULT_PRICING_PERCENTAGES.isv)
+    setCustomUnitProfitInput("")
+    setCustomPriceInput("")
+    setPaxModifier(0)
+    setPricingMethod(pricingDefaults.pricingMethod || DEFAULT_PRICING_METHOD)
+    setTargetFoodCostPercent(pricingDefaults.targetFoodCostPercent || DEFAULT_TARGET_FOOD_COST_PERCENT)
+    setOpenPopovers({})
+    setRestoredDraftAt(null)
+    if (userId) await clearRecipeDraft(userId, businessId)
+    toast({ title: t("ficha_tecnica_toast_cleared_title"), description: t("ficha_tecnica_toast_cleared_desc") })
+  }, [businessId, userId, toast, t])
 
   function loadTechnicalSheetData() {
     const ingredients = getIngredients(businessId)
@@ -817,6 +987,12 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
         })
       }
 
+      // La receta ya existe de verdad — el borrador sobra.
+      if (isNewRecipe && userId) {
+        draftDisabledRef.current = true
+        await clearRecipeDraft(userId, businessId)
+      }
+
       router.push("/mis-recetas")
     } catch (error) {
       console.error("Error al guardar la receta:", error)
@@ -843,6 +1019,10 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     calculations.yieldByWeight,
     paxModifier,
     calculations.paxMultiplier,
+    isNewRecipe,
+    userId,
+    user,
+    mode,
   ])
 
   // Validaciones de siempre + el nuevo paso: si el modificador de PAX está activo,
@@ -963,6 +1143,42 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
 
   return (
     <div className="container mx-auto py-6 space-y-6 max-w-6xl">
+      {isNewRecipe && restoredDraftAt && (
+        <div
+          role="status"
+          className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3"
+        >
+          <History className="h-5 w-5 text-primary shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground">
+              {recipe.name
+                ? t("ficha_tecnica_draft_restored_title_named").replace("{name}", recipe.name)
+                : t("ficha_tecnica_draft_restored_title")}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {t("ficha_tecnica_draft_restored_desc").replace(
+                "{time}",
+                new Date(restoredDraftAt).toLocaleString(getDateLocale(language), { dateStyle: "medium", timeStyle: "short" }),
+              )}
+            </p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowClearConfirm(true)}>
+              <Eraser className="h-4 w-4" />
+              {t("ficha_tecnica_clear_button")}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label={t("ficha_tecnica_draft_dismiss")}
+              onClick={() => setRestoredDraftAt(null)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
       <Card className="w-full mx-auto">
         <CardHeader>
           <CardTitle className="text-2xl">{t("nav_ficha_tecnica")}</CardTitle>
@@ -1796,12 +2012,37 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       </Card>
 
       {isEditMode && (
-        <div className="flex justify-end w-full mx-auto" data-tour="ficha-save">
+        <div
+          className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 w-full mx-auto"
+          data-tour="ficha-save"
+        >
+          {isNewRecipe && (
+            <>
+              <p className="text-xs text-muted-foreground sm:mr-auto">{t("ficha_tecnica_draft_autosave_hint")}</p>
+              <Button variant="outline" onClick={() => setShowClearConfirm(true)} className="gap-2">
+                <Eraser className="h-4 w-4" />
+                {t("ficha_tecnica_clear_button")}
+              </Button>
+            </>
+          )}
           <Button onClick={handleSaveRecipe} className="px-8">
             {t("ficha_tecnica_save_recipe_button")}
           </Button>
         </div>
       )}
+
+      <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("ficha_tecnica_clear_confirm_title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("ficha_tecnica_clear_confirm_desc")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common_cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClearSheet}>{t("ficha_tecnica_clear_confirm_button")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={showPaxSaveConfirm} onOpenChange={setShowPaxSaveConfirm}>
         <AlertDialogContent>

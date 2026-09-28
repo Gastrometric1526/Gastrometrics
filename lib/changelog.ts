@@ -21,6 +21,71 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-09-28",
+    content: {
+      es: {
+        title: "Novedades en Gastrometrics",
+        items: [
+          "Tu receta ya no se pierde: mientras creas una receta en Ficha Técnica, se guarda sola por 24 horas. Si cierras la pestaña o te vas a otro módulo, al volver la encuentras tal como la dejaste, incluso desde otro dispositivo.",
+          "Nuevo botón «Limpiar ficha» para dejar la Ficha Técnica en blanco y empezar una receta desde cero.",
+          "Manual de usuario completamente rediseñado y reescrito en los 6 idiomas, con capturas nuevas, índice por capítulos y ejemplos paso a paso. Ábrelo desde Configuración → Manual de usuario (PDF).",
+          "Recordatorios útiles por correo (opcionales): si llevas unos días sin entrar, te avisamos de una receta sin terminar, de tu próximo conteo de inventario, de revisar tus reportes o de actualizar precios. Nunca más de uno cada pocos días y con baja en un clic.",
+          "Todos los correos y las fechas de la app ahora respetan siempre el idioma que tienes seleccionado.",
+        ],
+      },
+      en: {
+        title: "What's new in Gastrometrics",
+        items: [
+          "Your recipe is never lost: while you create a recipe in the Recipe Sheet, it's saved automatically for 24 hours. If you close the tab or go to another module, it's waiting for you exactly as you left it, even on another device.",
+          "New “Clear sheet” button to reset the Recipe Sheet and start a recipe from scratch.",
+          "The user manual has been completely redesigned and rewritten in all 6 languages, with new screenshots, chapter index and step-by-step examples. Open it from Settings → User manual (PDF).",
+          "Helpful email reminders (optional): if you haven't signed in for a few days, we'll remind you about an unfinished recipe, your next inventory count, checking your reports or updating prices. Never more than one every few days, with one-click unsubscribe.",
+          "All emails and dates in the app now always follow the language you have selected.",
+        ],
+      },
+      da: {
+        title: "Nyheder i Gastrometrics",
+        items: [
+          "Din opskrift går aldrig tabt: mens du opretter en opskrift i Opskriftsark, gemmes den automatisk i 24 timer. Lukker du fanen eller går til et andet modul, venter den på dig præcis som du forlod den, også på en anden enhed.",
+          "Ny knap »Ryd arket« til at nulstille Opskriftsark og starte en opskrift forfra.",
+          "Brugermanualen er fuldstændig redesignet og omskrevet på alle 6 sprog med nye skærmbilleder, kapitelindeks og eksempler trin for trin. Åbn den fra Indstillinger → Brugermanual (PDF).",
+          "Nyttige påmindelser via e-mail (valgfrit): har du ikke været logget ind i nogle dage, minder vi dig om en ufærdig opskrift, din næste lageroptælling, at se dine rapporter eller at opdatere priser. Aldrig mere end én med få dages mellemrum og med afmelding med ét klik.",
+          "Alle e-mails og datoer i appen følger nu altid det sprog, du har valgt.",
+        ],
+      },
+      fr: {
+        title: "Nouveautés de Gastrometrics",
+        items: [
+          "Votre recette n'est plus jamais perdue : pendant que vous créez une recette dans la Fiche Technique, elle est enregistrée automatiquement pendant 24 heures. Si vous fermez l'onglet ou passez à un autre module, vous la retrouvez telle quelle, même sur un autre appareil.",
+          "Nouveau bouton « Vider la fiche » pour remettre la Fiche Technique à blanc et repartir de zéro.",
+          "Le manuel utilisateur a été entièrement repensé et réécrit dans les 6 langues, avec de nouvelles captures, un sommaire par chapitres et des exemples pas à pas. Ouvrez-le depuis Paramètres → Manuel utilisateur (PDF).",
+          "Des rappels utiles par e-mail (facultatifs) : si vous ne vous êtes pas connecté depuis quelques jours, nous vous rappelons une recette inachevée, votre prochain inventaire, la consultation de vos rapports ou la mise à jour de vos prix. Jamais plus d'un tous les quelques jours, avec désabonnement en un clic.",
+          "Tous les e-mails et les dates de l'application respectent désormais toujours la langue que vous avez choisie.",
+        ],
+      },
+      pt: {
+        title: "Novidades na Gastrometrics",
+        items: [
+          "Sua receita não se perde mais: enquanto você cria uma receita na Ficha Técnica, ela é salva automaticamente por 24 horas. Se fechar a aba ou for para outro módulo, ela espera por você do jeito que deixou, até em outro dispositivo.",
+          "Novo botão «Limpar ficha» para deixar a Ficha Técnica em branco e começar uma receita do zero.",
+          "O manual do usuário foi totalmente redesenhado e reescrito nos 6 idiomas, com novas capturas de tela, sumário por capítulos e exemplos passo a passo. Abra em Configurações → Manual do usuário (PDF).",
+          "Lembretes úteis por e-mail (opcionais): se você passar alguns dias sem entrar, avisamos sobre uma receita não finalizada, sua próxima contagem de estoque, revisar seus relatórios ou atualizar preços. Nunca mais de um a cada poucos dias, com cancelamento em um clique.",
+          "Todos os e-mails e datas do app agora seguem sempre o idioma que você selecionou.",
+        ],
+      },
+      zh: {
+        title: "Gastrometrics 新功能",
+        items: [
+          "食谱不再丢失：在技术配方表中创建食谱时，内容会自动保存 24 小时。即使你关闭标签页或切换到其他模块，回来时也会原样恢复，在其他设备上同样可以找到。",
+          "新增“清空技术配方表”按钮，可一键清空并从头开始新食谱。",
+          "用户手册已全面重新设计，并用 6 种语言重写，配有全新截图、章节目录和分步示例。可在 设置 → 用户手册（PDF）中打开。",
+          "实用的邮件提醒（可选）：如果你几天没有登录，我们会提醒你未完成的食谱、下一次库存盘点、查看报表或更新价格。每隔几天最多一封，并可一键退订。",
+          "应用中的所有邮件和日期现在都会始终使用你所选择的语言。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-09-22",
     content: {
       es: {

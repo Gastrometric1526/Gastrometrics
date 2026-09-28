@@ -19,6 +19,7 @@ import { processPdfOrder } from "@/utils/pdf-order-processor"
 import type { ProcessedOrder, ValidationResult, PurchaseOrder } from "@/types/purchase-order"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
+import { getDateLocale, type LanguageCode } from "@/lib/i18n/translations"
 
 interface PdfOrderProcessorProps {
   businessId?: string
@@ -78,7 +79,7 @@ const OrderItem = memo(({ item, index, t }: { item: any; index: number; t: (key:
 
 // Create a memoized order component
 const OrderCard = memo(
-  ({ order, orderIndex, t }: { order: ProcessedOrder; orderIndex: number; t: (key: any) => string }) => (
+  ({ order, orderIndex, t, language }: { order: ProcessedOrder; orderIndex: number; t: (key: any) => string; language: LanguageCode }) => (
     <div key={orderIndex} className="border rounded-lg p-4">
       <div className="flex justify-between items-start mb-4">
         <div>
@@ -88,7 +89,7 @@ const OrderCard = memo(
           <p className="text-sm text-muted-foreground">
             {t("procesar_order_number_label")} {order.orderNumber} • {t("procesar_order_date_label")}
             {""}
-            {new Date(order.date || Date.now()).toLocaleDateString()}
+            {new Date(order.date || Date.now()).toLocaleDateString(getDateLocale(language))}
           </p>
         </div>
         <Badge variant="outline">
@@ -113,7 +114,7 @@ const OrderCard = memo(
 )
 
 export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const [isProcessing, setIsProcessing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [processedOrders, setProcessedOrders] = useState<ProcessedOrder[]>([])
@@ -304,7 +305,7 @@ export function PdfOrderProcessor({ businessId }: PdfOrderProcessorProps) {
         <ScrollArea className="h-[400px] rounded-md border p-4">
           <div className="space-y-6">
             {processedOrders.map((order, orderIndex) => (
-              <OrderCard key={orderIndex} order={order} orderIndex={orderIndex} t={t} />
+              <OrderCard key={orderIndex} order={order} orderIndex={orderIndex} t={t} language={language} />
             ))}
           </div>
         </ScrollArea>

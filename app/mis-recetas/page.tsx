@@ -74,6 +74,7 @@ import { migrateCompleteRecipe } from "@/lib/subrecipe/migration"
 import { useAllBusinesses } from "@/lib/storage/businesses"
 import type { Recipe } from "@/types/recipe"
 import type { Business } from "@/types/business"
+import { getDateLocale } from "@/lib/i18n/translations"
 
 // Clasificaciones disponibles
 // BUG CORREGIDO: esta lista era una copia local con valores que no coinciden con ninguna
@@ -971,7 +972,7 @@ export default function MisRecetasPage() {
                       <div className="min-w-0">
                         <p className="font-medium text-foreground truncate">{recipe.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {t("misrecetas_trash_deleted_on_prefix")} {new Date(deletedAt).toLocaleDateString()} ·{" "}
+                          {t("misrecetas_trash_deleted_on_prefix")} {new Date(deletedAt).toLocaleDateString(getDateLocale(language))} ·{" "}
                           {daysRemaining > 0
                             ? daysRemaining === 1
                               ? t("misrecetas_trash_days_remaining_one")

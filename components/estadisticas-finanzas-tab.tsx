@@ -54,9 +54,10 @@ import { useLanguage } from "@/contexts/language-context"
 import type { SalesImport } from "@/types/sales-import"
 import type { Recipe } from "@/types/recipe"
 import type { Menu } from "@/lib/types/menus"
+import { getDateLocale } from "@/lib/i18n/translations"
 
 export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
 
   const classificationMeta: Record<MenuEngineeringClass, { label: string; icon: any; color: string; desc: string }> = {
     estrella: {
@@ -701,7 +702,7 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(imp.importedAt).toLocaleString()} · {imp.lineCount} {t("finanzas_import_rows_suffix")} ·{" "}
+                      {new Date(imp.importedAt).toLocaleString(getDateLocale(language))} · {imp.lineCount} {t("finanzas_import_rows_suffix")} ·{" "}
                       {formatCurrency(imp.totalRevenue)}
                       {imp.unmatchedDishNames.length > 0 &&
                         ` · ${imp.unmatchedDishNames.length} ${t("finanzas_unlinked_badge")}`}

@@ -3,6 +3,10 @@
 /.pnp
 .pnp.js
 
+# manual de usuario: herramientas de build y salidas intermedias (ver manual/LEEME.md)
+/manual/node_modules
+/manual/out
+
 # testing
 /coverage
 

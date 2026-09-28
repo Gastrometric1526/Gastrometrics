@@ -433,6 +433,36 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["activation_emails_sent"]["Row"]>
         Relationships: never[]
       }
+      recipe_drafts: {
+        Row: {
+          user_id: string
+          business_key: string
+          recipe_name: string
+          data: Record<string, unknown>
+          updated_at: string
+        }
+        Insert: Omit<Database["public"]["Tables"]["recipe_drafts"]["Row"], "updated_at" | "recipe_name" | "data"> & {
+          recipe_name?: string
+          data?: Record<string, unknown>
+          updated_at?: string
+        }
+        Update: Partial<Database["public"]["Tables"]["recipe_drafts"]["Row"]>
+        Relationships: never[]
+      }
+      reengagement_emails_sent: {
+        Row: {
+          id: number
+          account_id: string
+          email_type: "unfinished_recipe" | "inventory_count" | "review_reports" | "update_prices" | "we_miss_you"
+          sent_at: string
+        }
+        Insert: Omit<Database["public"]["Tables"]["reengagement_emails_sent"]["Row"], "id" | "sent_at"> & {
+          id?: number
+          sent_at?: string
+        }
+        Update: Partial<Database["public"]["Tables"]["reengagement_emails_sent"]["Row"]>
+        Relationships: never[]
+      }
       page_views: {
         Row: {
           id: number

@@ -19,6 +19,7 @@ import { downloadSalesHistoryPDF } from "@/lib/pdf/sales-history-pdf-generator"
 import type { SalesImport } from "@/types/sales-import"
 import type { Recipe } from "@/types/recipe"
 import type { Menu } from "@/lib/types/menus"
+import { getDateLocale } from "@/lib/i18n/translations"
 
 type RangeOption = "7" | "30" | "90" | "all" | "custom"
 
@@ -48,7 +49,7 @@ export function SalesHistoryBreakdown({
   businessId,
   combinedBusinessCount,
 }: SalesHistoryBreakdownProps) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const [range, setRange] = useState<RangeOption>("30")
   const [granularity, setGranularity] = useState<SalesGranularity>("day")
   const [customFrom, setCustomFrom] = useState("")
@@ -75,14 +76,14 @@ export function SalesHistoryBreakdown({
   const formatPeriodLabel = (startDate: string, endDate: string) => {
     const start = new Date(`${startDate}T00:00:00`)
     if (granularity === "day") {
-      return start.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" })
+      return start.toLocaleDateString(getDateLocale(language), { weekday: "short", day: "numeric", month: "short", year: "numeric" })
     }
     if (granularity === "week") {
       const end = new Date(`${endDate}T00:00:00`)
-      return `${start.toLocaleDateString(undefined, { day: "numeric", month: "short" })} – ${end.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`
+      return `${start.toLocaleDateString(getDateLocale(language), { day: "numeric", month: "short" })} – ${end.toLocaleDateString(getDateLocale(language), { day: "numeric", month: "short", year: "numeric" })}`
     }
     if (granularity === "month") {
-      return start.toLocaleDateString(undefined, { month: "long", year: "numeric" })
+      return start.toLocaleDateString(getDateLocale(language), { month: "long", year: "numeric" })
     }
     return start.getFullYear().toString()
   }
@@ -90,8 +91,8 @@ export function SalesHistoryBreakdown({
   const chartAxisLabel = (startDate: string) => {
     const start = new Date(`${startDate}T00:00:00`)
     if (granularity === "year") return start.getFullYear().toString()
-    if (granularity === "month") return start.toLocaleDateString(undefined, { month: "short", year: "2-digit" })
-    return start.toLocaleDateString(undefined, { day: "numeric", month: "short" })
+    if (granularity === "month") return start.toLocaleDateString(getDateLocale(language), { month: "short", year: "2-digit" })
+    return start.toLocaleDateString(getDateLocale(language), { day: "numeric", month: "short" })
   }
 
   const chartData = useMemo(
