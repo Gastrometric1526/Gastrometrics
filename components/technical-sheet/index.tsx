@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { formatCurrency, formatUnitPrice, getCurrentCurrencyCode } from "@/lib/currency"
 import { roundSalePrice, roundUpToStep } from "@/lib/price-rounding"
+import { normalizeUploadedPhoto } from "@/lib/pdf/pdf-image"
 import { BEVERAGE_COST_TARGET_RANGE, DEFAULT_BEVERAGE_COST_TARGET, getBarKind } from "@/lib/beverage"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
@@ -664,6 +665,11 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     salesCommissionPercent,
   ])
 
+  const unlinkedIngredientNames = useMemo(
+    () => recipe.ingredients.filter((line) => !line.ingredientId && line.name?.trim()).map((line) => line.name.trim()),
+    [recipe.ingredients],
+  )
+
   const recipeAllergens = useMemo(
     () => getRecipeAllergens(recipe, availableIngredients, getRecipes(businessId)),
     [recipe, availableIngredients, businessId],
@@ -948,11 +954,11 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
   }, [])
 
   const handleImageUpload = useCallback((file: File) => {
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setRecipe((prev) => ({ ...prev, image: reader.result as string }))
-    }
-    reader.readAsDataURL(file)
+    // Reducida a 1600 px y en JPEG (docs/137): más liviana dentro de la receta y siempre en
+    // un formato que los PDF pueden dibujar.
+    void normalizeUploadedPhoto(file).then((dataUrl) => {
+      if (dataUrl) setRecipe((prev) => ({ ...prev, image: dataUrl }))
+    })
   }, [])
 
   const [isDraggingImage, setIsDraggingImage] = useState(false)
@@ -1535,6 +1541,17 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
           <CardTitle>{t("nav_ingredientes")}</CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Líneas con nombre pero sin ingrediente de ESTE negocio — típicamente una receta
+              migrada "solo la receta" (docs/137). Se eligen desde la base de este negocio. */}
+          {unlinkedIngredientNames.length > 0 && (
+            <div className="mb-4 flex items-start gap-2 rounded-lg border border-warning/40 bg-warning-soft px-4 py-3 text-sm text-warning">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-semibold">{t("ficha_tecnica_unlinked_ingredients_title")}</p>
+                <p>{t("ficha_tecnica_unlinked_ingredients_desc").replace("{names}", unlinkedIngredientNames.join(", "))}</p>
+              </div>
+            </div>
+          )}
           {isEditMode && (
             <Button variant="outline" onClick={addNewIngredient} className="mb-4 bg-transparent">
               {t("ficha_tecnica_add_ingredient_button")}

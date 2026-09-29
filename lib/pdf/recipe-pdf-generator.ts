@@ -5,6 +5,7 @@ import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { getPdfLabels, getCurrentPdfLanguage } from "@/lib/i18n/pdf-labels"
 import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 import { drawBusinessLogo } from "./pdf-logo"
+import { drawImageFit } from "./pdf-image"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
 import { getYieldUnitLabel } from "@/lib/ingredient-labels"
 import { trackEvent } from "@/lib/analytics/track-event"
@@ -1004,6 +1005,21 @@ function generateAdministrativePDF(
   // components/technical-sheet/index.tsx — recipe.observations solo puede traer datos
   // en recetas exportadas antes de esa migración (nunca se reabrieron en la app desde
   // entonces), así que se sigue anexando aquí para no perder ese texto en el PDF.
+  // ===== FOTO DEL PLATO (docs/137): antes la copia administrativa no la incluía =====
+  if (recipe.image && options.includeImage) {
+    const photoMaxHeight = 80
+    if (yPosition + photoMaxHeight + 12 > pageHeight - 15) {
+      doc.addPage()
+      yPosition = margin
+    }
+    doc.setFontSize(10)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(...COLORS.darkGray)
+    doc.text(labels.fotoDelPlato.toUpperCase(), margin, yPosition)
+    const drawn = drawImageFit(doc, recipe.image, margin, yPosition + 3, 130, photoMaxHeight, "left")
+    yPosition += drawn ? drawn.height + 10 : 4
+  }
+
   yPosition = drawAllergensLine(
     doc,
     labels.alergenos,
@@ -1175,17 +1191,10 @@ function generateEmployeePDF(
   doc.text(yieldServingsText, pageWidth / 2, yPosition, { align: "center" })
   yPosition += 10
 
-  // ===== IMAGE (Limited size) =====
+  // ===== FOTO (docs/137): hasta el ancho útil × 95 mm, centrada y sin deformar =====
   if (recipe.image && options.includeImage) {
-    try {
-      const maxImgWidth = 100
-      const maxImgHeight = 60 // Limit height to ~60mm
-      const imgX = (pageWidth - maxImgWidth) / 2
-      doc.addImage(recipe.image, "JPEG", imgX, yPosition, maxImgWidth, maxImgHeight)
-      yPosition += maxImgHeight + 8
-    } catch (e) {
-      // Skip image
-    }
+    const drawn = drawImageFit(doc, recipe.image, margin, yPosition, contentWidth, 95, "center")
+    if (drawn) yPosition += drawn.height + 8
   }
 
   // ===== INGREDIENTS TABLE (Simple, no costs) =====
@@ -1352,17 +1361,18 @@ function generateNormalPDF(
   // ===== YIELD/SERVINGS (Plain text) =====
   doc.setFontSize(10)
   doc.setTextColor(...COLORS.text)
-  doc.text(`Rendimiento: ${recipe.yieldAmount} ${yieldUnitLabel(recipe)} | Porciones: ${recipe.servings}`, margin, yPosition)
+  // BUG CORREGIDO (docs/137): el texto estaba fijo en español.
+  doc.text(
+    `${labels.rendimiento}: ${recipe.yieldAmount} ${yieldUnitLabel(recipe)} | ${labels.porciones}: ${recipe.servings}`,
+    margin,
+    yPosition,
+  )
   yPosition += 10
 
-  // ===== IMAGE (Controlled size) =====
+  // ===== FOTO (docs/137): hasta el ancho útil × 95 mm, centrada y sin deformar =====
   if (recipe.image && options.includeImage) {
-    try {
-      doc.addImage(recipe.image, "JPEG", margin, yPosition, 80, 55)
-      yPosition += 60
-    } catch (e) {
-      // Skip image
-    }
+    const drawn = drawImageFit(doc, recipe.image, margin, yPosition, doc.internal.pageSize.getWidth() - margin * 2, 95, "center")
+    if (drawn) yPosition += drawn.height + 8
   }
 
   // ===== INGREDIENTS TABLE =====

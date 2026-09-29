@@ -16,6 +16,8 @@ import { NumericInput } from "@/components/ui/numeric-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/auth-context"
+import { logActivity } from "@/lib/services/activity-log"
 import { useLanguage } from "@/contexts/language-context"
 import { formatCurrency, getCurrentCurrencyCode } from "@/lib/currency"
 import { roundSalePrice } from "@/lib/price-rounding"
@@ -58,6 +60,7 @@ export function SellByServingDialog({ ingredient: openIngredient, businessId, on
   }, [openIngredient])
   const { toast } = useToast()
   const router = useRouter()
+  const { user } = useAuth()
 
   const isVolume = ingredient ? mlPerIngredientUnit(ingredient.unit) !== null : false
   const presets = useMemo(() => {
@@ -168,6 +171,17 @@ export function SellByServingDialog({ ingredient: openIngredient, businessId, on
     }
     try {
       const saved = await saveRecipe(recipe, businessId)
+      // Misma huella que una receta creada en la Ficha Técnica: el cron de activación
+      // usa esta actividad para no mandar "crea tu primera receta" (docs/137).
+      if (user) {
+        logActivity({
+          user,
+          businessId: businessId && businessId !== "main" ? businessId : null,
+          module: "recetas",
+          action: "created",
+          entityLabel: saved.name,
+        })
+      }
       onOpenChange(false)
       toast({
         title: t("bebidas_sell_toast_title"),

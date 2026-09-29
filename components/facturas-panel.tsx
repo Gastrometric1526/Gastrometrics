@@ -30,6 +30,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/auth-context"
+import { logActivity } from "@/lib/services/activity-log"
 import { formatCurrency } from "@/lib/currency"
 import { useFeatureAccess, getAccessBlockReason } from "@/lib/plan-access"
 import { FeatureLockedPage } from "@/components/feature-locked"
@@ -81,6 +83,7 @@ function emptyDraftItem(): DraftItem {
 export function FacturasPanel({ businessId }: { businessId: string }) {
   const { t } = useLanguage()
   const { toast } = useToast()
+  const { user } = useAuth()
   const canAccessInvoices = useFeatureAccess("invoices")
 
   const invoices = useInvoices(businessId)
@@ -347,6 +350,17 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
         await addInvoice(businessId, invoice)
       }
       await syncSalesImportForInvoice(invoice, !editingInvoice)
+      // Una factura cuenta como venta (docs/124): se registra como tal para que el correo de
+      // "primera venta" (cron de activación) y los recordatorios la vean (docs/137).
+      if (user && !editingInvoice) {
+        logActivity({
+          user,
+          businessId: businessId && businessId !== "main" ? businessId : null,
+          module: "estadisticas",
+          action: "imported",
+          metadata: { source: "invoice" },
+        })
+      }
       toast({ title: t("facturas_toast_saved_title"), description: t("facturas_toast_saved_desc") })
       setIsDialogOpen(false)
     } catch (error) {

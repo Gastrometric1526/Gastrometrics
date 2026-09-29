@@ -252,6 +252,31 @@ export function chooseReengagement(f: AccountFacts, r = REENGAGEMENT_RULES): Ree
   return null
 }
 
+/**
+ * Motivo por el que una cuenta NO recibe recordatorio hoy (solo para el modo de prueba —
+ * docs/137): hace verificable el cron sin mandar nada. Sigue el mismo orden que
+ * chooseReengagement.
+ */
+export type ReengagementSkipReason =
+  | "sin_actividad_registrada"
+  | "inactiva_demasiado_tiempo"
+  | "pausa_por_recordatorio_reciente"
+  | "pausa_por_correo_de_activacion"
+  | "activa_hace_poco"
+  | "ninguna_regla_aplica"
+
+export function explainSkip(f: AccountFacts, r = REENGAGEMENT_RULES): ReengagementSkipReason {
+  if (!f.lastActiveAt) return "sin_actividad_registrada"
+  const inactiveDays = daysBetween(f.lastActiveAt, f.now)
+  if (inactiveDays > r.maxInactiveDays) return "inactiva_demasiado_tiempo"
+  const lastSentAny = f.sentHistory.reduce((max, s) => Math.max(max, s.sentAt), 0)
+  if (lastSentAny && f.now - lastSentAny < r.globalCooldownDays * DAY_MS) return "pausa_por_recordatorio_reciente"
+  if (f.lastActivationEmailAt && f.now - f.lastActivationEmailAt < r.activationGapHours * HOUR_MS)
+    return "pausa_por_correo_de_activacion"
+  if (inactiveDays < r.minInactiveDays) return "activa_hace_poco"
+  return "ninguna_regla_aplica"
+}
+
 // ─── Recolección de datos + envío (cron) ───
 
 type AdminClient = ReturnType<typeof getSupabaseAdminClient>
@@ -352,6 +377,8 @@ export interface ReengagementRunResult {
   sent: number
   byType: Partial<Record<ReengagementType, number>>
   decisions?: { accountId: string; type: ReengagementType; actionPath: string }[]
+  // Solo en modo de prueba: cuántas cuentas se descartaron por cada motivo.
+  skipReasons?: Partial<Record<ReengagementSkipReason, number>>
 }
 
 export async function runReengagementReminders(options: { dryRun?: boolean } = {}): Promise<ReengagementRunResult> {
@@ -501,7 +528,13 @@ export async function runReengagementReminders(options: { dryRun?: boolean } = {
     }
 
     const decision = chooseReengagement(facts)
-    if (!decision) continue
+    if (!decision) {
+      if (options.dryRun) {
+        const reason = explainSkip(facts)
+        result.skipReasons = { ...result.skipReasons, [reason]: (result.skipReasons?.[reason] ?? 0) + 1 }
+      }
+      continue
+    }
     decisions.push({ accountId: account.id, type: decision.type, actionPath: decision.actionPath })
     if (options.dryRun || !resend) continue
 

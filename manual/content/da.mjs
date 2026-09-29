@@ -188,7 +188,7 @@ export default {
         ["figure", "06-mis-recetas.jpg", "Mine Opskrifter: alle dine opskrifter med kostpris, udbytte og hurtige handlinger."],
         ["list", [
           "<strong>Dupliker</strong> laver en kopi i samme virksomhed med »(kopi)« i navnet.",
-          "<strong>Flyt</strong> flytter opskriften til en af dine andre virksomheder sammen med dens underopskrifter og ingredienser og genbruger dem, der allerede findes der.",
+          "<strong>Flyt</strong> kopierer opskriften til en anden af dine virksomheder. Den spørger, om ingredienser og underopskrifter skal med (dem, der allerede findes, genbruges) eller kun opskriften: så åbnes arket i virksomheden, så du vælger ingredienserne fra dens egen database (dem med samme navn kobles automatisk).",
           "<strong>Slet</strong> sender den i <strong>papirkurven</strong>, hvor du kan gendanne den i 30 dage, før den slettes automatisk.",
         ]],
       ],

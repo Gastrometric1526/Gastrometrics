@@ -5,8 +5,8 @@
 
 import type { Recipe } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
-import { getRecipes, saveRecipes, isSubRecipe } from "../storage/recipes"
-import { getIngredients, saveIngredients } from "../storage/ingredients"
+import { getRecipes, saveRecipes, isSubRecipe, ensureRecipesLoaded } from "../storage/recipes"
+import { getIngredients, saveIngredients, ensureIngredientsLoaded } from "../storage/ingredients"
 import { syncSubRecipeToIngredient } from "./core"
 
 interface MigrationResult {
@@ -71,6 +71,60 @@ async function migrateSubRecipeChain(
 }
 
 /**
+ * Migración "solo la receta" (docs/137): no copia ingredientes ni sub-recetas. Cada línea
+ * se vincula al ingrediente del negocio destino que tenga el MISMO nombre (con el precio de
+ * ese negocio); las que no tengan equivalente quedan sin vincular (conservan nombre, cantidad
+ * y unidad) para que el usuario elija el ingrediente desde la base de ese negocio en la Ficha
+ * Técnica, que se abre justo después.
+ */
+function migrateRecipeOnly(recipe: Recipe, sourceBusinessId: string, targetBusinessId: string): MigrationResult {
+  const byName = new Map(
+    (getIngredients(targetBusinessId) || []).map((ing) => [ing.name.toLowerCase().trim(), ing] as const),
+  )
+  const skippedIngredients: string[] = []
+  const ingredients = recipe.ingredients.map((line) => {
+    if (!line.ingredientId && !line.name) return line
+    const match = line.name ? byName.get(line.name.toLowerCase().trim()) : undefined
+    if (match) {
+      const unitCost = match.pricing?.pricePerUnit || 0
+      return {
+        ...line,
+        ingredientId: match.id,
+        category: match.category,
+        unit: match.unit,
+        unitCost,
+        costPerMeasure: unitCost,
+        extension: (line.quantity || 0) * unitCost,
+      }
+    }
+    skippedIngredients.push(line.name)
+    return { ...line, ingredientId: null, unitCost: 0, costPerMeasure: 0, extension: 0 }
+  })
+  const totalCost = ingredients.reduce((sum, line) => sum + (line.extension || 0), 0)
+  const yieldAmount = recipe.yieldAmount > 0 ? recipe.yieldAmount : 1
+  const now = new Date().toISOString()
+  const migratedRecipe: Recipe = {
+    ...recipe,
+    id: `migrated_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    businessId: targetBusinessId,
+    ingredients,
+    totalCost,
+    costPerServing: totalCost / yieldAmount,
+    originalSnapshot: undefined,
+    metadata: { ...recipe.metadata, migratedFrom: sourceBusinessId, migratedAt: now, updatedAt: now, version: 1 },
+  }
+  void saveRecipes([...getRecipes(targetBusinessId), migratedRecipe], targetBusinessId)
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("recipesUpdated", {
+        detail: { businessId: targetBusinessId, action: "migrated", recipeId: migratedRecipe.id },
+      }),
+    )
+  }
+  return { success: true, migratedRecipe, migratedIngredients: [], migratedSubRecipes: [], skippedIngredients }
+}
+
+/**
  * Migrate ingredients that don't exist in target database. Si un ingrediente viene de una
  * sub-receta (ingredient.recipeId), también se migra esa receta al destino (recursivo), para
  * que quede editable como Ficha Técnica ahí, no solo como un costo plano.
@@ -83,7 +137,11 @@ async function migrateIngredients(
   visited: Set<string>,
 ): Promise<{ migratedIngredients: Ingredient[]; skippedIngredients: string[] }> {
   const sourceIngredients = getIngredients(sourceBusinessId) || []
-  let targetIngredients = getIngredients(targetBusinessId) || []
+  // Copia local: getIngredients() devuelve el MISMO arreglo de la caché. Antes se le hacía
+  // push directo y después se volvía a sumar al guardar → filas duplicadas en un solo upsert,
+  // que Supabase rechazaba entero (21000) — los ingredientes migrados nunca se guardaban
+  // (docs/137).
+  const targetIngredients = [...(getIngredients(targetBusinessId) || [])]
 
   const recipeIngredientIds = recipe.ingredients.map((ing) => ing.ingredientId).filter((id): id is string => !!id)
   const ingredientsToCheck = sourceIngredients.filter((ing) => recipeIngredientIds.includes(ing.id))
@@ -139,8 +197,9 @@ async function migrateIngredients(
 
   if (migratedIngredients.length > 0) {
     // Releer por si migrateSubRecipeChain ya guardó ingredientes propios (p.ej. de una sub-receta anidada).
-    targetIngredients = [...getIngredients(targetBusinessId), ...migratedIngredients]
-    saveIngredients(targetIngredients, targetBusinessId)
+    const byId = new Map(getIngredients(targetBusinessId).map((ing) => [ing.id, ing] as const))
+    for (const ing of migratedIngredients) byId.set(ing.id, ing)
+    await saveIngredients([...byId.values()], targetBusinessId)
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(
@@ -168,11 +227,27 @@ export async function migrateCompleteRecipe(
   sourceBusinessId: string,
   targetBusinessId: string,
   internal?: { migratedSubRecipes: Recipe[]; visited: Set<string> },
+  options: { includeIngredients?: boolean } = {},
 ): Promise<MigrationResult> {
   const migratedSubRecipes = internal?.migratedSubRecipes ?? []
   const visited = internal?.visited ?? new Set<string>()
+  const includeIngredients = options.includeIngredients !== false
 
   try {
+    // BUG CORREGIDO (docs/137): si los datos del negocio destino no estaban cargados en la
+    // caché (nunca se había abierto en esta sesión), getIngredients() devolvía [] y cada
+    // ingrediente que YA existía allá se volvía a crear duplicado. Se cargan antes los dos.
+    if (!internal) {
+      await Promise.all([
+        ensureIngredientsLoaded(sourceBusinessId),
+        ensureRecipesLoaded(sourceBusinessId),
+        ensureIngredientsLoaded(targetBusinessId),
+        ensureRecipesLoaded(targetBusinessId),
+      ])
+    }
+
+    if (!includeIngredients) return migrateRecipeOnly(recipe, sourceBusinessId, targetBusinessId)
+
     const { migratedIngredients, skippedIngredients } = await migrateIngredients(
       recipe,
       sourceBusinessId,
@@ -225,9 +300,7 @@ export async function migrateCompleteRecipe(
         : `🔄 Migrado desde ${sourceBusinessId} el ${new Date().toLocaleDateString()}`,
     }
 
-    const targetRecipes = getRecipes(targetBusinessId)
-    targetRecipes.push(migratedRecipe)
-    saveRecipes(targetRecipes, targetBusinessId)
+    await saveRecipes([...getRecipes(targetBusinessId), migratedRecipe], targetBusinessId)
 
     // Si la propia receta migrada es una sub-receta, sincronizar su ingrediente espejo en el
     // destino apuntando al nuevo id — para que quien la migró como parte de otra receta la

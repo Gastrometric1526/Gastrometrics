@@ -188,7 +188,7 @@ export default {
         ["figure", "06-mis-recetas.jpg", "My Recipes: all your recipes with their cost, yield and quick actions."],
         ["list", [
           "<strong>Duplicate</strong> creates a copy in the same business, with “(copy)” in the name.",
-          "<strong>Migrate</strong> moves the recipe to another of your businesses, together with its sub-recipes and ingredients, reusing any that already exist there.",
+          "<strong>Migrate</strong> copies the recipe to another of your businesses. It asks whether to bring its ingredients and sub-recipes too (reusing those that already exist there) or just the recipe: in that case its sheet opens in the business so you pick the ingredients from its own database (those with the same name are linked automatically).",
           "<strong>Delete</strong> sends it to the <strong>trash</strong>, where you can recover it for 30 days before it's removed automatically.",
         ]],
       ],

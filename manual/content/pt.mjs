@@ -188,7 +188,7 @@ export default {
         ["figure", "06-mis-recetas.jpg", "Minhas Receitas: todas as suas receitas com custo, rendimento e ações rápidas."],
         ["list", [
           "<strong>Duplicar</strong> cria uma cópia no mesmo negócio, com «(cópia)» no nome.",
-          "<strong>Migrar</strong> move a receita para outro dos seus negócios, junto com as sub-receitas e ingredientes, reaproveitando os que já existirem lá.",
+          "<strong>Migrar</strong> copia a receita para outro dos seus negócios. Pergunta se leva também os ingredientes e sub-receitas (reaproveitando os que já existem lá) ou só a receita: nesse caso a ficha abre no negócio para você escolher os ingredientes da base dele (os que têm o mesmo nome são vinculados sozinhos).",
           "<strong>Excluir</strong> envia a receita para a <strong>lixeira</strong>, onde você pode recuperá-la por 30 dias antes de ela ser apagada sozinha.",
         ]],
       ],

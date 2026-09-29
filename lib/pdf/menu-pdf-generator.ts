@@ -7,6 +7,7 @@ import { getCurrentPdfLanguage, getPdfLabels } from "@/lib/i18n/pdf-labels"
 import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 import { getBusinessThemeRgb, BRAND_ORANGE_RGB } from "@/lib/theme-colors"
 import { drawBusinessLogo } from "./pdf-logo"
+import { drawImageFit } from "./pdf-image"
 
 // PDF de Menus — dos variantes con objetivos deliberadamente opuestos, no solo dos
 // temas de color sobre la misma plantilla (pedido explicito: "toma libertad creativa"):
@@ -230,9 +231,8 @@ export type MenuPDFType = "cliente" | "interno"
 export interface MenuPDFOptions {
   type: MenuPDFType
   businessName?: string
-  // Solo se dibuja en la copia "interno" — la copia "cliente" se queda a propósito en
-  // naranja de marca fijo y sin logo del negocio (ver docs/36 sección 1, "fuera de la
-  // sesión"), es una pieza para el comensal, no un documento operativo del negocio.
+  // Se dibuja en las dos copias (docs/137 — antes solo en la "interno"). La copia
+  // "cliente" sigue en naranja de marca fijo (docs/36).
   businessLogo?: string
   // Alérgenos ya traducidos por receta (lib/allergens.ts, docs/137). En la carta del
   // cliente van en una línea pequeña bajo cada plato.
@@ -292,6 +292,12 @@ function generateClientMenuPDF(
   }
   drawClientPageFrame()
 
+  // Logo del negocio centrado arriba (docs/137, pedido del dueño: todos los PDF llevan el
+  // logo que el usuario agregó en su negocio). Antes la carta del cliente no lo mostraba.
+  if (options.businessLogo) {
+    const drawn = drawImageFit(doc, options.businessLogo, margin, yPosition - 4, contentWidth, 22, "center")
+    if (drawn) yPosition += drawn.height + 2
+  }
   doc.setFont("times", "italic")
   doc.setFontSize(9)
   doc.setTextColor(...COLORS.secondary)

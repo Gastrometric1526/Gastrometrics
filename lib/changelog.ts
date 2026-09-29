@@ -21,6 +21,65 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-09-29-b",
+    content: {
+      es: {
+        title: "Más novedades en Gastrometrics",
+        items: [
+          "Migrar recetas a otro negocio ahora te pregunta: llevar también sus ingredientes y sub-recetas, o solo la receta. Si eliges solo la receta, se abre su ficha en ese negocio para que elijas los ingredientes de su propia base de datos.",
+          "Corregido: al migrar una receta con sus ingredientes, los ingredientes no se guardaban en el negocio destino. Ahora sí, y sin duplicar los que ya existían.",
+          "PDF: la foto del plato sale más grande y sin deformarse en las tres fichas técnicas (la administrativa ahora también la incluye), y el logo de tu negocio aparece en todos los PDF, incluida la carta para tus clientes.",
+          "Las fotos que subes a una receta se optimizan solas: pesan mucho menos y siempre se ven en el PDF.",
+        ],
+      },
+      en: {
+        title: "More news in Gastrometrics",
+        items: [
+          "Migrating recipes to another business now asks you: bring its ingredients and sub-recipes too, or just the recipe. If you choose just the recipe, its sheet opens in that business so you pick the ingredients from its own database.",
+          "Fixed: when migrating a recipe with its ingredients, the ingredients weren't saved in the target business. Now they are, without duplicating the ones that already existed.",
+          "PDFs: the dish photo is bigger and no longer distorted in all three recipe sheets (the administrative one now includes it too), and your business logo appears on every PDF, including the customer menu.",
+          "Photos you upload to a recipe are optimized automatically: they're much lighter and always show up in the PDF.",
+        ],
+      },
+      da: {
+        title: "Flere nyheder i Gastrometrics",
+        items: [
+          "Når du flytter opskrifter til en anden virksomhed, bliver du nu spurgt: skal ingredienser og underopskrifter med, eller kun opskriften? Vælger du kun opskriften, åbnes arket i virksomheden, så du vælger ingredienserne fra dens egen database.",
+          "Rettet: når en opskrift blev flyttet med ingredienser, blev ingredienserne ikke gemt i den nye virksomhed. Nu gør de, uden at dem, der allerede fandtes, bliver dubleret.",
+          "PDF'er: fotoet af retten er større og ikke længere forvrænget i alle tre opskriftsark (det administrative har det nu også), og din virksomheds logo vises på alle PDF'er, også gæstemenuen.",
+          "Fotos, du uploader til en opskrift, optimeres automatisk: de fylder meget mindre og vises altid i PDF'en.",
+        ],
+      },
+      fr: {
+        title: "Encore des nouveautés dans Gastrometrics",
+        items: [
+          "Migrer une recette vers une autre entreprise vous demande désormais : emporter aussi ses ingrédients et sous-recettes, ou seulement la recette. Si vous choisissez seulement la recette, sa fiche s'ouvre dans cette entreprise pour que vous choisissiez les ingrédients dans sa propre base.",
+          "Corrigé : en migrant une recette avec ses ingrédients, ceux-ci n'étaient pas enregistrés dans l'entreprise de destination. C'est désormais le cas, sans dupliquer ceux qui existaient déjà.",
+          "PDF : la photo du plat est plus grande et n'est plus déformée dans les trois fiches techniques (l'administrative l'inclut désormais), et le logo de votre entreprise apparaît sur tous les PDF, y compris la carte client.",
+          "Les photos que vous ajoutez à une recette sont optimisées automatiquement : elles sont bien plus légères et s'affichent toujours dans le PDF.",
+        ],
+      },
+      pt: {
+        title: "Mais novidades na Gastrometrics",
+        items: [
+          "Migrar receitas para outro negócio agora pergunta: levar também os ingredientes e sub-receitas, ou só a receita. Se escolher só a receita, a ficha abre nesse negócio para você escolher os ingredientes da base dele.",
+          "Corrigido: ao migrar uma receita com os ingredientes, eles não eram salvos no negócio de destino. Agora são, sem duplicar os que já existiam.",
+          "PDFs: a foto do prato sai maior e sem distorção nas três fichas técnicas (a administrativa agora também a inclui), e o logo do seu negócio aparece em todos os PDFs, inclusive no cardápio para clientes.",
+          "As fotos que você envia para uma receita são otimizadas sozinhas: ficam muito mais leves e sempre aparecem no PDF.",
+        ],
+      },
+      zh: {
+        title: "Gastrometrics 更多新功能",
+        items: [
+          "把配方迁移到另一个商户时，现在会询问：是否同时带上原料和子配方，还是只迁移配方。若只迁移配方，会在该商户中打开配方表，由你从该商户自己的数据库选择原料。",
+          "已修复：连同原料迁移配方时，原料没有保存到目标商户。现在会正确保存，且不会重复已有的原料。",
+          "PDF：三种技术配方表中的菜品照片更大且不再变形（管理版现在也包含照片），你的商户标志会出现在所有 PDF 上，包括给客人的菜单。",
+          "上传到配方的照片会自动优化：体积小得多，并且始终能在 PDF 中显示。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-09-29",
     content: {
       es: {

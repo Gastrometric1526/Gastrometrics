@@ -189,7 +189,7 @@ export default {
         ["figure", "06-mis-recetas.jpg", "Mis Recetas: todas tus recetas con su costo, rendimiento y accesos rápidos."],
         ["list", [
           "<strong>Duplicar</strong> crea una copia en el mismo negocio, con «(copia)» en el nombre.",
-          "<strong>Migrar</strong> mueve la receta a otro de tus negocios, junto con sus sub-recetas e ingredientes, reutilizando los que ya existan allá.",
+          "<strong>Migrar</strong> copia la receta a otro de tus negocios. Te pregunta si llevar también sus ingredientes y sub-recetas (reutiliza los que ya existan allá) o solo la receta: en ese caso se abre su ficha en el negocio para que elijas los ingredientes de su propia base de datos (los que tengan el mismo nombre se vinculan solos).",
           "<strong>Eliminar</strong> la envía a la <strong>papelera</strong>, donde puedes recuperarla durante 30 días antes de que se borre sola.",
         ]],
       ],

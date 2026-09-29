@@ -30,6 +30,7 @@ export interface PdfLabels {
   notas: string
   procedimiento: string
   alergenos: string
+  fotoDelPlato: string
   marketing: string
   total: string
   ultimaRevision: string
@@ -163,6 +164,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     notas: "Notas",
     procedimiento: "Procedimiento",
     alergenos: "Alérgenos",
+    fotoDelPlato: "Foto del plato",
     marketing: "Marketing",
     total: "TOTAL",
     ultimaRevision: "Ultima revision",
@@ -294,6 +296,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     notas: "Notes",
     procedimiento: "Procedure",
     alergenos: "Allergens",
+    fotoDelPlato: "Photo of the dish",
     marketing: "Marketing",
     total: "TOTAL",
     ultimaRevision: "Last revised",
@@ -425,6 +428,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     notas: "Noter",
     procedimiento: "Fremgangsmåde",
     alergenos: "Allergener",
+    fotoDelPlato: "Foto af retten",
     marketing: "Markedsføring",
     total: "TOTAL",
     ultimaRevision: "Sidst redigeret",
@@ -556,6 +560,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     notas: "Notes",
     procedimiento: "Procédure",
     alergenos: "Allergènes",
+    fotoDelPlato: "Photo du plat",
     marketing: "Marketing",
     total: "TOTAL",
     ultimaRevision: "Dernière révision",
@@ -687,6 +692,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     notas: "Notas",
     procedimiento: "Procedimento",
     alergenos: "Alergênicos",
+    fotoDelPlato: "Foto do prato",
     marketing: "Marketing",
     total: "TOTAL",
     ultimaRevision: "Última revisão",
@@ -818,6 +824,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     notas: "备注",
     procedimiento: "步骤",
     alergenos: "过敏原",
+    fotoDelPlato: "菜品照片",
     marketing: "营销",
     total: "总计",
     ultimaRevision: "最后修改",

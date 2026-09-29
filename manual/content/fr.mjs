@@ -188,7 +188,7 @@ export default {
         ["figure", "06-mis-recetas.jpg", "Mes Recettes : toutes vos recettes avec leur coût, leur rendement et des actions rapides."],
         ["list", [
           "<strong>Dupliquer</strong> crée une copie dans le même établissement, avec « (copie) » dans le nom.",
-          "<strong>Migrer</strong> déplace la recette vers un autre de vos établissements, avec ses sous-recettes et ingrédients, en réutilisant ceux qui y existent déjà.",
+          "<strong>Migrer</strong> copie la recette vers une autre de vos entreprises. Elle vous demande s'il faut emporter aussi ses ingrédients et sous-recettes (en réutilisant ceux qui existent déjà) ou seulement la recette : dans ce cas, sa fiche s'ouvre dans l'entreprise pour que vous choisissiez les ingrédients dans sa propre base (ceux qui portent le même nom sont liés automatiquement).",
           "<strong>Supprimer</strong> l'envoie à la <strong>corbeille</strong>, où vous pouvez la récupérer pendant 30 jours avant sa suppression automatique.",
         ]],
       ],

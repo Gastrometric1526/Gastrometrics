@@ -76,6 +76,7 @@ import type { Recipe } from "@/types/recipe"
 import type { Business } from "@/types/business"
 import { getDateLocale } from "@/lib/i18n/translations"
 import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 // Clasificaciones disponibles
 // BUG CORREGIDO: esta lista era una copia local con valores que no coinciden con ninguna
@@ -149,6 +150,9 @@ export default function MisRecetasPage() {
   )
   const [selectedTargetBusiness, setSelectedTargetBusiness] = useState<string>("")
   const [isMigrating, setIsMigrating] = useState(false)
+  // docs/137: migrar con ingredientes y sub-recetas (true) o solo la receta, eligiendo después
+  // los ingredientes desde la base del negocio destino (false).
+  const [migrateWithIngredients, setMigrateWithIngredients] = useState(true)
   // Hay algún destino válido si hay otros negocios visibles, o si el destino sería
   // "Dashboard Principal" y quien mira es de verdad el dueño (ver nota sobre isTeamPreview).
   const canMigrateAnywhere = availableBusinesses.length > 0 || (businessId !== "main" && !isTeamPreview)
@@ -266,7 +270,9 @@ export default function MisRecetasPage() {
       console.log("🚀 Iniciando migración de receta:", recipeToMigrate.name)
 
       // Usar la función mejorada de migración completa
-      const migrationResult = await migrateCompleteRecipe(recipeToMigrate, businessId, selectedTargetBusiness)
+      const migrationResult = await migrateCompleteRecipe(recipeToMigrate, businessId, selectedTargetBusiness, undefined, {
+        includeIngredients: migrateWithIngredients,
+      })
 
       if (!migrationResult.success || !migrationResult.migratedRecipe) {
         throw new Error(migrationResult.error || t("misrecetas_toast_migration_error_fallback"))
@@ -288,9 +294,31 @@ export default function MisRecetasPage() {
         }),
       )
 
+      const targetBusinessForSheet = selectedTargetBusiness
       setShowMigrationDialog(false)
       setRecipeToMigrate(null)
       setSelectedTargetBusiness("")
+
+      if (!migrateWithIngredients) {
+        // Solo la receta: se abre su Ficha Técnica en el negocio destino para elegir los
+        // ingredientes desde la base de ese negocio.
+        if (user) {
+          logActivity({
+            user,
+            businessId: targetBusinessForSheet !== "main" ? targetBusinessForSheet : null,
+            module: "recetas",
+            action: "migrated",
+            entityLabel: `"${recipeToMigrate.name}"`,
+          })
+        }
+        showSuccess(
+          t("misrecetas_toast_migration_success_title"),
+          t("misrecetas_toast_migration_recipe_only_desc").replace("{name}", recipeToMigrate.name),
+        )
+        setMigrateWithIngredients(true)
+        router.push(`/ficha-tecnica/${migratedRecipe.id}?business=${encodeURIComponent(targetBusinessForSheet)}&mode=edit`)
+        return
+      }
 
       let message = t("misrecetas_toast_migration_success_desc").replace("{name}", recipeToMigrate.name)
       if (migratedSubRecipes.length > 0) {
@@ -876,6 +904,7 @@ export default function MisRecetasPage() {
                 {t("misrecetas_migration_dialog_prefix")} <strong>"{recipeToMigrate?.name}"</strong>{" "}
                 {t("misrecetas_migration_dialog_suffix")}
               </p>
+              {migrateWithIngredients && (
               <Alert className="mt-4 border-blue-200 dark:border-blue-900 bg-blue-50">
                 <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                 <AlertDescription className="text-info">
@@ -891,9 +920,33 @@ export default function MisRecetasPage() {
                   </ul>
                 </AlertDescription>
               </Alert>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium mb-1">{t("misrecetas_migration_ingredients_question")}</legend>
+              <RadioGroup
+                value={migrateWithIngredients ? "with" : "only"}
+                onValueChange={(value) => setMigrateWithIngredients(value === "with")}
+                className="space-y-2"
+              >
+                <label htmlFor="migrate-with" className="flex items-start gap-3 rounded-lg border p-3 cursor-pointer">
+                  <RadioGroupItem id="migrate-with" value="with" className="mt-0.5" />
+                  <span>
+                    <span className="block text-sm font-medium">{t("misrecetas_migration_with_ingredients")}</span>
+                    <span className="block text-xs text-muted-foreground">{t("misrecetas_migration_with_ingredients_desc")}</span>
+                  </span>
+                </label>
+                <label htmlFor="migrate-only" className="flex items-start gap-3 rounded-lg border p-3 cursor-pointer">
+                  <RadioGroupItem id="migrate-only" value="only" className="mt-0.5" />
+                  <span>
+                    <span className="block text-sm font-medium">{t("misrecetas_migration_recipe_only")}</span>
+                    <span className="block text-xs text-muted-foreground">{t("misrecetas_migration_recipe_only_desc")}</span>
+                  </span>
+                </label>
+              </RadioGroup>
+            </fieldset>
             <div className="space-y-2">
               <Label htmlFor="target-business" className="flex items-center gap-2">
                 <Building2 className="h-4 w-4" />

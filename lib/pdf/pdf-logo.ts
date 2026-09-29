@@ -1,4 +1,5 @@
 import type { jsPDF } from "jspdf"
+import { drawImageFit } from "./pdf-image"
 
 // Dibuja el logo del negocio respetando su proporción real, en vez de forzarlo a un
 // cuadrado fijo (bug real: los 4 sitios que dibujaban el logo — 3 en
@@ -16,23 +17,7 @@ export function drawBusinessLogo(
   maxWidth: number,
   maxHeight: number,
 ): boolean {
-  try {
-    const props = doc.getImageProperties(logoDataUrl)
-    if (!props.width || !props.height) return false
-
-    const aspectRatio = props.width / props.height
-    let drawWidth = maxWidth
-    let drawHeight = drawWidth / aspectRatio
-
-    if (drawHeight > maxHeight) {
-      drawHeight = maxHeight
-      drawWidth = drawHeight * aspectRatio
-    }
-
-    doc.addImage(logoDataUrl, "PNG", x, y, drawWidth, drawHeight)
-    return true
-  } catch (error) {
-    console.error("Error al agregar el logo del negocio al PDF:", error)
-    return false
-  }
+  // Formato real del archivo (PNG/JPEG/WEBP) — antes se forzaba "PNG" y un logo JPG podía
+  // no aparecer (docs/137).
+  return drawImageFit(doc, logoDataUrl, x, y, maxWidth, maxHeight, "left") !== null
 }
