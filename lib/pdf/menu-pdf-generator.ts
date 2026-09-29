@@ -3,7 +3,8 @@ import autoTable from "jspdf-autotable"
 import type { Menu } from "@/lib/types/menus"
 import type { Recipe } from "@/types/recipe"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
-import { getPdfLabels } from "@/lib/i18n/pdf-labels"
+import { getCurrentPdfLanguage, getPdfLabels } from "@/lib/i18n/pdf-labels"
+import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 import { getBusinessThemeRgb, BRAND_ORANGE_RGB } from "@/lib/theme-colors"
 import { drawBusinessLogo } from "./pdf-logo"
 
@@ -233,6 +234,9 @@ export interface MenuPDFOptions {
   // naranja de marca fijo y sin logo del negocio (ver docs/36 sección 1, "fuera de la
   // sesión"), es una pieza para el comensal, no un documento operativo del negocio.
   businessLogo?: string
+  // Alérgenos ya traducidos por receta (lib/allergens.ts, docs/137). En la carta del
+  // cliente van en una línea pequeña bajo cada plato.
+  allergensByRecipeId?: Record<string, string[]>
 }
 
 export function generateMenuPDF(menu: Menu, recipes: Recipe[], options: MenuPDFOptions): jsPDF {
@@ -326,7 +330,7 @@ function generateClientMenuPDF(
 
     // Encabezado de tiempo: mayusculas espaciadas entre dos lineas finas, como en una
     // carta real — nada de fondos ni cajas.
-    const stepLabel = sanitizeText(step.name).toUpperCase()
+    const stepLabel = sanitizeText(getRecipeStepLabel(step.name, getCurrentPdfLanguage())).toUpperCase()
     doc.setFont("times", "bold")
     doc.setFontSize(12)
     doc.setTextColor(...COLORS.text)
@@ -379,7 +383,17 @@ function generateClientMenuPDF(
         doc.setLineDashPattern([], 0)
       }
 
-      yPosition += 10
+      const allergens = options.allergensByRecipeId?.[item.recipeId] ?? []
+      if (allergens.length > 0) {
+        yPosition += 4.5
+        doc.setFont("times", "italic")
+        doc.setFontSize(8.5)
+        doc.setTextColor(...COLORS.secondary)
+        doc.text(`${labels.alergenos}: ${allergens.join(", ")}`, margin, yPosition, { maxWidth: contentWidth })
+        yPosition += 7
+      } else {
+        yPosition += 10
+      }
     }
     yPosition += 6
   }
@@ -469,7 +483,7 @@ function generateInternalMenuPDF(
     doc.setFontSize(11)
     doc.setFont("helvetica", "bold")
     doc.setTextColor(...COLORS.darkGray)
-    doc.text(sanitizeText(step.name).toUpperCase(), margin + 3, yPosition + 5.5)
+    doc.text(sanitizeText(getRecipeStepLabel(step.name, getCurrentPdfLanguage())).toUpperCase(), margin + 3, yPosition + 5.5)
     yPosition += 12
 
     const rows = stepItems.map((item) => {

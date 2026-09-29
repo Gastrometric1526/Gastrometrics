@@ -16,6 +16,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { FileDown, FileText, Users, File, CheckCircle, Lock, ShieldAlert } from "lucide-react"
 import type { Recipe, PDFExportType } from "@/types/recipe"
 import { downloadRecipePDF } from "@/lib/pdf/recipe-pdf-generator"
+import { allergenLabelKey, getRecipeAllergens } from "@/lib/allergens"
+import { getIngredients } from "@/lib/storage/ingredients"
+import { getRecipes } from "@/lib/storage/recipes"
 import { useFeatureAccess, useActiveMembership } from "@/lib/plan-access"
 import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
@@ -74,6 +77,10 @@ export function RecipePDFExportDialog({
         includeNotes: selectedType !== "normal",
         businessName,
         businessLogo,
+        // Alérgenos vigentes, desde los ingredientes actuales (docs/137).
+        allergens: getRecipeAllergens(recipe, getIngredients(recipe.businessId), getRecipes(recipe.businessId)).map(
+          (key) => t(allergenLabelKey(key)),
+        ),
       }
 
       downloadRecipePDF(recipe, options)

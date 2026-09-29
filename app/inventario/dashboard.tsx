@@ -14,14 +14,17 @@ import { getDateLocale } from "@/lib/i18n/translations"
 import { getCategoryLabel } from "@/lib/ingredient-labels"
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
 import { formatCurrency } from "@/lib/currency"
+import { inventoryItemValue, inventoryTotalValue, snapshotValue, type PackageContentLookup } from "@/lib/inventory-value"
 
 interface DashboardProps {
   inventoryItems: InventoryItem[]
+  // Contenido de envase por producto, desde Ingredientes (docs/136).
+  packageLookup?: PackageContentLookup
   inventoryHistory: InventorySnapshot[]
   isLoading: boolean
 }
 
-export function InventoryDashboard({ inventoryItems, inventoryHistory, isLoading }: DashboardProps) {
+export function InventoryDashboard({ inventoryItems, inventoryHistory, isLoading, packageLookup }: DashboardProps) {
   const { toast } = useToast()
   const { t, language } = useLanguage()
   const [timePeriod, setTimePeriod] = useState<"day" | "week" | "month">("week")
@@ -49,14 +52,14 @@ export function InventoryDashboard({ inventoryItems, inventoryHistory, isLoading
         .slice(0, 10)
         .map((snapshot) => ({
           date: new Date(snapshot.date).toLocaleDateString(getDateLocale(language), { month: "short", day: "numeric" }),
-          value: (snapshot.items ?? []).reduce((sum, item) => sum + item.quantity * (item.priceAtDate ?? 0), 0),
+          value: snapshotValue(snapshot),
         }))
         .reverse()
 
       // Distribución por categoría
       const categories: Record<string, number> = {}
       inventoryItems.forEach((item) => {
-        categories[item.category] = (categories[item.category] || 0) + (item.currentStock || 0) * item.price
+        categories[item.category] = (categories[item.category] || 0) + inventoryItemValue(item, packageLookup)
       })
 
       const categoryDistribution = Object.entries(categories).map(([name, value]) => ({
@@ -85,18 +88,19 @@ export function InventoryDashboard({ inventoryItems, inventoryHistory, isLoading
         locationDistribution,
       })
     }
-  }, [inventoryItems, inventoryHistory, timePeriod])
+  }, [inventoryItems, inventoryHistory, timePeriod, packageLookup])
 
   // Calcular métricas clave
   const totalItems = inventoryItems.length
   const criticalItems = inventoryItems.filter((item) => item.status === "critical").length
   const lowItems = inventoryItems.filter((item) => item.status === "low").length
-  const totalValue = inventoryItems.reduce((sum, item) => sum + (item.currentStock || 0) * item.price, 0)
+  // Precio del envase ÷ su contenido (lib/inventory-value.ts, docs/136).
+  const totalValue = inventoryTotalValue(inventoryItems, packageLookup)
 
   // Calcular cambio porcentual comparado con el snapshot anterior
   const previousTotal =
     inventoryHistory.length > 1
-      ? (inventoryHistory[1]?.items ?? []).reduce((sum, item) => sum + item.quantity * (item.priceAtDate ?? 0), 0)
+      ? snapshotValue(inventoryHistory[1])
       : totalValue
 
   const valueChange = previousTotal ? ((totalValue - previousTotal) / previousTotal) * 100 : 0

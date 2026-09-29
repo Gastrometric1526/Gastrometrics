@@ -34,6 +34,7 @@ export interface RecipeDraftPricing {
   paxModifier: number
   pricingMethod: PricingMethod
   targetFoodCostPercent: number
+  salesCommissionPercent?: number
 }
 
 export interface RecipeDraft {

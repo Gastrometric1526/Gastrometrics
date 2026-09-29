@@ -30,6 +30,7 @@ import type { Recipe, Classification } from "@/types/recipe"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
 import { getClassificationLabel } from "@/lib/classification-labels"
+import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 
 interface RecipeCardProps {
   recipe: Recipe
@@ -139,7 +140,7 @@ export function RecipeCard({
                     {recipe.plate && (
                       <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">
                         <Utensils className="h-3 w-3 mr-1" />
-                        {recipe.plate}
+                        {getRecipeStepLabel(recipe.plate, language)}
                       </Badge>
                     )}
                     {recipe.metadata?.migratedFrom && (
@@ -263,7 +264,7 @@ export function RecipeCard({
               {recipe.plate && (
                 <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">
                   <Utensils className="h-3 w-3 mr-1" />
-                  {recipe.plate}
+                  {getRecipeStepLabel(recipe.plate, language)}
                 </Badge>
               )}
               {recipe.metadata?.migratedFrom && (

@@ -11,7 +11,8 @@ import { useDebouncedCallback } from "@/lib/hooks/useDebounce"
 import { getIngredients } from "@/lib/storage/ingredients"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
-import { getCategoryLabel, getUnitLabel } from "@/lib/ingredient-labels"
+import { getCategoryLabel, getPresentationLabel, getUnitLabel } from "@/lib/ingredient-labels"
+import { getPackageContent, isBeverageCategory } from "@/lib/beverage"
 import type { TheoreticalStockEntry } from "@/lib/theoretical-stock"
 
 // Modificar la interfaz InventoryTableProps para incluir una nueva prop para manejar cambios en el stock mínimo
@@ -149,6 +150,17 @@ export function InventoryTable({
   // alcance por ahora en vez de improvisar una conversión a medias; la celda ahora es
   // honesta: siempre de solo lectura, sin fingir ser un campo editable.
 
+  // Barra (docs/136): para bebidas con presentación, el stock, el mínimo y la diferencia
+  // del último conteo también se leen en envases ("≈ 2.3 × Botella"), que es como cuenta
+  // un bartender. El valor guardado sigue en la unidad del ingrediente.
+  const getPackageInfo = (item: InventoryItem): PackageInfo | undefined => {
+    if (!isBeverageCategory(item.category) || !item.presentation) return undefined
+    const ingredient = ingredientsData.find((ing) => ing.id === item.id) || ingredientsData.find((ing) => ing.name === item.name)
+    const content = ingredient ? getPackageContent(ingredient) : item.netContent || 0
+    if (!(content > 0)) return undefined
+    return { content, label: getPresentationLabel(item.presentation, language) }
+  }
+
   // Función para obtener el precio de compra correcto para un item
   const getPurchasePrice = (item: InventoryItem) => {
     // Primero intentamos obtener el precio directamente del item
@@ -195,6 +207,7 @@ export function InventoryTable({
           {editedItems.map((item) => {
             // Obtener el precio de compra para este item
             const purchasePrice = getPurchasePrice(item)
+            const packageInfo = getPackageInfo(item)
 
             return (
               <TableRow key={item.id}>
@@ -222,7 +235,7 @@ export function InventoryTable({
                 </TableCell>
                 <TableCell className="text-center">
                   {item.presentation ? (
-                    <span className="text-sm">{item.presentation}</span>
+                    <span className="text-sm">{getPresentationLabel(item.presentation, language)}</span>
                   ) : (
                     <select
                       className="w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
@@ -236,7 +249,7 @@ export function InventoryTable({
                       <option value="">{t("inventario_select_placeholder")}</option>
                       {availablePresentations.map((presentation) => (
                         <option key={presentation} value={presentation}>
-                          {presentation}
+                          {getPresentationLabel(presentation, language)}
                         </option>
                       ))}
                     </select>
@@ -274,7 +287,15 @@ export function InventoryTable({
                           <div className="relative h-1 w-full rounded-full bg-secondary overflow-hidden">
                             <div className={`absolute inset-y-0 left-0 rounded-full ${barColor}`} style={{ width: `${barPct}%` }} />
                           </div>
-                          <TheoreticalStockLine entry={theoreticalStock?.get(item.id)} item={item} />
+                          {packageInfo && (
+                            <span className={`text-[11px] tabular-nums ${textColor === "text-foreground" ? "text-muted-foreground" : textColor}`}>
+                              {t("inventario_packages_stock_line")
+                                .replace("{count}", formatStockQuantity(item.currentStock / packageInfo.content))
+                                .replace("{min}", formatStockQuantity(item.minStock / packageInfo.content))
+                                .replace("{presentation}", packageInfo.label)}
+                            </span>
+                          )}
+                          <TheoreticalStockLine entry={theoreticalStock?.get(item.id)} item={item} packageInfo={packageInfo} />
                         </div>
                       )
                     })()
@@ -393,7 +414,17 @@ function formatStockQuantity(value: number): string {
  * las ventas registradas desde el último conteo, y cuánto se desvió el último conteo de
  * lo esperado. Solo aparece cuando hay un conteo real de partida.
  */
-function TheoreticalStockLine({ entry, item }: { entry?: TheoreticalStockEntry; item: InventoryItem }) {
+type PackageInfo = { content: number; label: string }
+
+function TheoreticalStockLine({
+  entry,
+  item,
+  packageInfo,
+}: {
+  entry?: TheoreticalStockEntry
+  item: InventoryItem
+  packageInfo?: PackageInfo
+}) {
   const { t, language } = useLanguage()
   if (!entry) return null
   const unit = getUnitLabel(item.unit, language)
@@ -411,6 +442,7 @@ function TheoreticalStockLine({ entry, item }: { entry?: TheoreticalStockEntry; 
           className={`tabular-nums cursor-help ${theoreticalLow ? "text-warning font-medium" : "text-muted-foreground"}`}
         >
           {t("inventario_theoretical_label")}: {formatStockQuantity(theoretical)} {unit}
+          {packageInfo && ` (≈ ${formatStockQuantity(theoretical / packageInfo.content)} × ${packageInfo.label})`}
         </span>
       )}
       {showVariance && variance !== null && (
@@ -420,6 +452,7 @@ function TheoreticalStockLine({ entry, item }: { entry?: TheoreticalStockEntry; 
         >
           {t("inventario_variance_label")}: {variance > 0 ? "+" : "−"}
           {formatStockQuantity(Math.abs(variance))} {unit}
+          {packageInfo && ` (≈ ${formatStockQuantity(Math.abs(variance) / packageInfo.content)} × ${packageInfo.label})`}
         </span>
       )}
     </div>

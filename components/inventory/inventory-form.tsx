@@ -78,21 +78,26 @@ export function InventoryForm({ onSubmit, onCancel, initialData }: InventoryForm
   const handleSelectChange = (name: string, value: string) => {
     if (name === "unit") {
       const newUnit = value
-      const currentValue = formData.netContent || 0
-
-      // Perform conversion
-      let newValue = currentValue
+      // Factor de conversión entre unidades (g↔ml se toma 1:1, como antes).
+      let factor = 1
       if (conversionFactors[previousUnit] && conversionFactors[newUnit]) {
-        newValue = currentValue * (conversionFactors[previousUnit] / conversionFactors[newUnit])
-      } else if (previousUnit === "g" && newUnit === "ml") {
-        newValue = currentValue
-      } else if (previousUnit === "ml" && newUnit === "g") {
-        newValue = currentValue
+        factor = conversionFactors[previousUnit] / conversionFactors[newUnit]
       }
+
+      // BUG CORREGIDO (docs/137): solo se convertía el contenido neto, así que al pasar de
+      // kg a ml el contenido quedaba ×1000 y el stock y el mínimo seguían igual — el producto
+      // quedaba incoherente. Ahora las tres cantidades se expresan en la unidad nueva.
+      const convert = (v: number | null | undefined) =>
+        typeof v === "number" && Number.isFinite(v) ? Math.round(v * factor * 1000) / 1000 : v
 
       setFormData((prev) => ({
         ...prev,
-        netContent: newValue,
+        netContent: convert(prev.netContent) as number,
+        currentStock:
+          prev.currentStock === "" || !Number.isFinite(Number(prev.currentStock))
+            ? prev.currentStock
+            : String(convert(Number(prev.currentStock))),
+        minStock: convert(prev.minStock) as number,
         unit: newUnit,
       }))
       setPreviousUnit(newUnit) // Update previous unit

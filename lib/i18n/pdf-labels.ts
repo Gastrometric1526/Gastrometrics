@@ -29,6 +29,7 @@ export interface PdfLabels {
   monto: string
   notas: string
   procedimiento: string
+  alergenos: string
   marketing: string
   total: string
   ultimaRevision: string
@@ -161,6 +162,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     monto: "Monto",
     notas: "Notas",
     procedimiento: "Procedimiento",
+    alergenos: "Alérgenos",
     marketing: "Marketing",
     total: "TOTAL",
     ultimaRevision: "Ultima revision",
@@ -291,6 +293,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     monto: "Amount",
     notas: "Notes",
     procedimiento: "Procedure",
+    alergenos: "Allergens",
     marketing: "Marketing",
     total: "TOTAL",
     ultimaRevision: "Last revised",
@@ -421,6 +424,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     monto: "Beløb",
     notas: "Noter",
     procedimiento: "Fremgangsmåde",
+    alergenos: "Allergener",
     marketing: "Markedsføring",
     total: "TOTAL",
     ultimaRevision: "Sidst redigeret",
@@ -551,6 +555,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     monto: "Montant",
     notas: "Notes",
     procedimiento: "Procédure",
+    alergenos: "Allergènes",
     marketing: "Marketing",
     total: "TOTAL",
     ultimaRevision: "Dernière révision",
@@ -681,6 +686,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     monto: "Valor",
     notas: "Notas",
     procedimiento: "Procedimento",
+    alergenos: "Alergênicos",
     marketing: "Marketing",
     total: "TOTAL",
     ultimaRevision: "Última revisão",
@@ -811,6 +817,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     monto: "金额",
     notas: "备注",
     procedimiento: "步骤",
+    alergenos: "过敏原",
     marketing: "营销",
     total: "总计",
     ultimaRevision: "最后修改",

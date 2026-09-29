@@ -25,6 +25,11 @@ const ES_LABELS: Record<Classification, string> = {
   "Fermentación y conservas (Fermentation/Conserverie)": "Fermentación y conservas",
   // Simplificado a pedido del dueño del proyecto — antes decía "Sub Receta / Producción".
   // El VALOR canónico guardado en cada receta no cambia (ver comentario de cabecera).
+  "Barra - Cócteles (Bar)": "Barra · Cócteles",
+  "Barra - Vinos (Sommellerie)": "Barra · Vinos",
+  "Barra - Cervezas (Bar)": "Barra · Cervezas",
+  "Barra - Sin alcohol (Bar)": "Barra · Sin alcohol",
+  "Barra - Café y té (Caféterie)": "Barra · Café y té",
   "Sub Receta / produccion (Mise en place)": "Sub Receta",
   "I+D (R&D)": "I+D",
 }
@@ -45,6 +50,11 @@ const EN_LABELS: Record<Classification, string> = {
   "Heladería (Glacerie)": "Ice Cream",
   "Charcutería y curados (Charcuterie/Salaison)": "Charcuterie and Cured Goods",
   "Fermentación y conservas (Fermentation/Conserverie)": "Fermentation and Preserves",
+  "Barra - Cócteles (Bar)": "Bar · Cocktails",
+  "Barra - Vinos (Sommellerie)": "Bar · Wine",
+  "Barra - Cervezas (Bar)": "Bar · Beer",
+  "Barra - Sin alcohol (Bar)": "Bar · Non-alcoholic",
+  "Barra - Café y té (Caféterie)": "Bar · Coffee & tea",
   "Sub Receta / produccion (Mise en place)": "Sub-recipe",
   "I+D (R&D)": "R&D",
 }
@@ -65,6 +75,11 @@ const DA_LABELS: Record<Classification, string> = {
   "Heladería (Glacerie)": "Is",
   "Charcutería y curados (Charcuterie/Salaison)": "Charcuteri og saltet kød",
   "Fermentación y conservas (Fermentation/Conserverie)": "Fermentering og konserves",
+  "Barra - Cócteles (Bar)": "Bar · Cocktails",
+  "Barra - Vinos (Sommellerie)": "Bar · Vin",
+  "Barra - Cervezas (Bar)": "Bar · Øl",
+  "Barra - Sin alcohol (Bar)": "Bar · Alkoholfri",
+  "Barra - Café y té (Caféterie)": "Bar · Kaffe og te",
   "Sub Receta / produccion (Mise en place)": "Underopskrift",
   "I+D (R&D)": "F&U",
 }
@@ -85,6 +100,11 @@ const FR_LABELS: Record<Classification, string> = {
   "Heladería (Glacerie)": "Glacerie",
   "Charcutería y curados (Charcuterie/Salaison)": "Charcuterie et salaisons",
   "Fermentación y conservas (Fermentation/Conserverie)": "Fermentation et conserves",
+  "Barra - Cócteles (Bar)": "Bar · Cocktails",
+  "Barra - Vinos (Sommellerie)": "Bar · Vins",
+  "Barra - Cervezas (Bar)": "Bar · Bières",
+  "Barra - Sin alcohol (Bar)": "Bar · Sans alcool",
+  "Barra - Café y té (Caféterie)": "Bar · Café et thé",
   "Sub Receta / produccion (Mise en place)": "Sous-recette",
   "I+D (R&D)": "R&D",
 }
@@ -105,6 +125,11 @@ const PT_LABELS: Record<Classification, string> = {
   "Heladería (Glacerie)": "Sorveteria",
   "Charcutería y curados (Charcuterie/Salaison)": "Charcutaria e curados",
   "Fermentación y conservas (Fermentation/Conserverie)": "Fermentação e conservas",
+  "Barra - Cócteles (Bar)": "Bar · Coquetéis",
+  "Barra - Vinos (Sommellerie)": "Bar · Vinhos",
+  "Barra - Cervezas (Bar)": "Bar · Cervejas",
+  "Barra - Sin alcohol (Bar)": "Bar · Sem álcool",
+  "Barra - Café y té (Caféterie)": "Bar · Café e chá",
   "Sub Receta / produccion (Mise en place)": "Sub-receita",
   "I+D (R&D)": "P&D",
 }
@@ -125,6 +150,11 @@ const ZH_LABELS: Record<Classification, string> = {
   "Heladería (Glacerie)": "冰淇淋",
   "Charcutería y curados (Charcuterie/Salaison)": "熟食与腌制品",
   "Fermentación y conservas (Fermentation/Conserverie)": "发酵与腌渍",
+  "Barra - Cócteles (Bar)": "酒吧 · 鸡尾酒",
+  "Barra - Vinos (Sommellerie)": "酒吧 · 葡萄酒",
+  "Barra - Cervezas (Bar)": "酒吧 · 啤酒",
+  "Barra - Sin alcohol (Bar)": "酒吧 · 无酒精饮品",
+  "Barra - Café y té (Caféterie)": "酒吧 · 咖啡与茶",
   "Sub Receta / produccion (Mise en place)": "子配方",
   "I+D (R&D)": "研发",
 }

@@ -55,6 +55,7 @@ import type { SalesImport } from "@/types/sales-import"
 import type { Recipe } from "@/types/recipe"
 import type { Menu } from "@/lib/types/menus"
 import { getDateLocale } from "@/lib/i18n/translations"
+import { computeCOGSByArea, filterDishesByArea, splitSalesByArea, type SalesArea } from "@/lib/bar-analytics"
 
 export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) {
   const { t, language } = useLanguage()
@@ -195,7 +196,15 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
     () => aggregateSalesByDish(salesImports, recipes, menus),
     [salesImports, recipes, menus],
   )
-  const menuEngineering = useMemo(() => classifyMenuEngineering(dishPerformance), [dishPerformance])
+  // Cocina vs. barra (docs/136): el Menu Engineering se clasifica dentro de cada área —
+  // comparar la popularidad de un shot con la de un plato fuerte no dice nada.
+  const areaSplit = useMemo(() => splitSalesByArea(dishPerformance, recipes), [dishPerformance, recipes])
+  const hasBarSales = areaSplit.bar.dishCount > 0
+  const [menuEngineeringArea, setMenuEngineeringArea] = useState<SalesArea | "all">("all")
+  const menuEngineering = useMemo(
+    () => classifyMenuEngineering(filterDishesByArea(dishPerformance, recipes, hasBarSales ? menuEngineeringArea : "all")),
+    [dishPerformance, recipes, menuEngineeringArea, hasBarSales],
+  )
   const avgPopularity =
     dishPerformance.length > 0 ? dishPerformance.reduce((s, d) => s + d.quantitySold, 0) / dishPerformance.length : 0
   const avgMargin =
@@ -221,6 +230,18 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
         currentInventoryValue: inventoryStats.totalValue,
       }),
     [inventoryHistory, purchaseOrders, period, inventoryStats.totalValue],
+  )
+
+  const areaCogs = useMemo(
+    () =>
+      computeCOGSByArea({
+        snapshots: inventoryHistory,
+        purchaseOrders,
+        periodStart: period.start,
+        periodEnd: period.end,
+        ingredients,
+      }),
+    [inventoryHistory, purchaseOrders, period, ingredients],
   )
 
   const realCostPercent = totalRevenue > 0 ? (cogsResult.cogs / totalRevenue) * 100 : 0
@@ -407,6 +428,51 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
             </div>
           )}
 
+
+          {hasBarSales && (
+            <Card className="border-border bg-card">
+              <CardHeader>
+                <CardTitle className="text-base">{t("finanzas_area_title")}</CardTitle>
+                <CardDescription>{t("finanzas_area_desc")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-px rounded-xl overflow-hidden bg-border">
+                  {(["kitchen", "bar"] as const).map((area) => {
+                    const totals = areaSplit[area]
+                    const realCost = areaCogs.hasFullData ? areaCogs[area] : null
+                    const realPercent = realCost !== null && totals.revenue > 0 ? (realCost / totals.revenue) * 100 : null
+                    return (
+                      <div key={area} className="bg-card p-4 space-y-3">
+                        <div className="flex items-baseline justify-between">
+                          <span className="text-sm font-semibold">
+                            {area === "kitchen" ? t("finanzas_area_kitchen") : t("finanzas_area_bar")}
+                          </span>
+                          <span className="text-xs text-muted-foreground tabular-nums">
+                            {t("finanzas_area_mix").replace("{percent}", totals.mixPercent.toFixed(1))}
+                          </span>
+                        </div>
+                        <p className="text-2xl font-semibold tabular-nums">{formatCurrency(totals.revenue)}</p>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <p className="text-xs text-muted-foreground">{t("finanzas_area_theoretical")}</p>
+                            <p className="font-medium tabular-nums">{totals.costPercent.toFixed(1)}%</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">{t("finanzas_area_real")}</p>
+                            <p className="font-medium tabular-nums">{realPercent !== null ? `${realPercent.toFixed(1)}%` : "—"}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-3">
+                  {areaCogs.hasFullData ? t("finanzas_area_bar_hint") : t("finanzas_area_real_missing")}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Margen de contribución por plato */}
             <Card className="border-border bg-card">
@@ -493,6 +559,26 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
             <CardHeader>
               <CardTitle className="text-base">{t("finanzas_menu_engineering_title")}</CardTitle>
               <CardDescription>{t("finanzas_menu_engineering_desc")}</CardDescription>
+              {hasBarSales && (
+                <div className="flex gap-1 pt-2" role="group" aria-label={t("finanzas_area_title")}>
+                  {(["all", "kitchen", "bar"] as const).map((area) => (
+                    <Button
+                      key={area}
+                      type="button"
+                      size="sm"
+                      variant={menuEngineeringArea === area ? "default" : "outline"}
+                      aria-pressed={menuEngineeringArea === area}
+                      onClick={() => setMenuEngineeringArea(area)}
+                    >
+                      {area === "all"
+                        ? t("finanzas_area_all")
+                        : area === "kitchen"
+                          ? t("finanzas_area_kitchen")
+                          : t("finanzas_area_bar")}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">

@@ -93,6 +93,14 @@ export function IngredientesTour() {
       selector: '[data-tour="ing-header"]',
     },
     { id: "new", title: t("tour_ing_new_title"), description: t("tour_ing_new_desc"), selector: '[data-tour="ing-new"]' },
+    // Empaques y desechables también son costo del plato — pedido del dueño del proyecto
+    // (2026-09-29): que el usuario lo tenga en cuenta desde el primer ingrediente.
+    {
+      id: "packaging",
+      title: t("tour_ing_packaging_title"),
+      description: t("tour_ing_packaging_desc"),
+      selector: '[data-tour="ing-new"]',
+    },
     { id: "import", title: t("tour_ing_import_title"), description: t("tour_ing_import_desc"), selector: '[data-tour="ing-import"]' },
     { id: "search", title: t("tour_ing_search_title"), description: t("tour_ing_search_desc"), selector: '[data-tour="ing-search"]' },
     { id: "unit-switch", title: t("tour_ing_unit_switch_title"), description: t("tour_ing_unit_switch_desc"), selector: '[data-tour="ing-unit-switch"]' },

@@ -12,6 +12,7 @@ import type { PurchaseOrder } from "@/types/purchase-order"
 import type { BusinessExpenses } from "@/types/business"
 import type { Ingredient } from "@/types/ingredient"
 import type { Menu } from "@/lib/types/menus"
+import { snapshotValue } from "@/lib/inventory-value"
 
 // ============== DESEMPEÑO POR PLATO ==============
 
@@ -304,8 +305,10 @@ export function computeCOGS(params: {
   const initialSnapshot = inPeriod[0]
   const finalSnapshot = inPeriod.length > 1 ? inPeriod[inPeriod.length - 1] : undefined
 
-  const initialInventoryValue = initialSnapshot?.totalValue ?? currentInventoryValue
-  const finalInventoryValue = finalSnapshot?.totalValue ?? currentInventoryValue
+  // Recalculado desde las líneas del conteo (lib/inventory-value.ts, docs/136): el
+  // totalValue guardado en conteos viejos quedó multiplicado por el contenido del envase.
+  const initialInventoryValue = initialSnapshot ? snapshotValue(initialSnapshot) : currentInventoryValue
+  const finalInventoryValue = finalSnapshot ? snapshotValue(finalSnapshot) : currentInventoryValue
 
   const purchasesValue = purchaseOrders.filter((po) => inRange(po.date)).reduce((sum, po) => sum + (po.total || 0), 0)
 

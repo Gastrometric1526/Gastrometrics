@@ -69,6 +69,8 @@ import type { InventoryItem } from "@/types/inventory"
 import { getClassificationLabel } from "@/lib/classification-labels"
 import { getCategoryLabel, getUnitLabel } from "@/lib/ingredient-labels"
 import { getDateLocale } from "@/lib/i18n/translations"
+import { buildPackageContentLookup, inventoryItemValue } from "@/lib/inventory-value"
+import { formatUnitPrice } from "@/lib/currency"
 
 const chartTokens = ["chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "chart-6", "chart-7"] as const
 
@@ -360,21 +362,23 @@ function EstadisticasContent() {
   }, [recipes])
 
   // Ingredientes más gastados según inventario: mayor valor total (stock actual × precio) inmovilizado.
+  // Precio del envase ÷ su contenido (lib/inventory-value.ts, docs/136).
+  const packageLookup = useMemo(() => buildPackageContentLookup(ingredients), [ingredients])
   const mostSpentInventoryIngredients = useMemo(
     () =>
       [...inventoryItems]
-        .map((item) => ({ ...item, totalValue: (item.currentStock || 0) * (item.price || 0) }))
+        .map((item) => ({ ...item, totalValue: inventoryItemValue(item, packageLookup) }))
         .filter((item) => item.totalValue > 0)
         .sort((a, b) => b.totalValue - a.totalValue)
         .slice(0, 5),
-    [inventoryItems],
+    [inventoryItems, packageLookup],
   )
 
   // Valor de inventario por categoría — en qué categorías está el dinero inmovilizado.
   const inventoryValueByCategory = useMemo(() => {
     const map = new Map<string, number>()
     inventoryItems.forEach((item) => {
-      const value = (item.currentStock || 0) * (item.price || 0)
+      const value = inventoryItemValue(item, packageLookup)
       if (value <= 0) return
       const key = item.category || "Sin categoría"
       map.set(key, (map.get(key) || 0) + value)
@@ -824,7 +828,7 @@ function EstadisticasContent() {
                             <div key={ing.id} className="flex items-center justify-between text-sm bg-muted/20 rounded-lg px-3 py-2">
                               <span className="truncate pr-2">{ing.name}</span>
                               <span className="font-semibold text-foreground tabular-nums shrink-0">
-                                {formatCurrency(ing.pricing?.pricePerUnit || 0)}/{unitAbbreviations[ing.unit] || ing.unit}
+                                {formatUnitPrice(ing.pricing?.pricePerUnit || 0)}/{unitAbbreviations[ing.unit] || ing.unit}
                               </span>
                             </div>
                           ))

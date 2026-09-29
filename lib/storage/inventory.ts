@@ -7,6 +7,8 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { createBusinessScopedCache } from "./supabase-cache"
 import type { Database } from "@/types/database"
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
+import { getIngredients } from "./ingredients"
+import { buildPackageContentLookup, inventoryTotalValue } from "@/lib/inventory-value"
 
 type InventoryItemRow = Database["public"]["Tables"]["inventory_items"]["Row"]
 type InventorySnapshotRow = Database["public"]["Tables"]["inventory_snapshots"]["Row"]
@@ -266,7 +268,8 @@ export function getInventoryStats(businessId?: string | null): {
     totalItems: inventory.length,
     criticalItems: inventory.filter((item) => item.status === "critical").length,
     lowItems: inventory.filter((item) => item.status === "low").length,
-    totalValue: inventory.reduce((sum, item) => sum + (item.currentStock || 0) * (item.price || 0), 0),
+    // Precio del envase ÷ su contenido, no stock × precio (lib/inventory-value.ts, docs/136).
+    totalValue: inventoryTotalValue(inventory, buildPackageContentLookup(getIngredients(businessId))),
   }
 }
 

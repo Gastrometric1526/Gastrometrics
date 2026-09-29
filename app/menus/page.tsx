@@ -46,6 +46,10 @@ import { getMenus, deleteMenu, duplicateMenu, updateMenu, ensureMenusLoaded } fr
 import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { getBusinessById } from "@/lib/storage/businesses"
 import { generateMenuPDF, type MenuPDFType } from "@/lib/pdf/menu-pdf-generator"
+import { allergenLabelKey, getRecipeAllergens } from "@/lib/allergens"
+import { getMenuTypeLabel } from "@/lib/menu-type-labels"
+import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
+import { getIngredients } from "@/lib/storage/ingredients"
 import { FileDown, Lock } from "lucide-react"
 import { MenuWizard } from "@/components/menu-wizard"
 import type { Menu } from "@/lib/types/menus"
@@ -168,10 +172,20 @@ export default function MenusPage() {
     }
     try {
       const business = getBusinessById(businessId || "main")
+      // Alérgenos vigentes de cada plato, desde los ingredientes actuales (docs/137).
+      const menuIngredients = getIngredients(businessId || "main")
+      const allergensByRecipeId = Object.fromEntries(
+        menu.items.map((item) => {
+          const recipe = recipes.find((r) => r.id === item.recipeId)
+          const keys = recipe ? getRecipeAllergens(recipe, menuIngredients, recipes) : []
+          return [item.recipeId, keys.map((key) => t(allergenLabelKey(key)))]
+        }),
+      )
       const doc = generateMenuPDF(menu, recipes, {
         type,
         businessName: business?.name,
         businessLogo: business?.logo,
+        allergensByRecipeId,
       })
       const suffix = type === "interno" ? "interno" : "cliente"
       doc.save(`menu-${menu.name.toLowerCase().replace(/\s+/g, "-")}-${suffix}.pdf`)
@@ -434,7 +448,7 @@ export default function MenusPage() {
                                 <span>{formatTimeAgo(menu.updatedAt)}</span>
                                 {menu.menuType && (
                                   <Badge variant="outline" className="text-[10px]">
-                                    {menu.menuType}
+                                    {getMenuTypeLabel(menu.menuType, language)}
                                   </Badge>
                                 )}
                               </div>
@@ -547,7 +561,7 @@ export default function MenusPage() {
                               <div className="flex flex-wrap gap-1 mt-2">
                                 {menu.steps.map((step) => (
                                   <Badge key={step.id} variant="secondary" className="text-[10px]">
-                                    {step.name}
+                                    {getRecipeStepLabel(step.name, language)}
                                   </Badge>
                                 ))}
                               </div>
@@ -662,7 +676,7 @@ export default function MenusPage() {
                       <div className="text-center border-b pb-4">
                         <h2 className="text-2xl font-bold text-foreground mb-2">{previewMenu.name}</h2>
                         <div className="flex items-center justify-center gap-3 text-muted-foreground flex-wrap">
-                          {previewMenu.menuType && <Badge variant="outline">{previewMenu.menuType}</Badge>}
+                          {previewMenu.menuType && <Badge variant="outline">{getMenuTypeLabel(previewMenu.menuType, language)}</Badge>}
                           {formatServiceDate(previewMenu.serviceDate) && (
                             <span className="flex items-center gap-1.5 text-sm">
                               <Calendar className="h-3.5 w-3.5" />
@@ -687,7 +701,7 @@ export default function MenusPage() {
                         return (
                           <div key={step.id} className="space-y-3">
                             <h3 className="text-xl font-bold text-foreground border-b border-border pb-2">
-                              {step.name}
+                              {getRecipeStepLabel(step.name, language)}
                             </h3>
                             <div className="grid gap-3">
                               {stepItems.map((item) => {

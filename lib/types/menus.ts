@@ -9,6 +9,7 @@ export const menuTypes = [
   "Degustación",
   "Catering",
   "Evento especial",
+  "Carta de bebidas",
   "Otro",
 ] as const
 

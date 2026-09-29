@@ -14,6 +14,12 @@ export const classifications = [
   "Heladería (Glacerie)",
   "Charcutería y curados (Charcuterie/Salaison)",
   "Fermentación y conservas (Fermentation/Conserverie)",
+  // Estaciones de barra (docs/136): separan beverage cost de food cost en reportes.
+  "Barra - Cócteles (Bar)",
+  "Barra - Vinos (Sommellerie)",
+  "Barra - Cervezas (Bar)",
+  "Barra - Sin alcohol (Bar)",
+  "Barra - Café y té (Caféterie)",
   "Sub Receta / produccion (Mise en place)",
   "I+D (R&D)",
 ] as const
@@ -54,6 +60,10 @@ export const recipeSteps = [
   "Infusión",
   "Digestivo",
   "Maridaje de cierre",
+  "Cócteles",
+  "Vinos",
+  "Cervezas",
+  "Bebidas sin alcohol",
   "Pan dulce",
   "Degustación especial",
   "Menú infantil",
@@ -181,6 +191,9 @@ export interface Recipe {
   // método por defecto del negocio (Business.pricingMethod). Ver types/business.ts.
   pricingMethod?: "gastrometrics" | "food_cost"
   targetFoodCostPercent?: number
+  // Comisión que se queda la app de delivery o la tarjeta, en % del PRECIO de venta
+  // (docs/137). El precio sugerido se divide entre (1 − comisión) para cubrirla.
+  salesCommissionPercent?: number
 
   // Business & Metadata
   businessId: string
@@ -244,4 +257,7 @@ export interface PDFExportOptions {
   includeNotes?: boolean
   businessName?: string
   businessLogo?: string
+  // Alérgenos de la receta ya traducidos (lib/allergens.ts, docs/137) — los calcula quien
+  // exporta, desde los ingredientes vigentes, para que el PDF nunca muestre datos viejos.
+  allergens?: string[]
 }

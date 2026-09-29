@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable"
 import type { Recipe, PDFExportType, PDFExportOptions } from "@/types/recipe"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { getPdfLabels, getCurrentPdfLanguage } from "@/lib/i18n/pdf-labels"
+import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 import { drawBusinessLogo } from "./pdf-logo"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
 import { getYieldUnitLabel } from "@/lib/ingredient-labels"
@@ -246,6 +247,33 @@ function drawPieChart(
 
 // ============== MAIN GENERATOR ==============
 
+// Alérgenos de la receta (docs/137): una línea "Alérgenos: Gluten, Leche…" antes del
+// procedimiento. Los trae ya traducidos options.allergens; sin alérgenos no dibuja nada.
+function drawAllergensLine(
+  doc: jsPDF,
+  label: string,
+  allergens: string[] | undefined,
+  x: number,
+  y: number,
+  width: number,
+  pageHeight: number,
+  font: "helvetica" | "times",
+): number {
+  if (!allergens || allergens.length === 0) return y
+  const text = `${label}: ${allergens.join(", ")}`
+  doc.setFontSize(9)
+  doc.setFont(font, "bold")
+  const lines = doc.splitTextToSize(text, width)
+  if (y + lines.length * 4.5 > pageHeight - 20) {
+    doc.addPage()
+    y = 20
+  }
+  doc.setTextColor(143, 44, 16)
+  doc.text(lines, x, y)
+  doc.setTextColor(0, 0, 0)
+  return y + lines.length * 4.5 + 5
+}
+
 export function generateRecipePDF(recipe: Recipe, options: PDFExportOptions): jsPDF {
   // El color de acento del PDF sale del tema del negocio, no de una constante fija (ver
   // docs/36, sección 5) — se aplica sobre el mismo objeto COLORS/CHART_COLORS que ya
@@ -464,7 +492,7 @@ function generateAdministrativePDF(
   // imprimian "N/A" cuando la receta no tenia plato/etapa cargados — el PDF quedaba
   // ensuciado con campos vacios etiquetados. Ahora, si no hay dato, no se imprime ni
   // la etiqueta ni el valor (la celda del grid queda en blanco en vez de "Plato: N/A").
-  const platoText = sanitizeText(recipe.plate)
+  const platoText = sanitizeText(recipe.plate ? getRecipeStepLabel(recipe.plate, getCurrentPdfLanguage()) : "")
   if (platoText) {
     doc.setFont("helvetica", "bold")
     doc.setTextColor(...COLORS.darkGray)
@@ -976,6 +1004,17 @@ function generateAdministrativePDF(
   // components/technical-sheet/index.tsx — recipe.observations solo puede traer datos
   // en recetas exportadas antes de esa migración (nunca se reabrieron en la app desde
   // entonces), así que se sigue anexando aquí para no perder ese texto en el PDF.
+  yPosition = drawAllergensLine(
+    doc,
+    labels.alergenos,
+    options.allergens,
+    margin,
+    yPosition,
+    doc.internal.pageSize.getWidth() - margin * 2,
+    pageHeight,
+    "helvetica",
+  )
+
   const allProcedureLines = [...(recipe.procedure || []), ...(recipe.observations || [])].filter((s) =>
     sanitizeText(s),
   )
@@ -1189,6 +1228,7 @@ function generateEmployeePDF(
   // la nota completa sobre la fusión con observations). No son solo notas de costo
   // (esas van solo en la copia administrativa) — también llevan notas de preparación
   // útiles para cocina, como sustituciones o tiempos de reposo.
+  yPosition = drawAllergensLine(doc, labels.alergenos, options.allergens, margin, yPosition, contentWidth, ctx.pageHeight, "times")
   {
     const allProcedureLines = [...(recipe.procedure || []), ...(recipe.observations || [])].filter((s) =>
       sanitizeText(s),
@@ -1361,6 +1401,16 @@ function generateNormalPDF(
   yPosition = (doc as any).lastAutoTable.finalY + 10
 
   // ===== PROCEDIMIENTO Y OBSERVACIONES (una sola lista numerada) =====
+  yPosition = drawAllergensLine(
+    doc,
+    labels.alergenos,
+    options.allergens,
+    margin,
+    yPosition,
+    doc.internal.pageSize.getWidth() - margin * 2,
+    ctx.pageHeight,
+    "helvetica",
+  )
   {
     const allProcedureLines = [...(recipe.procedure || []), ...(recipe.observations || [])].filter((s) =>
       sanitizeText(s),

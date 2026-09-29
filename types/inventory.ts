@@ -88,9 +88,12 @@ export const categories = [
   "BEBIDAS",
   "CAFÉ",
   "CERDO",
+  "CERVEZA DE BARRIL",
+  "CERVEZA EMBOTELLADA",
   "CHOCOLATE",
   "GAME",
   "DESECHABLES",
+  "DESTILADOS",
   "DULCE",
   "EMBUTIDO",
   "ESENCIA",
@@ -110,6 +113,7 @@ export const categories = [
   "MOLECULAR",
   "NUECES",
   "OTROS",
+  "REFRESCOS Y MIXERS",
   "PESCADO",
   "REPOSTERÍA",
   "RES",
@@ -117,6 +121,7 @@ export const categories = [
   "SECOS Y ABARROTES",
   "SIROPES",
   "VEGETAL",
+  "VINOS",
 ] as const
 
 export type Category = (typeof categories)[number]

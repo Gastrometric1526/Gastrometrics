@@ -20,6 +20,8 @@ import { createMenu, updateMenu, getRecipeSection } from "@/lib/menus"
 import { ActivityTracker } from "@/lib/activity-tracker"
 import type { Menu, MenuItem, MenuStep } from "@/lib/types/menus"
 import { menuTypes } from "@/lib/types/menus"
+import { BAR_KIND_MENU_STEP, DRINKS_MENU_STEPS, getBarKind, type BarKind } from "@/lib/beverage"
+import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 import { recipeSteps } from "@/types/recipe"
 import type { Recipe } from "@/types/recipe"
 import { formatCurrency } from "@/lib/currency"
@@ -177,12 +179,34 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
     )
   }
 
+  // "Carta de bebidas" (docs/137): si el usuario todavía no tocó los tiempos por defecto
+  // (Entrada / Plato fuerte / Postre), se reemplazan por los de barra. Si ya los cambió,
+  // no se pisa su trabajo.
+  const handleMenuTypeChange = (value: string) => {
+    setMenuType(value)
+    const untouched =
+      items.length === 0 &&
+      steps.length === 3 &&
+      steps.map((s) => s.name).join("|") === "Entrada|Plato fuerte|Postre"
+    if (value === "Carta de bebidas" && untouched) {
+      const barSteps = DRINKS_MENU_STEPS.map((name, order) => ({ id: generateId("step"), name, order }))
+      setSteps(barSteps)
+      setActiveStepTab(barSteps[0].id)
+    }
+  }
+
   const recipesForStep = (step: MenuStep) => {
     const normalizedStepName = step.name.trim().toLowerCase()
     const suggested: Recipe[] = []
     const others: Recipe[] = []
+    // Pasos de barra (docs/137): también se sugieren las recetas cuya clasificación de barra
+    // corresponde a ese paso, aunque no tengan el Paso puesto.
+    const stepBarKind = (Object.keys(BAR_KIND_MENU_STEP) as BarKind[]).find(
+      (kind) => BAR_KIND_MENU_STEP[kind].toLowerCase() === normalizedStepName,
+    )
     recipes.forEach((recipe) => {
-      if (recipe.plate && recipe.plate.trim().toLowerCase() === normalizedStepName) {
+      const matchesBarKind = !!stepBarKind && getBarKind(recipe.classification) === stepBarKind
+      if (matchesBarKind || (recipe.plate && recipe.plate.trim().toLowerCase() === normalizedStepName)) {
         suggested.push(recipe)
       } else {
         others.push(recipe)
@@ -344,7 +368,7 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="menuType">{t("mw_type_label")}</Label>
-                  <Select value={menuType} onValueChange={setMenuType}>
+                  <Select value={menuType} onValueChange={handleMenuTypeChange}>
                     <SelectTrigger id="menuType">
                       <SelectValue placeholder={t("mw_type_placeholder")} />
                     </SelectTrigger>
@@ -403,7 +427,7 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
                       <SelectContent>
                         {recipeSteps.map((s) => (
                           <SelectItem key={s} value={s}>
-                            {s}
+                            {getRecipeStepLabel(s, language)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -413,7 +437,7 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
                       size="icon"
                       className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                       onClick={() => removeStep(step.id)}
-                      aria-label={t("mw_remove_step_aria").replace("{name}", step.name)}
+                      aria-label={t("mw_remove_step_aria").replace("{name}", getRecipeStepLabel(step.name, language))}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -430,7 +454,7 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
                       .filter((s) => !steps.some((step) => step.name === s))
                       .map((s) => (
                         <SelectItem key={s} value={s}>
-                          {s}
+                          {getRecipeStepLabel(s, language)}
                         </SelectItem>
                       ))}
                   </SelectContent>
@@ -454,7 +478,7 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
                   <TabsList className="flex-wrap h-auto">
                     {steps.map((step) => (
                       <TabsTrigger key={step.id} value={step.id} className="gap-1.5">
-                        {step.name || t("mw_step_unnamed")}
+                        {step.name ? getRecipeStepLabel(step.name, language) : t("mw_step_unnamed")}
                         {dishesByStep[step.id]?.length > 0 && (
                           <Badge variant="secondary" className="ml-1 px-1.5 h-4 min-w-4 text-[10px]">
                             {dishesByStep[step.id].length}
@@ -472,7 +496,7 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
                             {suggested.length > 0 && (
                               <>
                                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1 pt-1">
-                                  {t("mw_suggested_for").replace("{step}", step.name)}
+                                  {t("mw_suggested_for").replace("{step}", getRecipeStepLabel(step.name, language))}
                                 </p>
                                 {suggested.map((recipe) => (
                                   <RecipeCheckRow
@@ -524,7 +548,7 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
                   <span className="font-bold text-foreground">{menuName}</span>
                 </div>
                 <div className="flex flex-wrap gap-3 text-sm text-muted-foreground pt-1">
-                  {menuType && <Badge variant="outline">{menuType}</Badge>}
+                  {menuType && <Badge variant="outline">{getMenuTypeLabel(menuType, language)}</Badge>}
                   {serviceDate && (
                     <span className="flex items-center gap-1.5">
                       <Calendar className="h-3.5 w-3.5" />
@@ -555,7 +579,7 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
                   if (stepItems.length === 0) return null
                   return (
                     <div key={step.id} className="space-y-1.5">
-                      <h4 className="text-sm font-semibold text-foreground">{step.name}</h4>
+                      <h4 className="text-sm font-semibold text-foreground">{getRecipeStepLabel(step.name, language)}</h4>
                       {stepItems.map((item) => {
                         const recipe = recipes.find((r) => r.id === item.recipeId)
                         return (

@@ -18,9 +18,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
 import { CalendarIcon, ChevronRight, ChevronLeft, Info, Search, AlertCircle } from "lucide-react"
+import { WeighCountPopover } from "@/components/inventory/weigh-count-popover"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
+import { es, enUS, da, fr, ptBR, zhCN } from "date-fns/locale"
 import { Label } from "@/components/ui/label"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -41,6 +41,9 @@ import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
 import { updateIngredientPriceAndRecalculate } from "@/lib/recalculate"
 import { computeWeightedAverageCost } from "@/lib/utils/weighted-average-cost"
 import { useLanguage } from "@/contexts/language-context"
+import { getDateLocale } from "@/lib/i18n/translations"
+import { getPackageContent, isBeverageCategory, type BottleWeights } from "@/lib/beverage"
+import { stockValue } from "@/lib/inventory-value"
 
 interface RegisterInventoryModalProps {
   open: boolean
@@ -112,6 +115,8 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
   // Añadir después de la declaración de otros estados, cerca de la línea 70
 
   const [inventoryMode, setInventoryMode] = useState<"metric" | "presentation">("metric")
+  // Texto que se está tecleando en el conteo por envases ("2." mientras se escribe "2.3").
+  const [presentationDrafts, setPresentationDrafts] = useState<Record<string, string>>({})
 
   // Declare missing variables
   const [orderName, setOrderName] = useState("Inventario")
@@ -187,6 +192,10 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
           presentation: presentation,
           price: purchasePrice,
           supplier: supplier, // Añadir el proveedor
+          // Contenido físico del envase (sin la merma) y pesos de botella para contar por
+          // peso — siempre desde Ingredientes (docs/136).
+          originalNetContent: matchingIngredient?.originalNetContent ?? ing.originalNetContent,
+          bottleWeights: currentIngredient?.bottleWeights ?? matchingIngredient?.bottleWeights ?? ing.bottleWeights,
           pricing: {
             ...(ing.pricing || {}),
             netContent: netContent,
@@ -281,8 +290,10 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
       notes: notes,
       inventoryMode: inventoryMode, // Guardar el modo de inventario
       modifiedItems: ingredientsWithValues.length,
+      // Precio del envase ÷ su contenido (lib/inventory-value.ts, docs/136) — antes
+      // stock × precio del envase, que multiplicaba el valor por el contenido.
       totalValue: ingredientsWithValues.reduce(
-        (sum, item) => sum + (item.calculatedQuantity || item.quantity) * (item.price || 0),
+        (sum, item) => sum + stockValue(item.calculatedQuantity || item.quantity, item.price, getPackageContent(item)),
         0,
       ),
       items: ingredientsWithValues.map((item) => ({
@@ -293,16 +304,16 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
         displayQuantity: item.quantity, // Guardar la cantidad mostrada al usuario
         unit: item.unit,
         price: item.price || 0,
-        totalPrice: (item.calculatedQuantity || item.quantity) * (item.price || 0),
+        totalPrice: stockValue(item.calculatedQuantity || item.quantity, item.price, getPackageContent(item)),
         presentation: item.presentation, // Guardar la presentación
-        netContent: item.pricing?.netContent || 0, // Guardar el contenido neto
+        netContent: getPackageContent(item), // Contenido físico del envase (sin merma)
         priceAtDate: item.price || 0,
         previousPrice: item.previousPrice || item.price || 0,
         supplier: item.supplier || "No especificado", // Guardar el proveedor
         receivedSincePrevious: receivedById.get(item.id) || 0,
       })),
       createdAt: new Date().toISOString(),
-      createdBy: "Usuario Actual",
+      createdBy: user?.email || undefined,
     }
 
     addInventorySnapshot(newInventorySnapshot, businessId)
@@ -312,8 +323,14 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
     const currentInventory = getInventory(businessId)
 
     // En la función handleSave, asegurarse de que se actualicen todos los campos necesarios
+    // BUG CORREGIDO (docs/137): solo se emparejaba por id. Un producto creado a mano con
+    // "Agregar producto" tiene su propio id (no el del ingrediente), así que un conteo nunca
+    // actualizaba su stock — la lectura de arriba sí emparejaba también por nombre.
+    const sameName = (a?: string, b?: string) => !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase()
     const updatedInventory = currentInventory.map((item): InventoryItem => {
-      const matchingItem = ingredientsWithValues.find((ing) => ing.id === item.id)
+      const matchingItem =
+        ingredientsWithValues.find((ing) => ing.id === item.id) ||
+        ingredientsWithValues.find((ing) => sameName(ing.name, item.name))
       if (matchingItem) {
         return {
           ...item,
@@ -375,6 +392,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
 
         return {
           ...ing,
+          ...(matchingItem.bottleWeights ? { bottleWeights: matchingItem.bottleWeights } : {}),
           currentStock:
             inventoryMode === "presentation"
               ? matchingItem.calculatedQuantity || matchingItem.quantity
@@ -508,7 +526,9 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
     setIngredientsWithQuantity((prev) =>
       prev.map((ing) => {
         if (ing.id === id) {
-          const netContent = ing.pricing?.netContent || 0
+          // Envases físicos: el contenido SIN merma (docs/136). pricing.netContent ya viene
+          // reducido por la merma — contar 2 botellas de 750 ml con 5 % de merma daba 1,425 ml.
+          const netContent = getPackageContent(ing)
           if (inventoryMode === "presentation" && netContent > 0) {
             const baseQuantity = value * netContent
             return {
@@ -527,6 +547,19 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
         return ing
       }),
     )
+  }
+
+  // Conteo por peso (docs/136, Fase 4): llega en envases con decimales. Se traduce a la
+  // unidad que espera handleQuantityChange según el modo, y los pesos de calibración de
+  // la botella quedan en la fila para guardarse con el ingrediente al registrar.
+  const applyWeighCount = (id: string, packages: number, packageContent: number, weights: BottleWeights) => {
+    setPresentationDrafts((prev) => {
+      const next = { ...prev }
+      delete next[id]
+      return next
+    })
+    setIngredientsWithQuantity((prev) => prev.map((ing) => (ing.id === id ? { ...ing, bottleWeights: weights } : ing)))
+    handleQuantityChange(id, inventoryMode === "presentation" ? packages : packages * packageContent)
   }
 
   // Precio pagado en ESTA compra — el único lugar del sistema donde se espera que el
@@ -595,8 +628,9 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
         if (ing.id === ingredientId) {
           // Recalcular la cantidad según el modo y el contenido neto
           const currentQuantity = ing.quantity || 0
+          const physicalContent = matchingIngredient?.originalNetContent || netContent
           const calculatedQuantity =
-            inventoryMode === "presentation" && netContent > 0 ? currentQuantity * netContent : currentQuantity
+            inventoryMode === "presentation" && physicalContent > 0 ? currentQuantity * physicalContent : currentQuantity
 
           return {
             ...ing,
@@ -776,7 +810,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                           <Input
                             id="date"
                             readOnly
-                            value={date ? format(date, "dd/MM/yyyy", { locale: es }) : ""}
+                            value={date ? date.toLocaleDateString(getDateLocale(language)) : ""}
                             className="w-full h-9 pr-10"
                           />
                           <Popover>
@@ -800,7 +834,13 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                                 width: "auto",
                               }}
                             >
-                              <Calendar autoFocus mode="single" selected={date} onSelect={setDate} locale={es} />
+                              <Calendar
+                                autoFocus
+                                mode="single"
+                                selected={date}
+                                onSelect={setDate}
+                                locale={{ es, en: enUS, da, fr, pt: ptBR, zh: zhCN }[language] ?? es}
+                              />
                             </PopoverContent>
                           </Popover>
                         </div>
@@ -968,11 +1008,13 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                           {filteredIngredients.map((ingredient) => {
                             // Verificar si el ingrediente tiene presentación y contenido neto
                             const hasPresentation = !!ingredient.presentation
-                            const netContent = ingredient.pricing?.netContent || 0
+                            const netContent = getPackageContent(ingredient)
 
-                            // Calcular la cantidad de presentaciones si estamos en modo presentación
+                            // Envases con decimales (docs/136): "2.3" = 2 enteras + 3 décimos de la
+                            // abierta. Antes Math.round descartaba la fracción.
                             const presentationCount =
-                              netContent > 0 ? Math.round((ingredient.quantity || 0) / netContent) : 0
+                              netContent > 0 ? Math.round(((ingredient.quantity || 0) / netContent) * 100) / 100 : 0
+                            const canWeigh = isBeverageCategory(ingredient.category) && netContent > 0
 
                             return (
                               <TableRow key={ingredient.id} className={ingredient.quantity > 0 ? "bg-primary/5" : ""}>
@@ -988,9 +1030,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                                       // Mostrar la presentación con el contenido neto correctamente formateado desde la base de datos
                                       <span className="text-sm font-medium">
                                         {getPresentationLabel(ingredient.presentation || "", language)} (
-                                        {ingredient.pricing?.netContent || 0}
-                                        {""}
-                                        {getUnitLabel(ingredient.unit, language)})
+                                        {netContent} {getUnitLabel(ingredient.unit, language)})
                                       </span>
                                     ) : (
                                       // Solo mostrar el selector de presentación si NO tiene una presentación existente
@@ -1019,31 +1059,65 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                                   {inventoryMode === "presentation" && hasPresentation && netContent > 0 ? (
                                     <div className="flex items-center justify-center space-x-2">
                                       <Input
-                                        type="number"
-                                        value={presentationCount > 0 ? presentationCount : ""}
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={presentationDrafts[ingredient.id] ?? (presentationCount > 0 ? String(presentationCount) : "")}
                                         onChange={(e) => {
-                                          const value = Number.parseFloat(e.target.value) || 0
+                                          const raw = e.target.value.replace(",", ".")
+                                          if (!/^\d*\.?\d*$/.test(raw)) return
+                                          setPresentationDrafts((prev) => ({ ...prev, [ingredient.id]: raw }))
                                           // Calcular automáticamente el stock real basado en la presentación
-                                          handleQuantityChange(ingredient.id, value)
+                                          handleQuantityChange(ingredient.id, Number.parseFloat(raw) || 0)
                                         }}
+                                        onBlur={() =>
+                                          setPresentationDrafts((prev) => {
+                                            const next = { ...prev }
+                                            delete next[ingredient.id]
+                                            return next
+                                          })
+                                        }
+                                        title={t("inventario_presentation_decimal_hint")}
                                         className="w-16 h-8 text-center"
                                         placeholder="0"
                                       />
-                                      <span className="text-xs text-muted-foreground">
-                                        = {ingredient.calculatedQuantity || 0} {getUnitLabel(ingredient.unit, language)}
+                                      <span className="text-xs text-muted-foreground tabular-nums">
+                                        = {Math.round((ingredient.calculatedQuantity || 0) * 100) / 100} {getUnitLabel(ingredient.unit, language)}
                                       </span>
+                                      {canWeigh && (
+                                        <WeighCountPopover
+                                          ingredient={ingredient}
+                                          packageContent={netContent}
+                                          onApply={(packages, weights) => applyWeighCount(ingredient.id, packages, netContent, weights)}
+                                        />
+                                      )}
                                     </div>
                                   ) : (
-                                    <div className="flex justify-center">
-                                      <Input
-                                        type="number"
-                                        value={ingredient.quantity || ""}
-                                        onChange={(e) =>
-                                          handleQuantityChange(ingredient.id, Number.parseFloat(e.target.value) || 0)
-                                        }
-                                        className="w-16 h-8 text-center"
-                                        placeholder="0"
-                                      />
+                                    <div className="flex flex-col items-center gap-0.5">
+                                      <div className="flex items-center gap-1">
+                                        <Input
+                                          type="number"
+                                          value={ingredient.quantity || ""}
+                                          onChange={(e) =>
+                                            handleQuantityChange(ingredient.id, Number.parseFloat(e.target.value) || 0)
+                                          }
+                                          className="w-16 h-8 text-center"
+                                          placeholder="0"
+                                        />
+                                        {canWeigh && (
+                                          <WeighCountPopover
+                                            ingredient={ingredient}
+                                            packageContent={netContent}
+                                            onApply={(packages, weights) => applyWeighCount(ingredient.id, packages, netContent, weights)}
+                                          />
+                                        )}
+                                      </div>
+                                      {hasPresentation && netContent > 0 && (ingredient.quantity || 0) > 0 && (
+                                        <span className="text-[11px] text-muted-foreground tabular-nums">
+                                          {t("inventario_packages_approx")
+                                            .replace("{count}", String(Math.round(((ingredient.quantity || 0) / netContent) * 100) / 100))
+                                            .replace("{presentation}", getPresentationLabel(ingredient.presentation || "", language))}
+                                        </span>
+                                      )}
                                     </div>
                                   )}
                                 </TableCell>
@@ -1129,7 +1203,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                       <div className="p-2 bg-muted rounded-md">
                         <p className="text-xs font-medium text-muted-foreground">{t("inventario_date_label")}</p>
                         <p className="font-medium text-sm text-foreground">
-                          {date ? format(date, "PPP", { locale: es }) : t("inventario_register_no_date_selected")}
+                          {date ? date.toLocaleDateString(getDateLocale(language), { dateStyle: "long" }) : t("inventario_register_no_date_selected")}
                         </p>
                       </div>
                       <div className="p-2 bg-muted rounded-md">
@@ -1188,10 +1262,9 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                                 <span className="font-medium">{ingredient.quantity}</span> {getUnitLabel(ingredient.unit, language)}
                                 {inventoryMode === "presentation" &&
                                   ingredient.presentation &&
-                                  ingredient.pricing?.netContent > 0 && (
+                                  getPackageContent(ingredient) > 0 && (
                                     <span className="text-xs text-muted-foreground ml-1">
-                                      ({Math.round(ingredient.quantity / ingredient.pricing.netContent)}
-                                      {""}
+                                      ({Math.round((ingredient.quantity / getPackageContent(ingredient)) * 100) / 100}{" "}
                                       {getPresentationLabel(ingredient.presentation, language)})
                                     </span>
                                   )}

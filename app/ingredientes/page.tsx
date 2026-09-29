@@ -73,6 +73,8 @@ import { updateIngredientPriceAndRecalculate } from "@/lib/recalculate"
 import { ActivityTracker } from "@/lib/activity-tracker"
 import { trackEvent } from "@/lib/analytics/track-event"
 import { logActivity } from "@/lib/services/activity-log"
+import { ALLERGENS, allergenLabelKey } from "@/lib/allergens"
+import { formatUnitPrice } from "@/lib/currency"
 
 // Helper function for generating unique IDs
 const generateUniqueId = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 9)
@@ -1891,7 +1893,7 @@ export default function IngredientesPage() {
                       .replace("{price}", formatCurrency(formData.pricing?.purchasePrice || 0))
                       .replace(
                         "{perUnit}",
-                        formatCurrency((formData.pricing?.purchasePrice || 0) / (formData.pricing?.netContent || 1)),
+                        formatUnitPrice((formData.pricing?.purchasePrice || 0) / (formData.pricing?.netContent || 1)),
                       )}
                   </p>
                 </div>
@@ -1942,6 +1944,40 @@ export default function IngredientesPage() {
                   />
                 </div>
 
+                {/* Alérgenos (docs/137): las recetas los heredan solas. */}
+                <div className="space-y-2">
+                  <Label className="text-foreground font-medium">{t("allergens_label")}</Label>
+                  <p className="text-xs text-muted-foreground">{t("allergens_ingredient_hint")}</p>
+                  <div className="flex flex-wrap gap-2" role="group" aria-label={t("allergens_label")}>
+                    {ALLERGENS.map((key) => {
+                      const selected = (formData.allergens || []).includes(key)
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          aria-pressed={selected}
+                          onClick={() =>
+                            setFormData((prev) => {
+                              const current = prev.allergens || []
+                              return {
+                                ...prev,
+                                allergens: selected ? current.filter((a) => a !== key) : [...current, key],
+                              }
+                            })
+                          }
+                          className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                            selected
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-transparent text-foreground hover:bg-muted"
+                          }`}
+                        >
+                          {t(allergenLabelKey(key))}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
                 {/* Summary */}
                 <div className="p-4 bg-muted/30 rounded-lg">
                   <h4 className="font-semibold mb-3">{t("ingredientes_summary_title")}</h4>
@@ -1968,7 +2004,7 @@ export default function IngredientesPage() {
                     <div className="flex justify-between">
                       <span>{t("ingredientes_summary_price_per_unit_label")}</span>
                       <span className="font-medium text-primary">
-                        {formatCurrency((formData.pricing?.purchasePrice || 0) / (formData.pricing?.netContent || 1))}
+                        {formatUnitPrice((formData.pricing?.purchasePrice || 0) / (formData.pricing?.netContent || 1))}
                       </span>
                     </div>
                   </div>

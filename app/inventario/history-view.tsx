@@ -36,6 +36,8 @@ import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
 import { getCategoryLabel, getUnitLabel } from "@/lib/ingredient-labels"
+import { snapshotItemValue } from "@/lib/inventory-value"
+import { getPresentationLabel } from "@/lib/ingredient-labels"
 
 interface HistoryViewProps {
   inventoryHistory: InventorySnapshot[]
@@ -43,8 +45,19 @@ interface HistoryViewProps {
   isLoading: boolean
 }
 
+// Periodicidad guardada en español ("diario"…) o en inglés (alias legado "daily"…).
+const PERIOD_KEYS: Record<string, "inventario_period_daily" | "inventario_period_weekly" | "inventario_period_monthly"> = {
+  diario: "inventario_period_daily",
+  daily: "inventario_period_daily",
+  semanal: "inventario_period_weekly",
+  weekly: "inventario_period_weekly",
+  mensual: "inventario_period_monthly",
+  monthly: "inventario_period_monthly",
+}
+
 export function HistoryView({ inventoryHistory, exportInventory, isLoading }: HistoryViewProps) {
   const { t, language } = useLanguage()
+  const periodLabel = (value?: string) => (value && PERIOD_KEYS[value] ? t(PERIOD_KEYS[value]) : value || "N/A")
   const [searchTerm, setSearchTerm] = useState("")
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const [periodFilter, setPeriodFilter] = useState<string | null>(null)
@@ -245,7 +258,7 @@ export function HistoryView({ inventoryHistory, exportInventory, isLoading }: Hi
                           </Badge>
                         </TableCell>
                         <TableCell className="capitalize">
-                          {inventory.periodicity || inventory.period || "N/A"}
+                          {periodLabel(inventory.periodicity || inventory.period)}
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline">
@@ -263,6 +276,8 @@ export function HistoryView({ inventoryHistory, exportInventory, isLoading }: Hi
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
+                              aria-label={t("inventario_detail_title")}
+                              title={t("inventario_detail_title")}
                               onClick={() => {
                                 setSelectedInventory(inventory)
                                 setIsViewingDetails(true)
@@ -275,6 +290,8 @@ export function HistoryView({ inventoryHistory, exportInventory, isLoading }: Hi
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
+                              aria-label={t("common_export")}
+                              title={t("common_export")}
                               onClick={() => exportInventory(inventory)}
                             >
                               <Download className="h-4 w-4" />
@@ -393,7 +410,13 @@ export function HistoryView({ inventoryHistory, exportInventory, isLoading }: Hi
             <div className="py-4">
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-medium">{t("inventario_detail_created_by").replace("{name}", selectedInventory.createdBy || "")}</h3>
+                  <h3 className="text-sm font-medium">{t("inventario_detail_created_by").replace(
+                    "{name}",
+                    // Conteos viejos guardaban el texto fijo "Usuario Actual" (docs/137).
+                    !selectedInventory.createdBy || selectedInventory.createdBy === "Usuario Actual"
+                      ? "—"
+                      : selectedInventory.createdBy,
+                  )}</h3>
                   <p className="text-sm text-muted-foreground">
                     {new Date(selectedInventory.createdAt || selectedInventory.date).toLocaleString(getDateLocale(language))}
                   </p>
@@ -430,12 +453,12 @@ export function HistoryView({ inventoryHistory, exportInventory, isLoading }: Hi
                                 item.netContent &&
                                 item.netContent > 0 && (
                                   <span className="text-xs text-muted-foreground ml-1">
-                                    ({Math.round(item.quantity / item.netContent)} {item.presentation})
+                                    ({Math.round((item.quantity / item.netContent) * 100) / 100} {getPresentationLabel(item.presentation, language)})
                                   </span>
                                 )}
                             </TableCell>
                             <TableCell>{formatCurrency(item.price)}</TableCell>
-                            <TableCell>{formatCurrency(item.quantity * item.price)}</TableCell>
+                            <TableCell>{formatCurrency(snapshotItemValue(item))}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>

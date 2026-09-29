@@ -75,6 +75,7 @@ import { useAllBusinesses } from "@/lib/storage/businesses"
 import type { Recipe } from "@/types/recipe"
 import type { Business } from "@/types/business"
 import { getDateLocale } from "@/lib/i18n/translations"
+import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 
 // Clasificaciones disponibles
 // BUG CORREGIDO: esta lista era una copia local con valores que no coinciden con ninguna
@@ -1019,9 +1020,11 @@ export default function MisRecetasPage() {
                           : "bg-muted text-muted-foreground"
                       }`}
                     >
-                      {detailsRecipe.classification || t("misrecetas_detail_unclassified")}
+                      {detailsRecipe.classification
+                        ? getClassificationLabel(detailsRecipe.classification as (typeof recipeClassifications)[number], language)
+                        : t("misrecetas_detail_unclassified")}
                     </Badge>
-                    {detailsRecipe.plate && <Badge variant="secondary">{detailsRecipe.plate}</Badge>}
+                    {detailsRecipe.plate && <Badge variant="secondary">{getRecipeStepLabel(detailsRecipe.plate, language)}</Badge>}
                   </div>
                 </SheetDescription>
               </SheetHeader>

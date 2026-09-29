@@ -5,6 +5,8 @@ import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { getPdfLabels } from "@/lib/i18n/pdf-labels"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
 import { drawBusinessLogo } from "./pdf-logo"
+import { buildPackageContentLookup, inventoryItemValue, snapshotItemValue, type PackageContentLookup } from "@/lib/inventory-value"
+import { getIngredients } from "@/lib/storage/ingredients"
 
 // ============== HELPERS ==============
 // Mismo patron que los demas generadores en lib/pdf/ (recipe/menu/purchase-order):
@@ -240,7 +242,7 @@ export interface InventoryPDFOptions {
   businessId?: string
 }
 
-export function buildInventoryPDFDataFromCurrent(items: InventoryItem[]): InventoryPDFData {
+export function buildInventoryPDFDataFromCurrent(items: InventoryItem[], packageLookup?: PackageContentLookup): InventoryPDFData {
   const labels = getPdfLabels()
   return {
     title: labels.inventarioActualTitulo,
@@ -251,7 +253,8 @@ export function buildInventoryPDFDataFromCurrent(items: InventoryItem[]): Invent
       quantity: item.currentStock ?? 0,
       unit: item.unit,
       price: item.price,
-      totalValue: (item.currentStock ?? 0) * item.price,
+      // Precio del envase ÷ su contenido (lib/inventory-value.ts, docs/136).
+      totalValue: inventoryItemValue(item, packageLookup),
       supplier: item.supplier,
       status: item.status,
     })),
@@ -275,7 +278,7 @@ export function buildInventoryPDFDataFromSnapshot(snapshot: InventorySnapshot): 
       quantity: item.displayQuantity ?? item.quantity,
       unit: item.unit,
       price: item.price,
-      totalValue: item.totalPrice,
+      totalValue: snapshotItemValue(item),
       supplier: item.supplier,
     })),
   }
@@ -537,7 +540,7 @@ export function downloadInventorySnapshotPDF(snapshot: InventorySnapshot, option
 
 export function downloadCurrentInventoryPDF(items: InventoryItem[], options: InventoryPDFOptions = {}): void {
   try {
-    const data = buildInventoryPDFDataFromCurrent(items)
+    const data = buildInventoryPDFDataFromCurrent(items, buildPackageContentLookup(getIngredients(options.businessId)))
     const doc = generateInventoryPDF(data, options)
     doc.save(generateInventoryPDFFilename(data))
   } catch (error) {

@@ -12,6 +12,11 @@ import { yieldUnits, type YieldUnit } from "@/types/recipe"
 
 const CATEGORY_LABELS: Partial<Record<LanguageCode, Record<Category, string>>> = {
   en: {
+    "CERVEZA DE BARRIL": "Draft Beer",
+    "CERVEZA EMBOTELLADA": "Bottled Beer",
+    "DESTILADOS": "Spirits",
+    "REFRESCOS Y MIXERS": "Soft Drinks & Mixers",
+    "VINOS": "Wine",
     ACEITES: "Oils",
     ALCOHOL: "Alcohol",
     AVES: "Poultry",
@@ -51,6 +56,11 @@ const CATEGORY_LABELS: Partial<Record<LanguageCode, Record<Category, string>>> =
     VEGETAL: "Vegetables",
   },
   da: {
+    "CERVEZA DE BARRIL": "Fadøl",
+    "CERVEZA EMBOTELLADA": "Flaskeøl",
+    "DESTILADOS": "Spiritus",
+    "REFRESCOS Y MIXERS": "Sodavand og mixere",
+    "VINOS": "Vin",
     ACEITES: "Olier",
     ALCOHOL: "Alkohol",
     AVES: "Fjerkræ",
@@ -90,6 +100,11 @@ const CATEGORY_LABELS: Partial<Record<LanguageCode, Record<Category, string>>> =
     VEGETAL: "Grøntsager",
   },
   fr: {
+    "CERVEZA DE BARRIL": "Bière pression",
+    "CERVEZA EMBOTELLADA": "Bière en bouteille",
+    "DESTILADOS": "Spiritueux",
+    "REFRESCOS Y MIXERS": "Sodas et mixers",
+    "VINOS": "Vins",
     ACEITES: "Huiles",
     ALCOHOL: "Alcool",
     AVES: "Volaille",
@@ -129,6 +144,11 @@ const CATEGORY_LABELS: Partial<Record<LanguageCode, Record<Category, string>>> =
     VEGETAL: "Légumes",
   },
   pt: {
+    "CERVEZA DE BARRIL": "Chope",
+    "CERVEZA EMBOTELLADA": "Cerveja engarrafada",
+    "DESTILADOS": "Destilados",
+    "REFRESCOS Y MIXERS": "Refrigerantes e mixers",
+    "VINOS": "Vinhos",
     ACEITES: "Óleos",
     ALCOHOL: "Álcool",
     AVES: "Aves",
@@ -168,6 +188,11 @@ const CATEGORY_LABELS: Partial<Record<LanguageCode, Record<Category, string>>> =
     VEGETAL: "Vegetais",
   },
   zh: {
+    "CERVEZA DE BARRIL": "生啤",
+    "CERVEZA EMBOTELLADA": "瓶装啤酒",
+    "DESTILADOS": "烈酒",
+    "REFRESCOS Y MIXERS": "软饮与调酒辅料",
+    "VINOS": "葡萄酒",
     ACEITES: "油类",
     ALCOHOL: "酒类",
     AVES: "禽类",

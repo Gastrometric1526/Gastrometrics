@@ -1,5 +1,13 @@
 // Mapping of categories to their shrinkage percentages
 export const mermaPorCategoria: Record<string, number> = {
+  // Barra (docs/136): destilados 1–3 % (derrame, sobre-servido), vino ~5 % (apertura y
+  // fondo de botella), barril 15–25 % (espuma, purga de línea), embotellada ~0 %.
+  // ALCOHOL y BEBIDAS no se tocan: cambiarlos recalcularía costos ya guardados.
+  "CERVEZA DE BARRIL": 18,
+  "CERVEZA EMBOTELLADA": 0,
+  "DESTILADOS": 2,
+  "REFRESCOS Y MIXERS": 2,
+  "VINOS": 5,
   ACEITES: 0,
   ALCOHOL: 0,
   AVES: 27,
@@ -40,6 +48,14 @@ export const mermaPorCategoria: Record<string, number> = {
 
 // Merma categories with their default percentages (keeping both for compatibility)
 export const MERMA_CATEGORIES = {
+  // Barra (docs/136): destilados 1–3 % (derrame, sobre-servido), vino ~5 % (apertura y
+  // fondo de botella), barril 15–25 % (espuma, purga de línea), embotellada ~0 %.
+  // ALCOHOL y BEBIDAS no se tocan: cambiarlos recalcularía costos ya guardados.
+  "CERVEZA DE BARRIL": 18,
+  "CERVEZA EMBOTELLADA": 0,
+  "DESTILADOS": 2,
+  "REFRESCOS Y MIXERS": 2,
+  "VINOS": 5,
   ACEITES: 0,
   ALCOHOL: 0,
   AVES: 27,

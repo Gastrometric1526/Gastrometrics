@@ -5,9 +5,12 @@ export const categories = [
   "BEBIDAS",
   "CAFÉ",
   "CERDO",
+  "CERVEZA DE BARRIL",
+  "CERVEZA EMBOTELLADA",
   "CHOCOLATE",
   "GAME",
   "DESECHABLES",
+  "DESTILADOS",
   "DULCE",
   "EMBUTIDO",
   "ESENCIA",
@@ -28,6 +31,7 @@ export const categories = [
   "MOLECULAR",
   "NUECES",
   "OTROS",
+  "REFRESCOS Y MIXERS",
   "PESCADO",
   "REPOSTERÍA",
   "RES",
@@ -36,6 +40,7 @@ export const categories = [
   "SIROPES",
   "Sub Receta / produccion (Mise en place)", // Updated from "SUB RECETA" to match new classification
   "VEGETAL",
+  "VINOS",
 ] as const
 
 export type Category = (typeof categories)[number]
@@ -156,4 +161,9 @@ export interface Ingredient {
   recipeId?: string // Links to the original recipe ID
   recipeData?: RecipeDataLink // Complete recipe data for sub-recipes
   unitLocked?: boolean
+  // Pesos de calibración para contar la botella abierta con báscula (docs/136):
+  // fracción = (peso − vacía) ÷ (llena − vacía). Se guardan al usar "Contar por peso".
+  bottleWeights?: { fullG: number; emptyG: number }
+  // Alérgenos que contiene (claves de lib/allergens.ts, docs/137). Las recetas los heredan.
+  allergens?: string[]
 }

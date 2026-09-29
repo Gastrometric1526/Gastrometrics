@@ -6,6 +6,7 @@ import { createBusinessScopedCache } from "./storage/supabase-cache"
 import type { Database } from "@/types/database"
 import type { Menu, MenuItem, MenuSection, MenuStep } from "@/lib/types/menus"
 import type { Recipe } from "@/types/recipe"
+import { isBarClassification } from "./beverage"
 
 export type { Menu, MenuItem, MenuSection, MenuStep }
 
@@ -46,9 +47,16 @@ const stepToSection: Record<string, MenuSection> = {
   Infusión: "bebida",
   Digestivo: "bebida",
   "Maridaje de cierre": "bebida",
+  "Cócteles": "bebida",
+  "Vinos": "bebida",
+  "Cervezas": "bebida",
+  "Bebidas sin alcohol": "bebida",
 }
 
 function mapClassificationToSection(classification: string): MenuSection {
+  // Clasificaciones "Barra - …" (docs/136/137): antes caían en "fuerte" porque no contienen
+  // "bebida" ni "coctelería".
+  if (isBarClassification(classification)) return "bebida"
   const lowerClass = (classification || "").toLowerCase()
   if (lowerClass.includes("entrada") || lowerClass.includes("fría")) return "entrada"
   if (lowerClass.includes("postre") || lowerClass.includes("repostería") || lowerClass.includes("pastelería"))

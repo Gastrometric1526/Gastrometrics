@@ -17,6 +17,7 @@ const EN_LABELS: Record<MenuTypeOption, string> = {
   Degustación: "Tasting",
   Catering: "Catering",
   "Evento especial": "Special Event",
+  "Carta de bebidas": "Drinks menu",
   Otro: "Other",
 }
 
@@ -28,6 +29,7 @@ const DA_LABELS: Record<MenuTypeOption, string> = {
   Degustación: "Smagsmenu",
   Catering: "Catering",
   "Evento especial": "Særligt arrangement",
+  "Carta de bebidas": "Drikkekort",
   Otro: "Andet",
 }
 
@@ -39,6 +41,7 @@ const FR_LABELS: Record<MenuTypeOption, string> = {
   Degustación: "Dégustation",
   Catering: "Traiteur",
   "Evento especial": "Événement spécial",
+  "Carta de bebidas": "Carte des boissons",
   Otro: "Autre",
 }
 
@@ -50,6 +53,7 @@ const PT_LABELS: Record<MenuTypeOption, string> = {
   Degustación: "Degustação",
   Catering: "Catering",
   "Evento especial": "Evento especial",
+  "Carta de bebidas": "Carta de bebidas",
   Otro: "Outro",
 }
 
@@ -61,6 +65,7 @@ const ZH_LABELS: Record<MenuTypeOption, string> = {
   Degustación: "品鉴菜单",
   Catering: "餐饮外送",
   "Evento especial": "特别活动",
+  "Carta de bebidas": "饮品单",
   Otro: "其他",
 }
 

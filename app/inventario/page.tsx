@@ -71,6 +71,7 @@ import { useInventoryHistory } from "@/lib/storage/inventory"
 import { ensureSalesImportsLoaded, getSalesImports } from "@/lib/storage/sales-imports"
 import { computeTheoreticalStock } from "@/lib/theoretical-stock"
 import type { SalesImport } from "@/types/sales-import"
+import { buildPackageContentLookup, inventoryTotalValue } from "@/lib/inventory-value"
 
 // Algunos ingredientes guardados antes de que el precio/contenido neto vivieran bajo
 // `pricing` pudieron quedar con esos campos"planos"en la fila real — por eso el código
@@ -89,6 +90,8 @@ export default function InventoryPage() {
   const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
   const ingredients = useIngredients(businessId)
+  // Contenido de envase por producto para valorar el stock (lib/inventory-value.ts, docs/136).
+  const packageLookup = useMemo(() => buildPackageContentLookup(ingredients), [ingredients])
   const [items, setItems] = useState<InventoryItem[]>([])
   const [searchTerm, setSearchQuery] = useState("")
   const { toast } = useToast()
@@ -754,7 +757,7 @@ export default function InventoryPage() {
                         <div className="flex items-baseline">
                           <h3 className="text-2xl font-bold">
                             {formatCurrency(
-                              items.reduce((sum, item) => sum + (item.currentStock || 0) * (item.price || 0), 0),
+                              inventoryTotalValue(items, packageLookup),
                             )}
                           </h3>
                         </div>
@@ -830,7 +833,12 @@ export default function InventoryPage() {
               </TabsContent>
 
               <TabsContent value="dashboard">
-                <InventoryDashboard inventoryItems={items} inventoryHistory={inventoryHistory} isLoading={isLoading} />
+                <InventoryDashboard
+                  inventoryItems={items}
+                  inventoryHistory={inventoryHistory}
+                  isLoading={isLoading}
+                  packageLookup={packageLookup}
+                />
               </TabsContent>
 
               <TabsContent value="history">

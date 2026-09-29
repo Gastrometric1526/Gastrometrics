@@ -16,7 +16,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Check, ChevronsUpDown, Upload, Settings, RotateCcw, Calculator, Info, AlertTriangle, Eraser, History, X } from "lucide-react"
 import { CalculationInfoDialog } from "./calculation-info-dialog"
 import { cn } from "@/lib/utils"
-import { getRecipeById, saveRecipe, ensureRecipesLoaded } from "@/lib/storage/recipes"
+import { getRecipeById, getRecipes, saveRecipe, ensureRecipesLoaded } from "@/lib/storage/recipes"
+import { allergenLabelKey, getRecipeAllergens } from "@/lib/allergens"
 import { ActivityTracker } from "@/lib/activity-tracker"
 import { trackEvent } from "@/lib/analytics/track-event"
 import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
@@ -44,7 +45,9 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog"
-import { formatCurrency } from "@/lib/currency"
+import { formatCurrency, formatUnitPrice, getCurrentCurrencyCode } from "@/lib/currency"
+import { roundSalePrice, roundUpToStep } from "@/lib/price-rounding"
+import { BEVERAGE_COST_TARGET_RANGE, DEFAULT_BEVERAGE_COST_TARGET, getBarKind } from "@/lib/beverage"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
 import { logActivity } from "@/lib/services/activity-log"
@@ -77,10 +80,11 @@ interface TechnicalSheetProps {
 }
 
 // Exportada (antes privada del componente) para poder cubrirla con una prueba
-// unitaria directa — es la regla de negocio confirmada "un solo redondeo, en precio
-// de venta unitario, hacia el 5 más alto" (ver CLAUDE.md, docs/04).
+// unitaria directa. Regla original "un solo redondeo, en precio de venta unitario,
+// hacia el 5 más alto" (ver CLAUDE.md, docs/04) — hoy es el caso HNL de
+// lib/price-rounding.ts, que elige el escalón según la moneda (docs/136).
 export function roundToNearestFive(value: number): number {
-  return Math.ceil(value / 5) * 5
+  return roundUpToStep(value, 5)
 }
 
 // BUG CORREGIDO: el blur de precio/ganancia personalizados solo limpiaba el campo si
@@ -184,6 +188,17 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
   const [customPriceInput, setCustomPriceInput] = useState<string>("")
   const [pricingMethod, setPricingMethod] = useState<PricingMethod>(DEFAULT_PRICING_METHOD)
   const [targetFoodCostPercent, setTargetFoodCostPercent] = useState<number>(DEFAULT_TARGET_FOOD_COST_PERCENT)
+  // Comisión de delivery/tarjeta en % del precio de venta (docs/137). 0 = sin comisión.
+  const [salesCommissionPercent, setSalesCommissionPercent] = useState<number>(0)
+  // Moneda vigente: define el escalón de redondeo del precio sugerido (lib/price-rounding.ts).
+  // Se escucha el evento de Configuración para que el precio se re-redondee al cambiar de moneda.
+  const [currencyCode, setCurrencyCode] = useState<string>("HNL")
+  useEffect(() => {
+    setCurrencyCode(getCurrentCurrencyCode())
+    const onCurrencyChange = () => setCurrencyCode(getCurrentCurrencyCode())
+    window.addEventListener("currencyChanged", onCurrencyChange)
+    return () => window.removeEventListener("currencyChanged", onCurrencyChange)
+  }, [])
 
   // ─── Borrador automático de receta nueva (docs/131, lib/storage/recipe-draft.ts) ───
   // Solo en mode "new". draftReadyRef evita que el autoguardado pise el borrador con
@@ -213,6 +228,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       setPaxModifier(p.paxModifier || 0)
       if (p.pricingMethod) setPricingMethod(p.pricingMethod)
       if (p.targetFoodCostPercent) setTargetFoodCostPercent(p.targetFoodCostPercent)
+      setSalesCommissionPercent(p.salesCommissionPercent || 0)
       setRestoredDraftAt(draft.savedAt)
     },
     [businessId],
@@ -260,6 +276,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
         paxModifier,
         pricingMethod,
         targetFoodCostPercent,
+        salesCommissionPercent,
       },
       savedAt: new Date().toISOString(),
     }),
@@ -276,6 +293,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       paxModifier,
       pricingMethod,
       targetFoodCostPercent,
+      salesCommissionPercent,
     ],
   )
 
@@ -335,6 +353,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     setPaxModifier(0)
     setPricingMethod(pricingDefaults.pricingMethod || DEFAULT_PRICING_METHOD)
     setTargetFoodCostPercent(pricingDefaults.targetFoodCostPercent || DEFAULT_TARGET_FOOD_COST_PERCENT)
+    setSalesCommissionPercent(0)
     setOpenPopovers({})
     setRestoredDraftAt(null)
     if (userId) await clearRecipeDraft(userId, businessId)
@@ -382,6 +401,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
             pricingDefaults.targetFoodCostPercent ||
             DEFAULT_TARGET_FOOD_COST_PERCENT,
         )
+        setSalesCommissionPercent(existingRecipe.salesCommissionPercent || 0)
         if (existingRecipe.customUnitProfit !== undefined && existingRecipe.customUnitProfit !== null) {
           setCustomUnitProfitInput(existingRecipe.customUnitProfit.toString())
         }
@@ -401,24 +421,61 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
   // pricingMethod guardado explícitamente no se tocan (ver el fallback en el useEffect
   // de arriba: receta propia -> default del negocio -> default global); esto solo
   // cambia qué default heredan las recetas que nunca lo sobreescribieron.
+  // Receta de barra (clasificación "Barra - …", docs/136): su método y su pour cost
+  // objetivo son de ESTA receta — nunca se vuelven el default del negocio, que es el de
+  // los platos (un 20 % de un trago no debe convertirse en el food cost de la cocina).
+  const barKind = getBarKind(recipe.classification)
+  const isBarRecipe = barKind !== null
+
   const handlePricingMethodChange = useCallback(
     (value: PricingMethod) => {
       setPricingMethod(value)
+      if (isBarRecipe) return
       setEffectivePricingDefaults(businessId, { pricingMethod: value })
       toast({
         title: t("ficha_tecnica_toast_pricing_method_updated_title"),
         description: t("ficha_tecnica_toast_pricing_method_updated_desc"),
       })
     },
-    [businessId, toast, t],
+    [businessId, toast, t, isBarRecipe],
   )
 
   const handleTargetFoodCostPercentChange = useCallback(
     (value: number) => {
       setTargetFoodCostPercent(value)
+      if (isBarRecipe) return
       setEffectivePricingDefaults(businessId, { targetFoodCostPercent: value })
     },
-    [businessId],
+    [businessId, isBarRecipe],
+  )
+
+  // Al elegir una clasificación de barra, el precio pasa a calcularse con pour cost
+  // (costo ÷ % objetivo típico de ese tipo de bebida): el método de seis rubros suma
+  // mano de obra y operación como en un plato y deja el trago con ~50 % de costo. Al
+  // volver a una clasificación de cocina, se recuperan los defaults del negocio. Solo
+  // corre cuando el usuario cambia la clasificación, nunca al abrir una receta guardada.
+  const handleClassificationChange = useCallback(
+    (value: string) => {
+      const previousKind = getBarKind(recipe.classification)
+      const nextKind = getBarKind(value)
+      setRecipe((prev) => ({ ...prev, classification: value }))
+      if (nextKind && nextKind !== previousKind) {
+        // Un trago se rinde en porciones, no en gramos (default de la ficha en blanco).
+        setRecipe((prev) => (prev.yieldUnit === "g" ? { ...prev, yieldUnit: "porciones" } : prev))
+        const target = DEFAULT_BEVERAGE_COST_TARGET[nextKind]
+        setPricingMethod("food_cost")
+        setTargetFoodCostPercent(target)
+        toast({
+          title: t("ficha_tecnica_toast_bar_pricing_title"),
+          description: t("ficha_tecnica_toast_bar_pricing_desc").replace("{percent}", String(target)),
+        })
+      } else if (!nextKind && previousKind) {
+        const pricingDefaults = getEffectivePricingDefaults(businessId)
+        setPricingMethod(pricingDefaults.pricingMethod || DEFAULT_PRICING_METHOD)
+        setTargetFoodCostPercent(pricingDefaults.targetFoodCostPercent || DEFAULT_TARGET_FOOD_COST_PERCENT)
+      }
+    },
+    [recipe.classification, businessId, toast, t],
   )
 
   const calculations = useMemo(() => {
@@ -517,14 +574,22 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     const customValue = parsePositiveOrUndefined(customUnitProfitInput)
     const unitProfit = customValue !== undefined ? customValue : calculatedUnitProfit
 
+    // Comisión sobre la venta (docs/137): la app de delivery o la tarjeta se queda un % del
+    // PRECIO, así que el precio se divide entre (1 − comisión) para que, después de pagarla,
+    // quede lo mismo que sin comisión. Se limita a 90 % para no dividir entre cero.
+    const commissionFraction = Math.min(Math.max(salesCommissionPercent || 0, 0), 90) / 100
+    const coverCommission = (price: number) => (commissionFraction > 0 ? price / (1 - commissionFraction) : price)
+
     // Método GastroMetrics (conservador): seis rubros sumados sobre el costo de producción.
-    const gastrometricsPrice = roundToNearestFive(unitCost + unitProfit)
+    const gastrometricsPrice = roundSalePrice(coverCommission(unitCost + unitProfit), currencyCode)
 
     // Método Food Cost % (estándar de industria): Precio = Costo unitario / Food Cost % objetivo.
     // Ej. costo unitario L20, food cost objetivo 30% → precio = 20 / 0.30 = L66.67 → redondeado L70.
     // No usa los seis rubros — es un solo número, más simple pero menos granular.
     const foodCostPrice =
-      targetFoodCostPercent > 0 && unitCost > 0 ? roundToNearestFive(unitCost / (targetFoodCostPercent / 100)) : 0
+      targetFoodCostPercent > 0 && unitCost > 0
+        ? roundSalePrice(coverCommission(unitCost / (targetFoodCostPercent / 100)), currencyCode)
+        : 0
 
     const recommendedPrice = pricingMethod === "food_cost" ? foodCostPrice : gastrometricsPrice
 
@@ -537,10 +602,14 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     const finalPrice = customPriceValue !== undefined ? customPriceValue : recommendedPrice
 
     const totalSales = finalPrice * effectiveYield
+    const commissionPerUnit = finalPrice * commissionFraction
+    const totalCommission = commissionPerUnit * effectiveYield
 
-    const totalNetProfit = totalSales - productionCost
+    // La comisión es un costo variable real: se descuenta de la ganancia y del margen.
+    const totalNetProfit = totalSales - productionCost - totalCommission
 
-    const calculatedContributionMargin = totalSales > 0 ? ((totalSales - productionCost) / totalSales) * 100 : 0
+    const calculatedContributionMargin =
+      totalSales > 0 ? ((totalSales - productionCost - totalCommission) / totalSales) * 100 : 0
 
     // "Costo %" (food cost), Excel maestro H11 = H33/H10*100 (documento 01, sección 10).
     // No editable, solo informativo.
@@ -570,6 +639,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       fixedCostAmount,
       fixedCostPercentage,
       foodCostPercent,
+      commissionPerUnit,
       scaledIngredientQuantities,
       paxMultiplier,
       yieldSanityWarning,
@@ -590,7 +660,14 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     pricingMethod,
     targetFoodCostPercent,
     customPriceInput,
+    currencyCode,
+    salesCommissionPercent,
   ])
+
+  const recipeAllergens = useMemo(
+    () => getRecipeAllergens(recipe, availableIngredients, getRecipes(businessId)),
+    [recipe, availableIngredients, businessId],
+  )
 
   useEffect(() => {
     setRecipe((prev) => ({
@@ -952,6 +1029,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
         isv,
         pricingMethod,
         targetFoodCostPercent,
+        salesCommissionPercent: salesCommissionPercent > 0 ? salesCommissionPercent : undefined,
         metadata: {
           ...recipe.metadata,
           updatedAt: new Date().toISOString(),
@@ -1204,7 +1282,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                   <Select
                     value={recipe.classification}
                     onValueChange={(value) => {
-                      handleFieldUpdate("classification", value)
+                      handleClassificationChange(value)
                       if (isEditMode) focusAndOpenPlate()
                     }}
                     open={classificationOpen}
@@ -1599,7 +1677,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                     </TableCell>
                     <TableCell className="text-center">{ingredient.measure || ""}</TableCell>
                     <TableCell className="text-center font-mono">
-                      {ingredient.unitCost > 0 ? formatCurrency(ingredient.unitCost) : ""}
+                      {ingredient.unitCost > 0 ? formatUnitPrice(ingredient.unitCost) : ""}
                     </TableCell>
                     <TableCell className="text-center font-mono">
                       {(ingredient.extension ?? 0) > 0 ? formatCurrency(ingredient.extension ?? 0) : ""}
@@ -1620,6 +1698,25 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
               {calculations.productionCost > 0 ? formatCurrency(calculations.productionCost) : ""}
             </p>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Alérgenos (docs/137): se heredan de los ingredientes y sub-recetas, nunca a mano. */}
+      <Card className="w-full mx-auto">
+        <CardContent className="pt-6 space-y-2">
+          <h3 className="text-base font-semibold">{t("allergens_label")}</h3>
+          {recipeAllergens.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {recipeAllergens.map((key) => (
+                <span key={key} className="rounded-full bg-warning-soft px-3 py-1 text-xs font-medium text-warning">
+                  {t(allergenLabelKey(key))}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t("allergens_recipe_none")}</p>
+          )}
+          <p className="text-xs text-muted-foreground">{t("allergens_recipe_hint")}</p>
         </CardContent>
       </Card>
 
@@ -1667,12 +1764,23 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
           <div className="flex items-center justify-between">
             <CardTitle>{t("tour_ficha_pricing_title")}</CardTitle>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" onClick={() => setShowCalculationInfo(true)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowCalculationInfo(true)}
+                aria-label={t("ficha_tecnica_calc_info_title")}
+                title={t("ficha_tecnica_calc_info_title")}
+              >
                 <Calculator className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
               </Button>
               <Dialog open={showPriceSettings} onOpenChange={setShowPriceSettings}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t("ficha_tecnica_percentage_settings_title")}
+                  title={t("ficha_tecnica_percentage_settings_title")}
+                >
                   <Settings className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
                 </Button>
               </DialogTrigger>
@@ -1788,9 +1896,49 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
             </div>
             <p className="text-xs text-muted-foreground">
               {isEditMode
-                ? t("ficha_tecnica_pricing_method_saved_hint")
+                ? isBarRecipe
+                  ? t("ficha_tecnica_pricing_method_bar_hint")
+                  : t("ficha_tecnica_pricing_method_saved_hint")
                 : ""}
             </p>
+          </div>
+
+          {/* Comisión sobre la venta (docs/137) — vale para los dos métodos. */}
+          <div className="space-y-2 border-b pb-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Label htmlFor="salesCommissionPercent" className="text-sm whitespace-nowrap">
+                {t("ficha_tecnica_field_sales_commission")}
+              </Label>
+              {isEditMode ? (
+                <NumericInput
+                  id="salesCommissionPercent"
+                  value={salesCommissionPercent}
+                  onChange={(value) => setSalesCommissionPercent(Math.min(Math.max(value || 0, 0), 90))}
+                  className="w-24"
+                  placeholder="0"
+                  decimalPlaces={1}
+                  min={0}
+                  max={90}
+                />
+              ) : (
+                <span className="text-sm font-medium">{salesCommissionPercent}%</span>
+              )}
+              <span className="text-xs text-muted-foreground">{t("ficha_tecnica_sales_commission_hint")}</span>
+            </div>
+            {salesCommissionPercent > 0 && calculations.finalPrice > 0 && (
+              <div className="grid gap-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    {t("ficha_tecnica_sales_commission_amount").replace("{percent}", String(salesCommissionPercent))}
+                  </span>
+                  <span className="font-mono">{formatCurrency(calculations.commissionPerUnit)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t("ficha_tecnica_net_after_commission")}</span>
+                  <span className="font-mono">{formatCurrency(calculations.finalPrice - calculations.commissionPerUnit)}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {pricingMethod === "food_cost" ? (
@@ -1800,7 +1948,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Label htmlFor="targetFoodCostPercent" className="text-sm whitespace-nowrap">
-                  {t("ficha_tecnica_field_target_food_cost")}
+                  {isBarRecipe ? t("ficha_tecnica_field_target_beverage_cost") : t("ficha_tecnica_field_target_food_cost")}
                 </Label>
                 {isEditMode ? (
                   <NumericInput
@@ -1817,7 +1965,9 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                   <span className="text-sm font-medium">{targetFoodCostPercent}%</span>
                 )}
                 <span className="text-xs text-muted-foreground">
-                  {t("ficha_tecnica_target_food_cost_hint")}
+                  {barKind
+                    ? t("ficha_tecnica_target_beverage_cost_hint").replace("{range}", BEVERAGE_COST_TARGET_RANGE[barKind])
+                    : t("ficha_tecnica_target_food_cost_hint")}
                 </span>
               </div>
 
@@ -1828,11 +1978,17 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                 </span>
               </div>
               <div className="flex justify-between items-center border-b pb-2">
-                <span>{t("ficha_tecnica_field_target_food_cost")}</span>
+                <span>{isBarRecipe ? t("ficha_tecnica_field_target_beverage_cost") : t("ficha_tecnica_field_target_food_cost")}</span>
                 <span className="font-mono">{targetFoodCostPercent.toFixed(2)}%</span>
               </div>
+              {salesCommissionPercent > 0 && (
+                <div className="flex justify-between items-center border-b pb-2 text-sm text-muted-foreground">
+                  <span>{t("ficha_tecnica_calc_info_commission_title")}</span>
+                  <span className="font-mono">÷ (1 − {salesCommissionPercent}%)</span>
+                </div>
+              )}
               <div className="flex justify-between items-center pt-2 font-bold">
-                <span>{t("ficha_tecnica_sale_price_formula_label")}</span>
+                <span>{isBarRecipe ? t("ficha_tecnica_sale_price_formula_bar_label") : t("ficha_tecnica_sale_price_formula_label")}</span>
                 <span className="font-mono">
                   {calculations.foodCostPrice > 0 ? formatCurrency(calculations.foodCostPrice) : ""}
                 </span>
@@ -1920,7 +2076,18 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                   {calculations.unitCost > 0 ? formatCurrency(calculations.unitCost) : ""}
                 </TableCell>
                 <TableCell>
-                  {isEditMode && calculations.yieldAmount > 0 ? (
+                  {pricingMethod === "food_cost" ? (
+                    // Con Food Cost % el precio sale de costo ÷ % objetivo: la ganancia unitaria
+                    // es un resultado (precio − costo − comisión), no un dato editable. Antes se
+                    // mostraba la ganancia de los 6 rubros, que este método no usa (docs/137).
+                    calculations.finalPrice > 0 ? (
+                      <span className="font-mono">
+                        {formatCurrency(calculations.finalPrice - calculations.unitCost - calculations.commissionPerUnit)}
+                      </span>
+                    ) : (
+                      ""
+                    )
+                  ) : isEditMode && calculations.yieldAmount > 0 ? (
                     <Input
                       type="number"
                       value={customUnitProfitInput}
@@ -2000,7 +2167,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
             <Table>
               <TableBody>
                 <TableRow>
-                  <TableCell className="font-bold">{t("ficha_tecnica_food_cost_percent_label")}</TableCell>
+                  <TableCell className="font-bold">{isBarRecipe ? t("ficha_tecnica_beverage_cost_percent_label") : t("ficha_tecnica_food_cost_percent_label")}</TableCell>
                   <TableCell className="font-mono text-muted-foreground">
                     {calculations.foodCostPercent > 0 ? `${calculations.foodCostPercent.toFixed(2)}%` : ""}
                   </TableCell>
@@ -2086,6 +2253,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
         gastrometricsPrice={calculations.gastrometricsPrice}
         foodCostPrice={calculations.foodCostPrice}
         finalPrice={calculations.finalPrice}
+        salesCommissionPercent={salesCommissionPercent}
         totalSales={calculations.totalSales}
         netProfit={calculations.netProfit}
         calculatedContributionMargin={calculations.calculatedContributionMargin}

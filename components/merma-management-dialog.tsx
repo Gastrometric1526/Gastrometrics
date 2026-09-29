@@ -16,7 +16,8 @@ import { setDashboardData } from "@/utils/dashboard-data"
 import { MermaInfoDialog } from "./merma-info-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
-import { getCategoryLabel, getUnitLabel } from "@/lib/ingredient-labels"
+import { getCategoryLabel, getMermaLevelLabel, getUnitLabel } from "@/lib/ingredient-labels"
+import { formatUnitPrice } from "@/lib/currency"
 import { useAuth } from "@/contexts/auth-context"
 import { logActivity } from "@/lib/services/activity-log"
 import type { Ingredient } from "@/types/ingredient"
@@ -448,7 +449,7 @@ export function MermaManagementDialog({
                               >
                                 {categoryMerma}%
                               </Badge>
-                              <span className="text-xs text-muted-foreground">{mermaLevel}</span>
+                              <span className="text-xs text-muted-foreground">{getMermaLevelLabel(mermaLevel, language)}</span>
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
@@ -522,7 +523,7 @@ export function MermaManagementDialog({
                             )}
                           </TableCell>
                           <TableCell className="text-center">
-                            <div className="font-medium">${Number(ingredient.pricing.pricePerUnit.toFixed(2))}</div>
+                            <div className="font-medium">{formatUnitPrice(ingredient.pricing.pricePerUnit)}</div>
                           </TableCell>
                         </TableRow>
                       )

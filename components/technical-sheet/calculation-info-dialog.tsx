@@ -49,6 +49,8 @@ interface CalculationInfoDialogProps {
   netProfit: number
   calculatedContributionMargin: number
   foodCostPercent: number
+  // Comisión sobre la venta en % del precio (docs/137). 0 = sin comisión.
+  salesCommissionPercent?: number
 }
 
 export function CalculationInfoDialog({
@@ -67,6 +69,7 @@ export function CalculationInfoDialog({
   gastrometricsPrice,
   foodCostPrice,
   finalPrice,
+  salesCommissionPercent = 0,
   totalSales,
   netProfit,
   calculatedContributionMargin,
@@ -74,7 +77,9 @@ export function CalculationInfoDialog({
 }: CalculationInfoDialogProps) {
   const { t } = useLanguage()
   const paxIsActive = paxModifier > 0 && paxMultiplier !== 1
-  const rawPrice = pricingMethod === "food_cost" ? unitCost / (targetFoodCostPercent / 100) : unitCost + unitProfit
+  const basePrice = pricingMethod === "food_cost" ? unitCost / (targetFoodCostPercent / 100) : unitCost + unitProfit
+  const commissionFraction = Math.min(Math.max(salesCommissionPercent, 0), 90) / 100
+  const rawPrice = commissionFraction > 0 ? basePrice / (1 - commissionFraction) : basePrice
   const roundedPrice = pricingMethod === "food_cost" ? foodCostPrice : gastrometricsPrice
 
   const rubros = [
@@ -145,7 +150,7 @@ export function CalculationInfoDialog({
                 </h4>
                 <p className="text-muted-foreground mb-2">{t("ficha_tecnica_calc_info_foodcost_desc")}</p>
                 <div className="p-3 bg-muted/50 rounded border font-mono text-xs sm:text-sm">
-                  {formatCurrency(unitCost)} ÷ {targetFoodCostPercent}% = {formatCurrency(rawPrice)}
+                  {formatCurrency(unitCost)} ÷ {targetFoodCostPercent}% = {formatCurrency(basePrice)}
                 </div>
               </div>
             ) : (
@@ -171,7 +176,17 @@ export function CalculationInfoDialog({
                   {yieldAmount.toFixed(0)} = {formatCurrency(unitProfit)} ({t("ficha_tecnica_col_unit_profit")})
                 </div>
                 <div className="mt-2 p-3 bg-muted/50 rounded border font-mono text-xs sm:text-sm">
-                  {formatCurrency(unitCost)} + {formatCurrency(unitProfit)} = {formatCurrency(rawPrice)}
+                  {formatCurrency(unitCost)} + {formatCurrency(unitProfit)} = {formatCurrency(basePrice)}
+                </div>
+              </div>
+            )}
+
+            {commissionFraction > 0 && (
+              <div>
+                <h4 className="font-semibold mb-1">{t("ficha_tecnica_calc_info_commission_title")}</h4>
+                <p className="text-muted-foreground mb-2">{t("ficha_tecnica_calc_info_commission_desc")}</p>
+                <div className="p-3 bg-muted/50 rounded border font-mono text-xs sm:text-sm">
+                  {formatCurrency(basePrice)} ÷ (1 − {salesCommissionPercent}%) = {formatCurrency(rawPrice)}
                 </div>
               </div>
             )}
@@ -202,7 +217,9 @@ export function CalculationInfoDialog({
                 <div className="flex justify-between p-2 bg-muted/50 rounded border text-xs sm:text-sm">
                   <span>{t("ficha_tecnica_net_profit_total_sales_label")}</span>
                   <span className="font-mono">
-                    {formatCurrency(totalSales)} − {formatCurrency(productionCost)} = {formatCurrency(netProfit)}
+                    {formatCurrency(totalSales)} − {formatCurrency(productionCost)}
+                    {commissionFraction > 0 && <> − {formatCurrency(totalSales * commissionFraction)}</>} ={" "}
+                    {formatCurrency(netProfit)}
                   </span>
                 </div>
                 <div className="flex justify-between p-2 bg-muted/50 rounded border text-xs sm:text-sm">

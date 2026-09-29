@@ -53,6 +53,8 @@ import type { Ingredient } from "@/types/ingredient"
 import { unitAbbreviations } from "@/types/ingredient"
 import { getUnitLabel } from "@/lib/ingredient-labels"
 import type { PurchaseOrder } from "@/types/purchase-order"
+import { buildPackageContentLookup, inventoryItemValue } from "@/lib/inventory-value"
+import { formatUnitPrice } from "@/lib/currency"
 
 export function PurchaseOrderPage() {
   const router = useRouter()
@@ -114,14 +116,16 @@ export function PurchaseOrderPage() {
 
   const mostUsedIngredients = useMemo(() => recipeIngredientCounts.slice(0, 3), [recipeIngredientCounts])
 
+  // Precio del envase ÷ su contenido (lib/inventory-value.ts, docs/136).
+  const packageLookup = useMemo(() => buildPackageContentLookup(ingredients), [ingredients])
   const mostSpentInventoryIngredients = useMemo(
     () =>
       [...inventoryItems]
-        .map((item) => ({ ...item, totalValue: (item.currentStock || 0) * (item.price || 0) }))
+        .map((item) => ({ ...item, totalValue: inventoryItemValue(item, packageLookup) }))
         .filter((item) => item.totalValue > 0)
         .sort((a, b) => b.totalValue - a.totalValue)
         .slice(0, 3),
-    [inventoryItems],
+    [inventoryItems, packageLookup],
   )
 
   const mostExpensiveIngredients = useMemo(
@@ -790,7 +794,7 @@ export function PurchaseOrderPage() {
                   <div key={ing.id} className="flex items-center justify-between text-xs">
                     <span className="truncate pr-2">{ing.name}</span>
                     <span className="font-semibold text-foreground shrink-0">
-                      {formatCurrency(ing.pricing?.pricePerUnit || 0)}/{unitAbbreviations[ing.unit] || ing.unit}
+                      {formatUnitPrice(ing.pricing?.pricePerUnit || 0)}/{unitAbbreviations[ing.unit] || ing.unit}
                     </span>
                   </div>
                 ))

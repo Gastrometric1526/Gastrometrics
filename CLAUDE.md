@@ -6,7 +6,7 @@ Sistema de gestión gastronómica (fichas técnicas, costeo, inventario, menús,
 
 Lee, en este orden:
 1. `docs/00-README-EMPIEZA-AQUI.md`
-2. El documento de auditoría con el número más alto en `docs/` (a la fecha de este commit: `docs/135-kit-de-marketing-gratuito-seo-trustpilot-y-perfiles-sociales.md`) — es la fuente de verdad sobre qué está hecho, qué falta, y dónde. **No confíes en él sin verificar contra el código real** — es la regla que se ha seguido en todo el proyecto.
+2. El documento de auditoría con el número más alto en `docs/` (a la fecha de este commit: `docs/137-comisiones-alergenos-carta-de-bebidas-y-20-pruebas-de-uso-real.md`) — es la fuente de verdad sobre qué está hecho, qué falta, y dónde. **No confíes en él sin verificar contra el código real** — es la regla que se ha seguido en todo el proyecto.
 3. `docs/12-guia-backend.md` es histórico (de antes de conectar el backend) — para su estado real, ver el punto 4.
 4. Para arquitectura/diseño técnico consolidado (no cronológico): `docs/mapa-de-documentacion.md` (índice por tema de todo `docs/`) y `docs/referencia-arquitectura-tecnica.md` (storage, recálculo de precios, sub-recetas, PDF, i18n, PWA, backend, admin, rutas). Se actualizan in-place cuando algo cambia — si tu cambio toca algo que describen, actualízalos ahí además del documento de sesión numerado.
 5. Para **operar** la app (no cómo está construida, sino cómo se administra en el mundo real: servicios externos, variables de entorno, despliegue/rollback, `/admin`, y qué hacer en caso de incidente): `docs/referencia-manual-de-operaciones.md`.
@@ -23,7 +23,7 @@ Si el build falla, revisa primero `package.json`: `react`/`react-dom` deben esta
 
 **Nunca corras `npm run build` con `next dev` activo en la misma carpeta** — corrompe los artefactos que el servidor de dev tiene cargados (404/500 fantasma en el navegador hasta reiniciar). Detén el dev server primero, corre el build, y si vas a seguir probando en vivo después, borra `.next` y reinicia el dev server limpio (ver `docs/30`).
 
-`npm test` corre la suite de pruebas automatizadas (Vitest, ver `docs/29` sección 3) — 85 pruebas a la fecha de `docs/134` (aislamiento de storage por negocio, cascada de recálculo, redondeo de precio, costo promedio ponderado, análisis de ventas, menús, órdenes de compra, la selección de recordatorios por correo de `docs/131`, el tope de equipo por plan de `docs/133` y el stock teórico de `docs/134`).
+`npm test` corre la suite de pruebas automatizadas (Vitest, ver `docs/29` sección 3) — 115 pruebas a la fecha de `docs/137` (aislamiento de storage por negocio, cascada de recálculo, redondeo de precio por moneda, costo promedio ponderado, análisis de ventas, menús, órdenes de compra, la selección de recordatorios por correo de `docs/131`, el tope de equipo por plan de `docs/133`, el stock teórico de `docs/134`, costeo de barra, valor de inventario y cocina vs. barra de `docs/136`, y alérgenos de `docs/137`).
 
 ## Reglas del proyecto (no negociables, pedidas explícitamente por el dueño)
 
@@ -33,7 +33,7 @@ Si el build falla, revisa primero `package.json`: `react`/`react-dom` deben esta
 
 ## Decisiones de negocio ya confirmadas (no volver a preguntar)
 
-- Redondeo de precio: un solo redondeo, en precio de venta unitario, hacia el 5 más alto.
+- Redondeo de precio: un solo redondeo, en precio de venta unitario, siempre hacia arriba, al escalón de la moneda (`lib/price-rounding.ts`: 5 en HNL, 0.50 en USD/EUR, etc. — ver `docs/136`; antes era siempre al 5, lo que en USD convertía $10.60 en $15).
 - Los seis rubros de costeo son % sobre costo de producción, no sobre precio de venta.
 - ISV/impuesto: 0 por defecto, opcional, sin lógica de país específica.
 - Escalado de recetas/menús: cantidades de ingredientes siempre redondean hacia arriba.

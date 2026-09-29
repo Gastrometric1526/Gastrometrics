@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Edit, Trash2, Lock, Info } from "lucide-react"
+import { Edit, Trash2, Lock, Info, Wine } from "lucide-react"
 import type { Ingredient, Presentation, Unit } from "@/types/ingredient"
 import { units, presentations, unitAbbreviations } from "@/types/ingredient"
 import { convertBetweenUnits } from "@/lib/utils/calculations"
@@ -17,6 +17,9 @@ import { getPriceChangeHistory } from "@/lib/recalculate"
 import { useLanguage } from "@/contexts/language-context"
 import { getCategoryLabel, getUnitLabel, getPresentationLabel } from "@/lib/ingredient-labels"
 import { getDateLocale } from "@/lib/i18n/translations"
+import { isBeverageCategory } from "@/lib/beverage"
+import { SellByServingDialog } from "@/components/beverage/sell-by-serving-dialog"
+import { formatUnitPrice } from "@/lib/currency"
 
 // Tendencia de precio a 90 días (docs/04 del paquete de diseño: "el cambio de precio
 // a 90 días se muestra como barra fina, no como número suelto"). Usa el historial real
@@ -64,6 +67,8 @@ export function IngredientsTable({
 }: Props) {
   const { t, language } = useLanguage()
   const [wacInfoIngredientId, setWacInfoIngredientId] = useState<string | null>(null)
+  // "Vender por copa / botella" (docs/136) — solo en ingredientes con categoría de barra.
+  const [sellIngredient, setSellIngredient] = useState<Ingredient | null>(null)
   const wacInfoIngredient = wacInfoIngredientId ? allItems.find((i) => i.id === wacInfoIngredientId) || null : null
   const persist = useCallback(
     (updated: Ingredient[]) => {
@@ -408,7 +413,7 @@ export function IngredientsTable({
                   <td className="px-4 py-4 text-center">
                     <div className="flex flex-col items-center">
                       <span className="font-bold text-primary text-sm">
-                        {formatCurrency(Number(pricePerUnit.toFixed(2)))}
+                        {formatUnitPrice(pricePerUnit)}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {t("ingredientes_per_prefix")} {unitAbbreviations[ingredient.unit] || ingredient.unit}
@@ -502,6 +507,25 @@ export function IngredientsTable({
                         </TooltipContent>
                       </Tooltip>
 
+                      {isBeverageCategory(ingredient.category) && (ingredient.pricing?.netContent || 0) > 0 && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSellIngredient(ingredient)}
+                              aria-label={t("bebidas_sell_button_tooltip")}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Wine className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{t("bebidas_sell_button_tooltip")}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+
                       {/* BOTÓN ELIMINAR PARA TODOS LOS INGREDIENTES - SIN RESTRICCIONES */}
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -565,6 +589,13 @@ export function IngredientsTable({
           )}
         </DialogContent>
       </Dialog>
+      <SellByServingDialog
+        ingredient={sellIngredient}
+        businessId={businessId}
+        onOpenChange={(open) => {
+          if (!open) setSellIngredient(null)
+        }}
+      />
     </TooltipProvider>
   )
 }

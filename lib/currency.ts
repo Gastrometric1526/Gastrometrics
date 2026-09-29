@@ -126,6 +126,33 @@ export function formatCurrency(amount: number): string {
   }
 }
 
+/**
+ * Precio por unidad base (por g, por ml, por unidad). Con 2 decimales, 1.20 ÷ 330 ml se
+ * mostraba "L 0.00" y 450 ÷ 25000 g "L 0.02" (docs/137). Si el valor es menor a 1 se
+ * muestran hasta 4 decimales (mínimo 2); si no, igual que formatCurrency.
+ */
+export function formatUnitPrice(amount: number): string {
+  if (!Number.isFinite(amount) || Math.abs(amount) >= 1 || amount === 0) return formatCurrency(amount)
+  const option = getCurrentCurrencyOption()
+  try {
+    const parts = new Intl.NumberFormat(option.locale, {
+      style: "currency",
+      currency: option.code,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 4,
+    }).formatToParts(amount)
+    return parts
+      .map((part) => {
+        if (part.type === "group") return ","
+        if (part.type === "decimal") return "."
+        return part.value
+      })
+      .join("")
+  } catch {
+    return `${option.symbol}${amount.toFixed(4)}`
+  }
+}
+
 export function formatPercentage(value: number): string {
   return new Intl.NumberFormat("es-HN", {
     style: "percent",
