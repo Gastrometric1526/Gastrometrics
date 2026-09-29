@@ -176,7 +176,7 @@ const translations = {
     misrecetas_empty_no_recipes_desc: "Comienza creando tu primera receta con nuestra ficha técnica.",
     misrecetas_create_first: "Crear Primera Receta",
     misrecetas_delete_confirm_prefix: "¿Estás seguro de que quieres eliminar la receta",
-    misrecetas_delete_confirm_suffix: "? Esta acción no se puede deshacer.",
+    misrecetas_delete_confirm_suffix: "? Irá a la papelera y podrás recuperarla durante 30 días.",
     misrecetas_delete_subrecipe_note_label: "Nota:",
     misrecetas_delete_subrecipe_note_desc:
       "Esta es una sub-receta. Al eliminarla, también se eliminará el ingrediente asociado automáticamente.",
@@ -3489,7 +3489,7 @@ const translations = {
     misrecetas_empty_no_recipes_desc: "Start by creating your first recipe with our recipe card.",
     misrecetas_create_first: "Create First Recipe",
     misrecetas_delete_confirm_prefix: "Are you sure you want to delete the recipe",
-    misrecetas_delete_confirm_suffix: "? This action cannot be undone.",
+    misrecetas_delete_confirm_suffix: "? It will go to the trash and you can restore it for 30 days.",
     misrecetas_delete_subrecipe_note_label: "Note:",
     misrecetas_delete_subrecipe_note_desc:
       "This is a sub-recipe. Deleting it will also automatically delete its associated ingredient.",
@@ -6782,7 +6782,7 @@ const translations = {
     misrecetas_empty_no_recipes_desc: "Begynd med at oprette din første opskrift med vores opskriftskort.",
     misrecetas_create_first: "Opret Første Opskrift",
     misrecetas_delete_confirm_prefix: "Er du sikker på, at du vil slette opskriften",
-    misrecetas_delete_confirm_suffix: "? Denne handling kan ikke fortrydes.",
+    misrecetas_delete_confirm_suffix: "? Den flyttes til papirkurven, og du kan gendanne den i 30 dage.",
     misrecetas_delete_subrecipe_note_label: "Bemærk:",
     misrecetas_delete_subrecipe_note_desc:
       "Dette er en delopskrift. Hvis du sletter den, slettes den tilknyttede ingrediens også automatisk.",
@@ -10057,7 +10057,7 @@ const translations = {
     misrecetas_empty_no_recipes_desc: "Commencez par créer votre première recette avec notre fiche technique.",
     misrecetas_create_first: "Créer la Première Recette",
     misrecetas_delete_confirm_prefix: "Êtes-vous sûr de vouloir supprimer la recette",
-    misrecetas_delete_confirm_suffix: "? Cette action est irréversible.",
+    misrecetas_delete_confirm_suffix: "? Elle ira dans la corbeille et vous pourrez la récupérer pendant 30 jours.",
     misrecetas_delete_subrecipe_note_label: "Remarque :",
     misrecetas_delete_subrecipe_note_desc:
       "Il s'agit d'une sous-recette. La supprimer supprimera aussi automatiquement l'ingrédient associé.",
@@ -13336,7 +13336,7 @@ const translations = {
     misrecetas_empty_no_recipes_desc: "Comece criando sua primeira receita com nossa ficha técnica.",
     misrecetas_create_first: "Criar Primeira Receita",
     misrecetas_delete_confirm_prefix: "Tem certeza de que deseja excluir a receita",
-    misrecetas_delete_confirm_suffix: "? Esta ação não pode ser desfeita.",
+    misrecetas_delete_confirm_suffix: "? Ela vai para a lixeira e você pode recuperá-la por 30 dias.",
     misrecetas_delete_subrecipe_note_label: "Nota:",
     misrecetas_delete_subrecipe_note_desc:
       "Esta é uma sub-receita. Ao excluí-la, o ingrediente associado também será excluído automaticamente.",
@@ -16613,7 +16613,7 @@ const translations = {
     misrecetas_empty_no_recipes_desc: "使用我们的技术卡创建你的第一个食谱吧。",
     misrecetas_create_first: "创建第一个食谱",
     misrecetas_delete_confirm_prefix: "确定要删除食谱",
-    misrecetas_delete_confirm_suffix: "吗?此操作无法撤销。",
+    misrecetas_delete_confirm_suffix: "吗？它会进入回收站，30 天内可以恢复。",
     misrecetas_delete_subrecipe_note_label: "注意:",
     misrecetas_delete_subrecipe_note_desc: "这是一个子食谱。删除后,关联的食材也会被自动删除。",
     misrecetas_migration_dialog_title: "将食谱迁移到其他商户",
