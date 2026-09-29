@@ -7,7 +7,9 @@ import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 import { drawBusinessLogo } from "./pdf-logo"
 import { drawImageFit } from "./pdf-image"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
-import { getYieldUnitLabel } from "@/lib/ingredient-labels"
+import { getYieldUnitLabel, getUnitLabel, getCategoryLabel } from "@/lib/ingredient-labels"
+import { getClassificationLabel } from "@/lib/classification-labels"
+import type { Classification } from "@/types/recipe"
 import { trackEvent } from "@/lib/analytics/track-event"
 
 // ============== HELPERS ==============
@@ -29,6 +31,14 @@ const sanitizeText = (input: string | undefined | null): string =>
 // este selector existiera (el default histórico, ver docs/115).
 const yieldUnitLabel = (recipe: Recipe): string =>
   sanitizeText(getYieldUnitLabel(recipe.yieldUnit || "g", getCurrentPdfLanguage()))
+
+// Unidad, categoría y clasificación en el idioma del PDF (docs/141): se guardan como claves
+// en español ("gramos", "CARNES", "Plato fuerte") y se imprimían crudas en los 6 idiomas.
+const unitLabel = (unit: string | undefined): string => sanitizeText(getUnitLabel(unit || "", getCurrentPdfLanguage()))
+const categoryLabel = (category: string | undefined): string =>
+  sanitizeText(getCategoryLabel(category || "", getCurrentPdfLanguage()))
+const classificationLabel = (recipe: Recipe): string =>
+  sanitizeText(getClassificationLabel((recipe.classification || "") as Classification, getCurrentPdfLanguage()))
 
 /**
  * NOTA (ver documento de continuidad): existía aquí una copia local de formatCurrency
@@ -485,7 +495,7 @@ function generateAdministrativePDF(
   doc.text(labels.clasificacion, col1X, metaY + 6)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(...COLORS.text)
-  const classText = sanitizeText(recipe.classification)
+  const classText = classificationLabel(recipe)
   const shortClass = classText.length > 35 ? classText.substring(0, 35) + "..." : classText
   doc.text(shortClass, col1X + 24, metaY + 6)
 
@@ -700,10 +710,10 @@ function generateAdministrativePDF(
   const ingredientColumns = ["#", labels.categoria, labels.ingrediente, labels.cant, labels.medida, labels.costo, labels.extension]
   const ingredientRows = recipe.ingredients.map((ing, index) => [
     String(index + 1),
-    sanitizeText(ing.category) || labels.general,
+    categoryLabel(ing.category) || labels.general,
     sanitizeText(ing.name),
     ing.quantity.toFixed(2),
-    sanitizeText(ing.unit),
+    unitLabel(ing.unit),
     formatCurrency2(ing.unitCost || 0),
     formatCurrency2(ing.extension || ing.quantity * (ing.unitCost || 0)),
   ])
@@ -1177,7 +1187,7 @@ function generateEmployeePDF(
   doc.setFontSize(10)
   doc.setFont("times", "italic")
   doc.setTextColor(...COLORS.secondary)
-  doc.text(sanitizeText(recipe.classification), pageWidth / 2, yPosition, { align: "center" })
+  doc.text(classificationLabel(recipe), pageWidth / 2, yPosition, { align: "center" })
   yPosition += 8
 
   // ===== YIELD/SERVINGS (badge, no tabla) =====
@@ -1207,7 +1217,7 @@ function generateEmployeePDF(
   const ingredientRows = recipe.ingredients.map((ing) => [
     sanitizeText(ing.name),
     ing.quantity.toFixed(2),
-    sanitizeText(ing.unit),
+    unitLabel(ing.unit),
   ])
 
   autoTable(doc, {
@@ -1355,7 +1365,7 @@ function generateNormalPDF(
   doc.setFontSize(11)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(...COLORS.secondary)
-  doc.text(`${sanitizeText(recipe.classification)}${recipe.step ? ` | ${sanitizeText(recipe.step)}` : ""}`, margin, yPosition)
+  doc.text(`${classificationLabel(recipe)}${recipe.step ? ` | ${sanitizeText(recipe.step)}` : ""}`, margin, yPosition)
   yPosition += 7
 
   // ===== YIELD/SERVINGS (Plain text) =====
@@ -1363,7 +1373,8 @@ function generateNormalPDF(
   doc.setTextColor(...COLORS.text)
   // BUG CORREGIDO (docs/137): el texto estaba fijo en español.
   doc.text(
-    `${labels.rendimiento}: ${recipe.yieldAmount} ${yieldUnitLabel(recipe)} | ${labels.porciones}: ${recipe.servings}`,
+    // Las etiquetas ya traen sus dos puntos ("Rendimiento:", "Rendement :", "产量：") — antes salía "Rendimiento::".
+    `${labels.rendimiento} ${recipe.yieldAmount} ${yieldUnitLabel(recipe)} | ${labels.porciones} ${recipe.servings}`,
     margin,
     yPosition,
   )
@@ -1385,7 +1396,7 @@ function generateNormalPDF(
   const ingredientRows = recipe.ingredients.map((ing) => [
     sanitizeText(ing.name),
     ing.quantity.toFixed(2),
-    sanitizeText(ing.unit),
+    unitLabel(ing.unit),
     sanitizeText(ing.notes) || "",
   ])
 

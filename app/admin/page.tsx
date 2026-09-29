@@ -14,6 +14,7 @@ import { StatsPanel } from "@/components/admin/stats-panel"
 import { AccountsPanel } from "@/components/admin/accounts-panel"
 import { FeedbackPanel } from "@/components/admin/feedback-panel"
 import { AnalyticsPanel } from "@/components/admin/analytics-panel"
+import { TopUsersPanel } from "@/components/admin/top-users-panel"
 import { BusinessHealthPanel } from "@/components/admin/business-health-panel"
 import { ActivationPanel } from "@/components/admin/activation-panel"
 import { ProductUpdatesPanel } from "@/components/admin/product-updates-panel"
@@ -233,7 +234,8 @@ export default function AdminPage() {
           <TabsContent value="feedback" className="mt-6">
             <FeedbackPanel onCountsChange={setFeedbackCounts} />
           </TabsContent>
-          <TabsContent value="analiticas" className="mt-6">
+          <TabsContent value="analiticas" className="mt-6 space-y-6">
+            <TopUsersPanel />
             <AnalyticsPanel />
           </TabsContent>
           <TabsContent value="negocios" className="mt-6">

@@ -21,6 +21,59 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-09-29-d",
+    content: {
+      es: {
+        title: "PDF en chino y mejor traducidos",
+        items: [
+          "Con la app en chino, todos los PDF (fichas técnicas, menús, inventario, órdenes de compra, facturas e historial de ventas) ya se ven con caracteres chinos correctos.",
+          "Las unidades, categorías y clasificaciones de los PDF salen en tu idioma, en lugar de siempre en español.",
+          "Corregidos los dos puntos dobles en la ficha rápida y las tildes que faltaban en los PDF en español.",
+        ],
+      },
+      en: {
+        title: "Chinese PDFs and better translations",
+        items: [
+          "With the app in Chinese, every PDF (recipe sheets, menus, inventory, purchase orders, invoices and sales history) now shows proper Chinese characters.",
+          "Units, categories and classifications in PDFs now appear in your language instead of always in Spanish.",
+          "Fixed the double colons on the quick sheet and the missing accents in Spanish PDFs.",
+        ],
+      },
+      da: {
+        title: "PDF på kinesisk og bedre oversættelser",
+        items: [
+          "Med appen på kinesisk viser alle PDF'er (opskriftsark, menuer, lager, indkøbsordrer, fakturaer og salgshistorik) nu korrekte kinesiske tegn.",
+          "Enheder, kategorier og klassificeringer i PDF'er vises nu på dit sprog i stedet for altid på spansk.",
+          "Rettet de dobbelte koloner på hurtigarket og de manglende accenter i spanske PDF'er.",
+        ],
+      },
+      fr: {
+        title: "PDF en chinois et meilleures traductions",
+        items: [
+          "Avec l'application en chinois, tous les PDF (fiches techniques, menus, inventaire, bons de commande, factures et historique des ventes) affichent désormais correctement les caractères chinois.",
+          "Les unités, catégories et classifications des PDF apparaissent dans votre langue au lieu de toujours en espagnol.",
+          "Corrigé : les doubles deux-points de la fiche rapide et les accents manquants dans les PDF en espagnol.",
+        ],
+      },
+      pt: {
+        title: "PDFs em chinês e melhor traduzidos",
+        items: [
+          "Com o app em chinês, todos os PDFs (fichas técnicas, cardápios, estoque, pedidos de compra, faturas e histórico de vendas) agora mostram os caracteres chineses corretamente.",
+          "Unidades, categorias e classificações nos PDFs aparecem no seu idioma, em vez de sempre em espanhol.",
+          "Corrigidos os dois-pontos duplicados na ficha rápida e os acentos que faltavam nos PDFs em espanhol.",
+        ],
+      },
+      zh: {
+        title: "中文 PDF 与更完善的翻译",
+        items: [
+          "应用设为中文时，所有 PDF（技术配方表、菜单、库存、采购单、发票和销售记录）现在都能正确显示中文字符。",
+          "PDF 中的单位、分类和类别现在以你的语言显示，而不再总是西班牙语。",
+          "修复了快速单据中的双冒号，以及西班牙语 PDF 中缺失的重音符号。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-09-29-c",
     content: {
       es: {

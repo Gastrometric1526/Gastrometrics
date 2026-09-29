@@ -22,6 +22,8 @@ function getBrowserDefaultLanguage(): LanguageCode {
   return match ? (match.code as LanguageCode) : "es"
 }
 
+let cjkPdfModuleRequested = false
+
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<LanguageCode>("es")
   // false hasta leer localStorage/navegador: el "es" inicial es provisional y no debe
@@ -77,6 +79,19 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     if (!userProfile || !languageReady) return
     if (profileLanguage !== language) syncPreferredLanguage(language)
   }, [userProfile, profileLanguage, language, languageReady, syncPreferredLanguage])
+
+  // Tipografía china para los PDF (docs/141): se descarga solo con la app en chino. Import
+  // dinámico para no sumar jsPDF al paquete inicial de todas las páginas; si alguna vez se
+  // cargó y se cambia a otro idioma, se apaga.
+  useEffect(() => {
+    if (!languageReady) return
+    if (language === "zh" || cjkPdfModuleRequested) {
+      cjkPdfModuleRequested = true
+      import("@/lib/pdf/pdf-cjk-font")
+        .then((m) => m.setPdfCjkMode(language === "zh"))
+        .catch((error) => console.error("[language-context] Tipografía china de PDF:", error))
+    }
+  }, [language, languageReady])
 
   const t = useCallback((key: Parameters<typeof translate>[1]) => translate(language, key), [language])
 

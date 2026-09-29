@@ -2,7 +2,8 @@ import { jsPDF } from "jspdf"
 import autoTable from "jspdf-autotable"
 import type { PurchaseOrder } from "@/types/purchase-order"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
-import { getPdfLabels } from "@/lib/i18n/pdf-labels"
+import { getPdfLabels, getCurrentPdfLanguage } from "@/lib/i18n/pdf-labels"
+import { getUnitLabel, getPresentationLabel } from "@/lib/ingredient-labels"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
 import { drawBusinessLogo } from "./pdf-logo"
 
@@ -245,11 +246,16 @@ export function generatePurchaseOrderPDF(order: PurchaseOrder, options: Purchase
   // ===== TABLA DE ITEMS =====
   // Los items ya vienen ordenados alfabeticamente por proveedor (sortPurchaseOrderItemsBySupplier,
   // ver lib/purchase-orders.ts) -- se respeta ese orden aqui, no se reordena.
+  // Presentación y unidad en el idioma del PDF (docs/141) — antes salían las claves en
+  // español. El plural con "s" solo aplica a los idiomas que lo usan.
+  const pdfLanguage = getCurrentPdfLanguage()
+  const pluralS = ["es", "en", "fr", "pt"].includes(pdfLanguage)
   const tableRows = order.items.map((item) => {
+    const presentationLabel = item.presentation ? getPresentationLabel(item.presentation, pdfLanguage) : ""
     const qtyLabel =
       item.presentation && item.presentationQuantity
-        ? `${item.presentationQuantity} ${item.presentation}${item.presentationQuantity !== 1 ? "s" : ""}`
-        : `${item.totalQuantity} ${item.unit}`
+        ? `${item.presentationQuantity} ${presentationLabel}${pluralS && item.presentationQuantity !== 1 && !presentationLabel.endsWith("s") ? "s" : ""}`
+        : `${item.totalQuantity} ${getUnitLabel(item.unit, pdfLanguage)}`
 
     return [
       sanitizeText(item.name),

@@ -2,7 +2,8 @@ import { jsPDF } from "jspdf"
 import autoTable from "jspdf-autotable"
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
-import { getPdfLabels } from "@/lib/i18n/pdf-labels"
+import { getPdfLabels, getCurrentPdfLanguage } from "@/lib/i18n/pdf-labels"
+import { getUnitLabel, getCategoryLabel } from "@/lib/ingredient-labels"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
 import { drawBusinessLogo } from "./pdf-logo"
 import { buildPackageContentLookup, inventoryItemValue, snapshotItemValue, type PackageContentLookup } from "@/lib/inventory-value"
@@ -366,7 +367,9 @@ function renderInventoryPDF(doc: jsPDF, data: InventoryPDFData, options: Invento
   // ===== DISTRIBUCION VISUAL (por categoria) =====
   const byCategory = new Map<string, number>()
   data.rows.forEach((r) => {
-    byCategory.set(r.category || labels.sinCategoria, (byCategory.get(r.category || labels.sinCategoria) || 0) + r.totalValue)
+    // Categoría en el idioma del PDF (docs/141); se agrupa por la etiqueta ya traducida.
+    const cat = r.category ? getCategoryLabel(r.category, getCurrentPdfLanguage()) : labels.sinCategoria
+    byCategory.set(cat, (byCategory.get(cat) || 0) + r.totalValue)
   })
   const categoryEntries = Array.from(byCategory.entries())
     .filter(([, v]) => v > 0)
@@ -449,8 +452,8 @@ function renderInventoryPDF(doc: jsPDF, data: InventoryPDFData, options: Invento
     .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name))
     .map((r) => [
       sanitizeText(r.name),
-      sanitizeText(r.category),
-      `${r.quantity} ${r.unit}`,
+      sanitizeText(r.category ? getCategoryLabel(r.category, getCurrentPdfLanguage()) : ""),
+      `${r.quantity} ${getUnitLabel(r.unit, getCurrentPdfLanguage())}`,
       r.supplier?.trim() ? sanitizeText(r.supplier) : labels.sinProveedor,
       formatCurrency(r.price),
       formatCurrency(r.totalValue),
