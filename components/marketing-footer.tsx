@@ -2,6 +2,16 @@
 
 import Link from "next/link"
 import { useLanguage } from "@/contexts/language-context"
+import { Facebook, Instagram, Linkedin, Music2, Youtube, Star } from "lucide-react"
+import { SOCIAL_LINKS, TRUSTPILOT_URL, CONTACT_EMAIL, type SocialNetwork } from "@/lib/site-links"
+
+const SOCIAL_ICONS: Record<SocialNetwork, typeof Facebook> = {
+  facebook: Facebook,
+  instagram: Instagram,
+  linkedin: Linkedin,
+  tiktok: Music2,
+  youtube: Youtube,
+}
 
 // Footer compartido por las páginas públicas ("/", "/about", "/caracteristicas/[slug]").
 // Antes cada página repetía el mismo <footer> a mano sin enlaces legales — se centraliza
@@ -29,10 +39,40 @@ export function MarketingFooter() {
           <Link href="/recursos" className="hover:text-foreground transition-colors">
             {t("marketing_footer_resources")}
           </Link>
-          <a href="mailto:GastroMetrics@outlook.com" className="hover:text-foreground transition-colors">
-            GastroMetrics@outlook.com
+          <a
+            href={TRUSTPILOT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-foreground transition-colors inline-flex items-center gap-1"
+          >
+            <Star className="h-3.5 w-3.5" />
+            {t("marketing_footer_reviews")}
+          </a>
+          <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-foreground transition-colors">
+            {CONTACT_EMAIL}
           </a>
         </div>
+        {/* Redes: solo aparecen las que tengan URL en su variable de entorno (lib/site-links.ts, docs/135). */}
+        {SOCIAL_LINKS.length > 0 && (
+          <div className="flex justify-center gap-4">
+            {SOCIAL_LINKS.map((link) => {
+              const Icon = SOCIAL_ICONS[link.network]
+              return (
+                <a
+                  key={link.network}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={link.label}
+                  title={link.label}
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <Icon className="h-5 w-5" />
+                </a>
+              )
+            })}
+          </div>
+        )}
         <div className="text-center text-muted-foreground text-sm space-y-1">
           <p>{t("marketing_footer_help_text")}</p>
           <p>{t("marketing_footer_rights")}</p>

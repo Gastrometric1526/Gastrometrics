@@ -18,6 +18,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { renderEmailTemplate } from "./email-templates"
 import { getEmailLabels, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { buildUnsubscribeUrl } from "@/lib/email-unsubscribe"
+import { TRUSTPILOT_URL } from "@/lib/site-links"
 
 type ActivationEmailType =
   | "first_recipe_reminder"
@@ -162,11 +163,8 @@ export async function sendFirstSaleReinforcement(accountId: string): Promise<voi
   })
 }
 
-// Placeholder real (mismo link que ya usa la sección Trustpilot de la landing,
-// components/home-content.tsx) — no hay todavía una página de negocio real en
-// Trustpilot configurada en ningún lado del proyecto. TRUSTPILOT_URL permite
-// pegarla en Vercel el día que exista, sin tocar código.
-const DEFAULT_TRUSTPILOT_URL = "https://www.trustpilot.com"
+// Perfil real de Trustpilot (lib/site-links.ts, docs/135) — el mismo enlace que usa la
+// sección Trustpilot de la landing. TRUSTPILOT_URL (servidor) lo puede sobreescribir.
 
 /**
  * Encuesta de satisfacción a las 4 horas de uso REAL (user_presence.total_active_seconds
@@ -203,7 +201,7 @@ export async function sendFourHourExperienceSurvey(accountId: string): Promise<v
     footerAddress: labels.footer_address,
     footer2: labels.e10_footer2,
     commentUrl: `${siteUrl}/contacto?type=experiencia`,
-    trustpilotUrl: process.env.TRUSTPILOT_URL || DEFAULT_TRUSTPILOT_URL,
+    trustpilotUrl: process.env.TRUSTPILOT_URL || TRUSTPILOT_URL,
   })
 
   const resend = new Resend(process.env.RESEND_API_KEY)

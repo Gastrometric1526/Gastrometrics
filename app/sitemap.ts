@@ -18,6 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/signup",
     "/terminos-de-uso",
     "/politica-privacidad",
+    "/aviso-de-responsabilidad",
     "/recursos",
   ]
 

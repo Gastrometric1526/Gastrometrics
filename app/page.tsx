@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
 import { HomeContent } from "@/components/home-content"
+import { plans } from "@/lib/plans"
+import { CONTACT_EMAIL, SOCIAL_LINKS, TRUSTPILOT_URL } from "@/lib/site-links"
 
 // El contenido traducible vive en components/home-content.tsx (Client Component, usa
 // useLanguage) porque `export const metadata` de abajo solo es válido en un Server
@@ -19,6 +21,49 @@ export const metadata: Metadata = {
   },
 }
 
+// Datos estructurados (schema.org, docs/135): le dicen a Google qué es Gastrometrics —
+// empresa, aplicación web, precios reales de lib/plans.ts, idiomas, redes sociales y
+// perfil de Trustpilot — para resultados enriquecidos y el panel de marca.
+function structuredData() {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://gastrometrics.org"
+  const sameAs = [TRUSTPILOT_URL, ...SOCIAL_LINKS.map((link) => link.url)]
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "Gastrometrics",
+      url: siteUrl,
+      logo: `${siteUrl}/icon-512x512.png`,
+      email: CONTACT_EMAIL,
+      sameAs,
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "Gastrometrics",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      url: siteUrl,
+      inLanguage: ["es", "en", "da", "fr", "pt", "zh"],
+      description:
+        "Costeo de recetas, fichas técnicas, precio de venta sugerido, inventario con stock teórico, menús y órdenes de compra para restaurantes.",
+      offers: plans
+        .filter((plan) => !plan.comingSoon)
+        .map((plan) => ({
+          "@type": "Offer",
+          name: plan.name,
+          price: (plan.priceUsdCents / 100).toFixed(2),
+          priceCurrency: "USD",
+        })),
+    },
+  ]
+}
+
 export default function Home() {
-  return <HomeContent />
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData()) }} />
+      <HomeContent />
+    </>
+  )
 }

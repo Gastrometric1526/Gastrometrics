@@ -14,6 +14,7 @@ import { AnimatedNumber } from "@/components/animated-number"
 import { LandingAdminPdfPreview } from "@/components/landing-admin-pdf-preview"
 import { LandingRecipeDemo } from "@/components/landing-recipe-demo"
 import { ChefHat, Calculator, BarChart3, ArrowRight, Star, CheckCircle2, Smartphone, Download } from "lucide-react"
+import { TRUSTPILOT_URL } from "@/lib/site-links"
 
 // Landing recortada — docs/80-rediseno-visual-y-logo-oficial.md fue el diseño
 // original (hero + investigación + fuga invisible + tres pasos + seis módulos + un
@@ -350,7 +351,7 @@ export function HomeContent() {
                 </p>
               </div>
               <a
-                href="https://www.trustpilot.com"
+                href={TRUSTPILOT_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1 shrink-0"

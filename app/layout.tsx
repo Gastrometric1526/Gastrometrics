@@ -25,8 +25,18 @@ import { PwaBackGuard } from "@/components/pwa-back-guard"
 const dmSans = DM_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-sans" })
 
 export const metadata: Metadata = {
+  // metadataBase: sin esto, las URLs relativas de Open Graph (la imagen de vista previa
+  // de app/opengraph-image.tsx) no se resuelven a absolutas y WhatsApp/Facebook no las
+  // muestran (docs/135).
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://gastrometrics.org"),
   title: "GastroMetrics",
   description: "Sistema de gestión gastronómica",
+  // Google Search Console, verificación por etiqueta HTML (docs/135): pegar el código
+  // que da Search Console en NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION en Vercel y redesplegar.
+  // Sin la variable no se imprime nada.
+  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION } }
+    : {}),
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
