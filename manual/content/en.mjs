@@ -432,6 +432,7 @@ export default {
         ["figure", "12-mi-plan.jpg", "My Plan: your current plan, what it includes and how to manage your subscription."],
         ["h3", "Paying, changing or cancelling"],
         ["p", "Payments are processed by Stripe. From <strong>My Plan</strong> you can change plans or open the billing portal to update your card or cancel. Changes show up in your account automatically and you get a confirmation email."],
+        ["p", "Whenever your plan changes —because you changed it, because the Gastrometrics team adjusted it, or because an assigned plan expired— we let you know by email and with a window when you open the Dashboard, listing exactly what you <strong>gain</strong>, what you <strong>lose</strong> and what your plan includes now. If you lose access to a section, your data isn't deleted: it becomes available again if you upgrade later."],
         ["p", "If you cancel, you keep full access until the end of the period you've already paid for. My Plan shows you the exact date."],
         ["info", "When something is locked", "You'll see a padlock and a button to My Plan. If you use the app as part of a team, the message tells you it's the account owner who controls that access."],
       ],

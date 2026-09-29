@@ -53,7 +53,7 @@ import {
   sendFirstSaleReinforcement,
   sendFourHourExperienceSurvey,
 } from "@/lib/services/notify-activation"
-import { runPlanExpiryReminders } from "@/lib/services/notify-plan-expiry"
+import { runPlanExpiryReminders, runExpiredPlanDowngrades } from "@/lib/services/notify-plan-expiry"
 import { runAccountDeletionPurge } from "@/lib/services/purge-deleted-accounts"
 import { runReengagementReminders } from "@/lib/services/notify-reengagement"
 
@@ -147,6 +147,14 @@ export async function GET(request: Request) {
     }
 
     const planExpiry = await runPlanExpiryReminders()
+    // Planes asignados que ya vencieron: pasan a Foodie con correo y aviso (docs/139).
+    let expiredDowngrades: Awaited<ReturnType<typeof runExpiredPlanDowngrades>> | { error: string }
+    try {
+      expiredDowngrades = await runExpiredPlanDowngrades()
+    } catch (error) {
+      console.error("[api/cron/activation-emails] Error pasando planes vencidos a Foodie:", error)
+      expiredDowngrades = { error: "Error con planes vencidos." }
+    }
 
     const { data: presenceRows, error: presenceError } = await admin
       .from("user_presence")
@@ -182,6 +190,7 @@ export async function GET(request: Request) {
       firstSaleSent,
       planExpiryCandidates: planExpiry.candidates,
       planExpirySent: planExpiry.sent,
+      expiredDowngrades,
       experienceSurveyCandidates: presenceRows?.length ?? 0,
       experienceSurveySent,
       deletionPurgeCandidates: deletionPurge.candidates,

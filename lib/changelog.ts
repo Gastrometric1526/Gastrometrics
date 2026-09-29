@@ -21,6 +21,65 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-09-29-c",
+    content: {
+      es: {
+        title: "Correos más variados y cambios de plan más claros",
+        items: [
+          "Los recordatorios por correo ya no llegan siempre con el mismo texto: cada uno tiene tres versiones distintas y nunca recibes la misma dos veces seguidas.",
+          "Cuando tu plan cambia, el correo y la ventana del Dashboard te muestran exactamente qué ganas, qué pierdes y qué incluye tu plan ahora. Tus datos nunca se borran al bajar de plan.",
+          "Si un plan asignado por el equipo de Gastrometrics vence, tu cuenta pasa sola al plan gratis y te avisamos con la misma lista.",
+          "Corregido: el correo de cambio de plan mostraba solo la primera función del plan.",
+        ],
+      },
+      en: {
+        title: "More varied emails and clearer plan changes",
+        items: [
+          "Reminder emails no longer arrive with the same text every time: each one has three different versions and you never get the same one twice in a row.",
+          "When your plan changes, the email and the Dashboard window show exactly what you gain, what you lose and what your plan includes now. Your data is never deleted when you downgrade.",
+          "If a plan assigned by the Gastrometrics team expires, your account moves to the free plan automatically and we let you know with the same list.",
+          "Fixed: the plan-change email only showed the first feature of the plan.",
+        ],
+      },
+      da: {
+        title: "Mere varierede e-mails og tydeligere planskift",
+        items: [
+          "Påmindelser på e-mail kommer ikke længere med den samme tekst hver gang: hver har tre forskellige versioner, og du får aldrig den samme to gange i træk.",
+          "Når din plan ændres, viser e-mailen og vinduet i Dashboardet præcis, hvad du får, hvad du mister, og hvad din plan nu omfatter. Dine data slettes aldrig, når du nedgraderer.",
+          "Hvis en plan tildelt af Gastrometrics-teamet udløber, går din konto automatisk over til gratisplanen, og vi giver dig besked med den samme liste.",
+          "Rettet: e-mailen om planskift viste kun planens første funktion.",
+        ],
+      },
+      fr: {
+        title: "Des e-mails plus variés et des changements de forfait plus clairs",
+        items: [
+          "Les rappels par e-mail n'arrivent plus toujours avec le même texte : chacun a trois versions différentes et vous ne recevez jamais la même deux fois de suite.",
+          "Quand votre forfait change, l'e-mail et la fenêtre du Dashboard indiquent exactement ce que vous gagnez, ce que vous perdez et ce que comprend votre forfait. Vos données ne sont jamais supprimées en cas de rétrogradation.",
+          "Si un forfait attribué par l'équipe Gastrometrics expire, votre compte passe automatiquement au forfait gratuit et nous vous prévenons avec la même liste.",
+          "Corrigé : l'e-mail de changement de forfait n'affichait que la première fonctionnalité du forfait.",
+        ],
+      },
+      pt: {
+        title: "E-mails mais variados e mudanças de plano mais claras",
+        items: [
+          "Os lembretes por e-mail não chegam mais sempre com o mesmo texto: cada um tem três versões diferentes e você nunca recebe a mesma duas vezes seguidas.",
+          "Quando seu plano muda, o e-mail e a janela do Dashboard mostram exatamente o que você ganha, o que perde e o que seu plano inclui agora. Seus dados nunca são apagados ao baixar de plano.",
+          "Se um plano atribuído pela equipe da Gastrometrics vencer, sua conta passa sozinha para o plano grátis e avisamos com a mesma lista.",
+          "Corrigido: o e-mail de mudança de plano mostrava só a primeira função do plano.",
+        ],
+      },
+      zh: {
+        title: "更多样的邮件和更清晰的方案变更",
+        items: [
+          "提醒邮件不再每次都是同样的文字：每种提醒有三个不同版本，你不会连续两次收到同一封。",
+          "当你的方案变化时，邮件和仪表板弹窗会准确列出你获得了什么、失去了什么以及方案现在包含的内容。降级时你的数据永远不会被删除。",
+          "如果 Gastrometrics 团队分配的方案到期，你的账户会自动转为免费方案，我们会用同样的清单通知你。",
+          "已修复：方案变更邮件只显示方案的第一项功能。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-09-29-b",
     content: {
       es: {

@@ -23,7 +23,7 @@ const PAGE_TEXT: Record<EmailLang, { confirmTitle: string; confirmBody: string; 
     confirmBody: "Vas a dejar de recibir los recordatorios y las novedades de Gastrometrics por correo. Los correos de tu cuenta (pagos, contraseña, equipo) siguen llegando igual.",
     confirmButton: "Sí, dejar de recibirlos",
     doneTitle: "Listo, no te vamos a mandar más",
-    doneBody: "Si cambiás de idea, podés volver a activarlos en Configuración → Notificaciones dentro de la app.",
+    doneBody: "Si cambias de idea, puedes volver a activarlos en Configuración → Notificaciones dentro de la app.",
     invalid: "Este link no es válido o está incompleto.",
     back: "Ir a Gastrometrics",
   },

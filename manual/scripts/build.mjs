@@ -76,9 +76,16 @@ function assertSameShape(lang, content, reference) {
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 
 function formulaExpr(line) {
-  // Resalta operadores de una expresión escrita en lenguaje natural.
-  return esc(line).replace(/(\s)([=×÷+−])(\s)/g, '$1<span class="op">$2</span>$3')
+  // Resalta operadores de una expresión escrita en lenguaje natural. El ÷ lleva además la
+  // clase "div": en DM Sans sus puntos son diminutos y, impreso en naranja y negrita, se leía
+  // como "+" (un lector externo del PDF reportó las divisiones como sumas — docs/140).
+  return esc(line)
+    .replace(/(\s)([=×+−])(\s)/g, '$1<span class="op">$2</span>$3')
+    .replace(/(\s)÷(\s)/g, '$1<span class="op div">÷</span>$2')
 }
+
+// Mismo ÷ legible dentro de tablas y ejemplos (texto normal, sin resaltar en naranja).
+const divSign = (html) => String(html).replace(/(\s)÷(\s)/g, '$1<span class="div">÷</span>$2')
 
 let figureCounter = 0
 
@@ -117,14 +124,14 @@ function renderBlock(rawBlock, ctx) {
     case "example": {
       const [label, rows] = a
       return `<div class="example"><div class="label">${label}</div>${rows
-        .map(([k, v, total]) => `<div class="row${total ? " total" : ""}"><span>${k}</span><span>${v}</span></div>`)
+        .map(([k, v, total]) => `<div class="row${total ? " total" : ""}"><span>${divSign(k)}</span><span>${divSign(v)}</span></div>`)
         .join("")}</div>`
     }
     case "table": {
       const [headers, rows] = a
       // Tablas cortas (≤ 8 filas) nunca se parten entre páginas; las largas sí, repitiendo el encabezado.
       return `<table class="tbl${rows.length <= 8 ? " keep" : ""}"><thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows
-        .map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`)
+        .map((r) => `<tr>${r.map((c) => `<td>${divSign(c)}</td>`).join("")}</tr>`)
         .join("")}</tbody></table>`
     }
     case "chips":

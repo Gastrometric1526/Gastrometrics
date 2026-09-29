@@ -52,7 +52,10 @@ export function renderEmailTemplateWithFeatureRows(
   vars: Record<string, string>,
 ): string {
   const html = loadTemplate(fileName)
-  const rowPattern = /<tr><td style="font-family:Archivo,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:14\.5px;line-height:1\.55;color:#3A332E;padding-bottom:10px;border-bottom:1px solid #EDE6E0">\{\{feature\}\}<\/td><\/tr>/
+  // Cualquier fila <tr><td …>{{feature}}</td></tr>, sin depender de los estilos exactos: antes
+  // buscaba la tipografía "Archivo" literal y al pasar las plantillas a DM Sans dejó de
+  // repetir las filas (docs/139).
+  const rowPattern = /<tr><td[^>]*>\{\{feature\}\}<\/td><\/tr>/
   const rowMatch = html.match(rowPattern)
   if (!rowMatch) {
     // Si el patrón exacto no calza (la plantilla cambió), no revienta el envío —

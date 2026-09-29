@@ -18,7 +18,7 @@ export async function recordPlanChangeNotice(input: {
   amountCents: number | null
   nextChargeUnixSeconds: number | null
   expiresAtUnixSeconds: number | null
-  source: "stripe" | "admin"
+  source: "stripe" | "admin" | "expired"
 }): Promise<void> {
   if (input.fromPlanSlug === input.toPlanSlug) return // sin cambio real, nada que avisar
 

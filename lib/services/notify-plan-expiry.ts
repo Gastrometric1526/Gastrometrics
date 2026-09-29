@@ -19,6 +19,8 @@ import { Resend } from "resend"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getPlanBySlug, getLocalizedPlan } from "@/lib/plans"
 import { renderEmailTemplate, escapeHtml } from "./email-templates"
+import { sendPlanChangedEmail } from "./notify-billing"
+import { recordPlanChangeNotice } from "./plan-change-notice"
 import { getEmailLabels, fillLabel, normalizeEmailLang, EMAIL_DATE_LOCALES } from "@/lib/i18n/email-labels"
 
 async function getAccountEmailAndLanguage(accountId: string): Promise<{ email: string; language: string } | null> {
@@ -119,4 +121,63 @@ export async function runPlanExpiryReminders(): Promise<{ candidates: number; se
   }
 
   return { candidates: candidates?.length ?? 0, sent }
+}
+
+/**
+ * Plan asignado a mano que YA venció (docs/139). Antes solo el navegador lo trataba como
+ * Foodie al cargar la sesión: la persona perdía funciones sin ningún aviso de qué perdía.
+ * Ahora el cron diario pasa la cuenta a Foodie en la base y le manda el correo y el aviso
+ * del Dashboard con lo que pierde y lo que conserva. Idempotente: la actualización solo
+ * aplica si la fila sigue con ese mismo vencimiento, y después ya no queda vencida.
+ */
+export async function runExpiredPlanDowngrades(): Promise<{ candidates: number; downgraded: number }> {
+  const admin = getSupabaseAdminClient()
+  const nowIso = new Date().toISOString()
+
+  const { data: expired, error } = await admin
+    .from("account_plans")
+    .select("account_id, plan_slug, plan_expires_at")
+    .is("stripe_subscription_id", null)
+    .not("plan_expires_at", "is", null)
+    .lt("plan_expires_at", nowIso)
+    .neq("plan_slug", "foodie")
+  if (error) throw error
+
+  let downgraded = 0
+  for (const row of expired ?? []) {
+    if (!row.plan_expires_at) continue
+    const { data: updated, error: updateError } = await admin
+      .from("account_plans")
+      .update({ plan_slug: "foodie", plan_expires_at: null })
+      .eq("account_id", row.account_id)
+      .eq("plan_expires_at", row.plan_expires_at)
+      .select("account_id")
+    if (updateError || !updated?.length) {
+      if (updateError) console.error("[notify-plan-expiry] Error pasando a Foodie un plan vencido:", updateError)
+      continue
+    }
+    downgraded++
+    try {
+      await sendPlanChangedEmail({
+        accountId: row.account_id,
+        fromPlanSlug: row.plan_slug,
+        toPlanSlug: "foodie",
+        nextChargeUnixSeconds: null,
+        nextChargeAmountCents: null,
+        source: "expired",
+      })
+    } catch (emailError) {
+      console.error("[notify-plan-expiry] Error mandando el correo de plan vencido:", emailError)
+    }
+    await recordPlanChangeNotice({
+      accountId: row.account_id,
+      fromPlanSlug: row.plan_slug,
+      toPlanSlug: "foodie",
+      amountCents: null,
+      nextChargeUnixSeconds: null,
+      expiresAtUnixSeconds: null,
+      source: "expired",
+    })
+  }
+  return { candidates: expired?.length ?? 0, downgraded }
 }

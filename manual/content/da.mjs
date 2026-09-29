@@ -432,6 +432,7 @@ export default {
         ["figure", "12-mi-plan.jpg", "Min plan: din nuværende plan, hvad den indeholder, og hvordan du administrerer dit abonnement."],
         ["h3", "Betal, skift eller opsig"],
         ["p", "Betalinger behandles af Stripe. Under <strong>Min plan</strong> kan du skifte plan eller åbne betalingsportalen for at opdatere dit kort eller opsige. Ændringer vises automatisk på din konto, og du får en bekræftelse på e-mail."],
+        ["p", "Hver gang din plan ændres —fordi du selv ændrede den, fordi Gastrometrics-teamet justerede den, eller fordi en tildelt plan udløb— får du besked på e-mail og i et vindue, når du åbner Dashboardet, med en præcis liste over, hvad du <strong>får</strong>, hvad du <strong>mister</strong>, og hvad din plan nu omfatter. Mister du adgang til en sektion, slettes dine data ikke: de bliver tilgængelige igen, hvis du opgraderer senere."],
         ["p", "Opsiger du, beholder du fuld adgang til slutningen af den periode, du allerede har betalt for. Min plan viser dig den præcise dato."],
         ["info", "Når noget er låst", "Du ser en hængelås og en knap til Min plan. Bruger du appen som en del af et team, fortæller beskeden, at det er kontoens ejer, der styrer den adgang."],
       ],

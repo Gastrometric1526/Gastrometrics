@@ -9,7 +9,8 @@
 import { Resend } from "resend"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getPlanBySlug, getLocalizedPlan, plans } from "@/lib/plans"
-import { renderEmailTemplate, renderEmailTemplateWithFeatureRows, escapeHtml } from "./email-templates"
+import { renderEmailTemplate, escapeHtml } from "./email-templates"
+import { diffPlanCapabilities } from "@/lib/plan-capabilities"
 import { getEmailLabels, fillLabel, normalizeEmailLang, EMAIL_DATE_LOCALES } from "@/lib/i18n/email-labels"
 
 // Aviso al dueño del proyecto por cada evento REAL de dinero de Stripe (suscripción
@@ -93,12 +94,29 @@ function formatDate(unixSeconds: number, language: string): string {
   })
 }
 
+// Sección de lista para el correo de cambio de plan (docs/139): título + una fila por ítem,
+// con un signo de color (+ ganado, − perdido, · incluido). HTML de correo: tablas y estilos en
+// línea, sin CSS externo.
+function featureSectionHtml(heading: string, items: string[], color: string, sign: string): string {
+  const font = "font-family:'DM Sans','Helvetica Neue',Helvetica,Arial,sans-serif"
+  const rows = items
+    .map(
+      (item) =>
+        `<tr><td width="18" valign="top" style="${font};font-size:14.5px;line-height:1.55;font-weight:800;color:${color};padding:0 0 9px">${sign}</td><td style="${font};font-size:14.5px;line-height:1.55;color:#3A332E;padding:0 0 9px">${escapeHtml(item)}</td></tr>`,
+    )
+    .join("")
+  return `<p style="margin:0 0 10px;${font};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${color};font-weight:700">${escapeHtml(heading)}</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px">${rows}</table>`
+}
+
+function noteHtml(text: string): string {
+  return `<p style="margin:-8px 0 20px;font-family:'DM Sans','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;line-height:1.55;color:#6E635C;background:#F7F4F1;border-radius:8px;padding:10px 14px">${escapeHtml(text)}</p>`
+}
+
 function planRank(slug: string): number {
   return plans.findIndex((p) => p.slug === slug)
 }
 
-export async function sendPlanChangedEmail(input: {
-  accountId: string
+interface PlanChangedEmailInput {
   fromPlanSlug: string
   toPlanSlug: string
   nextChargeUnixSeconds: number | null
@@ -108,49 +126,45 @@ export async function sendPlanChangedEmail(input: {
   // fecha de vencimiento del plan (docs/59). Cuando viene esto, el correo muestra esa
   // fecha en vez de un cobro, y usa un cuerpo que no menciona prorrateo (docs/89).
   expiresAtUnixSeconds?: number | null
-  source?: "stripe" | "admin"
-}): Promise<void> {
-  if (!process.env.RESEND_API_KEY) return
-  if (input.fromPlanSlug === input.toPlanSlug) return // no hubo cambio real de plan, no molestar
+  // "expired": un plan asignado a mano venció y la cuenta pasó a Foodie (cron diario,
+  // lib/services/notify-plan-expiry.ts — docs/139).
+  source?: "stripe" | "admin" | "expired"
+}
 
-  const account = await getAccountEmailAndLanguage(input.accountId)
-  if (!account) return
-  const { email, language } = account
+/** Asunto y HTML del correo de cambio de plan — puro, cubierto por notify-billing.test.ts. */
+export function renderPlanChangedEmail(input: PlanChangedEmailInput & { language: string }): { subject: string; html: string } {
+  const { language } = input
   const labels = getEmailLabels(language)
-  const isAdminChange = input.source === "admin"
+  // Un vencimiento tampoco pasa por Stripe: se muestra igual que un cambio de /admin, sin cobro.
+  const isAdminChange = input.source === "admin" || input.source === "expired"
 
   const fromPlan = getLocalizedPlan(getPlanBySlug(input.fromPlanSlug), normalizeEmailLang(language))
   const toPlan = getLocalizedPlan(getPlanBySlug(input.toPlanSlug), normalizeEmailLang(language))
-  const isUpgrade = planRank(input.toPlanSlug) > planRank(input.fromPlanSlug)
+  const isExpired = input.source === "expired"
 
-  // Qué features cambiaron: en upgrade, lo que trae el plan nuevo y no tenía el viejo;
-  // en downgrade, lo que tenía el plan viejo y el nuevo ya no incluye.
-  const fromFeatures = new Set(fromPlan.features)
-  const toFeatures = new Set(toPlan.features)
-  const changedFeatures = isUpgrade
-    ? toPlan.features.filter((f) => !fromFeatures.has(f))
-    : fromPlan.features.filter((f) => !toFeatures.has(f))
+  // Qué gana, qué pierde y qué incluye ahora (docs/139): desde los permisos reales de cada
+  // plan, no desde los textos de marketing (acumulativos, daban listas incompletas).
+  const diff = diffPlanCapabilities(input.fromPlanSlug, input.toPlanSlug, language)
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
 
-  // La plantilla dice "Se desbloqueó" — para una bajada de plan, el LEEME que vino con
-  // el diseño pide invertir a "Ya no incluye". Antes esto se hacía con un
-  // string.replace() sobre el HTML ya renderizado (frágil, y solo tenía el texto en
-  // español) — ahora {{featuresHeading}} es una variable real de la plantilla, así que
-  // solo hay que elegir la etiqueta correcta antes de renderizar.
-  const html = renderEmailTemplateWithFeatureRows(
-    "06-cambio-plan.html",
-    changedFeatures.length ? changedFeatures : ["—"],
-    {
+  const featureSections = [
+    diff.gained.length ? featureSectionHtml(labels.e06_gained_heading, diff.gained, "#1F6B45", "+") : "",
+    diff.lost.length ? featureSectionHtml(labels.e06_lost_heading, diff.lost, "#B3341A", "−") : "",
+    diff.lost.length ? noteHtml(labels.e06_data_kept) : "",
+    featureSectionHtml(labels.e06_now_heading, diff.now, "#6E635C", "·"),
+  ].join("")
+
+  const html = renderEmailTemplate("06-cambio-plan.html", {
+      featureSections,
       htmlLang: normalizeEmailLang(language),
       title: labels.e06_title,
       preheader: fillLabel(labels.e06_preheader, { fromPlan: fromPlan.name, toPlan: toPlan.name }),
-      body: isAdminChange ? labels.e06_body_admin : labels.e06_body,
+      body: isExpired ? labels.e06_body_expired : isAdminChange ? labels.e06_body_admin : labels.e06_body,
       labelBefore: labels.e06_label_before,
       labelNow: labels.e06_label_now,
-      featuresHeading: isUpgrade ? labels.e06_unlocked_heading : labels.e06_removed_heading,
-      nextChargePrefix:
-        isAdminChange && input.expiresAtUnixSeconds ? labels.e06_expires_prefix : labels.e06_next_charge_prefix,
+      // Cambios sin Stripe (admin / vencimiento) no tienen cobro: la fila habla del vencimiento.
+      nextChargePrefix: isAdminChange ? labels.e06_expires_prefix : labels.e06_next_charge_prefix,
       cta: labels.e06_cta,
       footnote: labels.e06_footnote,
       footerAddress: labels.footer_address,
@@ -171,14 +185,24 @@ export async function sendPlanChangedEmail(input: {
           ? formatUsd(input.nextChargeAmountCents)
           : "—",
       planUrl: `${siteUrl}/mi-plan`,
-    },
-  )
+  })
+  return { subject: fillLabel(labels.e06_subject, { fromPlan: fromPlan.name, toPlan: toPlan.name }), html }
+}
+
+export async function sendPlanChangedEmail(input: PlanChangedEmailInput & { accountId: string }): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return
+  if (input.fromPlanSlug === input.toPlanSlug) return // no hubo cambio real de plan, no molestar
+
+  const account = await getAccountEmailAndLanguage(input.accountId)
+  if (!account) return
+  const { email, language } = account
+  const { subject, html } = renderPlanChangedEmail({ ...input, language })
 
   const resend = new Resend(process.env.RESEND_API_KEY)
   const { error } = await resend.emails.send({
     from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
     to: [email],
-    subject: fillLabel(labels.e06_subject, { fromPlan: fromPlan.name, toPlan: toPlan.name }),
+    subject,
     html,
   })
   if (error) console.error("[notify-billing] Error mandando el correo de cambio de plan:", error)

@@ -433,6 +433,7 @@ export default {
         ["figure", "12-mi-plan.jpg", "Mi Plan: tu plan actual, lo que incluye y cómo gestionar tu suscripción."],
         ["h3", "Pagar, cambiar o cancelar"],
         ["p", "Los pagos se procesan con Stripe. Desde <strong>Mi Plan</strong> puedes cambiar de plan o abrir el portal de pagos para actualizar tu tarjeta o cancelar. Los cambios se reflejan solos en tu cuenta y te llega un correo de confirmación."],
+        ["p", "Cada vez que tu plan cambia —porque lo cambiaste tú, porque lo ajustó el equipo de Gastrometrics o porque venció un plan asignado— te avisamos por correo y con una ventana al entrar al Dashboard, con la lista exacta de lo que <strong>ganas</strong>, lo que <strong>pierdes</strong> y lo que incluye tu plan ahora. Si pierdes acceso a una sección, tus datos no se borran: vuelven a estar disponibles si subes de plan otra vez."],
         ["p", "Si cancelas, mantienes el acceso completo hasta el final del período que ya pagaste. Mi Plan te lo muestra con la fecha exacta."],
         ["info", "Cuando algo está bloqueado", "Verás un candado y un botón hacia Mi Plan. Si usas la app como parte de un equipo, el mensaje te indica que es el dueño de la cuenta quien controla ese acceso."],
       ],

@@ -779,8 +779,8 @@ function generateAdministrativePDF(
       publicServices: 10,
       marketing: 10,
       operationalCosts: 30,
-      laborCosts: 35,
-      netProfit: 25,
+      laborCosts: 25,
+      netProfit: 30,
       isv: 0,
     }
 

@@ -432,6 +432,7 @@ export default {
         ["figure", "12-mi-plan.jpg", "Mon forfait : votre forfait actuel, ce qu'il comprend et comment gérer votre abonnement."],
         ["h3", "Payer, changer ou résilier"],
         ["p", "Les paiements sont traités par Stripe. Depuis <strong>Mon forfait</strong>, vous pouvez changer de forfait ou ouvrir le portail de paiement pour mettre à jour votre carte ou résilier. Les changements apparaissent automatiquement sur votre compte et vous recevez un e-mail de confirmation."],
+        ["p", "Chaque fois que votre forfait change —parce que vous l'avez changé, parce que l'équipe Gastrometrics l'a ajusté ou parce qu'un forfait attribué a expiré— nous vous prévenons par e-mail et par une fenêtre à l'ouverture du Dashboard, avec la liste exacte de ce que vous <strong>gagnez</strong>, de ce que vous <strong>perdez</strong> et de ce que comprend désormais votre forfait. Si vous perdez l'accès à une section, vos données ne sont pas supprimées : elles redeviennent disponibles si vous changez à nouveau de forfait."],
         ["p", "Si vous résiliez, vous gardez un accès complet jusqu'à la fin de la période déjà payée. Mon forfait vous indique la date exacte."],
         ["info", "Quand quelque chose est verrouillé", "Vous voyez un cadenas et un bouton vers Mon forfait. Si vous utilisez l'application au sein d'une équipe, le message vous indique que c'est le propriétaire du compte qui contrôle cet accès."],
       ],

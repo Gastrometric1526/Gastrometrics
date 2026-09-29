@@ -46,6 +46,7 @@ import {
   REENGAGEMENT_SHARED,
   type ReengagementType,
 } from "@/lib/i18n/reengagement-email-labels"
+import { REENGAGEMENT_VARIANTS } from "@/lib/i18n/reengagement-email-variants"
 import { buildUnsubscribeUrl } from "@/lib/email-unsubscribe"
 
 const HOUR_MS = 60 * 60 * 1000
@@ -89,6 +90,28 @@ const MODULE_TO_TYPE: Record<string, ReengagementType> = {
 
 const BASE_PRIORITY: ReengagementType[] = ["inventory_count", "review_reports", "update_prices", "we_miss_you"]
 
+// ─── Variantes de texto (docs/139) ───
+
+/** Cuántas versiones de texto hay por tipo e idioma (la 0 es REENGAGEMENT_COPY). */
+export function reengagementVariantCount(type: ReengagementType, language?: string | null): number {
+  return 1 + REENGAGEMENT_VARIANTS[normalizeEmailLang(language)][type].length
+}
+
+function hashString(value: string): number {
+  let h = 0
+  for (let i = 0; i < value.length; i++) h = (h * 31 + value.charCodeAt(i)) >>> 0
+  return h
+}
+
+/**
+ * Qué variante le toca a una cuenta: arranca en un punto fijo por cuenta+tipo (para que no
+ * todos reciban el mismo texto el mismo día) y avanza una con cada envío anterior del mismo
+ * tipo — así nadie recibe dos veces el mismo texto hasta haber visto las tres versiones.
+ */
+export function pickReengagementVariant(accountId: string, type: ReengagementType, previousSends: number, total = 3): number {
+  return (hashString(`${accountId}:${type}`) + previousSends) % total
+}
+
 // ─── Render (puro — también lo usa la vista previa de /api/admin/reengagement-preview) ───
 
 export interface ReengagementVars {
@@ -99,7 +122,7 @@ export interface ReengagementVars {
 }
 
 function statBlockHtml(accent: string, label: string, value: string): string {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px"><tr><td style="border-left:4px solid ${accent};background:#FBF9F7;border-radius:0 10px 10px 0;padding:14px 18px;font-family:Archivo,'Helvetica Neue',Helvetica,Arial,sans-serif"><div style="font-size:12px;line-height:1.4;color:#8A7D74;text-transform:uppercase;letter-spacing:0.06em;font-weight:700">${label}</div><div style="font-size:20px;line-height:1.3;color:#1A1512;font-weight:800;margin-top:4px">${value}</div></td></tr></table>`
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px"><tr><td style="border-left:4px solid ${accent};background:#FBF9F7;border-radius:0 10px 10px 0;padding:14px 18px;font-family:'DM Sans','Helvetica Neue',Helvetica,Arial,sans-serif"><div style="font-size:12px;line-height:1.4;color:#8A7D74;text-transform:uppercase;letter-spacing:0.06em;font-weight:700">${label}</div><div style="font-size:20px;line-height:1.3;color:#1A1512;font-weight:800;margin-top:4px">${value}</div></td></tr></table>`
 }
 
 export function renderReengagementEmail(input: {
@@ -108,9 +131,13 @@ export function renderReengagementEmail(input: {
   vars: ReengagementVars
   actionUrl: string
   unsubscribeUrl: string
+  /** 0 = texto base; 1 y 2 = REENGAGEMENT_VARIANTS. Fuera de rango vuelve al base. */
+  variant?: number
 }): { subject: string; html: string; lang: EmailLang } {
   const lang = normalizeEmailLang(input.language)
-  const copy = REENGAGEMENT_COPY[lang][input.type]
+  const base = REENGAGEMENT_COPY[lang][input.type]
+  const alt = input.variant ? REENGAGEMENT_VARIANTS[lang][input.type][input.variant - 1] : undefined
+  const copy = alt ? { ...base, ...alt } : base
   const shared = REENGAGEMENT_SHARED[lang]
   const baseLabels = getEmailLabels(lang)
 
@@ -376,7 +403,7 @@ export interface ReengagementRunResult {
   candidates: number
   sent: number
   byType: Partial<Record<ReengagementType, number>>
-  decisions?: { accountId: string; type: ReengagementType; actionPath: string }[]
+  decisions?: { accountId: string; type: ReengagementType; actionPath: string; variant: number }[]
   // Solo en modo de prueba: cuántas cuentas se descartaron por cada motivo.
   skipReasons?: Partial<Record<ReengagementSkipReason, number>>
 }
@@ -424,7 +451,6 @@ export async function runReengagementReminders(options: { dryRun?: boolean } = {
         .from("reengagement_emails_sent")
         .select("account_id, email_type, sent_at")
         .in("account_id", c)
-        .gte("sent_at", since(R.weMissYouCooldownDays))
         .range(a, b),
     ),
     fetchAllByIds<{ account_id: string; sent_at: string }>(ids, (c, a, b) =>
@@ -523,7 +549,9 @@ export async function runReengagementReminders(options: { dryRun?: boolean } = {
       lastReportsVisitAt: reportsVisit ? new Date(reportsVisit.created_at).getTime() : null,
       recipeCount: (recipesBy.get(account.id) ?? []).length,
       staleIngredientCount: staleIngredients,
-      sentHistory: (sentBy.get(account.id) ?? []).map((s) => ({ type: s.email_type, sentAt: new Date(s.sent_at).getTime() })),
+      sentHistory: (sentBy.get(account.id) ?? [])
+        .map((s) => ({ type: s.email_type, sentAt: new Date(s.sent_at).getTime() }))
+        .filter((s) => now - s.sentAt < R.weMissYouCooldownDays * DAY_MS),
       lastActivationEmailAt: maxTime(...(activationBy.get(account.id) ?? []).map((a) => a.sent_at)),
     }
 
@@ -535,7 +563,14 @@ export async function runReengagementReminders(options: { dryRun?: boolean } = {
       }
       continue
     }
-    decisions.push({ accountId: account.id, type: decision.type, actionPath: decision.actionPath })
+    const previousSends = (sentBy.get(account.id) ?? []).filter((s) => s.email_type === decision.type).length
+    const variant = pickReengagementVariant(
+      account.id,
+      decision.type,
+      previousSends,
+      reengagementVariantCount(decision.type, account.language),
+    )
+    decisions.push({ accountId: account.id, type: decision.type, actionPath: decision.actionPath, variant })
     if (options.dryRun || !resend) continue
 
     // Reserva primero (evita duplicados si el cron corre dos veces); si el envío falla,
@@ -557,6 +592,7 @@ export async function runReengagementReminders(options: { dryRun?: boolean } = {
       vars: { ...decision.vars, name: account.name },
       actionUrl: `${siteUrl}${decision.actionPath}`,
       unsubscribeUrl,
+      variant,
     })
     const { error: sendError } = await resend.emails.send({
       from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
