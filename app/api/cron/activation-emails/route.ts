@@ -43,6 +43,11 @@
  * docs/131 (runReengagementReminders(), ver lib/services/notify-reengagement.ts): un
  * correo según lo último que hizo cada cuenta que tenga activada la casilla de recibir
  * información. Con ?reengagementDryRun=1 no manda nada y devuelve qué se mandaría.
+ *
+ * docs/142: primero corre el resumen diario de cuentas nuevas al dueño
+ * (sendDailySignupDigest, red de seguridad del aviso inmediato; ?digestDryRun=1 solo
+ * cuenta, sin mandar). Cada paso corre aislado en su propio try: antes, un error en
+ * cualquier paso cancelaba todos los siguientes (recordatorios incluidos).
  */
 
 import { NextResponse } from "next/server"
@@ -56,6 +61,11 @@ import {
 import { runPlanExpiryReminders, runExpiredPlanDowngrades } from "@/lib/services/notify-plan-expiry"
 import { runAccountDeletionPurge } from "@/lib/services/purge-deleted-accounts"
 import { runReengagementReminders } from "@/lib/services/notify-reengagement"
+import { sendDailySignupDigest } from "@/lib/services/notify-signup"
+
+// Muchos correos en serie con pausa entre envíos (lib/services/send-email.ts): se pide
+// el máximo de Vercel Hobby para que la ejecución no se corte a la mitad.
+export const maxDuration = 60
 
 const FOUR_HOURS_IN_SECONDS = 4 * 60 * 60
 
@@ -66,6 +76,30 @@ function isWithinWindow(dateIso: string, minDaysAgo: number, maxDaysAgo: number)
   return ageMs >= minDaysAgo * DAY_MS && ageMs < maxDaysAgo * DAY_MS
 }
 
+/** Corre un paso del cron sin dejar que su error cancele los demás. */
+async function step<T>(name: string, fn: () => Promise<T>): Promise<T | { error: string }> {
+  try {
+    return await fn()
+  } catch (error) {
+    console.error(`[api/cron/activation-emails] Error en "${name}":`, error)
+    return { error: `Error en ${name}.` }
+  }
+}
+
+/** Un envío por cuenta: el error de una cuenta no corta el lote. */
+async function sendEach(ids: string[], send: (id: string) => Promise<unknown>, name: string): Promise<number> {
+  let count = 0
+  for (const id of ids) {
+    try {
+      await send(id)
+      count++
+    } catch (error) {
+      console.error(`[api/cron/activation-emails] Error en "${name}" para ${id}:`, error)
+    }
+  }
+  return count
+}
+
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET
   if (cronSecret) {
@@ -74,10 +108,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ ok: false, error: "No autorizado." }, { status: 401 })
     }
   }
+  const params = new URL(request.url).searchParams
 
   // Modo de prueba: solo calcula a quién le tocaría qué recordatorio, sin mandar nada
   // ni correr el resto del cron. Protegido por el mismo CRON_SECRET de arriba.
-  if (new URL(request.url).searchParams.get("reengagementDryRun") === "1") {
+  if (params.get("reengagementDryRun") === "1") {
     try {
       return NextResponse.json({ ok: true, reengagement: await runReengagementReminders({ dryRun: true }) })
     } catch (error) {
@@ -85,8 +120,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ ok: false, error: "Error calculando recordatorios." }, { status: 500 })
     }
   }
+  // Modo de prueba del resumen diario: cuenta las cuentas nuevas de 24 h sin mandar nada.
+  if (params.get("digestDryRun") === "1") {
+    return NextResponse.json({ ok: true, signupDigest: await step("resumen de cuentas nuevas", () => sendDailySignupDigest({ dryRun: true })) })
+  }
 
-  try {
+  // 1. Lo más importante para el dueño, primero y aislado.
+  const signupDigest = await step("resumen de cuentas nuevas", () => sendDailySignupDigest())
+
+  const activation = await step("correos de activación", async () => {
     const admin = getSupabaseAdminClient()
 
     let allUsers: { id: string; createdAt: string }[] = []
@@ -122,83 +164,50 @@ export async function GET(request: Request) {
       if (!firstSaleAtByUser.has(row.user_id)) firstSaleAtByUser.set(row.user_id, row.created_at)
     }
 
-    let reminderSent = 0
-    for (const u of reminderCandidates) {
-      if (!accountsWithRecipe.has(u.id)) {
-        await sendFirstRecipeReminder(u.id)
-        reminderSent++
-      }
-    }
-
-    let day7Sent = 0
-    for (const u of day7Candidates) {
-      if (accountsWithRecipe.has(u.id)) {
-        await sendDay7MarginCheckin(u.id)
-        day7Sent++
-      }
-    }
-
-    let firstSaleSent = 0
-    for (const [userId, firstSaleAt] of firstSaleAtByUser.entries()) {
-      if (isWithinWindow(firstSaleAt, 0, 2)) {
-        await sendFirstSaleReinforcement(userId)
-        firstSaleSent++
-      }
-    }
-
-    const planExpiry = await runPlanExpiryReminders()
-    // Planes asignados que ya vencieron: pasan a Foodie con correo y aviso (docs/139).
-    let expiredDowngrades: Awaited<ReturnType<typeof runExpiredPlanDowngrades>> | { error: string }
-    try {
-      expiredDowngrades = await runExpiredPlanDowngrades()
-    } catch (error) {
-      console.error("[api/cron/activation-emails] Error pasando planes vencidos a Foodie:", error)
-      expiredDowngrades = { error: "Error con planes vencidos." }
-    }
-
-    const { data: presenceRows, error: presenceError } = await admin
-      .from("user_presence")
-      .select("user_id")
-      .gte("total_active_seconds", FOUR_HOURS_IN_SECONDS)
-    if (presenceError) throw presenceError
-
-    let experienceSurveySent = 0
-    for (const row of presenceRows ?? []) {
-      await sendFourHourExperienceSurvey(row.user_id)
-      experienceSurveySent++
-    }
-
-    const deletionPurge = await runAccountDeletionPurge()
-
-    // Aislado en su propio try: un fallo acá no debe tirar abajo el resto del cron (que
-    // ya mandó sus correos arriba) ni hacer que Vercel lo reintente y duplique nada.
-    let reengagement: Awaited<ReturnType<typeof runReengagementReminders>> | { error: string }
-    try {
-      reengagement = await runReengagementReminders()
-    } catch (error) {
-      console.error("[api/cron/activation-emails] Error en recordatorios:", error)
-      reengagement = { error: "Error corriendo recordatorios." }
-    }
-
-    return NextResponse.json({
-      ok: true,
-      checkedAt: new Date().toISOString(),
+    const reminderSent = await sendEach(
+      reminderCandidates.filter((u) => !accountsWithRecipe.has(u.id)).map((u) => u.id),
+      sendFirstRecipeReminder,
+      "recordatorio de primera receta",
+    )
+    const day7Sent = await sendEach(
+      day7Candidates.filter((u) => accountsWithRecipe.has(u.id)).map((u) => u.id),
+      sendDay7MarginCheckin,
+      "margen a los 7 días",
+    )
+    const firstSaleSent = await sendEach(
+      [...firstSaleAtByUser.entries()].filter(([, at]) => isWithinWindow(at, 0, 2)).map(([id]) => id),
+      sendFirstSaleReinforcement,
+      "primera venta",
+    )
+    return {
       reminderCandidates: reminderCandidates.length,
       reminderSent,
       day7Candidates: day7Candidates.length,
       day7Sent,
       firstSaleSent,
-      planExpiryCandidates: planExpiry.candidates,
-      planExpirySent: planExpiry.sent,
-      expiredDowngrades,
-      experienceSurveyCandidates: presenceRows?.length ?? 0,
-      experienceSurveySent,
-      deletionPurgeCandidates: deletionPurge.candidates,
-      deletionPurged: deletionPurge.purged,
-      reengagement,
-    })
-  } catch (error) {
-    console.error("[api/cron/activation-emails] Error:", error)
-    return NextResponse.json({ ok: false, error: "Error corriendo el cron de activación." }, { status: 500 })
-  }
+    }
+  })
+
+  const planExpiry = await step("aviso de vencimiento de plan", () => runPlanExpiryReminders())
+  // Planes asignados que ya vencieron: pasan a Foodie con correo y aviso (docs/139).
+  const expiredDowngrades = await step("planes vencidos a Foodie", () => runExpiredPlanDowngrades())
+
+  const experienceSurvey = await step("encuesta de 4 horas", async () => {
+    const { data: presenceRows, error: presenceError } = await getSupabaseAdminClient()
+      .from("user_presence")
+      .select("user_id")
+      .gte("total_active_seconds", FOUR_HOURS_IN_SECONDS)
+    if (presenceError) throw presenceError
+    const ids = (presenceRows ?? []).map((r) => r.user_id)
+    return { candidates: ids.length, sent: await sendEach(ids, sendFourHourExperienceSurvey, "encuesta de 4 horas") }
+  })
+
+  const deletionPurge = await step("purga de cuentas eliminadas", () => runAccountDeletionPurge())
+  const reengagement = await step("recordatorios", () => runReengagementReminders())
+
+  const steps = { signupDigest, activation, planExpiry, expiredDowngrades, experienceSurvey, deletionPurge, reengagement }
+  const failed = Object.entries(steps)
+    .filter(([, v]) => v && typeof v === "object" && "error" in v)
+    .map(([k]) => k)
+  return NextResponse.json({ ok: failed.length === 0, checkedAt: new Date().toISOString(), failed, ...steps })
 }

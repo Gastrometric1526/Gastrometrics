@@ -7,6 +7,7 @@
  */
 
 import { Resend } from "resend"
+import { sendWithRetry } from "./send-email"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getPlanBySlug, getLocalizedPlan, plans } from "@/lib/plans"
 import { renderEmailTemplate, escapeHtml } from "./email-templates"
@@ -47,7 +48,7 @@ export async function sendOwnerBillingNotification(input: {
     input.amountCents !== null && input.amountCents !== undefined ? formatUsd(input.amountCents) : null
 
   const resend = new Resend(process.env.RESEND_API_KEY)
-  const { error } = await resend.emails.send({
+  const { error } = await sendWithRetry(resend, {
     from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
     to: [process.env.FEEDBACK_NOTIFY_TO as string],
     subject: `[GastroMetrics] ${eventLabel}: ${accountLabel}`,
@@ -199,7 +200,7 @@ export async function sendPlanChangedEmail(input: PlanChangedEmailInput & { acco
   const { subject, html } = renderPlanChangedEmail({ ...input, language })
 
   const resend = new Resend(process.env.RESEND_API_KEY)
-  const { error } = await resend.emails.send({
+  const { error } = await sendWithRetry(resend, {
     from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
     to: [email],
     subject,
@@ -248,7 +249,7 @@ export async function sendSubscriptionCancelledEmail(input: {
   })
 
   const resend = new Resend(process.env.RESEND_API_KEY)
-  const { error } = await resend.emails.send({
+  const { error } = await sendWithRetry(resend, {
     from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
     to: [email],
     subject: labels.e05_subject,

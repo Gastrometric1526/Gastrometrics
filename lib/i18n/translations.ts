@@ -3030,6 +3030,8 @@ const translations = {
     admin_product_updates_desc:
       "Se manda solo a cuentas que marcaron la casilla de novedades (al registrarse, o después en Configuración → Notificaciones). Nunca se dispara solo — hace falta este botón.",
     admin_product_updates_changelog_version_label: "Versión actual del changelog",
+    admin_product_updates_since_label: "Incluir novedades desde",
+    admin_product_updates_since_hint: "El correo lleva todas las entradas desde la elegida hasta la más reciente, cada una en el idioma de quien lo recibe. Abajo se muestran en español.",
     admin_product_updates_recipients_label: "Destinatarios",
     admin_product_updates_recipients_desc: "cuentas con la casilla marcada",
     admin_product_updates_send_button: "Enviar correo de novedades",
@@ -6340,6 +6342,8 @@ const translations = {
     admin_product_updates_desc:
       "Sent only to accounts that checked the updates box (when signing up, or later in Settings → Notifications). Never triggers on its own — this button is required.",
     admin_product_updates_changelog_version_label: "Current changelog version",
+    admin_product_updates_since_label: "Include updates since",
+    admin_product_updates_since_hint: "The email includes every entry from the selected one to the latest, each in the recipient's language. Shown below in Spanish.",
     admin_product_updates_recipients_label: "Recipients",
     admin_product_updates_recipients_desc: "accounts with the box checked",
     admin_product_updates_send_button: "Send update email",
@@ -9641,6 +9645,8 @@ const translations = {
     admin_product_updates_desc:
       "Sendes kun til konti, der har markeret nyhedsfeltet (ved tilmelding eller senere i Indstillinger → Notifikationer). Sendes aldrig af sig selv — denne knap er nødvendig.",
     admin_product_updates_changelog_version_label: "Nuværende changelog-version",
+    admin_product_updates_since_label: "Medtag nyheder fra",
+    admin_product_updates_since_hint: "E-mailen indeholder alle opslag fra det valgte til det nyeste, hver på modtagerens sprog. Vist nedenfor på spansk.",
     admin_product_updates_recipients_label: "Modtagere",
     admin_product_updates_recipients_desc: "konti med feltet markeret",
     admin_product_updates_send_button: "Send nyheds-e-mail",
@@ -12946,6 +12952,8 @@ const translations = {
     admin_product_updates_desc:
       "Envoyé uniquement aux comptes ayant coché la case des nouveautés (à l'inscription, ou plus tard dans Paramètres → Notifications). Ne se déclenche jamais tout seul — ce bouton est nécessaire.",
     admin_product_updates_changelog_version_label: "Version actuelle du journal des modifications",
+    admin_product_updates_since_label: "Inclure les nouveautés depuis",
+    admin_product_updates_since_hint: "L'e-mail contient toutes les entrées depuis celle choisie jusqu'à la plus récente, chacune dans la langue du destinataire. Affichées ci-dessous en espagnol.",
     admin_product_updates_recipients_label: "Destinataires",
     admin_product_updates_recipients_desc: "comptes avec la case cochée",
     admin_product_updates_send_button: "Envoyer l'e-mail des nouveautés",
@@ -16250,6 +16258,8 @@ const translations = {
     admin_product_updates_desc:
       "Enviado apenas para contas que marcaram a caixa de novidades (ao se cadastrar, ou depois em Configurações → Notificações). Nunca dispara sozinho — este botão é necessário.",
     admin_product_updates_changelog_version_label: "Versão atual do changelog",
+    admin_product_updates_since_label: "Incluir novidades desde",
+    admin_product_updates_since_hint: "O e-mail leva todas as entradas desde a escolhida até a mais recente, cada uma no idioma de quem recebe. Abaixo aparecem em espanhol.",
     admin_product_updates_recipients_label: "Destinatários",
     admin_product_updates_recipients_desc: "contas com a caixa marcada",
     admin_product_updates_send_button: "Enviar e-mail de novidades",
@@ -19518,6 +19528,8 @@ const translations = {
     admin_product_updates_title: "产品更新邮件",
     admin_product_updates_desc: "仅发送给勾选了更新通知选项的账户（注册时或之后在设置→通知中勾选）。绝不会自动触发——必须点击此按钮。",
     admin_product_updates_changelog_version_label: "当前更新日志版本",
+    admin_product_updates_since_label: "包含此版本以来的更新",
+    admin_product_updates_since_hint: "邮件包含从所选版本到最新版本的所有条目，每条都使用收件人的语言。下方以西班牙语显示。",
     admin_product_updates_recipients_label: "收件人",
     admin_product_updates_recipients_desc: "已勾选该选项的账户",
     admin_product_updates_send_button: "发送更新邮件",

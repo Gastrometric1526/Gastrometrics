@@ -18,6 +18,9 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { sendLegalUpdateNotice } from "@/lib/services/notify-legal-update"
 
+// Envío en serie con pausa entre correos (lib/services/send-email.ts, docs/142).
+export const maxDuration = 60
+
 async function getAllAccountsWithLanguage() {
   const admin = getSupabaseAdminClient()
 

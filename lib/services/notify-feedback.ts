@@ -14,6 +14,7 @@
  */
 
 import { Resend } from "resend"
+import { sendWithRetry } from "./send-email"
 import { renderEmailTemplate, escapeHtml, escapeHtmlWithLineBreaks } from "./email-templates"
 import { getEmailLabels, normalizeEmailLang, EMAIL_DATE_LOCALES, EMAIL_LABELS } from "@/lib/i18n/email-labels"
 
@@ -90,7 +91,7 @@ export async function sendFeedbackReplyEmail(input: {
     appUrl: siteUrl,
   })
 
-  const { error } = await resend.emails.send({
+  const { error } = await sendWithRetry(resend, {
     from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
     to: [input.toEmail],
     subject: labels.e02_subject,
@@ -120,7 +121,7 @@ export async function sendFeedbackNotification(input: {
   const typeLabel = typeKey ? EMAIL_LABELS.es[typeKey] : input.type
   const fromWho = input.userName || input.userEmail ? `${input.userName || "Anónimo"} (${input.userEmail || "sin correo"})` : "Anónimo"
 
-  const { error } = await resend.emails.send({
+  const { error } = await sendWithRetry(resend, {
     // "from" debe ser un remitente en un dominio verificado en Resend — con la cuenta
     // gratis sin dominio propio verificado, Resend solo permite "onboarding@resend.dev"
     // como remitente (funciona igual para recibir, solo se ve distinto en el "De:").

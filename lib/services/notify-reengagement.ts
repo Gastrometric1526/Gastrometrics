@@ -38,6 +38,7 @@
  */
 
 import { Resend } from "resend"
+import { sendWithRetry } from "./send-email"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { renderEmailTemplate, escapeHtml } from "./email-templates"
 import { getEmailLabels, normalizeEmailLang, fillLabel, type EmailLang } from "@/lib/i18n/email-labels"
@@ -594,7 +595,7 @@ export async function runReengagementReminders(options: { dryRun?: boolean } = {
       unsubscribeUrl,
       variant,
     })
-    const { error: sendError } = await resend.emails.send({
+    const { error: sendError } = await sendWithRetry(resend, {
       from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
       to: [account.email],
       subject,

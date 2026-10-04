@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Mail, Send, Loader2, CheckCircle2, AlertTriangle, RotateCw } from "lucide-react"
-import { CHANGELOG, LATEST_CHANGELOG_VERSION } from "@/lib/changelog"
+import { CHANGELOG, LATEST_CHANGELOG_VERSION, getChangelogEntriesSince, getDefaultEmailSinceVersion } from "@/lib/changelog"
 import { useLanguage } from "@/contexts/language-context"
 
 export function ProductUpdatesPanel() {
@@ -26,6 +27,12 @@ export function ProductUpdatesPanel() {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [result, setResult] = useState<{ sentCount: number; failedCount: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Desde qué entrada del changelog se incluye en el correo (docs/142): por defecto todas
+  // las del mismo día que la última, para que ninguna novedad quede sin enviarse.
+  const [sinceVersion, setSinceVersion] = useState(getDefaultEmailSinceVersion())
+  const selectedEntries = getChangelogEntriesSince(sinceVersion)
+  const versionRange =
+    selectedEntries.length > 1 ? `${sinceVersion} → ${LATEST_CHANGELOG_VERSION}` : LATEST_CHANGELOG_VERSION
 
   // Reenvío puntual a una cuenta específica — pedido explícito del dueño del proyecto:
   // "debe haber una opción también de reenviar el correo por si al usuario no le cae".
@@ -56,7 +63,7 @@ export function ProductUpdatesPanel() {
       const res = await fetch("/api/admin/product-update-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirm: true }),
+        body: JSON.stringify({ confirm: true, sinceVersion }),
       })
       const json = await res.json()
       if (!res.ok) {
@@ -80,7 +87,7 @@ export function ProductUpdatesPanel() {
       const res = await fetch("/api/admin/product-update-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirm: true, targetEmail: targetEmail.trim() }),
+        body: JSON.stringify({ confirm: true, targetEmail: targetEmail.trim(), sinceVersion }),
       })
       const json = await res.json()
       if (!res.ok) {
@@ -95,8 +102,6 @@ export function ProductUpdatesPanel() {
     }
   }
 
-  const latestEntry = CHANGELOG[0]
-  const preview = latestEntry?.content.es
   const canResend = targetEmail.trim().length > 3 && targetEmail.includes("@")
 
   return (
@@ -110,18 +115,39 @@ export function ProductUpdatesPanel() {
           <CardDescription>{t("admin_product_updates_desc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-lg border p-4 bg-muted/30">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
-              {t("admin_product_updates_changelog_version_label")}
-            </p>
-            <p className="text-sm font-semibold text-foreground">{latestEntry?.version}</p>
-            {preview && (
-              <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground list-disc pl-4">
-                {preview.items.map((item, i) => (
-                  <li key={i}>{item}</li>
-                ))}
-              </ul>
-            )}
+          <div className="rounded-lg border p-4 bg-muted/30 space-y-3">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
+                  {t("admin_product_updates_since_label")}
+                </p>
+                <Select value={sinceVersion} onValueChange={setSinceVersion}>
+                  <SelectTrigger className="w-[260px]" aria-label={t("admin_product_updates_since_label")}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CHANGELOG.slice(0, 10).map((entry) => (
+                      <SelectItem key={entry.version} value={entry.version}>
+                        {entry.version}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground max-w-sm">{t("admin_product_updates_since_hint")}</p>
+            </div>
+            {selectedEntries.map((entry) => (
+              <div key={entry.version}>
+                <p className="text-sm font-semibold text-foreground">
+                  {entry.content.es.title} <span className="font-normal text-muted-foreground">· {entry.version}</span>
+                </p>
+                <ul className="mt-1.5 space-y-1.5 text-sm text-muted-foreground list-disc pl-4">
+                  {entry.content.es.items.map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
 
           <div className="flex items-center justify-between rounded-lg border p-4">
@@ -206,7 +232,7 @@ export function ProductUpdatesPanel() {
             <AlertDialogDescription>
               {t("admin_product_updates_confirm_send_desc")
                 .replace("{count}", String(count ?? 0))
-                .replace("{version}", LATEST_CHANGELOG_VERSION)}
+                .replace("{version}", versionRange)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -223,7 +249,7 @@ export function ProductUpdatesPanel() {
             <AlertDialogDescription>
               {t("admin_product_updates_confirm_resend_desc")
                 .replace("{email}", targetEmail.trim())
-                .replace("{version}", LATEST_CHANGELOG_VERSION)}
+                .replace("{version}", versionRange)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

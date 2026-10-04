@@ -11,15 +11,30 @@
  * POST: manda de verdad, una sola vez por llamada (no hay programación ni reintento
  * automático — si Resend falla para alguien, queda en la lista de `failed` de la
  * respuesta y no se reintenta solo).
+ *
+ * docs/142: cada envío pasa por sendWithRetry (reintentos ante límites de Resend y
+ * pausa entre envíos), y el correo puede llevar varias entradas del changelog
+ * (`sinceVersion`, por defecto las del mismo día que la última). Todo en el idioma de
+ * cada destinatario (profiles.preferred_language), ver lib/services/product-update-email.ts.
  */
 
 import { NextResponse } from "next/server"
 import { Resend } from "resend"
+import { sendWithRetry } from "@/lib/services/send-email"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
-import { renderEmailTemplate, escapeHtml } from "@/lib/services/email-templates"
-import { getEmailLabels, normalizeEmailLang } from "@/lib/i18n/email-labels"
-import { getChangelogContent, LATEST_CHANGELOG_VERSION } from "@/lib/changelog"
+import { normalizeEmailLang } from "@/lib/i18n/email-labels"
+import {
+  CHANGELOG,
+  LATEST_CHANGELOG_VERSION,
+  getChangelogEntriesSince,
+  getDefaultEmailSinceVersion,
+  type ChangelogEntry,
+} from "@/lib/changelog"
+import { renderProductUpdateEmail } from "@/lib/services/product-update-email"
+
+// Envío en serie con pausa entre correos: se pide el máximo de Vercel Hobby.
+export const maxDuration = 60
 
 async function getOptedInAccounts() {
   const admin = getSupabaseAdminClient()
@@ -54,7 +69,12 @@ export async function GET() {
   }
   try {
     const recipients = await getOptedInAccounts()
-    return NextResponse.json({ count: recipients.length, version: LATEST_CHANGELOG_VERSION })
+    return NextResponse.json({
+      count: recipients.length,
+      version: LATEST_CHANGELOG_VERSION,
+      defaultSinceVersion: getDefaultEmailSinceVersion(),
+      versions: CHANGELOG.slice(0, 10).map((e) => ({ version: e.version, title: e.content.es.title })),
+    })
   } catch (error) {
     console.error("[api/admin/product-update-email] Error contando destinatarios:", error)
     return NextResponse.json({ error: "No se pudo contar los destinatarios." }, { status: 500 })
@@ -91,37 +111,23 @@ async function findAccountByEmail(email: string) {
   }
 }
 
-async function sendChangelogEmail(recipient: { email: string; language: ReturnType<typeof normalizeEmailLang> }) {
+async function sendChangelogEmail(
+  recipient: { email: string; language: ReturnType<typeof normalizeEmailLang> },
+  entries: ChangelogEntry[],
+) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
   const resend = new Resend(process.env.RESEND_API_KEY as string)
-  const labels = getEmailLabels(recipient.language)
-  const changelog = getChangelogContent(recipient.language)
-  const itemsHtml = changelog.items
-    .map(
-      (item) =>
-        `<tr><td style="font-family:Archivo,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:14.5px;line-height:1.55;color:#3A332E;padding:0 0 12px 22px;position:relative">&bull;&nbsp; ${escapeHtml(item)}</td></tr>`,
-    )
-    .join("")
-
-  const html = renderEmailTemplate("08-novedades.html", {
-    htmlLang: recipient.language,
-    title: labels.e08_title,
-    preheader: labels.e08_preheader,
-    heading: labels.e08_heading,
-    itemsHtml,
-    cta: labels.e08_cta,
-    ctaUrl: `${siteUrl}/dashboard`,
-    footnote: labels.e08_footnote,
-    footerAddress: labels.footer_address,
-    footer2: labels.e08_footer2,
-  })
-
-  return resend.emails.send({
-    from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
-    to: [recipient.email],
-    subject: labels.e08_subject,
-    html,
-  })
+  const { subject, html } = renderProductUpdateEmail({ entries, language: recipient.language, siteUrl })
+  return sendWithRetry(
+    resend,
+    {
+      from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
+      to: [recipient.email],
+      subject,
+      html,
+    },
+    "novedades",
+  )
 }
 
 export async function POST(request: Request) {
@@ -135,6 +141,9 @@ export async function POST(request: Request) {
   if (!process.env.RESEND_API_KEY) {
     return NextResponse.json({ error: "RESEND_API_KEY no está configurada." }, { status: 500 })
   }
+  const entries = getChangelogEntriesSince(
+    typeof body?.sinceVersion === "string" ? body.sinceVersion : getDefaultEmailSinceVersion(),
+  )
 
   // Reenvío a una sola cuenta (ver findAccountByEmail arriba) — camino aparte del envío
   // masivo, mismo endpoint para no duplicar la verificación de sesión de admin ni el
@@ -145,7 +154,7 @@ export async function POST(request: Request) {
       if (!account) {
         return NextResponse.json({ error: "No existe ninguna cuenta con ese correo." }, { status: 404 })
       }
-      const { error: sendError } = await sendChangelogEmail(account)
+      const { error: sendError } = await sendChangelogEmail(account, entries)
       if (sendError) {
         console.error("[api/admin/product-update-email] Resend rechazó el reenvío:", account.email, sendError)
         return NextResponse.json({ error: "Resend rechazó el envío." }, { status: 502 })
@@ -170,7 +179,7 @@ export async function POST(request: Request) {
 
   for (const recipient of recipients) {
     try {
-      const { error: sendError } = await sendChangelogEmail(recipient)
+      const { error: sendError } = await sendChangelogEmail(recipient, entries)
       if (sendError) {
         console.error("[api/admin/product-update-email] Resend rechazó el envío:", recipient.email, sendError)
         failed.push(recipient.email)

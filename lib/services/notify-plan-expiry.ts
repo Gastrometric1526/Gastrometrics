@@ -16,6 +16,7 @@
  */
 
 import { Resend } from "resend"
+import { sendWithRetry } from "./send-email"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getPlanBySlug, getLocalizedPlan } from "@/lib/plans"
 import { renderEmailTemplate, escapeHtml } from "./email-templates"
@@ -69,7 +70,7 @@ export async function sendPlanExpiryReminder(accountId: string, planSlug: string
   })
 
   const resend = new Resend(process.env.RESEND_API_KEY)
-  const { error } = await resend.emails.send({
+  const { error } = await sendWithRetry(resend, {
     from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
     to: [email],
     subject: fillLabel(labels.e09_subject, { plan: planName }),

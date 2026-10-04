@@ -14,6 +14,7 @@
 
 import { NextResponse } from "next/server"
 import { Resend } from "resend"
+import { sendWithRetry } from "@/lib/services/send-email"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { requireSupabaseServiceRoleEnv } from "@/lib/supabase/env"
 import { renderEmailTemplate, escapeHtml } from "@/lib/services/email-templates"
@@ -128,7 +129,7 @@ export async function POST(request: Request) {
       device: escapeHtml(describeDevice(request.headers.get("user-agent"), labels)),
     })
 
-    const { error: sendError } = await resend.emails.send({
+    const { error: sendError } = await sendWithRetry(resend, {
       from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
       to: [email],
       subject: labels.e03_subject,

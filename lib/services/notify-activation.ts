@@ -14,6 +14,7 @@
  */
 
 import { Resend } from "resend"
+import { sendWithRetry } from "./send-email"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { renderEmailTemplate } from "./email-templates"
 import { getEmailLabels, normalizeEmailLang } from "@/lib/i18n/email-labels"
@@ -111,7 +112,7 @@ async function sendActivationEmail(input: {
   })
 
   const resend = new Resend(process.env.RESEND_API_KEY)
-  const { error } = await resend.emails.send({
+  const { error } = await sendWithRetry(resend, {
     from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
     to: [email],
     subject: labels[input.subjectKey],
@@ -205,7 +206,7 @@ export async function sendFourHourExperienceSurvey(accountId: string): Promise<v
   })
 
   const resend = new Resend(process.env.RESEND_API_KEY)
-  const { error } = await resend.emails.send({
+  const { error } = await sendWithRetry(resend, {
     from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
     to: [email],
     subject: labels.e10_subject,

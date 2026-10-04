@@ -690,3 +690,25 @@ export function getChangelogContent(language: LanguageCode) {
   const entry = CHANGELOG[0]
   return entry.content[language] || entry.content.es
 }
+
+/**
+ * Entradas para el correo de novedades (docs/142): de la más reciente hasta
+ * `sinceVersion` incluida. Antes el correo llevaba solo la última entrada, así que si
+ * se publicaban varias antes de enviar, las anteriores nunca llegaban a nadie.
+ * Versión desconocida o vacía → solo la última.
+ */
+export function getChangelogEntriesSince(sinceVersion?: string | null): ChangelogEntry[] {
+  const index = sinceVersion ? CHANGELOG.findIndex((e) => e.version === sinceVersion) : -1
+  return index >= 0 ? CHANGELOG.slice(0, index + 1) : CHANGELOG.slice(0, 1)
+}
+
+/** Por defecto el correo incluye todas las entradas del mismo día que la última. */
+export function getDefaultEmailSinceVersion(): string {
+  const day = CHANGELOG[0].version.slice(0, 10)
+  let since = CHANGELOG[0].version
+  for (const entry of CHANGELOG) {
+    if (entry.version.slice(0, 10) !== day) break
+    since = entry.version
+  }
+  return since
+}

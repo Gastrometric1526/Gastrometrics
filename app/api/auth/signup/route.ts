@@ -16,6 +16,7 @@
 
 import { NextResponse } from "next/server"
 import { Resend } from "resend"
+import { sendWithRetry } from "@/lib/services/send-email"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getPlanBySlug } from "@/lib/plans"
 import { CURRENT_LEGAL_VERSION } from "@/lib/legal"
@@ -128,7 +129,7 @@ export async function POST(request: Request) {
         footer2: labels.e01_footer2,
         confirmUrl: data.properties.action_link,
       })
-      const { error: sendError } = await resend.emails.send({
+      const { error: sendError } = await sendWithRetry(resend, {
         from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
         to: [email],
         subject: labels.e01_subject,
@@ -140,26 +141,34 @@ export async function POST(request: Request) {
     }
   }
 
-  // Best-effort, igual que el correo de arriba: si falla no debe afectar el registro.
-  sendAccountCreatedNotification({
-    email,
-    fullName: profile.fullName || undefined,
-    businessType: profile.businessType || undefined,
-    nationality: profile.nationality || undefined,
-  }).catch((notifyError) => {
+  // Aviso al dueño de la cuenta nueva. BUG CORREGIDO (docs/142): se lanzaba sin `await`,
+  // y en Vercel la función puede congelarse apenas responde — el correo a veces no
+  // llegaba a salir, sin ningún error. Ahora se espera (con reintentos dentro de
+  // sendWithRetry); si aun así falla, no rompe el registro: queda el evento
+  // owner_signup_notify_failed en Analíticas y el resumen diario del cron
+  // (sendDailySignupDigest) vuelve a avisar de esta cuenta.
+  let ownerNotified = false
+  try {
+    ownerNotified = await sendAccountCreatedNotification({
+      email,
+      fullName: profile.fullName || undefined,
+      businessType: profile.businessType || undefined,
+      nationality: profile.nationality || undefined,
+      language: preferredLanguage,
+    })
+  } catch (notifyError) {
     console.error("[api/auth/signup] Error inesperado notificando la nueva cuenta:", notifyError)
-  })
+  }
 
   // Evento de embudo (ver supabase/migrations/0029_product_events.sql) — server-side
   // acá en vez de un trackEvent() de cliente en app/signup/page.tsx: esta ruta ya sabe
-  // con certeza que la cuenta se creó de verdad, sin depender de que el navegador
-  // siga vivo para mandar el evento después.
-  admin
-    .from("product_events")
-    .insert({ event_name: "signup_completed" })
-    .then(({ error: eventError }) => {
-      if (eventError) console.error("[api/auth/signup] Error registrando evento signup_completed:", eventError)
-    })
+  // con certeza que la cuenta se creó de verdad. También se espera (mismo motivo que arriba).
+  const events = [{ event_name: "signup_completed" }]
+  if (!ownerNotified && process.env.RESEND_API_KEY && process.env.FEEDBACK_NOTIFY_TO) {
+    events.push({ event_name: "owner_signup_notify_failed" })
+  }
+  const { error: eventError } = await admin.from("product_events").insert(events)
+  if (eventError) console.error("[api/auth/signup] Error registrando eventos de registro:", eventError)
 
   return NextResponse.json({ ok: true })
 }
