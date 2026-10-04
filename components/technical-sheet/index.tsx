@@ -21,6 +21,7 @@ import { allergenLabelKey, getRecipeAllergens } from "@/lib/allergens"
 import { ActivityTracker } from "@/lib/activity-tracker"
 import { trackEvent } from "@/lib/analytics/track-event"
 import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
+import { takePendingImport, buildImportedRows } from "@/lib/recipe-import/pending-import"
 import { getBusinessById, getEffectivePricingDefaults, setEffectivePricingDefaults } from "@/lib/storage/businesses"
 import {
   calculateTotalMonthlyExpenses,
@@ -211,6 +212,9 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
   const draftReadyRef = useRef(false)
   const draftDisabledRef = useRef(false)
   const draftBusinessRef = useRef<string | null>(null)
+  // Negocio en el que se aplicó una receta importada: si el efecto vuelve a correr
+  // (p. ej. llega userId), el borrador viejo no debe pisar la importación.
+  const importAppliedForRef = useRef<string | null>(null)
   const [restoredDraftAt, setRestoredDraftAt] = useState<string | null>(null)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
 
@@ -242,7 +246,27 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       await Promise.all([ensureIngredientsLoaded(businessId), ensureRecipesLoaded(businessId)])
       if (cancelled) return
       loadTechnicalSheetData()
-      if (isNewRecipe && userId) {
+      // Receta importada desde texto/archivo/foto (docs/145, components/recipe-import-dialog.tsx):
+      // gana sobre el borrador porque la persona acaba de pedirla.
+      if (!isNewRecipe) importAppliedForRef.current = null
+      const pendingImport = isNewRecipe ? takePendingImport(businessId) : null
+      if (pendingImport) {
+        importAppliedForRef.current = businessId
+        draftBusinessRef.current = businessId
+        const empty = createEmptyRecipe(undefined, businessId)
+        const rows = buildImportedRows(pendingImport.ingredients, getIngredients(businessId))
+        setRecipe({
+          ...empty,
+          name: pendingImport.name,
+          servings: pendingImport.servings || 1,
+          yieldAmount: pendingImport.yieldAmount || 0,
+          yieldUnit: pendingImport.yieldUnit || empty.yieldUnit,
+          procedure: pendingImport.procedure.length ? pendingImport.procedure : [""],
+          observations: pendingImport.observations,
+          ingredients: [...rows, ...empty.ingredients],
+        })
+        toast({ title: t("recipe_import_applied_title"), description: t("recipe_import_applied_desc") })
+      } else if (isNewRecipe && userId && importAppliedForRef.current !== businessId) {
         const draft = await loadRecipeDraft(userId, businessId)
         if (cancelled) return
         if (draft && isRecipeDraftMeaningful(draft.recipe)) {

@@ -1251,7 +1251,7 @@ export default function IngredientesPage() {
       <Sidebar />
       <div className="flex-1 p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
-          <IngredientesTour />
+          <IngredientesTour onOpenImport={() => setShowImportDialog(true)} />
           {/* Drag overlay */}
           {isDragOver && (
             <div className="fixed inset-0 bg-primary/20 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -1547,10 +1547,16 @@ export default function IngredientesPage() {
                     ? t("ingredientes_empty_no_ingredients_desc")
                     : t("ingredientes_empty_not_found_desc")}
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4">
+                {/* Sin ingredientes (docs/145): la importación masiva va primero y destacada,
+                    con la opción manual siempre visible al lado. */}
+                {ingredients.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center -mt-4 mb-6 max-w-md">{t("ingredientes_empty_import_hint")}</p>
+                )}
+                <div className={`flex flex-col sm:flex-row gap-4 ${ingredients.length === 0 ? "sm:flex-row-reverse" : ""}`}>
                   <Button
+                    variant={ingredients.length === 0 ? "outline" : "default"}
                     onClick={() => setShowAddDialog(true)}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    className={ingredients.length === 0 ? "border-border hover:bg-accent" : "bg-primary text-primary-foreground hover:bg-primary/90"}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     {ingredients.length === 0
@@ -1558,9 +1564,9 @@ export default function IngredientesPage() {
                       : t("ingredientes_new_ingredient_button")}
                   </Button>
                   <Button
-                    variant="outline"
+                    variant={ingredients.length === 0 ? "default" : "outline"}
                     onClick={() => setShowImportDialog(true)}
-                    className="border-border hover:bg-accent"
+                    className={ingredients.length === 0 ? "bg-primary text-primary-foreground hover:bg-primary/90" : "border-border hover:bg-accent"}
                   >
                     <Upload className="h-4 w-4 mr-2" />
                     {t("ingredientes_import_from_excel_button")}

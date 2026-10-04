@@ -2,11 +2,13 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, ChefHat, UtensilsCrossed, Package, BarChart3, Lock } from "lucide-react"
+import { Home, ChefHat, UtensilsCrossed, Package, BarChart3, Lock, ClipboardList } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/contexts/language-context"
 import { useFeatureAccess, getMinimumPlanForFeature } from "@/lib/plan-access"
 import { useToast } from "@/hooks/use-toast"
+import { useModuleReveal } from "@/lib/module-reveal"
+import { useActiveMembership } from "@/lib/plan-access"
 
 // Barra de navegación inferior en móvil (ver docs/36, prioridad alta #2): antes el
 // drawer lateral era el único acceso a la navegación en teléfono, y su botón hamburguesa
@@ -23,13 +25,22 @@ export function MobileBottomNav() {
   const canAccessMenus = useFeatureAccess("menus")
   const canAccessInventory = useFeatureAccess("inventory")
 
-  const items = [
+  const baseItems = [
     { href: "/dashboard", label: t("mobile_nav_inicio"), icon: Home, locked: false, feature: null as const },
     { href: "/mis-recetas", label: t("mobile_nav_recetas"), icon: ChefHat, locked: false, feature: null as const },
     { href: "/menus", label: t("nav_menus"), icon: UtensilsCrossed, locked: canAccessMenus === false, feature: "menus" as const },
     { href: "/inventario", label: t("nav_inventario"), icon: Package, locked: canAccessInventory === false, feature: "inventory" as const },
     { href: "/estadisticas", label: t("mobile_nav_numeros"), icon: BarChart3, locked: false, feature: null as const },
   ]
+  // Revelación progresiva (docs/145): mientras Menús/Inventario/Reportes no se revelan,
+  // su lugar en la barra lo ocupan Ingredientes y Ficha Técnica (lo que toca hacer primero).
+  const { active: revealPreviewActive } = useActiveMembership()
+  const reveal = useModuleReveal({ disabled: revealPreviewActive })
+  const substitutes: (typeof baseItems)[number][] = [
+    { href: "/ingredientes", label: t("nav_ingredientes"), icon: Package, locked: false, feature: null },
+    { href: "/ficha-tecnica", label: t("nav_ficha_tecnica"), icon: ClipboardList, locked: false, feature: null },
+  ]
+  const items = baseItems.flatMap((item) => (reveal.hidden.has(item.href) ? (substitutes.length ? [substitutes.shift()!] : []) : [item]))
 
   return (
     <nav

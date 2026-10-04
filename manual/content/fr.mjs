@@ -58,6 +58,7 @@ export default {
         ["h3", "Créer votre compte"],
         ["p", "L'inscription est un assistant en 5 étapes : vos coordonnées et mot de passe, vos informations professionnelles (pays, devise, type et taille d'établissement), le <strong>forfait</strong> souhaité, l'acceptation des conditions et un récapitulatif final. Si vous arrivez depuis la page des forfaits avec un forfait déjà choisi, il est présélectionné."],
         ["p", "La dernière étape comporte une case facultative pour <strong>recevoir les nouveautés et rappels par e-mail</strong>. Elle est décochée par défaut et vous pouvez la modifier à tout moment dans Paramètres (chapitre 15)."],
+        ["p", "À la connexion, la case <strong>Se souvenir de moi sur cet appareil</strong> est cochée : votre session reste ouverte. Décochez-la sur un ordinateur partagé et la session se fermera à la fermeture du navigateur."],
         ["h3", "Créer un établissement"],
         ["steps", [
           "<strong>Informations de base et logo.</strong> Nom, description, type d'établissement et, si vous le souhaitez, un logo qui apparaîtra en en-tête de vos PDF.",
@@ -75,6 +76,7 @@ export default {
           "<strong>Indicateurs</strong> : nombre de recettes, d'ingrédients, d'établissements et coût moyen, tous établissements confondus.",
           "<strong>Actions rapides</strong> : un raccourci par module pour entrer sans passer par le menu latéral.",
         ]],
+        ["p", "Pendant vos débuts, le Dashboard affiche <strong>Votre parcours</strong> : ajouter des ingrédients, créer votre première recette, atteindre 3 recettes et explorer les nouveautés. Chaque étape vous mène directement au bon endroit. Vous pouvez le masquer avec la croix."],
         ["h3", "Le menu latéral"],
         ["table", ["Section", "À quoi elle sert"], [
           ["Tableau de bord", "Vue d'ensemble de tout votre compte et de ce qui demande votre attention."],
@@ -89,6 +91,7 @@ export default {
           ["Rapports", "Vue d'ensemble de l'activité et finances."],
           ["Établissements", "Créer, ouvrir et supprimer des établissements."],
         ]],
+        ["info", "Le menu se complète au fil de l'eau", "Pour ne pas vous submerger, le menu commence par l'essentiel. Avec votre première recette apparaissent Rapports et Ventes ; avec 3 recettes, Inventaire, Menus, Bons de commande et Équipe, marqués « Nouveau ». Pour tout voir dès le début, utilisez « Afficher tous les modules maintenant » en bas du menu."],
         ["info", "Paramètres et Mon forfait", "Paramètres n'est pas une page : c'est une fenêtre que vous ouvrez depuis n'importe quel écran avec l'icône d'engrenage. Votre forfait et votre abonnement se trouvent dans <strong>Mon forfait</strong>, en bas du menu."],
       ],
     },
@@ -116,6 +119,7 @@ export default {
         ["p", "Si vous achetez par caisse, sac, bouteille, boîte, sachet ou bocal, enregistrez ce que contient chaque conditionnement. Vos commandes indiqueront ainsi « 4 caisses » plutôt qu'une quantité en grammes que personne ne commanderait."],
         ["h3", "Importer depuis Excel"],
         ["p", "Vous pouvez charger ou exporter toute votre base dans Excel avec un modèle généré par l'application à partir de ses vraies catégories et unités. Les en-têtes de colonnes sont reconnus dans les 6 langues de l'application."],
+        ["p", "La visite guidée des Ingrédients se termine en ouvrant cet import, pour charger toute votre liste d'un coup. Si vous préférez, vous pouvez aussi les ajouter un par un avec « Nouvel ingrédient »."],
         ["h3", "Pertes"],
         ["p", "Les pertes, c'est ce que vous payez sans pouvoir l'utiliser : épluchures, os, parures, évaporation. Dans <strong>Gérer les Pertes</strong>, vous activez le système et choisissez pour chaque ingrédient le pourcentage type de sa catégorie ou le vôtre (ou une quantité fixe)."],
         ["formula", "Coût réel avec pertes", ["Contenu utilisable = Contenu net × (1 − % de pertes)", "Prix par unité = Prix d'achat ÷ Contenu utilisable"], "Vous payez la totalité mais n'en utilisez qu'une partie : le prix réel par unité augmente donc. Si vous désactivez les pertes, tout revient aux valeurs d'origine."],
@@ -184,6 +188,10 @@ export default {
           "<strong>Restaurer la recette originale</strong> revient à cette taille d'origine. Appuyez ensuite sur Enregistrer pour confirmer.",
         ]],
         ["warn", "Rendement suspect", "Si un ingrédient mesuré en « unité » atteint 20 fois le rendement déclaré ou plus (par exemple 200 œufs pour un rendement de 1), un avertissement jaune apparaît dans la fiche et dans le PDF. Il ne bloque rien : il vous aide seulement à repérer une faute de frappe."],
+        ["h3", "Importer une recette écrite"],
+        ["p", "Dans Mes recettes, <strong>Importer une recette</strong> transforme une recette écrite en fiche technique : collez-la telle quelle, téléversez un fichier (.txt, .csv, .md) ou <strong>prenez-la en photo</strong> avec l'appareil photo du téléphone. L'application reconnaît le nom, les portions, les ingrédients avec quantité et unité (200 g, 2 tasses, ½ kg, « selon le goût », tableaux, listes…) et les étapes, dans les 6 langues."],
+        ["tip", "Vous vérifiez avant l'ouverture", "Chaque ingrédient est associé à votre base et sa quantité est convertie dans l'unité de cet ingrédient. Ceux que vous n'avez pas peuvent être créés (sans prix, à compléter ensuite dans Ingrédients), choisis dans votre liste ou ignorés. Rien n'est enregistré avant d'appuyer sur Enregistrer dans la Fiche Technique."],
+        ["info", "Photos de recettes", "La photo est lue sur votre propre téléphone ou ordinateur (elle n'est envoyée à aucun serveur). Vous verrez la photo à côté du texte lu, avec la confiance de lecture et les lignes douteuses signalées : touchez-les pour les corriger avant de continuer. Pour de meilleurs résultats, photographiez de face, avec une bonne lumière et sans ombres, et choisissez la langue de la recette."],
         ["h3", "Mes Recettes : dupliquer, déplacer et corbeille"],
         ["figure", "06-mis-recetas.jpg", "Mes Recettes : toutes vos recettes avec leur coût, leur rendement et des actions rapides."],
         ["list", [

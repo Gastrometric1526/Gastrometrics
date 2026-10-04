@@ -58,6 +58,7 @@ export default {
         ["h3", "Opret din konto"],
         ["p", "Tilmeldingen er en guide i 5 trin: dine oplysninger og adgangskode, dine professionelle oplysninger (land, valuta, virksomhedstype og -størrelse), den <strong>plan</strong> du vil bruge, accept af vilkårene og et resumé. Kommer du fra prissiden med en plan allerede valgt, er den forvalgt."],
         ["p", "Det sidste trin har et valgfrit felt til at <strong>modtage nyheder og påmindelser via e-mail</strong>. Det er ikke markeret fra start, og du kan ændre det når som helst under Indstillinger (kapitel 15)."],
+        ["p", "Når du logger ind, er feltet <strong>Husk mig på denne enhed</strong> markeret: din session forbliver åben. Fjern markeringen på en delt computer, så lukkes sessionen, når du lukker browseren."],
         ["h3", "Opret en virksomhed"],
         ["steps", [
           "<strong>Grunddata og logo.</strong> Navn, beskrivelse, virksomhedstype og eventuelt et logo, der vises i toppen af dine PDF'er.",
@@ -75,6 +76,7 @@ export default {
           "<strong>Nøgletal</strong>: antal opskrifter, ingredienser, virksomheder og gennemsnitlig kostpris på tværs af alle dine virksomheder.",
           "<strong>Hurtige handlinger</strong>: en genvej pr. modul, så du kommer ind uden sidemenuen.",
         ]],
+        ["p", "Mens du kommer i gang, viser Dashboardet <strong>Din vej</strong>: tilføj ingredienser, opret din første opskrift, nå 3 opskrifter, og udforsk det nye. Hvert trin fører dig direkte derhen. Du kan skjule det med X."],
         ["h3", "Sidemenuen"],
         ["table", ["Afsnit", "Hvad det bruges til"], [
           ["Dashboard", "Overblik over hele din konto og det, der kræver opmærksomhed."],
@@ -89,6 +91,7 @@ export default {
           ["Rapporter", "Overblik over virksomheden og økonomi."],
           ["Virksomheder", "Opret, åbn og slet virksomheder."],
         ]],
+        ["info", "Menuen udfyldes undervejs", "For ikke at overvælde dig starter menuen med det vigtigste. Med din første opskrift dukker Rapporter og Salg op; med 3 opskrifter Lager, Menuer, Indkøbsordrer og Team, markeret \"Ny\". Vil du se det hele fra start, så brug \"Vis alle moduler nu\" nederst i menuen."],
         ["info", "Indstillinger og Min plan", "Indstillinger er ikke en side: det er et vindue, du åbner fra enhver skærm med tandhjulsikonet. Din plan og dit abonnement findes under <strong>Min plan</strong> nederst i menuen."],
       ],
     },
@@ -116,6 +119,7 @@ export default {
         ["p", "Køber du pr. kasse, sæk, flaske, dåse, pose eller glas, så gem hvor meget hver pakke indeholder. Så står der »4 kasser« på dine indkøbsordrer i stedet for en mængde i gram, som ingen ville bestille."],
         ["h3", "Import fra Excel"],
         ["p", "Du kan indlæse eller eksportere hele din database i Excel med en skabelon, som appen laver ud fra sine rigtige kategorier og enheder. Kolonneoverskrifter genkendes på alle 6 sprog i appen."],
+        ["p", "Den guidede tur i Ingredienser slutter med at åbne denne import, så du kan indlæse hele listen på én gang. Du kan også tilføje dem én ad gangen med \"Ny ingrediens\"."],
         ["h3", "Svind"],
         ["p", "Svind er det, du betaler for, men ikke kan bruge: skræller, ben, afskær, fordampning. Under <strong>Administrer Svind</strong> slår du systemet til og vælger for hver ingrediens enten den typiske procent for dens kategori eller din egen (eller en fast mængde)."],
         ["formula", "Reel kostpris med svind", ["Brugbart indhold = Nettoindhold × (1 − svind %)", "Pris pr. enhed = Indkøbspris ÷ Brugbart indhold"], "Du betaler for det hele, men bruger kun en del, så den reelle pris pr. enhed stiger. Slår du svind fra, vender alt tilbage til de oprindelige værdier."],
@@ -184,6 +188,10 @@ export default {
           "<strong>Gendan original opskrift</strong> går tilbage til den originale størrelse. Tryk derefter Gem for at bekræfte.",
         ]],
         ["warn", "Mistænkeligt udbytte", "Hvis en ingrediens målt i »stk« er 20 gange det angivne udbytte eller mere (for eksempel 200 æg til et udbytte på 1), ser du en gul advarsel i arket og i PDF'en. Den blokerer ikke noget: den hjælper dig bare med at fange en tastefejl."],
+        ["h3", "Importér en skrevet opskrift"],
+        ["p", "Under Mine opskrifter gør <strong>Importér opskrift</strong> en skrevet opskrift til et opskriftsark: indsæt den, som du har den, upload en fil (.txt, .csv, .md) eller <strong>tag et foto</strong> med mobilens kamera. Appen genkender navn, portioner, ingredienser med mængde og enhed (200 g, 2 kopper, ½ kg, \"efter smag\", tabeller, lister…) og trinene på alle 6 sprog."],
+        ["tip", "Du gennemgår den, før den åbnes", "Hver ingrediens matches med din database, og mængden omregnes til ingrediensens enhed. Dem, du ikke har, kan oprettes (uden pris; du udfylder den senere under Ingredienser), vælges fra din liste eller springes over. Intet gemmes, før du trykker Gem i Opskriftsarket."],
+        ["info", "Fotos af opskrifter", "Fotoet læses på din egen telefon eller computer (det uploades ikke til nogen server). Du ser fotoet ved siden af den læste tekst med læsesikkerheden og de usikre linjer markeret: tryk på dem for at rette dem, før du fortsætter. Det bedste resultat får du med et foto taget lige forfra, i godt lys og uden skygger, og ved at vælge det sprog, opskriften er skrevet på."],
         ["h3", "Mine Opskrifter: duplikér, flyt og papirkurv"],
         ["figure", "06-mis-recetas.jpg", "Mine Opskrifter: alle dine opskrifter med kostpris, udbytte og hurtige handlinger."],
         ["list", [

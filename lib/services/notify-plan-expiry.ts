@@ -23,6 +23,7 @@ import { renderEmailTemplate, escapeHtml } from "./email-templates"
 import { sendPlanChangedEmail } from "./notify-billing"
 import { recordPlanChangeNotice } from "./plan-change-notice"
 import { getEmailLabels, fillLabel, normalizeEmailLang, EMAIL_DATE_LOCALES } from "@/lib/i18n/email-labels"
+import { withEmailTracking } from "@/lib/email-tracking"
 
 async function getAccountEmailAndLanguage(accountId: string): Promise<{ email: string; language: string } | null> {
   const admin = getSupabaseAdminClient()
@@ -66,7 +67,7 @@ export async function sendPlanExpiryReminder(accountId: string, planSlug: string
     footnote: labels.e09_footnote,
     footerAddress: labels.footer_address,
     footer2: labels.e09_footer2,
-    actionUrl: `${siteUrl}/mi-plan`,
+    actionUrl: withEmailTracking(`${siteUrl}/mi-plan`, "plan_expiry"),
   })
 
   const resend = new Resend(process.env.RESEND_API_KEY)

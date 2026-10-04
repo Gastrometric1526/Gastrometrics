@@ -40,3 +40,6 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# OCR del importador de recetas: se copia de node_modules en postinstall/prebuild (docs/146)
+/public/ocr

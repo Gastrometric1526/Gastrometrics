@@ -8,7 +8,9 @@
     "lint": "next lint",
     "start": "next start",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "postinstall": "node scripts/copy-ocr-assets.mjs",
+    "prebuild": "node scripts/copy-ocr-assets.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -42,6 +44,12 @@
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",
     "@tanstack/react-virtual": "^3.14.9",
+    "@tesseract.js-data/chi_sim": "^1.0.0",
+    "@tesseract.js-data/dan": "^1.0.0",
+    "@tesseract.js-data/eng": "^1.0.0",
+    "@tesseract.js-data/fra": "^1.0.0",
+    "@tesseract.js-data/por": "^1.0.0",
+    "@tesseract.js-data/spa": "^1.0.0",
     "@vercel/analytics": "^2.0.1",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
@@ -73,6 +81,7 @@
     "stripe": "^22.5.0",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
+    "tesseract.js": "^7.0.0",
     "uuid": "^14.0.1",
     "vaul": "^1.1.2",
     "xlsx": "^0.18.5",

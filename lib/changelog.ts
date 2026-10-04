@@ -21,6 +21,71 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-04-b",
+    content: {
+      es: {
+        title: "Importa tus recetas y empieza más fácil",
+        items: [
+          "Nuevo: «Importar receta» en Mis Recetas. Pega una receta tal como la tienes escrita (o sube un archivo) y se convierte en una ficha técnica, con los ingredientes de tu base y las cantidades convertidas a su unidad.",
+          "También puedes tomarle una foto a la receta con la cámara del celular: la app lee el texto, te marca las líneas dudosas para que las corrijas y lo convierte en ficha técnica. La foto se lee en tu propio dispositivo.",
+          "El menú se va completando paso a paso: los módulos avanzados aparecen al crear tus primeras recetas, y el Dashboard te muestra «Tu camino». Si quieres verlo todo, hay un botón para mostrar todos los módulos.",
+          "El recorrido de Ingredientes termina abriendo la importación masiva, para cargar toda tu lista de una vez (también puedes seguir agregándolos uno por uno).",
+          "Nueva casilla «Recuérdame en este dispositivo» al iniciar sesión.",
+        ],
+      },
+      en: {
+        title: "Import your recipes and get started more easily",
+        items: [
+          "New: \"Import recipe\" in My Recipes. Paste a recipe as you have it written (or upload a file) and it becomes a recipe sheet, with your database ingredients and quantities converted to their unit.",
+          "You can also take a photo of the recipe with your phone camera: the app reads the text, highlights doubtful lines for you to fix and turns it into a recipe sheet. The photo is read on your own device.",
+          "The menu fills in step by step: advanced modules appear as you create your first recipes, and the Dashboard shows \"Your path\". To see everything, there's a button to show all modules.",
+          "The Ingredients tour now ends by opening bulk import, so you can load your whole list at once (you can still add them one by one).",
+          "New \"Remember me on this device\" box when signing in.",
+        ],
+      },
+      da: {
+        title: "Importér dine opskrifter, og kom lettere i gang",
+        items: [
+          "Nyt: \"Importér opskrift\" under Mine opskrifter. Indsæt en opskrift, som du har den (eller upload en fil), og den bliver til et opskriftsark med ingredienserne fra din database og mængderne omregnet til deres enhed.",
+          "Du kan også tage et foto af opskriften med mobilens kamera: appen læser teksten, markerer usikre linjer, så du kan rette dem, og gør det til et opskriftsark. Fotoet læses på din egen enhed.",
+          "Menuen udfyldes trin for trin: avancerede moduler dukker op, når du opretter dine første opskrifter, og Dashboardet viser \"Din vej\". Vil du se det hele, er der en knap til at vise alle moduler.",
+          "Turen i Ingredienser slutter nu med at åbne masseimport, så du kan indlæse hele listen på én gang (du kan stadig tilføje dem én ad gangen).",
+          "Nyt felt \"Husk mig på denne enhed\" ved login.",
+        ],
+      },
+      fr: {
+        title: "Importez vos recettes et démarrez plus facilement",
+        items: [
+          "Nouveau : « Importer une recette » dans Mes recettes. Collez une recette telle que vous l'avez écrite (ou téléversez un fichier) et elle devient une fiche technique, avec les ingrédients de votre base et les quantités converties dans leur unité.",
+          "Vous pouvez aussi photographier la recette avec l'appareil photo du téléphone : l'application lit le texte, signale les lignes douteuses pour que vous les corrigiez et en fait une fiche technique. La photo est lue sur votre propre appareil.",
+          "Le menu se complète étape par étape : les modules avancés apparaissent quand vous créez vos premières recettes, et le Dashboard affiche « Votre parcours ». Pour tout voir, un bouton affiche tous les modules.",
+          "La visite des Ingrédients se termine désormais en ouvrant l'import en masse, pour charger toute votre liste d'un coup (vous pouvez toujours les ajouter un par un).",
+          "Nouvelle case « Se souvenir de moi sur cet appareil » à la connexion.",
+        ],
+      },
+      pt: {
+        title: "Importe suas receitas e comece mais fácil",
+        items: [
+          "Novo: «Importar receita» em Minhas receitas. Cole uma receita como você a tem escrita (ou envie um arquivo) e ela vira uma ficha técnica, com os ingredientes da sua base e as quantidades convertidas para a unidade deles.",
+          "Você também pode tirar uma foto da receita com a câmera do celular: o app lê o texto, marca as linhas duvidosas para você corrigir e transforma em ficha técnica. A foto é lida no seu próprio dispositivo.",
+          "O menu vai se completando passo a passo: os módulos avançados aparecem ao criar suas primeiras receitas, e o Dashboard mostra «Seu caminho». Para ver tudo, há um botão para mostrar todos os módulos.",
+          "O tour de Ingredientes agora termina abrindo a importação em massa, para cadastrar toda a lista de uma vez (você ainda pode adicioná-los um por um).",
+          "Nova caixa «Lembrar de mim neste dispositivo» ao entrar.",
+        ],
+      },
+      zh: {
+        title: "导入你的配方，更轻松地开始",
+        items: [
+          "新功能：“我的配方”中的“导入配方”。按原样粘贴配方（或上传文件），即可转换为技术配方表，自动匹配你原料库中的原料，并把数量换算为对应单位。",
+          "你也可以用手机相机给配方拍照：应用会识别文字、标出不确定的行供你修正，并转换为技术配方表。照片在你自己的设备上识别。",
+          "菜单会逐步完善：创建最初的几个配方后会出现高级模块，仪表板会显示“你的 Gastrometrics 之路”。想看到全部，可以点击按钮显示所有模块。",
+          "原料引导教程现在结束时会打开批量导入，让你一次性导入整份清单（仍可逐个添加）。",
+          "登录时新增“在此设备上记住我”选项。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-10-04",
     content: {
       es: {

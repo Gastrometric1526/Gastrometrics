@@ -15,10 +15,13 @@ import { GastrometricsLogo } from "@/components/gastrometrics-logo"
 import { setCurrentPlanSlug } from "@/lib/plan-access"
 import { bootstrapPasswordHashIfMissing } from "@/lib/utils/password-hash"
 import { consumePendingSignupPlan } from "@/lib/pending-signup-plan"
+import { Checkbox } from "@/components/ui/checkbox"
+import { setRememberChoice } from "@/lib/remember-me"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [rememberMe, setRememberMe] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [loginError, setLoginError] = useState("")
   const [isDevLoggingIn, setIsDevLoggingIn] = useState(false)
@@ -53,6 +56,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password)
+      setRememberChoice(rememberMe)
       // Cuentas legacy/demo nunca pasan por /signup, así que no tienen una contraseña
       // guardada todavía para el chequeo de "confirma tu contraseña" al cambiar el
       // correo en Configuración — la primera contraseña real que alguien escriba aquí
@@ -115,6 +119,7 @@ export default function LoginPage() {
       // que ese cliente se enterara, y el guard de autenticación rebotaba de vuelta a
       // /login. Una navegación dura fuerza al cliente a releer la sesión real de las
       // cookies desde cero.
+      setRememberChoice(rememberMe)
       window.location.href = "/dashboard"
     } catch (error) {
       console.error("Dev login error:", error)
@@ -189,6 +194,13 @@ export default function LoginPage() {
                   />
                 </div>
               </div>
+
+              {/* Recuérdame (docs/145): marcado = la sesión dura como siempre; desmarcado =
+                  se cierra al cerrar el navegador (lib/remember-me.ts). */}
+              <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+                <Checkbox checked={rememberMe} onCheckedChange={(v) => setRememberMe(v === true)} />
+                {t("login_remember_me")}
+              </label>
 
               {loginError && (
                 <p className="text-sm text-destructive text-center" role="alert">

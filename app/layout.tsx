@@ -18,6 +18,7 @@ import { AnalyticsTracker } from "@/components/analytics-tracker"
 import { PresenceTracker } from "@/components/presence-tracker"
 import { ModuleActivityTracker } from "@/components/module-activity-tracker"
 import { PwaBackGuard } from "@/components/pwa-back-guard"
+import { EmailClickTracker } from "@/components/email-click-tracker"
 
 // Rediseño visual (ver docs/79): DM Sans en vez de Inter — geométrica y cercana, sin
 // perder cobertura de es/en/da/fr/pt (latín + latín extendido). zh sigue resolviendo
@@ -111,6 +112,7 @@ export default function RootLayout({
                   <TeamPreviewBanner />
                   <LegalUpdateBanner />
                   <AnalyticsTracker />
+                  <EmailClickTracker />
                   <PresenceTracker />
                   <Suspense fallback={null}>
                     <ModuleActivityTracker />

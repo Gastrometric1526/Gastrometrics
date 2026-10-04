@@ -13,6 +13,7 @@
  * uno duplicado.
  */
 
+import { hashString } from "./hash-string"
 import { Resend } from "resend"
 import { sendWithRetry } from "./send-email"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
@@ -21,6 +22,7 @@ import { getEmailLabels, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { buildUnsubscribeUrl } from "@/lib/email-unsubscribe"
 import { TRUSTPILOT_URL } from "@/lib/site-links"
 import { ACTIVATION_VARIANTS, type ActivationVariant } from "@/lib/i18n/activation-email-variants"
+import { withEmailTracking } from "@/lib/email-tracking"
 
 export type ActivationEmailType =
   | "first_recipe_reminder"
@@ -63,10 +65,7 @@ function unsubscribeHeaders(accountId: string): Record<string, string> {
  * textos distintos. 0 = el texto de email-labels.ts; 1 y 2 = ACTIVATION_VARIANTS.
  */
 export function activationVariantFor(accountId: string, emailType: ActivationEmailType, language: string): ActivationVariant | null {
-  let h = 0
-  const key = `${accountId}:${emailType}`
-  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0
-  const pick = h % 3
+  const pick = hashString(`${accountId}:${emailType}`) % 3
   return pick === 0 ? null : ACTIVATION_VARIANTS[normalizeEmailLang(language)][emailType][pick - 1]
 }
 
@@ -123,7 +122,7 @@ async function sendActivationEmail(input: {
     footnote: labels.e07_footnote,
     footerAddress: labels.footer_address,
     footer2: labels.e07_footer2,
-    actionUrl: `${siteUrl}${input.actionPath}`,
+    actionUrl: withEmailTracking(`${siteUrl}${input.actionPath}`, input.emailType),
   })
 
   const resend = new Resend(process.env.RESEND_API_KEY)
@@ -217,7 +216,7 @@ export async function sendFourHourExperienceSurvey(accountId: string): Promise<v
     footnote: labels.e10_footnote,
     footerAddress: labels.footer_address,
     footer2: labels.e10_footer2,
-    commentUrl: `${siteUrl}/contacto?type=experiencia`,
+    commentUrl: withEmailTracking(`${siteUrl}/contacto?type=experiencia`, "four_hour_experience"),
     trustpilotUrl: process.env.TRUSTPILOT_URL || TRUSTPILOT_URL,
   })
 

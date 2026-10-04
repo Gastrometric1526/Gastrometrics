@@ -13,11 +13,11 @@ import { CONTACT_EMAIL, SOCIAL_LINKS, TRUSTPILOT_URL } from "@/lib/site-links"
 export const metadata: Metadata = {
   title: "Gastrometrics — Costeo, fichas técnicas e inventario para restaurantes",
   description:
-    "Calcula el costo real de cada plato, controla tu inventario y arma fichas técnicas sin hojas de cálculo. Gratis para empezar.",
+    "Sabe cuánto ganas en cada plato: importa tus recetas (texto, archivo o foto), calcula el costo real con merma y el precio sugerido. Gratis para siempre, sin tarjeta.",
   openGraph: {
     title: "Gastrometrics — Costeo, fichas técnicas e inventario para restaurantes",
     description:
-      "Calcula el costo real de cada plato, controla tu inventario y arma fichas técnicas sin hojas de cálculo. Gratis para empezar.",
+      "Sabe cuánto ganas en cada plato: importa tus recetas (texto, archivo o foto), calcula el costo real con merma y el precio sugerido. Gratis para siempre, sin tarjeta.",
   },
 }
 

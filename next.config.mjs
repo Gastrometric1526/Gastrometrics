@@ -83,7 +83,10 @@ const nextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+              // 'wasm-unsafe-eval' (docs/146): solo permite compilar WebAssembly — lo
+              // necesita el OCR del importador de recetas (tesseract.js, servido desde
+              // /ocr). No habilita eval() de JavaScript.
+              `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${isDev ? " 'unsafe-eval'" : ""}`,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob:",
               "font-src 'self' data:",

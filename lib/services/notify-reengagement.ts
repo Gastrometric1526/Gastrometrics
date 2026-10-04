@@ -37,6 +37,7 @@
  * crons y ya están usados). Si la migración 0032 no se corrió, no hace nada.
  */
 
+import { hashString } from "./hash-string"
 import { Resend } from "resend"
 import { sendWithRetry } from "./send-email"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
@@ -49,6 +50,7 @@ import {
 } from "@/lib/i18n/reengagement-email-labels"
 import { REENGAGEMENT_VARIANTS } from "@/lib/i18n/reengagement-email-variants"
 import { buildUnsubscribeUrl } from "@/lib/email-unsubscribe"
+import { withEmailTracking, isClickRow } from "@/lib/email-tracking"
 
 const HOUR_MS = 60 * 60 * 1000
 const DAY_MS = 24 * HOUR_MS
@@ -96,12 +98,6 @@ const BASE_PRIORITY: ReengagementType[] = ["inventory_count", "review_reports", 
 /** Cuántas versiones de texto hay por tipo e idioma (la 0 es REENGAGEMENT_COPY). */
 export function reengagementVariantCount(type: ReengagementType, language?: string | null): number {
   return 1 + REENGAGEMENT_VARIANTS[normalizeEmailLang(language)][type].length
-}
-
-function hashString(value: string): number {
-  let h = 0
-  for (let i = 0; i < value.length; i++) h = (h * 31 + value.charCodeAt(i)) >>> 0
-  return h
 }
 
 /**
@@ -346,6 +342,20 @@ export async function fetchAllByIds<T>(
   return rows
 }
 
+/** Todas las filas de una consulta sin filtro por ids, de 1000 en 1000 (tope de PostgREST). */
+export async function fetchAllPages<T>(
+  build: (from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: unknown }>,
+): Promise<T[]> {
+  const rows: T[] = []
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await build(from, from + PAGE_SIZE - 1)
+    if (error) throw error
+    const page = (data ?? []) as T[]
+    rows.push(...page)
+    if (page.length < PAGE_SIZE) return rows
+  }
+}
+
 export function maxTime(...values: (string | null | undefined | number)[]): number | null {
   let best: number | null = null
   for (const v of values) {
@@ -512,11 +522,12 @@ export async function runReengagementReminders(options: { dryRun?: boolean } = {
   // Correos de valor recientes (docs/144). Si la migración 0033 no se corrió, no hay nada.
   const engagementRecent = await admin
     .from("engagement_emails_sent")
-    .select("account_id, sent_at")
+    .select("account_id, email_type, sent_at")
     .in("account_id", ids.slice(0, 1000))
     .gte("sent_at", since(R.globalCooldownDays))
   const otherSentBy = new Map<string, number[]>()
-  for (const row of engagementRecent.error ? [] : ((engagementRecent.data ?? []) as { account_id: string; sent_at: string }[])) {
+  for (const row of engagementRecent.error ? [] : ((engagementRecent.data ?? []) as { account_id: string; email_type: string; sent_at: string }[])) {
+    if (isClickRow(row.email_type)) continue // un clic no es un envío (lib/email-tracking.ts)
     const list = otherSentBy.get(row.account_id) ?? []
     list.push(new Date(row.sent_at).getTime())
     otherSentBy.set(row.account_id, list)
@@ -610,7 +621,7 @@ export async function runReengagementReminders(options: { dryRun?: boolean } = {
       type: decision.type,
       language: account.language,
       vars: { ...decision.vars, name: account.name },
-      actionUrl: `${siteUrl}${decision.actionPath}`,
+      actionUrl: withEmailTracking(`${siteUrl}${decision.actionPath}`, decision.type),
       unsubscribeUrl,
       variant,
     })

@@ -12,6 +12,7 @@ import { setCurrentPlanOverrides } from "@/lib/plan-overrides"
 import { refreshBusinesses } from "@/lib/storage/businesses"
 import { ensureTeamMembersLoaded, ensureMyMembershipsLoaded } from "@/lib/storage/team"
 import { tryCarryLandingDemoIntoAccount } from "@/lib/landing-demo-carryover"
+import { shouldEndSessionOnLaunch, clearRememberChoice } from "@/lib/remember-me"
 
 interface User {
   name: string
@@ -209,8 +210,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Antes de preguntar por la sesión, procesa un posible link de confirmación de
     // registro o recuperación de contraseña (ver lib/supabase/consume-auth-hash.ts) —
     // si no se hace esto primero, getSession() nunca ve la sesión que ese link trae.
-    consumeAuthHashFromUrl().finally(() => {
+    consumeAuthHashFromUrl().finally(async () => {
       if (cancelled) return
+      // "Recuérdame" desmarcado y el navegador se cerró desde entonces: se cierra la
+      // sesión antes de leerla (docs/145, lib/remember-me.ts).
+      if (shouldEndSessionOnLaunch()) {
+        clearRememberChoice()
+        await supabase.auth.signOut().catch(() => null)
+      }
       supabase.auth.getSession().then(({ data }) => {
         applySession(data.session).finally(() => {
           if (!cancelled) setAuthChecked(true)

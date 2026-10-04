@@ -9,11 +9,42 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { getLocalizedPlans } from "@/lib/plans"
+import type { TranslationKey } from "@/lib/i18n/translations"
+
+// Qué plan encaja con cada tipo de negocio (docs/145) — funciones reales de cada plan.
+const BUSINESS_FIT = [
+  { key: "chef", icon: ChefHat, plan: "home-cook" },
+  { key: "catering", icon: UtensilsCrossed, plan: "chef-de-partie" },
+  { key: "bar", icon: Wine, plan: "chef-de-partie" },
+  { key: "restaurant", icon: Store, plan: "sous-chef" },
+  { key: "group", icon: Building2, plan: "chef-ejecutivo" },
+] as const
 import { useLanguage } from "@/contexts/language-context"
 import { AnimatedNumber } from "@/components/animated-number"
 import { LandingAdminPdfPreview } from "@/components/landing-admin-pdf-preview"
 import { LandingRecipeDemo } from "@/components/landing-recipe-demo"
-import { ChefHat, Calculator, BarChart3, ArrowRight, Star, CheckCircle2, Smartphone, Download } from "lucide-react"
+import {
+  ChefHat,
+  Calculator,
+  BarChart3,
+  ArrowRight,
+  Star,
+  CheckCircle2,
+  Smartphone,
+  Download,
+  UtensilsCrossed,
+  Store,
+  Building2,
+  Wine,
+  Tag,
+  RefreshCw,
+  Camera,
+  ShoppingCart,
+  Gift,
+  CreditCard,
+  ShieldCheck,
+  LifeBuoy,
+} from "lucide-react"
 import { TRUSTPILOT_URL } from "@/lib/site-links"
 
 // Landing recortada — docs/80-rediseno-visual-y-logo-oficial.md fue el diseño
@@ -26,6 +57,10 @@ import { TRUSTPILOT_URL } from "@/lib/site-links"
 // capturas (Inventario/Menu Engineering/tipos de PDF) — ver los comentarios en cada
 // sección para el detalle de qué se fusionó y qué se cortó del todo. El FAQ se
 // conserva (responde preguntas reales de compra, no vende funciones).
+// docs/147 (reescritura de contenido): hero con un CTA a /signup y la demo como salida
+// de menor compromiso, "Tus primeros 10 minutos" (qué hace la persona al crear la
+// cuenta), seis beneficios que reflejan la app actual, reversión de riesgo, nota del
+// fundador en lugar de testimonios de relleno y dos preguntas nuevas en el FAQ.
 export function HomeContent() {
   const { t, language } = useLanguage()
   const plans = getLocalizedPlans(language)
@@ -52,10 +87,23 @@ export function HomeContent() {
   // a lo que el propio PDF señala como más sólido del producto: costeo real, ventas
   // sin POS (docs/90, "una de las mejores decisiones de producto"), y el motor de
   // recálculo en cascada (antes enterrado como la frase de cierre de la grilla vieja).
+  // docs/147: seis resultados (no módulos) que cubren lo que la app hace hoy —
+  // importación de recetas por texto/foto, precio sugerido, ventas sin POS e inventario.
   const benefits = [
     { icon: Calculator, titleKey: "landing_benefit1_title", descKey: "landing_benefit1_desc" },
-    { icon: ChefHat, titleKey: "landing_benefit2_title", descKey: "landing_benefit2_desc" },
-    { icon: BarChart3, titleKey: "landing_benefit3_title", descKey: "landing_benefit3_desc" },
+    { icon: Tag, titleKey: "landing_benefit2_title", descKey: "landing_benefit2_desc" },
+    { icon: RefreshCw, titleKey: "landing_benefit3_title", descKey: "landing_benefit3_desc" },
+    { icon: Camera, titleKey: "landing_benefit4_title", descKey: "landing_benefit4_desc" },
+    { icon: BarChart3, titleKey: "landing_benefit5_title", descKey: "landing_benefit5_desc" },
+    { icon: ShoppingCart, titleKey: "landing_benefit6_title", descKey: "landing_benefit6_desc" },
+  ] as const
+
+  // Reversión de riesgo (docs/147): responde las objeciones antes de que aparezcan.
+  const risks = [
+    { icon: Gift, titleKey: "landing_risk1_title", descKey: "landing_risk1_desc" },
+    { icon: CreditCard, titleKey: "landing_risk2_title", descKey: "landing_risk2_desc" },
+    { icon: ShieldCheck, titleKey: "landing_risk3_title", descKey: "landing_risk3_desc" },
+    { icon: LifeBuoy, titleKey: "landing_risk4_title", descKey: "landing_risk4_desc" },
   ] as const
 
   // Mismas tres cifras que la tarjeta real de Estadísticas → Finanzas
@@ -67,12 +115,6 @@ export function HomeContent() {
   const realCostPercent = 34.8
   const theoreticalCostPercent = 30.6
   const costVariance = realCostPercent - theoreticalCostPercent
-
-  const trustCards = [
-    { quoteKey: "landing_trust1_quote", nameKey: "landing_trust1_name", businessKey: "landing_trust1_business", stars: 5 },
-    { quoteKey: "landing_trust2_quote", nameKey: "landing_trust1_name", businessKey: "landing_trust2_business", stars: 5 },
-    { quoteKey: "landing_trust3_quote", nameKey: "landing_trust1_name", businessKey: "landing_trust3_business", stars: 4 },
-  ] as const
 
   const sources = ["landing_source1", "landing_source2", "landing_source3", "landing_source4"] as const
 
@@ -93,24 +135,19 @@ export function HomeContent() {
               <span className="text-primary">{t("landing_hero_title_line2")}</span>
             </h1>
             <p className="text-lg text-text-3 max-w-xl mx-auto">{t("landing_hero_desc")}</p>
-            {/* CTA único (hallazgo de auditoría externa, ver docs/98: "vende módulos
-                en vez de un resultado claro"; PDF 3.2 pide "CTA único"). "Ver planes"
-                pasa de botón a link de texto — sigue accesible, pero ya no compite
-                visualmente con la acción principal.
-                BUG CORREGIDO: el botón decía "Calcular mi primer plato" pero llevaba
-                directo a /signup sin calcular nada — promesa rota, señalada por una
-                auditoría externa. Ahora baja a la demo real (#calculadora, ver
-                LandingRecipeDemo), que sí calcula, y desde ahí es donde se invita a
-                crear cuenta para guardar el resultado. */}
+            {/* Una sola acción principal (docs/98: "CTA único"): crear la cuenta, con
+                el texto exacto de lo que pasa ("Crear mi cuenta gratis" → /signup).
+                Debajo, en texto, la salida de menor compromiso para quien todavía duda:
+                la demo real (#calculadora, LandingRecipeDemo), que sí calcula — docs/147. */}
             <div className="flex flex-col items-center gap-3">
-              <Link href="#calculadora">
+              <Link href="/signup">
                 <Button size="lg" className="text-base px-6 py-3 bg-primary text-primary-foreground hover:bg-primary/90">
                   {t("landing_hero_cta_primary")}
                 </Button>
               </Link>
-              <Link href="/planes" className="text-sm text-text-3 hover:text-primary inline-flex items-center gap-1">
+              <Link href="#calculadora" className="text-sm text-text-3 hover:text-primary inline-flex items-center gap-1">
                 {t("landing_hero_cta_secondary")}
-                <ArrowRight className="h-3.5 w-3.5" />
+                <ArrowRight className="h-3.5 w-3.5 rotate-90" />
               </Link>
             </div>
             <p className="text-sm text-text-4 flex flex-wrap justify-center gap-x-2">
@@ -130,6 +167,35 @@ export function HomeContent() {
               que trae el PDF administrativo, ya que ahí están todos los datos juntos). */}
           <div className="max-w-3xl mx-auto">
             <LandingAdminPdfPreview />
+          </div>
+        </section>
+
+        {/* Tus primeros 10 minutos (docs/147) — el mismo camino que "Tu camino" del
+            Dashboard: quien llega sabe exactamente qué va a hacer al crear la cuenta y
+            cuánto le toma (reduce el esfuerzo percibido). Reemplaza los "tres pasos" que
+            terminaban en comparar inventario cada semana, que es lo último, no lo primero. */}
+        <section className="bg-canvas-alt border-y border-hairline">
+          <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 space-y-10">
+            <div className="max-w-2xl space-y-3">
+              <p className="text-xs font-medium uppercase tracking-[0.14em] text-primary">{t("landing_start_kicker")}</p>
+              <h2 className="text-3xl md:text-[40px] font-semibold tracking-[-0.038em] text-foreground">{t("landing_steps_title")}</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-hairline border border-hairline rounded-2xl overflow-hidden">
+              {steps.map((step, i) => (
+                <div key={step.titleKey} className="bg-card p-6 space-y-3">
+                  <span className="text-text-4 text-sm tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+                  <p className="text-lg font-semibold text-foreground">{t(step.titleKey)}</p>
+                  <p className="text-sm text-text-3 leading-relaxed">{t(step.descKey)}</p>
+                  <Badge variant="secondary" className="bg-secondary text-muted-foreground font-medium">{t(step.timeKey)}</Badge>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+              <p className="text-sm text-text-3 max-w-2xl">{t("landing_start_reveal")}</p>
+              <Link href="/signup" className="shrink-0">
+                <Button className="bg-primary text-primary-foreground hover:bg-primary/90">{t("landing_start_cta")}</Button>
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -212,28 +278,7 @@ export function HomeContent() {
           </Card>
         </section>
 
-        {/* Tres pasos — con tiempos honestos (docs/03). */}
-        <section className="bg-canvas-alt border-y border-hairline">
-          <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 space-y-10">
-            <h2 className="text-3xl md:text-[40px] font-semibold tracking-[-0.038em] text-foreground max-w-2xl">{t("landing_steps_title")}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-hairline border border-hairline rounded-2xl overflow-hidden">
-              {steps.map((step, i) => (
-                <div key={step.titleKey} className="bg-card p-6 space-y-3">
-                  <span className="text-text-4 text-sm tabular-nums">{String(i + 1).padStart(2, "0")}</span>
-                  <p className="text-lg font-semibold text-foreground">{t(step.titleKey)}</p>
-                  <p className="text-sm text-text-3 leading-relaxed">{t(step.descKey)}</p>
-                  <Badge variant="secondary" className="bg-secondary text-muted-foreground font-medium">{t(step.timeKey)}</Badge>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Tres beneficios — resultado, no módulos (ver comentario del array `benefits`
-            arriba). Reemplaza tanto la grilla de seis módulos como la sección completa
-            "Así se ve por dentro" (capturas de Inventario/Menu Engineering/PDFs) que
-            vendían funciones en vez de un resultado — hallazgo de auditoría externa,
-            ver docs/98. */}
+        {/* Beneficios — resultado, no módulos (ver comentario del array `benefits`). */}
         <section className="bg-canvas-alt border-y border-hairline">
           <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 space-y-10">
             <div className="max-w-2xl space-y-3">
@@ -250,6 +295,24 @@ export function HomeContent() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* Empezar no te cuesta nada (docs/147) — reversión de riesgo justo después de
+            los beneficios, cuando aparece la duda "¿y cuánto me cuesta probar?". */}
+        <section className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 space-y-10">
+          <div className="max-w-2xl space-y-3">
+            <h2 className="text-3xl md:text-[40px] font-semibold tracking-[-0.038em] text-foreground">{t("landing_risk_title")}</h2>
+            <p className="text-text-3">{t("landing_risk_subtitle")}</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {risks.map((risk) => (
+              <div key={risk.titleKey} className="rounded-2xl border border-hairline bg-card p-5 space-y-2">
+                <risk.icon className="h-5 w-5 text-primary" />
+                <p className="text-base font-semibold text-foreground">{t(risk.titleKey)}</p>
+                <p className="text-sm text-text-3 leading-relaxed">{t(risk.descKey)}</p>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -280,6 +343,41 @@ export function HomeContent() {
               </ul>
             </div>
           </div>
+        </section>
+
+        {/* ¿Qué plan le sirve a cada negocio? (docs/145) — pedido del dueño: decir qué
+            funciones encajan con cada tipo de negocio según el plan. Las funciones
+            listadas son las reales de cada plan (lib/plans.ts → unlockedFeatures). */}
+        <section className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 space-y-10">
+          <div className="max-w-2xl space-y-3">
+            <h2 className="text-3xl md:text-[40px] font-semibold tracking-[-0.038em] text-foreground">{t("landing_fit_title")}</h2>
+            <p className="text-text-3">{t("landing_fit_subtitle")}</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {BUSINESS_FIT.map((fit) => {
+              const plan = plans.find((p) => p.slug === fit.plan)
+              return (
+                <div key={fit.key} className="rounded-2xl border border-hairline bg-card p-5 flex flex-col gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary-soft flex items-center justify-center">
+                    <fit.icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <p className="text-base font-semibold text-foreground leading-snug">{t(`landing_fit_${fit.key}_title` as TranslationKey)}</p>
+                  <p className="text-xs font-medium text-primary">
+                    {plan?.name} · {plan?.price}
+                  </p>
+                  <ul className="text-sm text-text-3 space-y-1.5 flex-1">
+                    {[1, 2, 3].map((n) => (
+                      <li key={n} className="flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                        <span>{t(`landing_fit_${fit.key}_f${n}` as TranslationKey)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )
+            })}
+          </div>
+          <p className="text-xs text-text-4">{t("landing_fit_note")}</p>
         </section>
 
         {/* Planes reales — los cinco de lib/plans.ts, Sous Chef destacado en negro. */}
@@ -335,53 +433,46 @@ export function HomeContent() {
           </div>
         </section>
 
-        {/* Trustpilot — espacio reservado, sin testimonios inventados (docs/03). */}
+        {/* Hecho en la cocina (docs/147) — antes aquí había tres testimonios de relleno
+            con la etiqueta "Espacio reservado", que en una landing pública restan
+            confianza. Ahora: la nota del fundador (autoridad y cercanía reales, sin
+            inventar reseñas) y el enlace a las reseñas verificadas de Trustpilot. */}
         <section className="bg-canvas-alt border-y border-hairline">
-          <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 space-y-10">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-              <div className="space-y-2">
-                <h2 className="text-3xl md:text-[40px] font-semibold tracking-[-0.038em] text-foreground">{t("landing_trust_title")}</h2>
-                <p className="text-text-3 flex items-center gap-2">
-                  <span className="flex text-primary">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-current" />
-                    ))}
-                  </span>
-                  {t("landing_trust_subtitle")}
-                </p>
+          <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-10 items-center">
+            <div className="space-y-4">
+              <h2 className="text-3xl md:text-[40px] font-semibold tracking-[-0.038em] text-foreground leading-[1.08]">{t("landing_trust_title")}</h2>
+              <p className="text-text-3 flex items-center gap-2">
+                <span className="flex text-primary">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-current" />
+                  ))}
+                </span>
+                {t("landing_trust_subtitle")}
+              </p>
+              <div className="flex flex-wrap gap-x-5 gap-y-2">
+                <a
+                  href={TRUSTPILOT_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1"
+                >
+                  {t("landing_trust_link")} <ArrowRight className="h-3.5 w-3.5" />
+                </a>
+                <Link href="/contacto" className="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1">
+                  {t("landing_founder_contact")} <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
               </div>
-              <a
-                href={TRUSTPILOT_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1 shrink-0"
-              >
-                {t("landing_trust_link")} <ArrowRight className="h-3.5 w-3.5" />
-              </a>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {trustCards.map((card, i) => (
-                <Card key={i} className="border-hairline bg-card">
-                  <CardContent className="p-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="flex text-primary">
-                        {Array.from({ length: card.stars }).map((_, j) => (
-                          <Star key={j} className="h-3.5 w-3.5 fill-current" />
-                        ))}
-                      </span>
-                      <Badge variant="secondary" className="bg-secondary text-muted-foreground font-medium">
-                        {t("landing_trust_placeholder_badge")}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-text-3 leading-relaxed">{t(card.quoteKey)}</p>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{t(card.nameKey)}</p>
-                      <p className="text-xs text-text-4">{t(card.businessKey)}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <figure className="rounded-2xl border border-hairline bg-card p-6 md:p-8 space-y-5">
+              <ChefHat className="h-6 w-6 text-primary" />
+              <blockquote className="text-lg md:text-xl text-foreground leading-relaxed tracking-[-0.01em]">
+                “{t("landing_founder_quote")}”
+              </blockquote>
+              <figcaption>
+                <p className="text-sm font-semibold text-foreground">{t("landing_founder_name")}</p>
+                <p className="text-xs text-text-4">{t("landing_founder_role")}</p>
+              </figcaption>
+            </figure>
           </div>
         </section>
 
@@ -405,6 +496,10 @@ export function HomeContent() {
                     <AccordionTrigger className="text-foreground hover:text-primary">{t("landing_faq_q2")}</AccordionTrigger>
                     <AccordionContent className="text-muted-foreground">{t("landing_faq_a2")}</AccordionContent>
                   </AccordionItem>
+                  <AccordionItem value="item-start" className="border-border">
+                    <AccordionTrigger className="text-foreground hover:text-primary">{t("landing_faq_q11")}</AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground">{t("landing_faq_a11")}</AccordionContent>
+                  </AccordionItem>
                   <AccordionItem value="item-req" className="border-border">
                     <AccordionTrigger className="text-foreground hover:text-primary">{t("landing_faq_q3")}</AccordionTrigger>
                     <AccordionContent className="text-muted-foreground">{t("landing_faq_a3")}</AccordionContent>
@@ -419,6 +514,10 @@ export function HomeContent() {
               </CardHeader>
               <CardContent>
                 <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="item-import" className="border-border">
+                    <AccordionTrigger className="text-foreground hover:text-primary">{t("landing_faq_q12")}</AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground">{t("landing_faq_a12")}</AccordionContent>
+                  </AccordionItem>
                   <AccordionItem value="item-3" className="border-border">
                     <AccordionTrigger className="text-foreground hover:text-primary">{t("landing_faq_q4")}</AccordionTrigger>
                     <AccordionContent className="text-muted-foreground">{t("landing_faq_a4")}</AccordionContent>

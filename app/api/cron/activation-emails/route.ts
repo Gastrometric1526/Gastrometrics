@@ -64,7 +64,7 @@ import {
 } from "@/lib/services/notify-activation"
 import { runPlanExpiryReminders, runExpiredPlanDowngrades } from "@/lib/services/notify-plan-expiry"
 import { runAccountDeletionPurge } from "@/lib/services/purge-deleted-accounts"
-import { runReengagementReminders } from "@/lib/services/notify-reengagement"
+import { runReengagementReminders, fetchAllPages } from "@/lib/services/notify-reengagement"
 import { sendDailySignupDigest } from "@/lib/services/notify-signup"
 import { runEngagementEmails } from "@/lib/services/notify-engagement"
 
@@ -201,14 +201,36 @@ export async function GET(request: Request) {
   // Planes asignados que ya vencieron: pasan a Foodie con correo y aviso (docs/139).
   const expiredDowngrades = await step("planes vencidos a Foodie", () => runExpiredPlanDowngrades())
 
-  const experienceSurvey = await step("encuesta de 4 horas", async () => {
-    const { data: presenceRows, error: presenceError } = await getSupabaseAdminClient()
-      .from("user_presence")
-      .select("user_id")
-      .gte("total_active_seconds", FOUR_HOURS_IN_SECONDS)
-    if (presenceError) throw presenceError
-    const ids = (presenceRows ?? []).map((r) => r.user_id)
-    return { candidates: ids.length, sent: await sendEach(ids, sendFourHourExperienceSurvey, "encuesta de 4 horas") }
+  // Encuesta de experiencia (docs/145): antes solo a las 4 h de uso real, y el 75 % de las
+  // cuentas no llega a 2 h — nadie la recibía. Ahora también con 3 recetas propias o 3
+  // días distintos de uso, lo que pase primero. Sigue saliendo una sola vez por cuenta.
+  const experienceSurvey = await step("encuesta de experiencia", async () => {
+    const admin = getSupabaseAdminClient()
+    // Paginado: recetas y actividad pasan de 1000 filas y PostgREST cortaría en silencio.
+    const [presenceRows, recipeRows, dayRows] = await Promise.all([
+      fetchAllPages<{ user_id: string }>((from, to) =>
+        admin.from("user_presence").select("user_id").gte("total_active_seconds", FOUR_HOURS_IN_SECONDS).order("user_id").range(from, to),
+      ),
+      fetchAllPages<{ owner_id: string }>((from, to) =>
+        admin.from("recipes").select("owner_id").eq("is_sub_recipe", false).order("id").range(from, to),
+      ),
+      fetchAllPages<{ user_id: string; created_at: string }>((from, to) =>
+        admin.from("activity_log").select("user_id, created_at").order("created_at").range(from, to),
+      ),
+    ])
+    const candidates = new Set(presenceRows.map((r) => r.user_id))
+    const recipeCount = new Map<string, number>()
+    for (const r of recipeRows) recipeCount.set(r.owner_id, (recipeCount.get(r.owner_id) ?? 0) + 1)
+    for (const [id, n] of recipeCount) if (n >= 3) candidates.add(id)
+    const days = new Map<string, Set<string>>()
+    for (const r of dayRows) {
+      const set = days.get(r.user_id) ?? new Set<string>()
+      set.add(r.created_at.slice(0, 10))
+      days.set(r.user_id, set)
+    }
+    for (const [id, set] of days) if (set.size >= 3) candidates.add(id)
+    const ids = [...candidates]
+    return { candidates: ids.length, sent: await sendEach(ids, sendFourHourExperienceSurvey, "encuesta de experiencia") }
   })
 
   const deletionPurge = await step("purga de cuentas eliminadas", () => runAccountDeletionPurge())

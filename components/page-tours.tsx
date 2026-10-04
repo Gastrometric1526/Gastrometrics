@@ -1,5 +1,7 @@
 "use client"
 
+import { useRef } from "react"
+
 import { useRouter } from "next/navigation"
 import { PageTour, type TourStep } from "@/components/page-tour"
 import { useLanguage } from "@/contexts/language-context"
@@ -82,9 +84,13 @@ export function FichaTecnicaTour({ hasIngredients }: { hasIngredients: boolean }
   return <PageTour steps={steps} storageKey="tour_completed_ficha-tecnica" />
 }
 
-export function IngredientesTour() {
+export function IngredientesTour({ onOpenImport }: { onOpenImport?: () => void } = {}) {
   const { t } = useLanguage()
   const router = useRouter()
+  // Terminar el recorrido abre la importación masiva (docs/145); saltarlo sigue llevando
+  // a Ficha Técnica como antes. page-tour.tsx llama a onClose ANTES que a onFinish, así
+  // que onClose espera un instante para saber si fue un "terminar".
+  const finishedRef = useRef(false)
   const steps: TourStep[] = [
     {
       id: "header",
@@ -105,6 +111,8 @@ export function IngredientesTour() {
     { id: "search", title: t("tour_ing_search_title"), description: t("tour_ing_search_desc"), selector: '[data-tour="ing-search"]' },
     { id: "unit-switch", title: t("tour_ing_unit_switch_title"), description: t("tour_ing_unit_switch_desc"), selector: '[data-tour="ing-unit-switch"]' },
     { id: "table", title: t("tour_ing_table_title"), description: t("tour_ing_table_desc"), selector: '[data-tour="ing-table"]' },
+    // Último paso (docs/145): carga masiva primero, sin esconder la opción manual.
+    { id: "bulk", title: t("tour_ing_bulk_title"), description: t("tour_ing_bulk_desc"), selector: '[data-tour="ing-import"]' },
   ]
 
   // Cierra el recorrido guiado que empieza en el Dashboard (OnboardingTour) → termina
@@ -118,8 +126,16 @@ export function IngredientesTour() {
     <PageTour
       steps={steps}
       storageKey="tour_completed_ingredientes"
-      finishLabel={t("tour_finish_go_ficha")}
-      onClose={() => router.push("/ficha-tecnica")}
+      finishLabel={onOpenImport ? t("tour_finish_open_import") : t("tour_finish_go_ficha")}
+      onFinish={() => {
+        finishedRef.current = true
+        onOpenImport?.()
+      }}
+      onClose={() =>
+        setTimeout(() => {
+          if (!finishedRef.current || !onOpenImport) router.push("/ficha-tecnica")
+        }, 0)
+      }
     />
   )
 }

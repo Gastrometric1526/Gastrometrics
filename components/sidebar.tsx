@@ -56,6 +56,7 @@ import {
 } from "@/lib/plan-access"
 import type { FeatureKey } from "@/lib/plans"
 import { Lock } from "lucide-react"
+import { useModuleReveal } from "@/lib/module-reveal"
 
 function useNavigationItems() {
   const { t } = useLanguage()
@@ -234,7 +235,13 @@ function SidebarInner() {
   const currentBusinessId = businessPathMatch ? businessPathMatch[1] : searchParams.get("business")
   const { user, logout } = useAuth()
   const { t } = useLanguage()
-  const navigationItems = useNavigationItems()
+  const allNavigationItems = useNavigationItems()
+  // Revelación progresiva (docs/145): los módulos avanzados aparecen al crear recetas.
+  // No aplica a la Vista previa de Equipo ni a un miembro invitado.
+  const { active: revealPreviewActive } = useActiveMembership()
+  const reveal = useModuleReveal({ disabled: revealPreviewActive })
+  const navigationItems = allNavigationItems.filter((item) => !reveal.hidden.has(item.href))
+  const hiddenModuleCount = allNavigationItems.length - navigationItems.length
   const { active: previewActive } = useTeamPreview()
   const { theme, setTheme } = useTheme()
   const [isCollapsed, setIsCollapsed] = useState(true) // Comienza colapsado por defecto
@@ -529,9 +536,19 @@ function SidebarInner() {
 
                   {!effectiveCollapsed && (
                     <div className="flex-1 min-w-0">
-                      <p className={cn("font-medium truncate text-sm", isActive ? "text-foreground" : "")}>{item.title}</p>
+                      <p className={cn("font-medium truncate text-sm flex items-center gap-1.5", isActive ? "text-foreground" : "")}>
+                        <span className="truncate">{item.title}</span>
+                        {reveal.fresh.has(item.href) && (
+                          <span className="shrink-0 rounded-full bg-primary px-1.5 py-px text-[10px] font-semibold text-primary-foreground">
+                            {t("sidebar_module_new")}
+                          </span>
+                        )}
+                      </p>
                       <p className="text-xs text-text-4 truncate hidden sm:block">{item.description}</p>
                     </div>
+                  )}
+                  {effectiveCollapsed && reveal.fresh.has(item.href) && (
+                    <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
                   )}
 
                   {/* Tooltip para modo colapsado */}
@@ -544,6 +561,21 @@ function SidebarInner() {
               </Link>
             )
           })}
+
+          {/* Módulos que se revelan con las recetas (docs/145): explica por qué no están y
+              deja verlos de todos modos. */}
+          {hiddenModuleCount > 0 && !effectiveCollapsed && (
+            <div className="mx-1 mt-2 rounded-lg border border-dashed border-hairline px-3 py-2.5 space-y-1.5">
+              <p className="text-xs text-text-4 leading-snug">
+                {t("sidebar_modules_hidden_hint")
+                  .replace("{count}", String(hiddenModuleCount))
+                  .replace("{recipes}", String(reveal.recipeCount))}
+              </p>
+              <button type="button" onClick={reveal.showAll} className="text-xs font-medium text-primary hover:underline">
+                {t("sidebar_modules_show_all")}
+              </button>
+            </div>
+          )}
 
           {/* Dashboard Navigation */}
           {pathname.startsWith("/business/") && !effectiveCollapsed && (

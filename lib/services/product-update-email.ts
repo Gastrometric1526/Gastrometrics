@@ -10,6 +10,7 @@
 import { renderEmailTemplate, escapeHtml } from "./email-templates"
 import { getEmailLabels, type EmailLang } from "@/lib/i18n/email-labels"
 import type { ChangelogEntry } from "@/lib/changelog"
+import { withEmailTracking } from "@/lib/email-tracking"
 
 const FONT = "font-family:'DM Sans','Helvetica Neue',Helvetica,Arial,sans-serif"
 
@@ -45,7 +46,7 @@ export function renderProductUpdateEmail(input: {
     heading: labels.e08_heading,
     itemsHtml: buildChangelogItemsHtml(input.entries, input.language),
     cta: labels.e08_cta,
-    ctaUrl: `${input.siteUrl}/dashboard`,
+    ctaUrl: withEmailTracking(`${input.siteUrl}/dashboard`, "product_update"),
     footnote: labels.e08_footnote,
     footerAddress: labels.footer_address,
     footer2: labels.e08_footer2,

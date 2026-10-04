@@ -45,6 +45,8 @@ import { AddBusinessDialog } from "@/components/add-business-dialog"
 import { OnboardingTour } from "@/components/onboarding-tour"
 import { WhatsNewDialog } from "@/components/whats-new-dialog"
 import { PlanChangeNoticeDialog } from "@/components/plan-change-notice-dialog"
+import { QuickRatingDialog } from "@/components/quick-rating-dialog"
+import { GettingStartedPath } from "@/components/getting-started-path"
 import { useFeatureAccess, useActiveMembership, setCurrentPlanSlug, getMinimumPlanForFeature } from "@/lib/plan-access"
 import type { FeatureKey } from "@/lib/plans"
 import { Lock } from "lucide-react"
@@ -741,6 +743,7 @@ export default function DashboardPage() {
       <OnboardingTour />
       <WhatsNewDialog />
       <PlanChangeNoticeDialog />
+      <QuickRatingDialog />
       <Sidebar />
       <div className="flex-1 overflow-hidden">
         <div className="h-full overflow-y-auto">
@@ -886,6 +889,9 @@ export default function DashboardPage() {
                 </div>
               </div>
             )}
+
+            {/* Tu camino (docs/145): pasos que van revelando los módulos. */}
+            <GettingStartedPath />
 
             {/* Stats — sin cajas: etiqueta, cifra grande, separadas por hairline
                 (docs/80/81/82: "cuatro KPIs sin cajas" del paquete de diseño). Mismos

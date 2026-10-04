@@ -58,6 +58,7 @@ export default {
         ["h3", "Creating your account"],
         ["p", "Sign-up is a 5-step wizard: your details and password, your professional information (country, currency, business type and size), the <strong>plan</strong> you want, acceptance of the terms, and a final summary. If you arrive from the pricing page with a plan already chosen, it comes preselected."],
         ["p", "The last step has an optional box to <strong>receive updates and reminders by email</strong>. It starts unchecked and you can change it anytime in Settings (chapter 15)."],
+        ["p", "When you sign in, the <strong>Remember me on this device</strong> box is checked: your session stays open. Uncheck it on a shared computer and the session ends when you close the browser."],
         ["h3", "Creating a business"],
         ["steps", [
           "<strong>Basics and logo.</strong> Name, description, business type and, if you like, a logo that will appear in the header of your PDFs.",
@@ -75,6 +76,7 @@ export default {
           "<strong>Key figures</strong>: total recipes, ingredients, businesses and average cost, across all your businesses.",
           "<strong>Quick actions</strong>: one shortcut per module so you can jump in without the side menu.",
         ]],
+        ["p", "While you get started, the Dashboard shows <strong>Your path</strong>: add ingredients, create your first recipe, reach 3 recipes and explore what's new. Each step takes you straight to where it's done. You can hide it with the X."],
         ["h3", "The side menu"],
         ["table", ["Section", "What it's for"], [
           ["Dashboard", "An overview of your whole account and what needs attention."],
@@ -89,6 +91,7 @@ export default {
           ["Reports", "Business overview and finances."],
           ["Businesses", "Create, open and delete businesses."],
         ]],
+        ["info", "The menu fills in as you go", "So you're not overwhelmed, the menu starts with the essentials. With your first recipe, Reports and Sales appear; with 3 recipes, Inventory, Menus, Purchase orders and Team, marked \"New\". To see everything from the start, use \"Show all modules now\" at the bottom of the menu."],
         ["info", "Settings and My Plan", "Settings isn't a page: it's a window you open from any screen with the gear icon. Your plan and subscription live in <strong>My Plan</strong>, at the bottom of the menu."],
       ],
     },
@@ -116,6 +119,7 @@ export default {
         ["p", "If you buy by the Box, Sack, Bottle, Can, Bag or Jar, save how much each pack contains. That way your purchase orders say “4 boxes” instead of a quantity in grams nobody would order."],
         ["h3", "Importing from Excel"],
         ["p", "You can load or export your whole database in Excel with a template the app generates from its real categories and units. Column headers are recognized in all 6 app languages."],
+        ["p", "The guided Ingredients tour ends by opening this import, so you can load your whole list at once. If you prefer, you can also add them one by one with \"New ingredient\"."],
         ["h3", "Shrinkage"],
         ["p", "Shrinkage is what you pay for but can't use: peels, bones, trimmings, evaporation. In <strong>Manage Shrinkage</strong> you switch the system on and, for each ingredient, choose the typical percentage for its category or your own (or a fixed amount)."],
         ["formula", "Real cost with shrinkage", ["Usable content = Net content × (1 − shrinkage %)", "Price per unit = Purchase price ÷ Usable content"], "You pay for all of it but only use part, so the real price per unit goes up. Turn shrinkage off and everything returns to the original values."],
@@ -184,6 +188,10 @@ export default {
           "<strong>Restore original recipe</strong> goes back to that original size. Then press Save to confirm it.",
         ]],
         ["warn", "Suspicious yield", "If any ingredient measured in “units” is 20 times the declared yield or more (for example, 200 eggs for a yield of 1), you'll see a yellow warning in the sheet and in the PDF. It doesn't block anything: it just helps you catch a typo."],
+        ["h3", "Import a written recipe"],
+        ["p", "In My Recipes, <strong>Import recipe</strong> turns a written recipe into a recipe sheet: paste it as you have it, upload a file (.txt, .csv, .md) or <strong>take a photo</strong> with your phone camera. The app recognizes the name, servings, ingredients with quantity and unit (200 g, 2 cups, ½ kg, \"to taste\", tables, lists…) and the steps, in all 6 languages."],
+        ["tip", "You review it before it opens", "Each ingredient is matched with your database and its quantity is converted to that ingredient's unit. Ones you don't have can be created (no price; you complete it later in Ingredients), picked from your list or skipped. Nothing is saved until you press Save in the Recipe Sheet."],
+        ["info", "Recipe photos", "The photo is read on your own phone or computer (it isn't uploaded to any server). You'll see the photo next to the text read, with the reading confidence and doubtful lines highlighted: tap them to fix them before continuing. For best results, shoot straight on, with good light and no shadows, and choose the language the recipe is written in."],
         ["h3", "My Recipes: duplicate, move and trash"],
         ["figure", "06-mis-recetas.jpg", "My Recipes: all your recipes with their cost, yield and quick actions."],
         ["list", [

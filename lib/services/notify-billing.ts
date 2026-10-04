@@ -13,6 +13,7 @@ import { getPlanBySlug, getLocalizedPlan, plans } from "@/lib/plans"
 import { renderEmailTemplate, escapeHtml } from "./email-templates"
 import { diffPlanCapabilities } from "@/lib/plan-capabilities"
 import { getEmailLabels, fillLabel, normalizeEmailLang, EMAIL_DATE_LOCALES } from "@/lib/i18n/email-labels"
+import { withEmailTracking } from "@/lib/email-tracking"
 
 // Aviso al dueño del proyecto por cada evento REAL de dinero de Stripe (suscripción
 // nueva pagada, cambio de plan pagado, cancelación) — pedido explícito: "que me caigan
@@ -185,7 +186,7 @@ export function renderPlanChangedEmail(input: PlanChangedEmailInput & { language
         input.nextChargeAmountCents !== null && input.nextChargeAmountCents !== undefined
           ? formatUsd(input.nextChargeAmountCents)
           : "—",
-      planUrl: `${siteUrl}/mi-plan`,
+      planUrl: withEmailTracking(`${siteUrl}/mi-plan`, "plan_changed"),
   })
   return { subject: fillLabel(labels.e06_subject, { fromPlan: fromPlan.name, toPlan: toPlan.name }), html }
 }

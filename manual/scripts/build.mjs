@@ -307,7 +307,8 @@ async function renderPdf(browser, html, options) {
   const page = await browser.newPage()
   await page.setContent(html, { waitUntil: "networkidle0", timeout: 120000 })
   await page.evaluate(() => document.fonts.ready)
-  const pdf = await page.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true, ...options })
+  // timeout: el PDF en chino (fuente CJK pesada) ya tarda más de los 30 s por defecto (docs/146).
+  const pdf = await page.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true, timeout: 180000, ...options })
   await page.close()
   return Buffer.from(pdf)
 }

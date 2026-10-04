@@ -59,6 +59,7 @@ export default {
         ["h3", "Crear tu cuenta"],
         ["p", "El registro es un asistente de 5 pasos: tus datos y contraseña, tu información profesional (país, moneda, tipo y tamaño de negocio), el <strong>plan</strong> que quieres usar, la aceptación de los términos y un resumen final. Si llegas desde la página de planes con uno ya elegido, aparece preseleccionado."],
         ["p", "En el último paso hay una casilla opcional para <strong>recibir novedades y recordatorios por correo</strong>. Viene desmarcada y puedes cambiarla cuando quieras en Configuración (capítulo 15)."],
+        ["p", "Al iniciar sesión, la casilla <strong>Recuérdame en este dispositivo</strong> viene marcada: tu sesión se mantiene abierta. Desmárcala en una computadora compartida y la sesión se cerrará al cerrar el navegador."],
         ["h3", "Crear un negocio"],
         ["steps", [
           "<strong>Datos básicos y logo.</strong> Nombre, descripción, tipo de negocio y, si quieres, el logo, que aparecerá en el encabezado de tus PDFs.",
@@ -76,6 +77,7 @@ export default {
           "<strong>Indicadores</strong>: total de recetas, ingredientes, negocios y costo promedio, sumando todos tus negocios.",
           "<strong>Acciones rápidas</strong>: un acceso por módulo para entrar sin pasar por el menú lateral.",
         ]],
+        ["p", "Mientras empiezas, el Dashboard muestra <strong>Tu camino</strong>: cargar ingredientes, crear tu primera receta, llegar a 3 recetas y explorar lo nuevo. Cada paso te lleva directo a donde se hace. Puedes ocultarlo con la X."],
         ["h3", "El menú lateral"],
         ["table", ["Sección", "Para qué sirve"], [
           ["Dashboard", "Resumen de toda tu cuenta y lo que requiere atención."],
@@ -90,6 +92,7 @@ export default {
           ["Reportes", "Panorama del negocio y finanzas."],
           ["Negocios", "Crear, abrir y eliminar negocios."],
         ]],
+        ["info", "El menú se va completando", "Para no abrumarte, el menú empieza con lo esencial. Con tu primera receta aparecen Reportes y Ventas; con 3 recetas, Inventario, Menús, Órdenes de compra y Equipo, marcados como «Nuevo». Si quieres verlo todo desde el inicio, usa «Ver todos los módulos ahora» al final del menú."],
         ["info", "Configuración y Mi Plan", "Configuración no es una página: es una ventana que abres desde cualquier pantalla con el ícono de engranaje. Tu plan y tu suscripción están en <strong>Mi Plan</strong>, en la parte inferior del menú."],
       ],
     },
@@ -117,6 +120,7 @@ export default {
         ["p", "Si compras por Caja, Saco, Botella, Lata, Bolsa o Frasco, guarda cuánto trae cada presentación. Así tus órdenes de compra dicen «4 cajas» en lugar de una cantidad en gramos que nadie pediría así."],
         ["h3", "Importar desde Excel"],
         ["p", "Puedes cargar o exportar toda tu base en Excel con una plantilla que la app genera con sus categorías y unidades reales. Los encabezados se reconocen en los 6 idiomas de la app."],
+        ["p", "El recorrido guiado de Ingredientes termina abriendo esta importación, para que cargues toda tu lista de una vez. Si prefieres, también puedes agregarlos uno por uno con «Nuevo ingrediente»."],
         ["h3", "Merma"],
         ["p", "La merma es lo que pagas pero no aprovechas: cáscaras, huesos, recortes, evaporación. En <strong>Gestionar mermas</strong> activas el sistema y, por ingrediente, eliges usar el porcentaje típico de su categoría o uno propio (o una cantidad fija)."],
         ["formula", "Costo real con merma", ["Contenido aprovechable = Contenido neto × (1 − % de merma)", "Precio por unidad = Precio de compra ÷ Contenido aprovechable"], "Pagas por todo el contenido, pero solo aprovechas una parte: por eso el precio real por unidad sube. Si apagas la merma, todo vuelve a los valores originales."],
@@ -185,6 +189,10 @@ export default {
           "<strong>Restaurar receta original</strong> vuelve a ese tamaño original. Después presiona Guardar para confirmarlo.",
         ]],
         ["warn", "Rendimiento sospechoso", "Si algún ingrediente medido en «unidad» es 20 veces mayor o más que el rendimiento declarado (por ejemplo, 200 huevos para un rendimiento de 1), verás un aviso amarillo en la ficha y en el PDF. No bloquea nada: solo te ayuda a detectar un error de escritura."],
+        ["h3", "Importar una receta escrita"],
+        ["p", "En Mis Recetas, <strong>Importar receta</strong> convierte una receta escrita en una ficha técnica: pégala tal como la tienes, sube un archivo (.txt, .csv, .md) o <strong>tómale una foto</strong> con la cámara del celular. La app reconoce el nombre, las porciones, los ingredientes con su cantidad y unidad (200 g, 2 tazas, ½ kg, «al gusto», tablas, listas…) y los pasos, en los 6 idiomas."],
+        ["tip", "Revisas antes de abrirla", "Cada ingrediente se empareja con tu base y su cantidad se convierte a la unidad de ese ingrediente. Los que no tienes se pueden crear (sin precio, lo completas después en Ingredientes), elegir de tu lista u omitir. Nada se guarda hasta que pulsas Guardar en la Ficha Técnica."],
+        ["info", "Fotos de recetas", "La foto se lee en tu propio celular o computadora (no se sube a ningún servidor). Verás la foto al lado del texto leído, con la confianza de lectura y las líneas dudosas marcadas: tócalas para corregirlas antes de seguir. Para mejores resultados, toma la foto de frente, con buena luz y sin sombras, y elige el idioma en que está escrita la receta."],
         ["h3", "Mis Recetas: duplicar, mover y papelera"],
         ["figure", "06-mis-recetas.jpg", "Mis Recetas: todas tus recetas con su costo, rendimiento y accesos rápidos."],
         ["list", [

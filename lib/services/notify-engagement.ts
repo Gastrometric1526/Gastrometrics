@@ -36,6 +36,8 @@ import { getPlanBySlug } from "@/lib/plans"
 import { CURRENCY_OPTIONS } from "@/lib/currency"
 import { getUnitLabel } from "@/lib/ingredient-labels"
 import { fetchAllByIds, isMissingTableError, loadOptedInAccounts, maxTime } from "./notify-reengagement"
+import { hashString } from "./hash-string"
+import { withEmailTracking, isClickRow } from "@/lib/email-tracking"
 
 const HOUR_MS = 60 * 60 * 1000
 const DAY_MS = 24 * HOUR_MS
@@ -290,12 +292,6 @@ export function chooseEngagement(f: EngagementFacts, language: EmailLang, r = EN
 
 // ─── Variante y render (puros — también los usa la vista previa de /admin) ───
 
-function hashString(value: string): number {
-  let h = 0
-  for (let i = 0; i < value.length; i++) h = (h * 31 + value.charCodeAt(i)) >>> 0
-  return h
-}
-
 /** Rota con cada envío del mismo tipo y arranca en un punto distinto por cuenta. */
 export function pickEngagementVariant(accountId: string, type: EngagementType, previousSends: number): number {
   return (hashString(`${accountId}:${type}`) + previousSends) % 3
@@ -519,7 +515,8 @@ export async function runEngagementEmails(options: { dryRun?: boolean; now?: num
   const modulesBy = group(modules, (r) => r.user_id)
   const invitesBy = group(invites, (r) => r.owner_id)
   const businessesBy = group(businesses, (r) => r.owner_id)
-  const historyBy = group(history, (r) => r.account_id)
+  // Los clics (email_type "click:…") viven en la misma tabla pero no son envíos.
+  const historyBy = group(history.filter((h) => !isClickRow(h.email_type)), (r) => r.account_id)
   const otherBy = group([...reeng, ...activation], (r) => r.account_id)
   const planBy = new Map(plans.map((p) => [p.account_id, p.plan_slug]))
   const currencyBy = new Map(profiles.map((p) => [p.id, p.currency]))
@@ -597,7 +594,7 @@ export async function runEngagementEmails(options: { dryRun?: boolean; now?: num
         decision,
         language: account.language,
         name: account.name,
-        actionUrl: `${siteUrl}${decision.actionPath}`,
+        actionUrl: withEmailTracking(`${siteUrl}${decision.actionPath}`, decision.type),
         unsubscribeUrl,
         variant,
       })

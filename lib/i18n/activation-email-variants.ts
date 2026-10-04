@@ -40,8 +40,8 @@ export const ACTIVATION_VARIANTS: Record<EmailLang, Record<ActivationVariantType
       a("Buen comienzo: tu primera venta registrada", "Sigue así para ver tu Menu Engineering.", "Tu primera venta, registrada", "Con cada venta que registras, Gastrometrics descuenta ingredientes de tu inventario y te muestra qué platos son tus estrellas. Ya diste el primer paso.", "Registrar otra venta"),
     ],
     four_hour_experience: [
-      a("Cuatro horas en Gastrometrics: ¿cómo te va?", "Tu opinión nos ayuda a mejorar.", "¿Qué tal tu experiencia?", "Ya llevas cuatro horas usando Gastrometrics. ¿Qué te gusta y qué cambiarías? Tu respuesta la leemos nosotros y nos ayuda a decidir qué mejorar."),
-      a("¿Nos cuentas qué te parece Gastrometrics?", "Un minuto, y nos ayudas mucho.", "Queremos saber tu opinión", "Has usado Gastrometrics varias horas y tu opinión vale oro. Déjanos un comentario o una reseña: nos ayuda a mejorar y a que otras cocinas nos conozcan."),
+      a("¿Cómo te va con Gastrometrics?", "Tu opinión nos ayuda a mejorar.", "¿Qué tal tu experiencia?", "Ya llevas un tiempo usando Gastrometrics. ¿Qué te gusta y qué cambiarías? Tu respuesta la leemos nosotros y nos ayuda a decidir qué mejorar."),
+      a("¿Nos cuentas qué te parece Gastrometrics?", "Un minuto, y nos ayudas mucho.", "Queremos saber tu opinión", "Ya conoces bien Gastrometrics y tu opinión vale oro. Déjanos un comentario o una reseña: nos ayuda a mejorar y a que otras cocinas nos conozcan."),
     ],
   },
   en: {
@@ -58,8 +58,8 @@ export const ACTIVATION_VARIANTS: Record<EmailLang, Record<ActivationVariantType
       a("Great start: your first sale logged", "Keep going to unlock your Menu Engineering.", "Your first sale, logged", "With every sale you log, Gastrometrics deducts ingredients from your inventory and shows you your star dishes. You've taken the first step.", "Log another sale"),
     ],
     four_hour_experience: [
-      a("Four hours on Gastrometrics: how's it going?", "Your opinion helps us improve.", "How's your experience so far?", "You've spent four hours on Gastrometrics. What do you like and what would you change? We read every answer ourselves and it helps us decide what to improve."),
-      a("Tell us what you think of Gastrometrics?", "One minute, and it helps a lot.", "We'd love your opinion", "You've used Gastrometrics for several hours and your opinion is gold. Leave us a comment or a review: it helps us improve and helps other kitchens find us."),
+      a("How's it going with Gastrometrics?", "Your opinion helps us improve.", "How's your experience so far?", "You've been using Gastrometrics for a while. What do you like and what would you change? We read every answer ourselves and it helps us decide what to improve."),
+      a("Tell us what you think of Gastrometrics?", "One minute, and it helps a lot.", "We'd love your opinion", "You know Gastrometrics well by now and your opinion is gold. Leave us a comment or a review: it helps us improve and helps other kitchens find us."),
     ],
   },
   da: {
@@ -76,8 +76,8 @@ export const ACTIVATION_VARIANTS: Record<EmailLang, Record<ActivationVariantType
       a("God start: dit første salg er registreret", "Fortsæt for at låse op for Menu Engineering.", "Dit første salg, registreret", "Med hvert salg du registrerer, trækker Gastrometrics ingredienser fra dit lager og viser dig dine stjerneretter. Du har taget første skridt.", "Registrér endnu et salg"),
     ],
     four_hour_experience: [
-      a("Fire timer i Gastrometrics: hvordan går det?", "Din mening hjælper os med at blive bedre.", "Hvordan er din oplevelse?", "Du har brugt fire timer i Gastrometrics. Hvad kan du lide, og hvad ville du ændre? Vi læser selv hvert svar, og det hjælper os med at vælge, hvad vi forbedrer."),
-      a("Vil du fortælle os, hvad du synes om Gastrometrics?", "Ét minut, og det hjælper meget.", "Vi vil gerne høre din mening", "Du har brugt Gastrometrics i flere timer, og din mening er guld værd. Skriv en kommentar eller en anmeldelse: det hjælper os med at blive bedre og andre køkkener med at finde os."),
+      a("Hvordan går det med Gastrometrics?", "Din mening hjælper os med at blive bedre.", "Hvordan er din oplevelse?", "Du har brugt Gastrometrics et stykke tid. Hvad kan du lide, og hvad ville du ændre? Vi læser selv hvert svar, og det hjælper os med at vælge, hvad vi forbedrer."),
+      a("Vil du fortælle os, hvad du synes om Gastrometrics?", "Ét minut, og det hjælper meget.", "Vi vil gerne høre din mening", "Du kender Gastrometrics godt nu, og din mening er guld værd. Skriv en kommentar eller en anmeldelse: det hjælper os med at blive bedre og andre køkkener med at finde os."),
     ],
   },
   fr: {
@@ -94,8 +94,8 @@ export const ACTIVATION_VARIANTS: Record<EmailLang, Record<ActivationVariantType
       a("Bon début : première vente enregistrée", "Continuez pour débloquer votre Menu Engineering.", "Votre première vente, enregistrée", "À chaque vente enregistrée, Gastrometrics déduit les ingrédients de votre stock et vous montre vos plats vedettes. Vous avez fait le premier pas.", "Enregistrer une autre vente"),
     ],
     four_hour_experience: [
-      a("Quatre heures sur Gastrometrics : comment ça se passe ?", "Votre avis nous aide à nous améliorer.", "Comment se passe votre expérience ?", "Vous avez passé quatre heures sur Gastrometrics. Qu'est-ce qui vous plaît et que changeriez-vous ? Nous lisons nous-mêmes chaque réponse et cela nous aide à décider quoi améliorer."),
-      a("Vous nous dites ce que vous pensez de Gastrometrics ?", "Une minute, et cela nous aide beaucoup.", "Nous aimerions votre avis", "Vous utilisez Gastrometrics depuis plusieurs heures et votre avis est précieux. Laissez-nous un commentaire ou un avis : cela nous aide à progresser et d'autres cuisines à nous découvrir."),
+      a("Comment ça se passe avec Gastrometrics ?", "Votre avis nous aide à nous améliorer.", "Comment se passe votre expérience ?", "Vous utilisez Gastrometrics depuis un moment. Qu'est-ce qui vous plaît et que changeriez-vous ? Nous lisons nous-mêmes chaque réponse et cela nous aide à décider quoi améliorer."),
+      a("Vous nous dites ce que vous pensez de Gastrometrics ?", "Une minute, et cela nous aide beaucoup.", "Nous aimerions votre avis", "Vous connaissez bien Gastrometrics et votre avis est précieux. Laissez-nous un commentaire ou un avis : cela nous aide à progresser et d'autres cuisines à nous découvrir."),
     ],
   },
   pt: {
@@ -112,8 +112,8 @@ export const ACTIVATION_VARIANTS: Record<EmailLang, Record<ActivationVariantType
       a("Bom começo: primeira venda registrada", "Continue para desbloquear seu Menu Engineering.", "Sua primeira venda, registrada", "A cada venda registrada, a Gastrometrics desconta ingredientes do estoque e mostra seus pratos estrela. Você já deu o primeiro passo.", "Registrar outra venda"),
     ],
     four_hour_experience: [
-      a("Quatro horas na Gastrometrics: como está indo?", "Sua opinião nos ajuda a melhorar.", "Como está sua experiência?", "Você já usou a Gastrometrics por quatro horas. Do que você gosta e o que mudaria? Nós mesmos lemos cada resposta, e isso nos ajuda a decidir o que melhorar."),
-      a("Conta pra gente o que você acha da Gastrometrics?", "Um minuto, e ajuda muito.", "Queremos sua opinião", "Você usou a Gastrometrics por várias horas e sua opinião vale ouro. Deixe um comentário ou uma avaliação: nos ajuda a melhorar e outras cozinhas a nos conhecer."),
+      a("Como está indo com a Gastrometrics?", "Sua opinião nos ajuda a melhorar.", "Como está sua experiência?", "Você já usa a Gastrometrics há um tempo. Do que você gosta e o que mudaria? Nós mesmos lemos cada resposta, e isso nos ajuda a decidir o que melhorar."),
+      a("Conta pra gente o que você acha da Gastrometrics?", "Um minuto, e ajuda muito.", "Queremos sua opinião", "Você já conhece bem a Gastrometrics e sua opinião vale ouro. Deixe um comentário ou uma avaliação: nos ajuda a melhorar e outras cozinhas a nos conhecer."),
     ],
   },
   zh: {
@@ -130,8 +130,8 @@ export const ACTIVATION_VARIANTS: Record<EmailLang, Record<ActivationVariantType
       a("好的开始：第一笔销售已记录", "继续记录即可解锁菜单工程。", "你的第一笔销售，已记录", "每记录一笔销售，Gastrometrics 都会从库存中扣除原料，并展示你的明星菜品。你已经迈出了第一步。", "再记录一笔销售"),
     ],
     four_hour_experience: [
-      a("使用 Gastrometrics 四小时了：感觉如何？", "你的意见帮助我们改进。", "你的体验怎么样？", "你已经使用 Gastrometrics 四个小时了。你喜欢什么，又想改变什么？每条回复我们都会亲自阅读，帮助我们决定改进方向。"),
-      a("能告诉我们你对 Gastrometrics 的看法吗？", "一分钟，帮助很大。", "我们想听听你的意见", "你已经使用 Gastrometrics 好几个小时了，你的意见非常宝贵。留下评论或评价：帮助我们改进，也让更多厨房认识我们。"),
+      a("使用 Gastrometrics 感觉如何？", "你的意见帮助我们改进。", "你的体验怎么样？", "你已经使用 Gastrometrics 一段时间了。你喜欢什么，又想改变什么？每条回复我们都会亲自阅读，帮助我们决定改进方向。"),
+      a("能告诉我们你对 Gastrometrics 的看法吗？", "一分钟，帮助很大。", "我们想听听你的意见", "你已经很熟悉 Gastrometrics 了，你的意见非常宝贵。留下评论或评价：帮助我们改进，也让更多厨房认识我们。"),
     ],
   },
 }

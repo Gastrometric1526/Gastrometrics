@@ -44,7 +44,9 @@ import {
   Eye,
   Edit,
   Copy,
+  Upload,
 } from "lucide-react"
+import { RecipeImportDialog } from "@/components/recipe-import-dialog"
 import { Sidebar } from "@/components/sidebar"
 import { MisRecetasTour } from "@/components/page-tours"
 import { RecipeCard } from "@/components/recipe-card"
@@ -118,6 +120,7 @@ export default function MisRecetasPage() {
   const [isLoading, setIsLoading] = useState(true)
   // Papelera de recetas (ver documento de continuidad) — retención de 30 días
   const [showTrashDialog, setShowTrashDialog] = useState(false)
+  const [showRecipeImport, setShowRecipeImport] = useState(false)
   const [trashedRecipes, setTrashedRecipes] = useState<TrashedRecipe[]>([])
   // BUG CORREGIDO (hallazgo de un chequeo exhaustivo de la interfaz): dos clics
   // rapidos en "Restaurar" para la misma receta (el segundo antes de que la lista
@@ -524,6 +527,7 @@ export default function MisRecetasPage() {
       <div className="flex-1 p-2 md:p-4 lg:p-8">
         <div className="max-w-7xl mx-auto">
           <MisRecetasTour />
+          <RecipeImportDialog open={showRecipeImport} onOpenChange={setShowRecipeImport} businessId={businessId} />
           {/* Header Section - Responsivo */}
           <div className="flex flex-col gap-4 md:gap-6 mb-6 md:mb-8">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 md:gap-4">
@@ -559,6 +563,18 @@ export default function MisRecetasPage() {
                     <span className="sm:hidden">{t("misrecetas_new_short")}</span>
                   </Button>
                 </Link>
+
+                {/* Importar una receta escrita (docs/145): texto pegado o archivo. Crear a
+                    mano sigue siendo el botón principal de al lado. */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowRecipeImport(true)}
+                  className="gap-1 md:gap-2 border-border text-xs md:text-sm px-3 md:px-4 py-2"
+                >
+                  <Upload className="h-3 w-3 md:h-4 md:w-4" />
+                  <span className="hidden sm:inline">{t("recipe_import_button")}</span>
+                </Button>
 
                 {/* BUG CORREGIDO: openTrash() antes solo estaba conectado a un botón dentro
  del estado vacío"0 resultados"— cualquier negocio con recetas visibles

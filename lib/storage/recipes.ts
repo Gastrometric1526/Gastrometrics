@@ -76,6 +76,21 @@ export function ensureRecipesLoaded(businessId?: string | null): Promise<void> {
 }
 
 /**
+ * Recetas propias (no sub-recetas) de la cuenta en todos sus negocios, para la
+ * revelación de módulos y la encuesta rápida (docs/147). Solo cuenta (head: true),
+ * no descarga filas. null si falla.
+ */
+export async function countOwnRecipesAllBusinesses(userId: string): Promise<number | null> {
+  const { count, error } = await getSupabaseBrowserClient()
+    .from("recipes")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_id", userId)
+    .eq("is_sub_recipe", false)
+    .neq("classification", SUBRECIPE_CLASSIFICATION)
+  return error ? null : count ?? 0
+}
+
+/**
  * Validate recipe data before saving
  */
 export function validateRecipeData(recipe: Recipe): { valid: boolean; errors: string[] } {
