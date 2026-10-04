@@ -8,8 +8,10 @@
 //    elige el más rápido que soporte el navegador)
 //  - modelos "best_int" de cada idioma de la app (mismo modelo LSTM que "best", con pesos
 //    enteros: precisión prácticamente igual y mucho más livianos para el celular)
+//  - pdf.js (docs/149): worker, mapas de caracteres (texto de PDFs con fuentes CJK) y
+//    decodificadores WebAssembly de imágenes JBIG2/JPEG 2000 (típicos de PDFs escaneados)
 
-import { copyFileSync, mkdirSync, existsSync } from "fs"
+import { copyFileSync, mkdirSync, existsSync, readdirSync } from "fs"
 import { join, dirname } from "path"
 import { fileURLToPath } from "url"
 
@@ -27,6 +29,16 @@ const files = [
     join(nm, "@tesseract.js-data", lang, "4.0.0_best_int", `${lang}.traineddata.gz`),
     join(out, "lang", `${lang}.traineddata.gz`),
   ]),
+  [join(nm, "pdfjs-dist", "legacy", "build", "pdf.worker.min.mjs"), join(out, "pdf", "pdf.worker.min.mjs")],
+  ...["jbig2.wasm", "jbig2_nowasm_fallback.js", "openjpeg.wasm", "openjpeg_nowasm_fallback.js", "qcms_bg.wasm"].map((f) => [
+    join(nm, "pdfjs-dist", "wasm", f),
+    join(out, "pdf", "wasm", f),
+  ]),
+  ...(existsSync(join(nm, "pdfjs-dist", "cmaps"))
+    ? readdirSync(join(nm, "pdfjs-dist", "cmaps"))
+        .filter((f) => f.endsWith(".bcmap"))
+        .map((f) => [join(nm, "pdfjs-dist", "cmaps", f), join(out, "pdf", "cmaps", f)])
+    : []),
 ]
 
 let copied = 0

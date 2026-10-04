@@ -37,7 +37,8 @@ export function defaultUnitFor(dimension: Dimension | null): Unit {
 const STOP = new Set(["de", "del", "la", "el", "los", "las", "y", "en", "a", "con", "of", "the", "and", "fresh", "fresco", "fresca", "picado", "picada", "rallado", "rallada", "molido", "molida", "entero", "entera", "grande", "pequeno", "mediano"])
 
 export function normalizeName(value: string): string {
-  return stripAccents(value.toLowerCase())
+  // ø/æ/œ/ß no se descomponen con NFD: sin esto "løg" quedaba en "l g" (docs/148).
+  return stripAccents(value.toLowerCase().replace(/ø/g, "o").replace(/æ/g, "ae").replace(/œ/g, "oe").replace(/ß/g, "ss"))
     .replace(/[^a-z0-9一-鿿 ]/g, " ")
     .split(/\s+/)
     .filter(Boolean)
@@ -58,6 +59,7 @@ export function findBestMatch(name: string, ingredients: Ingredient[], language:
   const target = normalizeName(name)
   if (!target) return null
   const headLast = language === "en" || language === "da"
+  const isChinese = /[\u4e00-\u9fff]/.test(target)
   const targetWords = target.split(" ")
   const targetSet = new Set(targetWords)
   const startsWith = (a: string, b: string) => a === b || a.startsWith(`${b} `)
@@ -68,7 +70,11 @@ export function findBestMatch(name: string, ingredients: Ingredient[], language:
     if (!candidate) continue
     let score = 0
     if (candidate === target) score = 1
-    else if (headLast ? endsWith(candidate, target) || endsWith(target, candidate) : startsWith(candidate, target) || startsWith(target, candidate)) score = 0.85
+    else if (isChinese) {
+      // Chino: sin espacios y el núcleo va al final ("红洋葱" es un 洋葱).
+      const [short, long] = candidate.length <= target.length ? [candidate, target] : [target, candidate]
+      score = short.length >= 2 && long.endsWith(short) ? 0.85 : 0
+    } else if (headLast ? endsWith(candidate, target) || endsWith(target, candidate) : startsWith(candidate, target) || startsWith(target, candidate)) score = 0.85
     else {
       const words = candidate.split(" ")
       const sameHead = headLast ? words[words.length - 1] === targetWords[targetWords.length - 1] : words[0] === targetWords[0]

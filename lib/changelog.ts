@@ -21,6 +21,71 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-04-c",
+    content: {
+      es: {
+        title: "Trae tus cosas en minutos",
+        items: [
+          "Importar ingredientes ya no necesita la plantilla: sube tu Excel o CSV tal como lo tienes, o pega tu lista desde una hoja de cálculo, un correo o WhatsApp. Se leen bien los precios con símbolo de moneda («₡1.500», «$8,50») y antes de importar ves qué entra y qué se omite.",
+          "Si la lista no trae categoría, se sugiere por el nombre del ingrediente.",
+          "«Importar receta» ahora acepta Excel y PDF, incluso PDF escaneados, además de texto y fotos.",
+          "No tienes que elegir el idioma de la receta: se asume el de tu app y, si la receta está en otro (de los 6), la app lo detecta y la lee con el correcto.",
+          "«Tu camino» y los recorridos te llevan directo a importar: primero tus ingredientes, después tus recetas una tras otra.",
+        ],
+      },
+      en: {
+        title: "Bring your stuff in within minutes",
+        items: [
+          "Importing ingredients no longer needs the template: upload your Excel or CSV as it is, or paste your list from a spreadsheet, an email or WhatsApp. Prices with currency symbols (\"$8,50\", \"1,250.75\") are read correctly and before importing you see what comes in and what is skipped.",
+          "If the list has no category, one is suggested from the ingredient name.",
+          "\"Import recipe\" now accepts Excel and PDF, even scanned PDFs, as well as text and photos.",
+          "You don't have to choose the recipe's language: your app language is assumed and, if the recipe is in another one (of the 6), the app detects it and reads it with the right one.",
+          "\"Your path\" and the tours take you straight to importing: first your ingredients, then your recipes one after another.",
+        ],
+      },
+      da: {
+        title: "Hent dine ting ind på få minutter",
+        items: [
+          "Import af ingredienser kræver ikke længere skabelonen: upload din Excel eller CSV, som den er, eller indsæt listen fra et regneark, en e-mail eller WhatsApp. Priser med valutategn (\"12,50 kr\", \"1.250,75\") læses korrekt, og før importen ser du, hvad der kommer ind, og hvad der springes over.",
+          "Har listen ingen kategori, foreslås en ud fra ingrediensens navn.",
+          "\"Importér opskrift\" accepterer nu Excel og PDF, også scannede PDF'er, ud over tekst og fotos.",
+          "Du behøver ikke vælge opskriftens sprog: appens sprog antages, og er opskriften på et andet (af de 6), opdager appen det og læser den med det rigtige.",
+          "\"Din vej\" og guiderne fører dig direkte til import: først dine ingredienser, derefter dine opskrifter én efter én.",
+        ],
+      },
+      fr: {
+        title: "Importez vos données en quelques minutes",
+        items: [
+          "Importer des ingrédients ne demande plus le modèle : téléversez votre Excel ou CSV tel quel, ou collez votre liste depuis un tableur, un e-mail ou WhatsApp. Les prix avec symbole monétaire (« 1,50 € », « 1 250,75 ») sont bien lus et, avant d'importer, vous voyez ce qui entre et ce qui est ignoré.",
+          "Si la liste n'a pas de catégorie, elle est suggérée d'après le nom de l'ingrédient.",
+          "« Importer une recette » accepte maintenant Excel et PDF, même scannés, en plus du texte et des photos.",
+          "Plus besoin de choisir la langue de la recette : celle de votre application est utilisée par défaut et, si la recette est dans une autre (parmi les 6), l'application la détecte et la lit avec la bonne.",
+          "« Votre parcours » et les visites guidées vous mènent directement à l'import : d'abord vos ingrédients, puis vos recettes l'une après l'autre.",
+        ],
+      },
+      pt: {
+        title: "Traga suas coisas em minutos",
+        items: [
+          "Importar ingredientes não precisa mais do modelo: envie seu Excel ou CSV como está, ou cole sua lista de uma planilha, um e-mail ou WhatsApp. Preços com símbolo de moeda («R$ 1,50», «1.250,75») são lidos corretamente e, antes de importar, você vê o que entra e o que é ignorado.",
+          "Se a lista não tiver categoria, ela é sugerida pelo nome do ingrediente.",
+          "«Importar receita» agora aceita Excel e PDF, inclusive PDFs escaneados, além de texto e fotos.",
+          "Você não precisa escolher o idioma da receita: assume-se o do seu app e, se a receita estiver em outro (dos 6), o app detecta e a lê com o certo.",
+          "«Seu caminho» e os tours levam você direto a importar: primeiro seus ingredientes, depois suas receitas uma atrás da outra.",
+        ],
+      },
+      zh: {
+        title: "几分钟搬入你的数据",
+        items: [
+          "导入原料不再需要模板：按原样上传 Excel 或 CSV，或从表格、邮件、WhatsApp 粘贴清单。带货币符号的价格（“¥8.50”“1,250.75”）都能正确读取，导入前可看到哪些会导入、哪些会跳过。",
+          "如果清单没有分类，会根据原料名称自动建议。",
+          "“导入配方”现已支持 Excel 和 PDF（包括扫描版 PDF），以及文本和照片。",
+          "无需选择配方语言：默认使用应用当前的语言；如果配方是其他语言（6 种之一），应用会自动识别并用正确的语言读取。",
+          "“之路”和引导教程会直接带你去导入：先导入原料，再一份接一份地导入配方。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-10-04-b",
     content: {
       es: {

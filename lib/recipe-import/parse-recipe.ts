@@ -97,6 +97,11 @@ const UNIT_ALIASES: Record<string, UnitDef> = {
   // chino
   "克": U("mass", 1), "千克": U("mass", 1000), "公斤": U("mass", 1000), "毫升": U("volume", 1), "升": U("volume", 1000),
   "个": U("count", 1), "汤匙": U("volume", 15), "茶匙": U("volume", 5), "杯": U("volume", 240),
+  "公克": U("mass", 1), "斤": U("mass", 500), "两": U("mass", 50), "公升": U("volume", 1000), "大勺": U("volume", 15), "小勺": U("volume", 5),
+  "勺": U("volume", 15), "瓣": U("count", 1), "片": U("count", 1), "根": U("count", 1), "颗": U("count", 1), "只": U("count", 1),
+  "把": U("count", 1), "块": U("count", 1), "条": U("count", 1),
+  // danés / francés / portugués contables
+  fed: U("count", 1), gousse: U("count", 1), gousses: U("count", 1), dente: U("count", 1), dentes: U("count", 1),
 }
 
 const MULTIWORD_UNITS: [RegExp, UnitDef][] = [
@@ -109,6 +114,11 @@ const MULTIWORD_UNITS: [RegExp, UnitDef][] = [
   [/^colher(es)? de cha\b/, U("volume", 5)],
   [/^cuilleres? a soupe\b/, U("volume", 15)],
   [/^cuilleres? a cafe\b/, U("volume", 5)],
+  // "c. à soupe", "c.à.s.", "cuill. à soupe" (sin tildes: "c. a soupe")
+  [/^(?:c|cuill?)\.? ?a ?(?:soupe|s\.)(?=\s|$)/, U("volume", 15)],
+  [/^(?:c|cuill?)\.? ?a ?(?:cafe|the|c\.)(?=\s|$)/, U("volume", 5)],
+  [/^c\.?a\.?s\.?(?=\s|$)/, U("volume", 15)],
+  [/^c\.?a\.?c\.?(?=\s|$)/, U("volume", 5)],
 ]
 
 const WORD_NUMBERS: Record<string, number> = {
@@ -128,12 +138,14 @@ export function stripAccents(value: string): string {
 function normalizeLine(line: string): string {
   let out = line
   for (const [f, rep] of Object.entries(FRACTIONS)) out = out.split(f).join(rep)
+  // Chino: ni el OCR ni la escritura separan numeros de caracteres ("大米2杯" -> "大米 2 杯").
+  if (/[一-鿿]/.test(out)) out = out.replace(/([一-鿿])(\d)/g, "$1 $2").replace(/(\d)([一-鿿])/g, "$1 $2")
   return out.replace(/ /g, " ").replace(/\s+/g, " ").trim()
 }
 
 // Incluye las viñetas que el OCR suele leer como letra suelta ("e 800 g", "o 2 tazas",
 // "« 1 cebolla"): solo si justo después viene una cantidad, para no comerse palabras.
-const BULLET = /^\s*(?:[-*•·–—▪●○✓□✔➤>]+|\(?[a-z]\)|\d+[.)](?=\s)|[eoc°«»+®©¢](?=\s+(?:\d|½|¼|¾)))\s*/i
+const BULLET = /^\s*(?:[-*•·–—▪●○✓□✔➤>=_~“”"]+|\(?[a-z]\)|\d+[.)](?=\s)|[eoc°«»+®©¢](?=\s+(?:\d|½|¼|¾)))\s*/i
 
 function stripBullet(line: string): string {
   return line.replace(BULLET, "").trim()
@@ -167,7 +179,7 @@ function readUnit(rest: string): { unit: UnitDef | null; label: string; rest: st
     if (m) return { unit: def, label: rest.slice(0, m[0].length), rest: rest.slice(m[0].length).trim() }
   }
   // Chino: la unidad va pegada sin espacio
-  for (const zh of ["千克", "公斤", "毫升", "汤匙", "茶匙", "克", "升", "个", "杯"]) {
+  for (const zh of ["千克", "公斤", "公克", "公升", "毫升", "汤匙", "茶匙", "大勺", "小勺", "克", "升", "个", "杯", "斤", "两", "勺", "瓣", "片", "根", "颗", "只", "把", "块", "条"]) {
     if (rest.startsWith(zh)) return { unit: UNIT_ALIASES[zh], label: zh, rest: rest.slice(zh.length).trim() }
   }
   const m = plain.match(/^([a-z0-9]+)\.?(?=[\s,(]|$)/)
@@ -180,7 +192,7 @@ function readUnit(rest: string): { unit: UnitDef | null; label: string; rest: st
   return { unit: null, label: "", rest }
 }
 
-const LINKING = /^(?:de la|de los|de las|de l'|d'|del|de|of|du|des|da|do|das|dos|af)\s+/i
+const LINKING = /^(?:(?:de la|de los|de las|del|de|of|du|des|da|do|das|dos|af)\s+|(?:de l|d|l)['’]\s*)/i
 
 function cleanName(name: string): string {
   return name.replace(LINKING, "").replace(/^[,;:\s]+|[,;:\s]+$/g, "").trim()
@@ -225,7 +237,9 @@ export function parseIngredientLine(rawLine: string, section = ""): ParsedIngred
     if (qIdx >= 0) {
       let qtyText = clean[qIdx]
       let unitText = ""
-      const attached = qtyText.match(new RegExp(`^(${RANGE})\\s*([^\\d\\s].*)$`))
+      // Una celda que ya es solo cantidad ("1/2", "2-3") no lleva unidad pegada: sin esto
+      // "1/2" se partía en 1 + "/2".
+      const attached = new RegExp(`^${RANGE}$`).test(qtyText) ? null : qtyText.match(new RegExp(`^(${RANGE})\\s*([^\\d\\s].*)$`))
       if (attached) {
         qtyText = attached[1]
         unitText = attached[2]
@@ -282,10 +296,10 @@ export function parseIngredientLine(rawLine: string, section = ""): ParsedIngred
 
 // ─── Receta completa ───
 
-const H_INGREDIENTS = /^(ingredientes?|ingredients?|ingr[eé]dients?|ingredienser|配料|原料|食材|用料)\b/i
-const H_STEPS = /^(preparaci[oó]n|procedimiento|elaboraci[oó]n|instrucciones|pasos|modo de (preparo|fazer|preparaci[oó]n)|preparo|m[eé]todo|method|directions|instructions|steps|preparation|pr[eé]paration|[ée]tapes|fremgangsm[aå]de|tilberedning|做法|步骤|制作方法|制作)\b/i
-const H_NOTES = /^(notas?|tips?|consejos|observaciones|notes?|astuces|dicas|observa[cç][oõ]es|bem[æa]rk|noter|备注|小贴士)\b/i
-const YIELD = /(rinde|rendimiento|porciones|raciones|sirve|serves|servings|yield|makes|portions?|personas|pax|udbytte|portioner|rendement|rende|por[cç][oõ]es|pessoas|份|人份)/i
+const H_INGREDIENTS = /^(ingredientes?|ingredients?|ingr[eé]dients?|ingredienser|配料|原料|食材|用料)(?![a-z])/i
+const H_STEPS = /^(preparaci[oó]n|procedimiento|elaboraci[oó]n|instrucciones|pasos|modo de (preparo|fazer|preparaci[oó]n)|preparo|m[eé]todo|method|directions|instructions|steps|preparation|pr[eé]paration|[ée]tapes|fremgangsm[aå]de|tilberedning|做法|步骤|制作方法|制作)(?![a-z])/i
+const H_NOTES = /^(notas?|tips?|consejos|observaciones|notes?|astuces|dicas|observa[cç][oõ]es|bem[æa]rk|noter|备注|小贴士)(?![a-z])/i
+const YIELD = /(rinde|rendimiento|porciones|raciones|sirve|serves|servings|yield|makes|portions?|personas|pax|udbytte|portioner|rendement|rende|por[cç][oõ]es|pessoas|personnes|couverts|份|人份)/i
 const TITLE_PREFIX = /^(receta|nombre|t[ií]tulo|recipe|title|recette|receita|opskrift|菜名|名称)\s*:\s*/i
 
 function headerOf(line: string): "ingredients" | "steps" | "notes" | null {
@@ -321,6 +335,7 @@ function stepText(line: string): string {
   return line
     .replace(/^\s*(?:paso|step|etapa|[ée]tape|trin|步骤)\s*\d+\s*[:.)-]?\s*/i, "")
     .replace(/^\s*\d+\s*[.)-]\s+/, "")
+    .replace(/^\s*[^\p{L}\p{N}\s]{1,2}[.)]\s+/u, "")
     .replace(BULLET, "")
     .trim()
 }

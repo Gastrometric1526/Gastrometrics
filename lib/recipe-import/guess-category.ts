@@ -20,7 +20,7 @@ const RULES: [Category, string[]][] = [
   ["SAL", ["sal", "salt", "sel", "盐"]],
   ["ESPECIAS", ["pimienta", "comino", "canela", "oregano", "paprika", "pepper", "cumin", "cinnamon", "pimenta", "poivre", "peber", "胡椒"]],
   ["HIERBAS", ["cilantro", "perejil", "albahaca", "romero", "tomillo", "parsley", "basil", "herb", "salsa verde", "coentro", "persil", "basilic", "persille", "香菜"]],
-  ["FRUTA", ["limon", "naranja", "manzana", "fresa", "pina", "mango", "lemon", "lime", "orange", "apple", "banana", "laranja", "citron", "pomme", "citron", "柠檬", "苹果"]],
+  ["FRUTA", ["limon", "naranja", "manzana", "fresa", "pina", "mango", "banano", "platano", "lemon", "lime", "orange", "apple", "banana", "laranja", "citron", "pomme", "citron", "柠檬", "苹果"]],
   ["VEGETAL", ["tomate", "cebolla", "ajo", "papa", "zanahoria", "chile", "pimiento", "lechuga", "tomato", "onion", "garlic", "potato", "carrot", "cebola", "alho", "oignon", "ail", "log", "hvidlog", "番茄", "洋葱", "蒜"]],
   ["GRANOS", ["arroz", "frijol", "lenteja", "maiz", "rice", "bean", "lentil", "corn", "feijao", "riz", "haricot", "ris", "bonne", "米", "豆"]],
   ["FIDEOS", ["pasta", "fideo", "espagueti", "spaghetti", "noodle", "macarrao", "nouille", "面条"]],
@@ -33,7 +33,9 @@ const RULES: [Category, string[]][] = [
 ]
 
 export function guessCategory(name: string): Category {
-  const plain = ` ${stripAccents(name.toLowerCase())} `
+  // Signos fuera ("onion, chopped") y ø/æ/œ convertidas ("løg" → "log"), docs/149.
+  const lower = name.toLowerCase().replace(/ø/g, "o").replace(/æ/g, "ae").replace(/œ/g, "oe")
+  const plain = ` ${stripAccents(lower).replace(/[^\p{L}\p{N}]+/gu, " ").trim()} `
   for (const [category, words] of RULES) {
     if (words.some((w) => (/[一-鿿]/.test(w) ? plain.includes(w) : plain.includes(` ${w} `) || plain.includes(` ${w}s `) || plain.includes(` ${w}es `)))) {
       return category

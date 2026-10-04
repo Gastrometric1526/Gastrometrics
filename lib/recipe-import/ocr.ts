@@ -35,6 +35,77 @@ export interface OcrResult {
 /** Líneas que conviene revisar (confianza baja). */
 export const LOW_CONFIDENCE = 70
 
+// Palabras típicas de receta por idioma, para notar que la foto está en otro idioma
+// del elegido (docs/148). Sin tildes y en minúsculas.
+const LANG_WORDS: Record<string, string[]> = {
+  spa: ["ingredientes", "preparacion", "procedimiento", "porciones", "cucharada", "cucharadas", "taza", "tazas", "cebolla", "ajo", "sal", "pimienta", "agregar", "cocinar", "minutos", "y", "con", "del"],
+  por: ["ingredientes", "preparo", "porcoes", "colher", "colheres", "xicara", "xicaras", "cebola", "alho", "sal", "acrescente", "cozinhe", "minutos", "e", "com", "do", "da"],
+  eng: ["ingredients", "method", "directions", "serves", "cup", "cups", "tbsp", "tsp", "onion", "garlic", "salt", "add", "cook", "minutes", "and", "the", "with"],
+  fra: ["ingredients", "preparation", "personnes", "cuillere", "soupe", "tasse", "oignon", "ail", "sel", "ajouter", "cuire", "minutes", "et", "le", "la", "les", "avec"],
+  dan: ["ingredienser", "fremgangsmade", "portioner", "spsk", "tsk", "dl", "log", "hvidlog", "salt", "tilsaet", "kog", "minutter", "og", "med", "i"],
+}
+
+/**
+ * Idioma más probable del texto leído (código de Tesseract), o null si no hay señales
+ * claras. El chino se reconoce por la proporción de caracteres chinos.
+ */
+export function detectRecipeLanguage(text: string): string | null {
+  const cjk = (text.match(/[一-鿿]/g) ?? []).length
+  const letters = (text.match(/\p{L}/gu) ?? []).length
+  if (letters > 10 && cjk / letters > 0.3) return "chi_sim"
+  const words = new Set(
+    text
+      .toLowerCase()
+      .replace(/ø/g, "o")
+      .replace(/æ/g, "ae")
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .split(/[^a-z]+/)
+      .filter(Boolean),
+  )
+  let best: string | null = null
+  let bestScore = 0
+  let second = 0
+  for (const [lang, list] of Object.entries(LANG_WORDS)) {
+    const score = list.filter((w) => words.has(w)).length
+    if (score > bestScore) {
+      second = bestScore
+      bestScore = score
+      best = lang
+    } else if (score > second) second = score
+  }
+  return bestScore >= 3 && bestScore >= second + 2 ? best : null
+}
+
+/**
+ * Lee la foto y, si hace falta, vuelve a leerla con otro idioma: con confianza baja se
+ * prueba el otro alfabeto (latino ↔ chino), y si el texto delata otro idioma se relee con
+ * ese modelo. Se queda con la lectura de mayor confianza. Así una receta en inglés o en
+ * chino se lee bien aunque la persona no haya cambiado el idioma (docs/148).
+ */
+export async function recognizeWithLanguageCheck(
+  file: File,
+  ocrLang: string,
+  fallbackLatin: string,
+  onProgress?: (p: number) => void,
+): Promise<OcrResult & { lang: string }> {
+  // La primera lectura ocupa el 80 % de la barra; las relecturas (si hacen falta), el resto.
+  const step = (i: number) => (p: number) => onProgress?.(i === 0 ? p * 0.8 : 0.8 + (i - 1) * 0.1 + p * 0.1)
+  let best = { ...(await recognizeRecipeImage(file, ocrLang, step(0))), lang: ocrLang }
+  const tried = new Set([ocrLang])
+  const tryLang = async (lang: string, i: number) => {
+    if (tried.has(lang)) return
+    tried.add(lang)
+    const r = await recognizeRecipeImage(file, lang, step(i))
+    if (r.confidence > best.confidence) best = { ...r, lang }
+  }
+  if (best.confidence < 65) await tryLang(ocrLang === "chi_sim" ? fallbackLatin : "chi_sim", 1)
+  const detected = detectRecipeLanguage(best.text)
+  if (detected && best.confidence < 90) await tryLang(detected, 2)
+  onProgress?.(1)
+  return best
+}
+
 type Decoded = { source: CanvasImageSource; width: number; height: number; release: () => void }
 
 /**

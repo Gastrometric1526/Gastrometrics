@@ -11,8 +11,8 @@ import { useActiveMembership } from "@/lib/plan-access"
 
 /**
  * "Tu camino" en el Dashboard (docs/145): los pasos que revelan la app de a poco.
- *   1. Cargar ingredientes (importación masiva o uno por uno)
- *   2. Crear la primera receta → aparecen Reportes y Ventas
+ *   1. Cargar ingredientes (abre la importación; o uno por uno)
+ *   2. Importar o crear la primera receta → aparecen Reportes y Ventas
  *   3. Llegar a 3 recetas → aparecen Inventario, Menús, Órdenes de compra y Equipo
  *   4. Abrir uno de los módulos nuevos
  * Desaparece al completar todo o si la persona la cierra. No se muestra a miembros
@@ -40,16 +40,33 @@ export function GettingStartedPath() {
   const exploredNew = n >= 3 && !reveal.fresh.has("/inventario") && !reveal.fresh.has("/menus")
   const steps = useMemo(
     () => [
-      { done: ingredients.length > 0, title: t("path_step1_title"), desc: t("path_step1_desc"), href: "/ingredientes", cta: t("path_step1_cta") },
-      { done: n >= 1, title: t("path_step2_title"), desc: t("path_step2_desc"), href: "/ficha-tecnica", cta: t("path_step2_cta") },
+      // Los botones abren directo la importación (docs/148): migrar lo que ya tienes es
+      // más rápido que escribirlo de nuevo. "Desde cero" queda como alternativa.
+      {
+        done: ingredients.length > 0,
+        title: t("path_step1_title"),
+        desc: t("path_step1_desc"),
+        href: "/ingredientes?import=1",
+        cta: t("path_step1_cta"),
+        alt: { href: "/ingredientes", label: t("path_step1_alt") },
+      },
+      {
+        done: n >= 1,
+        title: t("path_step2_title"),
+        desc: t("path_step2_desc"),
+        href: "/mis-recetas?import=1",
+        cta: t("path_step2_cta"),
+        alt: { href: "/ficha-tecnica", label: t("path_step2_alt") },
+      },
       {
         done: n >= 3,
         title: t("path_step3_title").replace("{n}", String(Math.min(n, 3))),
         desc: t("path_step3_desc"),
-        href: "/ficha-tecnica",
+        href: "/mis-recetas?import=1",
         cta: t("path_step2_cta"),
+        alt: { href: "/ficha-tecnica", label: t("path_step2_alt") },
       },
-      { done: exploredNew, title: t("path_step4_title"), desc: t("path_step4_desc"), href: "/inventario", cta: t("path_step4_cta") },
+      { done: exploredNew, title: t("path_step4_title"), desc: t("path_step4_desc"), href: "/inventario", cta: t("path_step4_cta"), alt: null },
     ],
     [ingredients.length, n, exploredNew, t],
   )
@@ -93,9 +110,16 @@ export function GettingStartedPath() {
             </p>
             <p className="text-xs text-text-3 leading-relaxed">{step.desc}</p>
             {i === current && (
-              <Link href={step.href} className="inline-block text-xs font-semibold text-primary hover:underline">
-                {step.cta} →
-              </Link>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <Link href={step.href} className="inline-block text-xs font-semibold text-primary hover:underline">
+                  {step.cta} →
+                </Link>
+                {step.alt && (
+                  <Link href={step.alt.href} className="inline-block text-xs text-text-3 hover:text-primary hover:underline">
+                    {step.alt.label}
+                  </Link>
+                )}
+              </div>
             )}
           </li>
         ))}

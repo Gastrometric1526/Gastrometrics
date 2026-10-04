@@ -1101,7 +1101,12 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
         await clearRecipeDraft(userId, businessId)
       }
 
-      router.push("/mis-recetas")
+      // Vuelve a Mis Recetas del mismo negocio (antes siempre al principal). Si la receta
+      // vino de una importación, Mis Recetas ofrece importar la siguiente (docs/148).
+      const params = new URLSearchParams()
+      if (businessId && businessId !== "main") params.set("business", businessId)
+      if (isNewRecipe && importAppliedForRef.current === businessId) params.set("imported", "1")
+      router.push(params.size ? `/mis-recetas?${params}` : "/mis-recetas")
     } catch (error) {
       console.error("Error al guardar la receta:", error)
       toast({

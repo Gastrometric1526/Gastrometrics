@@ -98,6 +98,8 @@ export function IngredientesTour({ onOpenImport }: { onOpenImport?: () => void }
       description: t("tour_ing_header_desc"),
       selector: '[data-tour="ing-header"]',
     },
+    // Importar va antes que "Nuevo": traer la lista que ya tienes es lo más rápido (docs/148).
+    { id: "import", title: t("tour_ing_import_title"), description: t("tour_ing_import_desc"), selector: '[data-tour="ing-import"]' },
     { id: "new", title: t("tour_ing_new_title"), description: t("tour_ing_new_desc"), selector: '[data-tour="ing-new"]' },
     // Empaques y desechables también son costo del plato — pedido del dueño del proyecto
     // (2026-09-29): que el usuario lo tenga en cuenta desde el primer ingrediente.
@@ -107,7 +109,6 @@ export function IngredientesTour({ onOpenImport }: { onOpenImport?: () => void }
       description: t("tour_ing_packaging_desc"),
       selector: '[data-tour="ing-new"]',
     },
-    { id: "import", title: t("tour_ing_import_title"), description: t("tour_ing_import_desc"), selector: '[data-tour="ing-import"]' },
     { id: "search", title: t("tour_ing_search_title"), description: t("tour_ing_search_desc"), selector: '[data-tour="ing-search"]' },
     { id: "unit-switch", title: t("tour_ing_unit_switch_title"), description: t("tour_ing_unit_switch_desc"), selector: '[data-tour="ing-unit-switch"]' },
     { id: "table", title: t("tour_ing_table_title"), description: t("tour_ing_table_desc"), selector: '[data-tour="ing-table"]' },
@@ -157,7 +158,7 @@ export function InventarioTour() {
   return <PageTour steps={steps} storageKey="tour_completed_inventario" />
 }
 
-export function MisRecetasTour() {
+export function MisRecetasTour({ onOpenImport }: { onOpenImport?: () => void } = {}) {
   const { t } = useLanguage()
   const steps: TourStep[] = [
     {
@@ -166,12 +167,22 @@ export function MisRecetasTour() {
       description: t("tour_recetas_header_desc"),
       selector: '[data-tour="recetas-header"]',
     },
+    // docs/148: importar las recetas que ya tienes (texto, archivo o foto) es el camino
+    // más rápido; el recorrido termina abriendo esa ventana.
+    { id: "import", title: t("tour_recetas_import_title"), description: t("tour_recetas_import_desc"), selector: '[data-tour="recetas-import"]' },
     { id: "new", title: t("tour_recetas_new_title"), description: t("tour_recetas_new_desc"), selector: '[data-tour="recetas-new"]' },
     { id: "trash", title: t("tour_recetas_trash_title"), description: t("tour_recetas_trash_desc"), selector: '[data-tour="recetas-trash"]' },
     { id: "stats", title: t("tour_recetas_stats_title"), description: t("tour_recetas_stats_desc"), selector: '[data-tour="recetas-stats"]' },
   ]
 
-  return <PageTour steps={steps} storageKey="tour_completed_mis-recetas" />
+  return (
+    <PageTour
+      steps={steps}
+      storageKey="tour_completed_mis-recetas"
+      finishLabel={onOpenImport ? t("tour_finish_open_recipe_import") : undefined}
+      onFinish={onOpenImport}
+    />
+  )
 }
 
 export function MenusTour() {

@@ -38,6 +38,21 @@ function decodeTextBuffer(buffer: ArrayBuffer): string {
   }
 }
 
+/**
+ * Primera hoja como matriz de celdas (sin asumir que la primera fila son encabezados),
+ * para la importación tolerante de ingredientes (lib/ingredient-import.ts, docs/148).
+ * Acepta .xlsx, .xls, .csv y .txt.
+ */
+export async function parseSpreadsheetMatrix(file: File): Promise<unknown[][]> {
+  const buffer = await file.arrayBuffer()
+  const workbook = isPlainTextFile(file.name)
+    ? XLSX.read(decodeTextBuffer(buffer), { type: "string" })
+    : XLSX.read(new Uint8Array(buffer), { type: "array" })
+  const sheet = workbook.Sheets[workbook.SheetNames[0]]
+  if (!sheet) return []
+  return XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", blankrows: false, raw: false }) as unknown[][]
+}
+
 export async function parseExcelFile(file: File): Promise<any[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()

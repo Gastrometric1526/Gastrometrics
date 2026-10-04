@@ -146,7 +146,8 @@ export async function sendFirstRecipeReminder(accountId: string): Promise<void> 
     headingKey: "e07_reminder_heading",
     bodyKey: "e07_reminder_body",
     ctaKey: "e07_reminder_cta",
-    actionPath: "/dashboard",
+    // Abre directo "Importar receta" (docs/148): traer las que ya tiene es lo más rápido.
+    actionPath: "/mis-recetas?import=1",
   })
 }
 

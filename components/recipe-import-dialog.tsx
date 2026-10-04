@@ -18,7 +18,16 @@ import { parseRecipeText, type ParsedRecipe } from "@/lib/recipe-import/parse-re
 import { convertToUnit, defaultUnitFor, findBestMatch } from "@/lib/recipe-import/match-ingredients"
 import { guessCategory } from "@/lib/recipe-import/guess-category"
 import { setPendingImport } from "@/lib/recipe-import/pending-import"
-import { recognizeRecipeImage, OCR_AVAILABLE, OCR_LANG, LOW_CONFIDENCE, type OcrLine } from "@/lib/recipe-import/ocr"
+import {
+  recognizeRecipeImage,
+  recognizeWithLanguageCheck,
+  detectRecipeLanguage,
+  OCR_AVAILABLE,
+  OCR_LANG,
+  LOW_CONFIDENCE,
+  type OcrLine,
+} from "@/lib/recipe-import/ocr"
+import { spreadsheetToRecipeText } from "@/lib/recipe-import/spreadsheet"
 import { Camera, FileText, ImageIcon, Loader2, Upload, AlertTriangle, ScanText } from "lucide-react"
 
 const CREATE = "__create__"
@@ -84,6 +93,13 @@ export function RecipeImportDialog({
   const [ocrProgress, setOcrProgress] = useState(0)
   const [ocrLang, setOcrLang] = useState(OCR_LANG[language] || "spa")
   const [ocr, setOcr] = useState<OcrState | null>(null)
+  // Idioma con el que se leyó la foto (puede diferir del elegido si la app lo corrigió sola)
+  const [ocrLangUsed, setOcrLangUsed] = useState<string | null>(null)
+  const photoRef = useRef<File | null>(null)
+  const pdfRef = useRef<File | null>(null)
+  // El idioma se detecta solo y por defecto se asume el de la app; el selector queda
+  // escondido detrás de "Cambiar" (docs/149).
+  const [showLangPicker, setShowLangPicker] = useState(false)
 
   const byId = useMemo(() => new Map(ingredients.map((i) => [i.id, i])), [ingredients])
 
@@ -102,6 +118,10 @@ export function RecipeImportDialog({
     setSteps("")
     setBusy(null)
     setOcr(null)
+    setOcrLangUsed(null)
+    photoRef.current = null
+    pdfRef.current = null
+    setShowLangPicker(false)
   }
 
   const convert = (row: Pick<Row, "dimension" | "baseAmount" | "rawQuantity">, unit: Unit) => {
@@ -109,15 +129,21 @@ export function RecipeImportDialog({
     return { quantity: converted === null ? String(row.rawQuantity || "") : String(converted), needsReview: converted === null && row.rawQuantity > 0 }
   }
 
+  const latinFallback = OCR_LANG[language] && OCR_LANG[language] !== "chi_sim" ? OCR_LANG[language] : "eng"
+
   const analyze = (source: string) => {
     const result = parseRecipeText(source)
+    // El emparejamiento con la base usa el idioma en que está escrita la receta (la
+    // palabra principal va primero en español y al final en inglés); si no se nota, el de la app.
+    const detected = detectRecipeLanguage(source)
+    const matchLang = (detected && SUPPORTED_LANGUAGES.find((l) => OCR_LANG[l.code] === detected)?.code) || language
     setParsed(result)
     setName(result.name)
     setServings(String(result.servings ?? 1))
     setSteps(result.procedure.join("\n"))
     setRows(
       result.ingredients.map((p) => {
-        const match = findBestMatch(p.name, ingredients, language)
+        const match = findBestMatch(p.name, ingredients, matchLang)
         const base = { dimension: p.dimension, baseAmount: p.baseAmount, rawQuantity: p.quantity }
         const newUnit = defaultUnitFor(p.dimension)
         return {
@@ -135,24 +161,96 @@ export function RecipeImportDialog({
     )
   }
 
-  const onFile = async (file: File) => {
-    if (OCR_AVAILABLE && file.type.startsWith("image/")) {
-      setBusy("ocr")
-      setOcrProgress(0)
-      try {
-        const result = await recognizeRecipeImage(file, ocrLang, setOcrProgress)
-        setOcr({ imageUrl: URL.createObjectURL(file), lines: result.lines, confidence: result.confidence })
-        setText(result.text)
-        if (!result.text.trim()) toast({ title: t("recipe_import_ocr_empty"), variant: "destructive" })
-      } catch (error) {
-        console.error("[recipe-import] OCR:", error)
-        toast({ title: t("recipe_import_ocr_error"), variant: "destructive" })
-      } finally {
-        setBusy(null)
+  /**
+   * Lee la foto. La primera vez, si la foto está en otro idioma del elegido, la app relee
+   * sola con el correcto (docs/148). "Leer de nuevo" respeta el idioma elegido.
+   */
+  const readPhoto = async (file: File, lang: string, checkLanguage: boolean) => {
+    setBusy("ocr")
+    setOcrProgress(0)
+    try {
+      const result = checkLanguage
+        ? await recognizeWithLanguageCheck(file, lang, latinFallback, setOcrProgress)
+        : { ...(await recognizeRecipeImage(file, lang, setOcrProgress)), lang }
+      photoRef.current = file
+      setOcrLangUsed(result.lang)
+      if (result.lang !== lang) setOcrLang(result.lang)
+      setOcr((prev) => {
+        if (prev?.imageUrl) URL.revokeObjectURL(prev.imageUrl)
+        return { imageUrl: URL.createObjectURL(file), lines: result.lines, confidence: result.confidence }
+      })
+      setText(result.text)
+      if (!result.text.trim()) toast({ title: t("recipe_import_ocr_empty"), variant: "destructive" })
+    } catch (error) {
+      console.error("[recipe-import] OCR:", error)
+      toast({ title: t("recipe_import_ocr_error"), variant: "destructive" })
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  /**
+   * PDF (docs/149): las páginas con texto se leen tal cual; las escaneadas pasan por el OCR
+   * (con detección de idioma) y se muestran para revisar como una foto.
+   */
+  const readPdf = async (file: File, lang: string) => {
+    setBusy("ocr")
+    setOcrProgress(0)
+    try {
+      const { readRecipePdf } = await import("@/lib/recipe-import/pdf")
+      const result = await readRecipePdf(file, lang, latinFallback, setOcrProgress)
+      pdfRef.current = file
+      if (!result.text.trim()) {
+        toast({ title: t("recipe_import_ocr_empty"), variant: "destructive" })
+        return
       }
+      if (result.ocr) {
+        const preview = result.ocr.preview
+        photoRef.current = null
+        setOcrLangUsed(result.ocr.lang)
+        if (result.ocr.lang !== lang) setOcrLang(result.ocr.lang)
+        setOcr((prev) => {
+          if (prev?.imageUrl) URL.revokeObjectURL(prev.imageUrl)
+          return { imageUrl: URL.createObjectURL(preview), lines: result.ocr!.lines, confidence: result.ocr!.confidence }
+        })
+        setText(result.text)
+      } else {
+        setOcr(null)
+        setText(result.text)
+        analyze(result.text)
+      }
+    } catch (error) {
+      console.error("[recipe-import] PDF:", error)
+      toast({ title: t("recipe_import_pdf_error"), variant: "destructive" })
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const onFile = async (file: File) => {
+    const name = file.name.toLowerCase()
+    if (OCR_AVAILABLE && file.type.startsWith("image/")) {
+      await readPhoto(file, ocrLang, true)
       return
     }
-    const content = await file.text()
+    if (file.type === "application/pdf" || name.endsWith(".pdf")) {
+      await readPdf(file, ocrLang)
+      return
+    }
+    let content: string
+    if (/\.(xlsx|xls)$/.test(name)) {
+      // Excel: la primera hoja como texto (docs/149, lib/recipe-import/spreadsheet.ts).
+      try {
+        const { parseSpreadsheetMatrix } = await import("@/lib/excel-utils")
+        content = spreadsheetToRecipeText(await parseSpreadsheetMatrix(file))
+      } catch (error) {
+        console.error("[recipe-import] Excel:", error)
+        toast({ title: t("recipe_import_excel_error"), variant: "destructive" })
+        return
+      }
+    } else {
+      content = await file.text()
+    }
     setOcr(null)
     setText(content)
     analyze(content)
@@ -262,7 +360,10 @@ export function RecipeImportDialog({
               <input
                 ref={fileRef}
                 type="file"
-                accept={OCR_AVAILABLE ? ".txt,.csv,.md,text/plain,text/csv,image/*" : ".txt,.csv,.md,text/plain,text/csv"}
+                accept={
+                  ".txt,.csv,.md,.xlsx,.xls,.pdf,text/plain,text/csv,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" +
+                  (OCR_AVAILABLE ? ",image/*" : "")
+                }
                 className="hidden"
                 onChange={onInputChange}
               />
@@ -279,22 +380,33 @@ export function RecipeImportDialog({
                 <Upload className="h-4 w-4 mr-2" />
                 {t("recipe_import_upload")}
               </Button>
-              {OCR_AVAILABLE && (
-                <Select value={ocrLang} onValueChange={setOcrLang}>
-                  <SelectTrigger className="h-9 w-full sm:w-[230px]" aria-label={t("recipe_import_ocr_language")}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SUPPORTED_LANGUAGES.map((l) => (
-                      <SelectItem key={l.code} value={OCR_LANG[l.code]}>
-                        {t("recipe_import_ocr_language")}: {l.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+              {OCR_AVAILABLE &&
+                (showLangPicker ? (
+                  <Select value={ocrLang} onValueChange={setOcrLang}>
+                    <SelectTrigger className="h-9 w-full sm:w-[230px]" aria-label={t("recipe_import_ocr_language")}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUPPORTED_LANGUAGES.map((l) => (
+                        <SelectItem key={l.code} value={OCR_LANG[l.code]}>
+                          {t("recipe_import_ocr_language")}: {l.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    {t("recipe_import_lang_auto").replace(
+                      "{lang}",
+                      SUPPORTED_LANGUAGES.find((l) => OCR_LANG[l.code] === ocrLang)?.name ?? "",
+                    )}{" "}
+                    <button type="button" className="text-primary hover:underline" onClick={() => setShowLangPicker(true)}>
+                      {t("recipe_import_lang_change")}
+                    </button>
+                  </span>
+                ))}
               <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <FileText className="h-3.5 w-3.5" /> .txt .csv .md
+                <FileText className="h-3.5 w-3.5" /> .txt .csv .xlsx .pdf
                 {OCR_AVAILABLE && (
                   <>
                     {" "}· <ImageIcon className="h-3.5 w-3.5" /> {t("recipe_import_photo_hint")}
@@ -322,6 +434,25 @@ export function RecipeImportDialog({
                   {t("recipe_import_ocr_done").replace("{c}", String(ocr.confidence))}
                 </p>
                 <p className="text-xs text-muted-foreground">{t("recipe_import_ocr_review_hint")}</p>
+                {ocrLangUsed && (photoRef.current || pdfRef.current) && ocrLang !== ocrLangUsed ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      photoRef.current ? readPhoto(photoRef.current, ocrLang, false) : pdfRef.current && readPdf(pdfRef.current, ocrLang)
+                    }
+                    disabled={busy !== null}
+                  >
+                    <ScanText className="h-4 w-4 mr-2" />
+                    {t("recipe_import_ocr_reread").replace("{lang}", SUPPORTED_LANGUAGES.find((l) => OCR_LANG[l.code] === ocrLang)?.name ?? "")}
+                  </Button>
+                ) : (
+                  ocrLangUsed &&
+                  ocr.confidence < LOW_CONFIDENCE && (
+                    <p className="text-xs text-amber-600">{t("recipe_import_ocr_wrong_lang_hint")}</p>
+                  )
+                )}
                 {lowLines.length > 0 && (
                   <div className="space-y-1">
                     <p className="flex items-center gap-1.5 text-xs font-medium text-amber-600">

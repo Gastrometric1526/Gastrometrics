@@ -433,15 +433,15 @@ const stripAccentsUpper = (value: string): string =>
 // Abreviaturas/sinónimos comunes que no son, en sí, la etiqueta traducida de ningún
 // idioma (ej. "kg", "fl oz") — se suman a las tablas de arriba para el reconocimiento.
 const UNIT_ALIASES: Record<Unit, string[]> = {
-  gramos: ["g", "gr", "gram", "gramo", "gramme", "gramm"],
-  kilogramos: ["kg", "kilo", "kilogramo", "kilogramme"],
+  gramos: ["g", "gr", "grs", "gram", "gramo", "gramme", "gramm", "公克"],
+  kilogramos: ["kg", "kgs", "kilo", "kilos", "kilogramo", "kilogramme", "公斤", "kilogram"],
   mililitros: ["ml", "mililitro", "millilitre", "millilitro"],
-  litros: ["l", "lt", "litro", "liter", "litre"],
+  litros: ["l", "lt", "lts", "litro", "liter", "litre", "公升"],
   onzas: ["oz", "onza", "ounce"],
   "onzas líquidas": ["fl oz", "floz", "onza liquida", "fluid ounce", "once liquide"],
   libras: ["lb", "lbs", "libra", "pound"],
   galones: ["gal", "galon", "gallon"],
-  unidad: ["u", "ud", "pza", "pieza", "unit", "stk", "enhed", "piece", "unidade"],
+  unidad: ["u", "ud", "uds", "und", "unid", "un", "pza", "pieza", "unit", "units", "pc", "pcs", "stk", "styk", "enhed", "piece", "pièce", "pce", "unité", "unidade", "个", "只", "颗", "件", "份"],
 }
 
 let unitReverseMap: Map<string, Unit> | null = null

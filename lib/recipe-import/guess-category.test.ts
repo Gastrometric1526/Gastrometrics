@@ -13,3 +13,11 @@ describe("categoría sugerida (docs/146)", () => {
     expect(guessCategory("xantana")).toBe("OTROS")
   })
 })
+
+describe("categoría con signos y letras nórdicas", () => {
+  it("ignora la coma y convierte ø", () => {
+    expect(guessCategory("onion, chopped")).toBe("VEGETAL")
+    expect(guessCategory("løg, hakket")).toBe("VEGETAL")
+    expect(guessCategory("Banano maduro")).toBe("FRUTA")
+  })
+})

@@ -58,14 +58,17 @@ import { useNotification } from "@/hooks/use-notification"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { FileUpload } from "@/components/file-upload"
 import { MermaManagementDialog } from "@/components/merma-management-dialog"
-import { matchCategoryLabel, matchUnitLabel } from "@/lib/ingredient-labels"
+import { matchCategoryLabel } from "@/lib/ingredient-labels"
 import type { Ingredient } from "@/types/ingredient"
 import { categories, units, presentations } from "@/types/ingredient"
 import { getCategoryLabel, getUnitLabel, getPresentationLabel } from "@/lib/ingredient-labels"
 import { getIngredients, saveIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import type { Recipe } from "@/types/recipe"
-import { parseExcelFile, createIngredientsExcelTemplate } from "@/lib/excel-utils"
+import { parseSpreadsheetMatrix, createIngredientsExcelTemplate } from "@/lib/excel-utils"
+import { mapIngredientRows, splitPastedList, type ImportedIngredientRow } from "@/lib/ingredient-import"
+import { guessCategory } from "@/lib/recipe-import/guess-category"
+import { getCurrentCurrencyCode } from "@/lib/currency"
 import { IngredientsTable } from "@/components/ingredients/ingredients-table"
 import { IngredientesTour } from "@/components/page-tours"
 import { convertAllIngredientsToSystem } from "@/lib/utils/calculations"
@@ -100,62 +103,7 @@ const getFormSteps = (t: Translator) => [
   { id: "additional", title: t("ingredientes_step_additional_title"), icon: Info },
 ]
 
-// Columnas que el sistema pide vía Excel: solo estas 4. Categoría, presentación,
-// proveedor y notas se llenan después en la tabla con opciones seleccionables.
-// Alias por campo en los 6 idiomas seleccionables de la app (no solo Español/Inglés)
-// — así una plantilla de ingredientes exportada en cualquiera de esos idiomas (o de
-// cualquier POS/ERP que las nombre distinto) igual se reconoce automáticamente.
-// Español | Inglés | Danés | Francés | Portugués | Chino
-const EXCEL_COLUMN_MAPPINGS = {
-  name: [
-    "nombre", "ingrediente", "producto",
-    "name", "item", "product",
-    "navn", "produkt",
-    "nom", "produit", "ingrédient",
-    "nome", "produto", "ingrediente",
-    "名称", "产品", "食材",
-  ],
-  unit: [
-    "unidad", "medida",
-    "unit", "measure", "u",
-    "enhed",
-    "unité", "mesure",
-    "unidade",
-    "单位",
-  ],
-  price: [
-    "precio", "costo", "valor", "importe",
-    "price", "cost", "value",
-    "pris",
-    "prix", "coût",
-    "preço", "custo",
-    "价格", "价钱",
-  ],
-  content: [
-    "contenido", "cantidad", "peso", "volumen", "neto",
-    "content", "quantity", "weight", "volume", "net",
-    "indhold", "mængde", "vægt",
-    "contenu", "quantité", "poids",
-    "conteúdo", "quantidade", "peso",
-    "净含量", "数量", "重量",
-  ],
-  category: [
-    "categoria", "rubro", "clasificacion",
-    "category", "classification",
-    "kategori",
-    "catégorie", "classification",
-    "categoria", "classificação",
-    "类别", "分类",
-  ],
-  supplier: [
-    "proveedor",
-    "supplier", "vendor",
-    "leverandør",
-    "fournisseur",
-    "fornecedor",
-    "供应商",
-  ],
-}
+// Columnas, números y listas pegadas de la importación: lib/ingredient-import.ts (docs/148).
 
 // Sin tildes/diéresis y en mayúsculas, para comparar sin importar cómo haya escrito
 // el usuario la categoría en el Excel ("Lácteos y derivados"=="LACTEOS Y DERIVADOS").
@@ -185,42 +133,6 @@ const normalizeCategory = (value: string): (typeof categories)[number] => {
   return partial || "OTROS"
 }
 
-// Function to find matching column — ignora tildes además de mayúsculas/minúsculas,
-// para que un encabezado como"Catégorie"o"日期"emparejen igual de bien que uno en
-// Español.
-const findMatchingColumn = (headers: string[], possibleNames: string[]): string | null => {
-  const normalizedHeaders = headers.map((h) => stripAccents(h))
-
-  for (const possibleName of possibleNames) {
-    const normalizedName = stripAccents(possibleName)
-    const found = normalizedHeaders.find((header) => header.includes(normalizedName) || normalizedName.includes(header))
-    if (found) {
-      return headers[normalizedHeaders.indexOf(found)]
-    }
-  }
-  return null
-}
-
-// Function to normalize unit values — reconoce el valor canónico, abreviaturas
-// comunes (kg, fl oz, etc.), y la etiqueta traducida en cualquiera de los 6 idiomas
-// seleccionables (matchUnitLabel, lib/ingredient-labels.ts). BUG CORREGIDO: la tabla
-// anterior mapeaba "taza"/"cdta"/"cda" a "tazas"/"cucharaditas"/"cucharadas", que NO
-// son unidades válidas de types/ingredient.ts (`units`) — un ingrediente importado con
-// esas palabras quedaba guardado con un valor de unidad inválido/inexistente. Ahora,
-// si no hay una unidad canónica equivalente real, cae al mismo valor por defecto que
-// cualquier otro texto no reconocido.
-const normalizeUnit = (value: string): string => {
-  if (!value) return "gramos"
-
-  const normalized = value.toLowerCase().trim()
-
-  // Check if it's already a valid unit
-  if (units.includes(normalized as any)) {
-    return normalized
-  }
-
-  return matchUnitLabel(value) || "gramos"
-}
 
 export default function IngredientesPage() {
   const router = useRouter()
@@ -250,6 +162,17 @@ export default function IngredientesPage() {
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showImportDialog, setShowImportDialog] = useState(false)
+  // Tras importar ingredientes, se sugiere el siguiente paso: traer las recetas (docs/148).
+  const [importedCount, setImportedCount] = useState(0)
+  // ?import=1 (desde "Tu camino" del Dashboard): abre directo la importación.
+  useEffect(() => {
+    if (searchParams.get("import") !== "1") return
+    setShowImportDialog(true)
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete("import")
+    router.replace(params.size ? `/ingredientes?${params}` : "/ingredientes")
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
   const [showMermaDialog, setShowMermaDialog] = useState(false)
   const [ingredientToEdit, setIngredientToEdit] = useState<Ingredient | null>(null)
   const [ingredientToDelete, setIngredientToDelete] = useState<Ingredient | null>(null)
@@ -326,7 +249,10 @@ export default function IngredientesPage() {
 
   // Import state
   const [importFile, setImportFile] = useState<File | null>(null)
-  const [importPreview, setImportPreview] = useState<any[]>([])
+  // Filas ya interpretadas (lib/ingredient-import.ts): la vista previa muestra lo que
+  // de verdad se va a importar, no las columnas crudas del archivo (docs/148).
+  const [importRows, setImportRows] = useState<ImportedIngredientRow[]>([])
+  const [pasteText, setPasteText] = useState("")
   const [importProgress, setImportProgress] = useState(0)
   const [isImporting, setIsImporting] = useState(false)
 
@@ -487,8 +413,7 @@ export default function IngredientesPage() {
         (file) =>
           file.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
           file.type === "application/vnd.ms-excel" ||
-          file.name.endsWith(".xlsx") ||
-          file.name.endsWith(".xls"),
+          /\.(xlsx|xls|csv|txt)$/i.test(file.name),
       )
 
       if (excelFile) {
@@ -505,16 +430,36 @@ export default function IngredientesPage() {
   // Process import file
   const processImportFile = async (file: File) => {
     try {
-      const data = await parseExcelFile(file)
-      setImportPreview(data.slice(0, 10)) // Show first 10 rows as preview
+      const rows = mapIngredientRows(await parseSpreadsheetMatrix(file), { currency: getCurrentCurrencyCode() })
+      setImportRows(rows)
       showInfo(
         t("ingredientes_toast_file_processed_title"),
-        t("ingredientes_toast_file_processed_desc").replace("{count}", String(data.length)),
+        t("ingredientes_toast_file_processed_desc").replace("{count}", String(rows.length)),
       )
     } catch (error) {
       console.error("Error processing file:", error)
       showError(t("ingredientes_toast_process_error_title"), t("ingredientes_toast_process_error_desc"))
     }
+  }
+
+  // Lista pegada (de Excel, Google Sheets, un correo o WhatsApp) — sin archivo (docs/148).
+  const handlePasteList = () => {
+    const rows = mapIngredientRows(splitPastedList(pasteText), { currency: getCurrentCurrencyCode() })
+    if (!rows.length) {
+      showError(t("ingredientes_toast_process_error_title"), t("ingredientes_paste_empty"))
+      return
+    }
+    setImportRows(rows)
+    setImportFile(new File([pasteText], `${t("ingredientes_paste_source")}.txt`, { type: "text/plain" }))
+  }
+
+  // Por qué se omitiría una fila (sin precio o ya existe), para la vista previa.
+  const importSkipReason = (row: ImportedIngredientRow, index: number): string | null => {
+    if (!(row.price > 0)) return t("ingredientes_preview_skip_price")
+    const key = (row.name || "").toLowerCase()
+    if (ingredients.some((ing) => ing.name.toLowerCase() === key)) return t("ingredientes_preview_skip_exists")
+    if (importRows.slice(0, index).some((r) => (r.name || "").toLowerCase() === key)) return t("ingredientes_preview_skip_exists")
+    return null
   }
 
   const handleDownloadTemplate = async () => {
@@ -549,7 +494,7 @@ export default function IngredientesPage() {
     setImportProgress(0)
 
     try {
-      const data = await parseExcelFile(importFile)
+      const data = importRows
       const totalRows = data.length
       let importedCount = 0
       let errorCount = 0
@@ -559,105 +504,42 @@ export default function IngredientesPage() {
         throw new Error(t("ingredientes_error_no_valid_data"))
       }
 
-      // Get headers from first row to map columns intelligently
-      const headers = Object.keys(data[0])
-      console.log("Excel headers found:", headers)
-
-      // Map columns intelligently
-      const columnMap = {
-        name: findMatchingColumn(headers, EXCEL_COLUMN_MAPPINGS.name),
-        unit: findMatchingColumn(headers, EXCEL_COLUMN_MAPPINGS.unit),
-        price: findMatchingColumn(headers, EXCEL_COLUMN_MAPPINGS.price),
-        content: findMatchingColumn(headers, EXCEL_COLUMN_MAPPINGS.content),
-        category: findMatchingColumn(headers, EXCEL_COLUMN_MAPPINGS.category),
-        supplier: findMatchingColumn(headers, EXCEL_COLUMN_MAPPINGS.supplier),
-      }
-
-      console.log("Column mapping:", columnMap)
-
+      const seen = new Set(ingredients.map((ing) => ing.name.toLowerCase()))
       for (let i = 0; i < data.length; i++) {
         const row = data[i]
-        setImportProgress((i / totalRows) * 100)
-
-        try {
-          // Extract data using intelligent column mapping
-          const name = columnMap.name ? (row[columnMap.name] || "").toString().trim() : ""
-          const unitRaw = columnMap.unit ? (row[columnMap.unit] || "").toString().trim() : ""
-          const priceRaw = columnMap.price ? row[columnMap.price] : 0
-          const contentRaw = columnMap.content ? row[columnMap.content] : 1
-          const categoryRaw = columnMap.category ? (row[columnMap.category] || "").toString().trim() : ""
-          const supplierRaw = columnMap.supplier ? (row[columnMap.supplier] || "").toString().trim() : ""
-
-          // Skip empty rows
-          if (!name && !priceRaw) {
-            continue
-          }
-
-          // Validate and normalize data
-          const ingredientName = name || `Ingrediente ${i + 1}`
-          const unit = normalizeUnit(unitRaw)
-          // La categoría del Excel se compara contra las categorías reales que ya
-          // ofrece la base de datos (sin importar tildes/mayúsculas) — si la fila no
-          // trae categoría, o no coincide con ninguna, cae a"OTROS"(editable después
-          // desde el selector de la tabla, igual que antes).
-          const category = normalizeCategory(categoryRaw)
-          const presentation = undefined
-
-          const purchasePrice = Number(priceRaw) || 0
-          const netContent = Number(contentRaw) || 1
-
-          // Validate required fields
-          if (purchasePrice <= 0) {
-            console.warn(`Row ${i + 1}: Invalid price (${priceRaw}), skipping`)
-            errorCount++
-            continue
-          }
-
-          if (netContent <= 0) {
-            console.warn(`Row ${i + 1}: Invalid content (${contentRaw}), skipping`)
-            errorCount++
-            continue
-          }
-
-          const newIngredient: Ingredient = {
-            id: generateUniqueId(),
-            name: ingredientName,
-            category: category as any,
-            unit: unit as any,
-            presentation: presentation,
-            pricing: {
-              purchasePrice,
-              netContent,
-              pricePerUnit: purchasePrice / netContent,
-              lastUpdated: new Date().toISOString(),
-            },
-            supplier: supplierRaw || t("ingredientes_default_supplier"),
-            notes: "",
-            metadata: {
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              version: 1,
-            },
-          }
-
-          // Check if ingredient already exists (by name)
-          const existingIngredient = ingredients.find(
-            (ing) => ing.name.toLowerCase() === newIngredient.name.toLowerCase(),
-          )
-
-          if (!existingIngredient) {
-            newIngredients.push(newIngredient)
-            importedCount++
-          } else {
-            console.log(`Ingredient"${newIngredient.name}"already exists, skipping`)
-          }
-        } catch (rowError) {
-          console.error(`Error processing row ${i + 1}:`, rowError)
+        // La categoría se compara contra las reales (sin tildes/mayúsculas, 6 idiomas);
+        // si no coincide, entra como OTROS y se corrige desde la tabla.
+        const ingredientName = row.name || `${t("ingredientes_default_name_prefix")} ${i + 1}`
+        if (!(row.price > 0) || !(row.content > 0)) {
           errorCount++
+          continue
         }
-
-        // Small delay to show progress
-        await new Promise((resolve) => setTimeout(resolve, 10))
+        if (seen.has(ingredientName.toLowerCase())) continue
+        seen.add(ingredientName.toLowerCase())
+        const now = new Date().toISOString()
+        newIngredients.push({
+          id: generateUniqueId(),
+          name: ingredientName,
+          // Sin categoría en la lista: se sugiere por el nombre (mismas palabras clave que el
+          // importador de recetas), en vez de mandar todo a "Otros".
+          category: (row.category ? normalizeCategory(row.category) : guessCategory(ingredientName)) as any,
+          unit: row.unit as any,
+          presentation: undefined,
+          pricing: {
+            purchasePrice: row.price,
+            netContent: row.content,
+            pricePerUnit: row.price / row.content,
+            lastUpdated: now,
+          },
+          supplier: row.supplier || t("ingredientes_default_supplier"),
+          notes: "",
+          metadata: { createdAt: now, updatedAt: now, version: 1 },
+        })
+        importedCount++
+        if (i % 50 === 0) {
+          setImportProgress((i / totalRows) * 100)
+          await new Promise((resolve) => setTimeout(resolve, 0))
+        }
       }
 
       setImportProgress(100)
@@ -706,10 +588,12 @@ export default function IngredientesPage() {
           : t("ingredientes_toast_import_success_desc").replace("{count}", String(importedCount))
 
       showSuccess(t("ingredientes_toast_import_success_title"), message)
+      if (importedCount > 0) setImportedCount(importedCount)
 
       setShowImportDialog(false)
       setImportFile(null)
-      setImportPreview([])
+      setImportRows([])
+      setPasteText("")
     } catch (error) {
       console.error("Error importing:", error)
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -1267,6 +1151,26 @@ export default function IngredientesPage() {
 
           {/* Header Section */}
           <div className="flex flex-col gap-6 mb-8">
+            {importedCount > 0 && (
+              <div className="rounded-xl border border-primary/40 bg-primary-soft/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {t("ingredientes_next_recipes_title").replace("{count}", String(importedCount))}
+                  </p>
+                  <p className="text-xs text-text-3">{t("ingredientes_next_recipes_desc")}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Link href={`/mis-recetas?import=1${businessId ? `&business=${businessId}` : ""}`}>
+                    <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                      {t("ingredientes_next_recipes_cta")}
+                    </Button>
+                  </Link>
+                  <Button size="sm" variant="ghost" onClick={() => setImportedCount(0)} aria-label={t("common_close")}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-center gap-2 md:gap-4">
                 <Link href={businessId ? `/business/${businessId}` : "/dashboard"}>
@@ -2094,8 +1998,26 @@ export default function IngredientesPage() {
                       setImportFile(file)
                       processImportFile(file)
                     }}
-                    accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                    accept=".xlsx,.xls,.csv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,text/plain"
                   />
+                  <div className="mt-6 pt-6 border-t border-border text-left space-y-2">
+                    <Label htmlFor="ingredient-paste" className="text-sm font-medium text-foreground">
+                      {t("ingredientes_paste_title")}
+                    </Label>
+                    <Textarea
+                      id="ingredient-paste"
+                      value={pasteText}
+                      onChange={(e) => setPasteText(e.target.value)}
+                      placeholder={t("ingredientes_paste_placeholder")}
+                      rows={5}
+                      className="font-mono text-sm"
+                    />
+                    <div className="flex justify-end">
+                      <Button type="button" variant="outline" size="sm" onClick={handlePasteList} disabled={!pasteText.trim()}>
+                        {t("ingredientes_paste_button")}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -2112,44 +2034,59 @@ export default function IngredientesPage() {
                       size="sm"
                       onClick={() => {
                         setImportFile(null)
-                        setImportPreview([])
+                        setImportRows([])
                       }}
                     >
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
 
-                  {importPreview.length > 0 && (
-                    <div className="space-y-2">
-                      <h4 className="font-semibold">{t("ingredientes_preview_title")}</h4>
-                      <div className="border rounded-lg overflow-hidden">
-                        <div className="overflow-x-auto max-h-64">
-                          <table className="w-full text-sm">
-                            <thead className="bg-muted">
-                              <tr>
-                                {Object.keys(importPreview[0] || {}).map((key) => (
-                                  <th key={key} className="p-2 text-left font-medium">
-                                    {key}
-                                  </th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {importPreview.map((row, index) => (
-                                <tr key={index} className="border-t">
-                                  {Object.values(row).map((value: any, cellIndex) => (
-                                    <td key={cellIndex} className="p-2">
-                                      {String(value)}
-                                    </td>
-                                  ))}
+                  {importRows.length > 0 && (() => {
+                    const reasons = importRows.map((row, i) => importSkipReason(row, i))
+                    const ready = reasons.filter((r) => r === null).length
+                    return (
+                      <div className="space-y-2">
+                        <h4 className="font-semibold">{t("ingredientes_preview_title")}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {t("ingredientes_preview_summary")
+                            .replace("{ready}", String(ready))
+                            .replace("{skipped}", String(importRows.length - ready))}
+                        </p>
+                        <div className="border rounded-lg overflow-hidden">
+                          <div className="overflow-x-auto max-h-64">
+                            <table className="w-full text-sm">
+                              <thead className="bg-muted">
+                                <tr>
+                                  <th className="p-2 text-left font-medium">{t("ingredientes_preview_col_name")}</th>
+                                  <th className="p-2 text-left font-medium">{t("ingredientes_preview_col_content")}</th>
+                                  <th className="p-2 text-right font-medium">{t("ingredientes_preview_col_price")}</th>
+                                  <th className="p-2 text-left font-medium">{t("ingredientes_preview_col_status")}</th>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                              </thead>
+                              <tbody>
+                                {importRows.slice(0, 100).map((row, index) => (
+                                  <tr key={index} className={"border-t " + (reasons[index] ? "text-muted-foreground" : "")}>
+                                    <td className="p-2">{row.name || "—"}</td>
+                                    <td className="p-2 whitespace-nowrap">
+                                      {row.content} {getUnitLabel(row.unit as any, language)}
+                                    </td>
+                                    <td className="p-2 text-right tabular-nums">{row.price > 0 ? row.price : "—"}</td>
+                                    <td className="p-2 whitespace-nowrap">
+                                      {reasons[index] ? (
+                                        <span className="text-destructive">{reasons[index]}</span>
+                                      ) : (
+                                        <span className="text-success">{t("ingredientes_preview_ok")}</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )
+                  })()}
 
                   {isImporting && (
                     <div className="space-y-2">
