@@ -12,6 +12,7 @@ import { Rocket, Clock3 } from "lucide-react"
 interface ActivationAccount {
   email: string
   createdAt: string
+  emailConfirmed?: boolean
   firstRecipeAt: string | null
   hoursToActivation: number | null
 }
@@ -54,6 +55,8 @@ export function ActivationPanel() {
 
   return (
     <div className="space-y-6">
+      {/* "Activación" se confundía con confirmar el correo (docs/143): se explica arriba. */}
+      <p className="rounded-lg border bg-muted/40 p-3 text-sm text-muted-foreground">{t("admin_activation_explainer")}</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardContent className="p-4 space-y-3">
@@ -119,6 +122,7 @@ export function ActivationPanel() {
                   <TableRow>
                     <TableHead>{t("admin_activation_table_email")}</TableHead>
                     <TableHead>{t("admin_activation_table_created")}</TableHead>
+                    <TableHead>{t("admin_activation_table_email_confirmed")}</TableHead>
                     <TableHead>{t("admin_activation_table_status")}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -129,10 +133,13 @@ export function ActivationPanel() {
                       <TableCell className="text-muted-foreground">
                         {new Date(account.createdAt).toLocaleDateString(getDateLocale(language))}
                       </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {account.emailConfirmed ? t("admin_activation_confirmed_yes") : t("admin_activation_confirmed_no")}
+                      </TableCell>
                       <TableCell>
                         {account.hoursToActivation !== null ? (
                           <Badge variant="outline" className="bg-success-soft text-success border-transparent">
-                            {t("admin_activation_status_activated")} · {formatDuration(account.hoursToActivation)}
+                            {t("admin_activation_status_activated").replace("{time}", formatDuration(account.hoursToActivation))}
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-muted-foreground">

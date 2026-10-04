@@ -9,12 +9,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLanguage } from "@/contexts/language-context"
-import { ArrowLeft, Lock, LayoutDashboard, Users, Inbox, LineChart, BellOff, Rocket, Mail } from "lucide-react"
+import { ArrowLeft, Lock, LayoutDashboard, Users, Inbox, LineChart, BellOff, Rocket, Mail, Star } from "lucide-react"
 import { StatsPanel } from "@/components/admin/stats-panel"
 import { AccountsPanel } from "@/components/admin/accounts-panel"
 import { FeedbackPanel } from "@/components/admin/feedback-panel"
 import { AnalyticsPanel } from "@/components/admin/analytics-panel"
 import { TopUsersPanel } from "@/components/admin/top-users-panel"
+import { ReviewsPanel } from "@/components/admin/reviews-panel"
 import { BusinessHealthPanel } from "@/components/admin/business-health-panel"
 import { ActivationPanel } from "@/components/admin/activation-panel"
 import { ProductUpdatesPanel } from "@/components/admin/product-updates-panel"
@@ -195,7 +196,7 @@ export default function AdminPage() {
         </div>
 
         <Tabs defaultValue="resumen">
-          <TabsList>
+          <TabsList className="flex h-auto flex-wrap justify-start">
             <TabsTrigger value="resumen" className="gap-1.5">
               <LayoutDashboard className="h-4 w-4" />
               {t("admin_tab_resumen")}
@@ -207,6 +208,10 @@ export default function AdminPage() {
             <TabsTrigger value="feedback" className="gap-1.5">
               <Inbox className="h-4 w-4" />
               {t("admin_tab_feedback")} ({feedbackCounts.total})
+            </TabsTrigger>
+            <TabsTrigger value="resenas" className="gap-1.5">
+              <Star className="h-4 w-4" />
+              {t("admin_tab_reviews")}
             </TabsTrigger>
             <TabsTrigger value="analiticas" className="gap-1.5">
               <LineChart className="h-4 w-4" />
@@ -233,6 +238,9 @@ export default function AdminPage() {
           </TabsContent>
           <TabsContent value="feedback" className="mt-6">
             <FeedbackPanel onCountsChange={setFeedbackCounts} />
+          </TabsContent>
+          <TabsContent value="resenas" className="mt-6">
+            <ReviewsPanel />
           </TabsContent>
           <TabsContent value="analiticas" className="mt-6 space-y-6">
             <TopUsersPanel />

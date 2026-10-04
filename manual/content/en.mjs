@@ -460,6 +460,13 @@ export default {
           ["Reminder", "Inventory and reports", "When a week has passed since your last count or since you checked your reports."],
           ["Reminder", "Prices and coming back", "If your prices haven't been updated in over 30 days, or if you haven't visited in a while."],
         ]],
+        ["p", "And when your account has something specific to tell you, we email you the figure:"],
+        ["cards", [
+          ["Every Monday", "Weekly summary", "Your key numbers: average food cost, inventory value, items below minimum and dishes with low margin."],
+          ["Alert", "Low stock and margin", "If an item reaches its minimum or a dish stops meeting its food cost target."],
+          ["Team", "Invitations and businesses", "If your invitee hasn't joined, or a new business still has no recipes."],
+          ["Milestones", "Progress and your plan", "When you reach 10, 25 or 50 recipes, and if your plan includes something you haven't tried yet."],
+        ]],
         ["p", "We never send more than one reminder every few days. Every email has a link to unsubscribe in one click, or you can uncheck the box in Settings → Notifications."],
         ["h3", "Your data"],
         ["list", [

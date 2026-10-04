@@ -460,6 +460,13 @@ export default {
           ["Rappel", "Inventaire et rapports", "Quand une semaine s'est écoulée depuis votre dernier comptage ou depuis que vous avez consulté vos rapports."],
           ["Rappel", "Prix et retour", "Si vos prix n'ont pas été mis à jour depuis plus de 30 jours, ou si vous n'êtes pas venu depuis longtemps."],
         ]],
+        ["p", "Et quand votre compte a quelque chose de précis à vous dire, nous vous écrivons avec le chiffre :"],
+        ["cards", [
+          ["Chaque lundi", "Résumé hebdomadaire", "Vos chiffres clés : food cost moyen, valeur du stock, produits sous le minimum et plats à faible marge."],
+          ["Alerte", "Stock bas et marge", "Si un produit atteint son minimum ou si un plat ne respecte plus son objectif de food cost."],
+          ["Équipe", "Invitations et entreprises", "Si votre invité ne s'est pas connecté, ou si une nouvelle entreprise n'a toujours pas de recettes."],
+          ["Étapes", "Progrès et votre forfait", "Quand vous atteignez 10, 25 ou 50 recettes, et si votre forfait inclut quelque chose que vous n'avez pas encore essayé."],
+        ]],
         ["p", "Nous n'envoyons jamais plus d'un rappel tous les quelques jours. Chaque e-mail contient un lien pour vous désabonner en un clic, ou vous pouvez décocher la case dans Paramètres → Notifications."],
         ["h3", "Vos données"],
         ["list", [

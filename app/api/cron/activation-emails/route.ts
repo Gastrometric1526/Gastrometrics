@@ -48,6 +48,10 @@
  * (sendDailySignupDigest, red de seguridad del aviso inmediato; ?digestDryRun=1 solo
  * cuenta, sin mandar). Cada paso corre aislado en su propio try: antes, un error en
  * cualquier paso cancelaba todos los siguientes (recordatorios incluidos).
+ *
+ * docs/144: los correos de valor (runEngagementEmails: resumen semanal, stock bajo,
+ * margen, logros, invitación sin aceptar, negocio vacío, funciones sin usar) corren
+ * antes de los recordatorios. ?engagementDryRun=1 muestra qué se mandaría.
  */
 
 import { NextResponse } from "next/server"
@@ -62,6 +66,7 @@ import { runPlanExpiryReminders, runExpiredPlanDowngrades } from "@/lib/services
 import { runAccountDeletionPurge } from "@/lib/services/purge-deleted-accounts"
 import { runReengagementReminders } from "@/lib/services/notify-reengagement"
 import { sendDailySignupDigest } from "@/lib/services/notify-signup"
+import { runEngagementEmails } from "@/lib/services/notify-engagement"
 
 // Muchos correos en serie con pausa entre envíos (lib/services/send-email.ts): se pide
 // el máximo de Vercel Hobby para que la ejecución no se corte a la mitad.
@@ -119,6 +124,10 @@ export async function GET(request: Request) {
       console.error("[api/cron/activation-emails] Error en dry run de recordatorios:", error)
       return NextResponse.json({ ok: false, error: "Error calculando recordatorios." }, { status: 500 })
     }
+  }
+  // Modo de prueba de los correos de valor (docs/144): qué recibiría cada cuenta, sin mandar.
+  if (params.get("engagementDryRun") === "1") {
+    return NextResponse.json({ ok: true, engagement: await step("correos de valor", () => runEngagementEmails({ dryRun: true })) })
   }
   // Modo de prueba del resumen diario: cuenta las cuentas nuevas de 24 h sin mandar nada.
   if (params.get("digestDryRun") === "1") {
@@ -203,9 +212,12 @@ export async function GET(request: Request) {
   })
 
   const deletionPurge = await step("purga de cuentas eliminadas", () => runAccountDeletionPurge())
+  // Correos de valor antes que los recordatorios: comparten la pausa global y, si a una
+  // cuenta le toca uno útil (stock bajo, resumen, margen…), ese gana.
+  const engagement = await step("correos de valor", () => runEngagementEmails())
   const reengagement = await step("recordatorios", () => runReengagementReminders())
 
-  const steps = { signupDigest, activation, planExpiry, expiredDowngrades, experienceSurvey, deletionPurge, reengagement }
+  const steps = { signupDigest, activation, planExpiry, expiredDowngrades, experienceSurvey, deletionPurge, engagement, reengagement }
   const failed = Object.entries(steps)
     .filter(([, v]) => v && typeof v === "object" && "error" in v)
     .map(([k]) => k)

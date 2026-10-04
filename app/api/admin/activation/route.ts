@@ -34,13 +34,14 @@ export async function GET() {
 
     // Mismo bucle de paginación que /api/admin/accounts — listUsers() no tiene un
     // "traer todas" directo.
-    let allUsers: { id: string; email: string; createdAt: string }[] = []
+    let allUsers: { id: string; email: string; createdAt: string; emailConfirmed: boolean }[] = []
     let listPage = 1
     while (true) {
       const { data, error } = await admin.auth.admin.listUsers({ page: listPage, perPage: 200 })
       if (error) throw error
       allUsers = allUsers.concat(
-        data.users.map((u) => ({ id: u.id, email: u.email || "", createdAt: u.created_at })),
+        // emailConfirmed (docs/143): aparte de la "activación" (primera receta), que se confundía con confirmar el correo.
+        data.users.map((u) => ({ id: u.id, email: u.email || "", createdAt: u.created_at, emailConfirmed: Boolean(u.email_confirmed_at) })),
       )
       if (data.users.length < 200) break
       listPage += 1
@@ -71,7 +72,7 @@ export async function GET() {
           ? (new Date(firstRecipeAt).getTime() - new Date(u.createdAt).getTime()) / (1000 * 60 * 60)
           : null
         if (hours !== null && hours >= 0) hoursToActivation.push(hours)
-        return { email: u.email, createdAt: u.createdAt, firstRecipeAt, hoursToActivation: hours }
+        return { email: u.email, createdAt: u.createdAt, emailConfirmed: u.emailConfirmed, firstRecipeAt, hoursToActivation: hours }
       })
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 

@@ -193,6 +193,9 @@ export interface AccountFacts {
   recipeCount: number
   staleIngredientCount: number
   sentHistory: { type: ReengagementType; sentAt: number }[]
+  // Envíos recientes de los correos de valor (notify-engagement.ts, docs/144): cuentan
+  // para la pausa global, así una cuenta no recibe un recordatorio y un resumen seguidos.
+  otherSentTimes?: number[]
   lastActivationEmailAt: number | null
 }
 
@@ -216,7 +219,7 @@ export function chooseReengagement(f: AccountFacts, r = REENGAGEMENT_RULES): Ree
 
   if (inactiveDays > r.maxInactiveDays) return null
 
-  const lastSentAny = f.sentHistory.reduce((max, s) => Math.max(max, s.sentAt), 0)
+  const lastSentAny = Math.max(f.sentHistory.reduce((max, s) => Math.max(max, s.sentAt), 0), ...(f.otherSentTimes ?? []))
   if (lastSentAny && now - lastSentAny < r.globalCooldownDays * DAY_MS) return null
   if (f.lastActivationEmailAt && now - f.lastActivationEmailAt < r.activationGapHours * HOUR_MS) return null
 
@@ -297,7 +300,7 @@ export function explainSkip(f: AccountFacts, r = REENGAGEMENT_RULES): Reengageme
   if (!f.lastActiveAt) return "sin_actividad_registrada"
   const inactiveDays = daysBetween(f.lastActiveAt, f.now)
   if (inactiveDays > r.maxInactiveDays) return "inactiva_demasiado_tiempo"
-  const lastSentAny = f.sentHistory.reduce((max, s) => Math.max(max, s.sentAt), 0)
+  const lastSentAny = Math.max(f.sentHistory.reduce((max, s) => Math.max(max, s.sentAt), 0), ...(f.otherSentTimes ?? []))
   if (lastSentAny && f.now - lastSentAny < r.globalCooldownDays * DAY_MS) return "pausa_por_recordatorio_reciente"
   if (f.lastActivationEmailAt && f.now - f.lastActivationEmailAt < r.activationGapHours * HOUR_MS)
     return "pausa_por_correo_de_activacion"
@@ -324,7 +327,7 @@ function chunk<T>(items: T[], size: number): T[][] {
 
 // Supabase corta cada select en 1000 filas por defecto — pagina hasta traer todo, en
 // grupos de ids para no armar URLs gigantes con .in(...).
-async function fetchAllByIds<T>(
+export async function fetchAllByIds<T>(
   ids: string[],
   build: (idChunk: string[], from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: unknown }>,
 ): Promise<T[]> {
@@ -343,7 +346,7 @@ async function fetchAllByIds<T>(
   return rows
 }
 
-function maxTime(...values: (string | null | undefined | number)[]): number | null {
+export function maxTime(...values: (string | null | undefined | number)[]): number | null {
   let best: number | null = null
   for (const v of values) {
     if (v === null || v === undefined) continue
@@ -353,20 +356,21 @@ function maxTime(...values: (string | null | undefined | number)[]): number | nu
   return best
 }
 
-function isMissingTableError(error: unknown): boolean {
+export function isMissingTableError(error: unknown): boolean {
   const code = (error as { code?: string })?.code
   return code === "42P01" || code === "PGRST205"
 }
 
-interface CandidateAccount {
+export interface CandidateAccount {
   id: string
   email: string
   name: string
   language: string
   lastSignInAt: string | null
+  createdAt?: string
 }
 
-async function loadOptedInAccounts(admin: AdminClient): Promise<CandidateAccount[]> {
+export async function loadOptedInAccounts(admin: AdminClient): Promise<CandidateAccount[]> {
   const { data: profiles, error } = await admin
     .from("profiles")
     .select("id, full_name, preferred_language, deletion_requested_at")
@@ -391,6 +395,7 @@ async function loadOptedInAccounts(admin: AdminClient): Promise<CandidateAccount
         name: (profile.full_name || "").trim().split(/\s+/)[0] || "",
         language: profile.preferred_language || "es",
         lastSignInAt: u.last_sign_in_at ?? null,
+        createdAt: u.created_at,
       })
     }
     if (data.users.length < 200) break
@@ -504,6 +509,19 @@ export async function runReengagementReminders(options: { dryRun?: boolean } = {
     return map
   }
 
+  // Correos de valor recientes (docs/144). Si la migración 0033 no se corrió, no hay nada.
+  const engagementRecent = await admin
+    .from("engagement_emails_sent")
+    .select("account_id, sent_at")
+    .in("account_id", ids.slice(0, 1000))
+    .gte("sent_at", since(R.globalCooldownDays))
+  const otherSentBy = new Map<string, number[]>()
+  for (const row of engagementRecent.error ? [] : ((engagementRecent.data ?? []) as { account_id: string; sent_at: string }[])) {
+    const list = otherSentBy.get(row.account_id) ?? []
+    list.push(new Date(row.sent_at).getTime())
+    otherSentBy.set(row.account_id, list)
+  }
+
   const presenceBy = new Map(presence.map((p) => [p.user_id, p.last_seen_at]))
   const activityBy = group(activity, "user_id")
   const sentBy = group(sentRows, "account_id")
@@ -553,6 +571,7 @@ export async function runReengagementReminders(options: { dryRun?: boolean } = {
       sentHistory: (sentBy.get(account.id) ?? [])
         .map((s) => ({ type: s.email_type, sentAt: new Date(s.sent_at).getTime() }))
         .filter((s) => now - s.sentAt < R.weMissYouCooldownDays * DAY_MS),
+      otherSentTimes: otherSentBy.get(account.id) ?? [],
       lastActivationEmailAt: maxTime(...(activationBy.get(account.id) ?? []).map((a) => a.sent_at)),
     }
 

@@ -21,6 +21,65 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-04",
+    content: {
+      es: {
+        title: "Correos que te avisan lo importante",
+        items: [
+          "Resumen semanal: cada lunes recibes tus números clave (food cost promedio, valor del inventario, productos bajo mínimo y platos con margen bajo).",
+          "Alertas útiles: te avisamos cuando un producto llega a su mínimo o cuando un plato deja de cubrir su meta de food cost.",
+          "También te escribimos si tu invitado no ha entrado al equipo, si un negocio nuevo sigue sin recetas o cuando alcanzas un logro.",
+          "Los correos llegan con textos distintos, para que no recibas siempre el mismo. Puedes desactivarlos en Configuración → Notificaciones.",
+        ],
+      },
+      en: {
+        title: "Emails that tell you what matters",
+        items: [
+          "Weekly summary: every Monday you get your key numbers (average food cost, inventory value, items below minimum and dishes with low margin).",
+          "Useful alerts: we let you know when an item reaches its minimum or when a dish stops meeting its food cost target.",
+          "We also email you if your invitee hasn't joined the team, if a new business still has no recipes, or when you reach a milestone.",
+          "Emails come with different wording so you don't always get the same one. You can turn them off in Settings → Notifications.",
+        ],
+      },
+      da: {
+        title: "E-mails, der fortæller dig det vigtige",
+        items: [
+          "Ugentlig oversigt: hver mandag får du dine nøgletal (gennemsnitlig food cost, lagerværdi, varer under minimum og retter med lav margin).",
+          "Nyttige advarsler: vi giver besked, når en vare når sit minimum, eller når en ret ikke længere når sit food cost-mål.",
+          "Vi skriver også, hvis din inviterede ikke er kommet ind i teamet, hvis en ny virksomhed stadig ikke har opskrifter, eller når du når en milepæl.",
+          "E-mailene kommer med forskellige tekster, så du ikke altid får den samme. Du kan slå dem fra under Indstillinger → Notifikationer.",
+        ],
+      },
+      fr: {
+        title: "Des e-mails qui vous signalent l'essentiel",
+        items: [
+          "Résumé hebdomadaire : chaque lundi, vos chiffres clés (food cost moyen, valeur du stock, produits sous le minimum et plats à faible marge).",
+          "Alertes utiles : nous vous prévenons quand un produit atteint son minimum ou quand un plat ne respecte plus son objectif de food cost.",
+          "Nous vous écrivons aussi si votre invité n'a pas rejoint l'équipe, si une nouvelle entreprise n'a toujours pas de recettes ou quand vous franchissez une étape.",
+          "Les e-mails arrivent avec des textes différents pour ne pas recevoir toujours le même. Vous pouvez les désactiver dans Paramètres → Notifications.",
+        ],
+      },
+      pt: {
+        title: "E-mails que avisam o que importa",
+        items: [
+          "Resumo semanal: toda segunda você recebe seus números principais (food cost médio, valor do estoque, produtos abaixo do mínimo e pratos com margem baixa).",
+          "Alertas úteis: avisamos quando um produto chega ao mínimo ou quando um prato deixa de cumprir sua meta de food cost.",
+          "Também escrevemos se seu convidado não entrou na equipe, se um negócio novo continua sem receitas ou quando você alcança uma conquista.",
+          "Os e-mails chegam com textos diferentes, para você não receber sempre o mesmo. Você pode desativá-los em Configurações → Notificações.",
+        ],
+      },
+      zh: {
+        title: "告诉你重要事项的邮件",
+        items: [
+          "每周摘要：每周一你会收到关键数字（平均食材成本率、库存价值、低于最低库存的产品以及毛利偏低的菜品）。",
+          "实用提醒：当某个产品达到最低库存，或某道菜不再达到食材成本率目标时，我们会通知你。",
+          "当你邀请的人还没加入团队、新商户仍没有配方，或你达成某个里程碑时，我们也会发邮件给你。",
+          "邮件会使用不同的文字，你不会总是收到同一封。你可以在“设置 → 通知”中关闭它们。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-09-29-d",
     content: {
       es: {

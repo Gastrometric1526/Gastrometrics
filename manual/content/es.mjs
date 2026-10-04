@@ -461,6 +461,13 @@ export default {
           ["Recordatorio", "Inventario y reportes", "Cuando pasó una semana desde tu último conteo o desde que revisaste tus reportes."],
           ["Recordatorio", "Precios y regreso", "Si tus precios tienen más de 30 días sin actualizar, o si hace tiempo que no entras."],
         ]],
+        ["p", "Y cuando tu cuenta tiene algo concreto que contarte, te escribimos con el dato:"],
+        ["cards", [
+          ["Cada lunes", "Resumen semanal", "Tus números clave: food cost promedio, valor del inventario, productos bajo mínimo y platos con margen bajo."],
+          ["Alerta", "Stock bajo y margen", "Si un producto llega a su mínimo o un plato deja de cubrir su meta de food cost."],
+          ["Equipo", "Invitaciones y negocios", "Si tu invitado no ha entrado, o si un negocio nuevo sigue sin recetas."],
+          ["Logros", "Avances y tu plan", "Cuando llegas a 10, 25 o 50 recetas, y si tu plan incluye algo que aún no has probado."],
+        ]],
         ["p", "Nunca te enviamos más de un recordatorio cada pocos días. Cada correo trae un enlace para darte de baja con un clic, o puedes desmarcar la casilla en Configuración → Notificaciones."],
         ["h3", "Tus datos"],
         ["list", [

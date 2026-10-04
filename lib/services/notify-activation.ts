@@ -20,8 +20,9 @@ import { renderEmailTemplate } from "./email-templates"
 import { getEmailLabels, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { buildUnsubscribeUrl } from "@/lib/email-unsubscribe"
 import { TRUSTPILOT_URL } from "@/lib/site-links"
+import { ACTIVATION_VARIANTS, type ActivationVariant } from "@/lib/i18n/activation-email-variants"
 
-type ActivationEmailType =
+export type ActivationEmailType =
   | "first_recipe_reminder"
   | "day7_margin_checkin"
   | "first_sale_reinforcement"
@@ -54,6 +55,19 @@ async function hasOptedIn(accountId: string): Promise<boolean> {
 function unsubscribeHeaders(accountId: string): Record<string, string> {
   const url = buildUnsubscribeUrl(accountId)
   return { "List-Unsubscribe": `<${url}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" }
+}
+
+/**
+ * Variante de texto de un correo de activación (docs/144): cada cuenta recibe cada uno
+ * una sola vez, así que se elige por cuenta (hash del id) — personas distintas reciben
+ * textos distintos. 0 = el texto de email-labels.ts; 1 y 2 = ACTIVATION_VARIANTS.
+ */
+export function activationVariantFor(accountId: string, emailType: ActivationEmailType, language: string): ActivationVariant | null {
+  let h = 0
+  const key = `${accountId}:${emailType}`
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0
+  const pick = h % 3
+  return pick === 0 ? null : ACTIVATION_VARIANTS[normalizeEmailLang(language)][emailType][pick - 1]
 }
 
 /** Reserva el envío para esta cuenta+tipo. Devuelve true solo si esta llamada fue la primera. */
@@ -98,13 +112,14 @@ async function sendActivationEmail(input: {
   const labels = getEmailLabels(language)
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
 
+  const alt = activationVariantFor(input.accountId, input.emailType, language)
   const html = renderEmailTemplate("07-activacion.html", {
     htmlLang: normalizedLang,
-    title: labels[input.titleKey],
-    preheader: labels[input.preheaderKey],
-    heading: labels[input.headingKey],
-    body: labels[input.bodyKey],
-    cta: labels[input.ctaKey],
+    title: alt?.subject ?? labels[input.titleKey],
+    preheader: alt?.preheader ?? labels[input.preheaderKey],
+    heading: alt?.heading ?? labels[input.headingKey],
+    body: alt?.body ?? labels[input.bodyKey],
+    cta: alt?.cta ?? labels[input.ctaKey],
     footnote: labels.e07_footnote,
     footerAddress: labels.footer_address,
     footer2: labels.e07_footer2,
@@ -115,7 +130,7 @@ async function sendActivationEmail(input: {
   const { error } = await sendWithRetry(resend, {
     from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
     to: [email],
-    subject: labels[input.subjectKey],
+    subject: alt?.subject ?? labels[input.subjectKey],
     html,
     headers: unsubscribeHeaders(input.accountId),
   })
@@ -190,12 +205,13 @@ export async function sendFourHourExperienceSurvey(accountId: string): Promise<v
   const labels = getEmailLabels(language)
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
 
+  const alt = activationVariantFor(accountId, "four_hour_experience", language)
   const html = renderEmailTemplate("10-encuesta-experiencia.html", {
     htmlLang: normalizedLang,
-    title: labels.e10_title,
-    preheader: labels.e10_preheader,
-    heading: labels.e10_heading,
-    body: labels.e10_body,
+    title: alt?.subject ?? labels.e10_title,
+    preheader: alt?.preheader ?? labels.e10_preheader,
+    heading: alt?.heading ?? labels.e10_heading,
+    body: alt?.body ?? labels.e10_body,
     cta1: labels.e10_cta1,
     cta2: labels.e10_cta2,
     footnote: labels.e10_footnote,
@@ -209,7 +225,7 @@ export async function sendFourHourExperienceSurvey(accountId: string): Promise<v
   const { error } = await sendWithRetry(resend, {
     from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
     to: [email],
-    subject: labels.e10_subject,
+    subject: alt?.subject ?? labels.e10_subject,
     html,
     headers: unsubscribeHeaders(accountId),
   })

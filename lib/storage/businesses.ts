@@ -105,6 +105,16 @@ export async function addBusiness(business: Business): Promise<Business> {
   })
   if (error) throw error
 
+  // Aviso al dueño del proyecto (docs/143). No bloquea ni rompe la creación: la ruta
+  // verifica el negocio del lado del servidor y avisa una sola vez; `keepalive` deja que
+  // la petición termine aunque la persona cambie de página enseguida.
+  fetch("/api/notify/business-created", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ businessId: id }),
+    keepalive: true,
+  }).catch(() => {})
+
   const created: Business = { ...business, ownerId: user.id }
   cache.mutateSnapshot(CACHE_KEY, (list) => {
     const next = [...list, created]

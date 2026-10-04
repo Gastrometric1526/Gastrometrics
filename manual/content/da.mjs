@@ -460,6 +460,13 @@ export default {
           ["Påmindelse", "Lager og rapporter", "Når der er gået en uge siden din seneste optælling, eller siden du så dine rapporter."],
           ["Påmindelse", "Priser og comeback", "Hvis dine priser ikke er opdateret i over 30 dage, eller hvis du ikke har været inde længe."],
         ]],
+        ["p", "Og når din konto har noget konkret at fortælle dig, skriver vi med tallet:"],
+        ["cards", [
+          ["Hver mandag", "Ugentlig oversigt", "Dine nøgletal: gennemsnitlig food cost, lagerværdi, varer under minimum og retter med lav margin."],
+          ["Advarsel", "Lavt lager og margin", "Hvis en vare når sit minimum, eller en ret ikke længere når sit food cost-mål."],
+          ["Team", "Invitationer og virksomheder", "Hvis din inviterede ikke er logget ind, eller en ny virksomhed stadig ikke har opskrifter."],
+          ["Milepæle", "Fremskridt og din plan", "Når du når 10, 25 eller 50 opskrifter, og hvis din plan omfatter noget, du ikke har prøvet endnu."],
+        ]],
         ["p", "Vi sender aldrig mere end én påmindelse med få dages mellemrum. Hver e-mail har et link til at afmelde med ét klik, eller du kan fjerne fluebenet under Indstillinger → Notifikationer."],
         ["h3", "Dine data"],
         ["list", [

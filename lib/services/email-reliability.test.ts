@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest"
 import type { Resend } from "resend"
 import { sendWithRetry, __emailTiming } from "./send-email"
 import { renderSignupDigest } from "./notify-signup"
+import { renderOwnerNotification } from "./notify-owner"
 import { buildChangelogItemsHtml, renderProductUpdateEmail } from "./product-update-email"
 import { CHANGELOG, getChangelogEntriesSince, getDefaultEmailSinceVersion } from "@/lib/changelog"
 import { getEmailLabels } from "@/lib/i18n/email-labels"
@@ -65,13 +66,25 @@ describe("resumen diario de cuentas nuevas (docs/142)", () => {
       { email: "ana@x.com", createdAt: "2026-10-04T15:00:00Z", fullName: "Ana <b>", country: "Honduras", language: "es", invited: false },
       { email: "beto@x.com", createdAt: "2026-10-04T16:00:00Z", fullName: "", country: "", language: "zh", invited: true },
     ])
-    expect(subject).toContain("2 cuentas nuevas")
+    expect(subject).toContain("2 cuentas nuevas, 0 negocios, 0 invitaciones")
     expect(html).toContain("ana@x.com")
     expect(html).toContain("beto@x.com")
     expect(html).toContain("1 por registro propio, 1 invitadas")
     expect(html).toContain("Chino")
     expect(html).toContain("Ana &lt;b&gt;")
-    expect(renderSignupDigest([{ email: "a@x.com", createdAt: "2026-10-04T15:00:00Z", fullName: "", country: "", language: "", invited: false }]).subject).toContain("1 cuenta nueva ")
+    expect(renderSignupDigest([{ email: "a@x.com", createdAt: "2026-10-04T15:00:00Z", fullName: "", country: "", language: "", invited: false }]).subject).toContain("1 cuenta nueva,")
+  })
+})
+
+describe("resumen diario con negocios e invitaciones (docs/143)", () => {
+  it("lista negocios nuevos e invitaciones a equipos aunque no haya cuentas nuevas", () => {
+    const { subject, html } = renderSignupDigest([], {
+      businesses: [{ name: "Cocina & Co", ownerEmail: "dueno@x.com", createdAt: "2026-10-04T15:00:00Z" }],
+      invites: [{ email: "cocinero@x.com", ownerEmail: "dueno@x.com", invitedAt: "2026-10-04T16:00:00Z" }],
+    })
+    expect(subject).toContain("0 cuentas nuevas, 1 negocio, 1 invitación")
+    expect(html).toContain("Cocina &amp; Co")
+    expect(html).toContain("cocinero@x.com")
   })
 })
 
@@ -99,5 +112,14 @@ describe("correo de novedades por idioma (docs/142)", () => {
     expect(buildChangelogItemsHtml(entries.slice(0, 1), "es")).not.toContain("font-weight:700")
     if (entries.length > 1) expect(buildChangelogItemsHtml(entries, "es")).toContain("font-weight:700")
     expect(buildChangelogItemsHtml(entries, "es")).not.toContain("Archivo")
+  })
+})
+
+describe("avisos al dueño (docs/143)", () => {
+  it("omite filas vacías y escapa el HTML", () => {
+    const html = renderOwnerNotification([["Negocio", "Tacos <El Güero>"], ["Ubicación", undefined], ["Moneda", ""]], "Creado hoy.")
+    expect(html).toContain("Tacos &lt;El Güero&gt;")
+    expect(html).not.toContain("Ubicación")
+    expect(html).not.toContain("Moneda")
   })
 })

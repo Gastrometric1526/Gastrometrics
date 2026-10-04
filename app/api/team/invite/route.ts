@@ -25,6 +25,7 @@
 import { NextResponse } from "next/server"
 import { Resend } from "resend"
 import { sendWithRetry } from "@/lib/services/send-email"
+import { sendOwnerNotification, hondurasTime } from "@/lib/services/notify-owner"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { renderEmailTemplate, escapeHtml } from "@/lib/services/email-templates"
@@ -232,6 +233,22 @@ export async function POST(request: Request) {
       console.error("[api/team/invite] Resend rechazó el envío:", sendError)
       return NextResponse.json({ error: "No se pudo enviar el correo de invitación." }, { status: 502 })
     }
+
+    // Aviso al dueño del proyecto (docs/143). Se espera (Vercel corta lo que queda
+    // pendiente al responder); si falla, la invitación igual sigue y el resumen diario
+    // la lista.
+    await sendOwnerNotification({
+      subject: `Invitación a un equipo: ${user.email ?? ownerName} invitó a ${email}`,
+      rows: [
+        ["Invitó", `${ownerName}${user.email ? ` (${user.email})` : ""}`],
+        ["Persona invitada", `${invitedName ? `${invitedName} — ` : ""}${email}`],
+        ["Acceso", scopeLabel],
+        ["Funciones", toolsLabel],
+        ["PDF", pdfAccessLabel],
+      ],
+      footnote: `Invitación enviada el ${hondurasTime()}.`,
+      label: "aviso de invitación a equipo",
+    }).catch((notifyError) => console.error("[api/team/invite] Error avisando al dueño:", notifyError))
 
     return NextResponse.json({ ok: true, invitedUserId })
   } catch (error) {

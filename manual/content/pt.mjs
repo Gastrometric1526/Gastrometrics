@@ -460,6 +460,13 @@ export default {
           ["Lembrete", "Estoque e relatórios", "Quando passa uma semana desde a sua última contagem ou desde que você viu seus relatórios."],
           ["Lembrete", "Preços e retorno", "Se seus preços estão há mais de 30 dias sem atualizar, ou se faz tempo que você não entra."],
         ]],
+        ["p", "E quando sua conta tem algo concreto para contar, escrevemos com o dado:"],
+        ["cards", [
+          ["Toda segunda", "Resumo semanal", "Seus números principais: food cost médio, valor do estoque, produtos abaixo do mínimo e pratos com margem baixa."],
+          ["Alerta", "Estoque baixo e margem", "Se um produto chega ao mínimo ou um prato deixa de cumprir sua meta de food cost."],
+          ["Equipe", "Convites e negócios", "Se seu convidado não entrou, ou se um negócio novo continua sem receitas."],
+          ["Conquistas", "Avanços e seu plano", "Quando você chega a 10, 25 ou 50 receitas, e se seu plano inclui algo que você ainda não experimentou."],
+        ]],
         ["p", "Nunca enviamos mais de um lembrete a cada poucos dias. Cada e-mail traz um link para cancelar a inscrição com um clique, ou você pode desmarcar a caixa em Configurações → Notificações."],
         ["h3", "Seus dados"],
         ["list", [
