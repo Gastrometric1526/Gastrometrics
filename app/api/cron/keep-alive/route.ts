@@ -19,16 +19,13 @@
  */
 
 import { NextResponse } from "next/server"
+import { isAuthorizedCronRequest } from "@/lib/cron-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export async function GET(request: Request) {
-  const cronSecret = process.env.CRON_SECRET
-  if (cronSecret) {
-    const authHeader = request.headers.get("authorization")
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ ok: false, error: "No autorizado." }, { status: 401 })
-    }
+  if (!(await isAuthorizedCronRequest(request))) {
+    return NextResponse.json({ ok: false, error: "No autorizado." }, { status: 401 })
   }
 
   const rateLimit = checkRateLimit(`cron-keep-alive:${getClientIp(request)}`, {

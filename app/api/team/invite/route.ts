@@ -124,6 +124,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Ya invitaste al máximo de ${effectiveMaxTeamMembers} personas.` }, { status: 400 })
   }
 
+  // docs/154: un alcance de negocio concreto tiene que ser un negocio de la cuenta dueña.
+  // Antes se usaba tal cual con service role: quien conociera el id de un negocio ajeno
+  // podía invitarse a sí mismo (con otro correo) y obtener acceso a esos datos.
+  if (scope !== "dashboard") {
+    const { data: ownedBusiness } = await admin
+      .from("businesses")
+      .select("id")
+      .eq("id", scope)
+      .eq("owner_id", ownerAccountId)
+      .maybeSingle()
+    if (!ownedBusiness) {
+      return NextResponse.json({ error: "Ese negocio no pertenece a tu cuenta." }, { status: 403 })
+    }
+  }
+
   const { data: profileRow } = await supabase
     .from("profiles")
     .select("full_name, preferred_language")

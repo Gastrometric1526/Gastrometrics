@@ -13,6 +13,10 @@ import { isFeedbackNotifyConfigured, sendFeedbackNotification } from "@/lib/serv
 import { normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
+const MAX_MESSAGE = 5000
+const MAX_IMAGE_DATA_URL = 3_000_000 // ~2.2 MB de imagen (el formulario ya la comprime antes)
+const SAFE_IMAGE_DATA_URL = /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/
+
 export async function POST(request: Request) {
   // Límite por IP contra spam del formulario público de /contacto (ver docs/61) —
   // manda correo real al dueño del proyecto por cada mensaje, así que también
@@ -34,16 +38,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Falta type o message válidos." }, { status: 400 })
   }
 
+  // docs/154: topes de tamaño (formulario público: protege la base gratis de 500 MB) y la
+  // imagen solo como data URL de imagen — antes se guardaba cualquier texto y /admin lo
+  // mostraba como enlace, así que un "javascript:…" se habría ejecutado con la sesión admin.
+  const text = (value: unknown, max: number) => (typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null)
+  const image = typeof body?.imageDataUrl === "string" ? body.imageDataUrl : ""
+  if (image && (!SAFE_IMAGE_DATA_URL.test(image) || image.length > MAX_IMAGE_DATA_URL)) {
+    return NextResponse.json({ error: "La imagen no es válida o es demasiado grande." }, { status: 400 })
+  }
+  if (message.length > MAX_MESSAGE) {
+    return NextResponse.json({ error: "El mensaje es demasiado largo." }, { status: 400 })
+  }
+
   const id = `feedback-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   const admin = getSupabaseAdminClient()
   const baseRow = {
     id,
     type,
     message,
-    user_name: body?.userName?.trim() || null,
-    user_email: body?.userEmail?.trim() || null,
-    page: body?.page || null,
-    image_data_url: body?.imageDataUrl || null,
+    user_name: text(body?.userName, 200),
+    user_email: text(body?.userEmail, 320),
+    page: text(body?.page, 300),
+    image_data_url: image || null,
   }
   // El idioma activo de quien escribe — se usa después para que la respuesta desde
   // /admin (sendFeedbackReplyEmail) salga en el mismo idioma, ver docs/58. /contacto es

@@ -149,19 +149,25 @@ function rotateCanvas(source: HTMLCanvasElement, degrees: number): HTMLCanvasEle
 
 const letterCount = (text: string) => (text.match(/\p{L}/gu) ?? []).length
 
-async function prepareImage(file: File, enhance = true): Promise<HTMLCanvasElement> {
+// Borde blanco alrededor de la imagen (docs/154): Tesseract lee mal el texto pegado al borde.
+const PAD = 10
+
+async function prepareImage(file: File, enhance = true, pad = true): Promise<HTMLCanvasElement> {
   const bitmap = await decodeImage(file)
   const longSide = Math.max(bitmap.width, bitmap.height)
   const scale = longSide < 2000 ? 2000 / longSide : longSide > 3200 ? 3200 / longSide : 1
-  const width = Math.round(bitmap.width * scale)
-  const height = Math.round(bitmap.height * scale)
+  const border = pad ? PAD : 0
+  const width = Math.round(bitmap.width * scale) + border * 2
+  const height = Math.round(bitmap.height * scale) + border * 2
   const canvas = document.createElement("canvas")
   canvas.width = width
   canvas.height = height
   const ctx = canvas.getContext("2d", { willReadFrequently: true })
   if (!ctx) throw new Error("Canvas no disponible")
+  ctx.fillStyle = "#fff"
+  ctx.fillRect(0, 0, width, height)
   ctx.imageSmoothingQuality = "high"
-  ctx.drawImage(bitmap.source, 0, 0, width, height)
+  ctx.drawImage(bitmap.source, border, border, width - border * 2, height - border * 2)
   bitmap.release()
   // Tickets: sin realce de contraste. En las pruebas con tickets reales (docs/151) el
   // estiramiento confundía dígitos del papel térmico (1,37 → 1,32; 2,05 → 2,85).
@@ -210,7 +216,45 @@ export interface OcrOptions {
    * página de siempre, que en recetas separa bien las columnas.
    */
   layout?: "page" | "receipt"
+  /**
+   * Ajustes de la fase 1 (docs/154), todos activos por defecto; se pueden apagar para
+   * medir antes/después con el mismo material:
+   *  - pad: borde blanco de 10 px;
+   *  - rescale: si las letras quedan fuera del tamaño en que Tesseract rinde mejor (línea
+   *    de ~40 px), se reescala y se relee;
+   *  - variants: si la confianza sale baja, se relee con umbral adaptativo (Sauvola) y se
+   *    queda con la mejor lectura.
+   */
+  tuning?: { pad?: boolean; rescale?: boolean; variants?: boolean }
 }
+
+/** Redimensiona el lienzo por un factor (para llevar las letras al tamaño ideal). */
+function scaleCanvas(source: HTMLCanvasElement, factor: number): HTMLCanvasElement {
+  const out = document.createElement("canvas")
+  out.width = Math.round(source.width * factor)
+  out.height = Math.round(source.height * factor)
+  const ctx = out.getContext("2d")
+  if (!ctx) return source
+  ctx.imageSmoothingQuality = "high"
+  ctx.drawImage(source, 0, 0, out.width, out.height)
+  return out
+}
+
+const median = (values: number[]) => {
+  if (!values.length) return null
+  const sorted = [...values].sort((a, b) => a - b)
+  return sorted[Math.floor(sorted.length / 2)]
+}
+
+// Alto de línea ideal para el motor LSTM (mayúsculas de ~30 px ≈ línea de ~40 px) y
+// el rango en que no vale la pena releer.
+const IDEAL_LINE = 40
+const LINE_OK: [number, number] = [24, 64]
+const MAX_SIDE = 4200
+const LOW_READ = 70 // confianza bajo la cual se prueba otra variante
+
+/** Puntaje de una lectura: texto legible × confianza (para elegir entre variantes). */
+const readScore = (r: { text: string; confidence: number }) => letterCount(r.text) * r.confidence
 
 export async function recognizeRecipeImage(
   file: File,
@@ -220,7 +264,8 @@ export async function recognizeRecipeImage(
 ): Promise<OcrResult> {
   const lang = Object.values(OCR_LANG).includes(ocrLang) ? ocrLang : "spa"
   onProgress?.(0.02)
-  const canvas = await prepareImage(file, options.layout !== "receipt")
+  const tuning = { pad: true, rescale: true, variants: true, ...options.tuning }
+  const canvas = await prepareImage(file, options.layout !== "receipt", tuning.pad)
   onProgress?.(0.08)
   const worker = await createWorker(lang, OEM.LSTM_ONLY, {
     workerPath: "/ocr/worker.min.js",
@@ -233,19 +278,23 @@ export async function recognizeRecipeImage(
     },
   })
   try {
-    await worker.setParameters({
+    const baseParams = {
       tessedit_pageseg_mode: options.layout === "receipt" ? PSM.SINGLE_COLUMN : PSM.AUTO,
       preserve_interword_spaces: "1",
       user_defined_dpi: "300",
-    })
+      thresholding_method: "0",
+    }
+    await worker.setParameters(baseParams)
     const read = async (image: HTMLCanvasElement) => {
       const { data } = await worker.recognize(image, {}, { text: true, blocks: true })
       const lines: OcrLine[] = []
+      const heights: number[] = []
       for (const block of data.blocks ?? []) {
         for (const paragraph of block.paragraphs) {
           for (const line of paragraph.lines) {
             const text = line.text.replace(/\s+$/, "")
             if (text.trim()) lines.push({ text, confidence: Math.round(line.confidence) })
+            if (letterCount(text) >= 3 && line.confidence >= 50) heights.push(line.bbox.y1 - line.bbox.y0)
           }
           lines.push({ text: "", confidence: 100 }) // separa párrafos (secciones de la receta)
         }
@@ -253,7 +302,13 @@ export async function recognizeRecipeImage(
       const text = lines.length ? lines.map((l) => l.text).join("\n").replace(/\n{3,}/g, "\n\n").trim() : data.text.trim()
       // En modo ticket, el texto plano de Tesseract conserva cada fila completa (con los
       // espacios entre columnas); los bloques la partirían.
-      return { text: options.layout === "receipt" ? data.text.trim() : text, lines, confidence: Math.round(data.confidence) }
+      return {
+        text: options.layout === "receipt" ? data.text.trim() : text,
+        lines,
+        confidence: Math.round(data.confidence),
+        lineHeight: median(heights),
+        image,
+      }
     }
     let best = await read(canvas)
     // Casi sin texto: puede ser una foto de lado sin orientación EXIF (docs/151). Se prueba
@@ -264,6 +319,24 @@ export async function recognizeRecipeImage(
         if (letterCount(attempt.text) * attempt.confidence > letterCount(best.text) * best.confidence) best = attempt
         if (letterCount(best.text) >= 25) break
       }
+    }
+    // Letras muy chicas o muy grandes para el motor: se reescala la imagen para dejar la
+    // línea en ~40 px y se relee (docs/154).
+    if (tuning.rescale && best.lineHeight && (best.lineHeight < LINE_OK[0] || best.lineHeight > LINE_OK[1])) {
+      const longSide = Math.max(best.image.width, best.image.height)
+      const factor = Math.min(IDEAL_LINE / best.lineHeight, MAX_SIDE / longSide)
+      if (Math.abs(factor - 1) > 0.2) {
+        const attempt = await read(scaleCanvas(best.image, factor))
+        if (readScore(attempt) > readScore(best)) best = attempt
+      }
+    }
+    // Lectura floja (sombras, luz desigual): se prueba el umbral adaptativo Sauvola y se
+    // queda con la mejor. No reemplaza una lectura por basura de confianza baja.
+    if (tuning.variants && best.confidence < LOW_READ) {
+      await worker.setParameters({ ...baseParams, thresholding_method: "2" })
+      const attempt = await read(best.image)
+      await worker.setParameters(baseParams)
+      if (attempt.confidence >= 50 && readScore(attempt) > readScore(best)) best = attempt
     }
     const { text, lines, confidence } = best
     const data = { confidence }

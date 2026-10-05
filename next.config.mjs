@@ -79,6 +79,9 @@ const nextConfig = {
           // cabecera una vez — preload requiere estar en la lista de Chrome, no se
           // pide automáticamente por incluir el header.
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+          // docs/154: una ventana abierta desde otro sitio no puede manipular esta (window.opener).
+          // "same-origin-allow-popups" deja funcionar la ventana del Portal de Stripe.
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
           {
             key: "Content-Security-Policy",
             value: [

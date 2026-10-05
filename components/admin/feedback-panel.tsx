@@ -44,7 +44,8 @@ function rowToFeedback(row: any): Feedback {
     userName: row.user_name || undefined,
     userEmail: row.user_email || undefined,
     page: row.page || undefined,
-    imageDataUrl: row.image_data_url || undefined,
+    // Solo imágenes reales (docs/154): un "javascript:…" guardado no llega a ser un enlace.
+    imageDataUrl: /^data:image\/(png|jpeg|webp|gif);base64,/.test(row.image_data_url || "") ? row.image_data_url : undefined,
     status: row.status,
     createdAt: row.created_at,
     adminReply: row.admin_reply || undefined,

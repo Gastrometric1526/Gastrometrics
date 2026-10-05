@@ -55,6 +55,7 @@
  */
 
 import { NextResponse } from "next/server"
+import { isAuthorizedCronRequest } from "@/lib/cron-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import {
   sendFirstRecipeReminder,
@@ -106,17 +107,14 @@ async function sendEach(ids: string[], send: (id: string) => Promise<unknown>, n
 }
 
 export async function GET(request: Request) {
-  const cronSecret = process.env.CRON_SECRET
-  if (cronSecret) {
-    const authHeader = request.headers.get("authorization")
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ ok: false, error: "No autorizado." }, { status: 401 })
-    }
-  }
   const params = new URL(request.url).searchParams
+  const dryRun = ["reengagementDryRun", "engagementDryRun", "digestDryRun"].some((k) => params.get(k) === "1")
+  if (!(await isAuthorizedCronRequest(request, { dryRun }))) {
+    return NextResponse.json({ ok: false, error: "No autorizado." }, { status: 401 })
+  }
 
   // Modo de prueba: solo calcula a quién le tocaría qué recordatorio, sin mandar nada
-  // ni correr el resto del cron. Protegido por el mismo CRON_SECRET de arriba.
+  // ni correr el resto del cron. Con CRON_SECRET o sesión de /admin (lib/cron-auth.ts).
   if (params.get("reengagementDryRun") === "1") {
     try {
       return NextResponse.json({ ok: true, reengagement: await runReengagementReminders({ dryRun: true }) })
