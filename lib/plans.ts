@@ -49,6 +49,10 @@ export type FeatureKey =
   // administrativo — alguien con "ninguno" podía igual exportar PDF de empleado/normal
   // sin ningún control, ver docs/referencia-sistema-de-importaciones.md sección 3.9).
   | "pdf_export"
+  // Por plan (docs/153): importar (texto, Excel, PDF, fotos y tickets) es libre en todos
+  // los planes; actualizar el precio de ingredientes que ya existen desde un ticket o una
+  // lista (mantener los costos al día) es desde Home Cook.
+  | "price_import"
 
 export interface Plan {
   slug: string
@@ -77,10 +81,11 @@ export const plans: Plan[] = [
     features: [
       "Base de datos de ingredientes",
       "Fichas técnicas ilimitadas",
-      "Importación desde Excel",
+      "Importa tus recetas e ingredientes desde donde ya los tienes: Excel, PDF, texto, fotos y tickets",
       "Exportar PDF de cocina (ingredientes y procedimiento, sin costos)",
     ],
     locked: [
+      "Actualización de precios desde tickets o listas",
       "Sistema de merma",
       "PDF administrativo (con costos y rentabilidad)",
       "Facturación a clientes",
@@ -106,11 +111,12 @@ export const plans: Plan[] = [
       "Facturación a clientes",
       "Órdenes de compra manuales",
       "PDF administrativo (con costos y rentabilidad)",
+      "Actualiza precios con la foto del ticket o la lista de tu proveedor",
     ],
     locked: ["Inventario y auto-sugerencia de órdenes", "Menús", "Estadísticas y Finanzas avanzadas", "Multi-negocio"],
     maxBusinesses: 1,
     maxUsers: 1,
-    unlockedFeatures: ["merma", "purchase_orders_manual", "pdf_admin", "invoices"],
+    unlockedFeatures: ["merma", "purchase_orders_manual", "pdf_admin", "invoices", "price_import"],
   },
   {
     slug: "chef-de-partie",
@@ -122,6 +128,7 @@ export const plans: Plan[] = [
     features: [
       "Todo lo del plan Home Cook",
       "Inventario completo (stock y alertas)",
+      "Cuenta tu inventario con una foto, un PDF o un Excel",
       "Órdenes de compra automáticas (desde menús y stock bajo)",
       "Menús completos (con escalado por PAX)",
       "1 negocio",
@@ -131,7 +138,7 @@ export const plans: Plan[] = [
     locked: ["Finanzas completas (P&L, importación de POS, Menu Engineering)", "Multi-negocio", "Usuarios extra"],
     maxBusinesses: 1,
     maxUsers: 1,
-    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales"],
+    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "price_import"],
   },
   {
     slug: "sous-chef",
@@ -153,7 +160,7 @@ export const plans: Plan[] = [
     locked: ["Multi-negocio masivo (+5)", "Soporte prioritario", "Más de 2 usuarios"],
     maxBusinesses: 2,
     maxUsers: 2,
-    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance", "team"],
+    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance", "team", "price_import"],
     highlighted: true,
   },
   {
@@ -174,7 +181,7 @@ export const plans: Plan[] = [
     locked: [],
     maxBusinesses: 5,
     maxUsers: 5,
-    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance", "team"],
+    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance", "team", "price_import"],
     comingSoon: true,
   },
 ]

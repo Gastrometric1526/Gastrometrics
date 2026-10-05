@@ -53,6 +53,22 @@ export async function parseSpreadsheetMatrix(file: File): Promise<unknown[][]> {
   return XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", blankrows: false, raw: false }) as unknown[][]
 }
 
+/**
+ * Todas las hojas del libro como matrices (docs/152): un libro real trae la ficha técnica
+ * en una hoja y la base de ingredientes en otra. Acepta .xlsx, .xlsm (con macros: solo se
+ * leen los datos, las macros nunca se ejecutan), .xls, .csv y .txt.
+ */
+export async function parseWorkbookSheets(file: File): Promise<{ name: string; rows: unknown[][] }[]> {
+  const buffer = await file.arrayBuffer()
+  const workbook = isPlainTextFile(file.name)
+    ? XLSX.read(decodeTextBuffer(buffer), { type: "string" })
+    : XLSX.read(new Uint8Array(buffer), { type: "array", bookVBA: false })
+  return workbook.SheetNames.map((name) => ({
+    name,
+    rows: XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, defval: "", blankrows: false, raw: false }) as unknown[][],
+  }))
+}
+
 export async function parseExcelFile(file: File): Promise<any[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()

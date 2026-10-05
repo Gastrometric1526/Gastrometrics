@@ -21,6 +21,101 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-04-d",
+    content: {
+      es: {
+        title: "Tickets, fichas técnicas y recetarios",
+        items: [
+          "Libros de Excel completos (.xlsx, .xlsm o .xls): la app elige la hoja de ingredientes o la de la ficha técnica, entiende columnas como «Conversión» y «Unidad receta», y deja importar en 0 los productos sin precio para completarlos después.",
+          "Desde Home Cook, con cualquier lista (por ejemplo, la de tu proveedor) puedes actualizar el precio de los ingredientes que ya tienes y recalcular tus recetas.",
+          "Inventario: en «Registrar inventario» puedes leer tu hoja de conteo desde una foto, un PDF o un Excel, y las cantidades se llenan solas.",
+          "Nueva revisión de lo leído: vas directo a la receta entendida, con la foto al lado, un resumen y el estado de cada ingrediente («En tu base», «Nuevo» o «Revisa»).",
+          "Nuevo: carga ingredientes desde la foto o el PDF de un ticket o factura del supermercado. La app lee cada producto con su precio, deja fuera totales e impuestos, y puedes corregir nombre y precio antes de importar.",
+          "Desde Home Cook, con un ticket también puedes actualizar el precio de los ingredientes que ya tienes, y sus recetas se recalculan solas.",
+          "Recetarios en PDF de muchas páginas: la app elige sola la primera página con una receta y puedes cambiarla. Si la ficha técnica trae costos, se usan como precio del ingrediente nuevo.",
+          "Se leen mejor las fichas técnicas reales: tablas con columnas de costo o nutrición, nombres partidos en dos líneas, fichas a dos columnas y abreviaturas como «c», «t» y «T».",
+          "Una foto tomada de lado se gira sola.",
+          "Importar tus datos desde donde ya los tienes (texto, Excel, PDF, fotos y tickets) está incluido en todos los planes, también en Foodie.",
+        ],
+      },
+      en: {
+        title: "Receipts, recipe sheets and recipe books",
+        items: [
+          "Complete Excel workbooks (.xlsx, .xlsm or .xls): the app picks the ingredients sheet or the recipe sheet, understands columns like \"Conversion\" and \"Recipe unit\", and lets you import products without a price at 0 to complete later.",
+          "From Home Cook, with any list (for example, your supplier's) you can update the price of the ingredients you already have and recalculate your recipes.",
+          "Inventory: in \"Register inventory\" you can read your count sheet from a photo, a PDF or an Excel file, and the quantities fill in automatically.",
+          "New review of what was read: you go straight to the recipe as understood, with the photo beside it, a summary and each ingredient's status (\"In your database\", \"New\" or \"Check\").",
+          "New: load ingredients from the photo or PDF of a supermarket receipt or invoice. The app reads each product with its price, leaves out totals and taxes, and you can fix the name and price before importing.",
+          "From Home Cook, with a receipt you can also update the price of ingredients you already have, and their recipes recalculate on their own.",
+          "Multi-page PDF recipe books: the app picks the first page with a recipe and you can change it. If the recipe sheet includes costs, they're used as the new ingredient's price.",
+          "Real recipe sheets are read better: tables with cost or nutrition columns, names split over two lines, two-column cards and abbreviations like \"c\", \"t\" and \"T\".",
+          "A photo taken sideways is rotated automatically.",
+          "Importing your data from wherever it already is (text, Excel, PDF, photos and receipts) is included in every plan, Foodie too.",
+        ],
+      },
+      da: {
+        title: "Kvitteringer, opskriftsark og opskriftsbøger",
+        items: [
+          "Hele Excel-projektmapper (.xlsx, .xlsm eller .xls): appen vælger arket med ingredienser eller opskriftsarket, forstår kolonner som \"Omregning\" og \"Opskriftsenhed\" og lader dig importere produkter uden pris til 0, så du kan udfylde dem senere.",
+          "Fra Home Cook kan du med en hvilken som helst liste (f.eks. din leverandørs) opdatere prisen på de ingredienser, du allerede har, og genberegne dine opskrifter.",
+          "Lager: under \"Registrer lager\" kan du læse dit optællingsark fra et foto, en PDF eller en Excel-fil, og mængderne udfyldes automatisk.",
+          "Ny gennemgang af det læste: du kommer direkte til opskriften, som den er forstået, med fotoet ved siden af, et resumé og status for hver ingrediens (\"I din database\", \"Ny\" eller \"Tjek\").",
+          "Nyt: indlæs ingredienser fra fotoet eller PDF'en af en kvittering eller faktura fra supermarkedet. Appen læser hvert produkt med pris, udelader totaler og moms, og du kan rette navn og pris før importen.",
+          "Fra Home Cook kan du også med en kvittering opdatere prisen på de ingredienser, du allerede har, og deres opskrifter genberegnes af sig selv.",
+          "Opskriftsbøger i PDF med mange sider: appen vælger selv den første side med en opskrift, og du kan skifte side. Har opskriftsarket priser, bruges de som pris for den nye ingrediens.",
+          "Rigtige opskriftsark læses bedre: tabeller med pris- eller næringskolonner, navne delt over to linjer, kort i to kolonner og forkortelser som \"c\", \"t\" og \"T\".",
+          "Et foto taget på langs drejes automatisk.",
+          "Import af dine data, hvor de end ligger i dag (tekst, Excel, PDF, fotos og kvitteringer), er med i alle planer, også Foodie.",
+        ],
+      },
+      fr: {
+        title: "Tickets, fiches techniques et recueils de recettes",
+        items: [
+          "Classeurs Excel complets (.xlsx, .xlsm ou .xls) : l'application choisit la feuille des ingrédients ou celle de la fiche technique, comprend des colonnes comme « Conversion » et « Unité recette », et permet d'importer à 0 les produits sans prix pour les compléter plus tard.",
+          "Dès Home Cook, avec n'importe quelle liste (par exemple celle de votre fournisseur), vous pouvez mettre à jour le prix des ingrédients que vous avez déjà et recalculer vos recettes.",
+          "Inventaire : dans « Enregistrer l'inventaire », vous pouvez lire votre feuille de comptage depuis une photo, un PDF ou un fichier Excel, et les quantités se remplissent seules.",
+          "Nouvelle vérification de ce qui a été lu : vous arrivez directement à la recette comprise, avec la photo à côté, un résumé et le statut de chaque ingrédient (« Dans votre base », « Nouveau » ou « À vérifier »).",
+          "Nouveau : chargez des ingrédients depuis la photo ou le PDF d'un ticket ou d'une facture de supermarché. L'application lit chaque produit avec son prix, ignore totaux et taxes, et vous pouvez corriger nom et prix avant d'importer.",
+          "Dès Home Cook, avec un ticket, vous pouvez aussi mettre à jour le prix des ingrédients que vous avez déjà, et leurs recettes se recalculent toutes seules.",
+          "Recueils de recettes en PDF de nombreuses pages : l'application choisit seule la première page avec une recette et vous pouvez en changer. Si la fiche technique contient des coûts, ils servent de prix au nouvel ingrédient.",
+          "Les vraies fiches techniques sont mieux lues : tableaux avec colonnes de coûts ou de nutrition, noms coupés sur deux lignes, fiches à deux colonnes et abréviations comme « c », « t » et « T ».",
+          "Une photo prise de côté est pivotée automatiquement.",
+          "Importer vos données là où elles se trouvent déjà (texte, Excel, PDF, photos et tickets) est inclus dans toutes les offres, Foodie compris.",
+        ],
+      },
+      pt: {
+        title: "Cupons, fichas técnicas e receituários",
+        items: [
+          "Pastas do Excel completas (.xlsx, .xlsm ou .xls): o app escolhe a planilha de ingredientes ou a da ficha técnica, entende colunas como «Conversão» e «Unidade receita» e permite importar em 0 os produtos sem preço para completar depois.",
+          "A partir do Home Cook, com qualquer lista (por exemplo, a do seu fornecedor) você pode atualizar o preço dos ingredientes que já tem e recalcular suas receitas.",
+          "Estoque: em «Registrar estoque» você pode ler sua folha de contagem a partir de uma foto, um PDF ou um Excel, e as quantidades são preenchidas sozinhas.",
+          "Nova revisão do que foi lido: você vai direto para a receita entendida, com a foto ao lado, um resumo e o status de cada ingrediente («Na sua base», «Novo» ou «Revise»).",
+          "Novo: cadastre ingredientes a partir da foto ou do PDF de um cupom ou nota fiscal do supermercado. O app lê cada produto com o preço, deixa de fora totais e impostos, e você pode corrigir nome e preço antes de importar.",
+          "A partir do Home Cook, com um cupom você também pode atualizar o preço dos ingredientes que já tem, e suas receitas são recalculadas sozinhas.",
+          "Receituários em PDF de muitas páginas: o app escolhe sozinho a primeira página com uma receita e você pode trocá-la. Se a ficha técnica traz custos, eles são usados como preço do ingrediente novo.",
+          "Fichas técnicas reais são lidas melhor: tabelas com colunas de custo ou nutrição, nomes divididos em duas linhas, fichas em duas colunas e abreviações como «c», «t» e «T».",
+          "Uma foto tirada de lado é girada automaticamente.",
+          "Importar seus dados de onde eles já estão (texto, Excel, PDF, fotos e cupons) está incluído em todos os planos, inclusive no Foodie.",
+        ],
+      },
+      zh: {
+        title: "小票、技术配方表与配方合集",
+        items: [
+          "支持完整的 Excel 文件（.xlsx、.xlsm 或 .xls）：应用会自动选择原料表或技术配方表，能识别“换算”“配方单位”等列，没有价格的商品可按 0 导入，稍后补充。",
+          "Home Cook 起，使用任何价目表（例如供应商的价目表）都可以更新已有原料的价格，并重新计算配方。",
+          "库存：在“登记库存”中可以从照片、PDF 或 Excel 读取盘点表，数量会自动填入。",
+          "全新的识别结果核对界面：直接显示已理解的配方，照片在旁边，顶部有摘要，每种原料都显示状态（“已在原料库”“新原料”或“请核对”）。",
+          "新功能：可通过超市小票或发票的照片或 PDF 导入原料。应用会识别每件商品及其价格，忽略合计和税费，导入前可修改名称和价格。",
+          "Home Cook 起，使用小票还可以更新已有原料的价格，相关配方会自动重新计算。",
+          "多页 PDF 配方合集：应用会自动选择第一页含配方的页面，你也可以更换页面。如果技术配方表带有成本，会作为新原料的价格。",
+          "更好地识别真实的技术配方表：带成本或营养列的表格、分两行书写的名称、双栏配方卡，以及“c”“t”“T”等缩写。",
+          "横向拍摄的照片会自动旋转。",
+          "从你现有的资料直接导入（文本、Excel、PDF、照片和小票），所有套餐（包括 Foodie）均包含。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-10-04-c",
     content: {
       es: {

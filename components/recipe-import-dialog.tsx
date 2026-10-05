@@ -27,7 +27,9 @@ import {
   LOW_CONFIDENCE,
   type OcrLine,
 } from "@/lib/recipe-import/ocr"
-import { spreadsheetToRecipeText } from "@/lib/recipe-import/spreadsheet"
+import { spreadsheetToRecipeText, hasRecipeTable } from "@/lib/recipe-import/spreadsheet"
+import { useOcrUsage } from "@/lib/ocr-usage"
+import type { PdfDocumentInfo } from "@/lib/recipe-import/pdf"
 import { Camera, FileText, ImageIcon, Loader2, Upload, AlertTriangle, ScanText } from "lucide-react"
 
 const CREATE = "__create__"
@@ -77,6 +79,8 @@ export function RecipeImportDialog({
   businessId?: string | null
 }) {
   const { t, language } = useLanguage()
+  // Solo se registra el uso del OCR para medirlo (docs/153); no hay límite.
+  const logOcrRead = useOcrUsage()
   const { toast } = useToast()
   const router = useRouter()
   const ingredients = useIngredients(businessId)
@@ -97,6 +101,9 @@ export function RecipeImportDialog({
   const [ocrLangUsed, setOcrLangUsed] = useState<string | null>(null)
   const photoRef = useRef<File | null>(null)
   const pdfRef = useRef<File | null>(null)
+  // PDF de varias páginas (docs/151): qué página se está leyendo
+  const [pdfInfo, setPdfInfo] = useState<PdfDocumentInfo | null>(null)
+  const [pdfPage, setPdfPage] = useState(1)
   // El idioma se detecta solo y por defecto se asume el de la app; el selector queda
   // escondido detrás de "Cambiar" (docs/149).
   const [showLangPicker, setShowLangPicker] = useState(false)
@@ -121,12 +128,25 @@ export function RecipeImportDialog({
     setOcrLangUsed(null)
     photoRef.current = null
     pdfRef.current = null
+    setPdfInfo(null)
     setShowLangPicker(false)
   }
 
   const convert = (row: Pick<Row, "dimension" | "baseAmount" | "rawQuantity">, unit: Unit) => {
     const converted = convertToUnit(row, unit)
     return { quantity: converted === null ? String(row.rawQuantity || "") : String(converted), needsReview: converted === null && row.rawQuantity > 0 }
+  }
+
+  /**
+   * Costo unitario escrito en la ficha ("Harina 0.500 Kg $11.00") → precio por la unidad
+   * de compra del ingrediente nuevo (docs/151). Vacío si la ficha no traía costo.
+   */
+  const priceFromSheet = (p: ParsedRecipe["ingredients"][number], unit: Unit): string => {
+    if (!p.unitCost || !p.baseAmount || !(p.quantity > 0)) return ""
+    const perBase = p.unitCost / (p.baseAmount / p.quantity) // por g, ml o unidad
+    const unitBase = unit === "kilogramos" || unit === "litros" ? 1000 : 1
+    const price = Math.round(perBase * unitBase * 100) / 100
+    return price > 0 ? String(price) : ""
   }
 
   const latinFallback = OCR_LANG[language] && OCR_LANG[language] !== "chi_sim" ? OCR_LANG[language] : "eng"
@@ -155,7 +175,7 @@ export function RecipeImportDialog({
           ...base,
           newUnit,
           category: guessCategory(p.name),
-          price: "",
+          price: priceFromSheet(p, newUnit),
         }
       }),
     )
@@ -166,6 +186,8 @@ export function RecipeImportDialog({
    * sola con el correcto (docs/148). "Leer de nuevo" respeta el idioma elegido.
    */
   const readPhoto = async (file: File, lang: string, checkLanguage: boolean) => {
+    // Se registra la primera lectura; "Leer de nuevo" la misma foto no.
+    if (checkLanguage) logOcrRead("recipe")
     setBusy("ocr")
     setOcrProgress(0)
     try {
@@ -180,7 +202,9 @@ export function RecipeImportDialog({
         return { imageUrl: URL.createObjectURL(file), lines: result.lines, confidence: result.confidence }
       })
       setText(result.text)
-      if (!result.text.trim()) toast({ title: t("recipe_import_ocr_empty"), variant: "destructive" })
+      // Directo a la receta entendida (docs/152): el texto crudo queda en "Editar el texto leído".
+      if (result.text.trim()) analyze(result.text)
+      else toast({ title: t("recipe_import_ocr_empty"), variant: "destructive" })
     } catch (error) {
       console.error("[recipe-import] OCR:", error)
       toast({ title: t("recipe_import_ocr_error"), variant: "destructive" })
@@ -193,39 +217,93 @@ export function RecipeImportDialog({
    * PDF (docs/149): las páginas con texto se leen tal cual; las escaneadas pasan por el OCR
    * (con detección de idioma) y se muestran para revisar como una foto.
    */
-  const readPdf = async (file: File, lang: string) => {
+  /** Lee una página del PDF: con texto, se analiza directo; escaneada, pasa por el OCR. */
+  const loadPdfPage = async (file: File, info: PdfDocumentInfo, number: number, lang: string) => {
+    const page = info.pages.find((pg) => pg.number === number)
+    setPdfPage(number)
+    if (page?.text) {
+      setOcr(null)
+      setOcrLangUsed(null)
+      setText(page.text)
+      analyze(page.text)
+      return
+    }
+    logOcrRead("recipe")
     setBusy("ocr")
     setOcrProgress(0)
     try {
-      const { readRecipePdf } = await import("@/lib/recipe-import/pdf")
-      const result = await readRecipePdf(file, lang, latinFallback, setOcrProgress)
-      pdfRef.current = file
-      if (!result.text.trim()) {
-        toast({ title: t("recipe_import_ocr_empty"), variant: "destructive" })
-        return
-      }
-      if (result.ocr) {
-        const preview = result.ocr.preview
-        photoRef.current = null
-        setOcrLangUsed(result.ocr.lang)
-        if (result.ocr.lang !== lang) setOcrLang(result.ocr.lang)
-        setOcr((prev) => {
-          if (prev?.imageUrl) URL.revokeObjectURL(prev.imageUrl)
-          return { imageUrl: URL.createObjectURL(preview), lines: result.ocr!.lines, confidence: result.ocr!.confidence }
-        })
-        setText(result.text)
-      } else {
-        setOcr(null)
-        setText(result.text)
-        analyze(result.text)
-      }
+      const { ocrPdfPage } = await import("@/lib/recipe-import/pdf")
+      const result = await ocrPdfPage(file, number, lang, latinFallback, setOcrProgress)
+      photoRef.current = null
+      setParsed(null)
+      setOcrLangUsed(result.lang)
+      if (result.lang !== lang) setOcrLang(result.lang)
+      setOcr((prev) => {
+        if (prev?.imageUrl) URL.revokeObjectURL(prev.imageUrl)
+        return { imageUrl: URL.createObjectURL(result.preview), lines: result.lines, confidence: result.confidence }
+      })
+      setText(result.text)
+      if (result.text.trim()) analyze(result.text)
+      else toast({ title: t("recipe_import_ocr_empty"), variant: "destructive" })
     } catch (error) {
-      console.error("[recipe-import] PDF:", error)
+      console.error("[recipe-import] PDF OCR:", error)
       toast({ title: t("recipe_import_pdf_error"), variant: "destructive" })
     } finally {
       setBusy(null)
     }
   }
+
+  /**
+   * PDF (docs/149, docs/151): se lee el texto de todas las páginas, se sugiere la primera
+   * con una receta y se puede cambiar de página. Las escaneadas pasan por el OCR.
+   */
+  const readPdf = async (file: File, lang: string) => {
+    setBusy("ocr")
+    setOcrProgress(0)
+    let info: PdfDocumentInfo
+    try {
+      const { openRecipePdf } = await import("@/lib/recipe-import/pdf")
+      info = await openRecipePdf(file, setOcrProgress)
+    } catch (error) {
+      console.error("[recipe-import] PDF:", error)
+      toast({ title: t("recipe_import_pdf_error"), variant: "destructive" })
+      setBusy(null)
+      return
+    }
+    setBusy(null)
+    pdfRef.current = file
+    setPdfInfo(info)
+    await loadPdfPage(file, info, info.suggested, lang)
+  }
+
+  /** Selector de página de un PDF de varias páginas (en la lectura y en la revisión). */
+  const pdfPagePicker =
+    pdfInfo && pdfInfo.pages.length > 1 && pdfRef.current ? (
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2">
+        <span className="text-xs text-muted-foreground">
+          {pdfInfo.kind === "sheet"
+            ? t("recipe_import_sheets").replace("{n}", String(pdfInfo.totalPages))
+            : t("recipe_import_pdf_pages").replace("{n}", String(pdfInfo.totalPages))}
+        </span>
+        <Select
+          value={String(pdfPage)}
+          onValueChange={(v) => pdfRef.current && loadPdfPage(pdfRef.current, pdfInfo, Number(v), ocrLang)}
+        >
+          <SelectTrigger className="h-8 w-full sm:w-[360px]" aria-label={t("recipe_import_pdf_page")}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {pdfInfo.pages.map((pg) => (
+              <SelectItem key={pg.number} value={String(pg.number)}>
+                {pdfInfo.kind === "sheet" ? t("recipe_import_sheet") : t("recipe_import_pdf_page")} {pg.number}
+                {pg.text ? ` · ${pg.title}` : ` · ${t("recipe_import_pdf_scanned")}`}
+                {pg.ingredientCount >= 2 ? ` · ${t("recipe_import_pdf_ingredients").replace("{n}", String(pg.ingredientCount))}` : ""}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    ) : null
 
   const onFile = async (file: File) => {
     const name = file.name.toLowerCase()
@@ -238,11 +316,26 @@ export function RecipeImportDialog({
       return
     }
     let content: string
-    if (/\.(xlsx|xls)$/.test(name)) {
-      // Excel: la primera hoja como texto (docs/149, lib/recipe-import/spreadsheet.ts).
+    if (/\.(xlsx|xlsm|xls)$/.test(name)) {
+      // Excel (docs/149, docs/152): se elige la hoja con la tabla de la ficha técnica; si
+      // el libro trae varias recetas (una por hoja), se puede cambiar de hoja.
       try {
-        const { parseSpreadsheetMatrix } = await import("@/lib/excel-utils")
-        content = spreadsheetToRecipeText(await parseSpreadsheetMatrix(file))
+        const { parseWorkbookSheets } = await import("@/lib/excel-utils")
+        const sheets = await parseWorkbookSheets(file)
+        const pages = sheets.map((sh, i) => {
+          const text = spreadsheetToRecipeText(sh.rows)
+          const parsed = parseRecipeText(text)
+          const real = parsed.ingredients.filter((ing) => ing.quantity > 0 && ing.dimension && ing.unitLabel).length
+          return { number: i + 1, text, title: parsed.name || sh.name, ingredientCount: hasRecipeTable(sh.rows) ? real : 0 }
+        })
+        const recipeSheets = pages.filter((pg) => pg.ingredientCount > 0)
+        const chosen = recipeSheets[0] ?? pages[0]
+        if (recipeSheets.length > 1) {
+          pdfRef.current = file
+          setPdfInfo({ pages: recipeSheets, totalPages: sheets.length, suggested: chosen.number, kind: "sheet" })
+          setPdfPage(chosen.number)
+        }
+        content = chosen?.text ?? ""
       } catch (error) {
         console.error("[recipe-import] Excel:", error)
         toast({ title: t("recipe_import_excel_error"), variant: "destructive" })
@@ -332,6 +425,23 @@ export function RecipeImportDialog({
   }
 
   const created = rows.filter((r) => r.choice === CREATE)
+  const [photoZoom, setPhotoZoom] = useState(false)
+  /** Línea leída con poca confianza por el OCR: conviene compararla con la foto. */
+  const isDoubtful = (row: Row) => {
+    if (!ocr) return false
+    const raw = row.raw.replace(/\s+/g, " ").trim()
+    return ocr.lines.some((l) => {
+      const line = l.text.replace(/\s+/g, " ").trim()
+      return l.confidence < LOW_CONFIDENCE && line.length > 2 && (raw.includes(line) || line.includes(raw))
+    })
+  }
+  const statusOf = (row: Row): "skip" | "review" | "base" | "new" =>
+    row.choice === SKIP ? "skip" : isDoubtful(row) || row.needsReview ? "review" : row.choice === CREATE ? "new" : "base"
+  const summary = {
+    base: rows.filter((r) => statusOf(r) === "base").length,
+    created: created.length,
+    review: rows.filter((r) => statusOf(r) === "review").length,
+  }
   const lowLines = ocr?.lines.filter((l) => l.confidence < LOW_CONFIDENCE) ?? []
   const pickFile = (input: HTMLInputElement | null) => input?.click()
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -354,6 +464,8 @@ export function RecipeImportDialog({
           <DialogDescription>{t("recipe_import_desc")}</DialogDescription>
         </DialogHeader>
 
+        {pdfPagePicker}
+
         {!parsed ? (
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
@@ -361,7 +473,7 @@ export function RecipeImportDialog({
                 ref={fileRef}
                 type="file"
                 accept={
-                  ".txt,.csv,.md,.xlsx,.xls,.pdf,text/plain,text/csv,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" +
+                  ".txt,.csv,.md,.xlsx,.xlsm,.xls,.pdf,text/plain,text/csv,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel.sheet.macroEnabled.12,application/vnd.ms-excel" +
                   (OCR_AVAILABLE ? ",image/*" : "")
                 }
                 className="hidden"
@@ -440,7 +552,9 @@ export function RecipeImportDialog({
                     size="sm"
                     variant="outline"
                     onClick={() =>
-                      photoRef.current ? readPhoto(photoRef.current, ocrLang, false) : pdfRef.current && readPdf(pdfRef.current, ocrLang)
+                      photoRef.current
+                        ? readPhoto(photoRef.current, ocrLang, false)
+                        : pdfRef.current && pdfInfo && loadPdfPage(pdfRef.current, pdfInfo, pdfPage, ocrLang)
                     }
                     disabled={busy !== null}
                   >
@@ -494,7 +608,41 @@ export function RecipeImportDialog({
             <p className="text-xs text-muted-foreground">{t("recipe_import_manual_hint")}</p>
           </div>
         ) : (
+          <div className={ocr ? "grid grid-cols-1 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 items-start" : ""}>
+            {ocr && (
+              // Foto al lado de lo entendido, para comparar (docs/152)
+              <aside className="space-y-2 md:sticky md:top-0">
+                <button
+                  type="button"
+                  onClick={() => setPhotoZoom((z) => !z)}
+                  className={`block w-full rounded-lg border bg-muted ${photoZoom ? "max-h-[70vh] overflow-auto" : ""}`}
+                  title={photoZoom ? t("recipe_import_photo_zoom_out") : t("recipe_import_photo_zoom_in")}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={ocr.imageUrl}
+                    alt={t("recipe_import_photo_alt")}
+                    className={photoZoom ? "max-w-none w-[200%]" : "w-full max-h-[28vh] md:max-h-[60vh] object-contain"}
+                  />
+                </button>
+                <p className="text-xs text-muted-foreground">
+                  {t("recipe_import_ocr_done").replace("{c}", String(ocr.confidence))} ·{" "}
+                  {photoZoom ? t("recipe_import_photo_zoom_out") : t("recipe_import_photo_zoom_in")}
+                </p>
+                <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setParsed(null)} disabled={busy !== null}>
+                  <ScanText className="h-4 w-4 mr-2" />
+                  {t("recipe_import_edit_text")}
+                </Button>
+              </aside>
+            )}
           <div className="space-y-4">
+            <div className="rounded-lg border bg-muted/30 px-3 py-2 text-sm">
+              {t("recipe_import_summary")
+                .replace("{total}", String(rows.length))
+                .replace("{base}", String(summary.base))
+                .replace("{new}", String(summary.created))
+                .replace("{review}", String(summary.review))}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-3">
               <div className="space-y-1.5">
                 <Label>{t("recipe_import_name")}</Label>
@@ -510,10 +658,36 @@ export function RecipeImportDialog({
               <p className="text-sm font-medium">{t("recipe_import_ingredients").replace("{count}", String(rows.length))}</p>
               {rows.length === 0 && <p className="text-sm text-muted-foreground">{t("recipe_import_no_ingredients")}</p>}
               {rows.map((row, i) => (
-                <div key={i} className="rounded-lg border p-3 space-y-2">
-                  <p className="text-xs text-muted-foreground truncate" title={row.raw}>
-                    {row.raw}
-                  </p>
+                <div
+                  key={i}
+                  className={`rounded-lg border p-3 space-y-2 ${
+                    statusOf(row) === "review" ? "border-amber-400 bg-amber-50/50 dark:bg-amber-950/20" : statusOf(row) === "skip" ? "opacity-60" : ""
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs text-muted-foreground truncate" title={row.raw}>
+                      {t("recipe_import_read_as")} {row.raw}
+                    </p>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                        statusOf(row) === "review"
+                          ? "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200"
+                          : statusOf(row) === "base"
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"
+                            : statusOf(row) === "new"
+                              ? "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200"
+                              : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {statusOf(row) === "review"
+                        ? t("recipe_import_status_review")
+                        : statusOf(row) === "base"
+                          ? t("recipe_import_status_base")
+                          : statusOf(row) === "new"
+                            ? t("recipe_import_status_new")
+                            : t("recipe_import_status_skip")}
+                    </span>
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_130px] gap-2 items-center">
                     <Input value={row.name} onChange={(e) => updateRow(i, { name: e.target.value })} aria-label={t("recipe_import_name")} />
                     <Select value={row.choice} onValueChange={(v) => changeChoice(i, v)}>
@@ -593,6 +767,12 @@ export function RecipeImportDialog({
                       {t("recipe_import_review_quantity")}
                     </p>
                   )}
+                  {isDoubtful(row) && (
+                    <p className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      {t("recipe_import_doubtful_line")}
+                    </p>
+                  )}
                   {row.note && <p className="text-xs text-muted-foreground">{row.note}</p>}
                 </div>
               ))}
@@ -605,6 +785,7 @@ export function RecipeImportDialog({
             {created.length > 0 && (
               <p className="text-xs text-muted-foreground">{t("recipe_import_created_hint").replace("{count}", String(created.length))}</p>
             )}
+          </div>
           </div>
         )}
 

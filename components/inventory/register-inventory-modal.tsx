@@ -17,7 +17,9 @@ import type { Ingredient, Presentation } from "@/types/ingredient"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
-import { CalendarIcon, ChevronRight, ChevronLeft, Info, Search, AlertCircle } from "lucide-react"
+import { CalendarIcon, ChevronRight, ChevronLeft, Info, Search, AlertCircle, ScanText, Loader2, CheckCircle2, X } from "lucide-react"
+import { matchCountLines, sheetRowsToLines, type CountResult } from "@/lib/inventory-import"
+import { useOcrUsage } from "@/lib/ocr-usage"
 import { WeighCountPopover } from "@/components/inventory/weigh-count-popover"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { es, enUS, da, fr, ptBR, zhCN } from "date-fns/locale"
@@ -122,6 +124,13 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
   const [orderName, setOrderName] = useState("Inventario")
   const [orderNumber, setOrderNumber] = useState(1)
   const [selectedRecipes, setSelectedRecipes] = useState([])
+  // Conteo leído de una foto, PDF o Excel (docs/152)
+  const countFileRef = useRef<HTMLInputElement>(null)
+  const countCameraRef = useRef<HTMLInputElement>(null)
+  const [countProgress, setCountProgress] = useState<number | null>(null)
+  const [countResult, setCountResult] = useState<CountResult | null>(null)
+  // El conteo con foto/PDF/Excel viene con Inventario; solo se registra el uso del OCR (docs/153)
+  const logOcrRead = useOcrUsage()
   const [purchaseOrderData, setPurchaseOrderData] = useState([])
 
   // Necesitamos modificar la inicialización de ingredientsWithQuantity para incluir la información de presentación y contenido neto
@@ -522,6 +531,62 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
   // escribió, mientras el texto de ayuda de al lado sí mostraba el valor correcto.
   // Ahora `quantity` se mantiene siempre en unidad base (mismo significado en los
   // dos modos), multiplicando por netContent aquí en vez de en el render.
+  /**
+   * Lee una hoja de conteo (foto, PDF, Excel o texto), empareja cada línea con un
+   * ingrediente y llena su cantidad (en la unidad del ingrediente). Lo no reconocido se
+   * lista para cargarlo a mano (docs/152).
+   */
+  const handleCountFile = async (file: File) => {
+    setCountProgress(0)
+    setCountResult(null)
+    try {
+      const OCR_LANG: Record<string, string> = { es: "spa", en: "eng", pt: "por", fr: "fra", da: "dan", zh: "chi_sim" }
+      const lang = OCR_LANG[language] || "spa"
+      const latin = lang === "chi_sim" ? "eng" : lang
+      const name = file.name.toLowerCase()
+      let text = ""
+      if (/\.(xlsx|xlsm|xls)$/.test(name)) {
+        const { parseWorkbookSheets } = await import("@/lib/excel-utils")
+        const { pickIngredientSheet } = await import("@/lib/ingredient-import")
+        const sheets = await parseWorkbookSheets(file)
+        text = sheetRowsToLines(sheets[pickIngredientSheet(sheets)]?.rows ?? [])
+      } else if (file.type === "application/pdf" || name.endsWith(".pdf")) {
+        const { openRecipePdf, ocrPdfPage } = await import("@/lib/recipe-import/pdf")
+        const info = await openRecipePdf(file, (p) => setCountProgress(p * 0.3))
+        text = info.pages.map((pg) => pg.text ?? "").join("\n").trim()
+        if (!text) {
+          logOcrRead("inventory")
+          text = (await ocrPdfPage(file, 1, lang, latin, (p) => setCountProgress(0.3 + p * 0.7), { layout: "receipt" })).text
+        }
+      } else if (file.type.startsWith("image/")) {
+        logOcrRead("inventory")
+        const { recognizeWithLanguageCheck } = await import("@/lib/recipe-import/ocr")
+        // Fila por fila, como un ticket: nombre y cantidad quedan en la misma línea
+        text = (await recognizeWithLanguageCheck(file, lang, latin, (p) => setCountProgress(p), { layout: "receipt" })).text
+      } else {
+        text = await file.text()
+      }
+      const result = matchCountLines(text, ingredients, language)
+      setIngredientsWithQuantity((prev) =>
+        prev.map((ing) => {
+          const m = result.matched.find((x) => x.ingredientId === ing.id)
+          // La cantidad se guarda siempre en unidad base (igual en los dos modos, ver handleQuantityChange)
+          return m ? { ...ing, quantity: m.quantity, calculatedQuantity: m.quantity } : ing
+        }),
+      )
+      setPresentationDrafts({})
+      setCountResult(result)
+      if (!result.matched.length) {
+        toast({ title: t("inventario_count_none_title"), description: t("inventario_count_none_desc"), variant: "destructive" })
+      }
+    } catch (error) {
+      console.error("[inventario] Conteo desde archivo:", error)
+      toast({ title: t("inventario_count_none_title"), description: t("inventario_count_error_desc"), variant: "destructive" })
+    } finally {
+      setCountProgress(null)
+    }
+  }
+
   const handleQuantityChange = (id: string, value: number) => {
     setIngredientsWithQuantity((prev) =>
       prev.map((ing) => {
@@ -937,6 +1002,67 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
           {step === 2 && (
             <Card className="border mt-2">
               <CardHeader className="p-3 pb-0">
+                <input
+                  ref={countFileRef}
+                  type="file"
+                  accept="image/*,application/pdf,.pdf,.xlsx,.xlsm,.xls,.csv,.txt"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (f) handleCountFile(f)
+                    e.target.value = ""
+                  }}
+                />
+                <input
+                  ref={countCameraRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (f) handleCountFile(f)
+                    e.target.value = ""
+                  }}
+                />
+                <div className="mb-2 flex flex-wrap items-center gap-2 rounded-md border border-dashed p-2">
+                  <ScanText className="h-4 w-4 text-primary shrink-0" />
+                  <span className="text-xs text-muted-foreground flex-1 min-w-[180px]">{t("inventario_count_hint")}</span>
+                  {countProgress !== null ? (
+                    <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      {t("inventario_count_reading").replace("{p}", String(Math.round(countProgress * 100)))}
+                    </span>
+                  ) : (
+                    <>
+                      <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={() => countCameraRef.current?.click()}>
+                        {t("inventario_count_photo")}
+                      </Button>
+                      <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={() => countFileRef.current?.click()}>
+                        {t("inventario_count_file")}
+                      </Button>
+                    </>
+                  )}
+                </div>
+                {countResult && countResult.matched.length > 0 && (
+                  <div className="mb-2 rounded-md border bg-muted/30 p-2 text-xs space-y-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="flex items-center gap-1.5 font-medium text-foreground">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                        {t("inventario_count_applied").replace("{count}", String(countResult.matched.length))}
+                      </p>
+                      <button type="button" onClick={() => setCountResult(null)} aria-label={t("common_close")}>
+                        <X className="h-3.5 w-3.5 text-muted-foreground" />
+                      </button>
+                    </div>
+                    {countResult.unmatched.length > 0 && (
+                      <p className="text-amber-700 dark:text-amber-300">
+                        {t("inventario_count_unmatched").replace("{count}", String(countResult.unmatched.length))}{" "}
+                        <span className="text-muted-foreground">{countResult.unmatched.slice(0, 6).join(" · ")}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div className="relative">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input

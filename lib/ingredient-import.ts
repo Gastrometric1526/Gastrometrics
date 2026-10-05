@@ -14,6 +14,8 @@ export const INGREDIENT_COLUMN_ALIASES = {
   name: ["nombre", "ingrediente", "insumo", "producto", "articulo", "descripcion", "name", "ingredient", "item", "product", "description", "navn", "ingrediens", "produkt", "vare", "nom", "produit", "ingredient", "article", "nome", "produto", "insumo", "名称", "产品", "食材", "原料", "品名"],
   unit: ["unidad", "medida", "um", "unit", "uom", "measure", "enhed", "unite", "mesure", "unidade", "单位"],
   price: ["precio", "costo", "valor", "importe", "price", "cost", "value", "pris", "kostpris", "prix", "cout", "preco", "custo", "价格", "价钱", "单价", "成本"],
+  conversion: ["conversion", "factor", "factor de conversion", "equivalencia", "rendimiento por unidad", "conversion factor", "omregning", "fator de conversao", "换算"],
+  recipeUnit: ["unidad receta", "unidad de receta", "unidad de uso", "unidad costo", "recipe unit", "unit of use", "opskriftsenhed", "unite recette", "unidade receita", "配方单位"],
   content: ["contenido", "cantidad", "peso", "volumen", "neto", "presentacion", "content", "quantity", "qty", "weight", "volume", "net", "size", "indhold", "maengde", "vaegt", "contenu", "quantite", "poids", "conteudo", "quantidade", "净含量", "数量", "重量", "规格"],
   category: ["categoria", "rubro", "clasificacion", "familia", "category", "classification", "group", "kategori", "gruppe", "categorie", "famille", "classificacao", "类别", "分类"],
   supplier: ["proveedor", "supplier", "vendor", "leverandor", "fournisseur", "fornecedor", "供应商"],
@@ -62,7 +64,7 @@ export function parseLocaleNumber(value: unknown, currency?: string): number {
     s = lastComma > lastDot ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "")
   } else if (lastComma >= 0) {
     // Solo comas: "1,50" decimal; "1,500" o "1,500,000" miles.
-    s = /^-?\d{1,3}(,\d{3})+$/.test(s) ? s.replace(/,/g, "") : s.replace(",", ".")
+    s = /^-?[1-9]\d{0,2}(,\d{3})+$/.test(s) ? s.replace(/,/g, "") : s.replace(",", ".")
   } else if (lastDot >= 0 && /^-?\d{1,3}(\.\d{3}){2,}$/.test(s)) {
     s = s.replace(/\./g, "") // "1.500.000"
   } else if (lastDot >= 0 && /^-?[1-9]\d{0,2}\.\d{3}$/.test(s) && (/[₡₲₩]|CRC|COP|CLP|PYG|ARS/i.test(String(value)) || DOT_THOUSANDS_CURRENCIES.has(currency ?? ""))) {
@@ -126,24 +128,65 @@ function looksLikeHeaderRow(cells: string[]): boolean {
  * con texto es el nombre, la primera con números el precio, la que tenga unidades la
  * unidad, y una segunda numérica el contenido.
  */
+/** Fila de encabezados entre las primeras 15 (en muchos libros reales no es la primera). */
+function findHeaderRow(rows: string[][]): number {
+  let best = -1
+  let bestScore = 0
+  for (let r = 0; r < Math.min(rows.length, 15); r++) {
+    const taken = new Set<string>()
+    let score = 0
+    for (const field of ["name", "price", "unit", "content", "category", "supplier"] as IngredientField[]) {
+      const h = findColumn(rows[r], field, taken)
+      if (h) {
+        taken.add(h)
+        score++
+      }
+    }
+    if (score > bestScore) {
+      bestScore = score
+      best = r
+    }
+  }
+  return bestScore >= 2 ? best : -1
+}
+
+/** Columna con más textos distintos (el nombre, cuando el encabezado no dice "nombre"). */
+function guessNameColumn(headers: string[], data: string[][], used: Set<number>): number {
+  let best = -1
+  let bestCount = 0
+  headers.forEach((_, i) => {
+    if (used.has(i)) return
+    const values = new Set(data.slice(0, 200).map((r) => r[i] ?? "").filter((v) => /\p{L}{3}/u.test(v) && !/^\d/.test(v)))
+    if (values.size > bestCount) {
+      bestCount = values.size
+      best = i
+    }
+  })
+  return bestCount >= 2 ? best : -1
+}
+
 export function mapIngredientRows(matrix: unknown[][], options: { currency?: string } = {}): ImportedIngredientRow[] {
   const rows = matrix.map((r) => r.map((c) => String(c ?? "").trim())).filter((r) => r.some(Boolean))
   if (!rows.length) return []
   let headers: string[]
   let data: string[][]
-  if (looksLikeHeaderRow(rows[0])) {
-    headers = rows[0]
-    data = rows.slice(1)
+  const headerRow = looksLikeHeaderRow(rows[0]) ? 0 : findHeaderRow(rows)
+  if (headerRow >= 0) {
+    headers = rows[headerRow]
+    data = rows.slice(headerRow + 1)
   } else {
     headers = guessHeaders(rows)
     data = rows
   }
   const taken = new Set<string>()
   const col = {} as Record<IngredientField, number>
-  for (const field of ["name", "price", "unit", "content", "category", "supplier"] as IngredientField[]) {
+  for (const field of ["name", "price", "unit", "conversion", "recipeUnit", "content", "category", "supplier"] as IngredientField[]) {
     const h = findColumn(headers, field, taken)
     if (h) taken.add(h)
     col[field] = h ? headers.indexOf(h) : -1
+  }
+  if (col.name < 0) {
+    col.name = guessNameColumn(headers, data, new Set(Object.values(col).filter((i) => i >= 0)))
   }
   const at = (row: string[], field: IngredientField) => (col[field] >= 0 ? row[col[field]] ?? "" : "")
 
@@ -152,6 +195,21 @@ export function mapIngredientRows(matrix: unknown[][], options: { currency?: str
     const name = at(row, "name")
     const priceRaw = at(row, "price")
     if (!name && !priceRaw) continue
+    // Libro de costeo (docs/152): "Unidad compra: LITRO · Precio: 586.56 · Conversión: 1000 ·
+    // Unidad receta: ml" → 1000 ml a 586.56 (precio por ml correcto para las recetas).
+    const conversion = parseLocaleNumber(at(row, "conversion"))
+    const recipeUnit = readUnitCell(at(row, "recipeUnit")).unit
+    if (recipeUnit && conversion > 0) {
+      out.push({
+        name,
+        unit: recipeUnit,
+        price: parseLocaleNumber(priceRaw, options.currency),
+        content: conversion,
+        category: at(row, "category"),
+        supplier: at(row, "supplier"),
+      })
+      continue
+    }
     const unitCell = readUnitCell(at(row, "unit"))
     const contentRaw = at(row, "content")
     // "Contenido" puede traer la unidad pegada ("5 kg") si no hay columna de unidad.
@@ -159,7 +217,7 @@ export function mapIngredientRows(matrix: unknown[][], options: { currency?: str
     const contentNum = contentRaw ? parseLocaleNumber(contentRaw) : NaN
     out.push({
       name,
-      unit: unitCell.unit ?? contentCell.unit ?? "gramos",
+      unit: unitCell.unit ?? contentCell.unit ?? recipeUnit ?? "gramos",
       price: parseLocaleNumber(priceRaw, options.currency),
       content: Number.isFinite(contentNum) && contentNum > 0 ? contentNum : unitCell.content ?? 1,
       category: at(row, "category"),
@@ -167,6 +225,28 @@ export function mapIngredientRows(matrix: unknown[][], options: { currency?: str
     })
   }
   return out
+}
+
+/**
+ * Hoja de un libro que mejor parece una lista de ingredientes (docs/152): por el nombre
+ * de la hoja ("Ingredientes", "Insumos", "Inventario"…) y por cuántas columnas reconoce.
+ */
+export function pickIngredientSheet(sheets: { name: string; rows: unknown[][] }[]): number {
+  let best = 0
+  let bestScore = -1
+  sheets.forEach((sheet, i) => {
+    const rows = sheet.rows.map((r) => r.map((c) => String(c ?? "").trim()))
+    const headerRow = findHeaderRow(rows)
+    let score = headerRow >= 0 ? 2 : 0
+    if (/ingred|insumo|producto|inventar|base de datos|materia|ingredient|item|product|stock|vare|produit|estoque|原料|库存/i.test(sheet.name)) score += 3
+    if (/ficha|receta|recipe|opskrift|recette|receita|配方/i.test(sheet.name)) score -= 2
+    score += Math.min(rows.length, 500) / 500
+    if (score > bestScore) {
+      bestScore = score
+      best = i
+    }
+  })
+  return best
 }
 
 function guessHeaders(rows: string[][]): string[] {

@@ -11,18 +11,16 @@
  * contra la fecha de alta de cada cuenta (auth.users.created_at) — mismo patrón de
  * "traer todo y agregar en memoria" que /api/admin/analytics y /api/admin/accounts,
  * aceptado a esta escala.
+ *
+ * docs/153: además, "Tiempo hasta el primer costo" (de la cuenta a su primera receta con
+ * costo > 0, en tramos y con conversión a pago por tramo), ver lib/activation-metrics.ts.
  */
 
 import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
-
-function median(values: number[]): number | null {
-  if (values.length === 0) return null
-  const sorted = [...values].sort((a, b) => a - b)
-  const mid = Math.floor(sorted.length / 2)
-  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid]
-}
+import { loadAdminMetricAccounts } from "@/lib/admin-metric-accounts"
+import { median, summarizeTimeToFirstCost } from "@/lib/activation-metrics"
 
 export async function GET() {
   if (!(await hasAdminSession())) {
@@ -32,20 +30,8 @@ export async function GET() {
   try {
     const admin = getSupabaseAdminClient()
 
-    // Mismo bucle de paginación que /api/admin/accounts — listUsers() no tiene un
-    // "traer todas" directo.
-    let allUsers: { id: string; email: string; createdAt: string; emailConfirmed: boolean }[] = []
-    let listPage = 1
-    while (true) {
-      const { data, error } = await admin.auth.admin.listUsers({ page: listPage, perPage: 200 })
-      if (error) throw error
-      allUsers = allUsers.concat(
-        // emailConfirmed (docs/143): aparte de la "activación" (primera receta), que se confundía con confirmar el correo.
-        data.users.map((u) => ({ id: u.id, email: u.email || "", createdAt: u.created_at, emailConfirmed: Boolean(u.email_confirmed_at) })),
-      )
-      if (data.users.length < 200) break
-      listPage += 1
-    }
+    // Alta, pago y primer costo de cada cuenta (docs/153: Tiempo hasta el primer costo).
+    const allUsers = await loadAdminMetricAccounts(admin)
 
     const { data: recipeCreatedRows, error: activityError } = await admin
       .from("activity_log")
@@ -84,6 +70,7 @@ export async function GET() {
       activatedAccounts,
       activationRatePercent: totalAccounts > 0 ? Math.round((activatedAccounts / totalAccounts) * 1000) / 10 : 0,
       medianHoursToActivation: median(hoursToActivation),
+      timeToFirstCost: summarizeTimeToFirstCost(allUsers),
       recentAccounts: accounts.slice(0, 25),
     })
   } catch (error) {

@@ -25,6 +25,9 @@ export type ActivityModule =
   | "estadisticas"
   | "negocios"
   | "merma"
+  // Lecturas de fotos con OCR (docs/153): solo para contar el uso por plan y verlo en
+  // /admin; no se muestran en "Actividad reciente" ni en "Notificaciones".
+  | "ocr"
 
 export type ActivityAction =
   | "entered"
@@ -38,6 +41,7 @@ export type ActivityAction =
   | "removed"
   | "access_updated"
   | "migrated"
+  | "read"
 
 export interface ActivityLogEntry {
   id: number
@@ -136,6 +140,7 @@ export async function getActivityLog(params: {
   let query = supabase
     .from("activity_log")
     .select("*")
+    .neq("module", "ocr") // conteo de lecturas OCR, no actividad para mostrar
     .order("created_at", { ascending: false })
     .limit(limit)
 
@@ -179,6 +184,7 @@ const MODULE_NAV_KEY: Record<ActivityModule, string> = {
   estadisticas: "nav_estadisticas",
   negocios: "nav_negocios",
   merma: "nav_ingredientes",
+  ocr: "nav_ingredientes",
 }
 
 /**

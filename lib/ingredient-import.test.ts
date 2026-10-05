@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { findColumn, mapIngredientRows, parseLocaleNumber, readUnitCell, splitPastedList } from "./ingredient-import"
+import { findColumn, mapIngredientRows, parseLocaleNumber, pickIngredientSheet, readUnitCell, splitPastedList } from "./ingredient-import"
 
 describe("parseLocaleNumber", () => {
   it.each([
@@ -95,5 +95,27 @@ describe("ejemplo de lista pegada en los 6 idiomas", () => {
   it("pegado desde Excel (tabuladores) con encabezados", () => {
     const rows = mapIngredientRows(splitPastedList("Nombre\tPrecio\tUnidad\nArroz\t$2,10\tkg"))
     expect(rows).toEqual([expect.objectContaining({ name: "Arroz", price: 2.1, unit: "kilogramos" })])
+  })
+})
+
+describe("hoja de ingredientes de un libro de costeo (.xlsm, docs/152)", () => {
+  const ficha = { name: "ficha tecnica base", rows: [["Nombre", "Galletas"], ["#", "Nombre", "Cantidad"]] }
+  const base = {
+    name: "Ingredientes",
+    rows: [
+      ["Categoria", "Column1", "Unidad Compra", "Precio Compra", "CONVERSION", "Precio Costo", "UNIDAD RECETA"],
+      ["ACEITES", "Aceites - Ajonjoli (de Sesame)", "LITRO", "L586.56", "1000", "L0.59", "ml"],
+      ["LACTEOS Y DERIVADOS", "Mantequilla - Sin Sal Dos Pinos Amarilla", "GRAMOS", "L125.70", "453.59", "L0.28", "g"],
+      ["BEBIDAS", "Agua Y Refresco - Coca Cola (lata 12 Onzas)", "UNIDAD", "L13.90", "1", "L13.90", "un"],
+      ["ACEITES", "Aceites - Coco", "LITRO", "", "1000", "L0.00", "ml"],
+    ],
+  }
+  it("elige la hoja de ingredientes y usa conversión y unidad de receta", () => {
+    expect(pickIngredientSheet([ficha, base])).toBe(1)
+    const rows = mapIngredientRows(base.rows, { currency: "HNL" })
+    expect(rows[0]).toMatchObject({ name: "Aceites - Ajonjoli (de Sesame)", unit: "mililitros", content: 1000, price: 586.56, category: "ACEITES" })
+    expect(rows[1]).toMatchObject({ unit: "gramos", content: 453.59, price: 125.7 })
+    expect(rows[2]).toMatchObject({ unit: "unidad", content: 1, price: 13.9 })
+    expect(rows[3].price).toBeNaN() // sin precio: se ofrece importarlo en 0
   })
 })

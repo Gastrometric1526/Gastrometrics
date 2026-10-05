@@ -42,6 +42,8 @@ export interface ParsedIngredient {
   baseAmount: number | null // en g, ml o unidades; null si no se puede convertir
   note: string
   section: string // sub-sección ("Para la salsa"), vacío si no hay
+  /** Costo por unidad escrito en la ficha ("$ 11.00" el kg), null si no había. docs/151 */
+  unitCost: number | null
 }
 
 export interface ParsedRecipe {
@@ -138,6 +140,9 @@ export function stripAccents(value: string): string {
 function normalizeLine(line: string): string {
   let out = line
   for (const [f, rep] of Object.entries(FRACTIONS)) out = out.split(f).join(rep)
+  // OCR: "½" sale como "%" ("1% c" = 1½ tazas, "% t" = ½ cucharadita) y "lb" como "1b".
+  out = out.replace(/(^|\s)(\d*)%(?=\s+(?:[cCtT¢]|cups?|tsp|tbsp)(?:\s|\.|$))/g, (_, sp, d) => `${sp}${d ? d + " " : ""}1/2`)
+  out = out.replace(/(\d)\s+1bs?(?=[\s,.]|$)/g, "$1 lb")
   // Chino: ni el OCR ni la escritura separan numeros de caracteres ("大米2杯" -> "大米 2 杯").
   if (/[一-鿿]/.test(out)) out = out.replace(/([一-鿿])(\d)/g, "$1 $2").replace(/(\d)([一-鿿])/g, "$1 $2")
   return out.replace(/ /g, " ").replace(/\s+/g, " ").trim()
@@ -153,7 +158,7 @@ function stripBullet(line: string): string {
 
 // ─── Cantidad y unidad ───
 
-const NUM = String.raw`(?:\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:[.,]\d+)?)`
+const NUM = String.raw`(?:\d{1,2}\s+\d+\/\d+|\d+\/\d+|\d+(?:[.,]\d+)?)`
 const RANGE = String.raw`${NUM}(?:\s*(?:-|–|a|to|ou|eller|à)\s*${NUM})?`
 
 function parseNumber(token: string): number {
@@ -178,6 +183,11 @@ function readUnit(rest: string): { unit: UnitDef | null; label: string; rest: st
     const m = plain.match(re)
     if (m) return { unit: def, label: rest.slice(0, m[0].length), rest: rest.slice(m[0].length).trim() }
   }
+  // Después de las de varias palabras ("c. à soupe" es cucharada, no taza).
+  // Fichas de EE. UU.: "T" = cucharada, "t" = cucharadita, "c" = taza (sensible a
+  // mayúsculas). El OCR suele leer la "c" como "¢" (docs/151, fichas reales de 1950).
+  const us = rest.match(/^(?:(T)|(t)|(¢c|c¢|[cC¢]))\.?(?=\s|$)/)
+  if (us) return { unit: us[1] ? U("volume", 15) : us[2] ? U("volume", 5) : U("volume", 240), label: us[0], rest: rest.slice(us[0].length).trim() }
   // Chino: la unidad va pegada sin espacio
   for (const zh of ["千克", "公斤", "公克", "公升", "毫升", "汤匙", "茶匙", "大勺", "小勺", "克", "升", "个", "杯", "斤", "两", "勺", "瓣", "片", "根", "颗", "只", "把", "块", "条"]) {
     if (rest.startsWith(zh)) return { unit: UNIT_ALIASES[zh], label: zh, rest: rest.slice(zh.length).trim() }
@@ -207,7 +217,16 @@ function extractParens(text: string): { text: string; note: string } {
   return { text: out.replace(/\s+/g, " ").trim(), note: notes.join("; ") }
 }
 
-function build(raw: string, name: string, quantity: number, unit: UnitDef | null, unitLabel: string, note: string, section: string): ParsedIngredient {
+function build(
+  raw: string,
+  name: string,
+  quantity: number,
+  unit: UnitDef | null,
+  unitLabel: string,
+  note: string,
+  section: string,
+  unitCost: number | null = null,
+): ParsedIngredient {
   const q = Number.isFinite(quantity) ? quantity : 0
   const dimension = unit?.dimension ?? (unitLabel ? null : q > 0 ? "count" : null)
   const factor = unit?.factor ?? (dimension === "count" ? 1 : null)
@@ -220,7 +239,17 @@ function build(raw: string, name: string, quantity: number, unit: UnitDef | null
     baseAmount: factor !== null && q > 0 ? q * factor : null,
     note: note.trim(),
     section,
+    unitCost,
   }
+}
+
+/** Primer monto con símbolo de moneda ("$ 11.00", "€4,50", "₡1.500") de un resto de fila. */
+function moneyIn(rest: string): number | null {
+  const m = rest.match(/[$€₡£¥₲]\s*(\d+(?:[.,]\d+)*)/)
+  if (!m) return null
+  const raw = m[1]
+  const n = /[.,]\d{1,2}$/.test(raw) ? Number(raw.replace(/[.,](?=\d{3}(?:[.,]|$))/g, "").replace(",", ".")) : Number(raw.replace(/[.,]/g, ""))
+  return Number.isFinite(n) && n > 0 ? n : null
 }
 
 /** Una línea de ingrediente → cantidad, unidad y nombre. null si no parece un ingrediente. */
@@ -230,7 +259,7 @@ export function parseIngredientLine(rawLine: string, section = ""): ParsedIngred
   const toTaste = TO_TASTE.test(line)
 
   // Tabla (|, tabulaciones) o CSV (, ;) con una celda numérica
-  const cells = line.includes("|") || rawLine.includes("\t") ? line.split(/\s*[|\t]\s*/) : /^[^\d,;][^,;]*[,;]\s*\d/.test(line) ? line.split(/\s*[,;]\s*/) : null
+  const cells = line.includes("|") || rawLine.includes("\t") ? line.split(/\s*[|\t]\s*/) : /^[^\d,;][^\d,;]*[,;]\s*\d/.test(line) ? line.split(/\s*[,;]\s*/) : null
   if (cells && cells.filter(Boolean).length >= 2) {
     const clean = cells.map((c) => c.trim()).filter(Boolean)
     const qIdx = clean.findIndex((c) => new RegExp(`^${RANGE}$`).test(c) || new RegExp(`^${NUM}\\s*[^\\d\\s]\\S*$`).test(c))
@@ -248,7 +277,9 @@ export function parseIngredientLine(rawLine: string, section = ""): ParsedIngred
       }
       const nameCell = clean.find((c, i) => i !== qIdx && c !== unitText && !/^\d/.test(c)) ?? ""
       const u = readUnit(unitText)
-      return build(rawLine, nameCell, parseQuantity(qtyText), u.unit, u.unit ? u.label : unitText, "", section)
+      // Costo en otra celda de la fila ("Harina | 500 g | $0.02", docs/152)
+      const cost = moneyIn(clean.filter((_, i) => i !== qIdx).join(" "))
+      return build(rawLine, nameCell, parseQuantity(qtyText), u.unit, u.unit ? u.label : unitText, "", section, cost)
     }
   }
 
@@ -265,11 +296,23 @@ export function parseIngredientLine(rawLine: string, section = ""): ParsedIngred
     }
   }
 
+  // Fila de tabla de una ficha técnica (docs/151): nombre, cantidad, unidad y más columnas
+  // (costo unitario, rendimiento, importe, nutrientes). Se toman cantidad y unidad, y el
+  // costo unitario si viene con símbolo de moneda; el resto de columnas se ignora.
+  const row = text.match(new RegExp(`^([^\\d$€₡]*\\p{L}[^\\d$€₡]*?)\\s+(${NUM})(?![\\d.,/])\\s*(.*[\\d$€₡].*)$`, "u"))
+  if (row && !new RegExp(`^${NUM}`).test(row[1])) {
+    const u = readUnit(row[3])
+    return build(rawLine, row[1], parseQuantity(row[2]), u.unit, u.label, parenNote, section, moneyIn(u.rest))
+  }
+
   // Cantidad primero (número o palabra)
   const lead = text.match(new RegExp(`^(${RANGE})\\s*(.*)$`))
   if (lead) {
     const u = readUnit(lead[2])
-    return build(rawLine, u.rest, parseQuantity(lead[1]), u.unit, u.label, parenNote, section)
+    // "0.555 Kg $180.00 1.00 $99.9": el nombre quedó en la(s) línea(s) anterior(es) de la
+    // ficha; sin letras propias, el nombre se completa en parseRecipeText.
+    const hasOwnName = /\p{L}{2,}/u.test(u.rest.replace(/[$€₡£¥₲][\s\d.,]*/g, ""))
+    return build(rawLine, hasOwnName ? u.rest : "", parseQuantity(lead[1]), u.unit, u.label, parenNote, section, moneyIn(u.rest))
   }
   const word = stripAccents(text.toLowerCase()).match(/^([a-z]+)\s+(.*)$/)
   if (word && WORD_NUMBERS[word[1]] !== undefined && !toTaste) {
@@ -299,12 +342,17 @@ export function parseIngredientLine(rawLine: string, section = ""): ParsedIngred
 const H_INGREDIENTS = /^(ingredientes?|ingredients?|ingr[eé]dients?|ingredienser|配料|原料|食材|用料)(?![a-z])/i
 const H_STEPS = /^(preparaci[oó]n|procedimiento|elaboraci[oó]n|instrucciones|pasos|modo de (preparo|fazer|preparaci[oó]n)|preparo|m[eé]todo|method|directions|instructions|steps|preparation|pr[eé]paration|[ée]tapes|fremgangsm[aå]de|tilberedning|做法|步骤|制作方法|制作)(?![a-z])/i
 const H_NOTES = /^(notas?|tips?|consejos|observaciones|notes?|astuces|dicas|observa[cç][oõ]es|bem[æa]rk|noter|备注|小贴士)(?![a-z])/i
-const YIELD = /(rinde|rendimiento|porciones|raciones|sirve|serves|servings|yield|makes|portions?|personas|pax|udbytte|portioner|rendement|rende|por[cç][oõ]es|pessoas|personnes|couverts|份|人份)/i
-const TITLE_PREFIX = /^(receta|nombre|t[ií]tulo|recipe|title|recette|receita|opskrift|菜名|名称)\s*:\s*/i
+const YIELD = /(rinde|rendimiento|porciones|raciones|sirve|serves|servings|yield|makes|portions?|personas|pax|udbytte|portioner|rendement|rende|por[cç][oõ]es|pessoas|personnes|couverts|rendimento|份|人份)/i
+const TITLE_PREFIX =
+  /^(receta|nombre(?: de la receta| del plat(?:o|illo))?|t[ií]tulo|recipe(?: name)?|title|recette|nom de la recette|receita|nome da (?:prepara[cç][aã]o|receita)|opskrift(?:ens navn)?|菜名|名称)\s*[:：]\s*/i
 
 function headerOf(line: string): "ingredients" | "steps" | "notes" | null {
   const plain = line.replace(/[:：\-–=#*_]+\s*$/, "").replace(/^[#*_\s]+/, "").trim()
-  if (plain.length > 40) return null
+  // Encabezado de tabla largo: "Ingredientes Cantidad Unidad Costo Unitario Importe"
+  if (plain.length > 40) {
+    const columns = /\b(cantidad|quantidade|quantity|qty|unidad|unidade|unit|m[æa]ngde|quantit[ée]|数量|用量)\b/i
+    return H_INGREDIENTS.test(plain) && columns.test(plain) ? "ingredients" : null
+  }
   if (H_INGREDIENTS.test(plain)) return "ingredients"
   if (H_STEPS.test(plain)) return "steps"
   if (H_NOTES.test(plain)) return "notes"
@@ -312,10 +360,12 @@ function headerOf(line: string): "ingredients" | "steps" | "notes" | null {
 }
 
 function parseYield(line: string): { amount: number; hint: "porciones" | "unidades" } | null {
-  if (!YIELD.test(line) || line.length > 60) return null
+  if (!YIELD.test(line) || line.length > 60 || line.includes("%")) return null
+  if (/\d\s*(?:kg|g|l|lt|ml|lb|oz)\b/i.test(line)) return null // "Rendimento: 12kg" es peso, no porciones
   const n = line.match(/(\d+(?:[.,]\d+)?)/)
   if (!n) return null
   const amount = Number(n[1].replace(",", "."))
+  if (!(amount >= 1)) return null
   const hint = /(unidades|units|pieces|piezas|galletas|cookies|pcs)/i.test(line) ? "unidades" : "porciones"
   return { amount, hint }
 }
@@ -325,7 +375,7 @@ function looksLikeIngredient(line: string): boolean {
   if (!l || l.length > 90) return false
   if (new RegExp(`^${RANGE}`).test(l)) return true
   if (TO_TASTE.test(l)) return true
-  if (/[|\t]/.test(line) || /^[^\d,;][^,;]*[,;]\s*\d/.test(l)) return true
+  if (/[|\t]/.test(line) || /^[^\d,;][^\d,;]*[,;]\s*\d/.test(l)) return true
   if (new RegExp(`^.+?\\s*(?::|\\.{2,}|\\s[-–]\\s)\\s*${NUM}`).test(l)) return true
   const word = stripAccents(l.toLowerCase()).match(/^([a-z]+)\s/)
   return !!word && WORD_NUMBERS[word[1]] !== undefined && word[1].length > 2 && l.split(" ").length <= 8
@@ -340,26 +390,71 @@ function stepText(line: string): string {
     .trim()
 }
 
+/**
+ * Fichas impresas a dos columnas (docs/151): el OCR deja las dos en la misma línea,
+ * separadas por varios espacios. Si ambas mitades parecen ingredientes (o la derecha
+ * empieza con una unidad, cuando el OCR perdió el número), se parten en dos líneas.
+ */
+function splitColumns(line: string): string[] {
+  const gaps = [...line.matchAll(/\S(\s{3,})\S/g)]
+  if (!gaps.length) return [line]
+  const gap = gaps.reduce((a, b) => (b[1].length > a[1].length ? b : a))
+  const cut = (gap.index ?? 0) + 1
+  const left = line.slice(0, cut).trim()
+  const right = line.slice(cut + gap[1].length).trim()
+  const rightOk = looksLikeIngredient(right) || /^(?:[cCtT¢]|1\/2)\s+\p{L}/u.test(normalizeLine(right))
+  return looksLikeIngredient(left) && rightOk ? [left, right] : [line]
+}
+
+const COLUMN_WORDS = new Set(
+  "o ó y e medida caseira casera costo custo unitario unitaria rendimiento rendimento importe precio preço total porcion porcao porción porção peso bruto liquido neto pb pl fc fcc ic energia energía kcal kj cho ptn lpd ca fe mg zn vit fibra fibras sodio na g ml kg mcg mg l unidad unidade unit cantidad quantidade quantity cost price yield amount notas obs"
+    .split(" "),
+)
+
+function isColumnWordsLine(line: string): boolean {
+  const words = stripAccents(line.toLowerCase()).split(/[^a-z]+/).filter(Boolean)
+  return words.length > 0 && words.length <= 6 && !/\d{2,}/.test(line) && words.every((w) => COLUMN_WORDS.has(w) || w.length <= 2)
+}
+
 export function parseRecipeText(input: string): ParsedRecipe {
-  const lines = input.replace(/\r/g, "").split("\n")
+  const lines = input.replace(/\r/g, "").split("\n").flatMap(splitColumns)
   const recipe: ParsedRecipe = { name: "", servings: null, yieldAmount: null, yieldUnitHint: null, ingredients: [], procedure: [], notes: [] }
   let mode: "start" | "ingredients" | "steps" | "notes" = "start"
   let section = ""
   let sawHeaders = false
+  let nameFromPrefix = false
+  let tableHeader = false // justo después del encabezado de la tabla de ingredientes
+  let gramsHint = false // la tabla dice "(g/ml)": cantidades sin unidad son gramos
 
   for (const original of lines) {
     const line = normalizeLine(original)
     if (!line) continue
 
     const titled = line.match(TITLE_PREFIX)
-    if (titled && !recipe.name) {
+    // "Receta: Estándar  Costo Unitario:" es un campo del formulario, no el nombre.
+    if (titled && !nameFromPrefix && !/[:：]/.test(line.slice(titled[0].length))) {
       recipe.name = line.slice(titled[0].length).trim()
+      nameFromPrefix = true
       continue
     }
 
     // Encabezado, con o sin contenido en la misma línea ("Ingredientes: harina, …")
     const head = headerOf(line.split(/[:：]/)[0] + (line.includes(":") || line.includes("：") ? ":" : ""))
     if (head) {
+      // Lo que se tomó como ingrediente ANTES del primer encabezado de ingredientes eran
+      // datos sueltos de la ficha ("Rendimiento: 0.927%", "Temperatura…"): fuera.
+      if (head === "ingredients" && !sawHeaders) recipe.ingredients = []
+      if (!sawHeaders && recipe.procedure.length) {
+        // El nombre del plato suele ser una línea corta en mayúsculas de ese bloque
+        // ("PIZZA HAWAIANA") cuando la primera línea era el membrete de la página.
+        const caps = recipe.procedure.find((l) => l.length <= 40 && !/[:\d]/.test(l) && l === l.toUpperCase() && /\p{L}{3}/u.test(l))
+        if (caps && !nameFromPrefix) recipe.name = caps
+        recipe.procedure = []
+      }
+      if (head === "ingredients") {
+        tableHeader = true
+        if (/\(\s*g(?:\s*\/\s*ml)?\s*\)|gramas|gramos|grams/i.test(line)) gramsHint = true
+      }
       sawHeaders = true
       mode = head
       section = ""
@@ -384,10 +479,12 @@ export function parseRecipeText(input: string): ParsedRecipe {
     }
 
     if (mode === "start") {
-      if (!recipe.name && !looksLikeIngredient(line) && line.length <= 80) {
+      // Una letra suelta o un garabato que el OCR leyó del dibujo no es el nombre (docs/152)
+      if (!recipe.name && !looksLikeIngredient(line) && line.length <= 80 && /\p{L}{3}/u.test(line)) {
         recipe.name = line.replace(/^[#*_\s]+|[#*_\s]+$/g, "")
         continue
       }
+      if (!/\p{L}{3}/u.test(line) && !looksLikeIngredient(line)) continue // basura antes del título
       mode = looksLikeIngredient(line) ? "ingredients" : "steps"
     }
 
@@ -397,13 +494,51 @@ export function parseRecipeText(input: string): ParsedRecipe {
         section = line.replace(/[:：]$/, "").trim()
         continue
       }
+      // Filas de totales de la ficha ("Total", "Costo unitario", "Porção (100g)")
+      if (/^(?:total|subtotal|costo (?:total|unitario)|custo (?:total|unit[aá]rio)|importe|suma|porci[oó]n|por[cç][aã]o|total cost)(?![a-z])/i.test(stripAccents(line))) continue
+      // Continuación del encabezado de tabla ("ó", "Medida", "Costo", "Kcal", "(g/ml)")
+      if (tableHeader && isColumnWordsLine(line)) {
+        if (/\(\s*g(?:\s*\/\s*ml)?\s*\)|gramas|gramos|grams/i.test(line)) gramsHint = true
+        continue
+      }
+      tableHeader = false
+      // Fila de tabla que siguió en otra línea ("de sopa 27 25 1,08 …", "376 200 1,88 …")
+      if ((line.match(/\d+(?:[.,]\d+)?/g) ?? []).length >= 3 && (/^\p{Ll}/u.test(line) || !/\p{L}{2,}/u.test(line))) continue
       // Sin encabezados: una frase larga después de los ingredientes ya es un paso
       if (!sawHeaders && !looksLikeIngredient(line) && line.split(" ").length > 6) {
         mode = "steps"
       } else {
         const ing = parseIngredientLine(original, section)
+        if (ing && !ing.name && ing.quantity > 0) {
+          // Nombre partido en líneas anteriores ("Queso" / "mozzarella" / "0.555 Kg $180")
+          const parts: string[] = []
+          while (parts.length < 3) {
+            const last = recipe.ingredients[recipe.ingredients.length - 1]
+            if (!last || last.quantity !== 0 || last.unitLabel || last.name.split(" ").length > 3) break
+            parts.unshift(recipe.ingredients.pop()!.name)
+          }
+          if (parts.length) ing.name = parts.join(" ")
+        }
+        if (ing?.name && /^\p{Ll}/u.test(ing.name)) {
+          const last = recipe.ingredients[recipe.ingredients.length - 1]
+          if (last && last.quantity === 0 && !last.unitLabel && last.name.split(" ").length <= 2) {
+            recipe.ingredients.pop()
+            ing.name = `${last.name} ${ing.name}`
+          }
+        }
         if (ing?.name) recipe.ingredients.push(ing)
         else if (ing === null) recipe.procedure.push(stepText(line))
+        continue
+      }
+    }
+
+    // Sin encabezados, una línea basura antes de la lista (título mal leído por el OCR)
+    // no debe convertir toda la receta en pasos: el primer ingrediente vuelve a la lista.
+    if (mode === "steps" && !sawHeaders && recipe.ingredients.length === 0 && looksLikeIngredient(line)) {
+      const ing = parseIngredientLine(original, section)
+      if (ing?.name) {
+        mode = "ingredients"
+        recipe.ingredients.push(ing)
         continue
       }
     }
@@ -417,6 +552,14 @@ export function parseRecipeText(input: string): ParsedRecipe {
     if (mode === "notes") recipe.notes.push(stripBullet(line))
   }
 
-  if (!recipe.name) recipe.name = recipe.ingredients[0] ? "" : ""
+  if (gramsHint) {
+    for (const ing of recipe.ingredients) {
+      if (!ing.unitLabel && ing.quantity > 0 && /\d+(?:[.,]\d+)?\s+\S+.*\d/.test(ing.raw)) {
+        ing.unitLabel = "g"
+        ing.dimension = "mass"
+        ing.baseAmount = ing.quantity
+      }
+    }
+  }
   return recipe
 }

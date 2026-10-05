@@ -77,6 +77,9 @@ function isFeatureAllowedForMember(member: TeamMember, feature: FeatureKey): boo
   // "cliente" y "administrativo" pueden exportar algo (empleado/normal, o los tres
   // tipos respectivamente); "ninguno" no puede exportar ningún PDF de receta.
   if (feature === "pdf_export") return member.pdfAccess !== "ninguno"
+  // OCR (docs/153): un invitado trabaja dentro del plan del dueño (Sous Chef o más, que
+  // ya los incluye). Fotos sin límite; actualizar precios, si puede editar ingredientes.
+  if (feature === "price_import") return member.allowedFeatures.includes("ingredients")
   return member.allowedFeatures.includes(feature)
 }
 

@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   ArrowLeft,
   Search,
@@ -50,6 +51,8 @@ import {
   Ruler,
   AlertCircle,
   Lock,
+  Camera,
+  Receipt,
 } from "lucide-react"
 import { Sidebar } from "@/components/sidebar"
 import { useAuth } from "@/contexts/auth-context"
@@ -65,10 +68,13 @@ import { getCategoryLabel, getUnitLabel, getPresentationLabel } from "@/lib/ingr
 import { getIngredients, saveIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import type { Recipe } from "@/types/recipe"
-import { parseSpreadsheetMatrix, createIngredientsExcelTemplate } from "@/lib/excel-utils"
-import { mapIngredientRows, splitPastedList, type ImportedIngredientRow } from "@/lib/ingredient-import"
+import { parseWorkbookSheets, createIngredientsExcelTemplate } from "@/lib/excel-utils"
+import { mapIngredientRows, splitPastedList, parseLocaleNumber, pickIngredientSheet, type ImportedIngredientRow } from "@/lib/ingredient-import"
 import { guessCategory } from "@/lib/recipe-import/guess-category"
 import { getCurrentCurrencyCode } from "@/lib/currency"
+import { parseReceiptText } from "@/lib/receipt-import"
+import { useOcrUsage } from "@/lib/ocr-usage"
+import { OCR_LANG } from "@/lib/recipe-import/ocr"
 import { IngredientsTable } from "@/components/ingredients/ingredients-table"
 import { IngredientesTour } from "@/components/page-tours"
 import { convertAllIngredientsToSystem } from "@/lib/utils/calculations"
@@ -253,6 +259,23 @@ export default function IngredientesPage() {
   // de verdad se va a importar, no las columnas crudas del archivo (docs/148).
   const [importRows, setImportRows] = useState<ImportedIngredientRow[]>([])
   const [pasteText, setPasteText] = useState("")
+  // Ticket o factura (docs/151): leído con OCR; permite actualizar precios existentes
+  const [fromReceipt, setFromReceipt] = useState(false)
+  // Libro de Excel con varias hojas (docs/152): cuál se importa
+  const [importSheets, setImportSheets] = useState<{ name: string; rows: unknown[][] }[]>([])
+  const [importSheet, setImportSheet] = useState(0)
+  // Filas sin precio: se importan en 0 para completarlas después (migrar todo de una vez)
+  const [includeNoPrice, setIncludeNoPrice] = useState(true)
+  // Actualizar precios de lo que ya existe: marcado por defecto con un ticket; con un
+  // Excel (p. ej. la lista del proveedor) se ofrece desmarcado (docs/152).
+  const [updateExisting, setUpdateExisting] = useState(false)
+  // Por plan (docs/153): crear ingredientes desde un ticket o una lista es libre en todos
+  // los planes; actualizar el precio de los que ya existen es de Home Cook en adelante.
+  const canImportPrices = useFeatureAccess("price_import") === true
+  const logOcrRead = useOcrUsage()
+  const [receiptProgress, setReceiptProgress] = useState<number | null>(null)
+  const receiptCameraRef = useRef<HTMLInputElement>(null)
+  const receiptFileRef = useRef<HTMLInputElement>(null)
   const [importProgress, setImportProgress] = useState(0)
   const [isImporting, setIsImporting] = useState(false)
 
@@ -413,7 +436,7 @@ export default function IngredientesPage() {
         (file) =>
           file.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
           file.type === "application/vnd.ms-excel" ||
-          /\.(xlsx|xls|csv|txt)$/i.test(file.name),
+          /\.(xlsx|xlsm|xls|csv|txt)$/i.test(file.name),
       )
 
       if (excelFile) {
@@ -430,7 +453,11 @@ export default function IngredientesPage() {
   // Process import file
   const processImportFile = async (file: File) => {
     try {
-      const rows = mapIngredientRows(await parseSpreadsheetMatrix(file), { currency: getCurrentCurrencyCode() })
+      const sheets = await parseWorkbookSheets(file)
+      const index = pickIngredientSheet(sheets)
+      setImportSheets(sheets)
+      setImportSheet(index)
+      const rows = mapIngredientRows(sheets[index]?.rows ?? [], { currency: getCurrentCurrencyCode() })
       setImportRows(rows)
       showInfo(
         t("ingredientes_toast_file_processed_title"),
@@ -440,6 +467,11 @@ export default function IngredientesPage() {
       console.error("Error processing file:", error)
       showError(t("ingredientes_toast_process_error_title"), t("ingredientes_toast_process_error_desc"))
     }
+  }
+
+  const changeImportSheet = (index: number) => {
+    setImportSheet(index)
+    setImportRows(mapIngredientRows(importSheets[index]?.rows ?? [], { currency: getCurrentCurrencyCode() }))
   }
 
   // Lista pegada (de Excel, Google Sheets, un correo o WhatsApp) — sin archivo (docs/148).
@@ -453,11 +485,60 @@ export default function IngredientesPage() {
     setImportFile(new File([pasteText], `${t("ingredientes_paste_source")}.txt`, { type: "text/plain" }))
   }
 
+  /**
+   * Ticket o factura de supermercado (docs/151): foto o PDF → OCR en el dispositivo →
+   * productos con precio (lib/receipt-import.ts) → la misma vista previa de siempre.
+   */
+  const handleReceiptFile = async (file: File) => {
+    setReceiptProgress(0)
+    try {
+      const latin = OCR_LANG[language] && OCR_LANG[language] !== "chi_sim" ? OCR_LANG[language] : "eng"
+      const lang = OCR_LANG[language] || "spa"
+      let text = ""
+      if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
+        const { openRecipePdf, ocrPdfPage } = await import("@/lib/recipe-import/pdf")
+        const info = await openRecipePdf(file, (p) => setReceiptProgress(p * 0.3))
+        text = info.pages.map((pg) => pg.text ?? "").join("\n").trim()
+        if (!text) logOcrRead("receipt")
+        if (!text) text = (await ocrPdfPage(file, 1, lang, latin, (p) => setReceiptProgress(0.3 + p * 0.7), { layout: "receipt" })).text
+      } else {
+        logOcrRead("receipt")
+        const { recognizeWithLanguageCheck } = await import("@/lib/recipe-import/ocr")
+        text = (await recognizeWithLanguageCheck(file, lang, latin, (p) => setReceiptProgress(p), { layout: "receipt" })).text
+      }
+      const rows = parseReceiptText(text, { currency: getCurrentCurrencyCode() })
+      if (!rows.length) {
+        showError(t("ingredientes_receipt_empty_title"), t("ingredientes_receipt_empty_desc"))
+        return
+      }
+      setImportRows(rows)
+      setFromReceipt(true)
+      setUpdateExisting(canImportPrices)
+      setImportFile(new File([text], `${t("ingredientes_receipt_source")}.txt`, { type: "text/plain" }))
+    } catch (error) {
+      console.error("[ingredientes] Ticket:", error)
+      showError(t("ingredientes_receipt_empty_title"), t("ingredientes_receipt_error_desc"))
+    } finally {
+      setReceiptProgress(null)
+    }
+  }
+
+  const updateImportRow = (index: number, patch: Partial<ImportedIngredientRow>) =>
+    setImportRows((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)))
+
+  /** Ingrediente existente con el mismo nombre y unidad: su precio se puede actualizar. */
+  const existingForUpdate = (row: ImportedIngredientRow) => {
+    const key = (row.name || "").toLowerCase()
+    return ingredients.find((ing) => ing.name.toLowerCase() === key && ing.unit === row.unit) ?? null
+  }
+
   // Por qué se omitiría una fila (sin precio o ya existe), para la vista previa.
   const importSkipReason = (row: ImportedIngredientRow, index: number): string | null => {
-    if (!(row.price > 0)) return t("ingredientes_preview_skip_price")
+    if (!(row.price > 0) && !(includeNoPrice && row.name)) return t("ingredientes_preview_skip_price")
     const key = (row.name || "").toLowerCase()
-    if (ingredients.some((ing) => ing.name.toLowerCase() === key)) return t("ingredientes_preview_skip_exists")
+    if (ingredients.some((ing) => ing.name.toLowerCase() === key)) {
+      return updateExisting && row.price > 0 && existingForUpdate(row) ? null : t("ingredientes_preview_skip_exists")
+    }
     if (importRows.slice(0, index).some((r) => (r.name || "").toLowerCase() === key)) return t("ingredientes_preview_skip_exists")
     return null
   }
@@ -505,16 +586,27 @@ export default function IngredientesPage() {
       }
 
       const seen = new Set(ingredients.map((ing) => ing.name.toLowerCase()))
+      const priceUpdates: { id: string; price: number }[] = []
       for (let i = 0; i < data.length; i++) {
         const row = data[i]
         // La categoría se compara contra las reales (sin tildes/mayúsculas, 6 idiomas);
         // si no coincide, entra como OTROS y se corrige desde la tabla.
         const ingredientName = row.name || `${t("ingredientes_default_name_prefix")} ${i + 1}`
-        if (!(row.price > 0) || !(row.content > 0)) {
+        const price = row.price > 0 ? row.price : includeNoPrice ? 0 : NaN
+        if (!(price >= 0) || !(row.content > 0) || (!row.name && !(row.price > 0))) {
           errorCount++
           continue
         }
-        if (seen.has(ingredientName.toLowerCase())) continue
+        if (seen.has(ingredientName.toLowerCase())) {
+          // Ticket: el mismo producto ya existe con la misma unidad → nuevo precio, llevado
+          // a su contenido neto (precio por g/ml/unidad del ticket × contenido existente).
+          const existing = updateExisting && row.price > 0 ? existingForUpdate(row) : null
+          if (existing && !priceUpdates.some((u) => u.id === existing.id)) {
+            const net = existing.pricing?.netContent || 1
+            priceUpdates.push({ id: existing.id, price: Math.round((row.price / row.content) * net * 100) / 100 })
+          }
+          continue
+        }
         seen.add(ingredientName.toLowerCase())
         const now = new Date().toISOString()
         newIngredients.push({
@@ -526,9 +618,9 @@ export default function IngredientesPage() {
           unit: row.unit as any,
           presentation: undefined,
           pricing: {
-            purchasePrice: row.price,
+            purchasePrice: price,
             netContent: row.content,
-            pricePerUnit: row.price / row.content,
+            pricePerUnit: price / row.content,
             lastUpdated: now,
           },
           supplier: row.supplier || t("ingredientes_default_supplier"),
@@ -548,7 +640,22 @@ export default function IngredientesPage() {
       const updatedIngredients = [...ingredients, ...newIngredients]
       setIngredients(updatedIngredients)
 
-      saveIngredients(updatedIngredients, businessId)
+      await saveIngredients(updatedIngredients, businessId)
+
+      // Precios actualizados desde el ticket: misma función que al editar un precio a mano,
+      // que recalcula en cascada las recetas que usan ese ingrediente.
+      let updatedPrices = 0
+      for (const update of priceUpdates) {
+        try {
+          await updateIngredientPriceAndRecalculate(businessId || "main", update.id, update.price)
+          updatedPrices++
+        } catch (error) {
+          console.error("[ingredientes] No se pudo actualizar el precio:", error)
+        }
+      }
+      if (updatedPrices > 0) {
+        showSuccess(t("ingredientes_receipt_updated_title"), t("ingredientes_receipt_updated_desc").replace("{count}", String(updatedPrices)))
+      }
 
       // Trigger update event for other components
       window.dispatchEvent(
@@ -594,6 +701,9 @@ export default function IngredientesPage() {
       setImportFile(null)
       setImportRows([])
       setPasteText("")
+      setFromReceipt(false)
+      setUpdateExisting(false)
+      setImportSheets([])
     } catch (error) {
       console.error("Error importing:", error)
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -1998,8 +2108,57 @@ export default function IngredientesPage() {
                       setImportFile(file)
                       processImportFile(file)
                     }}
-                    accept=".xlsx,.xls,.csv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,text/plain"
+                    accept=".xlsx,.xlsm,.xls,.csv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel.sheet.macroEnabled.12,application/vnd.ms-excel,text/csv,text/plain"
                   />
+                  <div className="mt-6 pt-6 border-t border-border text-left space-y-2">
+                    <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <Receipt className="h-4 w-4 text-primary" />
+                      {t("ingredientes_receipt_title")}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{t("ingredientes_receipt_desc")}</p>
+                    <input
+                      ref={receiptCameraRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0]
+                        if (f) handleReceiptFile(f)
+                        e.target.value = ""
+                      }}
+                    />
+                    <input
+                      ref={receiptFileRef}
+                      type="file"
+                      accept="image/*,application/pdf,.pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0]
+                        if (f) handleReceiptFile(f)
+                        e.target.value = ""
+                      }}
+                    />
+                    {receiptProgress !== null ? (
+                      <div className="space-y-1.5">
+                        <p className="text-xs text-muted-foreground">
+                          {t("ingredientes_receipt_reading").replace("{p}", String(Math.round(receiptProgress * 100)))}
+                        </p>
+                        <Progress value={receiptProgress * 100} />
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        <Button type="button" size="sm" onClick={() => receiptCameraRef.current?.click()}>
+                          <Camera className="h-4 w-4 mr-2" />
+                          {t("ingredientes_receipt_photo")}
+                        </Button>
+                        <Button type="button" size="sm" variant="outline" onClick={() => receiptFileRef.current?.click()}>
+                          <Upload className="h-4 w-4 mr-2" />
+                          {t("ingredientes_receipt_upload")}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                   <div className="mt-6 pt-6 border-t border-border text-left space-y-2">
                     <Label htmlFor="ingredient-paste" className="text-sm font-medium text-foreground">
                       {t("ingredientes_paste_title")}
@@ -2035,6 +2194,8 @@ export default function IngredientesPage() {
                       onClick={() => {
                         setImportFile(null)
                         setImportRows([])
+                        setFromReceipt(false)
+                        setImportSheets([])
                       }}
                     >
                       <X className="h-4 w-4" />
@@ -2047,6 +2208,54 @@ export default function IngredientesPage() {
                     return (
                       <div className="space-y-2">
                         <h4 className="font-semibold">{t("ingredientes_preview_title")}</h4>
+                        {importSheets.length > 1 && (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs text-muted-foreground">{t("ingredientes_sheet_label")}</span>
+                            <Select value={String(importSheet)} onValueChange={(v) => changeImportSheet(Number(v))}>
+                              <SelectTrigger className="h-8 w-full sm:w-[260px]" aria-label={t("ingredientes_sheet_label")}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {importSheets.map((sh, i) => (
+                                  <SelectItem key={i} value={String(i)}>
+                                    {sh.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                        {importRows.some((r) => !(r.price > 0) && r.name) && (
+                          <label className="flex items-center gap-2 text-sm">
+                            <Checkbox checked={includeNoPrice} onCheckedChange={(v) => setIncludeNoPrice(v === true)} />
+                            {t("ingredientes_include_no_price").replace(
+                              "{count}",
+                              String(importRows.filter((r) => !(r.price > 0) && r.name).length),
+                            )}
+                          </label>
+                        )}
+                        {(fromReceipt || importRows.some((r) => r.price > 0 && existingForUpdate(r))) && (
+                          <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                            {fromReceipt && <p className="text-xs text-muted-foreground">{t("ingredientes_receipt_review_hint")}</p>}
+                            <label className={`flex items-center gap-2 text-sm ${canImportPrices ? "" : "opacity-60"}`}>
+                              <Checkbox
+                                checked={updateExisting && canImportPrices}
+                                disabled={!canImportPrices}
+                                onCheckedChange={(v) => setUpdateExisting(v === true)}
+                              />
+                              {t("ingredientes_receipt_update_existing")}
+                            </label>
+                            {!canImportPrices && (
+                              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Lock className="h-3.5 w-3.5" />
+                                {t("price_import_locked")}{" "}
+                                <Link href="/planes" className="text-primary hover:underline">
+                                  {t("price_import_see_plans")}
+                                </Link>
+                              </p>
+                            )}
+                          </div>
+                        )}
                         <p className="text-sm text-muted-foreground">
                           {t("ingredientes_preview_summary")
                             .replace("{ready}", String(ready))
@@ -2066,16 +2275,40 @@ export default function IngredientesPage() {
                               <tbody>
                                 {importRows.slice(0, 100).map((row, index) => (
                                   <tr key={index} className={"border-t " + (reasons[index] ? "text-muted-foreground" : "")}>
-                                    <td className="p-2">{row.name || "—"}</td>
+                                    {/* Nombre y precio editables antes de importar (docs/151): el OCR de
+                                        un ticket puede confundir un dígito o abreviar un nombre. */}
+                                    <td className="p-1">
+                                      <Input
+                                        value={row.name}
+                                        onChange={(e) => updateImportRow(index, { name: e.target.value })}
+                                        className="h-8 min-w-[160px] text-sm"
+                                        aria-label={t("ingredientes_preview_col_name")}
+                                      />
+                                    </td>
                                     <td className="p-2 whitespace-nowrap">
                                       {row.content} {getUnitLabel(row.unit as any, language)}
                                     </td>
-                                    <td className="p-2 text-right tabular-nums">{row.price > 0 ? row.price : "—"}</td>
+                                    <td className="p-1 text-right">
+                                      <Input
+                                        inputMode="decimal"
+                                        value={row.price > 0 ? String(row.price) : ""}
+                                        placeholder="—"
+                                        onChange={(e) => updateImportRow(index, { price: parseLocaleNumber(e.target.value) })}
+                                        className="h-8 w-24 text-right tabular-nums text-sm ml-auto"
+                                        aria-label={t("ingredientes_preview_col_price")}
+                                      />
+                                    </td>
                                     <td className="p-2 whitespace-nowrap">
                                       {reasons[index] ? (
                                         <span className="text-destructive">{reasons[index]}</span>
                                       ) : (
-                                        <span className="text-success">{t("ingredientes_preview_ok")}</span>
+                                        <span className="text-success">
+                                          {updateExisting && row.price > 0 && existingForUpdate(row)
+                                            ? t("ingredientes_preview_will_update")
+                                            : row.price > 0
+                                              ? t("ingredientes_preview_ok")
+                                              : t("ingredientes_preview_no_price_ok")}
+                                        </span>
                                       )}
                                     </td>
                                   </tr>

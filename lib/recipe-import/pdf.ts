@@ -1,22 +1,43 @@
 /**
- * Recetas en PDF (docs/149). Con pdf.js (Mozilla), servido desde /ocr/pdf (la CSP no
- * permite CDNs, ver scripts/copy-ocr-assets.mjs):
- *   - páginas con texto (PDF exportado de Word, de una web…): se extrae el texto tal cual,
- *     sin OCR — exacto e instantáneo;
- *   - páginas sin texto (PDF escaneado o foto guardada como PDF): se dibuja la página a
- *     buena resolución y pasa por el mismo OCR de las fotos, con detección de idioma.
- * Se leen hasta MAX_PAGES páginas (una receta rara vez ocupa más).
+ * Recetas en PDF (docs/149, docs/151). Con pdf.js (Mozilla), servido desde /ocr/pdf (la
+ * CSP no permite CDNs, ver scripts/copy-ocr-assets.mjs).
+ *
+ * En las pruebas con PDFs reales de fichas técnicas (docs/151) los PDF resultaron ser
+ * recetarios de 20 a 70 páginas, con portada, introducción e índice primero. Por eso:
+ *   - se extrae el texto de todas las páginas (hasta MAX_TEXT_PAGES; es instantáneo);
+ *   - se elige sola la primera página que de verdad tiene una receta (2+ ingredientes),
+ *     y el diálogo deja cambiar de página con el título de cada una;
+ *   - una página sin texto (escaneada) se dibuja a buena resolución y pasa por el mismo
+ *     OCR de las fotos, con detección de idioma, solo cuando se elige.
  */
 
-import { recognizeWithLanguageCheck, type OcrLine } from "./ocr"
+import { recognizeWithLanguageCheck, type OcrLine, type OcrOptions } from "./ocr"
+import { parseRecipeText } from "./parse-recipe"
 
-const MAX_PAGES = 6
+const MAX_TEXT_PAGES = 120
 const BASE = "/ocr/pdf"
 
-export interface PdfReadResult {
+export interface PdfPageInfo {
+  number: number // 1..n
+  text: string | null // null: página escaneada (necesita OCR)
+  title: string // para el selector de páginas
+  ingredientCount: number // ingredientes con cantidad y unidad
+}
+
+export interface PdfDocumentInfo {
+  pages: PdfPageInfo[]
+  totalPages: number
+  suggested: number // página sugerida (1..n)
+  /** "sheet": hojas de un libro de Excel con una receta cada una (docs/152) */
+  kind?: "pdf" | "sheet"
+}
+
+export interface PdfOcrPage {
   text: string
-  /** Solo si alguna página pasó por OCR: para la revisión editable del diálogo. */
-  ocr: { lines: OcrLine[]; confidence: number; lang: string; preview: Blob } | null
+  lines: OcrLine[]
+  confidence: number
+  lang: string
+  preview: Blob
 }
 
 type PdfJs = typeof import("pdfjs-dist")
@@ -31,6 +52,17 @@ function loadPdfJs(): Promise<PdfJs> {
     })
   }
   return pdfjsPromise
+}
+
+async function openTask(file: File) {
+  const pdfjs = await loadPdfJs()
+  return pdfjs.getDocument({
+    data: new Uint8Array(await file.arrayBuffer()),
+    cMapUrl: `${BASE}/cmaps/`,
+    cMapPacked: true,
+    wasmUrl: `${BASE}/wasm/`,
+    enableXfa: false,
+  })
 }
 
 /** Texto de una página, respetando los saltos de línea de pdf.js. */
@@ -48,57 +80,64 @@ function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob"))), "image/png"))
 }
 
-export async function readRecipePdf(
+/** Lee el texto de todas las páginas y sugiere la primera con una receta. */
+export async function openRecipePdf(file: File, onProgress?: (p: number) => void): Promise<PdfDocumentInfo> {
+  const task = await openTask(file)
+  try {
+    const doc = await task.promise
+    const count = Math.min(doc.numPages, MAX_TEXT_PAGES)
+    const pages: PdfPageInfo[] = []
+    for (let n = 1; n <= count; n++) {
+      const page = await doc.getPage(n)
+      const text = pageText((await page.getTextContent()).items as Array<{ str?: string; hasEOL?: boolean }>)
+      page.cleanup()
+      if (text.replace(/\s/g, "").length < 20) {
+        pages.push({ number: n, text: null, title: "", ingredientCount: 0 })
+      } else {
+        const parsed = parseRecipeText(text)
+        const firstLine = text.split("\n").find((l) => l.trim())?.trim() ?? ""
+        // Ingredientes "reales": con cantidad y unidad. Las páginas de explicación o índice
+        // también dan líneas sueltas que parecen ingredientes, pero sin unidad.
+        const real = parsed.ingredients.filter((i) => i.quantity > 0 && i.dimension && i.unitLabel).length
+        pages.push({ number: n, text, title: (parsed.name || firstLine).slice(0, 60), ingredientCount: real })
+      }
+      onProgress?.(n / count)
+    }
+    const withRecipe = pages.find((p) => p.ingredientCount >= 3) ?? [...pages].sort((a, b) => b.ingredientCount - a.ingredientCount).find((p) => p.ingredientCount > 0)
+    const withText = pages.find((p) => p.text)
+    return { pages, totalPages: doc.numPages, suggested: (withRecipe ?? withText ?? pages[0])?.number ?? 1 }
+  } finally {
+    await task.destroy()
+  }
+}
+
+/** OCR de una página escaneada (se dibuja con el lado mayor cerca de 2400 px). */
+export async function ocrPdfPage(
   file: File,
+  number: number,
   ocrLang: string,
   fallbackLatin: string,
   onProgress?: (p: number) => void,
-): Promise<PdfReadResult> {
-  const pdfjs = await loadPdfJs()
-  const task = pdfjs.getDocument({
-    data: new Uint8Array(await file.arrayBuffer()),
-    cMapUrl: `${BASE}/cmaps/`,
-    cMapPacked: true,
-    wasmUrl: `${BASE}/wasm/`,
-    enableXfa: false,
-  })
+  options: OcrOptions = {},
+): Promise<PdfOcrPage> {
+  const task = await openTask(file)
   try {
     const doc = await task.promise
-    const pages = Math.min(doc.numPages, MAX_PAGES)
-    const texts: string[] = []
-    let ocr = null as PdfReadResult["ocr"]
-    let lang = ocrLang
-    for (let n = 1; n <= pages; n++) {
-      const page = await doc.getPage(n)
-      const text = pageText((await page.getTextContent()).items as Array<{ str?: string; hasEOL?: boolean }>)
-      if (text.replace(/\s/g, "").length >= 20) {
-        texts.push(text)
-      } else {
-        // Página escaneada: se dibuja con el lado mayor cerca de 2400 px y se lee con OCR.
-        const base = page.getViewport({ scale: 1 })
-        const scale = Math.min(4, 2400 / Math.max(base.width, base.height))
-        const viewport = page.getViewport({ scale })
-        const canvas = document.createElement("canvas")
-        canvas.width = Math.round(viewport.width)
-        canvas.height = Math.round(viewport.height)
-        const ctx = canvas.getContext("2d")
-        if (!ctx) throw new Error("Canvas no disponible")
-        await page.render({ canvas, canvasContext: ctx, viewport }).promise
-        const blob = await canvasToBlob(canvas)
-        const image = new File([blob], `page-${n}.png`, { type: "image/png" })
-        const result = await recognizeWithLanguageCheck(image, lang, fallbackLatin, (p) =>
-          onProgress?.((n - 1 + p) / pages),
-        )
-        lang = result.lang // las páginas siguientes ya usan el idioma detectado
-        texts.push(result.text)
-        ocr = ocr
-          ? { ...ocr, lines: [...ocr.lines, ...result.lines], confidence: Math.min(ocr.confidence, result.confidence) }
-          : { lines: result.lines, confidence: result.confidence, lang: result.lang, preview: blob }
-      }
-      page.cleanup()
-      onProgress?.(n / pages)
-    }
-    return { text: texts.join("\n\n").trim(), ocr }
+    const page = await doc.getPage(number)
+    const base = page.getViewport({ scale: 1 })
+    const scale = Math.min(4, 2400 / Math.max(base.width, base.height))
+    const viewport = page.getViewport({ scale })
+    const canvas = document.createElement("canvas")
+    canvas.width = Math.round(viewport.width)
+    canvas.height = Math.round(viewport.height)
+    const ctx = canvas.getContext("2d")
+    if (!ctx) throw new Error("Canvas no disponible")
+    await page.render({ canvas, canvasContext: ctx, viewport }).promise
+    page.cleanup()
+    const preview = await canvasToBlob(canvas)
+    const image = new File([preview], `page-${number}.png`, { type: "image/png" })
+    const result = await recognizeWithLanguageCheck(image, ocrLang, fallbackLatin, onProgress, options)
+    return { text: result.text, lines: result.lines, confidence: result.confidence, lang: result.lang, preview }
   } finally {
     await task.destroy()
   }

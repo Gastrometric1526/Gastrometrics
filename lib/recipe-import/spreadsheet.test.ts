@@ -28,7 +28,37 @@ describe("receta en Excel", () => {
     expect(r.procedure).toEqual(["Mezclar todo.", "Hornear 45 minutos."])
   })
   it("encabezados de columna en chino y danés se descartan", () => {
-    expect(spreadsheetToRecipeText([["原料", "数量", "单位"], ["大米", 2, "杯"]])).toBe("大米 | 2 | 杯")
-    expect(spreadsheetToRecipeText([["Ingrediens", "Mængde", "Enhed"], ["Mel", 500, "g"]])).toBe("Mel | 500 | g")
+    // Con tabla reconocida se usan solo las columnas de nombre, cantidad y unidad (docs/152)
+    expect(spreadsheetToRecipeText([["原料", "数量", "单位"], ["大米", 2, "杯"]])).toBe(["Ingredientes:", "大米 | 2 杯"].join("\n"))
+    expect(spreadsheetToRecipeText([["Ingrediens", "Mængde", "Enhed"], ["Mel", 500, "g"]])).toBe(["Ingredientes:", "Mel | 500 g"].join("\n"))
+  })
+})
+
+describe("ficha técnica de escuela en Excel (.xlsm, docs/152)", () => {
+  // Estructura de un libro real: listas de opciones a la derecha, código de barra vacío,
+  // filas "-" sin usar, costos con "L" (lempiras), pasos con el número en otra celda.
+  const rows = [
+    ["", "", "FOTO o´DIBUJO", "", "", "", "", "", "", "", "", "", "", "", "", "", "Barismo"],
+    ["", "", "Ficha Técnica - Plato", "", "", "", "", "", "", "", "", "", "", "", "", "", "Guarnición"],
+    ["", "Nombre", "Galletas de prueba", "", "", "", "", "", "", "", "", "", "", "", "", "", "Molecular"],
+    ["", "Rendimiento", "45", "", "Ultima Revisión:30/10/2023", "", "Precio de Venta:", "L1,575.00", "", "", "", "", "", "", "", "", "Plato Fuerte"],
+    ["#", "Código de Barra", "Nombre", "Cantidad", "Medida", "Costo", "Costo / Medida", "Extensión", "costo de produccion", "", "", "", "", "", "", "", "Salsas"],
+    ["1", "", "Mantequilla - Sin Sal", "226", "g", "L0.28", "L0.28", "L62.63", "L311.76", "", "", "", "", "", "", "", "Sopas"],
+    ["2", "", "Harina - De Trigo Panadero", "500", "g", "L0.02", "L0.02", "L10.47"],
+    ["3", "", "-"],
+    ["Total:", "", "", "", "", "", "", "L311.76"],
+    ["Comentario:"],
+    ["1", "Precalienta el horno a 190°C y forra dos bandejas."],
+    ["2", "Bate la mantequilla con el azúcar hasta que esté cremosa.", "h", "j"],
+  ]
+  it("usa solo las columnas de la tabla y lee nombre, rendimiento, costos y pasos", () => {
+    const r = parseRecipeText(spreadsheetToRecipeText(rows))
+    expect(r.name).toBe("Galletas de prueba")
+    expect(r.servings).toBe(45)
+    expect(r.ingredients.map((i) => [i.name, i.quantity, i.baseAmount, i.unitCost])).toEqual([
+      ["Mantequilla - Sin Sal", 226, 226, 0.28],
+      ["Harina - De Trigo Panadero", 500, 500, 0.02],
+    ])
+    expect(r.procedure).toEqual(["Precalienta el horno a 190°C y forra dos bandejas.", "Bate la mantequilla con el azúcar hasta que esté cremosa."])
   })
 })

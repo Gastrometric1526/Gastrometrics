@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
-import { Rocket, Clock3 } from "lucide-react"
+import { Rocket, Clock3, Timer } from "lucide-react"
 
 interface ActivationAccount {
   email: string
@@ -23,6 +23,13 @@ interface ActivationData {
   activationRatePercent: number
   medianHoursToActivation: number | null
   recentAccounts: ActivationAccount[]
+  // Tiempo hasta el primer costo (docs/153)
+  timeToFirstCost?: {
+    reached: number
+    reachedPercent: number
+    medianMinutes: number | null
+    buckets: { bucket: string; accounts: number; paying: number; conversionPercent: number }[]
+  }
 }
 
 /**
@@ -52,6 +59,9 @@ export function ActivationPanel() {
   }
 
   const hasData = !!data && data.totalAccounts > 0
+  const ttfc = data?.timeToFirstCost
+  const formatMinutes = (minutes: number) =>
+    minutes < 60 ? t("admin_ttfc_minutes").replace("{n}", String(Math.round(minutes))) : formatDuration(minutes / 60)
 
   return (
     <div className="space-y-6">
@@ -104,6 +114,46 @@ export function ActivationPanel() {
           </CardContent>
         </Card>
       </div>
+
+      {ttfc && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Timer className="h-5 w-5 text-primary" />
+              {t("admin_ttfc_title")}
+            </CardTitle>
+            <CardDescription>{t("admin_ttfc_desc")}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-foreground">
+              {t("admin_ttfc_reached").replace("{pct}", String(ttfc.reachedPercent))}
+              {ttfc.medianMinutes !== null && <> · {t("admin_ttfc_median").replace("{time}", formatMinutes(ttfc.medianMinutes))}</>}
+            </p>
+            <div className="rounded-lg border border-border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("admin_ttfc_bucket")}</TableHead>
+                    <TableHead className="text-right">{t("admin_ttfc_accounts")}</TableHead>
+                    <TableHead className="text-right">{t("admin_ttfc_paying")}</TableHead>
+                    <TableHead className="text-right">{t("admin_ttfc_conversion")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {ttfc.buckets.map((row) => (
+                    <TableRow key={row.bucket}>
+                      <TableCell className="text-foreground">{t(`admin_ttfc_${row.bucket}` as Parameters<typeof t>[0])}</TableCell>
+                      <TableCell className="text-right tabular-nums">{row.accounts}</TableCell>
+                      <TableCell className="text-right tabular-nums">{row.paying}</TableCell>
+                      <TableCell className="text-right tabular-nums">{row.accounts ? `${row.conversionPercent}%` : "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

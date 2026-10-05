@@ -24,14 +24,15 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     foodie: {
       price: "Gratis",
       tagline: "Para empezar a organizar tus recetas",
-      description: "Base de datos, fichas técnicas ilimitadas, exportación de receta en PDF de cocina.",
+      description: "Base de datos, fichas técnicas ilimitadas, importación de recetas e ingredientes y PDF de cocina.",
       features: [
         "Base de datos de ingredientes",
         "Fichas técnicas ilimitadas",
-        "Importación desde Excel",
+        "Importa tus recetas e ingredientes desde donde ya los tienes: Excel, PDF, texto, fotos y tickets",
         "Exportar PDF de cocina (ingredientes y procedimiento, sin costos)",
       ],
       locked: [
+        "Actualización de precios desde tickets o listas",
         "Sistema de merma",
         "PDF administrativo (con costos y rentabilidad)",
         "Facturación a clientes",
@@ -51,6 +52,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
         "Facturación a clientes",
         "Órdenes de compra manuales",
         "PDF administrativo (con costos y rentabilidad)",
+        "Actualiza precios con la foto del ticket o la lista de tu proveedor",
       ],
       locked: ["Inventario y auto-sugerencia de órdenes", "Menús", "Estadísticas y Finanzas avanzadas", "Multi-negocio"],
     },
@@ -61,6 +63,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       features: [
         "Todo lo del plan Home Cook",
         "Inventario completo (stock y alertas)",
+        "Cuenta tu inventario con una foto, un PDF o un Excel",
         "Órdenes de compra automáticas (desde menús y stock bajo)",
         "Menús completos (con escalado por PAX)",
         "1 negocio",
@@ -104,14 +107,15 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     foodie: {
       price: "Free",
       tagline: "To start organizing your recipes",
-      description: "Ingredient database, unlimited recipe sheets, kitchen PDF recipe export.",
+      description: "Ingredient database, unlimited recipe sheets, recipe and ingredient import and kitchen PDF.",
       features: [
         "Ingredient database",
         "Unlimited recipe sheets",
-        "Excel import",
+        "Import your recipes and ingredients from wherever they already are: Excel, PDF, text, photos and receipts",
         "Kitchen PDF export (ingredients and procedure, no costs)",
       ],
       locked: [
+        "Price updates from receipts or lists",
         "Waste system",
         "Administrative PDF (with costs and profitability)",
         "Client invoicing",
@@ -131,6 +135,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
         "Client invoicing",
         "Manual purchase orders",
         "Administrative PDF (with costs and profitability)",
+        "Update prices from a receipt photo or your supplier's list",
       ],
       locked: ["Inventory and order auto-suggestion", "Menus", "Advanced Statistics and Finance", "Multi-business"],
     },
@@ -141,6 +146,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       features: [
         "Everything in the Home Cook plan",
         "Full inventory (stock and alerts)",
+        "Count your inventory from a photo, a PDF or an Excel file",
         "Automatic purchase orders (from menus and low stock)",
         "Full menus (with per-diner scaling)",
         "1 business",
@@ -184,14 +190,15 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     foodie: {
       price: "Gratis",
       tagline: "Til at begynde at organisere dine opskrifter",
-      description: "Ingrediensdatabase, ubegrænsede opskriftsark, PDF-eksport af køkkenopskrift.",
+      description: "Ingrediensdatabase, ubegrænsede opskriftsark, import af opskrifter og ingredienser og køkken-PDF.",
       features: [
         "Ingrediensdatabase",
         "Ubegrænsede opskriftsark",
-        "Excel-import",
+        "Importér dine opskrifter og ingredienser, hvor de end ligger i dag: Excel, PDF, tekst, fotos og kvitteringer",
         "Eksportér køkken-PDF (ingredienser og fremgangsmåde, uden omkostninger)",
       ],
       locked: [
+        "Prisopdatering fra kvitteringer eller lister",
         "Spildsystem",
         "Administrativ PDF (med omkostninger og rentabilitet)",
         "Fakturering til kunder",
@@ -211,6 +218,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
         "Fakturering til kunder",
         "Manuelle indkøbsordrer",
         "Administrativ PDF (med omkostninger og rentabilitet)",
+        "Opdater priser med et foto af kvitteringen eller din leverandørs liste",
       ],
       locked: ["Lager og automatisk ordreforslag", "Menuer", "Avanceret statistik og økonomi", "Flere virksomheder"],
     },
@@ -221,6 +229,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       features: [
         "Alt fra Home Cook-planen",
         "Fuldt lager (beholdning og advarsler)",
+        "Optæl dit lager fra et foto, en PDF eller en Excel-fil",
         "Automatiske indkøbsordrer (fra menuer og lav beholdning)",
         "Fulde menuer (med skalering pr. kuvert)",
         "1 virksomhed",
@@ -264,14 +273,15 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     foodie: {
       price: "Gratuit",
       tagline: "Pour commencer à organiser tes recettes",
-      description: "Base de données d'ingrédients, fiches techniques illimitées, export PDF de recette pour la cuisine.",
+      description: "Base de données d'ingrédients, fiches techniques illimitées, import de recettes et d'ingrédients et PDF pour la cuisine.",
       features: [
         "Base de données d'ingrédients",
         "Fiches techniques illimitées",
-        "Importation depuis Excel",
+        "Importez vos recettes et ingrédients là où ils se trouvent déjà : Excel, PDF, texte, photos et tickets",
         "Export PDF cuisine (ingrédients et procédure, sans les coûts)",
       ],
       locked: [
+        "Mise à jour des prix depuis des tickets ou des listes",
         "Système de pertes",
         "PDF administratif (avec coûts et rentabilité)",
         "Facturation client",
@@ -291,6 +301,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
         "Facturation client",
         "Bons de commande manuels",
         "PDF administratif (avec coûts et rentabilité)",
+        "Mettez à jour les prix avec la photo du ticket ou la liste de votre fournisseur",
       ],
       locked: ["Inventaire et suggestion automatique de commandes", "Menus", "Statistiques et finances avancées", "Multi-établissement"],
     },
@@ -301,6 +312,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       features: [
         "Tout ce qu'offre le plan Home Cook",
         "Inventaire complet (stock et alertes)",
+        "Comptez votre inventaire depuis une photo, un PDF ou un fichier Excel",
         "Bons de commande automatiques (depuis les menus et le stock bas)",
         "Menus complets (avec mise à l'échelle par couvert)",
         "1 établissement",
@@ -344,14 +356,15 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     foodie: {
       price: "Grátis",
       tagline: "Para começar a organizar suas receitas",
-      description: "Banco de dados de ingredientes, fichas técnicas ilimitadas, exportação de receita em PDF de cozinha.",
+      description: "Banco de dados de ingredientes, fichas técnicas ilimitadas, importação de receitas e ingredientes e PDF de cozinha.",
       features: [
         "Banco de dados de ingredientes",
         "Fichas técnicas ilimitadas",
-        "Importação do Excel",
+        "Importe suas receitas e ingredientes de onde eles já estão: Excel, PDF, texto, fotos e cupons",
         "Exportar PDF de cozinha (ingredientes e procedimento, sem custos)",
       ],
       locked: [
+        "Atualização de preços a partir de cupons ou listas",
         "Sistema de perdas",
         "PDF administrativo (com custos e rentabilidade)",
         "Faturamento para clientes",
@@ -371,6 +384,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
         "Faturamento para clientes",
         "Pedidos de compra manuais",
         "PDF administrativo (com custos e rentabilidade)",
+        "Atualize preços com a foto do cupom ou a lista do seu fornecedor",
       ],
       locked: ["Estoque e sugestão automática de pedidos", "Cardápios", "Estatísticas e finanças avançadas", "Múltiplos negócios"],
     },
@@ -381,6 +395,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       features: [
         "Tudo do plano Home Cook",
         "Estoque completo (níveis e alertas)",
+        "Conte seu estoque a partir de uma foto, um PDF ou um Excel",
         "Pedidos de compra automáticos (a partir de cardápios e estoque baixo)",
         "Cardápios completos (com escalonamento por pessoa)",
         "1 negócio",
@@ -424,15 +439,15 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     foodie: {
       price: "免费",
       tagline: "开始整理你的配方",
-      description: "食材数据库、无限配方卡、厨房版配方PDF导出。",
-      features: ["食材数据库", "无限配方卡", "从Excel导入", "导出厨房版PDF（食材和步骤，不含成本）"],
-      locked: ["损耗系统", "管理版PDF（含成本和利润率）", "客户开票", "采购订单", "库存", "菜单", "统计与财务"],
+      description: "食材数据库、无限配方卡、配方和原料导入以及厨房版PDF。",
+      features: ["食材数据库", "无限配方卡", "从你现有的资料直接导入配方和原料：Excel、PDF、文本、照片和小票", "导出厨房版PDF（食材和步骤，不含成本）"],
+      locked: ["通过小票或价目表更新价格", "损耗系统", "管理版PDF（含成本和利润率）", "客户开票", "采购订单", "库存", "菜单", "统计与财务"],
     },
     "home-cook": {
       price: "$15/月",
       tagline: "适合已经认真核算成本的你",
       description: "包含Foodie的全部功能，另加损耗系统、开票功能、手动采购订单和管理版PDF。",
-      features: ["Foodie套餐的全部功能", "损耗系统", "客户开票", "手动采购订单", "管理版PDF（含成本和利润率）"],
+      features: ["Foodie套餐的全部功能", "损耗系统", "客户开票", "手动采购订单", "管理版PDF（含成本和利润率）", "用小票照片或供应商价目表更新价格"],
       locked: ["库存及自动订单建议", "菜单", "高级统计与财务", "多商家"],
     },
     "chef-de-partie": {
@@ -442,6 +457,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       features: [
         "Home Cook套餐的全部功能",
         "完整库存（库存量与预警）",
+        "用照片、PDF 或 Excel 盘点库存",
         "自动采购订单（根据菜单和低库存生成）",
         "完整菜单（按用餐人数换算）",
         "1个商家",

@@ -88,15 +88,16 @@ export async function recognizeWithLanguageCheck(
   ocrLang: string,
   fallbackLatin: string,
   onProgress?: (p: number) => void,
+  options: OcrOptions = {},
 ): Promise<OcrResult & { lang: string }> {
   // La primera lectura ocupa el 80 % de la barra; las relecturas (si hacen falta), el resto.
   const step = (i: number) => (p: number) => onProgress?.(i === 0 ? p * 0.8 : 0.8 + (i - 1) * 0.1 + p * 0.1)
-  let best = { ...(await recognizeRecipeImage(file, ocrLang, step(0))), lang: ocrLang }
+  let best = { ...(await recognizeRecipeImage(file, ocrLang, step(0), options)), lang: ocrLang }
   const tried = new Set([ocrLang])
   const tryLang = async (lang: string, i: number) => {
     if (tried.has(lang)) return
     tried.add(lang)
-    const r = await recognizeRecipeImage(file, lang, step(i))
+    const r = await recognizeRecipeImage(file, lang, step(i), options)
     if (r.confidence > best.confidence) best = { ...r, lang }
   }
   if (best.confidence < 65) await tryLang(ocrLang === "chi_sim" ? fallbackLatin : "chi_sim", 1)
@@ -131,7 +132,24 @@ async function decodeImage(file: File): Promise<Decoded> {
   }
 }
 
-async function prepareImage(file: File): Promise<HTMLCanvasElement> {
+/** Gira el lienzo 90°, 180° o 270° (fotos tomadas de lado sin orientación EXIF). */
+function rotateCanvas(source: HTMLCanvasElement, degrees: number): HTMLCanvasElement {
+  if (!degrees) return source
+  const out = document.createElement("canvas")
+  const swap = degrees % 180 !== 0
+  out.width = swap ? source.height : source.width
+  out.height = swap ? source.width : source.height
+  const ctx = out.getContext("2d")
+  if (!ctx) return source
+  ctx.translate(out.width / 2, out.height / 2)
+  ctx.rotate((degrees * Math.PI) / 180)
+  ctx.drawImage(source, -source.width / 2, -source.height / 2)
+  return out
+}
+
+const letterCount = (text: string) => (text.match(/\p{L}/gu) ?? []).length
+
+async function prepareImage(file: File, enhance = true): Promise<HTMLCanvasElement> {
   const bitmap = await decodeImage(file)
   const longSide = Math.max(bitmap.width, bitmap.height)
   const scale = longSide < 2000 ? 2000 / longSide : longSide > 3200 ? 3200 / longSide : 1
@@ -145,6 +163,9 @@ async function prepareImage(file: File): Promise<HTMLCanvasElement> {
   ctx.imageSmoothingQuality = "high"
   ctx.drawImage(bitmap.source, 0, 0, width, height)
   bitmap.release()
+  // Tickets: sin realce de contraste. En las pruebas con tickets reales (docs/151) el
+  // estiramiento confundía dígitos del papel térmico (1,37 → 1,32; 2,05 → 2,85).
+  if (!enhance) return canvas
 
   const image = ctx.getImageData(0, 0, width, height)
   const px = image.data
@@ -182,10 +203,24 @@ async function prepareImage(file: File): Promise<HTMLCanvasElement> {
   return canvas
 }
 
-export async function recognizeRecipeImage(file: File, ocrLang: string, onProgress?: (p: number) => void): Promise<OcrResult> {
+export interface OcrOptions {
+  /**
+   * "receipt": lee fila por fila (PSM 4, una columna de tamaños variables: el modo que Tesseract recomienda para tickets) para no separar el nombre del
+   * producto de su precio en columnas distintas (docs/151). Por defecto, el análisis de
+   * página de siempre, que en recetas separa bien las columnas.
+   */
+  layout?: "page" | "receipt"
+}
+
+export async function recognizeRecipeImage(
+  file: File,
+  ocrLang: string,
+  onProgress?: (p: number) => void,
+  options: OcrOptions = {},
+): Promise<OcrResult> {
   const lang = Object.values(OCR_LANG).includes(ocrLang) ? ocrLang : "spa"
   onProgress?.(0.02)
-  const canvas = await prepareImage(file)
+  const canvas = await prepareImage(file, options.layout !== "receipt")
   onProgress?.(0.08)
   const worker = await createWorker(lang, OEM.LSTM_ONLY, {
     workerPath: "/ocr/worker.min.js",
@@ -199,22 +234,39 @@ export async function recognizeRecipeImage(file: File, ocrLang: string, onProgre
   })
   try {
     await worker.setParameters({
-      tessedit_pageseg_mode: PSM.AUTO,
+      tessedit_pageseg_mode: options.layout === "receipt" ? PSM.SINGLE_COLUMN : PSM.AUTO,
       preserve_interword_spaces: "1",
       user_defined_dpi: "300",
     })
-    const { data } = await worker.recognize(canvas, {}, { text: true, blocks: true })
-    const lines: OcrLine[] = []
-    for (const block of data.blocks ?? []) {
-      for (const paragraph of block.paragraphs) {
-        for (const line of paragraph.lines) {
-          const text = line.text.replace(/\s+$/, "")
-          if (text.trim()) lines.push({ text, confidence: Math.round(line.confidence) })
+    const read = async (image: HTMLCanvasElement) => {
+      const { data } = await worker.recognize(image, {}, { text: true, blocks: true })
+      const lines: OcrLine[] = []
+      for (const block of data.blocks ?? []) {
+        for (const paragraph of block.paragraphs) {
+          for (const line of paragraph.lines) {
+            const text = line.text.replace(/\s+$/, "")
+            if (text.trim()) lines.push({ text, confidence: Math.round(line.confidence) })
+          }
+          lines.push({ text: "", confidence: 100 }) // separa párrafos (secciones de la receta)
         }
-        lines.push({ text: "", confidence: 100 }) // separa párrafos (secciones de la receta)
+      }
+      const text = lines.length ? lines.map((l) => l.text).join("\n").replace(/\n{3,}/g, "\n\n").trim() : data.text.trim()
+      // En modo ticket, el texto plano de Tesseract conserva cada fila completa (con los
+      // espacios entre columnas); los bloques la partirían.
+      return { text: options.layout === "receipt" ? data.text.trim() : text, lines, confidence: Math.round(data.confidence) }
+    }
+    let best = await read(canvas)
+    // Casi sin texto: puede ser una foto de lado sin orientación EXIF (docs/151). Se prueba
+    // girada 90° y 270° y se queda con la que más texto legible da.
+    if (letterCount(best.text) < 25) {
+      for (const degrees of [90, 270]) {
+        const attempt = await read(rotateCanvas(canvas, degrees))
+        if (letterCount(attempt.text) * attempt.confidence > letterCount(best.text) * best.confidence) best = attempt
+        if (letterCount(best.text) >= 25) break
       }
     }
-    const text = lines.length ? lines.map((l) => l.text).join("\n").replace(/\n{3,}/g, "\n\n").trim() : data.text.trim()
+    const { text, lines, confidence } = best
+    const data = { confidence }
     onProgress?.(1)
     return { text, lines: lines.filter((l) => l.text.trim()), confidence: Math.round(data.confidence) }
   } finally {
