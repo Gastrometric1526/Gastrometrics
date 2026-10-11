@@ -3,7 +3,10 @@
  *
  * - Trustpilot: perfil real y reclamado desde septiembre 2026 (verificado en vivo). Se
  *   puede sobreescribir con NEXT_PUBLIC_TRUSTPILOT_URL sin tocar código.
- * - Redes sociales: vacías hasta que el dueño cree cada perfil. Al pegar la URL en la
+ * - Redes sociales: Instagram (@gastrometrics.app) y Facebook ya tienen su URL real por
+ *   defecto (docs/161); LinkedIn, TikTok y YouTube siguen vacías hasta que existan.
+ *   Las variables de entorno, si se definen, mandan sobre el valor por defecto.
+ * - (Histórico) Redes sociales: vacías hasta que el dueño cree cada perfil. Al pegar la URL en la
  *   variable de entorno de Vercel correspondiente (y redesplegar), el ícono aparece solo en
  *   el pie de página del sitio público y se agrega a los datos estructurados (sameAs) que
  *   lee Google — sin cambios de código.
@@ -17,8 +20,8 @@ export type SocialNetwork = "facebook" | "instagram" | "linkedin" | "tiktok" | "
 
 export const SOCIAL_LINKS: { network: SocialNetwork; label: string; url: string }[] = (
   [
-    { network: "facebook", label: "Facebook", url: process.env.NEXT_PUBLIC_FACEBOOK_URL || "" },
-    { network: "instagram", label: "Instagram", url: process.env.NEXT_PUBLIC_INSTAGRAM_URL || "" },
+    { network: "facebook", label: "Facebook", url: process.env.NEXT_PUBLIC_FACEBOOK_URL || "https://www.facebook.com/profile.php?id=61594885361553" },
+    { network: "instagram", label: "Instagram", url: process.env.NEXT_PUBLIC_INSTAGRAM_URL || "https://www.instagram.com/gastrometrics.app/" },
     { network: "linkedin", label: "LinkedIn", url: process.env.NEXT_PUBLIC_LINKEDIN_URL || "" },
     { network: "tiktok", label: "TikTok", url: process.env.NEXT_PUBLIC_TIKTOK_URL || "" },
     { network: "youtube", label: "YouTube", url: process.env.NEXT_PUBLIC_YOUTUBE_URL || "" },
