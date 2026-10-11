@@ -25,7 +25,7 @@ export async function GET() {
   const { data, error } = await admin
     .from("account_plans")
     .select(
-      "last_change_from_plan, last_change_to_plan, last_change_amount_cents, last_change_next_charge_at, last_change_expires_at, last_change_source, last_change_acknowledged",
+      "last_change_from_plan, last_change_to_plan, last_change_amount_cents, last_change_next_charge_at, last_change_expires_at, last_change_source, last_change_at, last_change_acknowledged",
     )
     .eq("account_id", user.id)
     .maybeSingle()
@@ -45,6 +45,8 @@ export async function GET() {
       nextChargeAt: data.last_change_next_charge_at,
       expiresAt: data.last_change_expires_at,
       source: data.last_change_source,
+      // Identifica este cambio para el tutorial de plan nuevo (docs/157).
+      changedAt: data.last_change_at ?? null,
     },
   })
 }

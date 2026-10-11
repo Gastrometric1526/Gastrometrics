@@ -69,7 +69,7 @@ import { getIngredients, saveIngredients, ensureIngredientsLoaded } from "@/lib/
 import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import type { Recipe } from "@/types/recipe"
 import { parseWorkbookSheets, createIngredientsExcelTemplate } from "@/lib/excel-utils"
-import { mapIngredientRows, splitPastedList, parseLocaleNumber, pickIngredientSheet, type ImportedIngredientRow } from "@/lib/ingredient-import"
+import { mapIngredientRows, splitPastedList, parseLocaleNumber, pickIngredientSheet, hasSuspiciousContent, type ImportedIngredientRow } from "@/lib/ingredient-import"
 import { guessCategory } from "@/lib/recipe-import/guess-category"
 import { getCurrentCurrencyCode } from "@/lib/currency"
 import { parseReceiptText } from "@/lib/receipt-import"
@@ -1243,7 +1243,7 @@ export default function IngredientesPage() {
       onDrop={handleDrop}
     >
       <Sidebar />
-      <div className="flex-1 p-4 md:p-8">
+      <div className="flex-1 min-w-0 p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           <IngredientesTour onOpenImport={() => setShowImportDialog(true)} />
           {/* Drag overlay */}
@@ -1476,7 +1476,7 @@ export default function IngredientesPage() {
             </Card>
 
             {/* Results Summary */}
-            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-border">
+            <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-muted/30 rounded-xl border border-border">
               <div className="flex items-center gap-3">
                 <Badge variant="secondary" className="rounded-lg px-3 py-1 bg-muted text-foreground font-medium">
                   {t("ingredientes_found_count").replace("{count}", String(filteredAndSortedIngredients.length))}
@@ -1495,7 +1495,7 @@ export default function IngredientesPage() {
                   </Badge>
                 )}
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 min-w-0">
                 {activeSystem === "mixed" && (
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <AlertCircle className="h-3 w-3" />
@@ -2309,6 +2309,9 @@ export default function IngredientesPage() {
                                               ? t("ingredientes_preview_ok")
                                               : t("ingredientes_preview_no_price_ok")}
                                         </span>
+                                      )}
+                                      {!reasons[index] && hasSuspiciousContent(row) && (
+                                        <span className="block text-xs text-warning">{t("ingredientes_preview_check_content")}</span>
                                       )}
                                     </td>
                                   </tr>

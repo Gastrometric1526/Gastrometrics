@@ -118,7 +118,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
 
   const router = useRouter()
   const { toast } = useToast()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const { isLoggedIn, authChecked, user } = useAuth()
   const { active: previewActive, member: previewMember } = useActiveMembership()
   const { setTheme } = useTheme()
@@ -1346,7 +1346,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                               {formatActivityEntry(activity, t)}
                             </p>
                             <p className="text-xs text-foreground/70 font-medium mt-1">
-                              {ActivityTracker.formatTimeAgo(activity.createdAt, t)}
+                              {ActivityTracker.formatTimeAgo(activity.createdAt, t, language)}
                             </p>
                           </div>
                         </div>
@@ -1384,7 +1384,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                               {formatActivityEntry(alert, t)}
                             </p>
                             <p className="text-xs text-foreground/50 mt-1">
-                              {ActivityTracker.formatTimeAgo(alert.createdAt, t)}
+                              {ActivityTracker.formatTimeAgo(alert.createdAt, t, language)}
                             </p>
                           </div>
                         </div>

@@ -1,4 +1,5 @@
 import type { useLanguage } from "@/contexts/language-context"
+import { getDateLocale, type LanguageCode } from "@/lib/i18n/translations"
 
 type Translator = ReturnType<typeof useLanguage>["t"]
 
@@ -147,7 +148,7 @@ export class ActivityTracker {
   // español sin importar el idioma seleccionado (ver auditoría de i18n). Reutiliza
   // las mismas claves de horas/días que ya usa app/menus/page.tsx (mismo significado,
   // no específico de menús) y agrega las de minutos/"ahora mismo" que faltaban.
-  static formatTimeAgo(timestamp: string, t: Translator): string {
+  static formatTimeAgo(timestamp: string, t: Translator, language?: LanguageCode): string {
     const now = new Date()
     const time = new Date(timestamp)
     const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60))
@@ -173,7 +174,9 @@ export class ActivityTracker {
         String(diffInDays),
       )
 
-    return time.toLocaleDateString()
+    // Con el idioma de la cuenta: sin él, el navegador ponía "9/29/2026" (formato de
+    // EE. UU.) en una interfaz en español (docs/156).
+    return time.toLocaleDateString(language ? getDateLocale(language) : undefined)
   }
 
   static getActivityIcon(type: UserActivity["type"]): string {

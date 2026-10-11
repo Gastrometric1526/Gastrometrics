@@ -137,7 +137,7 @@ export default function FichaTecnicaEditPage({
     return (
       <div className="flex min-h-screen bg-background">
         <Sidebar />
-        <div className="flex-1 p-4 md:p-8">
+        <div className="flex-1 min-w-0 p-4 md:p-8">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-center py-16">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -152,7 +152,7 @@ export default function FichaTecnicaEditPage({
     return (
       <div className="flex min-h-screen bg-background">
         <Sidebar />
-        <div className="flex-1 p-4 md:p-8">
+        <div className="flex-1 min-w-0 p-4 md:p-8">
           <div className="max-w-7xl mx-auto">
             <Card className="max-w-md mx-auto mt-16">
               <CardContent className="p-6 text-center">
@@ -176,7 +176,7 @@ export default function FichaTecnicaEditPage({
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <div className="flex-1 p-4 md:p-8">
+      <div className="flex-1 min-w-0 p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between gap-4 mb-4" data-tour="ficha-header">
             <div className="flex items-center gap-4">

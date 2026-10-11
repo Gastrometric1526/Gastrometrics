@@ -323,7 +323,8 @@ function SidebarInner() {
       if (!forcedByTourRef.current) return
       if (window.innerWidth >= 768) return
       const selector = (e as CustomEvent<{ selector: string | null }>).detail?.selector
-      setIsMobileOpen(selector === '[data-tour="sidebar"]')
+      // También los pasos que señalan un módulo del menú (tutorial de plan nuevo, docs/157).
+      setIsMobileOpen(selector === '[data-tour="sidebar"]' || !!selector?.startsWith('[data-tour="nav-'))
     }
     window.addEventListener("gm:tour:step", handler)
     return () => window.removeEventListener("gm:tour:step", handler)
@@ -518,6 +519,7 @@ function SidebarInner() {
             return (
               <Link key={item.href} href={contextualHref}>
                 <div
+                  data-tour={`nav-${item.href}`}
                   className={cn(
                     "flex items-center gap-3 py-2 rounded-r-lg transition-colors duration-150 group relative border-l-[3px]",
                     isActive

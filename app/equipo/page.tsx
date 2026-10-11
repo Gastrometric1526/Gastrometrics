@@ -396,7 +396,7 @@ function EquipoContent() {
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <div className="flex-1 p-4 md:p-8">
+      <div className="flex-1 min-w-0 p-4 md:p-8">
         <div className="max-w-5xl mx-auto space-y-6">
           <EquipoTour hasMembers={members.length > 0} />
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

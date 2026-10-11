@@ -1,6 +1,7 @@
 "use client"
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { foodCostBasePrice } from "@/lib/food-cost-pricing"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Calculator, Info, Percent, TrendingUp } from "lucide-react"
@@ -77,7 +78,10 @@ export function CalculationInfoDialog({
 }: CalculationInfoDialogProps) {
   const { t } = useLanguage()
   const paxIsActive = paxModifier > 0 && paxMultiplier !== 1
-  const basePrice = pricingMethod === "food_cost" ? unitCost / (targetFoodCostPercent / 100) : unitCost + unitProfit
+  const foodCostNet = targetFoodCostPercent > 0 ? unitCost / (targetFoodCostPercent / 100) : 0
+  // Food Cost % lleva el ISV sobre el precio (docs/156); GastroMetrics lo trae como rubro.
+  const basePrice =
+    pricingMethod === "food_cost" ? foodCostBasePrice(unitCost, targetFoodCostPercent, percentages.isv) : unitCost + unitProfit
   const commissionFraction = Math.min(Math.max(salesCommissionPercent, 0), 90) / 100
   const rawPrice = commissionFraction > 0 ? basePrice / (1 - commissionFraction) : basePrice
   const roundedPrice = pricingMethod === "food_cost" ? foodCostPrice : gastrometricsPrice
@@ -150,8 +154,14 @@ export function CalculationInfoDialog({
                 </h4>
                 <p className="text-muted-foreground mb-2">{t("ficha_tecnica_calc_info_foodcost_desc")}</p>
                 <div className="p-3 bg-muted/50 rounded border font-mono text-xs sm:text-sm">
-                  {formatCurrency(unitCost)} ÷ {targetFoodCostPercent}% = {formatCurrency(basePrice)}
+                  {formatCurrency(unitCost)} ÷ {targetFoodCostPercent}% = {formatCurrency(foodCostNet)}
                 </div>
+                {percentages.isv > 0 && (
+                  <div className="mt-2 p-3 bg-muted/50 rounded border font-mono text-xs sm:text-sm">
+                    {t("ficha_tecnica_isv_food_cost_step").replace("{percent}", String(percentages.isv))}:{" "}
+                    {formatCurrency(foodCostNet)} × (1 + {percentages.isv}%) = {formatCurrency(basePrice)}
+                  </div>
+                )}
               </div>
             ) : (
               <div>

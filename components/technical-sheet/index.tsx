@@ -26,6 +26,7 @@ import { getBusinessById, getEffectivePricingDefaults, setEffectivePricingDefaul
 import {
   calculateTotalMonthlyExpenses,
   DEFAULT_PRICING_METHOD,
+  LEGACY_PRICING_METHOD,
   DEFAULT_TARGET_FOOD_COST_PERCENT,
   type PricingMethod,
 } from "@/types/business"
@@ -48,6 +49,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { formatCurrency, formatUnitPrice, getCurrentCurrencyCode } from "@/lib/currency"
 import { roundSalePrice, roundUpToStep } from "@/lib/price-rounding"
+import { foodCostBasePrice, taxIncludedIn } from "@/lib/food-cost-pricing"
 import { normalizeUploadedPhoto } from "@/lib/pdf/pdf-image"
 import { BEVERAGE_COST_TARGET_RANGE, DEFAULT_BEVERAGE_COST_TARGET, getBarKind } from "@/lib/beverage"
 import { useToast } from "@/hooks/use-toast"
@@ -420,7 +422,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
         setOperationalCosts(existingRecipe.operationalCosts || 30)
         setLaborCosts(existingRecipe.laborCosts || 25)
         setIsv(existingRecipe.isv || 0)
-        setPricingMethod(existingRecipe.pricingMethod || pricingDefaults.pricingMethod || DEFAULT_PRICING_METHOD)
+        setPricingMethod(existingRecipe.pricingMethod || LEGACY_PRICING_METHOD)
         setTargetFoodCostPercent(
           existingRecipe.targetFoodCostPercent ||
             pricingDefaults.targetFoodCostPercent ||
@@ -611,10 +613,10 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     // Método Food Cost % (estándar de industria): Precio = Costo unitario / Food Cost % objetivo.
     // Ej. costo unitario L20, food cost objetivo 30% → precio = 20 / 0.30 = L66.67 → redondeado L70.
     // No usa los seis rubros — es un solo número, más simple pero menos granular.
-    const foodCostPrice =
-      targetFoodCostPercent > 0 && unitCost > 0
-        ? roundSalePrice(coverCommission(unitCost / (targetFoodCostPercent / 100)), currencyCode)
-        : 0
+    // Desde docs/156 el ISV también entra en este método, como impuesto SOBRE el precio
+    // (costo ÷ % objetivo × (1 + ISV)): el precio sugerido ya lo incluye.
+    const foodCostBase = foodCostBasePrice(unitCost, targetFoodCostPercent, isv)
+    const foodCostPrice = foodCostBase > 0 ? roundSalePrice(coverCommission(foodCostBase), currencyCode) : 0
 
     const recommendedPrice = pricingMethod === "food_cost" ? foodCostPrice : gastrometricsPrice
 
@@ -630,15 +632,23 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     const commissionPerUnit = finalPrice * commissionFraction
     const totalCommission = commissionPerUnit * effectiveYield
 
+    // Food Cost %: el ISV va incluido en el precio y es del Estado, no del negocio — se
+    // descuenta de la ganancia, y el margen y el "Costo %" se miden sobre la venta sin
+    // impuesto (así el Costo % coincide con el objetivo). En GastroMetrics el ISV ya es
+    // uno de los rubros sobre el costo y esto no cambia (decisión del dueño, docs/156).
+    const foodCostIsvPerUnit = pricingMethod === "food_cost" ? taxIncludedIn(finalPrice, isv) : 0
+    const totalFoodCostIsv = foodCostIsvPerUnit * effectiveYield
+    const netSales = totalSales - totalFoodCostIsv
+
     // La comisión es un costo variable real: se descuenta de la ganancia y del margen.
-    const totalNetProfit = totalSales - productionCost - totalCommission
+    const totalNetProfit = totalSales - productionCost - totalCommission - totalFoodCostIsv
 
     const calculatedContributionMargin =
-      totalSales > 0 ? ((totalSales - productionCost - totalCommission) / totalSales) * 100 : 0
+      netSales > 0 ? ((netSales - productionCost - totalCommission) / netSales) * 100 : 0
 
     // "Costo %" (food cost), Excel maestro H11 = H33/H10*100 (documento 01, sección 10).
     // No editable, solo informativo.
-    const foodCostPercent = totalSales > 0 ? (productionCost / totalSales) * 100 : 0
+    const foodCostPercent = netSales > 0 ? (productionCost / netSales) * 100 : 0
 
     return {
       productionCost,
@@ -665,6 +675,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       fixedCostPercentage,
       foodCostPercent,
       commissionPerUnit,
+      foodCostIsvPerUnit,
       scaledIngredientQuantities,
       paxMultiplier,
       yieldSanityWarning,
@@ -1299,7 +1310,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
         <CardContent>
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex-1 space-y-4">
-              <div className="grid grid-cols-2 gap-4" data-tour="ficha-name-classification">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" data-tour="ficha-name-classification">
                 <div>
                   <Label htmlFor="name">{t("ficha_tecnica_field_name")}</Label>
                   <Input
@@ -1342,7 +1353,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4" data-tour="ficha-paso-rendimiento">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" data-tour="ficha-paso-rendimiento">
                 <div>
                   <Label htmlFor="plate">{t("ficha_tecnica_field_step")}</Label>
                   <Select
@@ -1418,7 +1429,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="contributionMargin">{t("ficha_tecnica_field_contribution_margin")}</Label>
                   <div className="relative">
@@ -1460,7 +1471,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                 <Label htmlFor="paxModifier" className="font-semibold">
                   {t("tour_ficha_pax_title")}
                 </Label>
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex flex-wrap items-center gap-2 mt-2">
                   {isEditMode ? (
                     <NumericInput
                       id="paxModifier"
@@ -1992,7 +2003,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
             // hay rubros que sumar, así que se reemplaza por completo el desglose de
             // GastroMetrics. Pedido explícito: mostrar solo uno de los dos sistemas a la vez.
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Label htmlFor="targetFoodCostPercent" className="text-sm whitespace-nowrap">
                   {isBarRecipe ? t("ficha_tecnica_field_target_beverage_cost") : t("ficha_tecnica_field_target_food_cost")}
                 </Label>
@@ -2027,6 +2038,32 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                 <span>{isBarRecipe ? t("ficha_tecnica_field_target_beverage_cost") : t("ficha_tecnica_field_target_food_cost")}</span>
                 <span className="font-mono">{targetFoodCostPercent.toFixed(2)}%</span>
               </div>
+              <div className="flex flex-wrap items-center gap-2 border-b pb-2">
+                <Label htmlFor="isv-food-cost" className="text-sm whitespace-nowrap">
+                  {t("ficha_tecnica_field_isv")}
+                </Label>
+                {isEditMode ? (
+                  <NumericInput
+                    id="isv-food-cost"
+                    value={isv}
+                    onChange={(value) => setIsv(Math.min(Math.max(value || 0, 0), 100))}
+                    className="w-24"
+                    placeholder="0"
+                    decimalPlaces={2}
+                    min={0}
+                    max={100}
+                  />
+                ) : (
+                  <span className="text-sm font-medium">{isv}%</span>
+                )}
+                <span className="text-xs text-muted-foreground">{t("ficha_tecnica_isv_food_cost_hint")}</span>
+              </div>
+              {isv > 0 && (
+                <div className="flex justify-between items-center border-b pb-2 text-sm text-muted-foreground">
+                  <span>{t("ficha_tecnica_isv_food_cost_step").replace("{percent}", String(isv))}</span>
+                  <span className="font-mono">× (1 + {isv}%)</span>
+                </div>
+              )}
               {salesCommissionPercent > 0 && (
                 <div className="flex justify-between items-center border-b pb-2 text-sm text-muted-foreground">
                   <span>{t("ficha_tecnica_calc_info_commission_title")}</span>
@@ -2039,6 +2076,12 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                   {calculations.foodCostPrice > 0 ? formatCurrency(calculations.foodCostPrice) : ""}
                 </span>
               </div>
+              {isv > 0 && calculations.foodCostIsvPerUnit > 0 && (
+                <div className="flex justify-between items-center text-sm text-muted-foreground">
+                  <span>{t("ficha_tecnica_isv_included_label").replace("{percent}", String(isv))}</span>
+                  <span className="font-mono">{formatCurrency(calculations.foodCostIsvPerUnit)}</span>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -2128,7 +2171,12 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                     // mostraba la ganancia de los 6 rubros, que este método no usa (docs/137).
                     calculations.finalPrice > 0 ? (
                       <span className="font-mono">
-                        {formatCurrency(calculations.finalPrice - calculations.unitCost - calculations.commissionPerUnit)}
+                        {formatCurrency(
+                          calculations.finalPrice -
+                            calculations.unitCost -
+                            calculations.commissionPerUnit -
+                            calculations.foodCostIsvPerUnit,
+                        )}
                       </span>
                     ) : (
                       ""

@@ -18,6 +18,7 @@
  */
 
 import { generateId } from "@/lib/utils"
+import { DEFAULT_PRICING_METHOD, DEFAULT_TARGET_FOOD_COST_PERCENT } from "@/types/business"
 import { addIngredient } from "@/lib/storage/ingredients"
 import { saveRecipe } from "@/lib/storage/recipes"
 import { defaultPricingConfig } from "@/types/recipe"
@@ -101,6 +102,8 @@ export async function tryCarryLandingDemoIntoAccount(): Promise<boolean> {
       costPerServing: totalCost,
       unitPrice: draft.salePrice > 0 ? draft.salePrice : undefined,
       pricingConfig: defaultPricingConfig,
+      pricingMethod: DEFAULT_PRICING_METHOD,
+      targetFoodCostPercent: DEFAULT_TARGET_FOOD_COST_PERCENT,
       businessId: "main",
       metadata: { createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), version: 1 },
     },

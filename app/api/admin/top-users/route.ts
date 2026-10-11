@@ -46,6 +46,7 @@ export async function GET(request: Request) {
       const { data, error } = await admin
         .from("activity_log")
         .select("user_id, user_name, module, action, created_at")
+        .neq("module", "plan") // aviso de cambio de plan escrito por el servidor, no uso (docs/157)
         .gte("created_at", since)
         .order("created_at", { ascending: false })
         .range(from, from + PAGE - 1)

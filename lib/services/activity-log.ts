@@ -12,6 +12,7 @@
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import type { Database } from "@/types/database"
+import { getPlanBySlug } from "@/lib/plans"
 
 export type ActivityModule =
   | "dashboard"
@@ -28,6 +29,9 @@ export type ActivityModule =
   // Lecturas de fotos con OCR (docs/153): solo para contar el uso por plan y verlo en
   // /admin; no se muestran en "Actividad reciente" ni en "Notificaciones".
   | "ocr"
+  // Cambio de plan de la cuenta (docs/157): lo escribe el servidor en
+  // lib/services/plan-change-notice.ts, sin negocio; sale en "Notificaciones".
+  | "plan"
 
 export type ActivityAction =
   | "entered"
@@ -42,6 +46,7 @@ export type ActivityAction =
   | "access_updated"
   | "migrated"
   | "read"
+  | "plan_changed"
 
 export interface ActivityLogEntry {
   id: number
@@ -87,6 +92,7 @@ const NOTIFICATION_ACTIONS: ReadonlySet<ActivityAction> = new Set([
   "removed",
   "access_updated",
   "migrated",
+  "plan_changed",
 ])
 
 /**
@@ -185,6 +191,7 @@ const MODULE_NAV_KEY: Record<ActivityModule, string> = {
   negocios: "nav_negocios",
   merma: "nav_ingredientes",
   ocr: "nav_ingredientes",
+  plan: "nav_dashboard",
 }
 
 /**
@@ -193,8 +200,12 @@ const MODULE_NAV_KEY: Record<ActivityModule, string> = {
  */
 export function formatActivityEntry(entry: ActivityLogEntry, t: (key: any) => string): string {
   const module = t(MODULE_NAV_KEY[entry.module] || "nav_dashboard")
-  const entity = entry.entityLabel || ""
   const count = entry.metadata?.count != null ? String(entry.metadata.count) : ""
+  // Sin nombre (p. ej. un conteo de inventario completo) salía "Daniel creó  en
+  // Inventario" con un hueco (docs/156): se describe por cantidad o de forma genérica.
+  const entity =
+    entry.entityLabel ||
+    (count === "1" ? t("activity_entity_count_one") : count ? t("activity_entity_count").replace("{count}", count) : t("activity_entity_unnamed"))
 
   switch (entry.action) {
     case "entered":
@@ -217,6 +228,12 @@ export function formatActivityEntry(entry: ActivityLogEntry, t: (key: any) => st
       return t("activity_tpl_removed").replace("{user}", entry.userName).replace("{entity}", entity)
     case "access_updated":
       return t("activity_tpl_access_updated").replace("{user}", entry.userName).replace("{entity}", entity)
+    case "plan_changed": {
+      // Los nombres de plan no se traducen (lib/plans.ts); se guardan los slugs.
+      const from = getPlanBySlug(String(entry.metadata?.from ?? "")).name
+      const to = getPlanBySlug(String(entry.metadata?.to ?? entry.entityLabel ?? "")).name
+      return t("activity_tpl_plan_changed").replace("{from}", from).replace("{to}", to)
+    }
     case "migrated":
       return t("activity_tpl_migrated").replace("{user}", entry.userName).replace("{entity}", entity)
     default:

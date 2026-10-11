@@ -274,3 +274,13 @@ function guessHeaders(rows: string[][]): string[] {
   pick("nombre", (c) => !isNum(c) && !isUnit(c))
   return headers
 }
+
+/**
+ * Contenido neto sospechosamente chico para un producto que se compra por peso o volumen
+ * (docs/156): "Salsa sweet chili, L 825, 1 g" deja el gramo a L 825 y dispara el costo de
+ * cualquier receta que la use. Casi nunca se compra un paquete de menos de 5 g o 5 ml;
+ * suele ser un "1" leído donde iba "1000" o la unidad equivocada. Solo es un aviso.
+ */
+export function hasSuspiciousContent(row: Pick<ImportedIngredientRow, "unit" | "content" | "price">): boolean {
+  return (row.unit === "gramos" || row.unit === "mililitros") && row.price > 0 && row.content > 0 && row.content < 5
+}

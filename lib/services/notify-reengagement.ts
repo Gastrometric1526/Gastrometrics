@@ -458,6 +458,7 @@ export async function runReengagementReminders(options: { dryRun?: boolean } = {
         .from("activity_log")
         .select("user_id, module, action, created_at")
         .in("user_id", c)
+        .neq("module", "plan") // aviso de cambio de plan escrito por el servidor, no actividad (docs/157)
         .gte("created_at", since(R.maxInactiveDays + 30))
         .order("created_at", { ascending: false })
         .range(a, b),

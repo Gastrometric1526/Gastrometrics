@@ -16,6 +16,7 @@ import { LegalUpdateBanner } from "@/components/legal-update-banner"
 import { ThemeInitializer } from "@/components/theme-initializer"
 import { AnalyticsTracker } from "@/components/analytics-tracker"
 import { PresenceTracker } from "@/components/presence-tracker"
+import { FounderGrantTrigger } from "@/components/founder-grant-trigger"
 import { ModuleActivityTracker } from "@/components/module-activity-tracker"
 import { PwaBackGuard } from "@/components/pwa-back-guard"
 import { EmailClickTracker } from "@/components/email-click-tracker"
@@ -114,6 +115,8 @@ export default function RootLayout({
                   <AnalyticsTracker />
                   <EmailClickTracker />
                   <PresenceTracker />
+                  {/* 100 cocinas fundadoras automático (docs/158) */}
+                  <FounderGrantTrigger />
                   <Suspense fallback={null}>
                     <ModuleActivityTracker />
                   </Suspense>

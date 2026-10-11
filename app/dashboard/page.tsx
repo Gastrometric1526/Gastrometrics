@@ -45,6 +45,7 @@ import { AddBusinessDialog } from "@/components/add-business-dialog"
 import { OnboardingTour } from "@/components/onboarding-tour"
 import { WhatsNewDialog } from "@/components/whats-new-dialog"
 import { PlanChangeNoticeDialog } from "@/components/plan-change-notice-dialog"
+import { PlanTour } from "@/components/plan-tour"
 import { QuickRatingDialog } from "@/components/quick-rating-dialog"
 import { GettingStartedPath } from "@/components/getting-started-path"
 import { useFeatureAccess, useActiveMembership, setCurrentPlanSlug, getMinimumPlanForFeature } from "@/lib/plan-access"
@@ -743,6 +744,7 @@ export default function DashboardPage() {
       <OnboardingTour />
       <WhatsNewDialog />
       <PlanChangeNoticeDialog />
+      <PlanTour />
       <QuickRatingDialog />
       <Sidebar />
       <div className="flex-1 overflow-hidden">
@@ -1067,7 +1069,7 @@ export default function DashboardPage() {
                               {formatActivityEntry(activity, t)}
                             </p>
                             <p className="text-xs text-text-4 mt-0.5">
-                              {ActivityTracker.formatTimeAgo(activity.createdAt, t)}
+                              {ActivityTracker.formatTimeAgo(activity.createdAt, t, language)}
                             </p>
                           </div>
                         </div>
@@ -1106,7 +1108,7 @@ export default function DashboardPage() {
                           <span className="h-1.5 w-1.5 rounded-full shrink-0 mt-1.5 bg-primary" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground">{formatActivityEntry(alert, t)}</p>
-                            <p className="text-xs text-text-4 mt-0.5">{ActivityTracker.formatTimeAgo(alert.createdAt, t)}</p>
+                            <p className="text-xs text-text-4 mt-0.5">{ActivityTracker.formatTimeAgo(alert.createdAt, t, language)}</p>
                           </div>
                         </div>
                       ))}

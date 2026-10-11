@@ -46,4 +46,19 @@ export async function recordPlanChangeNotice(input: {
   // esta llamada en los 3 casos, así que un error acá nunca debe impedir eso; el
   // popup simplemente no tendrá nada que mostrar hasta que se corra la migración.
   if (error) console.error("[plan-change-notice] Error guardando el aviso de cambio de plan:", error)
+
+  // También queda en "Notificaciones" del Dashboard (docs/157), aunque la persona todavía
+  // no haya abierto la app: el popup se ve una vez y se cierra, esto queda en la lista.
+  // business_id null = evento de cuenta (getActivityLog lo trae con includeGlobalForUserId).
+  const { error: logError } = await admin.from("activity_log").insert({
+    business_id: null,
+    user_id: input.accountId,
+    user_name: "Gastrometrics",
+    module: "plan",
+    action: "plan_changed",
+    entity_label: input.toPlanSlug,
+    metadata: { from: input.fromPlanSlug, to: input.toPlanSlug, source: input.source },
+    is_notification: true,
+  })
+  if (logError) console.error("[plan-change-notice] Error guardando la notificación de cambio de plan:", logError)
 }

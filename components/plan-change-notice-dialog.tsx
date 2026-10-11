@@ -15,6 +15,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { getPlanBySlug } from "@/lib/plans"
 import { diffPlanCapabilities } from "@/lib/plan-capabilities"
 import { EMAIL_DATE_LOCALES, normalizeEmailLang } from "@/lib/i18n/email-labels"
+import { PLAN_TOUR_PENDING_KEY, planTourId } from "@/lib/plan-tour"
 
 interface PlanChangeNotice {
   fromPlanSlug: string
@@ -23,6 +24,7 @@ interface PlanChangeNotice {
   nextChargeAt: string | null
   expiresAt: string | null
   source: string | null
+  changedAt: string | null
 }
 
 function formatUsd(cents: number): string {
@@ -44,14 +46,19 @@ export function PlanChangeNoticeDialog() {
   useEffect(() => {
     if (!isLoggedIn) return
     let cancelled = false
-    fetch("/api/plan/change-notice")
-      .then((res) => res.json())
-      .then((data) => {
-        if (!cancelled && data?.notice) setNotice(data.notice)
-      })
-      .catch(() => {})
+    const load = () =>
+      fetch("/api/plan/change-notice")
+        .then((res) => res.json())
+        .then((data) => {
+          if (!cancelled && data?.notice) setNotice(data.notice)
+        })
+        .catch(() => {})
+    load()
+    // El programa de fundadoras cambia el plan con la app abierta (docs/158): se vuelve a consultar.
+    window.addEventListener("gm:plan-notice-refresh", load)
     return () => {
       cancelled = true
+      window.removeEventListener("gm:plan-notice-refresh", load)
     }
   }, [isLoggedIn])
 
@@ -67,6 +74,22 @@ export function PlanChangeNoticeDialog() {
     new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" })
 
   const handleClose = () => {
+    // Al cerrar el aviso empieza el tutorial del plan nuevo (components/plan-tour.tsx,
+    // docs/157). Queda guardado como pendiente: si la persona todavía no terminó el
+    // tutorial de bienvenida, sale en su próxima visita al Dashboard.
+    try {
+      localStorage.setItem(
+        PLAN_TOUR_PENDING_KEY,
+        JSON.stringify({
+          id: planTourId(notice.fromPlanSlug, notice.toPlanSlug, notice.changedAt),
+          from: notice.fromPlanSlug,
+          to: notice.toPlanSlug,
+        }),
+      )
+    } catch {
+      /* sin almacenamiento: no hay tutorial, el aviso igual se cierra */
+    }
+    window.dispatchEvent(new CustomEvent("gm:plan-tour"))
     setNotice(null)
     fetch("/api/plan/change-notice", { method: "POST" }).catch(() => {})
   }

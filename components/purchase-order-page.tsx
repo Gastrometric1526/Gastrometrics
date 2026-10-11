@@ -54,7 +54,6 @@ import { unitAbbreviations } from "@/types/ingredient"
 import { getUnitLabel } from "@/lib/ingredient-labels"
 import type { PurchaseOrder } from "@/types/purchase-order"
 import { buildPackageContentLookup, inventoryItemValue } from "@/lib/inventory-value"
-import { formatUnitPrice } from "@/lib/currency"
 
 export function PurchaseOrderPage() {
   const router = useRouter()
@@ -63,6 +62,10 @@ export function PurchaseOrderPage() {
   const { toast } = useToast()
   const { user } = useAuth()
   const { t, language } = useLanguage()
+  // Nombre legible para las órdenes sugeridas: antes llevaban una marca de tiempo interna
+  // ("OC-almuerzo-1788297564730", docs/156). Se puede editar en el formulario.
+  const orderDateLabel = () =>
+    new Date().toLocaleDateString(getDateLocale(language), { day: "numeric", month: "short", year: "numeric" })
   const businessId = params?.id as string | undefined
 
   const orderStatusLabels: Record<string, string> = {
@@ -130,9 +133,11 @@ export function PurchaseOrderPage() {
 
   const mostExpensiveIngredients = useMemo(
     () =>
+      // Por precio de compra (lo que se paga por el paquete): comparar precio por gramo
+      // contra precio por unidad mezclaba cosas no comparables (docs/156).
       [...ingredients]
-        .filter((ing) => (ing.pricing?.pricePerUnit || 0) > 0)
-        .sort((a, b) => (b.pricing?.pricePerUnit || 0) - (a.pricing?.pricePerUnit || 0))
+        .filter((ing) => (ing.pricing?.purchasePrice || 0) > 0)
+        .sort((a, b) => (b.pricing?.purchasePrice || 0) - (a.pricing?.purchasePrice || 0))
         .slice(0, 3),
     [ingredients],
   )
@@ -249,7 +254,7 @@ export function PurchaseOrderPage() {
       setEditingOrder(null)
       setIsSuggestedFromMenu(true)
       setSuggestedFormData({
-        orderNumber: `OC-${menu.name}-${Date.now()}`,
+        orderNumber: `OC ${menu.name} · ${orderDateLabel()}`,
         supplier: "",
         orderDate: new Date().toISOString().split("T")[0],
         expectedDeliveryDate: "",
@@ -327,7 +332,7 @@ export function PurchaseOrderPage() {
       setEditingOrder(null)
       setIsSuggestedFromMenu(true)
       setSuggestedFormData({
-        orderNumber: `OC-${recipe.name}-${Date.now()}`,
+        orderNumber: `OC ${recipe.name} · ${orderDateLabel()}`,
         supplier: "",
         orderDate: new Date().toISOString().split("T")[0],
         expectedDeliveryDate: "",
@@ -437,7 +442,7 @@ export function PurchaseOrderPage() {
     setEditingOrder(null)
     setIsSuggestedFromMenu(false)
     setSuggestedFormData({
-      orderNumber: `OC-Sugerida-${Date.now()}`,
+      orderNumber: `${t("ordenes_suggested_order_name")} · ${orderDateLabel()}`,
       supplier: headerSupplier,
       orderDate: new Date().toISOString().split("T")[0],
       expectedDeliveryDate: "",
@@ -794,7 +799,8 @@ export function PurchaseOrderPage() {
                   <div key={ing.id} className="flex items-center justify-between text-xs">
                     <span className="truncate pr-2">{ing.name}</span>
                     <span className="font-semibold text-foreground shrink-0">
-                      {formatUnitPrice(ing.pricing?.pricePerUnit || 0)}/{unitAbbreviations[ing.unit] || ing.unit}
+                      {formatCurrency(ing.pricing?.purchasePrice || 0)} / {ing.pricing?.netContent ?? ""}{" "}
+                      {unitAbbreviations[ing.unit] || ing.unit}
                     </span>
                   </div>
                 ))

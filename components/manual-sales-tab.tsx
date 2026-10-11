@@ -13,6 +13,7 @@ import { getMenus, ensureMenusLoaded } from "@/lib/menus"
 import { getSalesImports, deleteSalesImport, ensureSalesImportsLoaded } from "@/lib/storage/sales-imports"
 import { ManualSalesEntryDialog } from "@/components/manual-sales-entry-dialog"
 import type { SalesImport } from "@/types/sales-import"
+import { salesImportDisplayName } from "@/lib/sales-import-labels"
 
 interface ManualSalesTabProps {
   businessId: string
@@ -33,7 +34,7 @@ interface ManualSalesTabProps {
  */
 export function ManualSalesTab({ businessId, onSalesChanged }: ManualSalesTabProps) {
   const { toast } = useToast()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
 
   const [salesImports, setSalesImportsState] = useState<SalesImport[]>([])
   const setSalesImports = (imports: SalesImport[]) => {
@@ -208,7 +209,7 @@ export function ManualSalesTab({ businessId, onSalesChanged }: ManualSalesTabPro
                           <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
                         )}
                         <div className="min-w-0">
-                          <p className="font-medium truncate">{imp.fileName}</p>
+                          <p className="font-medium truncate">{salesImportDisplayName(imp, t, language)}</p>
                           <p className="text-xs text-muted-foreground">
                             {imp.lineCount} {t("manual_sales_lines_suffix")} · {formatCurrency(imp.totalRevenue)}
                           </p>
@@ -265,7 +266,7 @@ export function ManualSalesTab({ businessId, onSalesChanged }: ManualSalesTabPro
             </DialogTitle>
           </DialogHeader>
           <p className="text-muted-foreground text-sm md:text-base">
-            {t("manual_sales_delete_confirm_prefix")} <strong>"{entryToDelete?.fileName}"</strong>
+            {t("manual_sales_delete_confirm_prefix")} <strong>"{entryToDelete ? salesImportDisplayName(entryToDelete, t, language) : ""}"</strong>
             {t("manual_sales_delete_confirm_suffix")}
           </p>
           <DialogFooter className="flex flex-col sm:flex-row gap-2">

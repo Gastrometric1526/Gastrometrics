@@ -269,7 +269,7 @@ export default function NegociosPage() {
     return (
       <div className="flex min-h-screen bg-background">
         <Sidebar />
-        <div className="flex-1 p-4 md:p-8">
+        <div className="flex-1 min-w-0 p-4 md:p-8">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-center py-16">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -283,7 +283,7 @@ export default function NegociosPage() {
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <div className="flex-1 p-4 md:p-8">
+      <div className="flex-1 min-w-0 p-4 md:p-8">
         <div className="max-w-7xl mx-auto space-y-8">
           <NegociosTour />
           {/* Header */}

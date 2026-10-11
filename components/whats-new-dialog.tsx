@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Sparkles } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
+import { PLAN_TOUR_PENDING_KEY } from "@/lib/plan-tour"
 import { LATEST_CHANGELOG_VERSION, getChangelogContent } from "@/lib/changelog"
 
 const SEEN_KEY_PREFIX = "changelog_seen_"
@@ -29,6 +30,9 @@ export function WhatsNewDialog() {
     // próximo ingreso, ya con el tour completado, sí lo verá.
     const onboardingDone = localStorage.getItem("onboarding_completed") === "true"
     if (!onboardingDone) return
+    // Mismo criterio con el tutorial de plan nuevo (components/plan-tour.tsx, docs/157):
+    // si hay uno pendiente, las novedades esperan a la próxima visita.
+    if (localStorage.getItem(PLAN_TOUR_PENDING_KEY)) return
 
     const key = `${SEEN_KEY_PREFIX}${user.id}`
     const seenVersion = typeof window !== "undefined" ? localStorage.getItem(key) : LATEST_CHANGELOG_VERSION

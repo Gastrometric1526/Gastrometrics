@@ -18,6 +18,9 @@ export function InstallAppButton() {
   const [isStandalone, setIsStandalone] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
   const [showIOSInstructions, setShowIOSInstructions] = useState(false)
+  // Aparece apenas la persona empieza a bajar (docs/156): en la primera pantalla ya está
+  // el botón principal, y la pastilla tapaba "Plan gratis para siempre · Sin tarjeta".
+  const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
     setIsStandalone(
@@ -34,9 +37,14 @@ export function InstallAppButton() {
     const onInstalled = () => setIsStandalone(true)
     window.addEventListener("appinstalled", onInstalled)
 
+    const onScroll = () => setScrolled(window.scrollY > 120)
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+
     return () => {
       window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt)
       window.removeEventListener("appinstalled", onInstalled)
+      window.removeEventListener("scroll", onScroll)
     }
   }, [])
 
@@ -56,8 +64,20 @@ export function InstallAppButton() {
 
   return (
     <>
-      <div className="md:hidden fixed bottom-4 left-4 right-4 z-40">
-        <Button onClick={handleClick} className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+      {/* Pastilla compacta en la esquina (docs/156): a lo ancho de la pantalla tapaba la
+          línea "Plan gratis para siempre · Sin tarjeta" justo debajo del botón principal.
+          Se muestra en cuanto se baja un poco: sigue disponible en cualquier momento. */}
+      <div
+        className={`md:hidden fixed bottom-4 right-4 z-40 transition-all duration-200 ${
+          scrolled ? "opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-4"
+        }`}
+        aria-hidden={!scrolled}
+      >
+        <Button
+          onClick={handleClick}
+          size="sm"
+          className="h-10 gap-2 rounded-full px-4 shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
+        >
           <Download className="h-4 w-4" />
           {t("install_app_button")}
         </Button>

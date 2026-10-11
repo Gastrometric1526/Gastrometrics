@@ -15,7 +15,13 @@ export interface BusinessExpenses {
 // objetivo (ej. costo objetivo 30% → precio = costo / 0.30). Más simple, un solo número.
 export type PricingMethod = "gastrometrics" | "food_cost"
 
-export const DEFAULT_PRICING_METHOD: PricingMethod = "gastrometrics"
+// Desde docs/156 (decisión del dueño) el método por defecto es Food Cost %: es el número
+// que entiende un chef y el estándar de la industria. Los 6 rubros quedan como opción.
+export const DEFAULT_PRICING_METHOD: PricingMethod = "food_cost"
+// Recetas guardadas antes de que existiera el campo pricingMethod se costearon con los 6
+// rubros (y así las leen el PDF y los correos): al abrirlas se respeta eso, para que su
+// precio no cambie solo por haber cambiado el default.
+export const LEGACY_PRICING_METHOD: PricingMethod = "gastrometrics"
 export const DEFAULT_TARGET_FOOD_COST_PERCENT = 30
 
 export interface Business {

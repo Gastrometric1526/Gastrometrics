@@ -19,6 +19,7 @@
  */
 
 import { addIngredient } from "@/lib/storage/ingredients"
+import { DEFAULT_PRICING_METHOD, DEFAULT_TARGET_FOOD_COST_PERCENT } from "@/types/business"
 import { saveRecipe, getRecipeById } from "@/lib/storage/recipes"
 import { defaultPricingConfig } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
@@ -188,6 +189,8 @@ export async function getOrSeedExampleRecipe(
     laborCosts: defaultPricingConfig.laborCosts,
     isv: defaultPricingConfig.isv,
     contributionMargin: defaultPricingConfig.netProfit,
+    pricingMethod: DEFAULT_PRICING_METHOD,
+    targetFoodCostPercent: DEFAULT_TARGET_FOOD_COST_PERCENT,
     businessId: businessId ?? "main",
     metadata: { createdAt: now, updatedAt: now, version: 1 },
   }

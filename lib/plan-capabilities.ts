@@ -221,3 +221,26 @@ export function diffPlanCapabilities(fromSlug: string, toSlug: string, language:
     now: to.map((i) => i.label),
   }
 }
+
+export type GainedCapabilityKey = CapabilityKey | "businesses" | "users"
+
+/**
+ * Lo que se gana al pasar de un plan a otro, con su clave estable (no solo el texto) —
+ * lo usa el tutorial de plan nuevo (components/plan-tour.tsx, docs/157) para saber a qué
+ * módulo de la app llevar a la persona por cada cosa nueva. Mismo criterio que
+ * diffPlanCapabilities: los límites solo cuentan si suben.
+ */
+export function gainedCapabilities(
+  fromSlug: string,
+  toSlug: string,
+  language: string | null | undefined,
+): { key: GainedCapabilityKey; label: string }[] {
+  const lang = normalizeCapabilityLang(language)
+  const from = capabilityItems(getPlanBySlug(fromSlug), lang)
+  const to = capabilityItems(getPlanBySlug(toSlug), lang)
+  const fromIds = new Set(from.map((i) => i.id))
+  const limitOf = (items: CapabilityItem[], kind: string) => items.find((i) => i.limit?.kind === kind)?.limit?.value ?? 0
+  return to
+    .filter((i) => !fromIds.has(i.id) && (!i.limit || i.limit.value > limitOf(from, i.limit.kind)))
+    .map((i) => ({ key: (i.limit ? i.limit.kind : i.id) as GainedCapabilityKey, label: i.label }))
+}

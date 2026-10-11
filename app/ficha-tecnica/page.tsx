@@ -105,7 +105,7 @@ export default function FichaTecnicaPage() {
     return (
       <div className="flex min-h-screen bg-background">
         <Sidebar />
-        <div className="flex-1 p-4 md:p-8">
+        <div className="flex-1 min-w-0 p-4 md:p-8">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-center py-16">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -119,9 +119,12 @@ export default function FichaTecnicaPage() {
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <div className="flex-1 p-4 md:p-8">
+      <div className="flex-1 min-w-0 p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between gap-4 mb-8">
+          {/* En celular: Volver e Ingredientes arriba, el título debajo a todo el ancho
+              (docs/156: apretado entre los dos botones quedaba en una columna de 4 letras),
+              y espacio a la derecha para el botón de menú fijo. */}
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 mb-8 pr-12 md:pr-0">
             <Link href={businessId !== "main" ? `/business/${businessId}` : "/dashboard"}>
               <Button
                 variant="ghost"
@@ -132,7 +135,7 @@ export default function FichaTecnicaPage() {
                 {t("common_back")}
               </Button>
             </Link>
-            <div className="flex-1" data-tour="ficha-header">
+            <div className="order-3 basis-full sm:order-none sm:basis-0 sm:flex-1" data-tour="ficha-header">
               <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">{t("ficha_tecnica_title")}</h1>
               <p className="text-sm md:text-base text-muted-foreground">
                 {t("ficha_tecnica_subtitle")}

@@ -51,6 +51,7 @@ import { POSSalesImportDialog } from "@/components/pos-sales-import-dialog"
 import { FinanzasCalculationDialog } from "@/components/finanzas-calculation-dialog"
 import { SalesHistoryBreakdown } from "@/components/sales-history-breakdown"
 import { useLanguage } from "@/contexts/language-context"
+import { salesImportDisplayName } from "@/lib/sales-import-labels"
 import type { SalesImport } from "@/types/sales-import"
 import type { Recipe } from "@/types/recipe"
 import type { Menu } from "@/lib/types/menus"
@@ -773,7 +774,7 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
                     cumple exactamente el mismo rol visual (flex row), sin la regla
                     de anidado que <p> sí tiene. */}
                     <div className="font-medium truncate flex items-center gap-2">
-                      <span className="truncate">{imp.fileName}</span>
+                      <span className="truncate">{salesImportDisplayName(imp, t, language)}</span>
                       {imp.source === "manual" && (
                         <Badge variant="secondary" className="shrink-0 text-[10px]">
                           {t("finanzas_manual_entry_badge")}

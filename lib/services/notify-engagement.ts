@@ -393,7 +393,9 @@ interface RecipeRow {
 
 /** Food cost objetivo de una receta según su método (mismos rubros por defecto que la Ficha Técnica). */
 export function recipeTargetFoodCost(r: Pick<RecipeRow, "method" | "target" | "ps" | "mk" | "op" | "lb" | "isv" | "cm">): number {
-  if (r.method === "food_cost") return Number(r.target) || 30
+  // Food Cost %: el precio guardado incluye el ISV (docs/156), así que contra ese precio
+  // el objetivo efectivo es objetivo ÷ (1 + ISV).
+  if (r.method === "food_cost") return (Number(r.target) || 30) / (1 + (Number(r.isv) || 0) / 100)
   const sum = (Number(r.ps ?? 10) || 0) + (Number(r.mk ?? 10) || 0) + (Number(r.op ?? 30) || 0) + (Number(r.lb ?? 25) || 0) + (Number(r.isv ?? 0) || 0) + (Number(r.cm ?? 30) || 0)
   return 100 / (1 + sum / 100)
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { findColumn, mapIngredientRows, parseLocaleNumber, pickIngredientSheet, readUnitCell, splitPastedList } from "./ingredient-import"
+import { findColumn, hasSuspiciousContent, mapIngredientRows, parseLocaleNumber, pickIngredientSheet, readUnitCell, splitPastedList } from "./ingredient-import"
 
 describe("parseLocaleNumber", () => {
   it.each([
@@ -117,5 +117,15 @@ describe("hoja de ingredientes de un libro de costeo (.xlsm, docs/152)", () => {
     expect(rows[1]).toMatchObject({ unit: "gramos", content: 453.59, price: 125.7 })
     expect(rows[2]).toMatchObject({ unit: "unidad", content: 1, price: 13.9 })
     expect(rows[3].price).toBeNaN() // sin precio: se ofrece importarlo en 0
+  })
+})
+
+describe("hasSuspiciousContent: contenido neto demasiado chico en g/ml", () => {
+  it("1 g por L 825 es sospechoso", () => {
+    expect(hasSuspiciousContent({ unit: "gramos", content: 1, price: 825 })).toBe(true)
+  })
+  it("un frasco de 500 ml o algo por unidad no lo es", () => {
+    expect(hasSuspiciousContent({ unit: "mililitros", content: 500, price: 80 })).toBe(false)
+    expect(hasSuspiciousContent({ unit: "unidad", content: 1, price: 80 })).toBe(false)
   })
 })
