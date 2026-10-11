@@ -21,6 +21,89 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-11",
+    content: {
+      es: {
+        title: "Precios que te cuidan el margen",
+        items: [
+          "Tus precios ya no bajan solos: si sube el costo de un ingrediente y una receta queda corta, su precio sube al nuevo sugerido. Si el costo baja, el precio se mantiene (como si lo hubieras escrito tú) y en Notificaciones te avisamos cuánto subió tu margen.",
+          "Food Cost % es ahora el método de precio recomendado para recetas y negocios nuevos. Tus recetas guardadas conservan su método y su precio.",
+          "ISV en Food Cost %: precio = costo ÷ objetivo × (1 + ISV). La Ficha Técnica muestra el ISV incluido y mide el margen sobre la venta sin impuesto.",
+          "Al cambiar de plan te queda una notificación y un tutorial corto con lo que tu plan nuevo desbloquea y dónde está cada cosa.",
+          "100 cocinas fundadoras: las primeras 100 cuentas nuevas reciben Chef Ejecutivo gratis por 30 días.",
+          "Ficha Técnica e Ingredientes se ven completas en el celular, sin desplazarse de lado.",
+          "Fechas de Notificaciones y Actividad en tu idioma, y al importar ingredientes te avisamos si un contenido en g o ml parece mal cargado.",
+          "Síguenos en Instagram y Facebook (@gastrometrics.app) para tips de costeo y novedades: los enlaces están al pie del sitio.",
+        ],
+      },
+      en: {
+        title: "Prices that protect your margin",
+        items: [
+          "Your prices no longer drop on their own: if an ingredient's cost rises and a recipe falls short, its price moves up to the new suggested price. If the cost drops, the price stays (as if you had typed it) and Notifications tells you how much your margin rose.",
+          "Food Cost % is now the recommended pricing method for new recipes and businesses. Your saved recipes keep their method and price.",
+          "Sales tax in Food Cost %: price = cost ÷ target × (1 + tax). The Technical Sheet shows the tax included and measures margin on sales before tax.",
+          "When your plan changes you get a notification and a short tutorial showing what your new plan unlocks and where everything is.",
+          "100 founding kitchens: the first 100 new accounts get Executive Chef free for 30 days.",
+          "The Technical Sheet and Ingredients fit fully on your phone, with no sideways scrolling.",
+          "Notification and Activity dates in your language, and when importing ingredients we warn you if a content in g or ml looks wrong.",
+          "Follow us on Instagram and Facebook (@gastrometrics.app) for costing tips and news: the links are at the bottom of the site.",
+        ],
+      },
+      da: {
+        title: "Priser, der beskytter din margin",
+        items: [
+          "Dine priser falder ikke længere af sig selv: stiger en ingrediens' kostpris, og en opskrift bliver for billig, hæves prisen til den nye foreslåede pris. Falder kostprisen, bliver prisen stående (som om du havde skrevet den), og under Notifikationer kan du se, hvor meget din margin steg.",
+          "Food Cost % er nu den anbefalede prismetode for nye opskrifter og virksomheder. Dine gemte opskrifter beholder deres metode og pris.",
+          "Moms i Food Cost %: pris = kostpris ÷ mål × (1 + moms). Det tekniske ark viser den inkluderede moms og måler marginen på salget uden moms.",
+          "Når din plan ændres, får du en notifikation og en kort vejledning i, hvad din nye plan låser op, og hvor tingene findes.",
+          "100 stiftende køkkener: de første 100 nye konti får Executive Chef gratis i 30 dage.",
+          "Det tekniske ark og Ingredienser passer helt på mobilen uden sidelæns rulning.",
+          "Datoer i Notifikationer og Aktivitet på dit sprog, og ved import af ingredienser advarer vi dig, hvis et indhold i g eller ml ser forkert ud.",
+          "Følg os på Instagram og Facebook (@gastrometrics.app) for tips om kostberegning og nyheder: linkene er nederst på siden.",
+        ],
+      },
+      fr: {
+        title: "Des prix qui protègent votre marge",
+        items: [
+          "Vos prix ne baissent plus tout seuls : si le coût d'un ingrédient augmente et qu'une recette devient insuffisante, son prix passe au nouveau prix suggéré. Si le coût baisse, le prix reste (comme si vous l'aviez saisi) et Notifications vous indique de combien votre marge a augmenté.",
+          "Le Food Cost % est désormais la méthode de prix recommandée pour les nouvelles recettes et entreprises. Vos recettes enregistrées gardent leur méthode et leur prix.",
+          "TVA dans le Food Cost % : prix = coût ÷ objectif × (1 + TVA). La fiche technique affiche la TVA incluse et mesure la marge sur les ventes hors taxe.",
+          "Quand votre forfait change, vous recevez une notification et un court tutoriel sur ce que votre nouveau forfait débloque et où tout se trouve.",
+          "100 cuisines fondatrices : les 100 premiers nouveaux comptes reçoivent Chef Exécutif gratuitement pendant 30 jours.",
+          "La fiche technique et les Ingrédients s'affichent entièrement sur mobile, sans défilement horizontal.",
+          "Dates des Notifications et de l'Activité dans votre langue, et à l'import d'ingrédients nous vous avertissons si un contenu en g ou ml semble erroné.",
+          "Suivez-nous sur Instagram et Facebook (@gastrometrics.app) pour des conseils de calcul des coûts et des nouveautés : les liens sont en bas du site.",
+        ],
+      },
+      pt: {
+        title: "Preços que protegem a sua margem",
+        items: [
+          "Os seus preços não baixam mais sozinhos: se o custo de um ingrediente sobe e uma receita fica curta, o preço sobe para o novo sugerido. Se o custo baixa, o preço se mantém (como se você o tivesse digitado) e em Notificações avisamos quanto a sua margem subiu.",
+          "Food Cost % agora é o método de preço recomendado para receitas e negócios novos. As suas receitas salvas mantêm o método e o preço.",
+          "Imposto no Food Cost %: preço = custo ÷ objetivo × (1 + imposto). A Ficha Técnica mostra o imposto incluído e mede a margem sobre a venda sem imposto.",
+          "Ao mudar de plano você recebe uma notificação e um tutorial curto com o que o novo plano libera e onde fica cada coisa.",
+          "100 cozinhas fundadoras: as primeiras 100 contas novas recebem Chef Executivo grátis por 30 dias.",
+          "A Ficha Técnica e Ingredientes cabem inteiras no celular, sem rolar para o lado.",
+          "Datas de Notificações e Atividade no seu idioma, e ao importar ingredientes avisamos se um conteúdo em g ou ml parece errado.",
+          "Siga-nos no Instagram e no Facebook (@gastrometrics.app) para dicas de custeio e novidades: os links estão no rodapé do site.",
+        ],
+      },
+      zh: {
+        title: "守护利润率的定价",
+        items: [
+          "售价不再自动下降：如果食材成本上涨导致食谱售价不够，售价会调整到新的建议售价。如果成本下降，售价保持不变（就像你手动输入的一样），并会在“通知”中告诉你利润率提高了多少。",
+          "食材成本率（Food Cost %）现在是新食谱和新店铺的推荐定价方法。已保存的食谱保留原来的方法和售价。",
+          "食材成本率中的税：售价 = 成本 ÷ 目标 × (1 + 税率)。技术卡会显示含税金额，并按不含税销售额计算利润率。",
+          "更换方案时，你会收到一条通知和一个简短教程，介绍新方案解锁的功能及其位置。",
+          "100 家创始厨房：前 100 个新账户可免费使用行政主厨方案 30 天。",
+          "技术卡和食材页面在手机上可完整显示，无需左右滑动。",
+          "通知和动态的日期以你的语言显示；导入食材时，如果以克或毫升计的含量看起来有误，我们会提醒你。",
+          "在 Instagram 和 Facebook（@gastrometrics.app）关注我们，获取成本核算技巧和最新消息：链接在网站底部。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-10-04-d",
     content: {
       es: {

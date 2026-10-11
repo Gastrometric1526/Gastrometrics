@@ -13,6 +13,7 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import type { Database } from "@/types/database"
 import { getPlanBySlug } from "@/lib/plans"
+import { formatCurrency } from "@/lib/currency"
 
 export type ActivityModule =
   | "dashboard"
@@ -47,6 +48,9 @@ export type ActivityAction =
   | "migrated"
   | "read"
   | "plan_changed"
+  // Regla de precio al cambiar el costo de un ingrediente (docs/162).
+  | "price_raised"
+  | "margin_up"
 
 export interface ActivityLogEntry {
   id: number
@@ -93,6 +97,8 @@ const NOTIFICATION_ACTIONS: ReadonlySet<ActivityAction> = new Set([
   "access_updated",
   "migrated",
   "plan_changed",
+  "price_raised",
+  "margin_up",
 ])
 
 /**
@@ -234,9 +240,51 @@ export function formatActivityEntry(entry: ActivityLogEntry, t: (key: any) => st
       const to = getPlanBySlug(String(entry.metadata?.to ?? entry.entityLabel ?? "")).name
       return t("activity_tpl_plan_changed").replace("{from}", from).replace("{to}", to)
     }
+    case "price_raised":
+      return t("activity_tpl_price_raised")
+        .replace("{entity}", entity)
+        .replace("{from}", formatCurrency(Number(entry.metadata?.from ?? 0)))
+        .replace("{to}", formatCurrency(Number(entry.metadata?.to ?? 0)))
+    case "margin_up":
+      return t("activity_tpl_margin_up")
+        .replace("{entity}", entity)
+        .replace("{price}", formatCurrency(Number(entry.metadata?.price ?? 0)))
+        .replace("{from}", `${Number(entry.metadata?.from ?? 0).toFixed(1)} %`)
+        .replace("{to}", `${Number(entry.metadata?.to ?? 0).toFixed(1)} %`)
     case "migrated":
       return t("activity_tpl_migrated").replace("{user}", entry.userName).replace("{entity}", entity)
     default:
       return entry.userName
   }
+}
+
+/**
+ * Registra en "Notificaciones" los precios que subieron o que se mantuvieron con más
+ * margen al cambiar el costo de un ingrediente (lib/recalculate.ts, docs/162).
+ * Devuelve cuántos de cada tipo hubo, para el aviso en pantalla.
+ */
+export function logPriceRuleChanges(
+  changes: import("@/lib/recalculate").RecipePriceChange[],
+  user: { id: string; name?: string; email: string } | null | undefined,
+  businessId: string | null,
+): { raised: number; kept: number } {
+  let raised = 0
+  let kept = 0
+  for (const c of changes) {
+    if (c.kind === "raised") raised++
+    else kept++
+    if (!user) continue
+    logActivity({
+      user,
+      businessId: businessId && businessId !== "main" ? businessId : null,
+      module: "recetas",
+      action: c.kind === "raised" ? "price_raised" : "margin_up",
+      entityLabel: c.recipeName,
+      metadata:
+        c.kind === "raised"
+          ? { from: Math.round(c.oldPrice * 100) / 100, to: Math.round(c.newPrice * 100) / 100 }
+          : { price: Math.round(c.price * 100) / 100, from: Math.round(c.oldMargin * 10) / 10, to: Math.round(c.newMargin * 10) / 10 },
+    })
+  }
+  return { raised, kept }
 }

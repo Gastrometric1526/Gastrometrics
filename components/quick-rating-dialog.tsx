@@ -74,6 +74,9 @@ export function QuickRatingDialog() {
 
     let cancelled = false
     const timer = setTimeout(async () => {
+      // Si otro aviso sigue abierto (novedades, cambio de plan, tutorial), no se apila
+      // encima: se pregunta en la próxima visita (docs/162).
+      if (document.querySelector('[role="dialog"]')) return
       const activeDays = readJson<string[]>(daysKey, []).length
       if (activeDays >= MIN_ACTIVE_DAYS) return setOpen(true)
       // Recetas de todos los negocios, no solo del Dashboard principal.

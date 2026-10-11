@@ -106,3 +106,65 @@ describe("lib/recalculate: cascada de precio de ingrediente a costo de receta", 
     expect(getRecipes(businessId)[0].totalCost).toBe(15)
   })
 })
+
+// Regla de precio de docs/162: el precio de venta solo sube con el costo; si el costo baja
+// se mantiene como precio escrito a mano y se informa el margen nuevo.
+describe("lib/recalculate: regla de precio al cambiar el costo (docs/162)", () => {
+  const businessId = "test-biz-precio"
+
+  beforeEach(() => {
+    localStorage.clear()
+    saveIngredients(
+      [
+        {
+          id: "pollo",
+          name: "Pollo",
+          category: "CARNES",
+          unit: "gramos",
+          pricing: { purchasePrice: 120, netContent: 1000, pricePerUnit: 0.12, lastUpdated: new Date().toISOString() },
+          metadata: { createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), version: 1 },
+        } as unknown as Ingredient,
+      ],
+      businessId,
+    )
+    // 300 g × 0.12 = 36 de costo; Food Cost 30 % → precio 120
+    saveRecipes(
+      [
+        {
+          id: "plato",
+          name: "Pollo a la plancha",
+          classification: "Plato fuerte",
+          yieldAmount: 1,
+          totalCost: 36,
+          costPerServing: 36,
+          unitPrice: 120,
+          pricingMethod: "food_cost",
+          targetFoodCostPercent: 30,
+          ingredients: [{ ingredientId: "pollo", quantity: 300 }],
+        } as unknown as Recipe,
+      ],
+      businessId,
+    )
+  })
+
+  it("si sube el ingrediente, sube el precio de la receta y lo guarda", async () => {
+    const result = await updateIngredientPriceAndRecalculate(businessId, "pollo", 150) // costo 45 → 150
+    expect(result.priceChanges).toEqual([
+      expect.objectContaining({ kind: "raised", recipeName: "Pollo a la plancha", oldPrice: 120, newPrice: 150 }),
+    ])
+    expect(getRecipes(businessId)[0].unitPrice).toBe(150)
+  })
+
+  it("si baja el ingrediente, el precio se mantiene (como escrito a mano) y se informa el margen mayor", async () => {
+    const result = await updateIngredientPriceAndRecalculate(businessId, "pollo", 100) // costo 30
+    const change = result.priceChanges[0]
+    expect(change.kind).toBe("kept")
+    if (change.kind === "kept") {
+      expect(change.price).toBe(120)
+      expect(change.newMargin).toBeGreaterThan(change.oldMargin)
+    }
+    const saved = getRecipes(businessId)[0]
+    expect(saved.unitPrice).toBe(120)
+    expect(saved.customUnitPrice).toBe(120)
+  })
+})

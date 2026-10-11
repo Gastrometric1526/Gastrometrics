@@ -81,7 +81,7 @@ import { convertAllIngredientsToSystem } from "@/lib/utils/calculations"
 import { updateIngredientPriceAndRecalculate } from "@/lib/recalculate"
 import { ActivityTracker } from "@/lib/activity-tracker"
 import { trackEvent } from "@/lib/analytics/track-event"
-import { logActivity } from "@/lib/services/activity-log"
+import { logActivity, logPriceRuleChanges } from "@/lib/services/activity-log"
 import { ALLERGENS, allergenLabelKey } from "@/lib/allergens"
 import { formatUnitPrice } from "@/lib/currency"
 
@@ -645,9 +645,13 @@ export default function IngredientesPage() {
       // Precios actualizados desde el ticket: misma función que al editar un precio a mano,
       // que recalcula en cascada las recetas que usan ese ingrediente.
       let updatedPrices = 0
+      const priceRule = { raised: 0, kept: 0 }
       for (const update of priceUpdates) {
         try {
-          await updateIngredientPriceAndRecalculate(businessId || "main", update.id, update.price)
+          const recalc = await updateIngredientPriceAndRecalculate(businessId || "main", update.id, update.price)
+          const counts = logPriceRuleChanges(recalc.priceChanges, user, businessId || null)
+          priceRule.raised += counts.raised
+          priceRule.kept += counts.kept
           updatedPrices++
         } catch (error) {
           console.error("[ingredientes] No se pudo actualizar el precio:", error)
@@ -655,6 +659,12 @@ export default function IngredientesPage() {
       }
       if (updatedPrices > 0) {
         showSuccess(t("ingredientes_receipt_updated_title"), t("ingredientes_receipt_updated_desc").replace("{count}", String(updatedPrices)))
+      }
+      if (priceRule.raised + priceRule.kept > 0) {
+        showSuccess(
+          t("price_rule_toast_title"),
+          t("price_rule_toast_desc").replace("{raised}", String(priceRule.raised)).replace("{kept}", String(priceRule.kept)),
+        )
       }
 
       // Trigger update event for other components
@@ -831,6 +841,13 @@ export default function IngredientesPage() {
                     "{count}",
                     String(result.affectedRecipes.length),
                   ),
+                )
+              }
+              const priceRule = logPriceRuleChanges(result.priceChanges, user, businessId || null)
+              if (priceRule.raised + priceRule.kept > 0) {
+                showSuccess(
+                  t("price_rule_toast_title"),
+                  t("price_rule_toast_desc").replace("{raised}", String(priceRule.raised)).replace("{kept}", String(priceRule.kept)),
                 )
               }
             } catch (error) {

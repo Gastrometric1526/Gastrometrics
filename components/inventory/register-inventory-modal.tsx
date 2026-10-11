@@ -28,7 +28,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
-import { logActivity } from "@/lib/services/activity-log"
+import { logActivity, logPriceRuleChanges } from "@/lib/services/activity-log"
 import { ActivityTracker } from "@/lib/activity-tracker"
 import { v4 as uuidv4 } from "uuid"
 import { Badge } from "@/components/ui/badge"
@@ -481,6 +481,8 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
         ),
       )
         .then((results) => {
+          // Regla de precio (docs/162): avisos de precios que subieron o que ganan margen.
+          logPriceRuleChanges(results.flatMap((r) => r.priceChanges), user, businessId || null)
           const totalRecipes = results.reduce((sum, r) => sum + r.affectedRecipes.length, 0)
           const totalSubRecipes = results.reduce((sum, r) => sum + r.affectedSubRecipes.length, 0)
           if (totalRecipes > 0) {

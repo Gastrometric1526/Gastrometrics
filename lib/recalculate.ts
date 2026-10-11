@@ -3,6 +3,15 @@ import { getIngredients, updateIngredient } from "./storage/ingredients"
 import { syncSubRecipeToIngredient } from "./subrecipe/core"
 import { getFromStorage, saveToStorage, STORAGE_KEYS } from "./storage/core"
 import { SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
+import { applyPriceRule, type PricingContext } from "./recipe-pricing"
+import { getBusinessById, getEffectivePricingDefaults } from "./storage/businesses"
+import { calculateTotalMonthlyExpenses } from "@/types/business"
+import { getCurrentCurrencyCode } from "./currency"
+
+/** Cambio de precio de venta de una receta por la regla de docs/162. */
+export type RecipePriceChange =
+  | { kind: "raised"; recipeId: string; recipeName: string; oldPrice: number; newPrice: number }
+  | { kind: "kept"; recipeId: string; recipeName: string; price: number; oldMargin: number; newMargin: number }
 
 export interface RecalculationResult {
   ingredientId: string
@@ -24,6 +33,8 @@ export interface RecalculationResult {
     oldUnitCost: number
     newUnitCost: number
   }[]
+  /** Precios de venta que subieron, o que se mantuvieron con más margen (docs/162). */
+  priceChanges: RecipePriceChange[]
   timestamp: string
 }
 
@@ -87,7 +98,20 @@ export async function updateIngredientPriceAndRecalculate(
     newPrice,
     affectedRecipes: [],
     affectedSubRecipes: [],
+    priceChanges: [],
     timestamp: new Date().toISOString(),
+  }
+
+  // Contexto del precio sugerido, igual que en la Ficha Técnica (moneda, costo fijo por
+  // plato del negocio y objetivo de food cost por defecto).
+  const business = getBusinessById(businessId)
+  const pricingCtx: PricingContext = {
+    currencyCode: getCurrentCurrencyCode(),
+    fixedCostPerPlate:
+      business?.expenses && business.estimatedMonthlyPlates && business.estimatedMonthlyPlates > 0
+        ? calculateTotalMonthlyExpenses(business.expenses) / business.estimatedMonthlyPlates
+        : 0,
+    defaultTargetFoodCostPercent: getEffectivePricingDefaults(businessId).targetFoodCostPercent,
   }
 
   // Find all recipes that use this ingredient
@@ -123,8 +147,24 @@ export async function updateIngredientPriceAndRecalculate(
     // lib/analytics/menuScenario.ts. Sin este fix, el food cost % de cada receta
     // afectada quedaba desactualizado en silencio tras cambiar el precio de un
     // ingrediente, hasta que el usuario reabriera y regrabara cada receta a mano.
+    const oldUnitCost = recipe.costPerServing ?? (recipe.yieldAmount > 0 ? oldCost / recipe.yieldAmount : oldCost)
     recipe.totalCost = newCost
     recipe.costPerServing = recipe.yieldAmount > 0 ? newCost / recipe.yieldAmount : newCost
+
+    // Regla de precio (docs/162): el precio solo sube; si el costo baja, se mantiene como
+    // precio escrito a mano y se avisa que el margen aumentó. Las sub-recetas no tienen
+    // precio de venta propio.
+    if (!(recipe.classification === SUBRECIPE_CLASSIFICATION || recipe.isSubRecipe)) {
+      const outcome = applyPriceRule(recipe, oldUnitCost, recipe.costPerServing, pricingCtx)
+      if (outcome.kind !== "none") {
+        Object.assign(recipe, outcome.patch)
+        if (outcome.kind === "raised") {
+          result.priceChanges.push({ kind: "raised", recipeId: recipe.id, recipeName: recipe.name, oldPrice: outcome.oldPrice, newPrice: outcome.newPrice })
+        } else {
+          result.priceChanges.push({ kind: "kept", recipeId: recipe.id, recipeName: recipe.name, price: outcome.price, oldMargin: outcome.oldMargin, newMargin: outcome.newMargin })
+        }
+      }
+    }
 
     result.affectedRecipes.push({
       recipeId: recipe.id,
