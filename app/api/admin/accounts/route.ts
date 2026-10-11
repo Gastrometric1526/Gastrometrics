@@ -39,7 +39,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url)
   const search = (url.searchParams.get("search") || "").trim().toLowerCase()
   const planFilter = (url.searchParams.get("plan") || "").trim()
-  const sort = (url.searchParams.get("sort") || "recent").trim()
+  const sort = (url.searchParams.get("sort") || "time").trim()
   const page = Math.max(1, Number(url.searchParams.get("page")) || 1)
 
   try {
@@ -79,7 +79,11 @@ export async function GET(request: Request) {
       filtered = filtered.filter((u) => (planByUser.get(u.id)?.plan_slug || "foodie") === planFilter)
     }
     if (sort === "time") {
-      filtered.sort((a, b) => (activeSecondsByUser.get(b.id) || 0) - (activeSecondsByUser.get(a.id) || 0))
+      filtered.sort(
+        (a, b) =>
+          (activeSecondsByUser.get(b.id) || 0) - (activeSecondsByUser.get(a.id) || 0) ||
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      )
     } else if (sort === "plan") {
       filtered.sort((a, b) => {
         const planA = planByUser.get(a.id)?.plan_slug || "foodie"

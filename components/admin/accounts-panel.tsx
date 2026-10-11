@@ -125,7 +125,8 @@ export function AccountsPanel() {
   const [pageSize, setPageSize] = useState(25)
   const [search, setSearch] = useState("")
   const [planFilter, setPlanFilter] = useState("todos")
-  const [sortBy, setSortBy] = useState<"recent" | "time" | "plan">("recent")
+  // Por defecto, las cuentas que más usan la app primero (pedido del dueño, docs/160).
+  const [sortBy, setSortBy] = useState<"recent" | "time" | "plan">("time")
   const [loadingList, setLoadingList] = useState(false)
 
   const [selected, setSelected] = useState<AccountRow | null>(null)
@@ -948,8 +949,8 @@ export function AccountsPanel() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="recent">{t("admin_accounts_sort_recent")}</SelectItem>
               <SelectItem value="time">{t("admin_accounts_sort_time")}</SelectItem>
+              <SelectItem value="recent">{t("admin_accounts_sort_recent")}</SelectItem>
               <SelectItem value="plan">{t("admin_accounts_sort_plan")}</SelectItem>
             </SelectContent>
           </Select>
