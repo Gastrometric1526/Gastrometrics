@@ -40,7 +40,7 @@ import { getIngredients, saveIngredients } from "@/lib/storage/ingredients"
 import { presentations } from "@/types/ingredient"
 import { getCategoryLabel, getPresentationLabel, getUnitLabel } from "@/lib/ingredient-labels"
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
-import { updateIngredientPriceAndRecalculate } from "@/lib/recalculate"
+import { updateIngredientPriceAndRecalculate, requestSubRecipePricePrompt } from "@/lib/recalculate"
 import { computeWeightedAverageCost } from "@/lib/utils/weighted-average-cost"
 import { useLanguage } from "@/contexts/language-context"
 import { getDateLocale } from "@/lib/i18n/translations"
@@ -483,6 +483,8 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
         .then((results) => {
           // Regla de precio (docs/162): avisos de precios que subieron o que ganan margen.
           logPriceRuleChanges(results.flatMap((r) => r.priceChanges), user, businessId || null)
+          // Sub-recetas con precio de venta propio cuyo costo subió (docs/164): se pregunta.
+          requestSubRecipePricePrompt(businessId || "main", results)
           const totalRecipes = results.reduce((sum, r) => sum + r.affectedRecipes.length, 0)
           const totalSubRecipes = results.reduce((sum, r) => sum + r.affectedSubRecipes.length, 0)
           if (totalRecipes > 0) {

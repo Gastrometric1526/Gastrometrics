@@ -180,6 +180,11 @@ export interface Recipe {
   // directamente, ese valor manda y se guarda aquí; si nunca lo toca, se guarda el
   // sugerido tal cual (ver components/technical-sheet/index.tsx).
   customUnitPrice?: number
+  // Solo sub-recetas con precio de venta escrito a mano (docs/164): qué hacer con ese
+  // precio cuando la cascada sube su costo. "ask" (por defecto, o sin definir) = preguntar
+  // en una ventana; "always" = subirlo solo (el precio solo sube); "never" = dejarlo y
+  // actualizar solo el costo. Se elige en la Ficha Técnica o con «Recordar mi elección».
+  subRecipePriceUpdate?: "ask" | "always" | "never"
 
   pricingConfig?: PricingConfig
   publicServices?: number

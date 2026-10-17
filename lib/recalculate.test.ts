@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest"
-import { updateIngredientPriceAndRecalculate } from "./recalculate"
+import { updateIngredientPriceAndRecalculate, applySubRecipePriceDecisions, recalculateDependentsOfSubRecipe } from "./recalculate"
+import { syncSubRecipeToIngredient } from "./subrecipe/core"
 import { saveIngredients } from "./storage/ingredients"
 import { saveRecipes, getRecipes } from "./storage/recipes"
 import type { Ingredient } from "@/types/ingredient"
@@ -166,5 +167,143 @@ describe("lib/recalculate: regla de precio al cambiar el costo (docs/162)", () =
     const saved = getRecipes(businessId)[0]
     expect(saved.unitPrice).toBe(120)
     expect(saved.customUnitPrice).toBe(120)
+  })
+})
+
+// docs/164: cascada completa (ingrediente → sub-receta → platos que la usan) y la pregunta
+// por el precio de venta escrito a mano de las sub-recetas.
+describe("lib/recalculate: cascada por sub-recetas y precio de sub-recetas (docs/164)", () => {
+  const businessId = "test-biz-subreceta"
+  const now = () => new Date().toISOString()
+
+  function seed(subRecipeExtra: Partial<Recipe> = {}) {
+    localStorage.clear()
+    saveIngredients(
+      [
+        {
+          id: "tomate",
+          name: "Tomate",
+          category: "VEGETAL",
+          unit: "gramos",
+          pricing: { purchasePrice: 20, netContent: 1000, pricePerUnit: 0.02, lastUpdated: now() },
+          metadata: { createdAt: now(), updatedAt: now(), version: 1 },
+        } as unknown as Ingredient,
+        {
+          id: "salsa-ing",
+          name: "Salsa de tomate",
+          category: "Sub Receta / produccion (Mise en place)",
+          unit: "unidad",
+          recipeId: "salsa",
+          pricing: { purchasePrice: 2, netContent: 10, pricePerUnit: 2, lastUpdated: now() },
+          metadata: { createdAt: now(), updatedAt: now(), version: 1 },
+        } as unknown as Ingredient,
+      ],
+      businessId,
+    )
+    saveRecipes(
+      [
+        {
+          // 1000 g × 0.02 = 20 → 10 porciones de 2. Precio de venta escrito a mano: 10.
+          id: "salsa",
+          name: "Salsa de tomate",
+          classification: "Sub Receta / produccion (Mise en place)",
+          yieldAmount: 10,
+          yieldUnit: "porciones",
+          totalCost: 20,
+          costPerServing: 2,
+          unitPrice: 10,
+          customUnitPrice: 10,
+          pricingMethod: "food_cost",
+          targetFoodCostPercent: 30,
+          ingredients: [{ ingredientId: "tomate", quantity: 1000 }],
+          ...subRecipeExtra,
+        } as unknown as Recipe,
+        {
+          // Lleva salsa, no tomate suelto: 2 porciones × 2 = 4 de costo → precio 15.
+          id: "pasta",
+          name: "Pasta pomodoro",
+          classification: "Plato fuerte",
+          yieldAmount: 1,
+          totalCost: 4,
+          costPerServing: 4,
+          unitPrice: 15,
+          pricingMethod: "food_cost",
+          targetFoodCostPercent: 30,
+          ingredients: [{ ingredientId: "salsa-ing", quantity: 2 }],
+        } as unknown as Recipe,
+      ],
+      businessId,
+    )
+  }
+
+  const recipe = (id: string) => getRecipes(businessId).find((r) => r.id === id)!
+
+  it("recalcula los platos que usan la sub-receta, no solo la sub-receta", async () => {
+    seed()
+    const result = await updateIngredientPriceAndRecalculate(businessId, "tomate", 40)
+    expect(recipe("salsa").totalCost).toBeCloseTo(40, 5)
+    expect(recipe("pasta").totalCost).toBeCloseTo(8, 5) // 2 × (40 ÷ 10)
+    expect(recipe("pasta").unitPrice).toBe(30) // 8 ÷ 0.30 = 26.67 → 30
+    expect(result.priceChanges).toContainEqual(expect.objectContaining({ kind: "raised", recipeName: "Pasta pomodoro" }))
+  })
+
+  it("«Preguntarme» (por defecto): la sub-receta queda pendiente y su precio no cambia", async () => {
+    seed()
+    const result = await updateIngredientPriceAndRecalculate(businessId, "tomate", 40)
+    expect(result.pendingSubRecipePrices).toEqual([
+      { recipeId: "salsa", recipeName: "Salsa de tomate", currentPrice: 10, suggestedPrice: 15 },
+    ])
+    expect(recipe("salsa").customUnitPrice).toBe(10)
+    expect(result.priceChanges.some((c) => c.recipeId === "salsa")).toBe(false)
+  })
+
+  it("«Actualizar siempre»: sube el precio de la sub-receta sin preguntar", async () => {
+    seed({ subRecipePriceUpdate: "always" })
+    const result = await updateIngredientPriceAndRecalculate(businessId, "tomate", 40)
+    expect(result.pendingSubRecipePrices).toEqual([])
+    expect(recipe("salsa").customUnitPrice).toBe(15)
+    expect(recipe("salsa").unitPrice).toBe(15)
+    expect(result.priceChanges).toContainEqual(expect.objectContaining({ kind: "raised", recipeId: "salsa", newPrice: 15 }))
+  })
+
+  it("«No actualizar nunca»: solo cambia el costo", async () => {
+    seed({ subRecipePriceUpdate: "never" })
+    const result = await updateIngredientPriceAndRecalculate(businessId, "tomate", 40)
+    expect(result.pendingSubRecipePrices).toEqual([])
+    expect(recipe("salsa").customUnitPrice).toBe(10)
+    expect(recipe("salsa").totalCost).toBeCloseTo(40, 5)
+  })
+
+  it("una sub-receta sin precio escrito a mano no se pregunta", async () => {
+    seed({ customUnitPrice: undefined })
+    const result = await updateIngredientPriceAndRecalculate(businessId, "tomate", 40)
+    expect(result.pendingSubRecipePrices).toEqual([])
+  })
+
+  it("aceptar con «Recordar» sube el precio y guarda «siempre»; rechazar guarda «nunca»", async () => {
+    seed()
+    const result = await updateIngredientPriceAndRecalculate(businessId, "tomate", 40)
+    const accepted = await applySubRecipePriceDecisions(businessId, result.pendingSubRecipePrices, ["salsa"], true)
+    expect(accepted).toEqual([expect.objectContaining({ kind: "raised", recipeId: "salsa", oldPrice: 10, newPrice: 15 })])
+    expect(recipe("salsa").customUnitPrice).toBe(15)
+    expect(recipe("salsa").subRecipePriceUpdate).toBe("always")
+
+    seed()
+    const again = await updateIngredientPriceAndRecalculate(businessId, "tomate", 40)
+    const rejected = await applySubRecipePriceDecisions(businessId, again.pendingSubRecipePrices, [], true)
+    expect(rejected).toEqual([])
+    expect(recipe("salsa").customUnitPrice).toBe(10)
+    expect(recipe("salsa").subRecipePriceUpdate).toBe("never")
+  })
+
+  it("guardar una sub-receta recalcula los platos que la usan", async () => {
+    seed()
+    const salsa = { ...recipe("salsa"), totalCost: 30, costPerServing: 3 }
+    saveRecipes(getRecipes(businessId).map((r) => (r.id === "salsa" ? salsa : r)), businessId)
+    syncSubRecipeToIngredient(salsa, businessId)
+    const result = await recalculateDependentsOfSubRecipe(businessId, "salsa")
+    expect(result).not.toBeNull()
+    expect(recipe("pasta").totalCost).toBeCloseTo(6, 5) // 2 × 3
+    expect(recipe("pasta").unitPrice).toBe(20) // 6 ÷ 0.30 = 20
   })
 })

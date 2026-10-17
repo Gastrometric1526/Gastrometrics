@@ -31,6 +31,8 @@ import {
   type PricingMethod,
 } from "@/types/business"
 import { syncSubRecipeToIngredient } from "@/lib/subrecipe/core"
+import { recalculateDependentsOfSubRecipe, requestSubRecipePricePrompt, subRecipePriceModeOf, type SubRecipePriceMode } from "@/lib/recalculate"
+import { logPriceRuleChanges } from "@/lib/services/activity-log"
 import type { Recipe, RecipeIngredient } from "@/types/recipe"
 import { classifications, recipeSteps, yieldUnits, SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
@@ -194,6 +196,9 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
   const [targetFoodCostPercent, setTargetFoodCostPercent] = useState<number>(DEFAULT_TARGET_FOOD_COST_PERCENT)
   // Comisión de delivery/tarjeta en % del precio de venta (docs/137). 0 = sin comisión.
   const [salesCommissionPercent, setSalesCommissionPercent] = useState<number>(0)
+  // Solo sub-recetas (docs/164): qué hacer con su precio de venta escrito a mano cuando la
+  // cascada de costos lo deja corto. Aquí se cambia o se desmarca «Recordar mi elección».
+  const [subRecipePriceUpdate, setSubRecipePriceUpdate] = useState<SubRecipePriceMode>("ask")
   // Moneda vigente: define el escalón de redondeo del precio sugerido (lib/price-rounding.ts).
   // Se escucha el evento de Configuración para que el precio se re-redondee al cambiar de moneda.
   const [currencyCode, setCurrencyCode] = useState<string>("HNL")
@@ -381,6 +386,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     setPricingMethod(pricingDefaults.pricingMethod || DEFAULT_PRICING_METHOD)
     setTargetFoodCostPercent(pricingDefaults.targetFoodCostPercent || DEFAULT_TARGET_FOOD_COST_PERCENT)
     setSalesCommissionPercent(0)
+    setSubRecipePriceUpdate("ask")
     setOpenPopovers({})
     setRestoredDraftAt(null)
     if (userId) await clearRecipeDraft(userId, businessId)
@@ -429,6 +435,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
             DEFAULT_TARGET_FOOD_COST_PERCENT,
         )
         setSalesCommissionPercent(existingRecipe.salesCommissionPercent || 0)
+        setSubRecipePriceUpdate(subRecipePriceModeOf(existingRecipe))
         if (existingRecipe.customUnitProfit !== undefined && existingRecipe.customUnitProfit !== null) {
           setCustomUnitProfitInput(existingRecipe.customUnitProfit.toString())
         }
@@ -1071,6 +1078,8 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
         pricingMethod,
         targetFoodCostPercent,
         salesCommissionPercent: salesCommissionPercent > 0 ? salesCommissionPercent : undefined,
+        subRecipePriceUpdate:
+          recipe.classification === SUBRECIPE_CLASSIFICATION && subRecipePriceUpdate !== "ask" ? subRecipePriceUpdate : undefined,
         metadata: {
           ...recipe.metadata,
           updatedAt: new Date().toISOString(),
@@ -1094,6 +1103,25 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
 
       if (savedRecipe.classification === SUBRECIPE_CLASSIFICATION) {
         await syncSubRecipeToIngredient(savedRecipe, businessId)
+        // Cascada completa (docs/164): los platos y sub-recetas que usan esta sub-receta
+        // se recalculan ya, con la misma regla de precio que al cambiar un ingrediente.
+        try {
+          const cascade = await recalculateDependentsOfSubRecipe(businessId, savedRecipe.id)
+          if (cascade) {
+            const counts = logPriceRuleChanges(cascade.priceChanges, user, businessId !== "main" ? businessId : null)
+            if (cascade.affectedRecipes.length > 0) {
+              toast({
+                title: t("ficha_tecnica_subrecipe_cascade_title"),
+                description: t("ficha_tecnica_subrecipe_cascade_desc")
+                  .replace("{count}", String(cascade.affectedRecipes.length))
+                  .replace("{raised}", String(counts.raised)),
+              })
+            }
+            requestSubRecipePricePrompt(businessId, [cascade], savedRecipe.name)
+          }
+        } catch (error) {
+          console.error("[technical-sheet] Cascada de sub-receta:", error)
+        }
       }
 
       if (user) {
@@ -1147,6 +1175,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     userId,
     user,
     mode,
+    subRecipePriceUpdate,
   ])
 
   // Validaciones de siempre + el nuevo paso: si el modificador de PAX está activo,
@@ -1997,6 +2026,39 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
               </div>
             )}
           </div>
+
+          {/* Sub-recetas (docs/164): qué pasa con su precio de venta escrito a mano cuando
+              sube su costo. Es también donde se desmarca «Recordar mi elección». */}
+          {recipe.classification === SUBRECIPE_CLASSIFICATION && (
+            <div className="space-y-1 border-b py-3" data-tour="ficha-subrecipe-price-mode">
+              <div className="flex flex-wrap items-center gap-2">
+                <Label htmlFor="subRecipePriceUpdate" className="text-sm whitespace-nowrap">
+                  {t("ficha_tecnica_subrecipe_price_mode_label")}
+                </Label>
+                {isEditMode ? (
+                  <Select value={subRecipePriceUpdate} onValueChange={(v) => setSubRecipePriceUpdate(v as SubRecipePriceMode)}>
+                    <SelectTrigger id="subRecipePriceUpdate" className="w-full sm:w-80">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ask">{t("ficha_tecnica_subrecipe_price_mode_ask")}</SelectItem>
+                      <SelectItem value="always">{t("ficha_tecnica_subrecipe_price_mode_always")}</SelectItem>
+                      <SelectItem value="never">{t("ficha_tecnica_subrecipe_price_mode_never")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <span className="text-sm font-medium">{t(
+                      subRecipePriceUpdate === "always"
+                        ? "ficha_tecnica_subrecipe_price_mode_always"
+                        : subRecipePriceUpdate === "never"
+                          ? "ficha_tecnica_subrecipe_price_mode_never"
+                          : "ficha_tecnica_subrecipe_price_mode_ask",
+                    )}</span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">{t("ficha_tecnica_subrecipe_price_mode_desc")}</p>
+            </div>
+          )}
 
           {pricingMethod === "food_cost" ? (
             // Food Cost %: el precio sale directo del costo unitario y el % objetivo — no

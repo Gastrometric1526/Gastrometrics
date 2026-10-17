@@ -20,6 +20,7 @@ import { FounderGrantTrigger } from "@/components/founder-grant-trigger"
 import { ModuleActivityTracker } from "@/components/module-activity-tracker"
 import { PwaBackGuard } from "@/components/pwa-back-guard"
 import { EmailClickTracker } from "@/components/email-click-tracker"
+import { SubRecipePricePrompt } from "@/components/subrecipe-price-prompt"
 
 // Rediseño visual (ver docs/79): DM Sans en vez de Inter — geométrica y cercana, sin
 // perder cobertura de es/en/da/fr/pt (latín + latín extendido). zh sigue resolviendo
@@ -117,6 +118,7 @@ export default function RootLayout({
                   <PresenceTracker />
                   {/* 100 cocinas fundadoras automático (docs/158) */}
                   <FounderGrantTrigger />
+                  <SubRecipePricePrompt />
                   <Suspense fallback={null}>
                     <ModuleActivityTracker />
                   </Suspense>

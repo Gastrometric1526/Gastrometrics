@@ -21,6 +21,65 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-17",
+    content: {
+      es: {
+        title: "Sub-recetas: costos al día en toda la cadena",
+        items: [
+          "Si sube un ingrediente, ahora también se recalculan los platos que lo usan a través de una sub-receta (por ejemplo, los que llevan la salsa y no el tomate suelto), en cualquier nivel. Sus precios siguen la regla de siempre: solo suben.",
+          "Si una sub-receta tiene un precio de venta que escribiste a mano y su costo sube, la app te pregunta si también quieres subir ese precio: todas, una por una o ninguna, y puedes recordar tu elección.",
+          "En la Ficha Técnica de cada sub-receta eliges qué hacer con su precio cuando sube el costo: preguntarme, actualizar siempre o no actualizar nunca. Ahí también desmarcas una elección que recordaste.",
+          "Guardar una sub-receta recalcula al instante las recetas que la usan.",
+        ],
+      },
+      en: {
+        title: "Sub-recipes: costs up to date across the whole chain",
+        items: [
+          "When an ingredient goes up, the dishes that use it through a sub-recipe (for example, the ones with the sauce instead of loose tomato) are now recalculated too, at any level. Their prices follow the usual rule: they only go up.",
+          "If a sub-recipe has a sale price you wrote by hand and its cost goes up, the app asks whether you also want to raise that price: all, one by one or none, and you can remember your choice.",
+          "In each sub-recipe's Technical Sheet you choose what happens to its price when the cost goes up: ask me, always update or never update. That's also where you uncheck a remembered choice.",
+          "Saving a sub-recipe instantly recalculates the recipes that use it.",
+        ],
+      },
+      da: {
+        title: "Underopskrifter: opdaterede omkostninger i hele kæden",
+        items: [
+          "Når en ingrediens bliver dyrere, genberegnes nu også de retter, der bruger den via en underopskrift (fx dem med saucen i stedet for løse tomater), på alle niveauer. Deres priser følger den sædvanlige regel: de stiger kun.",
+          "Hvis en underopskrift har en salgspris, du har skrevet i hånden, og dens omkostning stiger, spørger appen, om du også vil hæve prisen: alle, én ad gangen eller ingen, og du kan huske dit valg.",
+          "I hver underopskrifts tekniske ark vælger du, hvad der sker med prisen, når omkostningen stiger: spørg mig, opdater altid eller opdater aldrig. Her fjerner du også et husket valg.",
+          "Når du gemmer en underopskrift, genberegnes de opskrifter, der bruger den, med det samme.",
+        ],
+      },
+      fr: {
+        title: "Sous-recettes : des coûts à jour dans toute la chaîne",
+        items: [
+          "Quand un ingrédient augmente, les plats qui l'utilisent via une sous-recette (par exemple ceux avec la sauce plutôt que la tomate seule) sont maintenant recalculés aussi, à tous les niveaux. Leurs prix suivent la règle habituelle : ils ne font que monter.",
+          "Si une sous-recette a un prix de vente saisi à la main et que son coût augmente, l'application vous demande si vous voulez aussi monter ce prix : toutes, une par une ou aucune, et vous pouvez mémoriser votre choix.",
+          "Dans la fiche technique de chaque sous-recette, vous choisissez ce qui arrive à son prix quand le coût augmente : me demander, toujours mettre à jour ou ne jamais mettre à jour. C'est aussi là que vous décochez un choix mémorisé.",
+          "Enregistrer une sous-recette recalcule immédiatement les recettes qui l'utilisent.",
+        ],
+      },
+      pt: {
+        title: "Sub-receitas: custos em dia em toda a cadeia",
+        items: [
+          "Quando um ingrediente sobe, agora também são recalculados os pratos que o usam através de uma sub-receita (por exemplo, os que levam o molho e não o tomate solto), em qualquer nível. Os preços seguem a regra de sempre: só sobem.",
+          "Se uma sub-receita tem um preço de venda escrito à mão e o custo dela sobe, o app pergunta se você também quer subir esse preço: todas, uma por uma ou nenhuma, e você pode lembrar a escolha.",
+          "Na Ficha Técnica de cada sub-receita você escolhe o que acontece com o preço quando o custo sobe: perguntar, atualizar sempre ou nunca atualizar. É ali também que você desmarca uma escolha lembrada.",
+          "Salvar uma sub-receita recalcula na hora as receitas que a usam.",
+        ],
+      },
+      zh: {
+        title: "子配方：整条链上的成本保持最新",
+        items: [
+          "原料涨价时，通过子配方使用它的菜品（例如用酱汁而不是直接用番茄的菜）现在也会在任何层级重新计算。它们的价格遵循一贯规则：只升不降。",
+          "如果某个子配方有您手动填写的售价且成本上涨，应用会询问是否也提高该售价：全部、逐个或都不，并且可以记住您的选择。",
+          "在每个子配方的技术卡中，您可以选择成本上涨时售价如何处理：每次询问、始终更新或从不更新。也可以在那里取消已记住的选择。",
+          "保存子配方时，会立即重新计算使用它的配方。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-10-11",
     content: {
       es: {

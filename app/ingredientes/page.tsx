@@ -78,7 +78,7 @@ import { OCR_LANG } from "@/lib/recipe-import/ocr"
 import { IngredientsTable } from "@/components/ingredients/ingredients-table"
 import { IngredientesTour } from "@/components/page-tours"
 import { convertAllIngredientsToSystem } from "@/lib/utils/calculations"
-import { updateIngredientPriceAndRecalculate } from "@/lib/recalculate"
+import { updateIngredientPriceAndRecalculate, requestSubRecipePricePrompt, type RecalculationResult } from "@/lib/recalculate"
 import { ActivityTracker } from "@/lib/activity-tracker"
 import { trackEvent } from "@/lib/analytics/track-event"
 import { logActivity, logPriceRuleChanges } from "@/lib/services/activity-log"
@@ -646,9 +646,11 @@ export default function IngredientesPage() {
       // que recalcula en cascada las recetas que usan ese ingrediente.
       let updatedPrices = 0
       const priceRule = { raised: 0, kept: 0 }
+      const recalcResults: RecalculationResult[] = []
       for (const update of priceUpdates) {
         try {
           const recalc = await updateIngredientPriceAndRecalculate(businessId || "main", update.id, update.price)
+          recalcResults.push(recalc)
           const counts = logPriceRuleChanges(recalc.priceChanges, user, businessId || null)
           priceRule.raised += counts.raised
           priceRule.kept += counts.kept
@@ -666,6 +668,8 @@ export default function IngredientesPage() {
           t("price_rule_toast_desc").replace("{raised}", String(priceRule.raised)).replace("{kept}", String(priceRule.kept)),
         )
       }
+      // Sub-recetas con precio de venta propio cuyo costo subió (docs/164): se pregunta.
+      requestSubRecipePricePrompt(businessId || "main", recalcResults)
 
       // Trigger update event for other components
       window.dispatchEvent(
@@ -850,6 +854,7 @@ export default function IngredientesPage() {
                   t("price_rule_toast_desc").replace("{raised}", String(priceRule.raised)).replace("{kept}", String(priceRule.kept)),
                 )
               }
+              requestSubRecipePricePrompt(businessId || "main", [result], ingredientData.name)
             } catch (error) {
               console.error("Error al recalcular recetas afectadas:", error)
               showError(t("ingredientes_toast_recalc_error_title"), t("ingredientes_toast_recalc_error_desc"))
