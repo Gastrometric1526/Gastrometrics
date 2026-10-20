@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AccountInsightsPanel } from "@/components/admin/account-insights"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -555,6 +556,8 @@ export function AccountsPanel() {
             </div>
           ) : (
             <>
+              {/* Radiografía completa de la cuenta (docs/166). */}
+              <AccountInsightsPanel userId={selected.userId} />
               {detail && (
                 <div className="rounded-lg border border-border p-4 space-y-3">
                   <div className="flex flex-wrap items-center gap-2">

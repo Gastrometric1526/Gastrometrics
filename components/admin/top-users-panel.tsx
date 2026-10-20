@@ -31,7 +31,7 @@ interface TopUsersData {
 }
 
 // Nombre visible de cada módulo de activity_log — los mismos textos del menú lateral.
-const MODULE_LABEL_KEY: Record<string, TranslationKey> = {
+export const MODULE_LABEL_KEY: Record<string, TranslationKey> = {
   dashboard: "nav_dashboard",
   ficha_tecnica: "nav_ficha_tecnica",
   recetas: "nav_mis_recetas",

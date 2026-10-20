@@ -26,6 +26,12 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getPlanBySlug } from "@/lib/plans"
 import { sendPlanChangedEmail, sendSubscriptionCancelledEmail, sendOwnerBillingNotification } from "@/lib/services/notify-billing"
 import { recordPlanChangeNotice } from "@/lib/services/plan-change-notice"
+import {
+  getScheduledRenewal,
+  saveScheduledRenewal,
+  cancelScheduledRenewal,
+  verifyScheduledRenewal,
+} from "@/lib/services/scheduled-renewal"
 
 const FREE_PLAN_SLUG = "foodie"
 
@@ -108,15 +114,37 @@ export async function POST(request: Request) {
     case "checkout.session.completed": {
       const session = event.data.object as {
         client_reference_id?: string | null
-        metadata?: { planSlug?: string; accountId?: string }
+        metadata?: { planSlug?: string; accountId?: string; scheduledRenewal?: string; startsAt?: string }
         customer?: string | { id: string }
         subscription?: string | { id: string }
+        payment_status?: string
       }
       const accountId = session.metadata?.accountId || session.client_reference_id
       const planSlug = session.metadata?.planSlug
       const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id
       const subscriptionId =
         typeof session.subscription === "string" ? session.subscription : session.subscription?.id
+
+      // Pago programado al vencer el plan (docs/165): no se cobró nada todavía, el plan
+      // no cambia; se aplica cuando Stripe confirme el primer cobro.
+      if (session.metadata?.scheduledRenewal === "1") {
+        if (accountId && planSlug && subscriptionId) {
+          await saveScheduledRenewal({
+            accountId,
+            planSlug,
+            subscriptionId,
+            customerId: customerId ?? null,
+            startsAt: session.metadata.startsAt || new Date().toISOString(),
+          })
+        }
+        break
+      }
+      // docs/165: solo con el pago confirmado por Stripe.
+      if (session.payment_status !== "paid") {
+        console.error("[api/webhooks/stripe] checkout.session.completed sin pago confirmado:", session.payment_status)
+        break
+      }
+      if (accountId) await cancelScheduledRenewal(accountId)
 
       if (accountId && planSlug && getPlanBySlug(planSlug).slug === planSlug) {
         await setPlanForAccount(accountId, planSlug, {
@@ -201,6 +229,13 @@ export async function POST(request: Request) {
       const planSlug = subscription.metadata?.planSlug
       const accountId = subscription.metadata?.accountId || (await findAccountIdByStripeCustomer(customerId))
 
+      // Suscripción de un pago programado que todavía no se cobró (docs/165): no se toca
+      // el plan con su estado (en prueba o activo sin pagar); se revisa la factura en Stripe.
+      if (accountId && (await getScheduledRenewal(accountId))?.subscriptionId === subscription.id) {
+        await verifyScheduledRenewal(accountId)
+        break
+      }
+
       if (accountId && planSlug && getPlanBySlug(planSlug).slug === planSlug) {
         const activeStatuses = ["active", "trialing", "past_due"]
         const resolvedPlanSlug = activeStatuses.includes(subscription.status) ? planSlug : FREE_PLAN_SLUG
@@ -263,8 +298,18 @@ export async function POST(request: Request) {
     }
     case "customer.subscription.deleted": {
       const subscription = event.data.object as {
+        id: string
         customer: string | { id: string }
         current_period_end?: number
+        metadata?: { accountId?: string; scheduledRenewal?: string }
+      }
+      // Pago programado cancelado antes de cobrarse (docs/165): solo se borra la marca.
+      if (subscription.metadata?.scheduledRenewal === "1" && subscription.metadata.accountId) {
+        const scheduled = await getScheduledRenewal(subscription.metadata.accountId)
+        if (scheduled?.subscriptionId === subscription.id) {
+          await verifyScheduledRenewal(subscription.metadata.accountId)
+          break
+        }
       }
       const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id
       const accountId = await findAccountIdByStripeCustomer(customerId)
@@ -291,6 +336,24 @@ export async function POST(request: Request) {
         } catch (emailError) {
           console.error("[api/webhooks/stripe] Error mandando el correo de cancelación:", emailError)
         }
+      }
+      break
+    }
+    // Cobro confirmado de una factura (docs/165): activa al instante un pago programado.
+    // Si este evento no está suscrito en Stripe, lo cubren /api/plan/renewal y el cron.
+    case "invoice.paid": {
+      const invoice = event.data.object as {
+        subscription?: string | { id: string } | null
+        parent?: {
+          subscription_details?: { subscription?: string | { id: string } | null; metadata?: Record<string, string> | null } | null
+        } | null
+      }
+      const details = invoice.parent?.subscription_details
+      const accountId = details?.metadata?.accountId
+      const rawSub = details?.subscription ?? invoice.subscription
+      const subscriptionId = typeof rawSub === "string" ? rawSub : rawSub?.id
+      if (accountId && subscriptionId && (await getScheduledRenewal(accountId))?.subscriptionId === subscriptionId) {
+        await verifyScheduledRenewal(accountId)
       }
       break
     }

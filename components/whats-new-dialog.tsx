@@ -7,7 +7,10 @@ import { Sparkles } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { PLAN_TOUR_PENDING_KEY } from "@/lib/plan-tour"
-import { LATEST_CHANGELOG_VERSION, getChangelogContent } from "@/lib/changelog"
+import { LATEST_CHANGELOG_VERSION, getChangelogContent, getLatestTutorialHref } from "@/lib/changelog"
+import { parseTourHref, TOUR_KEY_PREFIX } from "@/lib/tour-links"
+import { usePathname, useRouter } from "next/navigation"
+import { GraduationCap } from "lucide-react"
 
 const SEEN_KEY_PREFIX = "changelog_seen_"
 
@@ -21,6 +24,9 @@ export function WhatsNewDialog() {
   const { user } = useAuth()
   const { language, t } = useLanguage()
   const [open, setOpen] = useState(false)
+  const router = useRouter()
+  const pathname = usePathname()
+  const tutorialHref = getLatestTutorialHref()
 
   useEffect(() => {
     if (!user) return
@@ -48,6 +54,18 @@ export function WhatsNewDialog() {
     setOpen(false)
   }
 
+  // «Ver el tutorial» (docs/167): lleva a la sección y abre su tutorial desde el paso 1.
+  const openTutorial = () => {
+    if (!tutorialHref) return
+    handleClose()
+    const { path, slug } = parseTourHref(tutorialHref)
+    if (slug && path === pathname) {
+      window.dispatchEvent(new CustomEvent("gm:tour:restart", { detail: { storageKey: `${TOUR_KEY_PREFIX}${slug}` } }))
+      return
+    }
+    router.push(tutorialHref)
+  }
+
   const content = getChangelogContent(language)
 
   return (
@@ -67,10 +85,22 @@ export function WhatsNewDialog() {
             </li>
           ))}
         </ul>
-        <DialogFooter>
-          <Button onClick={handleClose} className="w-full sm:w-auto">
-            {t("whats_new_close")}
-          </Button>
+        <DialogFooter className="gap-2 sm:gap-2">
+          {tutorialHref ? (
+            <>
+              <Button variant="outline" onClick={handleClose} className="w-full sm:w-auto">
+                {t("whats_new_close")}
+              </Button>
+              <Button onClick={openTutorial} className="w-full sm:w-auto gap-2" data-tour="whats-new-tutorial">
+                <GraduationCap className="h-4 w-4" />
+                {t("whats_new_tutorial")}
+              </Button>
+            </>
+          ) : (
+            <Button onClick={handleClose} className="w-full sm:w-auto">
+              {t("whats_new_close")}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -48,6 +48,7 @@ import { PlanChangeNoticeDialog } from "@/components/plan-change-notice-dialog"
 import { PlanTour } from "@/components/plan-tour"
 import { QuickRatingDialog } from "@/components/quick-rating-dialog"
 import { GettingStartedPath } from "@/components/getting-started-path"
+import { refreshPlanStatus } from "@/lib/plan-status"
 import { useFeatureAccess, useActiveMembership, setCurrentPlanSlug, getMinimumPlanForFeature } from "@/lib/plan-access"
 import type { FeatureKey } from "@/lib/plans"
 import { Lock } from "lucide-react"
@@ -284,6 +285,13 @@ export default function DashboardPage() {
               title: t("dashboard_checkout_success_title"),
               description: t("dashboard_checkout_success_desc"),
             })
+          } else if (data.scheduled) {
+            // Pago programado al vencer el plan (docs/165): el plan todavía no cambia.
+            toast({
+              title: t("plan_expiry_scheduled_title"),
+              description: t("dashboard_checkout_scheduled_desc"),
+            })
+            if (user?.id) refreshPlanStatus(user.id)
           }
         })
         .catch(() => {})

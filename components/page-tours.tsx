@@ -435,6 +435,13 @@ export function MiPlanTour({ hasManageButton }: { hasManageButton: boolean }) {
       description: t("tour_miplan_grid_desc"),
       selector: '[data-tour="miplan-grid"]',
     },
+    // Vencimiento, cuenta regresiva y pago programado (docs/165).
+    {
+      id: "expiry",
+      title: t("tour_miplan_expiry_title"),
+      description: t("tour_miplan_expiry_desc"),
+      selector: '[data-tour="sidebar-plan"]',
+    },
   ]
 
   return <PageTour steps={steps} storageKey="tour_completed_mi-plan" />

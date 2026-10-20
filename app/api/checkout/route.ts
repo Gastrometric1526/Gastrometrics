@@ -19,6 +19,7 @@ import { getPlanBySlug } from "@/lib/plans"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { MIN_SCHEDULE_MS } from "@/lib/plan-expiry"
 
 // Cuántas veces puede una cuenta intentar iniciar un pago en poco tiempo — pedido
 // explícito del dueño del proyecto (ver docs/61). No hay forma legítima de necesitar
@@ -66,6 +67,9 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => null)
   const planSlug = body?.planSlug as string | undefined
+  // Pago al vencer un plan asignado (docs/165): con tiempo suficiente, se programa el
+  // primer cobro para la fecha de vencimiento; si no, es un pago normal de inmediato.
+  const isRenewal = body?.renewal === true
 
   if (!planSlug) {
     return NextResponse.json({ error: "Falta planSlug en el cuerpo de la petición." }, { status: 400 })
@@ -96,7 +100,7 @@ export async function POST(request: Request) {
     // desde el Portal de Cliente.
     const { data: accountPlan } = await getSupabaseAdminClient()
       .from("account_plans")
-      .select("stripe_subscription_id")
+      .select("stripe_subscription_id, plan_expires_at")
       .eq("account_id", user.id)
       .maybeSingle()
 
@@ -107,7 +111,7 @@ export async function POST(request: Request) {
         const existingItemId = existingSubscription.items.data[0]?.id
         if (activeStatuses.includes(existingSubscription.status) && existingItemId) {
           const productId = await getOrCreateSubscriptionProductId()
-          await stripe.subscriptions.update(accountPlan.stripe_subscription_id, {
+          const updated = await stripe.subscriptions.update(accountPlan.stripe_subscription_id, {
             items: [
               {
                 id: existingItemId,
@@ -120,10 +124,29 @@ export async function POST(request: Request) {
               },
             ],
             metadata: { planSlug: plan.slug, accountId: user.id },
+            // docs/165: el cambio solo se aplica si Stripe cobra la diferencia. Con
+            // pending_if_incomplete, si el cobro falla la suscripción queda como estaba
+            // (pending_update) y la app no cambia de plan.
+            proration_behavior: "always_invoice",
+            payment_behavior: "pending_if_incomplete",
           })
+          if (updated.pending_update) {
+            return NextResponse.json(
+              { error: "Stripe no pudo cobrar el cambio de plan. Tu plan sigue igual. Revisa tu tarjeta en Mi Plan." },
+              { status: 402 },
+            )
+          }
           return NextResponse.json({ updatedInPlace: true })
         }
-      } catch (updateError) {
+      } catch (updateError: any) {
+        // Tarjeta rechazada al cobrar la diferencia: el plan sigue igual (docs/165). No se
+        // sigue a un checkout nuevo, que crearía una segunda suscripción.
+        if (updateError?.type === "StripeCardError") {
+          return NextResponse.json(
+            { error: "Stripe no pudo cobrar el cambio de plan. Tu plan sigue igual. Revisa tu tarjeta en Mi Plan." },
+            { status: 402 },
+          )
+        }
         // No aborta el flujo — si la suscripción "activa" en account_plans en
         // realidad ya no existe en Stripe (canceló, o algo quedó desincronizado),
         // sigue abajo con un checkout nuevo en vez de dejar a la persona sin poder
@@ -133,6 +156,20 @@ export async function POST(request: Request) {
           updateError,
         )
       }
+    }
+
+    // trial_end = vencimiento del plan asignado: Stripe guarda la tarjeta ahora y cobra
+    // ese día. La cuenta NO cambia de plan hasta que ese cobro se confirme (ver
+    // lib/services/scheduled-renewal.ts). Stripe exige al menos 48 h (MIN_SCHEDULE_MS).
+    const expiresAtMs = accountPlan?.plan_expires_at ? new Date(accountPlan.plan_expires_at).getTime() : 0
+    const scheduleAt =
+      isRenewal && !accountPlan?.stripe_subscription_id && expiresAtMs - Date.now() > MIN_SCHEDULE_MS
+        ? new Date(expiresAtMs).toISOString()
+        : null
+    const metadata: Record<string, string> = { planSlug: plan.slug, accountId: user.id }
+    if (scheduleAt) {
+      metadata.scheduledRenewal = "1"
+      metadata.startsAt = scheduleAt
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -153,13 +190,16 @@ export async function POST(request: Request) {
       ],
       success_url: `${siteUrl}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/signup/payment?plan=${plan.slug}&checkout=cancelled`,
-      metadata: { planSlug: plan.slug, accountId: user.id },
+      metadata,
       // La sesión de checkout es efímera; la metadata NO se copia sola a la
       // suscripción que crea. subscription_data.metadata sí queda en el objeto
       // Subscription, así que eventos futuros (renovación, cambio de plan desde el
       // Portal de Cliente) también pueden leer qué plan es sin depender de la sesión
       // original — ver customer.subscription.updated en el webhook.
-      subscription_data: { metadata: { planSlug: plan.slug, accountId: user.id } },
+      subscription_data: {
+        metadata,
+        ...(scheduleAt ? { trial_end: Math.floor(new Date(scheduleAt).getTime() / 1000) } : {}),
+      },
     })
 
     // Evento de embudo (ver supabase/migrations/0029_product_events.sql) — server-side
@@ -172,7 +212,7 @@ export async function POST(request: Request) {
         if (eventError) console.error("[api/checkout] Error registrando evento checkout_started:", eventError)
       })
 
-    return NextResponse.json({ url: session.url })
+    return NextResponse.json({ url: session.url, scheduled: Boolean(scheduleAt) })
   } catch (error) {
     console.error("[api/checkout] Error creando sesión de Stripe:", error)
     return NextResponse.json({ error: "No se pudo iniciar el pago. Intenta de nuevo." }, { status: 500 })

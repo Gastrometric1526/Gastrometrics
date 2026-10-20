@@ -21,7 +21,13 @@ export type FounderGrantResult = FounderDecision & { ordinal?: number; planSlug?
 
 async function accountOrdinal(createdAt: string): Promise<number | null> {
   const admin = getSupabaseAdminClient()
-  const { count, error } = await admin.from("profiles").select("id", { count: "exact", head: true }).lte("created_at", createdAt)
+  // Cuentas eliminadas no cuentan (docs/165): las borradas desde /admin ya no tienen fila;
+  // las que pidieron su eliminación (30 días de gracia) se excluyen aquí.
+  const { count, error } = await admin
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .lte("created_at", createdAt)
+    .is("deletion_requested_at", null)
   if (error) {
     console.error("[founder-grant] No se pudo contar las cuentas:", error)
     return null

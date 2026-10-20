@@ -8,20 +8,92 @@
  * basta como versión) y el mismo contenido traducido a los 6 idiomas. El pop-up se
  * vuelve a mostrar solo por el hecho de que `LATEST_CHANGELOG_VERSION` cambió — no
  * hace falta tocar ningún otro archivo para que se dispare de nuevo.
+ *
+ * Ley (docs/167): cada entrada nueva lleva `tutorialHref` al tutorial de su sección,
+ * actualizado con lo nuevo.
  */
 
 import type { LanguageCode } from "@/lib/i18n/translations"
+import { tourHref } from "@/lib/tour-links"
 
 export interface ChangelogEntry {
   /** Fecha ISO (YYYY-MM-DD) — también funciona como identificador único de versión. */
   version: string
+  /**
+   * LEY DEL PROYECTO (docs/167): toda novedad desde 2026-10-17 lleva el enlace al
+   * tutorial de la sección que cambió, creado con `tourHref("<slug>")` de
+   * lib/tour-links.ts, y ese tutorial se actualiza con lo nuevo. La ventana de Novedades
+   * y el correo muestran el botón «Ver el tutorial». changelog.test.ts lo exige.
+   */
+  tutorialHref?: string
   content: Record<LanguageCode, { title: string; items: string[] }>
 }
 
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-20",
+    tutorialHref: tourHref("mi-plan"),
+    content: {
+      es: {
+        title: "Tu plan, sin sorpresas",
+        items: [
+          "Si tu plan tiene fecha de vencimiento, el menú lateral te muestra cuántos días quedan, en gris, ámbar o rojo según se acerca la fecha.",
+          "Tres días antes y el mismo día te avisamos en la app, con lo que perderías y el plan con el que quieres seguir.",
+          "Puedes programar el pago para el día que vence tu plan. Tu plan solo cambia cuando Stripe confirma el cobro.",
+          "Al crear tu cuenta ves todo lo que incluye cada plan antes de elegir; Foodie viene elegido por defecto.",
+        ],
+      },
+      en: {
+        title: "Your plan, no surprises",
+        items: [
+          "If your plan has an end date, the sidebar shows how many days are left, in gray, amber or red as the date gets closer.",
+          "Three days before and on the day itself we remind you in the app, with what you'd lose and the plan you want to keep.",
+          "You can schedule the payment for the day your plan ends. Your plan only changes once Stripe confirms the charge.",
+          "When you create your account you see everything each plan includes before choosing; Foodie is selected by default.",
+        ],
+      },
+      da: {
+        title: "Din plan uden overraskelser",
+        items: [
+          "Hvis din plan har en udløbsdato, viser menuen, hvor mange dage der er tilbage, i gråt, ravgult eller rødt, efterhånden som datoen nærmer sig.",
+          "Tre dage før og på selve dagen minder vi dig om det i appen, med hvad du ville miste, og den plan du vil fortsætte med.",
+          "Du kan planlægge betalingen til den dag, din plan udløber. Din plan skifter kun, når Stripe bekræfter betalingen.",
+          "Når du opretter din konto, ser du alt, hvad hver plan indeholder, før du vælger; Foodie er valgt som standard.",
+        ],
+      },
+      fr: {
+        title: "Votre formule, sans surprise",
+        items: [
+          "Si votre formule a une date d'expiration, le menu latéral affiche les jours restants, en gris, ambre ou rouge à mesure que la date approche.",
+          "Trois jours avant et le jour même, nous vous le rappelons dans l'application, avec ce que vous perdriez et la formule à garder.",
+          "Vous pouvez programmer le paiement pour le jour où votre formule expire. Votre formule ne change qu'une fois le prélèvement confirmé par Stripe.",
+          "En créant votre compte, vous voyez tout ce que comprend chaque formule avant de choisir ; Foodie est sélectionnée par défaut.",
+        ],
+      },
+      pt: {
+        title: "Seu plano, sem surpresas",
+        items: [
+          "Se o seu plano tem data de vencimento, o menu lateral mostra quantos dias faltam, em cinza, âmbar ou vermelho conforme a data se aproxima.",
+          "Três dias antes e no próprio dia avisamos você no app, com o que você perderia e o plano com o qual quer continuar.",
+          "Você pode programar o pagamento para o dia em que seu plano vence. Seu plano só muda quando a Stripe confirma a cobrança.",
+          "Ao criar sua conta, você vê tudo o que cada plano inclui antes de escolher; o Foodie vem escolhido por padrão.",
+        ],
+      },
+      zh: {
+        title: "你的套餐，不再有意外",
+        items: [
+          "如果你的套餐有到期日，侧边菜单会显示剩余天数，随着日期临近显示为灰色、琥珀色或红色。",
+          "到期前三天和当天，我们会在应用中提醒你，并列出你将失去的功能和你想继续使用的套餐。",
+          "你可以把付款预约在套餐到期当天。只有在 Stripe 确认扣款后，套餐才会更改。",
+          "创建账户时，你可以先看到每个套餐包含的全部内容再选择；默认选中 Foodie。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-10-17",
+    tutorialHref: tourHref("ficha-tecnica"),
     content: {
       es: {
         title: "Sub-recetas: costos al día en toda la cadena",
@@ -1115,6 +1187,11 @@ export const LATEST_CHANGELOG_VERSION = CHANGELOG[0].version
 export function getChangelogContent(language: LanguageCode) {
   const entry = CHANGELOG[0]
   return entry.content[language] || entry.content.es
+}
+
+/** Enlace al tutorial de la última novedad (docs/167). */
+export function getLatestTutorialHref(): string | null {
+  return CHANGELOG[0].tutorialHref ?? null
 }
 
 /**

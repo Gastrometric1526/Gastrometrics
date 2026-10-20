@@ -14,8 +14,9 @@ import { withEmailTracking } from "@/lib/email-tracking"
 
 const FONT = "font-family:'DM Sans','Helvetica Neue',Helvetica,Arial,sans-serif"
 
-export function buildChangelogItemsHtml(entries: ChangelogEntry[], language: EmailLang): string {
+export function buildChangelogItemsHtml(entries: ChangelogEntry[], language: EmailLang, siteUrl?: string): string {
   const withTitles = entries.length > 1
+  const labels = getEmailLabels(language)
   return entries
     .map((entry) => {
       const content = entry.content[language] || entry.content.es
@@ -28,7 +29,12 @@ export function buildChangelogItemsHtml(entries: ChangelogEntry[], language: Ema
             `<tr><td style="${FONT};font-size:14.5px;line-height:1.55;color:#3A332E;padding:0 0 12px 22px">&bull;&nbsp; ${escapeHtml(item)}</td></tr>`,
         )
         .join("")
-      return title + items
+      // Botón al tutorial de la sección (docs/167).
+      const tutorial =
+        siteUrl && entry.tutorialHref
+          ? `<tr><td style="${FONT};font-size:14px;line-height:1.5;padding:0 0 16px 22px"><a href="${escapeHtml(withEmailTracking(`${siteUrl}${entry.tutorialHref}`, "product_update_tutorial"))}" style="color:#F05324;font-weight:700;text-decoration:none">${escapeHtml(labels.e08_tutorial)} &rarr;</a></td></tr>`
+          : ""
+      return title + items + tutorial
     })
     .join("")
 }
@@ -44,7 +50,7 @@ export function renderProductUpdateEmail(input: {
     title: labels.e08_title,
     preheader: labels.e08_preheader,
     heading: labels.e08_heading,
-    itemsHtml: buildChangelogItemsHtml(input.entries, input.language),
+    itemsHtml: buildChangelogItemsHtml(input.entries, input.language, input.siteUrl),
     cta: labels.e08_cta,
     ctaUrl: withEmailTracking(`${input.siteUrl}/dashboard`, "product_update"),
     footnote: labels.e08_footnote,

@@ -19,6 +19,7 @@ import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getPlanBySlug } from "@/lib/plans"
+import { saveScheduledRenewal, cancelScheduledRenewal } from "@/lib/services/scheduled-renewal"
 
 export async function GET(request: Request) {
   if (!isStripeConfigured()) {
@@ -57,10 +58,35 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Esta sesión de pago pertenece a otra cuenta." }, { status: 403 })
     }
 
+    const stripeSubscriptionId =
+      typeof session.subscription === "string" ? session.subscription : session.subscription?.id ?? null
+
+    // Pago programado al vencer el plan (docs/165): todavía no se cobró nada, así que el
+    // plan NO cambia; solo se guarda para aplicarlo cuando Stripe confirme el cobro.
+    if (session.metadata?.scheduledRenewal === "1") {
+      if (session.status !== "complete" || !stripeSubscriptionId || !planSlug) {
+        return NextResponse.json({ customerId, planSlug: null, pending: true })
+      }
+      await saveScheduledRenewal({
+        accountId: user.id,
+        planSlug,
+        subscriptionId: stripeSubscriptionId,
+        customerId,
+        startsAt: session.metadata.startsAt || new Date().toISOString(),
+      })
+      return NextResponse.json({ customerId, planSlug: null, scheduled: true, scheduledPlanSlug: planSlug })
+    }
+
+    // docs/165: el plan solo se aplica si Stripe confirma que el pago se procesó. Antes se
+    // aplicaba con solo tener la sesión, aunque el pago no se hubiera completado.
+    if (session.status !== "complete" || session.payment_status !== "paid") {
+      return NextResponse.json({ customerId, planSlug: null, pending: true })
+    }
+
     if (planSlug && getPlanBySlug(planSlug).slug === planSlug) {
       const admin = getSupabaseAdminClient()
-      const stripeSubscriptionId =
-        typeof session.subscription === "string" ? session.subscription : session.subscription?.id ?? null
+      // Pagó un plan de inmediato: un pago programado anterior ya no hace falta.
+      await cancelScheduledRenewal(user.id)
       const { error: planError } = await admin.from("account_plans").upsert({
         account_id: user.id,
         plan_slug: planSlug,

@@ -26,6 +26,7 @@ import {
   Briefcase,
   Users,
   Award,
+  Check,
   CheckCircle2,
   Eye,
   EyeOff,
@@ -572,10 +573,30 @@ function SignupPageInner() {
             )}
 
             {/* Step 4: Plan selection */}
+            {/* Pedido del dueño (docs/165): que al crear la cuenta se vean TODOS los planes
+                con lo que trae cada uno, Foodie marcado por defecto, y la persona elija. */}
             {currentStep === 4 && (
               <div className="space-y-3 animate-in fade-in-50 duration-300">
                 {allSignupPlans.map((plan) => {
                   const isSelected = selectedPlanSlug === plan.slug
+                  const details = (
+                    <div className="mt-3 space-y-2">
+                      <ul className="space-y-1.5 text-sm">
+                        {plan.features.map((feature, index) => (
+                          <li key={index} className="flex items-start gap-2">
+                            <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                            <span className="text-foreground">{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      {plan.locked.length > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          <span className="font-medium">{t("signup_plan_not_included")}:</span>{" "}
+                          {plan.locked.join(" · ")}
+                        </p>
+                      )}
+                    </div>
+                  )
                   // Chef Ejecutivo se ve, pero no se elige acá — mismo criterio que
                   // /planes, ver comentario junto a allSignupPlans más arriba.
                   if (plan.comingSoon) {
@@ -584,7 +605,7 @@ function SignupPageInner() {
                         key={plan.slug}
                         className="w-full text-left rounded-lg border-2 border-muted bg-background p-4 opacity-60"
                       >
-                        <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-start justify-between gap-3">
                           <div>
                             <span className="font-semibold text-foreground">{plan.name}</span>
                             <p className="text-sm text-muted-foreground">{plan.tagline}</p>
@@ -603,6 +624,7 @@ function SignupPageInner() {
                             </a>
                           </div>
                         </div>
+                        {details}
                       </div>
                     )
                   }
@@ -611,13 +633,14 @@ function SignupPageInner() {
                       key={plan.slug}
                       type="button"
                       onClick={() => setSelectedPlanSlug(plan.slug)}
+                      aria-pressed={isSelected}
                       className={`w-full text-left rounded-lg border-2 p-4 transition-all ${
                         isSelected
                           ? "border-primary bg-primary/5"
-                          : "border-muted bg-background hover:bg-accent hover:text-accent-foreground"
+                          : "border-muted bg-background hover:bg-accent/40"
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-start justify-between gap-3">
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-foreground">{plan.name}</span>
@@ -636,9 +659,21 @@ function SignupPageInner() {
                           )}
                         </div>
                       </div>
+                      {details}
                     </button>
                   )
                 })}
+                <p className="text-sm text-muted-foreground text-center pt-1">
+                  {t(selectedPlanSlug === "foodie" ? "signup_plan_free_note" : "signup_plan_paid_note")}{" "}
+                  <a
+                    href="/planes"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-primary hover:underline"
+                  >
+                    {t("signup_plan_compare_link")}
+                  </a>
+                </p>
               </div>
             )}
 

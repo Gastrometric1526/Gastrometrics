@@ -69,6 +69,7 @@ import { runReengagementReminders, fetchAllPages } from "@/lib/services/notify-r
 import { sendDailySignupDigest } from "@/lib/services/notify-signup"
 import { runEngagementEmails } from "@/lib/services/notify-engagement"
 import { runPendingFounderGrants } from "@/lib/services/founder-grant"
+import { runScheduledRenewalChecks } from "@/lib/services/scheduled-renewal"
 
 // Muchos correos en serie con pausa entre envíos (lib/services/send-email.ts): se pide
 // el máximo de Vercel Hobby para que la ejecución no se corte a la mitad.
@@ -199,6 +200,8 @@ export async function GET(request: Request) {
   // Respaldo del programa automático de 100 cocinas fundadoras (docs/158): cuentas que no abrieron la app después del minuto.
   const founderGrants = await step("cocinas fundadoras pendientes", () => runPendingFounderGrants())
   const planExpiry = await step("aviso de vencimiento de plan", () => runPlanExpiryReminders())
+  // Pagos programados al vencer (docs/165): se aplican si Stripe ya cobró, antes de bajar a Foodie.
+  const scheduledRenewals = await step("pagos programados", () => runScheduledRenewalChecks())
   // Planes asignados que ya vencieron: pasan a Foodie con correo y aviso (docs/139).
   const expiredDowngrades = await step("planes vencidos a Foodie", () => runExpiredPlanDowngrades())
 
@@ -240,7 +243,7 @@ export async function GET(request: Request) {
   const engagement = await step("correos de valor", () => runEngagementEmails())
   const reengagement = await step("recordatorios", () => runReengagementReminders())
 
-  const steps = { signupDigest, activation, founderGrants, planExpiry, expiredDowngrades, experienceSurvey, deletionPurge, engagement, reengagement }
+  const steps = { signupDigest, activation, founderGrants, planExpiry, scheduledRenewals, expiredDowngrades, experienceSurvey, deletionPurge, engagement, reengagement }
   const failed = Object.entries(steps)
     .filter(([, v]) => v && typeof v === "object" && "error" in v)
     .map(([k]) => k)

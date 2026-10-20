@@ -57,6 +57,7 @@ import {
 import type { FeatureKey } from "@/lib/plans"
 import { Lock } from "lucide-react"
 import { useModuleReveal } from "@/lib/module-reveal"
+import { PlanCountdownChip, PlanCountdownDot } from "@/components/plan-countdown-chip"
 
 function useNavigationItems() {
   const { t } = useLanguage()
@@ -379,6 +380,8 @@ function SidebarInner() {
         onClick={() => setIsMobileOpen(!isMobileOpen)}
       >
         {isMobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+        {/* Aviso de vencimiento del plan (docs/165): el menú del celular está cerrado casi siempre. */}
+        {!isMobileOpen && <PlanCountdownDot onlyAlerts className="-top-0.5 -right-0.5" />}
       </Button>
 
       {/* Mobile Overlay */}
@@ -671,21 +674,27 @@ function SidebarInner() {
               dashboard de /planes, la pública) desde dentro de la app. BUG CORREGIDO:
               antes esto mandaba a /planes, sacando por completo al usuario del shell
               de la app para cambiar de plan y volviendo recién después. */}
-          <Link href="/mi-plan">
+          <Link href="/mi-plan" data-tour="sidebar-plan">
             <Button
               variant="ghost"
               size="sm"
               className={cn(
-                "w-full justify-start gap-2 relative group",
+                "w-full justify-start gap-2 relative group h-auto min-h-8 py-1.5",
                 effectiveCollapsed && "justify-center px-2",
               )}
             >
               <Sparkles className="h-4 w-4 flex-shrink-0 text-text-4" />
               {!effectiveCollapsed && (
-                <span className="text-sm truncate">
-                  {t("admin_accounts_plan_label")}: <span className="font-medium">{currentPlanName}</span>
+                <span className="flex min-w-0 flex-col items-start gap-1">
+                  <span className="text-sm truncate max-w-full">
+                    {t("admin_accounts_plan_label")}: <span className="font-medium">{currentPlanName}</span>
+                  </span>
+                  {/* Cuenta regresiva del plan / pago programado (docs/165), debajo del nombre
+                      para que se lea completo. Abre la ventana de vencimiento. */}
+                  <PlanCountdownChip />
                 </span>
               )}
+              {effectiveCollapsed && <PlanCountdownDot className="top-1 right-2" />}
               {effectiveCollapsed && (
                 <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-foreground text-background text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                   {t("admin_accounts_plan_label")}: {currentPlanName}

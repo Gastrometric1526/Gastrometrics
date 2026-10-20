@@ -5,6 +5,7 @@ import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, ArrowLeft, X } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
+import { requestedTourMatches } from "@/lib/tour-links"
 
 export type TourStep = {
   id: string
@@ -141,6 +142,14 @@ export function PageTour({ steps, storageKey, startDelay = 350, finishLabel, onF
   const [overflowCorrection, setOverflowCorrection] = useState<TooltipBox | null>(null)
 
   useEffect(() => {
+    // Enlace directo al tutorial (docs/167): `?tour=<slug>` lo abre aunque ya se hubiera
+    // visto (botón «Ver el tutorial» de Novedades y del correo de novedades).
+    if (requestedTourMatches(window.location.search, storageKey)) {
+      localStorage.removeItem(storageKey)
+      const url = new URL(window.location.href)
+      url.searchParams.delete("tour")
+      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`)
+    }
     const seen = localStorage.getItem(storageKey)
     if (seen) return
     startTimerRef.current = setTimeout(() => {

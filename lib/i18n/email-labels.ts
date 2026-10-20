@@ -146,6 +146,7 @@ export type EmailLabelKeys =
   | "e08_preheader"
   | "e08_heading"
   | "e08_cta"
+  | "e08_tutorial"
   | "e08_footnote"
   | "e08_footer2"
   | "e09_subject"
@@ -284,6 +285,7 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e08_preheader: "Esto es lo que agregamos últimamente",
     e08_heading: "Esto es lo que agregamos últimamente",
     e08_cta: "Ver en Gastrometrics",
+    e08_tutorial: "Ver el tutorial",
     e08_footnote: "Si no quieres recibir este correo, desmarca la casilla en Configuración → Notificaciones dentro de la app.",
     e08_footer2: "Correo de novedades de tu cuenta Gastrometrics.",
     e09_subject: "Tu plan {plan} vence en 3 días",
@@ -439,6 +441,7 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e08_preheader: "Here's what we shipped recently",
     e08_heading: "Here's what we shipped recently",
     e08_cta: "Open Gastrometrics",
+    e08_tutorial: "See the tutorial",
     e08_footnote: "If you'd rather not get this email, uncheck the box in Settings → Notifications inside the app.",
     e08_footer2: "Product update email for your Gastrometrics account.",
     e09_subject: "Your {plan} plan expires in 3 days",
@@ -594,6 +597,7 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e08_preheader: "Det her har vi tilføjet på det seneste",
     e08_heading: "Det her har vi tilføjet på det seneste",
     e08_cta: "Åbn Gastrometrics",
+    e08_tutorial: "Se vejledningen",
     e08_footnote: "Hvis du hellere vil undvære denne e-mail, så fjern fluebenet under Indstillinger → Notifikationer i appen.",
     e08_footer2: "Produktnyheds-mail til din Gastrometrics-konto.",
     e09_subject: "Din {plan}-plan udløber om 3 dage",
@@ -749,6 +753,7 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e08_preheader: "Voici ce qu'on a ajouté récemment",
     e08_heading: "Voici ce qu'on a ajouté récemment",
     e08_cta: "Ouvrir Gastrometrics",
+    e08_tutorial: "Voir le tutoriel",
     e08_footnote: "Si tu préfères ne plus recevoir cet e-mail, décoche la case dans Paramètres → Notifications dans l'application.",
     e08_footer2: "E-mail de nouveautés pour ton compte Gastrometrics.",
     e09_subject: "Ton plan {plan} expire dans 3 jours",
@@ -904,6 +909,7 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e08_preheader: "Veja o que adicionamos recentemente",
     e08_heading: "Veja o que adicionamos recentemente",
     e08_cta: "Abrir o Gastrometrics",
+    e08_tutorial: "Ver o tutorial",
     e08_footnote: "Se você não quiser mais receber este e-mail, desmarque a caixa em Configurações → Notificações dentro do app.",
     e08_footer2: "E-mail de novidades da sua conta Gastrometrics.",
     e09_subject: "Seu plano {plan} vence em 3 dias",
@@ -1055,6 +1061,7 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e08_preheader: "以下是我们最近新增的内容",
     e08_heading: "以下是我们最近新增的内容",
     e08_cta: "打开 Gastrometrics",
+    e08_tutorial: "查看教程",
     e08_footnote: "如果你不想再收到此邮件，可以在应用内的“设置 → 通知”中取消勾选。",
     e08_footer2: "这是你的 Gastrometrics 账户的产品更新邮件。",
     e09_subject: "您的{plan}套餐将在3天后到期",
