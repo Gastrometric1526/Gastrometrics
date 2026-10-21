@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Textarea } from "@/components/ui/textarea"
 import { useLanguage } from "@/contexts/language-context"
 import type { Feedback, FeedbackStatus, FeedbackType } from "@/types/feedback"
-import { Bug, Lightbulb, MessageCircleWarning, Smile, Trash2 } from "lucide-react"
+import { Archive, ArchiveRestore, Bug, Inbox, Lightbulb, MessageCircleWarning, Smile, Trash2 } from "lucide-react"
 import { formatDateTime } from "@/lib/date-format"
 
 const typeConfigDefs: Record<FeedbackType, { labelKey: "admin_type_suggestion" | "admin_type_complaint" | "admin_type_bug" | "admin_type_experience"; icon: typeof Lightbulb; color: string }> = {
@@ -53,7 +53,11 @@ function rowToFeedback(row: any): Feedback {
   }
 }
 
-/** El buzón de sugerencias/quejas/reportes de /admin — extraído tal cual de app/admin/page.tsx (sin cambios de lógica) al reestructurar /admin en pestañas, ver docs/63. */
+/**
+ * El buzón de sugerencias/quejas/reportes de /admin — extraído tal cual de app/admin/page.tsx (sin cambios de lógica) al reestructurar /admin en pestañas, ver docs/63.
+ * Desde docs/176: «Archivar» (en las opiniones, «Mover a Reseñas») saca un mensaje de la bandeja sin borrarlo,
+ * «Archivar todo» la vacía de un clic, y la vista «Archivo» permite devolverlos.
+ */
 export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { total: number; nuevo: number; bug: number }) => void }) {
   const { toast } = useToast()
   const { t, language } = useLanguage()
@@ -76,12 +80,16 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
   const [sendingReplyId, setSendingReplyId] = useState<string | null>(null)
   const [filter, setFilter] = useState<"todos" | FeedbackType>("todos")
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+  const [archived, setArchived] = useState<Set<string>>(new Set())
+  const [view, setView] = useState<"bandeja" | "archivo">("bandeja")
+  const [archiving, setArchiving] = useState(false)
 
   const loadData = async () => {
     try {
       const res = await fetch("/api/admin/feedback")
       const data = await res.json()
       if (Array.isArray(data.feedback)) setFeedback(data.feedback.map(rowToFeedback))
+      if (Array.isArray(data.archivedIds)) setArchived(new Set(data.archivedIds))
     } catch (error) {
       console.error("Error loading feedback:", error)
     }
@@ -92,19 +100,54 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const inbox = feedback.filter((f) => !archived.has(f.id))
+  const archivedItems = feedback.filter((f) => archived.has(f.id))
+  const inView = view === "bandeja" ? inbox : archivedItems
+
   const counts = {
-    total: feedback.length,
-    nuevo: feedback.filter((f) => f.status === "nuevo").length,
-    sugerencia: feedback.filter((f) => f.type === "sugerencia").length,
-    queja: feedback.filter((f) => f.type === "queja").length,
-    bug: feedback.filter((f) => f.type === "bug").length,
-    experiencia: feedback.filter((f) => f.type === "experiencia").length,
+    total: inView.length,
+    sugerencia: inView.filter((f) => f.type === "sugerencia").length,
+    queja: inView.filter((f) => f.type === "queja").length,
+    bug: inView.filter((f) => f.type === "bug").length,
+    experiencia: inView.filter((f) => f.type === "experiencia").length,
+  }
+  // El aviso de la pestaña de /admin cuenta solo lo que sigue en la bandeja.
+  const inboxCounts = {
+    total: inbox.length,
+    nuevo: inbox.filter((f) => f.status === "nuevo").length,
+    bug: inbox.filter((f) => f.type === "bug").length,
   }
 
   useEffect(() => {
-    onCountsChange?.({ total: counts.total, nuevo: counts.nuevo, bug: counts.bug })
+    onCountsChange?.(inboxCounts)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [counts.total, counts.nuevo, counts.bug])
+  }, [inboxCounts.total, inboxCounts.nuevo, inboxCounts.bug])
+
+  const setArchivedFor = async (ids: string[], value: boolean) => {
+    if (ids.length === 0) return
+    setArchiving(true)
+    try {
+      const res = await fetch("/api/admin/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids, archived: value }),
+      })
+      if (!res.ok) throw new Error()
+      setArchived((prev) => {
+        const next = new Set(prev)
+        for (const id of ids) {
+          if (value) next.add(id)
+          else next.delete(id)
+        }
+        return next
+      })
+      if (value) toast({ title: ids.length >= inbox.length ? t("admin_archived_all_toast") : t("admin_archived_toast") })
+    } catch {
+      toast({ title: t("admin_archive_error"), variant: "destructive" })
+    } finally {
+      setArchiving(false)
+    }
+  }
 
   const handleStatusChange = async (id: string, status: FeedbackStatus) => {
     await fetch(`/api/admin/feedback/${id}`, {
@@ -152,7 +195,7 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
     }
   }
 
-  const filtered = filter === "todos" ? feedback : feedback.filter((f) => f.type === filter)
+  const filtered = filter === "todos" ? inView : inView.filter((f) => f.type === filter)
 
   return (
     <Card>
@@ -161,6 +204,25 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
         <CardDescription>{t("admin_inbox_subtitle")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="inline-flex rounded-lg border border-border p-0.5">
+            <Button size="sm" variant={view === "bandeja" ? "secondary" : "ghost"} onClick={() => setView("bandeja")}>
+              <Inbox className="h-4 w-4 mr-1.5" />
+              {t("admin_inbox_view")} ({inbox.length})
+            </Button>
+            <Button size="sm" variant={view === "archivo" ? "secondary" : "ghost"} onClick={() => setView("archivo")}>
+              <Archive className="h-4 w-4 mr-1.5" />
+              {t("admin_archive_view")} ({archivedItems.length})
+            </Button>
+          </div>
+          {view === "bandeja" && filtered.length > 0 && (
+            <Button size="sm" variant="outline" disabled={archiving} onClick={() => setArchivedFor(filtered.map((f) => f.id), true)}>
+              <Archive className="h-4 w-4 mr-1.5" />
+              {t("admin_archive_all").replace("{n}", String(filtered.length))}
+            </Button>
+          )}
+        </div>
+
         <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
           <TabsList>
             <TabsTrigger value="todos">{t("admin_tab_all")} ({counts.total})</TabsTrigger>
@@ -172,7 +234,9 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
         </Tabs>
 
         {filtered.length === 0 ? (
-          <p className="text-center text-muted-foreground py-12">{t("admin_empty_category")}</p>
+          <p className="text-center text-muted-foreground py-12">
+            {view === "archivo" ? t("admin_archive_empty") : inbox.length === 0 ? t("admin_inbox_zero") : t("admin_empty_category")}
+          </p>
         ) : (
           <div className="space-y-3">
             {filtered.map((item) => {
@@ -189,9 +253,22 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
                         {formatDateTime(item.createdAt)}
                       </span>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => setDeleteTargetId(item.id)}>
-                      <Trash2 className="h-4 w-4 text-muted-foreground" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      {view === "bandeja" ? (
+                        <Button variant="outline" size="sm" className="h-8 text-xs" disabled={archiving} onClick={() => setArchivedFor([item.id], true)}>
+                          <Archive className="h-3.5 w-3.5 mr-1" />
+                          {item.type === "experiencia" ? t("admin_move_to_reviews") : t("admin_archive")}
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" className="h-8 text-xs" disabled={archiving} onClick={() => setArchivedFor([item.id], false)}>
+                          <ArchiveRestore className="h-3.5 w-3.5 mr-1" />
+                          {t("admin_unarchive")}
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteTargetId(item.id)}>
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </div>
                   </div>
                   <p className="text-foreground text-sm whitespace-pre-wrap">{item.message}</p>
                   {item.imageDataUrl && (

@@ -4,11 +4,12 @@ import { notFound } from "next/navigation"
 import { Check } from "lucide-react"
 import { GastrometricsLogo } from "@/components/gastrometrics-logo"
 import { getSeoLanding, seoLandings } from "@/lib/seo-landings"
+import { canonicalSiteUrl } from "@/lib/site-url"
 
 // Páginas de búsqueda por idioma (docs/173): llegan del servidor ya en su idioma, con
 // hreflang entre ellas y datos estructurados (SoftwareApplication + FAQPage).
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://www.gastrometrics.org"
+const SITE = canonicalSiteUrl()
 
 export function generateStaticParams() {
   return seoLandings.map((l) => ({ slug: l.slug }))

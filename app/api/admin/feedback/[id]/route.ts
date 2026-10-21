@@ -8,6 +8,7 @@ import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { sendFeedbackReplyEmail } from "@/lib/services/notify-feedback"
+import { setFeedbackArchived } from "@/lib/admin/feedback-archive"
 import type { Database } from "@/types/database"
 
 type FeedbackUpdate = Database["public"]["Tables"]["feedback"]["Update"]
@@ -77,6 +78,9 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
     console.error("[api/admin/feedback/:id] Error borrando:", error)
     return NextResponse.json({ error: "No se pudo borrar." }, { status: 500 })
   }
+
+  // Sin marca de archivo huérfana (docs/176).
+  await setFeedbackArchived([params.id], false).catch(() => {})
 
   return NextResponse.json({ ok: true })
 }

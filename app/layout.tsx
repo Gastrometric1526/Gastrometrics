@@ -23,6 +23,7 @@ import { ModuleActivityTracker } from "@/components/module-activity-tracker"
 import { PwaBackGuard } from "@/components/pwa-back-guard"
 import { EmailClickTracker } from "@/components/email-click-tracker"
 import { SubRecipePricePrompt } from "@/components/subrecipe-price-prompt"
+import { canonicalSiteUrl } from "@/lib/site-url"
 
 // Rediseño visual (ver docs/79): DM Sans en vez de Inter — geométrica y cercana, sin
 // perder cobertura de es/en/da/fr/pt (latín + latín extendido). zh sigue resolviendo
@@ -33,7 +34,7 @@ export const metadata: Metadata = {
   // metadataBase: sin esto, las URLs relativas de Open Graph (la imagen de vista previa
   // de app/opengraph-image.tsx) no se resuelven a absolutas y WhatsApp/Facebook no las
   // muestran (docs/135).
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://gastrometrics.org"),
+  metadataBase: new URL(canonicalSiteUrl()),
   title: "GastroMetrics",
   description: "Sistema de gestión gastronómica",
   // Google Search Console, verificación por etiqueta HTML (docs/135): pegar el código

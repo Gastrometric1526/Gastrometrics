@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { HomeContent } from "@/components/home-content"
 import { plans } from "@/lib/plans"
 import { CONTACT_EMAIL, SOCIAL_LINKS, TRUSTPILOT_URL } from "@/lib/site-links"
+import { canonicalSiteUrl } from "@/lib/site-url"
 
 // El contenido traducible vive en components/home-content.tsx (Client Component, usa
 // useLanguage) porque `export const metadata` de abajo solo es válido en un Server
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
 // empresa, aplicación web, precios reales de lib/plans.ts, idiomas, redes sociales y
 // perfil de Trustpilot — para resultados enriquecidos y el panel de marca.
 function structuredData() {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://gastrometrics.org"
+  const siteUrl = canonicalSiteUrl()
   const sameAs = [TRUSTPILOT_URL, ...SOCIAL_LINKS.map((link) => link.url)]
   return [
     {
