@@ -33,6 +33,9 @@ export type ActivityModule =
   // Cambio de plan de la cuenta (docs/157): lo escribe el servidor en
   // lib/services/plan-change-notice.ts, sin negocio; sale en "Notificaciones".
   | "plan"
+  // Respuestas a las preguntas cortas (docs/173): solo para /admin; no se muestran en
+  // «Actividad reciente» ni en «Notificaciones».
+  | "encuesta"
 
 export type ActivityAction =
   | "entered"
@@ -153,6 +156,7 @@ export async function getActivityLog(params: {
     .from("activity_log")
     .select("*")
     .neq("module", "ocr") // conteo de lecturas OCR, no actividad para mostrar
+    .neq("module", "encuesta") // respuestas a preguntas cortas (docs/173), solo para /admin
     .order("created_at", { ascending: false })
     .limit(limit)
 
@@ -198,6 +202,7 @@ const MODULE_NAV_KEY: Record<ActivityModule, string> = {
   merma: "nav_ingredientes",
   ocr: "nav_ingredientes",
   plan: "nav_dashboard",
+  encuesta: "nav_dashboard",
 }
 
 /**

@@ -5,6 +5,7 @@ import { MarketingHeader } from "@/components/marketing-header"
 import { MarketingFooter } from "@/components/marketing-footer"
 import { PlansGrid } from "@/components/plans-grid"
 import { useLanguage } from "@/contexts/language-context"
+import { PublicReviews } from "@/components/public-reviews"
 
 export function PlanesContent() {
   const { t } = useLanguage()
@@ -47,6 +48,11 @@ export function PlanesContent() {
         </div>
 
         <PlansGrid />
+
+        {/* Opiniones reales, filtrables por tipo de negocio (docs/173); solo con 3 o más publicadas. */}
+        <div className="mt-16">
+          <PublicReviews variant="planes" filterable max={6} />
+        </div>
 
         <div className="max-w-3xl mx-auto mt-16 text-center space-y-3">
           <h2 className="text-xl font-bold text-foreground">{t("planes_questions_title")}</h2>

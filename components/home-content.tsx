@@ -46,6 +46,7 @@ import {
   LifeBuoy,
 } from "lucide-react"
 import { TRUSTPILOT_URL } from "@/lib/site-links"
+import { PublicReviews } from "@/components/public-reviews"
 
 // Landing recortada — docs/80-rediseno-visual-y-logo-oficial.md fue el diseño
 // original (hero + investigación + fuga invisible + tres pasos + seis módulos + un
@@ -441,14 +442,10 @@ export function HomeContent() {
           <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-10 items-center">
             <div className="space-y-4">
               <h2 className="text-3xl md:text-[40px] font-semibold tracking-[-0.038em] text-foreground leading-[1.08]">{t("landing_trust_title")}</h2>
-              <p className="text-text-3 flex items-center gap-2">
-                <span className="flex text-primary">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-current" />
-                  ))}
-                </span>
-                {t("landing_trust_subtitle")}
-              </p>
+              {/* docs/173: antes aquí iban 5 estrellas llenas con «Reseñas verificadas en
+                  Trustpilot», sin reseñas detrás. Las estrellas reales (promedio de opiniones
+                  publicadas) salen en el bloque de opiniones de abajo, desde 3 publicadas. */}
+              <p className="text-text-3">{t("landing_trust_subtitle")}</p>
               <div className="flex flex-wrap gap-x-5 gap-y-2">
                 <a
                   href={TRUSTPILOT_URL}
@@ -475,6 +472,13 @@ export function HomeContent() {
             </figure>
           </div>
         </section>
+
+        {/* Opiniones reales de chefs (docs/173): solo con 3 o más publicadas con permiso. */}
+        <PublicReviews
+          variant="landing"
+          max={3}
+          wrapperClassName="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-20"
+        />
 
         {/* FAQ — no forma parte del paquete de diseño, se conserva porque responde
             preguntas reales de compra (privacidad, POS, monedas, planes). */}

@@ -381,6 +381,7 @@ export function PageTour({ steps, storageKey, startDelay = 350, finishLabel, onF
   // hit-testing real.
   return createPortal(
     <div
+      data-tour-overlay
       className="fixed inset-0 z-[999] pointer-events-auto"
       role="dialog"
       aria-modal="true"

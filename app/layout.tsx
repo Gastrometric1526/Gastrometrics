@@ -18,6 +18,7 @@ import { AnalyticsTracker } from "@/components/analytics-tracker"
 import { PresenceTracker } from "@/components/presence-tracker"
 import { FounderGrantTrigger } from "@/components/founder-grant-trigger"
 import { PlanExpiryDialog } from "@/components/plan-expiry-dialog"
+import { FeedbackOrchestrator } from "@/components/feedback/feedback-orchestrator"
 import { ModuleActivityTracker } from "@/components/module-activity-tracker"
 import { PwaBackGuard } from "@/components/pwa-back-guard"
 import { EmailClickTracker } from "@/components/email-click-tracker"
@@ -121,6 +122,8 @@ export default function RootLayout({
                   <FounderGrantTrigger />
                   {/* Vencimiento del plan y pago programado (docs/165) */}
                   <PlanExpiryDialog />
+                  {/* Calificación y preguntas cortas en momentos de valor (docs/173) */}
+                  <FeedbackOrchestrator />
                   <SubRecipePricePrompt />
                   <Suspense fallback={null}>
                     <ModuleActivityTracker />

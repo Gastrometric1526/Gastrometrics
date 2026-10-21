@@ -1,101 +1,60 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { useAuth } from "@/contexts/auth-context"
-import { useLanguage } from "@/contexts/language-context"
-import { TRUSTPILOT_URL } from "@/lib/site-links"
-import { countOwnRecipesAllBusinesses } from "@/lib/storage/recipes"
-
 /**
- * Pregunta rápida de satisfacción dentro de la app (docs/145) — antes la única forma de
- * opinar era la encuesta por correo a las 4 horas de uso, y el 75 % de las cuentas no
- * llega a 2 horas: cero opiniones. Ahora se pregunta en el Dashboard en cuanto la persona
- * tiene 3 recetas o usó la app 3 días distintos, lo que pase primero.
+ * Calificación dentro de la app (docs/145, rehecha en docs/173).
  *
- * "¿Qué tan probable es que recomiendes Gastrometrics?" (0–10) + comentario opcional.
- * Se guarda como feedback "experiencia" (`[9/10] comentario`), así aparece en /admin →
- * Reseñas y le llega el correo de aviso al dueño. Con 9 o 10 se invita a dejar la reseña
- * pública en Trustpilot. Se muestra una vez; si la cierra sin responder, se vuelve a
- * ofrecer una sola vez más a los 30 días.
+ * Cuándo sale lo decide components/feedback/feedback-orchestrator.tsx: en el Dashboard,
+ * después de un momento de valor (primera receta con costo, primer PDF, un cambio de precio
+ * que recalculó varias recetas) o a los 7 días de uso o con 3 recetas; como mucho una
+ * pregunta cada 5 días.
+ *
+ * Flujo (sin filtrar quién opina en público, como exigen Trustpilot y Google):
+ * 1. «¿Qué tan probable es que recomiendes Gastrometrics?» (0–10, escala NPS).
+ * 2. Seguimiento según la nota: 0–6 «¿qué te está costando o qué mejoramos?»,
+ *    7–8 «¿qué te falta para que sea excelente?», 9–10 «¿qué es lo que más te sirve?»;
+ *    casilla de permiso para mostrar el comentario en el sitio.
+ * 3. A TODOS por igual: «¿Nos ayudas con una reseña pública?» → Trustpilot, o «Ahora no».
+ * Se guarda en el buzón como opinión («[9/10][publicable] comentario», lib/reviews.ts).
  */
 
-const DAY_MS = 24 * 60 * 60 * 1000
-const MIN_RECIPES = 3
-const MIN_ACTIVE_DAYS = 3
+import { useState } from "react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import { useAuth } from "@/contexts/auth-context"
+import { useLanguage } from "@/contexts/language-context"
+import { TRUSTPILOT_URL, GOOGLE_REVIEW_URL } from "@/lib/site-links"
+import { ratingBand } from "@/lib/feedback/ask-rules"
+import { buildReviewMessage } from "@/lib/reviews"
+import type { TranslationKey } from "@/lib/i18n/translations"
 
-function readJson<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : fallback
-  } catch {
-    return fallback
-  }
+const ASK_BY_BAND: Record<"low" | "mid" | "high", TranslationKey> = {
+  low: "quick_rating_ask_low",
+  mid: "quick_rating_ask_mid",
+  high: "quick_rating_ask_high",
 }
 
-function writeJson(key: string, value: unknown) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value))
-  } catch {
-    /* almacenamiento bloqueado: no se pregunta */
-  }
-}
-
-export function QuickRatingDialog() {
+export function QuickRatingDialog({
+  open,
+  moment,
+  onFinish,
+}: {
+  open: boolean
+  /** Qué momento disparó la pregunta (queda anotado en el buzón). */
+  moment?: string | null
+  onFinish: (status: "answered" | "dismissed") => void
+}) {
   const { user, userProfile } = useAuth()
   const { t, language } = useLanguage()
-  const [open, setOpen] = useState(false)
   const [score, setScore] = useState<number | null>(null)
   const [comment, setComment] = useState("")
+  const [consent, setConsent] = useState(false)
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
 
-  const stateKey = user ? `gm_quick_rating:${user.id}` : ""
-
-  useEffect(() => {
-    if (!user) return
-    const daysKey = `gm_active_days:${user.id}`
-    const today = new Date().toISOString().slice(0, 10)
-    const days = readJson<string[]>(daysKey, [])
-    if (!days.includes(today)) writeJson(daysKey, [...days, today].slice(-30))
-
-    const state = readJson<{ status?: "answered" | "dismissed"; at?: number; dismissals?: number }>(stateKey, {})
-    if (state.status === "answered") return
-    if (state.status === "dismissed" && ((state.dismissals ?? 1) >= 2 || Date.now() - (state.at ?? 0) < 30 * DAY_MS)) return
-
-    let cancelled = false
-    const timer = setTimeout(async () => {
-      // Si otro aviso sigue abierto (novedades, cambio de plan, tutorial), no se apila
-      // encima: se pregunta en la próxima visita (docs/162).
-      if (document.querySelector('[role="dialog"]')) return
-      const activeDays = readJson<string[]>(daysKey, []).length
-      if (activeDays >= MIN_ACTIVE_DAYS) return setOpen(true)
-      // Recetas de todos los negocios, no solo del Dashboard principal.
-      const recipeCount = await countOwnRecipesAllBusinesses(user.id).catch(() => null)
-      if (!cancelled && (recipeCount ?? 0) >= MIN_RECIPES) setOpen(true)
-    }, 4000) // después de que el Dashboard (y sus otros avisos) ya se mostraron
-    return () => {
-      cancelled = true
-      clearTimeout(timer)
-    }
-  }, [user, stateKey])
-
-  const close = (answered: boolean) => {
-    if (!answered && !sent) {
-      const prev = readJson<{ dismissals?: number }>(stateKey, {})
-      writeJson(stateKey, { status: "dismissed", at: Date.now(), dismissals: (prev.dismissals ?? 0) + 1 })
-    }
-    setOpen(false)
-  }
+  const band = score === null ? null : ratingBand(score)
 
   const submit = async () => {
     if (score === null) return
@@ -106,22 +65,23 @@ export function QuickRatingDialog() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "experiencia",
-          message: `[${score}/10] ${comment.trim() || "—"}`,
+          message: buildReviewMessage({ score, publishable: consent && comment.trim() !== "", comment }),
           userName: userProfile?.fullName || "",
           userEmail: user?.email || "",
-          page: "/dashboard (encuesta rápida)",
+          page: `encuesta rápida${moment ? ` · momento: ${moment}` : ""}`,
           language,
         }),
       })
-      writeJson(stateKey, { status: "answered", at: Date.now() })
       setSent(true)
     } finally {
       setSending(false)
     }
   }
 
+  const close = () => onFinish(sent ? "answered" : "dismissed")
+
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && close(sent)}>
+    <Dialog open={open} onOpenChange={(o) => !o && close()}>
       <DialogContent className="sm:max-w-lg">
         {!sent ? (
           <>
@@ -150,15 +110,32 @@ export function QuickRatingDialog() {
                 <span>{t("quick_rating_low")}</span>
                 <span>{t("quick_rating_high")}</span>
               </div>
-              <Textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder={t("quick_rating_comment_placeholder")}
-                rows={3}
-              />
+              {band && (
+                <div className="space-y-2">
+                  <Label htmlFor="rating-comment" className="text-sm font-medium text-foreground">
+                    {t(ASK_BY_BAND[band])}
+                  </Label>
+                  <Textarea
+                    id="rating-comment"
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder={t("quick_rating_comment_placeholder")}
+                    rows={3}
+                  />
+                  <label className="flex items-start gap-2 text-xs text-muted-foreground">
+                    <Checkbox
+                      checked={consent}
+                      disabled={comment.trim() === ""}
+                      onCheckedChange={(v) => setConsent(v === true)}
+                      className="mt-0.5"
+                    />
+                    <span>{t("quick_rating_consent")}</span>
+                  </label>
+                </div>
+              )}
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="ghost" onClick={() => close(false)}>
+              <Button variant="ghost" onClick={close}>
                 {t("quick_rating_later")}
               </Button>
               <Button onClick={submit} disabled={score === null || sending}>
@@ -169,20 +146,27 @@ export function QuickRatingDialog() {
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>{t("quick_rating_thanks_title")}</DialogTitle>
+              <DialogTitle>{t("quick_rating_public_title")}</DialogTitle>
               <DialogDescription>
-                {score !== null && score >= 9 ? t("quick_rating_thanks_promoter") : t("quick_rating_thanks_desc")}
+                {band === "low" ? t("quick_rating_thanks_low") : t("quick_rating_thanks_desc")} {t("quick_rating_public_desc")}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="gap-2 sm:gap-0">
-              {score !== null && score >= 9 && (
-                <Button variant="outline" asChild>
-                  <a href={TRUSTPILOT_URL} target="_blank" rel="noopener noreferrer">
-                    {t("quick_rating_trustpilot")}
+              <Button variant="ghost" onClick={close}>
+                {t("quick_rating_later")}
+              </Button>
+              {GOOGLE_REVIEW_URL && (
+                <Button variant="outline" asChild onClick={close}>
+                  <a href={GOOGLE_REVIEW_URL} target="_blank" rel="noopener noreferrer">
+                    {t("quick_rating_google")}
                   </a>
                 </Button>
               )}
-              <Button onClick={() => close(true)}>{t("quick_rating_close")}</Button>
+              <Button asChild onClick={close}>
+                <a href={TRUSTPILOT_URL} target="_blank" rel="noopener noreferrer">
+                  {t("quick_rating_trustpilot")}
+                </a>
+              </Button>
             </DialogFooter>
           </>
         )}

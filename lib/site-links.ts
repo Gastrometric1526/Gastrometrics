@@ -14,6 +14,14 @@
 
 export const TRUSTPILOT_URL = process.env.NEXT_PUBLIC_TRUSTPILOT_URL || "https://www.trustpilot.com/review/gastrometrics.org"
 
+/**
+ * Reseñas de Google (docs/173): vacío hasta que el dueño cree la ficha de Google Business
+ * Profile. Al pegar el enlace «Pedir reseñas» en NEXT_PUBLIC_GOOGLE_REVIEW_URL (Vercel) y
+ * redesplegar, aparece junto a Trustpilot en el bloque de opiniones y al final de la
+ * calificación de la app, sin tocar código.
+ */
+export const GOOGLE_REVIEW_URL = (process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL || "").startsWith("https://") ? process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL! : ""
+
 export const CONTACT_EMAIL = "gastrometrics@outlook.com"
 
 export type SocialNetwork = "facebook" | "instagram" | "linkedin" | "tiktok" | "youtube"

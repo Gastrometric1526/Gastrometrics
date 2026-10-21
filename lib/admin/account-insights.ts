@@ -136,6 +136,7 @@ export function computeUsageInsights(
   const usage = sorted.filter(
     (r) =>
       r.module !== "plan" &&
+      r.module !== "encuesta" &&
       r.action !== "price_raised" &&
       r.action !== "margin_up",
   );

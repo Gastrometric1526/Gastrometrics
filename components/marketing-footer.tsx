@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useLanguage } from "@/contexts/language-context"
 import { Facebook, Instagram, Linkedin, Music2, Youtube, Star } from "lucide-react"
 import { SOCIAL_LINKS, TRUSTPILOT_URL, CONTACT_EMAIL, type SocialNetwork } from "@/lib/site-links"
+import { seoLandings } from "@/lib/seo-landings"
 
 const SOCIAL_ICONS: Record<SocialNetwork, typeof Facebook> = {
   facebook: Facebook,
@@ -18,7 +19,9 @@ const SOCIAL_ICONS: Record<SocialNetwork, typeof Facebook> = {
 // aquí para que Política de Privacidad y Términos de Uso queden accesibles desde todo
 // el sitio público, no solo desde el registro.
 export function MarketingFooter() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+  // Página de búsqueda del idioma activo (docs/173).
+  const seo = seoLandings.find((l) => l.lang === language) ?? seoLandings[0]
 
   return (
     <footer className="border-t border-border/50 bg-muted/30">
@@ -38,6 +41,12 @@ export function MarketingFooter() {
           </Link>
           <Link href="/recursos" className="hover:text-foreground transition-colors">
             {t("marketing_footer_resources")}
+          </Link>
+          <Link href={`/software/${seo.slug}`} hrefLang={seo.htmlLang} className="hover:text-foreground transition-colors">
+            {seo.navLabel}
+          </Link>
+          <Link href="/resenas" className="hover:text-foreground transition-colors">
+            {t("reviews_page_title")}
           </Link>
           <a
             href={TRUSTPILOT_URL}

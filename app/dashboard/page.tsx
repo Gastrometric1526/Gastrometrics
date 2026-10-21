@@ -46,7 +46,6 @@ import { OnboardingTour } from "@/components/onboarding-tour"
 import { WhatsNewDialog } from "@/components/whats-new-dialog"
 import { PlanChangeNoticeDialog } from "@/components/plan-change-notice-dialog"
 import { PlanTour } from "@/components/plan-tour"
-import { QuickRatingDialog } from "@/components/quick-rating-dialog"
 import { GettingStartedPath } from "@/components/getting-started-path"
 import { refreshPlanStatus } from "@/lib/plan-status"
 import { useFeatureAccess, useActiveMembership, setCurrentPlanSlug, getMinimumPlanForFeature } from "@/lib/plan-access"
@@ -59,6 +58,7 @@ import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredien
 import { ensureInventoryLoaded, getInventory } from "@/lib/storage/inventory"
 import { getOrSeedExampleRecipe } from "@/lib/services/seed-example-recipe"
 import { formatDate, formatDateTime } from "@/lib/date-format"
+import { PublicReviews } from "@/components/public-reviews"
 
 export default function DashboardPage() {
   const { isLoggedIn, authChecked, user } = useAuth()
@@ -753,7 +753,6 @@ export default function DashboardPage() {
       <WhatsNewDialog />
       <PlanChangeNoticeDialog />
       <PlanTour />
-      <QuickRatingDialog />
       <Sidebar />
       <div className="flex-1 overflow-hidden">
         <div className="h-full overflow-y-auto">
@@ -1128,6 +1127,8 @@ export default function DashboardPage() {
               </Card>
             </div>
 
+            {/* Opiniones de otros chefs (docs/173); solo con 3 o más publicadas. */}
+            <PublicReviews variant="dashboard" max={3} />
 
             {/* Add Business Dialog */}
             <AddBusinessDialog

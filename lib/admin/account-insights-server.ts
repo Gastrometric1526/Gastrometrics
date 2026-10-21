@@ -230,7 +230,7 @@ export async function getAccountInsights(userId: string) {
 
   // Actividad reciente para soporte: las últimas 25 acciones (sin el sistema).
   const recentActivity = activity
-    .filter((a) => a.module !== "plan")
+    .filter((a) => a.module !== "plan" && a.module !== "encuesta")
     .slice(-25)
     .reverse()
     .map((a) => ({ module: a.module, action: a.action, label: a.entity_label ?? null, at: a.created_at }))
@@ -367,6 +367,14 @@ export async function getAccountInsights(userId: string) {
     activation,
     recentActivity,
     billing,
+    // Respuestas a las preguntas cortas (docs/173).
+    surveyAnswers: activity
+      .filter((a) => a.module === "encuesta")
+      .map((a) => {
+        const m = (a.metadata || {}) as Record<string, unknown>
+        return { question: String(m.question || a.entity_label || ""), answer: (m.answer as string | null) ?? null, detail: (m.detail as string | null) ?? null, at: a.created_at }
+      })
+      .reverse(),
   };
 }
 

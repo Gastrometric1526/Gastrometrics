@@ -21,6 +21,7 @@ import { getFromStorage, saveToStorage, STORAGE_KEYS } from "./core"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { createBusinessScopedCache } from "./supabase-cache"
 import type { Database } from "@/types/database"
+import { emitValueMoment } from "@/lib/feedback/ask-store"
 
 type BusinessRow = Database["public"]["Tables"]["businesses"]["Row"]
 
@@ -114,6 +115,7 @@ export async function addBusiness(business: Business): Promise<Business> {
     body: JSON.stringify({ businessId: id }),
     keepalive: true,
   }).catch(() => {})
+  emitValueMoment("first_business") // pregunta corta «¿cuántos platos tiene tu menú?» (docs/173)
 
   const created: Business = { ...business, ownerId: user.id }
   cache.mutateSnapshot(CACHE_KEY, (list) => {

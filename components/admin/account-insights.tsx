@@ -261,7 +261,7 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
     }
   };
 
-  const { account, plan, usage, content, team, emails, feedback, emailClicks, limits, activation, recentActivity, billing } = data;
+  const { account, plan, usage, content, team, emails, feedback, emailClicks, limits, activation, recentActivity, billing, surveyAnswers } = data;
   const accountAge = daysSince(account.createdAt) ?? 0;
   const lastSeen =
     usage.lastSeenAt || usage.lastActivityAt || account.lastSignInAt;
@@ -922,6 +922,25 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
           )}
         </Section>
       </div>
+
+      {surveyAnswers.length > 0 && (
+        <Section icon={MessageSquare} title={t("admin_insights_section_survey")}>
+          <ul className="space-y-1.5 text-sm">
+            {surveyAnswers.map((a, i) => (
+              <li key={i} className="flex flex-wrap justify-between gap-2">
+                <span className="text-foreground">
+                  {t(`q_${a.question}_title` as TranslationKey)}{" "}
+                  <strong>
+                    {a.answer ? (/^\d$/.test(a.answer) ? `${a.answer}/5` : t(`q_${a.question}_opt_${a.answer}` as TranslationKey)) : ""}
+                    {a.detail ? ` “${a.detail}”` : ""}
+                  </strong>
+                </span>
+                <span className="text-xs text-muted-foreground">{date(a.at)}</span>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
     </div>
   );
 }

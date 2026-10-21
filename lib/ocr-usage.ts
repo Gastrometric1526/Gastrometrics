@@ -13,6 +13,7 @@
 import { useCallback } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { logActivity } from "@/lib/services/activity-log"
+import { emitValueMoment } from "@/lib/feedback/ask-store"
 
 export type OcrReadKind = "recipe" | "receipt" | "inventory"
 
@@ -22,6 +23,7 @@ export function useOcrUsage() {
     (kind: OcrReadKind) => {
       if (!user) return
       logActivity({ user: { id: user.id, email: user.email ?? "" }, businessId: null, module: "ocr", action: "read", metadata: { kind } })
+      emitValueMoment("first_ocr") // pregunta corta sobre la precisión de la lectura (docs/173)
     },
     [user],
   )
