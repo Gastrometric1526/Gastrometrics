@@ -7,7 +7,7 @@ import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PublicReviews } from "@/components/public-reviews"
 import { useLanguage } from "@/contexts/language-context"
-import { TRUSTPILOT_URL } from "@/lib/site-links"
+import { GOOGLE_REVIEW_URL, TRUSTPILOT_URL } from "@/lib/site-links"
 
 export function ReviewsPageContent() {
   const { t } = useLanguage()
@@ -27,11 +27,21 @@ export function ReviewsPageContent() {
           fallback={
             <div className="rounded-xl border border-border bg-card p-8 text-center space-y-3">
               <p className="text-foreground">{t("reviews_empty")}</p>
-              <Button asChild>
-                <a href={TRUSTPILOT_URL} target="_blank" rel="noopener noreferrer">
-                  {t("reviews_trustpilot")}
-                </a>
-              </Button>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button asChild>
+                  <a href={TRUSTPILOT_URL} target="_blank" rel="noopener noreferrer">
+                    {t("reviews_trustpilot")}
+                  </a>
+                </Button>
+                {/* Google junto a Trustpilot (docs/177), para todos por igual. */}
+                {GOOGLE_REVIEW_URL && (
+                  <Button asChild variant="outline">
+                    <a href={GOOGLE_REVIEW_URL} target="_blank" rel="noopener noreferrer">
+                      {t("reviews_google")}
+                    </a>
+                  </Button>
+                )}
+              </div>
             </div>
           }
         />
