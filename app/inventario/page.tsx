@@ -304,7 +304,7 @@ export default function InventoryPage() {
                 t("inventario_location_kitchen"),
               ][Math.floor(Math.random() * 3)],
               supplier: ing.supplier || t("ingredientes_default_supplier"),
-              lastUpdated: new Date().toLocaleDateString(),
+              lastUpdated: new Date().toISOString(),
               status: "normal",
               presentation: matchingIngredient?.presentation || undefined,
             }
@@ -400,7 +400,7 @@ export default function InventoryPage() {
       netContent: data.netContent,
       location: data.location,
       supplier: data.supplier,
-      lastUpdated: new Date().toLocaleDateString(),
+      lastUpdated: new Date().toISOString(),
       // Editar el stock a mano cuenta como conteo real para el stock teórico (docs/134);
       // si el stock no cambió, se conserva el punto de partida anterior.
       ...(existingItem && existingItem.currentStock === data.currentStock

@@ -19,7 +19,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale } from "@/lib/i18n/translations"
 import { useToast } from "@/hooks/use-toast"
 import { logActivity } from "@/lib/services/activity-log"
 import { Sidebar } from "@/components/sidebar"
@@ -45,6 +44,7 @@ import { formatCurrency as formatCurrencyShared } from "@/lib/currency"
 import { updateBusiness, deleteBusiness, getAllBusinesses, refreshBusinesses } from "@/lib/storage/businesses"
 import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
+import { formatDate } from "@/lib/date-format"
 
 export default function NegociosPage() {
   const router = useRouter()
@@ -394,11 +394,7 @@ export default function NegociosPage() {
                                   <Calendar className="h-4 w-4" />
                                   {t("negocios_created_label")}
                                   {""}
-                                  {new Date(business.createdAt).toLocaleDateString(getDateLocale(language), {
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                  })}
+                                  {formatDate(business.createdAt)}
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <Clock className="h-4 w-4" />

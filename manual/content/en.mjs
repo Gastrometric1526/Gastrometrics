@@ -94,6 +94,7 @@ export default {
         ]],
         ["info", "The menu fills in as you go", "So you're not overwhelmed, the menu starts with the essentials. With your first recipe, Reports and Sales appear; with 3 recipes, Inventory, Menus, Purchase orders and Team, marked \"New\". To see everything from the start, use \"Show all modules now\" at the bottom of the menu."],
         ["info", "Tutorials and what's new", "Each section has a guided tour that appears the first time you open it; replay it anytime with <strong>Restart tutorial</strong> in the menu. When we add something new, you'll see the <strong>What's new</strong> window with a <strong>See the tutorial</strong> button that takes you to that section and shows you what's new step by step. The update email has the same link."],
+        ["info", "Nothing gets lost, and dates are day/month/year", "If you close or leave without saving a new recipe, a new ingredient, an inventory count, a menu or a purchase order, when you come back you'll see <strong>We recovered what you left unfinished</strong>: 24 hours for recipes and ingredients, 3 days for inventory and orders, 7 days for menus. <strong>Start over</strong> discards it. Every date shows as <strong>day/month/year</strong> (for example 20/10/2026), in any language, including PDFs and emails."],
         ["info", "Settings and My Plan", "Settings isn't a page: it's a window you open from any screen with the gear icon. Your plan and subscription live in <strong>My Plan</strong>, at the bottom of the menu."],
       ],
     },

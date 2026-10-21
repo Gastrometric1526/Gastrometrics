@@ -16,10 +16,10 @@ import { getCategoryMermaPercentage } from "@/lib/merma-categories"
 import { getPriceChangeHistory } from "@/lib/recalculate"
 import { useLanguage } from "@/contexts/language-context"
 import { getCategoryLabel, getUnitLabel, getPresentationLabel } from "@/lib/ingredient-labels"
-import { getDateLocale } from "@/lib/i18n/translations"
 import { isBeverageCategory } from "@/lib/beverage"
 import { SellByServingDialog } from "@/components/beverage/sell-by-serving-dialog"
 import { formatUnitPrice } from "@/lib/currency"
+import { formatDate } from "@/lib/date-format"
 
 // Tendencia de precio a 90 días (docs/04 del paquete de diseño: "el cambio de precio
 // a 90 días se muestra como barra fina, no como número suelto"). Usa el historial real
@@ -477,7 +477,7 @@ export function IngredientsTable({
                       {ingredient.metadata?.updatedAt && (
                         <span className="text-xs text-muted-foreground">
                           {t("ingredientes_updated_on_label")}:{" "}
-                          {new Date(ingredient.metadata.updatedAt).toLocaleDateString(getDateLocale(language))}
+                          {formatDate(ingredient.metadata.updatedAt)}
                         </span>
                       )}
                     </div>

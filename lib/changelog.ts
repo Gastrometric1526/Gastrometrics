@@ -32,6 +32,54 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-20b",
+    tutorialHref: tourHref("ingredientes"),
+    content: {
+      es: {
+        title: "Nunca pierdas lo que estabas haciendo",
+        items: [
+          "Si cierras o te sales sin guardar un ingrediente nuevo, un registro de inventario, un menú o una orden de compra, lo recuperas al volver: 24 horas para ingredientes, 3 días para inventario y órdenes, 7 días para menús.",
+          "Todas las fechas de la app, los PDF y los correos se muestran como día/mes/año, en cualquier idioma. Los campos de fecha también: escribe dd/mm/aaaa o elige en el calendario.",
+        ],
+      },
+      en: {
+        title: "Never lose what you were working on",
+        items: [
+          "If you close or leave without saving a new ingredient, an inventory count, a menu or a purchase order, you'll get it back when you return: 24 hours for ingredients, 3 days for inventory and orders, 7 days for menus.",
+          "Every date in the app, PDFs and emails now shows as day/month/year, in any language. Date fields too: type dd/mm/yyyy or pick from the calendar.",
+        ],
+      },
+      da: {
+        title: "Mist aldrig det, du var i gang med",
+        items: [
+          "Lukker eller forlader du en ny ingrediens, en lageroptælling, en menu eller en indkøbsordre uden at gemme, får du det tilbage, når du vender tilbage: 24 timer for ingredienser, 3 dage for lager og ordrer, 7 dage for menuer.",
+          "Alle datoer i appen, PDF'erne og e-mails vises som dag/måned/år på alle sprog. Datofelter også: skriv dd/mm/åååå eller vælg i kalenderen.",
+        ],
+      },
+      fr: {
+        title: "Ne perdez plus jamais ce que vous faisiez",
+        items: [
+          "Si vous fermez ou partez sans enregistrer un nouvel ingrédient, un inventaire, un menu ou un bon de commande, vous le retrouvez à votre retour : 24 heures pour les ingrédients, 3 jours pour l'inventaire et les commandes, 7 jours pour les menus.",
+          "Toutes les dates de l'application, des PDF et des e-mails s'affichent en jour/mois/année, dans toutes les langues. Les champs de date aussi : tapez jj/mm/aaaa ou choisissez dans le calendrier.",
+        ],
+      },
+      pt: {
+        title: "Nunca perca o que estava fazendo",
+        items: [
+          "Se fechar ou sair sem salvar um ingrediente novo, uma contagem de estoque, um cardápio ou uma ordem de compra, você recupera ao voltar: 24 horas para ingredientes, 3 dias para estoque e ordens, 7 dias para cardápios.",
+          "Todas as datas do app, dos PDFs e dos e-mails aparecem como dia/mês/ano, em qualquer idioma. Os campos de data também: digite dd/mm/aaaa ou escolha no calendário.",
+        ],
+      },
+      zh: {
+        title: "再也不会丢失正在做的内容",
+        items: [
+          "如果未保存就关闭或离开新原料、库存盘点、菜单或采购单，回来时可以恢复：原料 24 小时，库存和采购单 3 天，菜单 7 天。",
+          "应用、PDF 和邮件中的所有日期现在都以 日/月/年 显示，任何语言都一样。日期输入框也是：输入 日/月/年 或在日历中选择。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-10-20",
     tutorialHref: tourHref("mi-plan"),
     content: {

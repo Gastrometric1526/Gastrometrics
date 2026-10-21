@@ -14,8 +14,8 @@
 import { CalendarClock, CheckCircle2, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale } from "@/lib/i18n/translations"
 import { usePlanStatus, planExpiryOf, OPEN_PLAN_EXPIRY_EVENT } from "@/lib/plan-status"
+import { formatDayMonth } from "@/lib/date-format"
 
 export type ChipTone = "calm" | "soon" | "urgent" | "ok"
 
@@ -24,7 +24,7 @@ export function usePlanCountdown(): { tone: ChipTone; label: string; tooltip: st
   const status = usePlanStatus()
   const expiry = planExpiryOf(status)
   if (!status) return null
-  const shortDate = (iso: string) => new Date(iso).toLocaleDateString(getDateLocale(language), { day: "numeric", month: "short" })
+  const shortDate = (iso: string) => formatDayMonth(iso)
 
   if (status.renewal?.status === "payment_failed") {
     return { tone: "urgent", label: t("plan_chip_payment_failed"), tooltip: t("plan_expiry_failed_title") }

@@ -45,6 +45,7 @@ import { setCurrentCurrencyCode } from "@/lib/currency"
 import { SettingsTour } from "@/components/page-tours"
 import { hasStoredPassword, verifyPassword } from "@/lib/utils/password-hash"
 import { useActiveMembership } from "@/lib/plan-access"
+import { formatDate } from "@/lib/date-format"
 
 interface UserSettings {
   name: string
@@ -570,11 +571,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                             // realUserProfile (useAuth()), la fuente real. De paso ya no
                             // hardcodea locale "es-HN": usa el idioma elegido en esta pestaña.
                             return realUserProfile?.createdAt
-                              ? new Date(realUserProfile.createdAt).toLocaleDateString(language, {
-                                  day: "2-digit",
-                                  month: "long",
-                                  year: "numeric",
-                                })
+                              ? formatDate(realUserProfile.createdAt)
                               : t("settings_not_available")
                           })()}
                         </p>

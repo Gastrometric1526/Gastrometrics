@@ -5,10 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton"
 import { ProgressBar } from "@/components/ui/dashboard"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale } from "@/lib/i18n/translations"
 import { formatActiveTime } from "@/lib/admin-format"
 import { getPlanBySlug } from "@/lib/plans"
 import { Users, Building2, MailWarning, Bug, Clock, CreditCard, UserCog, Receipt, CalendarClock } from "lucide-react"
+import { formatDate } from "@/lib/date-format"
 
 interface Stats {
   totalUsers: number
@@ -306,7 +306,7 @@ export function StatsPanel({ feedbackCounts }: { feedbackCounts: { total: number
                       <p className="text-xs text-muted-foreground">{getPlanBySlug(row.planSlug).name}</p>
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(row.expiresAt).toLocaleDateString(getDateLocale(language))}
+                      {formatDate(row.expiresAt)}
                     </span>
                   </div>
                 ))}

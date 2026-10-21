@@ -11,6 +11,7 @@ import { getYieldUnitLabel, getUnitLabel, getCategoryLabel } from "@/lib/ingredi
 import { getClassificationLabel } from "@/lib/classification-labels"
 import type { Classification } from "@/types/recipe"
 import { trackEvent } from "@/lib/analytics/track-event"
+import { formatDate, fileDate } from "@/lib/date-format"
 
 // ============== HELPERS ==============
 
@@ -457,9 +458,9 @@ function generateAdministrativePDF(
   doc.setFont("helvetica", "normal")
   doc.setTextColor(...COLORS.secondary)
   const updatedAt = recipe.metadata?.updatedAt
-    ? new Date(recipe.metadata.updatedAt).toLocaleDateString(labels.locale)
+    ? formatDate(recipe.metadata.updatedAt)
     : "N/A"
-  const exportedAt = new Date().toLocaleDateString(labels.locale)
+  const exportedAt = formatDate(new Date())
   doc.text(`${labels.ultimaRevision}: ${updatedAt}`, pageWidth - margin, 13, { align: "right" })
   doc.text(`${labels.exportado}: ${exportedAt}`, pageWidth - margin, 17, { align: "right" })
 
@@ -1152,7 +1153,7 @@ function generateEmployeePDF(
   doc.setFontSize(8)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(...COLORS.secondary)
-  doc.text(`${labels.fecha}: ${new Date().toLocaleDateString(labels.locale)}`, margin + (options.businessLogo ? 18 : 0), margin + 11)
+  doc.text(`${labels.fecha}: ${formatDate(new Date())}`, margin + (options.businessLogo ? 18 : 0), margin + 11)
 
   // Franja de identificación: distingue de un vistazo esta copia (sin costos) de la
   // administrativa — verde, en vez de la roja "financiera" de esa otra copia.
@@ -1331,11 +1332,11 @@ function generateNormalPDF(
   doc.setFontSize(8)
   doc.setFont("helvetica", "normal")
   doc.text(
-    `${labels.creado}: ${new Date(recipe.metadata?.createdAt || Date.now()).toLocaleDateString(labels.locale)}`,
+    `${labels.creado}: ${formatDate(recipe.metadata?.createdAt || Date.now())}`,
     margin + (options.businessLogo ? 22 : 0),
     20
   )
-  doc.text(`${labels.exportado}: ${new Date().toLocaleDateString(labels.locale)}`, margin + (options.businessLogo ? 22 : 0), 25)
+  doc.text(`${labels.exportado}: ${formatDate(new Date())}`, margin + (options.businessLogo ? 22 : 0), 25)
 
   // Badge blanco (en vez del color sólido de las otras dos copias, que ya iría sobre un
   // fondo del mismo color primario acá) — mismo criterio de "identificarse de un
@@ -1505,7 +1506,7 @@ export function generatePDFFilename(recipe: Recipe, type: PDFExportType): string
   const recipeName = sanitizeText(recipe.name).replace(/[^a-zA-Z0-9]/g, "_")
   const version = recipe.metadata?.version || 1
   const date = new Date()
-  const dateStr = date.toISOString().split("T")[0].replace(/-/g, "")
+  const dateStr = fileDate(date)
   const timeStr = date.toTimeString().slice(0, 5).replace(":", "")
 
   return `${typePrefix}_${recipeName}_v${version}_${dateStr}_${timeStr}.pdf`

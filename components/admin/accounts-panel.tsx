@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { DateField } from "@/components/ui/date-field"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
@@ -22,7 +23,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale } from "@/lib/i18n/translations"
 import { plans, getPlanBySlug } from "@/lib/plans"
 import { formatActiveTime, countryName } from "@/lib/admin-format"
 import {
@@ -43,6 +43,7 @@ import {
   Check,
   LifeBuoy,
 } from "lucide-react"
+import { formatDate, formatDateTime } from "@/lib/date-format"
 
 // Umbral de "inactivo" en la lista de Cuentas: sin actividad registrada en los últimos
 // 14 días (y no en línea ahora mismo) — pedido implícito al agregar "tiempo en la app":
@@ -537,7 +538,7 @@ export function AccountsPanel() {
           <CardTitle>{selected.email}</CardTitle>
           {detail && (
             <CardDescription>
-              {t("admin_accounts_created")} {new Date(detail.createdAt).toLocaleDateString(getDateLocale(language))}
+              {t("admin_accounts_created")} {formatDate(detail.createdAt)}
               {" · "}
               {detail.emailConfirmed ? t("admin_accounts_confirmed") : t("admin_accounts_unconfirmed")}
               {" · "}
@@ -568,7 +569,7 @@ export function AccountsPanel() {
                           ? t("admin_accounts_expired_badge")
                           : t("admin_accounts_expires_badge").replace(
                               "{date}",
-                              new Date(detail.planExpiresAt).toLocaleDateString(getDateLocale(language)),
+                              formatDate(detail.planExpiresAt),
                             )}
                       </Badge>
                     )}
@@ -600,12 +601,11 @@ export function AccountsPanel() {
                       <Label htmlFor="plan-expires-at" className="text-xs text-muted-foreground">
                         {t("admin_accounts_expires_label")}
                       </Label>
-                      <Input
+                      <DateField
                         id="plan-expires-at"
-                        type="date"
                         className="w-44"
                         value={expiresAtInput}
-                        onChange={(e) => setExpiresAtInput(e.target.value)}
+                        onChange={(v) => setExpiresAtInput(v)}
                       />
                     </div>
                     <Button size="sm" onClick={handleApplyPlan} disabled={applyingPlan || !hasUnappliedChanges}>
@@ -730,7 +730,7 @@ export function AccountsPanel() {
                         <div>
                           <p className="text-sm font-medium text-foreground">{b.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(b.createdAt).toLocaleDateString(getDateLocale(language))}
+                            {formatDate(b.createdAt)}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -779,7 +779,7 @@ export function AccountsPanel() {
                   <p className="text-sm text-muted-foreground">
                     {t("admin_accounts_pending_deletion_desc").replace(
                       "{date}",
-                      new Date(detail.deletionRequestedAt).toLocaleDateString(getDateLocale(language)),
+                      formatDate(detail.deletionRequestedAt),
                     )}
                   </p>
                   <Button size="sm" onClick={handleReactivateAccount} disabled={reactivatingAccount}>
@@ -1024,9 +1024,7 @@ export function AccountsPanel() {
                                 : presenceByUserId[a.userId]?.lastSeenAt
                                   ? t("admin_accounts_last_seen").replace(
                                       "{date}",
-                                      new Date(presenceByUserId[a.userId]!.lastSeenAt as string).toLocaleString(
-                                        getDateLocale(language),
-                                      ),
+                                      formatDateTime(presenceByUserId[a.userId]!.lastSeenAt as string),
                                     )
                                   : t("admin_accounts_never_seen")
                             }
@@ -1063,7 +1061,7 @@ export function AccountsPanel() {
                             variant="secondary"
                             title={
                               a.lastPosImportAt
-                                ? new Date(a.lastPosImportAt).toLocaleDateString(getDateLocale(language))
+                                ? formatDate(a.lastPosImportAt)
                                 : undefined
                             }
                           >
@@ -1079,7 +1077,7 @@ export function AccountsPanel() {
                             variant="secondary"
                             title={
                               a.lastManualSalesAt
-                                ? new Date(a.lastManualSalesAt).toLocaleDateString(getDateLocale(language))
+                                ? formatDate(a.lastManualSalesAt)
                                 : undefined
                             }
                           >
@@ -1090,7 +1088,7 @@ export function AccountsPanel() {
                         )}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {new Date(a.createdAt).toLocaleDateString(getDateLocale(language))}
+                        {formatDate(a.createdAt)}
                       </TableCell>
                       <TableCell>
                         <Button size="sm" variant="ghost" onClick={() => loadDetail(a)}>

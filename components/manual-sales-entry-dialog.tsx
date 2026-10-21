@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
+import { DateField } from "@/components/ui/date-field"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -24,10 +25,10 @@ import { logActivity } from "@/lib/services/activity-log"
 import { formatCurrency } from "@/lib/currency"
 import { addSalesImport, updateSalesImport } from "@/lib/storage/sales-imports"
 import { getMenuUnitPriceAndCost } from "@/lib/menus"
-import { EMAIL_DATE_LOCALES, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import type { Recipe } from "@/types/recipe"
 import type { Menu } from "@/lib/types/menus"
 import type { SalesImport, SalesImportLine } from "@/types/sales-import"
+import { formatDate } from "@/lib/date-format"
 
 interface ManualSalesEntryDialogProps {
   open: boolean
@@ -188,11 +189,7 @@ export function ManualSalesEntryDialog({
       theoreticalCost: l.quantity * l.unitCost,
       date: isoDate,
     }))
-    const displayDate = saleDateObj.toLocaleDateString(EMAIL_DATE_LOCALES[normalizeEmailLang(language)], {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    })
+    const displayDate = formatDate(saleDateObj)
 
     const salesImport: SalesImport = {
       id: editingImport?.id ?? uuidv4(),
@@ -255,12 +252,11 @@ export function ManualSalesEntryDialog({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="manual-sale-date">{t("manual_sales_date_label")}</Label>
-            <Input
+            <DateField
               id="manual-sale-date"
-              type="date"
               value={saleDate}
               max={todayIso()}
-              onChange={(e) => setSaleDate(e.target.value)}
+              onChange={(v) => setSaleDate(v)}
               className="w-48"
             />
           </div>

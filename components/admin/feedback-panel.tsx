@@ -19,9 +19,9 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { Textarea } from "@/components/ui/textarea"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale } from "@/lib/i18n/translations"
 import type { Feedback, FeedbackStatus, FeedbackType } from "@/types/feedback"
 import { Bug, Lightbulb, MessageCircleWarning, Smile, Trash2 } from "lucide-react"
+import { formatDateTime } from "@/lib/date-format"
 
 const typeConfigDefs: Record<FeedbackType, { labelKey: "admin_type_suggestion" | "admin_type_complaint" | "admin_type_bug" | "admin_type_experience"; icon: typeof Lightbulb; color: string }> = {
   sugerencia: { labelKey: "admin_type_suggestion", icon: Lightbulb, color: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
@@ -186,7 +186,7 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
                         {config.label}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
-                        {new Date(item.createdAt).toLocaleString(getDateLocale(language))}
+                        {formatDateTime(item.createdAt)}
                       </span>
                     </div>
                     <Button variant="ghost" size="sm" onClick={() => setDeleteTargetId(item.id)}>
@@ -227,7 +227,7 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
                     <div className="rounded-lg bg-muted/50 p-3 space-y-1">
                       <p className="text-xs font-medium text-muted-foreground">
                         {t("admin_reply_label")}
-                        {item.repliedAt ? ` · ${new Date(item.repliedAt).toLocaleString(getDateLocale(language))}` : ""}
+                        {item.repliedAt ? ` · ${formatDateTime(item.repliedAt)}` : ""}
                       </p>
                       <p className="text-sm text-foreground whitespace-pre-wrap">{item.adminReply}</p>
                     </div>

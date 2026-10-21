@@ -94,6 +94,7 @@ export default {
         ]],
         ["info", "O menu vai se completando", "Para não sobrecarregar, o menu começa com o essencial. Com sua primeira receita aparecem Relatórios e Vendas; com 3 receitas, Estoque, Cardápios, Pedidos de compra e Equipe, marcados como «Novo». Para ver tudo desde o início, use «Ver todos os módulos agora» no fim do menu."],
         ["info", "Tutoriais e novidades", "Cada seção tem um tour guiado que aparece na primeira vez que você a abre; repita quando quiser com <strong>Reiniciar tutorial</strong> no menu. Quando adicionamos algo novo, você verá a janela de <strong>Novidades</strong> com o botão <strong>Ver o tutorial</strong>, que leva você a essa seção e mostra a novidade passo a passo. O e-mail de novidades traz o mesmo link."],
+        ["info", "Nada se perde, e as datas são dia/mês/ano", "Se fechar ou sair sem salvar uma receita nova, um ingrediente novo, uma contagem de estoque, um cardápio ou uma ordem de compra, ao voltar aparece <strong>Recuperamos o que você deixou sem terminar</strong>: 24 horas para receitas e ingredientes, 3 dias para estoque e ordens, 7 dias para cardápios. <strong>Começar do zero</strong> descarta. Todas as datas aparecem como <strong>dia/mês/ano</strong> (por exemplo 20/10/2026), em qualquer idioma, também nos PDFs e e-mails."],
         ["info", "Configurações e Meu Plano", "Configurações não é uma página: é uma janela que você abre em qualquer tela pelo ícone de engrenagem. Seu plano e sua assinatura ficam em <strong>Meu Plano</strong>, na parte inferior do menu."],
       ],
     },

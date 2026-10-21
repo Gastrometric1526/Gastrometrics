@@ -24,6 +24,7 @@ import {
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import { DateField } from "@/components/ui/date-field"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -32,7 +33,6 @@ import { GastrometricsLogo } from "@/components/gastrometrics-logo"
 import { MenusTour } from "@/components/page-tours"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale } from "@/lib/i18n/translations"
 import { useToast } from "@/hooks/use-toast"
 import {
   Dialog,
@@ -60,6 +60,7 @@ import { hasFeatureAccess, useFeatureAccess } from "@/lib/plan-access"
 import { FeatureLockedPage } from "@/components/feature-locked"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { getAccessBlockReason } from "@/lib/plan-access"
+import { formatDate } from "@/lib/date-format"
 
 export default function MenusPage() {
   const router = useRouter()
@@ -262,18 +263,14 @@ export default function MenusPage() {
     if (diffInDays < 7)
       return t(diffInDays > 1 ? "menus_time_ago_days_plural" : "menus_time_ago_days_singular").replace("{count}", String(diffInDays))
 
-    return date.toLocaleDateString(getDateLocale(language), {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })
+    return formatDate(date)
   }
 
   const formatServiceDate = (dateString?: string | null) => {
     if (!dateString) return null
     const date = new Date(`${dateString}T00:00:00`)
     if (Number.isNaN(date.getTime())) return null
-    return date.toLocaleDateString(getDateLocale(language), { day: "2-digit", month: "short", year: "numeric" })
+    return formatDate(date)
   }
 
   if (canAccessMenus === null) {
@@ -536,11 +533,10 @@ export default function MenusPage() {
                               <Label htmlFor={`date-${menu.id}`} className="text-xs">
                                 {t("menus_service_date_label")}
                               </Label>
-                              <Input
+                              <DateField
                                 id={`date-${menu.id}`}
-                                type="date"
-                                defaultValue={menu.serviceDate || ""}
-                                onChange={(e) => handleDateChange(menu, e.target.value)}
+                                value={menu.serviceDate || ""}
+                                onChange={(v) => handleDateChange(menu, v)}
                                 autoFocus
                               />
                             </PopoverContent>
@@ -685,11 +681,7 @@ export default function MenusPage() {
                           )}
                           <span className="text-sm">
                             {t("menus_preview_created_on")}{" "}
-                            {new Date(previewMenu.createdAt).toLocaleDateString(getDateLocale(language), {
-                              day: "2-digit",
-                              month: "long",
-                              year: "numeric",
-                            })}
+                            {formatDate(previewMenu.createdAt)}
                           </span>
                         </div>
                       </div>

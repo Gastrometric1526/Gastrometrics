@@ -1,9 +1,13 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { DateField } from "@/components/ui/date-field"
+import { useFormDraft } from "@/hooks/use-form-draft"
+import { DraftRestoredNotice } from "@/components/draft-restored-notice"
+import { toIsoDate } from "@/lib/date-format"
 import { NumericInput } from "@/components/ui/numeric-input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -57,7 +61,7 @@ function createEmptyPurchaseOrderFormData(): PurchaseOrderFormData {
   return {
     orderNumber: `PO-${Date.now()}`,
     supplier: "",
-    orderDate: new Date().toISOString().split("T")[0],
+    orderDate: toIsoDate(new Date()), // día local (antes UTC: de noche salía el día siguiente)
     expectedDeliveryDate: "",
     status: "pending",
     items: [],
@@ -83,6 +87,14 @@ interface PurchaseOrderFormProps {
   // ingrediente. Oculta el campo y lo saca de la validación del formulario (al no estar
   // montado, el atributo required del input ya no bloquea el envío).
   hideSupplierField?: boolean
+  /** Negocio de la orden, para el borrador automático (docs/171). */
+  draftBusinessId?: string | null
+}
+
+// Borrador de orden NUEVA (docs/171): vale la pena si ya tiene proveedor, productos o notas.
+type PurchaseOrderDraft = { formData: PurchaseOrderFormData; taxPercent: number }
+function isPurchaseOrderDraftMeaningful(d: PurchaseOrderDraft): boolean {
+  return d.formData.items.length > 0 || d.formData.supplier.trim() !== "" || (d.formData.notes || "").trim() !== ""
 }
 
 const validUnits = ["g", "kg", "ml", "L", "oz", "fl oz", "unidad", "docena"]
@@ -128,6 +140,7 @@ export function PurchaseOrderForm({
   availableIngredients = [],
   onPresentationChange,
   hideSupplierField = false,
+  draftBusinessId,
 }: PurchaseOrderFormProps) {
   const { t, language } = useLanguage()
   const orderStatuses = orderStatusDefs.map((s) => ({ ...s, label: t(s.labelKey) }))
@@ -161,6 +174,21 @@ export function PurchaseOrderForm({
       setTaxPercent(0)
     }
   }, [initialData])
+
+  // Borrador automático (docs/171): solo una orden nueva en blanco (no al editar ni cuando
+  // viene armada desde un menú o una receta). Dura 3 días desde el último cambio.
+  const draftValue = useMemo<PurchaseOrderDraft>(() => ({ formData, taxPercent }), [formData, taxPercent])
+  const orderDraft = useFormDraft<PurchaseOrderDraft>({
+    kind: "purchaseOrder",
+    businessId: draftBusinessId,
+    active: !initialData,
+    value: draftValue,
+    isMeaningful: isPurchaseOrderDraftMeaningful,
+    onRestore: (d) => {
+      setFormData(d.formData)
+      setTaxPercent(d.taxPercent || 0)
+    },
+  })
 
   // Calcular totales cuando cambien los items o el % de impuesto
   useEffect(() => {
@@ -277,6 +305,7 @@ export function PurchaseOrderForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!initialData) orderDraft.clear()
     onSubmit(formData)
   }
 
@@ -296,6 +325,18 @@ export function PurchaseOrderForm({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {!initialData && (
+            <DraftRestoredNotice
+              kind="purchaseOrder"
+              restoredAt={orderDraft.restoredAt}
+              onDiscard={() => {
+                orderDraft.discard()
+                setFormData(createEmptyPurchaseOrderFormData())
+                setTaxPercent(0)
+              }}
+              onDismiss={orderDraft.dismissNotice}
+            />
+          )}
           <div className={`grid grid-cols-1 gap-4 ${hideSupplierField ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
             <div className="space-y-2">
               <Label htmlFor="orderNumber">{t("pof_order_number_label")}</Label>
@@ -336,21 +377,19 @@ export function PurchaseOrderForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="orderDate">{t("pof_order_date_label")}</Label>
-              <Input
+              <DateField
                 id="orderDate"
-                type="date"
                 value={formData.orderDate}
-                onChange={(e) => handleInputChange("orderDate", e.target.value)}
+                onChange={(v) => handleInputChange("orderDate", v)}
                 required
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="expectedDeliveryDate">{t("pof_expected_delivery_label")}</Label>
-              <Input
+              <DateField
                 id="expectedDeliveryDate"
-                type="date"
                 value={formData.expectedDeliveryDate}
-                onChange={(e) => handleInputChange("expectedDeliveryDate", e.target.value)}
+                onChange={(v) => handleInputChange("expectedDeliveryDate", v)}
               />
             </div>
           </div>

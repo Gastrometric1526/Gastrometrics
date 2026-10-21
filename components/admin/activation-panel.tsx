@@ -6,7 +6,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale } from "@/lib/i18n/translations"
+import { formatDate } from "@/lib/date-format"
 import { Rocket, Clock3, Timer } from "lucide-react"
 
 interface ActivationAccount {
@@ -181,7 +181,7 @@ export function ActivationPanel() {
                     <TableRow key={account.email + account.createdAt}>
                       <TableCell className="text-foreground">{account.email}</TableCell>
                       <TableCell className="text-muted-foreground">
-                        {new Date(account.createdAt).toLocaleDateString(getDateLocale(language))}
+                        {formatDate(account.createdAt)}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {account.emailConfirmed ? t("admin_activation_confirmed_yes") : t("admin_activation_confirmed_no")}

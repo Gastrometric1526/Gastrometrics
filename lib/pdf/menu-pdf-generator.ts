@@ -8,6 +8,7 @@ import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 import { getBusinessThemeRgb, BRAND_ORANGE_RGB } from "@/lib/theme-colors"
 import { drawBusinessLogo } from "./pdf-logo"
 import { drawImageFit } from "./pdf-image"
+import { formatDate } from "@/lib/date-format"
 
 // PDF de Menus — dos variantes con objetivos deliberadamente opuestos, no solo dos
 // temas de color sobre la misma plantilla (pedido explicito: "toma libertad creativa"):
@@ -312,7 +313,7 @@ function generateClientMenuPDF(
 
   const subtitleParts = [
     sanitizeText(menu.menuType),
-    menu.serviceDate ? new Date(menu.serviceDate + "T00:00:00").toLocaleDateString(labels.locale) : "",
+    menu.serviceDate ? formatDate(menu.serviceDate + "T00:00:00") : "",
   ].filter(Boolean)
   if (subtitleParts.length > 0) {
     yPosition += 6
@@ -465,7 +466,7 @@ function generateInternalMenuPDF(
   doc.setFont("helvetica", "normal")
   const subtitleParts = [
     sanitizeText(menu.menuType),
-    menu.serviceDate ? new Date(menu.serviceDate + "T00:00:00").toLocaleDateString(labels.locale) : "",
+    menu.serviceDate ? formatDate(menu.serviceDate + "T00:00:00") : "",
   ].filter(Boolean)
   if (subtitleParts.length > 0) {
     doc.text(subtitleParts.join(" - "), pageWidth / 2, 26, { align: "center" })

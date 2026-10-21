@@ -6,6 +6,7 @@ import { getPdfLabels, getCurrentPdfLanguage } from "@/lib/i18n/pdf-labels"
 import { getUnitLabel, getPresentationLabel } from "@/lib/ingredient-labels"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
 import { drawBusinessLogo } from "./pdf-logo"
+import { formatDate, formatDateTime, fileDate } from "@/lib/date-format"
 
 // ============== HELPERS ==============
 // Mismo patron que lib/pdf/recipe-pdf-generator.ts y lib/pdf/menu-pdf-generator.ts:
@@ -198,7 +199,7 @@ export function generatePurchaseOrderPDF(order: PurchaseOrder, options: Purchase
   doc.setFontSize(8)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(...COLORS.secondary)
-  doc.text(labels.exportado + ": " + new Date().toLocaleString(labels.locale), headerTextX, 18)
+  doc.text(labels.exportado + ": " + formatDateTime(new Date()), headerTextX, 18)
 
   doc.setFontSize(16)
   doc.setFont("helvetica", "bold")
@@ -237,7 +238,7 @@ export function generatePurchaseOrderPDF(order: PurchaseOrder, options: Purchase
     doc.text(sanitizeText(value) || "-", x, yPosition + 14)
   }
 
-  infoRow(labels.fecha, new Date(order.date).toLocaleDateString(labels.locale), 0)
+  infoRow(labels.fecha, formatDate(order.date), 0)
   infoRow(labels.estado, statusLabels[order.status || "pending"] || order.status || "-", 1)
   infoRow(labels.itemsOrden, String(order.items.length), 2)
 
@@ -383,7 +384,7 @@ export function generatePurchaseOrderPDF(order: PurchaseOrder, options: Purchase
 export function generatePurchaseOrderPDFFilename(order: PurchaseOrder): string {
   const orderName = sanitizeText(order.name).replace(/[^a-zA-Z0-9]/g, "_")
   const date = new Date()
-  const dateStr = date.toISOString().split("T")[0].replace(/-/g, "")
+  const dateStr = fileDate(date)
   return `OC_${orderName}_${dateStr}.pdf`
 }
 

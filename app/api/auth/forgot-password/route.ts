@@ -18,8 +18,9 @@ import { sendWithRetry } from "@/lib/services/send-email"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { requireSupabaseServiceRoleEnv } from "@/lib/supabase/env"
 import { renderEmailTemplate, escapeHtml } from "@/lib/services/email-templates"
-import { getEmailLabels, fillLabel, normalizeEmailLang, EMAIL_DATE_LOCALES, type EmailLabelKeys } from "@/lib/i18n/email-labels"
+import { getEmailLabels, fillLabel, normalizeEmailLang, type EmailLabelKeys } from "@/lib/i18n/email-labels"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { formatDateTime } from "@/lib/date-format"
 
 function describeDevice(userAgent: string | null, labels: Record<EmailLabelKeys, string>): string {
   if (!userAgent) return labels.device_unknown
@@ -122,10 +123,7 @@ export async function POST(request: Request) {
       footerAddress: labels.footer_address,
       footer2: labels.e03_footer2,
       resetUrl: data.properties.action_link,
-      requestedAt: new Date().toLocaleString(EMAIL_DATE_LOCALES[normalizeEmailLang(preferredLanguage)], {
-        dateStyle: "long",
-        timeStyle: "short",
-      }),
+      requestedAt: formatDateTime(new Date(), { timeZone: "America/Tegucigalpa" }),
       device: escapeHtml(describeDevice(request.headers.get("user-agent"), labels)),
     })
 

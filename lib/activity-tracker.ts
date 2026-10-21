@@ -1,5 +1,6 @@
 import type { useLanguage } from "@/contexts/language-context"
-import { getDateLocale, type LanguageCode } from "@/lib/i18n/translations"
+import { type LanguageCode } from "@/lib/i18n/translations"
+import { formatDate } from "@/lib/date-format"
 
 type Translator = ReturnType<typeof useLanguage>["t"]
 
@@ -176,7 +177,7 @@ export class ActivityTracker {
 
     // Con el idioma de la cuenta: sin él, el navegador ponía "9/29/2026" (formato de
     // EE. UU.) en una interfaz en español (docs/156).
-    return time.toLocaleDateString(language ? getDateLocale(language) : undefined)
+    return formatDate(time)
   }
 
   static getActivityIcon(type: UserActivity["type"]): string {

@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale, type TranslationKey } from "@/lib/i18n/translations"
+import { type TranslationKey } from "@/lib/i18n/translations"
 import { MousePointerClick } from "lucide-react"
+import { formatDateTime } from "@/lib/date-format"
 
 interface ClickData {
   days: number
@@ -98,7 +99,7 @@ export function EmailClicksPanel() {
                 <ul className="space-y-1 text-sm text-muted-foreground">
                   {data.recent.map((r, i) => (
                     <li key={i}>
-                      {r.email} · {label(r.campaign)} · {new Date(r.at).toLocaleString(getDateLocale(language))}
+                      {r.email} · {label(r.campaign)} · {formatDateTime(r.at)}
                     </li>
                   ))}
                 </ul>

@@ -12,8 +12,9 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getPlanBySlug, getLocalizedPlan, plans } from "@/lib/plans"
 import { renderEmailTemplate, escapeHtml } from "./email-templates"
 import { diffPlanCapabilities } from "@/lib/plan-capabilities"
-import { getEmailLabels, fillLabel, normalizeEmailLang, EMAIL_DATE_LOCALES } from "@/lib/i18n/email-labels"
+import { getEmailLabels, fillLabel, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { withEmailTracking } from "@/lib/email-tracking"
+import { formatDate as formatDMY, formatDateTime } from "@/lib/date-format"
 
 // Aviso al dueño del proyecto por cada evento REAL de dinero de Stripe (suscripción
 // nueva pagada, cambio de plan pagado, cancelación) — pedido explícito: "que me caigan
@@ -59,7 +60,7 @@ export async function sendOwnerBillingNotification(input: {
       ${toPlanName ? `<p><strong>Plan nuevo:</strong> ${escapeHtml(toPlanName)}</p>` : ""}
       ${amountLabel ? `<p><strong>Monto del cobro:</strong> ${escapeHtml(amountLabel)}</p>` : ""}
       <hr/>
-      <p style="color:#888;font-size:12px">Evento real de Stripe, ${escapeHtml(new Date().toLocaleString("es-HN"))}. Revisa el detalle desde el panel /admin.</p>
+      <p style="color:#888;font-size:12px">Evento real de Stripe, ${escapeHtml(formatDateTime(new Date(), { timeZone: "America/Tegucigalpa" }))}. Revisa el detalle desde el panel /admin.</p>
     `,
   })
   // El SDK de Resend no lanza en errores de la API (mismo hallazgo que
@@ -88,12 +89,9 @@ function formatUsd(cents: number): string {
   return new Intl.NumberFormat("es-HN", { style: "currency", currency: "USD" }).format(cents / 100)
 }
 
-function formatDate(unixSeconds: number, language: string): string {
-  return new Date(unixSeconds * 1000).toLocaleDateString(EMAIL_DATE_LOCALES[normalizeEmailLang(language)], {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  })
+// Día/mes/año en hora de Honduras (docs/170); el idioma ya no cambia el orden.
+function formatDate(unixSeconds: number, _language: string): string {
+  return formatDMY(unixSeconds * 1000, { timeZone: "America/Tegucigalpa" })
 }
 
 // Sección de lista para el correo de cambio de plan (docs/139): título + una fila por ítem,

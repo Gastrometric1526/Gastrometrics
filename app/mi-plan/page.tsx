@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useAllBusinesses } from "@/lib/storage/businesses"
 import { getPlanBySlug } from "@/lib/plans"
 import { useCurrentPlanSlug, setCurrentPlanSlug, getMaxBusinesses } from "@/lib/plan-access"
-import { getDateLocale } from "@/lib/i18n/translations"
+import { formatDate } from "@/lib/date-format"
 
 // Página de plan dentro del dashboard — antes, "Plan: X" en el sidebar y el CTA de
 // las pantallas bloqueadas por plan (components/feature-locked.tsx) mandaban a /planes,
@@ -167,7 +167,7 @@ export default function MiPlanPage() {
                     {currentPeriodEnd
                       ? t("mi_plan_cancelling_desc").replace(
                           "{date}",
-                          new Date(currentPeriodEnd).toLocaleDateString(getDateLocale(language), { dateStyle: "long" }),
+                          formatDate(currentPeriodEnd),
                         )
                       : t("mi_plan_cancelling_desc_no_date")}
                   </p>
@@ -186,7 +186,7 @@ export default function MiPlanPage() {
                     <p className="text-sm text-text-3">
                       {t("mi_plan_expiring_desc").replace(
                         "{date}",
-                        new Date(planExpiresAt).toLocaleDateString(getDateLocale(language), { dateStyle: "long" }),
+                        formatDate(planExpiresAt),
                       )}
                     </p>
                   </div>

@@ -1,15 +1,10 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { formatDate as formatDMY } from "@/lib/date-format"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
-
-const dateFormatter = new Intl.DateTimeFormat("es-HN", {
-  year: "numeric",
-  month: "short",
-  day: "numeric",
-})
 
 const percentFormatter = new Intl.NumberFormat("es-HN", {
   style: "percent",
@@ -34,10 +29,9 @@ function getNumberFormatter(decimals: number): Intl.NumberFormat {
 
 export { formatCurrency } from "@/lib/currency"
 
-export function formatDate(date: string | Date, locale?: string): string {
-  const dateObj = typeof date === "string" ? new Date(date) : date
-  if (!locale || locale === "es-HN") return dateFormatter.format(dateObj)
-  return new Intl.DateTimeFormat(locale, { year: "numeric", month: "short", day: "numeric" }).format(dateObj)
+// Día/mes/año en todo el proyecto (docs/170); `locale` se ignora y queda por compatibilidad.
+export function formatDate(date: string | Date, _locale?: string): string {
+  return formatDMY(date)
 }
 
 export function formatNumber(num: number, decimals = 2): string {

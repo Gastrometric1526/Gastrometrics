@@ -16,7 +16,8 @@
 import { Resend } from "resend"
 import { sendWithRetry } from "./send-email"
 import { renderEmailTemplate, escapeHtml, escapeHtmlWithLineBreaks } from "./email-templates"
-import { getEmailLabels, normalizeEmailLang, EMAIL_DATE_LOCALES, EMAIL_LABELS } from "@/lib/i18n/email-labels"
+import { getEmailLabels, normalizeEmailLang, EMAIL_LABELS } from "@/lib/i18n/email-labels"
+import { formatDate } from "@/lib/date-format"
 
 export function isFeedbackNotifyConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY && process.env.FEEDBACK_NOTIFY_TO)
@@ -79,11 +80,7 @@ export async function sendFeedbackReplyEmail(input: {
     typeLabel: escapeHtml(typeLabel),
     ticketId: escapeHtml(input.ticketId),
     receivedAt: escapeHtml(
-      new Date(input.createdAt).toLocaleDateString(EMAIL_DATE_LOCALES[language], {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }),
+      formatDate(input.createdAt, { timeZone: "America/Tegucigalpa" }),
     ),
     replyTitle: escapeHtml(replyTitleKey ? labels[replyTitleKey] : "—"),
     reply: escapeHtmlWithLineBreaks(input.reply),

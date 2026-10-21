@@ -10,6 +10,13 @@
 import { useEffect, useState } from "react";
 import {
   Activity,
+  AlertTriangle,
+  CheckCircle2,
+  Circle,
+  CreditCard,
+  ExternalLink,
+  Gauge,
+  History,
   CalendarDays,
   Clock,
   Flame,
@@ -32,8 +39,18 @@ import {
 } from "@/lib/types/user";
 import { MODULE_LABEL_KEY } from "@/components/admin/top-users-panel";
 import type { AccountInsights } from "@/lib/admin/account-insights-server";
+import { formatDate, formatDateTime, formatDayMonth } from "@/lib/date-format"
 
-const DAY_MS = 86_400_000;
+const DAY_MS = 86_400_000
+
+// Función del plan → módulo de la app (para «funciones pagadas que nunca abrió»).
+const FEATURE_TO_MODULE: Record<string, string> = {
+  inventory: "inventario",
+  menus: "menus",
+  purchase_orders_manual: "ordenes_compra",
+  team: "equipo",
+  stats_panorama: "estadisticas",
+};
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -207,26 +224,21 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
   const locale = getDateLocale(language);
   const date = (iso: string | null | undefined) =>
     iso
-      ? new Date(iso).toLocaleDateString(locale, {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        })
+      ? formatDate(iso)
       : "—";
   const dateTime = (iso: string | null | undefined) =>
     iso
-      ? new Date(iso).toLocaleString(locale, {
-          day: "numeric",
-          month: "short",
-          hour: "2-digit",
-          minute: "2-digit",
-          timeZone: "America/Tegucigalpa",
-        })
+      ? formatDateTime(iso, { timeZone: "America/Tegucigalpa" })
       : "—";
   const daysSince = (iso: string | null | undefined) =>
     iso ? Math.floor((Date.now() - new Date(iso).getTime()) / DAY_MS) : null;
   const yesNo = (v: boolean) =>
     v ? t("admin_insights_yes") : t("admin_insights_no");
+  const actionLabel = (a: string) => {
+    const key = `admin_insights_action_${a}` as TranslationKey;
+    const label = t(key);
+    return label && label !== key ? label : a;
+  };
   const moduleLabel = (m: string) =>
     MODULE_LABEL_KEY[m] ? t(MODULE_LABEL_KEY[m]) : m;
   const planName = (slug: string | null) =>
@@ -249,7 +261,7 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
     }
   };
 
-  const { account, plan, usage, content, team, emails, feedback } = data;
+  const { account, plan, usage, content, team, emails, feedback, emailClicks, limits, activation, recentActivity, billing } = data;
   const accountAge = daysSince(account.createdAt) ?? 0;
   const lastSeen =
     usage.lastSeenAt || usage.lastActivityAt || account.lastSignInAt;
@@ -276,10 +288,7 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
     h % 3 === 0 ? String(h) : "",
   );
   const weeklyLabels = usage.weekly.map((w) =>
-    new Date(`${w.weekStart}T12:00:00Z`).toLocaleDateString(locale, {
-      day: "numeric",
-      month: "short",
-    }),
+    formatDayMonth(`${w.weekStart}T12:00:00Z`),
   );
   const peakDay = usage.byWeekday.indexOf(Math.max(...usage.byWeekday));
   const peakHour = usage.byHour.indexOf(Math.max(...usage.byHour));
@@ -357,6 +366,98 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
           value={planName(plan.slug)}
           hint={`${t("admin_insights_plan_since")} ${date(plan.since)}`}
         />
+      </div>
+
+      {/* Alertas (docs/172): lo primero que conviene saber de la cuenta. */}
+      {(() => {
+        const alerts: { tone: "danger" | "warn" | "info"; text: string }[] = [];
+        if (billing && billing.failedPayments > 0)
+          alerts.push({ tone: "danger", text: t("admin_insights_alert_failed_payments").replace("{n}", String(billing.failedPayments)) });
+        const expiresIn = plan.expiresAt ? Math.ceil((new Date(plan.expiresAt).getTime() - Date.now()) / DAY_MS) : null;
+        if (expiresIn !== null && expiresIn >= 0 && expiresIn <= 7)
+          alerts.push({ tone: "warn", text: t("admin_insights_alert_expires").replace("{date}", date(plan.expiresAt)) });
+        if (plan.cancelAtPeriodEnd)
+          alerts.push({ tone: "warn", text: t("admin_insights_cancelling").replace("{date}", date(plan.currentPeriodEnd)) });
+        if (plan.scheduledRenewal) alerts.push({ tone: "info", text: t("admin_insights_scheduled") });
+        if (idleDays !== null && idleDays > 14)
+          alerts.push({ tone: "warn", text: t("admin_insights_alert_idle").replace("{n}", String(idleDays)) });
+        if (!account.emailConfirmedAt) alerts.push({ tone: "warn", text: t("admin_insights_alert_unconfirmed") });
+        if (account.deletionRequestedAt)
+          alerts.push({ tone: "danger", text: t("admin_insights_alert_deletion").replace("{date}", date(account.deletionRequestedAt)) });
+        if (plan.priceUsdCents > 0 && limits.unusedFeatures.length > 0)
+          alerts.push({ tone: "info", text: t("admin_insights_alert_unused").replace("{n}", String(limits.unusedFeatures.length)) });
+        const doneSteps = activation.filter((a) => a.done).length;
+        if (accountAge > 7 && doneSteps <= 2)
+          alerts.push({
+            tone: "warn",
+            text: t("admin_insights_alert_low_activation").replace("{done}", String(doneSteps)).replace("{total}", String(activation.length)),
+          });
+        const toneClass = { danger: "bg-destructive/10 text-destructive", warn: "bg-amber-500/15 text-amber-700 dark:text-amber-400", info: "bg-primary/10 text-primary" };
+        return (
+          <div className="flex flex-wrap items-center gap-2">
+            {alerts.length === 0 ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {t("admin_insights_no_alerts")}
+              </span>
+            ) : (
+              alerts.map((a, i) => (
+                <span key={i} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${toneClass[a.tone]}`}>
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  {a.text}
+                </span>
+              ))
+            )}
+          </div>
+        );
+      })()}
+
+      <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
+        <Section icon={CheckCircle2} title={`${t("admin_insights_section_activation")} (${activation.filter((a) => a.done).length}/${activation.length})`}>
+          <div className="h-2 rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary"
+              style={{ width: `${(activation.filter((a) => a.done).length / activation.length) * 100}%` }}
+            />
+          </div>
+          <ul className="grid grid-cols-1 gap-1.5 text-sm sm:grid-cols-2">
+            {activation.map((a) => (
+              <li key={a.key} className={`flex items-center gap-2 ${a.done ? "text-foreground" : "text-muted-foreground"}`}>
+                {a.done ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Circle className="h-4 w-4" />}
+                {t(`admin_insights_act_${a.key}` as TranslationKey)}
+              </li>
+            ))}
+          </ul>
+        </Section>
+        <Section icon={Gauge} title={t("admin_insights_section_limits")}>
+          {[
+            { label: t("admin_insights_limits_businesses"), used: limits.businessesUsed, max: limits.businessesMax },
+            { label: t("admin_insights_limits_users"), used: limits.usersUsed, max: limits.usersMax },
+          ].map((row) => (
+            <div key={row.label} className="space-y-1">
+              <div className="flex justify-between text-sm">
+                <span className="text-foreground">{row.label}</span>
+                <span className="tabular-nums text-muted-foreground">
+                  {row.used} / {row.max}
+                </span>
+              </div>
+              <div className="h-2 rounded-full bg-muted">
+                <div
+                  className={`h-full rounded-full ${row.used >= row.max ? "bg-amber-500" : "bg-primary/70"}`}
+                  style={{ width: `${Math.min((row.used / Math.max(row.max, 1)) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+          ))}
+          <div className="pt-1">
+            <p className="text-xs font-medium text-muted-foreground">{t("admin_insights_unused_features")}</p>
+            <p className="text-sm text-foreground">
+              {limits.unusedFeatures.length
+                ? limits.unusedFeatures.map((f) => moduleLabel(FEATURE_TO_MODULE[f] || f)).join(", ")
+                : t("admin_insights_all_features_used")}
+            </p>
+          </div>
+        </Section>
       </div>
 
       <Section icon={Activity} title={t("admin_insights_section_usage")}>
@@ -707,6 +808,10 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
           icon={Mail}
           title={`${t("admin_insights_section_emails")} (${emails.length})`}
         >
+          <p className="text-xs text-muted-foreground">
+            {t("admin_insights_email_clicks").replace("{n}", String(emailClicks.length))}
+            {emailClicks[0] ? ` · ${emailClicks[0].campaign} (${date(emailClicks[0].at)})` : ""}
+          </p>
           {emails.length ? (
             <ul className="max-h-48 space-y-1 overflow-y-auto text-sm">
               {emails.map((e, i) => (
@@ -744,6 +849,76 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
             <p className="text-sm text-muted-foreground">
               {t("admin_insights_none")}
             </p>
+          )}
+        </Section>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
+        <Section icon={History} title={t("admin_insights_section_recent")}>
+          {recentActivity.length ? (
+            <ul className="max-h-64 space-y-1 overflow-y-auto text-sm">
+              {recentActivity.map((a, i) => (
+                <li key={i} className="flex justify-between gap-2">
+                  <span className="truncate text-foreground">
+                    {moduleLabel(a.module)} · {actionLabel(a.action)}
+                    {a.label ? <span className="text-muted-foreground"> · {a.label}</span> : null}
+                  </span>
+                  <span className="shrink-0 text-xs text-muted-foreground">{dateTime(a.at)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
+          )}
+        </Section>
+        <Section icon={CreditCard} title={t("admin_insights_section_billing")}>
+          {!billing ? (
+            <p className="text-sm text-muted-foreground">{t("admin_insights_no_billing")}</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <Field
+                  label={t("admin_insights_total_paid")}
+                  value={`$${(billing.totalPaidCents / 100).toFixed(2)} ${billing.currency}`}
+                />
+                <Field label={t("admin_insights_failed_payments")} value={String(billing.failedPayments)} />
+                <Field
+                  label={t("admin_insights_card")}
+                  value={
+                    billing.card
+                      ? `${billing.card.brand.toUpperCase()} •••• ${billing.card.last4} (${String(billing.card.expMonth).padStart(2, "0")}/${billing.card.expYear})`
+                      : "—"
+                  }
+                />
+                {billing.dashboardUrl && (
+                  <a
+                    href={billing.dashboardUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 self-end text-sm font-medium text-primary hover:underline"
+                  >
+                    {t("admin_insights_open_stripe")} <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                )}
+              </div>
+              {billing.invoices.length > 0 && (
+                <ul className="max-h-40 space-y-1 overflow-y-auto pt-2 text-sm">
+                  {billing.invoices.map((inv, i) => (
+                    <li key={i} className="flex justify-between gap-2">
+                      <span className="truncate text-foreground">
+                        {date(inv.at)} · ${(inv.amountCents / 100).toFixed(2)} ·{" "}
+                        {t(`admin_insights_invoice_${inv.status}` as TranslationKey) || inv.status}
+                      </span>
+                      {inv.url && (
+                        <a href={inv.url} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs text-primary hover:underline">
+                          {inv.number || "PDF"}
+                        </a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
         </Section>
       </div>

@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale, type TranslationKey } from "@/lib/i18n/translations"
+import { type TranslationKey } from "@/lib/i18n/translations"
 import { getPlanBySlug } from "@/lib/plans"
 import { Trophy } from "lucide-react"
+import { formatDate } from "@/lib/date-format"
 
 interface UserUsage {
   userId: string
@@ -174,7 +175,7 @@ export function TopUsersPanel() {
                       {formatDuration(u.totalActiveSeconds)}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {u.lastSeenAt ? new Date(u.lastSeenAt).toLocaleDateString(getDateLocale(language)) : "—"}
+                      {u.lastSeenAt ? formatDate(u.lastSeenAt) : "—"}
                     </TableCell>
                   </TableRow>
                 ))}

@@ -8,6 +8,7 @@ import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors
 import { drawBusinessLogo } from "./pdf-logo"
 import { buildPackageContentLookup, inventoryItemValue, snapshotItemValue, type PackageContentLookup } from "@/lib/inventory-value"
 import { getIngredients } from "@/lib/storage/ingredients"
+import { formatDate, formatDateTime, fileDate } from "@/lib/date-format"
 
 // ============== HELPERS ==============
 // Mismo patron que los demas generadores en lib/pdf/ (recipe/menu/purchase-order):
@@ -322,7 +323,7 @@ function renderInventoryPDF(doc: jsPDF, data: InventoryPDFData, options: Invento
   doc.setFontSize(8)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(...COLORS.secondary)
-  doc.text(`${labels.exportado}: ${new Date().toLocaleString(labels.locale)}`, headerTextX, 18)
+  doc.text(`${labels.exportado}: ${formatDateTime(new Date())}`, headerTextX, 18)
 
   doc.setFontSize(15)
   doc.setFont("helvetica", "bold")
@@ -332,7 +333,7 @@ function renderInventoryPDF(doc: jsPDF, data: InventoryPDFData, options: Invento
   doc.setFontSize(9)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(...COLORS.darkGray)
-  doc.text(`${labels.fecha}: ${data.subtitle.toLocaleDateString(labels.locale)}`, pageWidth - margin, 18, { align: "right" })
+  doc.text(`${labels.fecha}: ${formatDate(data.subtitle)}`, pageWidth - margin, 18, { align: "right" })
 
   yPosition = 32
 
@@ -526,7 +527,7 @@ export function generateInventoryPDF(data: InventoryPDFData, options: InventoryP
 export function generateInventoryPDFFilename(data: InventoryPDFData): string {
   const titlePart = sanitizeText(data.title).replace(/[^a-zA-Z0-9]/g, "_")
   const date = new Date()
-  const dateStr = date.toISOString().split("T")[0].replace(/-/g, "")
+  const dateStr = fileDate(date)
   return `${titlePart}_${dateStr}.pdf`
 }
 

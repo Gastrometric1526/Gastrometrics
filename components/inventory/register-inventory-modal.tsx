@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { Input } from "@/components/ui/input"
 import {
   Dialog,
@@ -43,9 +43,35 @@ import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
 import { updateIngredientPriceAndRecalculate, requestSubRecipePricePrompt } from "@/lib/recalculate"
 import { computeWeightedAverageCost } from "@/lib/utils/weighted-average-cost"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale } from "@/lib/i18n/translations"
 import { getPackageContent, isBeverageCategory, type BottleWeights } from "@/lib/beverage"
 import { stockValue } from "@/lib/inventory-value"
+import { formatDate, toDate } from "@/lib/date-format"
+import { useFormDraft } from "@/hooks/use-form-draft"
+import { DraftRestoredNotice } from "@/components/draft-restored-notice"
+
+// Borrador del registro de inventario (docs/171): lo que la persona cambia por producto,
+// más el tipo, la fecha, las notas y el paso. Vale la pena desde que empezó a contar (paso 2).
+type InventoryDraftEntry = {
+  quantity: number
+  calculatedQuantity?: number
+  price: number
+  presentation?: string
+  bottleWeights?: unknown
+}
+type InventoryDraft = {
+  step: number
+  inventoryType: "inicial" | "final" | "nueva compra"
+  period: "diario" | "semanal" | "mensual"
+  date: string | null
+  division: string
+  notes: string
+  inventoryMode: "metric" | "presentation"
+  presentationDrafts: Record<string, string>
+  entries: Record<string, InventoryDraftEntry>
+}
+function isInventoryDraftMeaningful(d: InventoryDraft): boolean {
+  return d.step >= 2 || d.notes.trim() !== "" || Object.keys(d.presentationDrafts || {}).length > 0
+}
 
 interface RegisterInventoryModalProps {
   open: boolean
@@ -259,6 +285,63 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
   // Calculate table height (leave space for search box and navigation)
   const tableMaxHeight = Math.max(200, maxContentHeight - 160)
 
+  // Borrador automático (docs/171): si se cierra o se sale a mitad del conteo, al volver a
+  // abrir «Registrar inventario» (hasta 3 días después) se recupera.
+  const inventoryDraftValue = useMemo<InventoryDraft>(() => {
+    const entries: Record<string, InventoryDraftEntry> = {}
+    for (const ing of ingredientsWithQuantity) {
+      entries[ing.id] = {
+        quantity: ing.quantity,
+        calculatedQuantity: ing.calculatedQuantity,
+        price: ing.price,
+        presentation: ing.presentation,
+        bottleWeights: ing.bottleWeights,
+      }
+    }
+    return {
+      step,
+      inventoryType,
+      period,
+      date: date ? date.toISOString() : null,
+      division,
+      notes,
+      inventoryMode,
+      presentationDrafts,
+      entries,
+    }
+  }, [ingredientsWithQuantity, step, inventoryType, period, date, division, notes, inventoryMode, presentationDrafts])
+  // Lo restaurado por producto se aplica cuando la lista de productos ya está cargada.
+  const pendingDraftEntriesRef = useRef<Record<string, InventoryDraftEntry> | null>(null)
+  const inventoryDraft = useFormDraft<InventoryDraft>({
+    kind: "inventory",
+    businessId,
+    active: open,
+    value: inventoryDraftValue,
+    isMeaningful: isInventoryDraftMeaningful,
+    onRestore: (d) => {
+      setStep(d.step || 1)
+      setInventoryType(d.inventoryType)
+      setPeriod(d.period)
+      setDate(toDate(d.date) ?? new Date())
+      setDivision(d.division)
+      setNotes(d.notes || "")
+      setInventoryMode(d.inventoryMode || "metric")
+      setPresentationDrafts(d.presentationDrafts || {})
+      pendingDraftEntriesRef.current = d.entries || {}
+    },
+  })
+  useEffect(() => {
+    const entries = pendingDraftEntriesRef.current
+    if (!entries || ingredientsWithQuantity.length === 0) return
+    pendingDraftEntriesRef.current = null
+    setIngredientsWithQuantity((prev) =>
+      prev.map((ing) => {
+        const e = entries[ing.id]
+        return e ? ({ ...ing, ...e, bottleWeights: (e.bottleWeights as typeof ing.bottleWeights) ?? ing.bottleWeights } as typeof ing) : ing
+      }),
+    )
+  }, [ingredientsWithQuantity.length])
+
   const handleNext = () => {
     setStep(step + 1)
   }
@@ -347,7 +430,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
             inventoryMode === "presentation"
               ? matchingItem.calculatedQuantity || matchingItem.quantity
               : matchingItem.quantity, // Asegurar que se guarde la cantidad correcta
-          lastUpdated: new Date().toLocaleDateString(),
+          lastUpdated: new Date().toISOString(),
           // Punto de partida del stock teórico (docs/134): este registro es un conteo real.
           stockCountedAt: newInventorySnapshot.date,
           stockReceipts: [],
@@ -457,6 +540,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
       })
     }
 
+    inventoryDraft.clear()
     onOpenChange(false)
 
     // Cascada de precios: cualquier ingrediente cuyo precio cambió en esta compra dispara
@@ -798,6 +882,30 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
           </DialogDescription>
         </DialogHeader>
 
+        <DraftRestoredNotice
+          kind="inventory"
+          restoredAt={inventoryDraft.restoredAt}
+          onDiscard={() => {
+            inventoryDraft.discard()
+            setStep(1)
+            setNotes("")
+            setPresentationDrafts({})
+            setDate(new Date())
+            // Cantidades y precios vuelven a lo guardado (stock actual y precio del ingrediente).
+            const inv = getInventory(businessId)
+            const saved = getIngredients(businessId)
+            setIngredientsWithQuantity((prev) =>
+              prev.map((ing) => {
+                const item = inv.find((i: any) => i.id === ing.id || i.name === ing.name)
+                const stock = item?.currentStock || 0
+                const price = saved.find((x) => x.id === ing.id)?.pricing?.purchasePrice ?? ing.price
+                return { ...ing, quantity: stock, calculatedQuantity: stock, price }
+              }),
+            )
+          }}
+          onDismiss={inventoryDraft.dismissNotice}
+        />
+
         {/* Step Indicator */}
         <div className="flex justify-center py-2 overflow-x-auto flex-shrink-0">
           <div className="flex items-center min-w-max px-2">
@@ -879,7 +987,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                           <Input
                             id="date"
                             readOnly
-                            value={date ? date.toLocaleDateString(getDateLocale(language)) : ""}
+                            value={date ? formatDate(date) : ""}
                             className="w-full h-9 pr-10"
                           />
                           <Popover>
@@ -1333,7 +1441,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                       <div className="p-2 bg-muted rounded-md">
                         <p className="text-xs font-medium text-muted-foreground">{t("inventario_date_label")}</p>
                         <p className="font-medium text-sm text-foreground">
-                          {date ? date.toLocaleDateString(getDateLocale(language), { dateStyle: "long" }) : t("inventario_register_no_date_selected")}
+                          {date ? formatDate(date) : t("inventario_register_no_date_selected")}
                         </p>
                       </div>
                       <div className="p-2 bg-muted rounded-md">

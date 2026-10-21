@@ -22,8 +22,9 @@ import { getPlanBySlug, getLocalizedPlan } from "@/lib/plans"
 import { renderEmailTemplate, escapeHtml } from "./email-templates"
 import { sendPlanChangedEmail } from "./notify-billing"
 import { recordPlanChangeNotice } from "./plan-change-notice"
-import { getEmailLabels, fillLabel, normalizeEmailLang, EMAIL_DATE_LOCALES } from "@/lib/i18n/email-labels"
+import { getEmailLabels, fillLabel, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { withEmailTracking } from "@/lib/email-tracking"
+import { formatDate as formatDMY } from "@/lib/date-format"
 
 async function getAccountEmailAndLanguage(accountId: string): Promise<{ email: string; language: string } | null> {
   const admin = getSupabaseAdminClient()
@@ -35,12 +36,9 @@ async function getAccountEmailAndLanguage(accountId: string): Promise<{ email: s
   return { email: data.user.email, language: profileRow?.preferred_language || "es" }
 }
 
-function formatDate(iso: string, language: string): string {
-  return new Date(iso).toLocaleDateString(EMAIL_DATE_LOCALES[normalizeEmailLang(language)], {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  })
+// Día/mes/año en hora de Honduras (docs/170); el idioma ya no cambia el orden.
+function formatDate(iso: string, _language: string): string {
+  return formatDMY(iso, { timeZone: "America/Tegucigalpa" })
 }
 
 export async function sendPlanExpiryReminder(accountId: string, planSlug: string, expiresAtIso: string): Promise<void> {

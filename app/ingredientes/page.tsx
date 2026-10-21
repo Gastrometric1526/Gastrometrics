@@ -84,6 +84,9 @@ import { trackEvent } from "@/lib/analytics/track-event"
 import { logActivity, logPriceRuleChanges } from "@/lib/services/activity-log"
 import { ALLERGENS, allergenLabelKey } from "@/lib/allergens"
 import { formatUnitPrice } from "@/lib/currency"
+import { fileDate } from "@/lib/date-format"
+import { useFormDraft } from "@/hooks/use-form-draft"
+import { DraftRestoredNotice } from "@/components/draft-restored-notice"
 
 // Helper function for generating unique IDs
 const generateUniqueId = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 9)
@@ -139,6 +142,13 @@ const normalizeCategory = (value: string): (typeof categories)[number] => {
   return partial || "OTROS"
 }
 
+
+// Borrador del ingrediente nuevo (docs/171): vale la pena guardarlo si ya tiene algo escrito.
+type IngredientDraft = { formData: Partial<Ingredient>; currentStep: number }
+function isIngredientDraftMeaningful(d: IngredientDraft): boolean {
+  const f = d.formData || {}
+  return (f.name || "").trim() !== "" || (f.pricing?.purchasePrice || 0) > 0 || (f.supplier || "").trim() !== "" || (f.notes || "").trim() !== ""
+}
 
 export default function IngredientesPage() {
   const router = useRouter()
@@ -205,6 +215,21 @@ export default function IngredientesPage() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       version: 1,
+    },
+  })
+
+  // Borrador automático del ingrediente NUEVO (docs/171): si se cierra o se sale sin guardar,
+  // al volver a «Nuevo ingrediente» (hasta 24 h después) se recupera lo escrito.
+  const ingredientDraftValue = useMemo<IngredientDraft>(() => ({ formData, currentStep }), [formData, currentStep])
+  const ingredientDraft = useFormDraft<IngredientDraft>({
+    kind: "ingredient",
+    businessId,
+    active: showAddDialog && !showEditDialog,
+    value: ingredientDraftValue,
+    isMeaningful: isIngredientDraftMeaningful,
+    onRestore: (d) => {
+      setFormData(d.formData)
+      setCurrentStep(d.currentStep || 0)
     },
   })
 
@@ -941,6 +966,7 @@ export default function IngredientesPage() {
         }
 
         showSuccess(t("ingredientes_toast_created_title"), t("ingredientes_toast_created_desc"))
+        ingredientDraft.clear()
         setShowAddDialog(false)
         trackEvent("first_ingredient_created", businessId)
       }
@@ -1073,7 +1099,7 @@ export default function IngredientesPage() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = `ingredientes_${new Date().toISOString().split("T")[0]}.csv`
+      a.download = `ingredientes_${fileDate()}.csv`
       a.click()
       window.URL.revokeObjectURL(url)
 
@@ -1707,6 +1733,18 @@ export default function IngredientesPage() {
               {ingredientToEdit ? t("ingredientes_dialog_edit_desc") : t("ingredientes_dialog_add_desc")}
             </DialogDescription>
           </DialogHeader>
+
+          {!ingredientToEdit && (
+            <DraftRestoredNotice
+              kind="ingredient"
+              restoredAt={ingredientDraft.restoredAt}
+              onDiscard={() => {
+                ingredientDraft.discard()
+                resetForm()
+              }}
+              onDismiss={ingredientDraft.dismissNotice}
+            />
+          )}
 
           {/* Progress indicator */}
           <div className="flex items-center justify-between mb-6">

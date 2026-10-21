@@ -11,6 +11,9 @@ import {
 } from "@/lib/admin/account-insights";
 import { getPlanBySlug } from "@/lib/plans";
 import { isTesterEmail } from "@/lib/tester-allowlist";
+import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client";
+import { CLICK_PREFIX } from "@/lib/email-tracking";
+import type { FeatureKey } from "@/lib/plans";
 
 async function allRows<T>(
   build: (
@@ -177,12 +180,15 @@ export async function getAccountInsights(userId: string) {
       at: e.sent_at,
       clicked: null as boolean | null,
     })),
-    ...(engagementEmails.data ?? []).map((e: any) => ({
-      kind: "engagement",
-      type: e.email_type,
-      at: e.sent_at,
-      clicked: "clicked_at" in e ? Boolean(e.clicked_at) : null,
-    })),
+    // Los clics («click:<campaña>») viven en la misma tabla: no son correos (docs/172).
+    ...(engagementEmails.data ?? [])
+      .filter((e: any) => !String(e.email_type).startsWith(CLICK_PREFIX))
+      .map((e: any) => ({
+        kind: "engagement",
+        type: e.email_type,
+        at: e.sent_at,
+        clicked: null as boolean | null,
+      })),
     ...(reengagementEmails.data ?? []).map((e) => ({
       kind: "reengagement",
       type: e.email_type,
@@ -190,6 +196,91 @@ export async function getAccountInsights(userId: string) {
       clicked: null,
     })),
   ].sort((a, b) => b.at.localeCompare(a.at));
+
+  // Clics desde correos (docs/172).
+  const emailClicks = (engagementEmails.data ?? [])
+    .filter((e: any) => String(e.email_type).startsWith(CLICK_PREFIX))
+    .map((e: any) => ({ campaign: String(e.email_type).slice(CLICK_PREFIX.length), at: e.sent_at as string }))
+    .sort((a, b) => b.at.localeCompare(a.at))
+
+  // Uso del plan contra sus límites y funciones pagadas que nunca abrió (docs/172).
+  const planDef = getPlanBySlug(planSlug)
+  const visited = new Set(usage.moduleVisits.map((m) => m.module))
+  const FEATURE_MODULE: Partial<Record<FeatureKey, string>> = {
+    inventory: "inventario",
+    menus: "menus",
+    purchase_orders_manual: "ordenes_compra",
+    team: "equipo",
+    stats_panorama: "estadisticas",
+  }
+  const unusedFeatures = planDef.unlockedFeatures.filter((f) => FEATURE_MODULE[f] && !visited.has(FEATURE_MODULE[f]!))
+
+  // Progreso de activación: los pasos que muestran que la cuenta adoptó la app (docs/172).
+  const activation = [
+    { key: "business", done: (businesses ?? []).length > 0 },
+    { key: "ingredient", done: ingredients > 0 },
+    { key: "recipe", done: recipes > 0 },
+    { key: "sub_recipe", done: subRecipes > 0 },
+    { key: "inventory", done: inventoryItems > 0 || inventorySnapshots > 0 },
+    { key: "menu", done: menus > 0 },
+    { key: "purchase_order", done: purchaseOrders > 0 },
+    { key: "sales", done: posImports + manualSales > 0 },
+    { key: "team", done: (team.data ?? []).length > 0 },
+  ]
+
+  // Actividad reciente para soporte: las últimas 25 acciones (sin el sistema).
+  const recentActivity = activity
+    .filter((a) => a.module !== "plan")
+    .slice(-25)
+    .reverse()
+    .map((a) => ({ module: a.module, action: a.action, label: a.entity_label ?? null, at: a.created_at }))
+
+  // Pagos en Stripe: total pagado, facturas, tarjeta y pagos fallidos (docs/172).
+  let billing: {
+    totalPaidCents: number
+    currency: string
+    invoices: { number: string | null; at: string; amountCents: number; status: string; url: string | null }[]
+    failedPayments: number
+    card: { brand: string; last4: string; expMonth: number; expYear: number } | null
+    dashboardUrl: string | null
+  } | null = null
+  if (plan?.stripe_customer_id && isStripeConfigured()) {
+    try {
+      const stripe = getStripeClient()
+      const [invoiceList, customer] = await Promise.all([
+        stripe.invoices.list({ customer: plan.stripe_customer_id, limit: 24 }),
+        stripe.customers.retrieve(plan.stripe_customer_id, { expand: ["invoice_settings.default_payment_method"] }),
+      ])
+      const invoices = invoiceList.data.map((inv) => ({
+        number: inv.number ?? null,
+        at: new Date((inv.created || 0) * 1000).toISOString(),
+        amountCents: inv.status === "paid" ? inv.amount_paid : inv.amount_due,
+        status: inv.status ?? "draft",
+        url: inv.hosted_invoice_url ?? null,
+      }))
+      let card: { brand: string; last4: string; expMonth: number; expYear: number } | null = null
+      const pm = !("deleted" in customer && customer.deleted) ? (customer as any).invoice_settings?.default_payment_method : null
+      if (pm && typeof pm === "object" && pm.card) {
+        card = { brand: pm.card.brand, last4: pm.card.last4, expMonth: pm.card.exp_month, expYear: pm.card.exp_year }
+      } else if (plan.stripe_subscription_id) {
+        const sub = await stripe.subscriptions.retrieve(plan.stripe_subscription_id, { expand: ["default_payment_method"] })
+        const spm = sub.default_payment_method as any
+        if (spm && typeof spm === "object" && spm.card) {
+          card = { brand: spm.card.brand, last4: spm.card.last4, expMonth: spm.card.exp_month, expYear: spm.card.exp_year }
+        }
+      }
+      billing = {
+        totalPaidCents: invoiceList.data.filter((i) => i.status === "paid").reduce((sum, i) => sum + (i.amount_paid || 0), 0),
+        currency: (invoiceList.data[0]?.currency || "usd").toUpperCase(),
+        invoices,
+        failedPayments: invoiceList.data.filter((i) => (i.status === "open" || i.status === "uncollectible") && (i.attempt_count || 0) > 0).length,
+        card,
+        dashboardUrl: `https://dashboard.stripe.com/${process.env.STRIPE_SECRET_KEY?.startsWith("sk_test") ? "test/" : ""}customers/${plan.stripe_customer_id}`,
+      }
+    } catch (error) {
+      console.error("[account-insights] No se pudo leer Stripe:", error)
+    }
+  }
 
   return {
     account: {
@@ -264,7 +355,18 @@ export async function getAccountInsights(userId: string) {
       memberOf: memberOfBusinesses,
     },
     emails,
+    emailClicks,
     feedback: feedback.data ?? [],
+    limits: {
+      businessesUsed: (businesses ?? []).length,
+      businessesMax: planDef.maxBusinesses + (plan?.extra_businesses || 0),
+      usersUsed: 1 + (team.data ?? []).length,
+      usersMax: planDef.maxUsers + (plan?.extra_team_seats || 0),
+      unusedFeatures,
+    },
+    activation,
+    recentActivity,
+    billing,
   };
 }
 

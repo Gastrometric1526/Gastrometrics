@@ -36,7 +36,7 @@ import {
 import type { Recipe } from "@/types/recipe"
 import type { SalesImport, SalesImportLine, POSColumnMapping, DateFormatHint } from "@/types/sales-import"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale } from "@/lib/i18n/translations"
+import { formatDate } from "@/lib/date-format"
 
 interface POSSalesImportDialogProps {
   open: boolean
@@ -327,7 +327,7 @@ export function POSSalesImportDialog({
   const dateFormatPreview = useMemo(() => {
     if (!dateSamples[0]) return null
     const parsed = parseLocaleDate(dateSamples[0], effectiveDateFormat)
-    return parsed ? parsed.toLocaleDateString(getDateLocale(language), { dateStyle: "long" }) : null
+    return parsed ? formatDate(parsed) : null
   }, [dateSamples, effectiveDateFormat, language])
 
   const handleDrop = (e: React.DragEvent) => {

@@ -7,6 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { DateField } from "@/components/ui/date-field"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -20,6 +21,7 @@ import type { SalesImport } from "@/types/sales-import"
 import type { Recipe } from "@/types/recipe"
 import type { Menu } from "@/lib/types/menus"
 import { getDateLocale } from "@/lib/i18n/translations"
+import { formatDate, formatDayMonth, formatMonthYear, formatWeekdayDate } from "@/lib/date-format"
 
 type RangeOption = "7" | "30" | "90" | "all" | "custom"
 
@@ -76,14 +78,14 @@ export function SalesHistoryBreakdown({
   const formatPeriodLabel = (startDate: string, endDate: string) => {
     const start = new Date(`${startDate}T00:00:00`)
     if (granularity === "day") {
-      return start.toLocaleDateString(getDateLocale(language), { weekday: "short", day: "numeric", month: "short", year: "numeric" })
+      return formatWeekdayDate(start, getDateLocale(language), { short: true })
     }
     if (granularity === "week") {
       const end = new Date(`${endDate}T00:00:00`)
-      return `${start.toLocaleDateString(getDateLocale(language), { day: "numeric", month: "short" })} – ${end.toLocaleDateString(getDateLocale(language), { day: "numeric", month: "short", year: "numeric" })}`
+      return `${formatDayMonth(start)} – ${formatDate(end)}`
     }
     if (granularity === "month") {
-      return start.toLocaleDateString(getDateLocale(language), { month: "long", year: "numeric" })
+      return formatMonthYear(start)
     }
     return start.getFullYear().toString()
   }
@@ -91,8 +93,8 @@ export function SalesHistoryBreakdown({
   const chartAxisLabel = (startDate: string) => {
     const start = new Date(`${startDate}T00:00:00`)
     if (granularity === "year") return start.getFullYear().toString()
-    if (granularity === "month") return start.toLocaleDateString(getDateLocale(language), { month: "short", year: "2-digit" })
-    return start.toLocaleDateString(getDateLocale(language), { day: "numeric", month: "short" })
+    if (granularity === "month") return formatMonthYear(start)
+    return formatDayMonth(start)
   }
 
   const chartData = useMemo(
@@ -204,11 +206,19 @@ export function SalesHistoryBreakdown({
             <>
               <div className="space-y-1">
                 <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">{t("sales_history_from_label")}</Label>
-                <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className="w-full sm:w-40" />
+                <DateField
+                  value={customFrom}
+                  onChange={(v) => setCustomFrom(v)}
+                  className="w-full sm:w-40"
+                />
               </div>
               <div className="space-y-1">
                 <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">{t("sales_history_to_label")}</Label>
-                <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="w-full sm:w-40" />
+                <DateField
+                  value={customTo}
+                  onChange={(v) => setCustomTo(v)}
+                  className="w-full sm:w-40"
+                />
               </div>
             </>
           )}

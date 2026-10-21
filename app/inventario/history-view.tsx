@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
+import { DateField } from "@/components/ui/date-field"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -30,14 +31,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Calendar, ChevronDown, Download, Eye, Filter, Search } from "lucide-react"
+import { ChevronDown, Download, Eye, Filter, Search } from "lucide-react"
 import type { InventorySnapshot } from "@/types/inventory"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale } from "@/lib/i18n/translations"
 import { getCategoryLabel, getUnitLabel } from "@/lib/ingredient-labels"
 import { snapshotItemValue } from "@/lib/inventory-value"
 import { getPresentationLabel } from "@/lib/ingredient-labels"
+import { formatDate as formatDMY, formatDateTime } from "@/lib/date-format"
 
 interface HistoryViewProps {
   inventoryHistory: InventorySnapshot[]
@@ -87,12 +88,8 @@ export function HistoryView({ inventoryHistory, exportInventory, isLoading }: Hi
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedHistory = filteredHistory.slice(startIndex, startIndex + itemsPerPage)
 
-  // Modificar la función formatDate para manejar valores undefined
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return "N/A"
-    const options: Intl.DateTimeFormatOptions = { year: "numeric", month: "long", day: "numeric" }
-    return new Date(dateString).toLocaleDateString(getDateLocale(language), options)
-  }
+  // Fecha día/mes/año (docs/170); "N/A" si falta.
+  const formatDate = (dateString: string | undefined) => (dateString ? formatDMY(dateString) : "N/A")
 
   return (
     <div className="space-y-6">
@@ -154,14 +151,12 @@ export function HistoryView({ inventoryHistory, exportInventory, isLoading }: Hi
                 </DropdownMenu>
 
                 <div className="relative">
-                  <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="date"
+                  <DateField
                     placeholder={t("inventario_filter_date_placeholder")}
-                    className="pl-8 h-9 w-[180px]"
+                    className="w-[180px]"
                     value={dateFilter}
-                    onChange={(e) => {
-                      setDateFilter(e.target.value)
+                    onChange={(v) => {
+                      setDateFilter(v)
                       setCurrentPage(1)
                     }}
                   />
@@ -418,7 +413,7 @@ export function HistoryView({ inventoryHistory, exportInventory, isLoading }: Hi
                       : selectedInventory.createdBy,
                   )}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {new Date(selectedInventory.createdAt || selectedInventory.date).toLocaleString(getDateLocale(language))}
+                    {formatDateTime(selectedInventory.createdAt || selectedInventory.date)}
                   </p>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => exportInventory(selectedInventory)}>

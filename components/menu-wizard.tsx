@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { DateField } from "@/components/ui/date-field"
+import { useFormDraft } from "@/hooks/use-form-draft"
+import { DraftRestoredNotice } from "@/components/draft-restored-notice"
 import { NumericInput } from "@/components/ui/numeric-input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -27,8 +30,8 @@ import type { Recipe } from "@/types/recipe"
 import { formatCurrency } from "@/lib/currency"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale } from "@/lib/i18n/translations"
 import { getMenuTypeLabel } from "@/lib/menu-type-labels"
+import { formatDate } from "@/lib/date-format"
 
 interface MenuWizardProps {
   open: boolean
@@ -39,6 +42,20 @@ interface MenuWizardProps {
 }
 
 type Stage = "details" | "steps" | "dishes" | "review"
+
+// Borrador de menú NUEVO (docs/171): vale la pena si ya tiene nombre, fecha, porciones o platos.
+type MenuDraft = {
+  menuName: string
+  menuType: string
+  serviceDate: string
+  plannedServings: string
+  steps: MenuStep[]
+  items: MenuItem[]
+  stage: Stage
+}
+function isMenuDraftMeaningful(d: MenuDraft): boolean {
+  return d.menuName.trim() !== "" || d.serviceDate !== "" || d.plannedServings !== "" || d.items.length > 0
+}
 
 const stageDefs: { id: Stage; labelKey: "mw_stage_details" | "mw_stage_steps" | "mw_stage_dishes" | "mw_stage_review" }[] = [
   { id: "details", labelKey: "mw_stage_details" },
@@ -107,6 +124,28 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
     setStage("details")
     setNewStepName("")
   }, [open, menu, businessId])
+
+  // Borrador automático (docs/171): solo al crear un menú; dura 7 días desde el último cambio.
+  const draftValue = useMemo<MenuDraft>(
+    () => ({ menuName, menuType, serviceDate, plannedServings, steps, items, stage }),
+    [menuName, menuType, serviceDate, plannedServings, steps, items, stage],
+  )
+  const menuDraft = useFormDraft<MenuDraft>({
+    kind: "menu",
+    businessId,
+    active: open && !menu,
+    value: draftValue,
+    isMeaningful: isMenuDraftMeaningful,
+    onRestore: (d) => {
+      setMenuName(d.menuName)
+      setMenuType(d.menuType)
+      setServiceDate(d.serviceDate)
+      setPlannedServings(d.plannedServings)
+      setSteps(d.steps?.length ? d.steps : defaultSteps())
+      setItems(d.items || [])
+      setStage(d.stage || "details")
+    },
+  })
 
   useEffect(() => {
     if (steps.length > 0 && !steps.some((s) => s.id === activeStepTab)) {
@@ -279,6 +318,7 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
         savedMenu = await createMenu(businessId, payload)
       }
 
+      if (!menu) menuDraft.clear()
       onMenuSaved(savedMenu)
       ActivityTracker.addActivity(
         (menu ? t("menu_activity_updated") : t("menu_activity_created")).replace("{name}", savedMenu.name),
@@ -321,6 +361,24 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
             {menu ? t("mw_dialog_title_edit") : t("mw_dialog_title_new")}
           </DialogTitle>
         </DialogHeader>
+
+        {!menu && (
+          <DraftRestoredNotice
+            kind="menu"
+            restoredAt={menuDraft.restoredAt}
+            onDiscard={() => {
+              menuDraft.discard()
+              setMenuName("")
+              setMenuType("")
+              setServiceDate("")
+              setPlannedServings("")
+              setSteps(defaultSteps())
+              setItems([])
+              setStage("details")
+            }}
+            onDismiss={menuDraft.dismissNotice}
+          />
+        )}
 
         {/* Indicador de pasos del asistente */}
         <div className="flex items-center gap-2 shrink-0">
@@ -386,11 +444,10 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
                     <Calendar className="h-3.5 w-3.5" />
                     {t("mw_service_date_label")}
                   </Label>
-                  <Input
+                  <DateField
                     id="serviceDate"
-                    type="date"
                     value={serviceDate}
-                    onChange={(e) => setServiceDate(e.target.value)}
+                    onChange={(v) => setServiceDate(v)}
                   />
                   <p className="text-xs text-muted-foreground">{t("mw_service_date_hint")}</p>
                 </div>
@@ -552,11 +609,7 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
                   {serviceDate && (
                     <span className="flex items-center gap-1.5">
                       <Calendar className="h-3.5 w-3.5" />
-                      {new Date(`${serviceDate}T00:00:00`).toLocaleDateString(getDateLocale(language), {
-                        day: "2-digit",
-                        month: "long",
-                        year: "numeric",
-                      })}
+                      {formatDate(`${serviceDate}T00:00:00`)}
                     </span>
                   )}
                   <span>

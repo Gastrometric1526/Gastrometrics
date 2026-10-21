@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale } from "@/lib/i18n/translations"
 import { TRUSTPILOT_URL } from "@/lib/site-links"
 import { Star, ExternalLink, MessageSquareQuote } from "lucide-react"
+import { formatDate } from "@/lib/date-format"
 
 interface ReviewRow {
   id: string
@@ -82,7 +82,7 @@ export function ReviewsPanel() {
                   <p className="text-sm text-foreground whitespace-pre-wrap">{r.message}</p>
                   <p className="text-xs text-muted-foreground">
                     {[r.user_name, r.user_email].filter(Boolean).join(" · ") || t("admin_reviews_anonymous")} ·{" "}
-                    {new Date(r.created_at).toLocaleDateString(getDateLocale(language))}
+                    {formatDate(r.created_at)}
                   </p>
                 </div>
               ))}

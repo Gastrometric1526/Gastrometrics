@@ -8,6 +8,7 @@
 import type { RecipeIngredient } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 import { formatCurrency, formatPercentage } from "@/lib/currency"
+import { formatDate as formatDMY } from "@/lib/date-format"
 
 // Re-exportado para no romper los imports existentes (`@/lib/utils/consolidated-utils`).
 // La lógica real vive en lib/currency.ts, que sí respeta la moneda elegida en
@@ -18,12 +19,7 @@ export { formatCurrency, formatPercentage }
  * Formats a date to a localized string
  */
 export function formatDate(date: string | Date): string {
-  const dateObj = typeof date === "string" ? new Date(date) : date
-  return dateObj.toLocaleDateString("es-HN", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  })
+  return formatDMY(date) // día/mes/año (docs/170)
 }
 
 /**

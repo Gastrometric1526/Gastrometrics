@@ -28,9 +28,9 @@ import {
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import type { Recipe, Classification } from "@/types/recipe"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale } from "@/lib/i18n/translations"
 import { getClassificationLabel } from "@/lib/classification-labels"
 import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
+import { formatDate, formatDayMonth } from "@/lib/date-format"
 
 interface RecipeCardProps {
   recipe: Recipe
@@ -224,10 +224,7 @@ export function RecipeCard({
                   <div>
                     <p className="font-medium text-amber-600 dark:text-amber-300">
                       {recipe.metadata?.updatedAt
-                        ? new Date(recipe.metadata.updatedAt).toLocaleDateString(getDateLocale(language), {
-                            day: "2-digit",
-                            month: "2-digit",
-                          })
+                        ? formatDayMonth(recipe.metadata.updatedAt)
                         : "N/A"}
                     </p>
                     <p className="text-muted-foreground text-xs">{t("recipecard_updated")}</p>
@@ -379,11 +376,7 @@ export function RecipeCard({
             <div className="pt-2 border-t border-border">
               <p className="text-xs text-muted-foreground">
                 {t("recipecard_updated_prefix")}{" "}
-                {new Date(recipe.metadata.updatedAt).toLocaleDateString(getDateLocale(language), {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })}
+                {formatDate(recipe.metadata.updatedAt)}
               </p>
             </div>
           )}

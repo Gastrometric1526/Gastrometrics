@@ -6,8 +6,8 @@ import { Separator } from "@/components/ui/separator"
 import { Calculator, Info, Percent, TrendingUp, Scale, Sparkles } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale } from "@/lib/i18n/translations"
 import type { COGSResult, SimplifiedPnL, SupplierPriceVarianceEntry } from "@/lib/sales-analytics"
+import { formatDate } from "@/lib/date-format"
 
 // Explica, con los numeros reales de ESTE negocio y este periodo ya sustituidos en cada
 // formula (no un ejemplo generico), cada uno de los calculos de la pestaña Finanzas de
@@ -98,7 +98,7 @@ export function FinanzasCalculationDialog({
                 {t("fcd_intro_body").replace(
                   "{period}",
                   periodStart && periodEnd
-                    ? `${new Date(periodStart).toLocaleDateString(getDateLocale(language))} – ${new Date(periodEnd).toLocaleDateString(getDateLocale(language))}`
+                    ? `${formatDate(periodStart)} – ${formatDate(periodEnd)}`
                     : t("fcd_period_fallback"),
                 )}
               </p>

@@ -6,6 +6,7 @@ import { Plus, Receipt, Search, Trash2, Pencil, Download, DollarSign, FileText, 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { DateField } from "@/components/ui/date-field"
 import { Label } from "@/components/ui/label"
 import { NumericInput } from "@/components/ui/numeric-input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -53,6 +54,7 @@ import type { Invoice, InvoiceLineItem } from "@/types/invoice"
 import type { Recipe } from "@/types/recipe"
 import type { Menu } from "@/lib/types/menus"
 import type { SalesImport, SalesImportLine } from "@/types/sales-import"
+import { formatDate } from "@/lib/date-format"
 
 const NONE_VALUE = "__none__"
 
@@ -501,7 +503,7 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
                       detrás de UTC (todo el continente americano) mostraba un día antes del
                       real. "T00:00:00" fuerza medianoche LOCAL, mismo patrón usado en el
                       resto del proyecto (ver lib/pdf/invoice-pdf-generator.ts). */}
-                      {new Date(`${invoice.issueDate}T00:00:00`).toLocaleDateString("en-US")}
+                      {formatDate(`${invoice.issueDate}T00:00:00`)}
                     </TableCell>
                     <TableCell className="text-right font-medium tabular-nums">
                       {formatCurrency(invoice.total)}
@@ -548,7 +550,10 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
               </div>
               <div className="space-y-1.5">
                 <Label>{t("facturas_field_issue_date")}</Label>
-                <Input type="date" value={draftIssueDate} onChange={(e) => setDraftIssueDate(e.target.value)} />
+                <DateField
+                  value={draftIssueDate}
+                  onChange={(v) => setDraftIssueDate(v)}
+                />
               </div>
             </div>
 

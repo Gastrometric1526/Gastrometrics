@@ -26,7 +26,8 @@ import { sendWithRetry } from "@/lib/services/send-email"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { renderEmailTemplate, escapeHtml } from "@/lib/services/email-templates"
-import { getEmailLabels, fillLabel, normalizeEmailLang, EMAIL_DATE_LOCALES } from "@/lib/i18n/email-labels"
+import { getEmailLabels, fillLabel, normalizeEmailLang } from "@/lib/i18n/email-labels"
+import { formatDateTime } from "@/lib/date-format"
 
 export async function PATCH(request: Request) {
   if (!(await hasAdminSession())) {
@@ -133,10 +134,7 @@ export async function POST(request: Request) {
         footerAddress: labels.footer_address,
         footer2: labels.e03_footer2,
         resetUrl: data.properties.action_link,
-        requestedAt: new Date().toLocaleString(EMAIL_DATE_LOCALES[normalizeEmailLang(preferredLanguage)], {
-          dateStyle: "long",
-          timeStyle: "short",
-        }),
+        requestedAt: formatDateTime(new Date(), { timeZone: "America/Tegucigalpa" }),
         device: labels.e03_device_admin_requested,
       })
 

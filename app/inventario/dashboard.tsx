@@ -10,11 +10,11 @@ import { Button } from "@/components/ui/button"
 import { ChevronDown, AlertTriangle, Info, DollarSign, Package } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale } from "@/lib/i18n/translations"
 import { getCategoryLabel } from "@/lib/ingredient-labels"
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
 import { formatCurrency } from "@/lib/currency"
 import { inventoryItemValue, inventoryTotalValue, snapshotValue, type PackageContentLookup } from "@/lib/inventory-value"
+import { formatDateTime, formatDayMonth } from "@/lib/date-format"
 
 interface DashboardProps {
   inventoryItems: InventoryItem[]
@@ -51,7 +51,7 @@ export function InventoryDashboard({ inventoryItems, inventoryHistory, isLoading
       const valueHistory = inventoryHistory
         .slice(0, 10)
         .map((snapshot) => ({
-          date: new Date(snapshot.date).toLocaleDateString(getDateLocale(language), { month: "short", day: "numeric" }),
+          date: formatDayMonth(snapshot.date),
           value: snapshotValue(snapshot),
         }))
         .reverse()
@@ -287,7 +287,7 @@ export function InventoryDashboard({ inventoryItems, inventoryHistory, isLoading
           />
         </CardContent>
         <CardFooter className="text-sm text-muted-foreground">
-          {t("inventario_chart_last_updated").replace("{date}", new Date().toLocaleString(getDateLocale(language)))}
+          {t("inventario_chart_last_updated").replace("{date}", formatDateTime(new Date()))}
         </CardFooter>
       </Card>
     </div>

@@ -5,6 +5,7 @@ import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { getPdfLabels } from "@/lib/i18n/pdf-labels"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
 import { drawBusinessLogo } from "./pdf-logo"
+import { formatDate, fileDate } from "@/lib/date-format"
 
 // Mismo patrón que lib/pdf/purchase-order-pdf-generator.ts — sanitizeText/COLORS
 // duplicados localmente a propósito (ver docs/31, sección 2), sin acoplar los
@@ -106,7 +107,7 @@ export function generateInvoicePDF(invoice: Invoice, options: InvoicePDFOptions 
   // antes del real. Agregar "T00:00:00" fuerza a que se interprete como medianoche LOCAL,
   // mismo patrón ya usado en el resto del proyecto para evitar este error (ver
   // components/manual-sales-entry-dialog.tsx, lib/sales-analytics.ts).
-  doc.text(labels.fecha + " " + new Date(`${invoice.issueDate}T00:00:00`).toLocaleDateString(labels.locale), headerTextX, 18)
+  doc.text(labels.fecha + " " + formatDate(`${invoice.issueDate}T00:00:00`), headerTextX, 18)
 
   doc.setFontSize(16)
   doc.setFont("helvetica", "bold")
@@ -255,7 +256,7 @@ export function generateInvoicePDF(invoice: Invoice, options: InvoicePDFOptions 
 
 export function generateInvoicePDFFilename(invoice: Invoice): string {
   const number = sanitizeText(invoice.number).replace(/[^a-zA-Z0-9]/g, "_") || "sin_numero"
-  const date = new Date(invoice.issueDate || Date.now()).toISOString().split("T")[0].replace(/-/g, "")
+  const date = fileDate(invoice.issueDate || new Date())
   return `Factura_${number}_${date}.pdf`
 }
 

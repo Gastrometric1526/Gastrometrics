@@ -20,6 +20,7 @@ import { Resend } from "resend"
 import { sendWithRetry } from "./send-email"
 import { escapeHtml } from "./email-templates"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { formatDateTime } from "@/lib/date-format"
 
 const LANGUAGE_NAMES: Record<string, string> = {
   es: "Español",
@@ -62,7 +63,7 @@ export async function sendAccountCreatedNotification(input: {
       ${input.nationality ? `<p><strong>País:</strong> ${escapeHtml(input.nationality)}</p>` : ""}
       ${input.language ? `<p><strong>Idioma:</strong> ${escapeHtml(LANGUAGE_NAMES[input.language] || input.language)}</p>` : ""}
       <hr/>
-      <p style="color:#888;font-size:12px">Cuenta creada el ${escapeHtml(new Date().toLocaleString("es-HN", { timeZone: "America/Tegucigalpa" }))}. Revisa el detalle en <a href="${adminLink()}">/admin</a>.</p>
+      <p style="color:#888;font-size:12px">Cuenta creada el ${escapeHtml(formatDateTime(new Date(), { timeZone: "America/Tegucigalpa" }))}. Revisa el detalle en <a href="${adminLink()}">/admin</a>.</p>
     `,
     },
     "aviso de cuenta nueva",
@@ -96,7 +97,7 @@ export interface DigestInviteRow {
   invitedAt: string
 }
 
-const when = (iso: string) => escapeHtml(new Date(iso).toLocaleString("es-HN", { timeZone: "America/Tegucigalpa" }))
+const when = (iso: string) => escapeHtml(formatDateTime(iso, { timeZone: "America/Tegucigalpa" }))
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
 function table(headers: string[], rows: string[][]): string {

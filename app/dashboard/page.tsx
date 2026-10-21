@@ -58,7 +58,7 @@ import { getRecipes, ensureRecipesLoaded, isSubRecipe } from "@/lib/storage/reci
 import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 import { ensureInventoryLoaded, getInventory } from "@/lib/storage/inventory"
 import { getOrSeedExampleRecipe } from "@/lib/services/seed-example-recipe"
-import { getDateLocale } from "@/lib/i18n/translations"
+import { formatDate, formatDateTime } from "@/lib/date-format"
 
 export default function DashboardPage() {
   const { isLoggedIn, authChecked, user } = useAuth()
@@ -789,7 +789,7 @@ export default function DashboardPage() {
                 </p>
                 <div className="flex items-center gap-2 text-sm text-text-4">
                   <Clock className="h-4 w-4 flex-shrink-0" />
-                  <span className="truncate">{currentTime.toLocaleString(getDateLocale(language))}</span>
+                  <span className="truncate">{formatDateTime(currentTime)}</span>
                 </div>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0 flex-wrap">
@@ -953,11 +953,7 @@ export default function DashboardPage() {
                           <h3 className="font-semibold text-foreground truncate">{business.name}</h3>
                           <p className="text-xs text-text-4 truncate">
                             {t("dashboard_created_on")}{" "}
-                            {new Date(business.createdAt || Date.now()).toLocaleDateString("es-HN", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })}
+                            {formatDate(business.createdAt || Date.now())}
                           </p>
                         </div>
                         {business.hasFinancialData && (

@@ -9,6 +9,7 @@
 import { Resend } from "resend"
 import { sendWithRetry } from "./send-email"
 import { escapeHtml } from "./email-templates"
+import { formatDateTime } from "@/lib/date-format"
 
 export function ownerAdminLink(): string {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://gastrometrics.org"
@@ -16,7 +17,7 @@ export function ownerAdminLink(): string {
 }
 
 export function hondurasTime(date: Date | string = new Date()): string {
-  return new Date(date).toLocaleString("es-HN", { timeZone: "America/Tegucigalpa" })
+  return formatDateTime(date, { timeZone: "America/Tegucigalpa" })
 }
 
 /** HTML simple de un aviso: filas etiqueta → valor. Puro (cubierto por pruebas). */

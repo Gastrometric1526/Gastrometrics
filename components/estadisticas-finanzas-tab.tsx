@@ -55,8 +55,8 @@ import { salesImportDisplayName } from "@/lib/sales-import-labels"
 import type { SalesImport } from "@/types/sales-import"
 import type { Recipe } from "@/types/recipe"
 import type { Menu } from "@/lib/types/menus"
-import { getDateLocale } from "@/lib/i18n/translations"
 import { computeCOGSByArea, filterDishesByArea, splitSalesByArea, type SalesArea } from "@/lib/bar-analytics"
+import { formatDateTime } from "@/lib/date-format"
 
 export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) {
   const { t, language } = useLanguage()
@@ -789,7 +789,7 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(imp.importedAt).toLocaleString(getDateLocale(language))} · {imp.lineCount} {t("finanzas_import_rows_suffix")} ·{" "}
+                      {formatDateTime(imp.importedAt)} · {imp.lineCount} {t("finanzas_import_rows_suffix")} ·{" "}
                       {formatCurrency(imp.totalRevenue)}
                       {imp.unmatchedDishNames.length > 0 &&
                         ` · ${imp.unmatchedDishNames.length} ${t("finanzas_unlinked_badge")}`}

@@ -27,8 +27,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
 import { logActivity } from "@/lib/services/activity-log"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale } from "@/lib/i18n/translations"
-import { formatCurrency, formatDate } from "@/lib/utils"
+import { formatCurrency } from "@/lib/utils"
 import { PurchaseOrderForm, type PurchaseOrderFormData, type PurchaseOrderFormItem } from "./purchase-order-form"
 import { PackageSearch, ChefHat, Info, FileUp } from "lucide-react"
 import { OrdenesCompraTour } from "@/components/page-tours"
@@ -54,6 +53,7 @@ import { unitAbbreviations } from "@/types/ingredient"
 import { getUnitLabel } from "@/lib/ingredient-labels"
 import type { PurchaseOrder } from "@/types/purchase-order"
 import { buildPackageContentLookup, inventoryItemValue } from "@/lib/inventory-value"
+import { formatDate } from "@/lib/date-format"
 
 export function PurchaseOrderPage() {
   const router = useRouter()
@@ -65,7 +65,7 @@ export function PurchaseOrderPage() {
   // Nombre legible para las órdenes sugeridas: antes llevaban una marca de tiempo interna
   // ("OC-almuerzo-1788297564730", docs/156). Se puede editar en el formulario.
   const orderDateLabel = () =>
-    new Date().toLocaleDateString(getDateLocale(language), { day: "numeric", month: "short", year: "numeric" })
+    formatDate(new Date())
   const businessId = params?.id as string | undefined
 
   const orderStatusLabels: Record<string, string> = {
@@ -838,7 +838,7 @@ export function PurchaseOrderPage() {
                       sortedOrders.map((order) => (
                         <TableRow key={order.id}>
                           <TableCell className="font-medium">{order.name}</TableCell>
-                          <TableCell>{formatDate(order.date, getDateLocale(language))}</TableCell>
+                          <TableCell>{formatDate(order.date)}</TableCell>
                           <TableCell>
                             <Badge variant="outline">{orderStatusLabels[order.status || "pending"]}</Badge>
                           </TableCell>
@@ -898,6 +898,7 @@ export function PurchaseOrderPage() {
                 onCancel={handleCloseDialog}
                 onPresentationChange={handlePresentationPersist}
                 hideSupplierField={!editingOrder && isSuggestedFromMenu}
+                draftBusinessId={businessId}
               />
             )}
           </DialogContent>

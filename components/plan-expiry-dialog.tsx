@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast"
 import { getLocalizedPlans, getLocalizedPlan, getPlanBySlug } from "@/lib/plans"
 import { getDateLocale } from "@/lib/i18n/translations"
 import { usePlanStatus, planExpiryOf, refreshPlanStatus, OPEN_PLAN_EXPIRY_EVENT } from "@/lib/plan-status"
+import { formatWeekdayDate } from "@/lib/date-format"
 
 // Páginas públicas y de cuenta: ahí no se interrumpe con la ventana.
 const QUIET_PATHS = ["/", "/login", "/signup", "/forgot-password", "/reset-password", "/planes", "/about", "/contacto", "/admin"]
@@ -65,8 +66,7 @@ export function PlanExpiryDialog() {
   const [selected, setSelected] = useState<string | undefined>(defaultSlug)
   useEffect(() => setSelected(defaultSlug), [defaultSlug])
 
-  const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString(getDateLocale(language), { weekday: "long", day: "numeric", month: "long" })
+  const formatDate = (iso: string) => formatWeekdayDate(iso, getDateLocale(language))
 
   // Apertura automática: una vez por etapa y fecha de vencimiento.
   useEffect(() => {

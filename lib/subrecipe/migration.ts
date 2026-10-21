@@ -8,6 +8,7 @@ import type { Ingredient } from "@/types/ingredient"
 import { getRecipes, saveRecipes, isSubRecipe, ensureRecipesLoaded } from "../storage/recipes"
 import { getIngredients, saveIngredients, ensureIngredientsLoaded } from "../storage/ingredients"
 import { syncSubRecipeToIngredient } from "./core"
+import { formatDate } from "@/lib/date-format"
 
 interface MigrationResult {
   success: boolean
@@ -184,8 +185,8 @@ async function migrateIngredients(
           updatedAt: new Date().toISOString(),
         },
         notes: ingredient.notes
-          ? `${ingredient.notes}\n\n🔄 Migrado desde ${sourceBusinessId} el ${new Date().toLocaleDateString()}`
-          : `🔄 Migrado desde ${sourceBusinessId} el ${new Date().toLocaleDateString()}`,
+          ? `${ingredient.notes}\n\n🔄 Migrado desde ${sourceBusinessId} el ${formatDate(new Date())}`
+          : `🔄 Migrado desde ${sourceBusinessId} el ${formatDate(new Date())}`,
       }
 
       migratedIngredients.push(migratedIngredient)
@@ -296,8 +297,8 @@ export async function migrateCompleteRecipe(
         version: 1,
       },
       notes: recipe.notes
-        ? `${recipe.notes}\n\n🔄 Migrado desde ${sourceBusinessId} el ${new Date().toLocaleDateString()}`
-        : `🔄 Migrado desde ${sourceBusinessId} el ${new Date().toLocaleDateString()}`,
+        ? `${recipe.notes}\n\n🔄 Migrado desde ${sourceBusinessId} el ${formatDate(new Date())}`
+        : `🔄 Migrado desde ${sourceBusinessId} el ${formatDate(new Date())}`,
     }
 
     await saveRecipes([...getRecipes(targetBusinessId), migratedRecipe], targetBusinessId)

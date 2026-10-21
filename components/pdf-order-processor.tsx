@@ -19,7 +19,8 @@ import { processPdfOrder } from "@/utils/pdf-order-processor"
 import type { ProcessedOrder, ValidationResult, PurchaseOrder } from "@/types/purchase-order"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
-import { getDateLocale, type LanguageCode } from "@/lib/i18n/translations"
+import { type LanguageCode } from "@/lib/i18n/translations"
+import { formatDate } from "@/lib/date-format"
 
 interface PdfOrderProcessorProps {
   businessId?: string
@@ -89,7 +90,7 @@ const OrderCard = memo(
           <p className="text-sm text-muted-foreground">
             {t("procesar_order_number_label")} {order.orderNumber} • {t("procesar_order_date_label")}
             {""}
-            {new Date(order.date || Date.now()).toLocaleDateString(getDateLocale(language))}
+            {formatDate(order.date || Date.now())}
           </p>
         </div>
         <Badge variant="outline">

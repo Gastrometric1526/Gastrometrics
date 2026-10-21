@@ -61,7 +61,6 @@ import { useLanguage } from "@/contexts/language-context"
 import { getClassificationLabel } from "@/lib/classification-labels"
 import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 import { getYieldUnitLabel, getCategoryLabel } from "@/lib/ingredient-labels"
-import { getDateLocale } from "@/lib/i18n/translations"
 import {
   loadRecipeDraft,
   saveRecipeDraftLocal,
@@ -70,6 +69,7 @@ import {
   isRecipeDraftMeaningful,
   type RecipeDraft,
 } from "@/lib/storage/recipe-draft"
+import { formatDateTime } from "@/lib/date-format"
 
 interface TechnicalSheetProps {
   mode: "new" | "view" | "edit"
@@ -1311,7 +1311,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
             <p className="text-xs text-muted-foreground">
               {t("ficha_tecnica_draft_restored_desc").replace(
                 "{time}",
-                new Date(restoredDraftAt).toLocaleString(getDateLocale(language), { dateStyle: "medium", timeStyle: "short" }),
+                formatDateTime(restoredDraftAt),
               )}
             </p>
           </div>

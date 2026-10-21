@@ -154,7 +154,7 @@ export async function updateInventoryItem(
   const current = inventory.find((item) => item.id === id)
   if (!current) return null
 
-  const updated: InventoryItem = { ...current, ...updates, lastUpdated: new Date().toLocaleDateString() }
+  const updated: InventoryItem = { ...current, ...updates, lastUpdated: new Date().toISOString() }
   itemsCache.mutateSnapshot(businessId, (list) => list.map((item) => (item.id === id ? updated : item)))
 
   const supabase = getSupabaseBrowserClient()

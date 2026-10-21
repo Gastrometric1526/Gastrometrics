@@ -16,6 +16,7 @@ import { getPlanBySlug } from "@/lib/plans"
 import { diffPlanCapabilities } from "@/lib/plan-capabilities"
 import { EMAIL_DATE_LOCALES, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { PLAN_TOUR_PENDING_KEY, planTourId } from "@/lib/plan-tour"
+import { formatDate as formatDMY } from "@/lib/date-format"
 
 interface PlanChangeNotice {
   fromPlanSlug: string
@@ -70,8 +71,7 @@ export function PlanChangeNoticeDialog() {
   const diff = diffPlanCapabilities(notice.fromPlanSlug, notice.toPlanSlug, language)
   const isExpired = notice.source === "expired"
   const locale = EMAIL_DATE_LOCALES[normalizeEmailLang(language)]
-  const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" })
+  const formatDate = (iso: string) => formatDMY(iso)
 
   const handleClose = () => {
     // Al cerrar el aviso empieza el tutorial del plan nuevo (components/plan-tour.tsx,

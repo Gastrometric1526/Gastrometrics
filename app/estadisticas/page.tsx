@@ -68,9 +68,9 @@ import { unitAbbreviations } from "@/types/ingredient"
 import type { InventoryItem } from "@/types/inventory"
 import { getClassificationLabel } from "@/lib/classification-labels"
 import { getCategoryLabel, getUnitLabel } from "@/lib/ingredient-labels"
-import { getDateLocale } from "@/lib/i18n/translations"
 import { buildPackageContentLookup, inventoryItemValue } from "@/lib/inventory-value"
 import { formatUnitPrice } from "@/lib/currency"
+import { formatDate } from "@/lib/date-format"
 
 const chartTokens = ["chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "chart-6", "chart-7"] as const
 
@@ -424,8 +424,8 @@ function EstadisticasContent() {
     if (!selectedPriceHistory) return []
     const first = selectedPriceHistory.entries[0]
     return [
-      { date: new Date(first.timestamp).toLocaleDateString(getDateLocale(language)), price: first.oldPrice },
-      ...selectedPriceHistory.entries.map((e) => ({ date: new Date(e.timestamp).toLocaleDateString(getDateLocale(language)), price: e.newPrice })),
+      { date: formatDate(first.timestamp), price: first.oldPrice },
+      ...selectedPriceHistory.entries.map((e) => ({ date: formatDate(e.timestamp), price: e.newPrice })),
     ]
   }, [selectedPriceHistory])
 

@@ -9,6 +9,7 @@ import type { Ingredient } from "@/types/ingredient"
 import { units } from "@/types/ingredient"
 import { getIngredients, saveIngredients, getIngredientByRecipeId } from "../storage/ingredients"
 import { isSubRecipe } from "../storage/recipes"
+import { formatDateTime } from "@/lib/date-format"
 
 // recipe.yieldUnit se guarda ya abreviado (types/recipe.ts#yieldUnits: "g", "kg",
 // "porciones"...), no como la palabra completa que usa Ingredient.unit ("gramos",
@@ -87,7 +88,7 @@ export function syncSubRecipeToIngredient(recipe: Recipe, businessId?: string | 
       lastSyncedAt: new Date().toISOString(),
     },
     businessId: businessId || "main",
-    notes: `Ingrediente auto-generado desde receta "${recipe.name}". Última sincronización: ${new Date().toLocaleString()}`,
+    notes: `Ingrediente auto-generado desde receta "${recipe.name}". Última sincronización: ${formatDateTime(new Date())}`,
   }
 
   if (existingIngredient) {
