@@ -78,7 +78,7 @@ export function PlansGrid({ freeRedirectTo = "/dashboard" }: PlansGridProps) {
       if (!res?.ok || (!result?.planSlug && !result?.scheduled)) {
         toast({
           title: t("planes_downgrade_error_title"),
-          description: result?.error || t("planes_downgrade_error_desc"),
+          description: t("planes_downgrade_error_desc"),
           variant: "destructive",
         })
         return

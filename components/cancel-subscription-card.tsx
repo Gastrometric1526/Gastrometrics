@@ -31,9 +31,8 @@ export function CancelSubscriptionCard({ planName, periodEnd, onCancelled }: { p
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planSlug: "foodie" }),
       })
-      const json = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setError(json.error || t("planes_downgrade_error_desc"))
+        setError(t("planes_downgrade_error_desc"))
         return
       }
       toast({

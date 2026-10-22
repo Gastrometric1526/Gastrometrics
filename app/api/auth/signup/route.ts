@@ -123,7 +123,7 @@ export async function POST(request: Request) {
   const referralCode = typeof body?.referralCode === "string" && body.referralCode ? body.referralCode : cookieCode
   if (referralCode && data.user?.id) {
     try {
-      await recordReferralAtSignup(data.user.id, referralCode)
+      await recordReferralAtSignup(data.user.id, referralCode, { email, name: profile.fullName || undefined, language: preferredLanguage })
     } catch (referralError) {
       console.error("[api/auth/signup] Error registrando la invitación:", referralError)
     }

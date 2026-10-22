@@ -128,7 +128,7 @@ export function PlanExpiryDialog() {
         window.location.href = data.url
         return
       }
-      setError(data.error || t("plan_expiry_error"))
+      setError(t("plan_expiry_error"))
     } catch {
       setError(t("plan_expiry_error"))
     }

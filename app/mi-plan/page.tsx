@@ -102,7 +102,7 @@ export default function MiPlanPage() {
       if (!res.ok || !result?.planSlug) {
         toast({
           title: t("planes_downgrade_error_title"),
-          description: result?.error || t("planes_downgrade_error_desc"),
+          description: t("planes_downgrade_error_desc"),
           variant: "destructive",
         })
         return
@@ -126,7 +126,7 @@ export default function MiPlanPage() {
       if (!res.ok || !data.url) {
         toast({
           title: t("mi_plan_portal_error_title"),
-          description: data.error || t("mi_plan_portal_error_desc"),
+          description: t("mi_plan_portal_error_desc"),
           variant: "destructive",
         })
         setIsOpeningPortal(false)

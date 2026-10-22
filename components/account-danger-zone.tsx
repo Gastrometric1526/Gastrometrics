@@ -112,9 +112,8 @@ export function AccountDangerZone() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ confirmEmail: deleteEmail.trim() }),
       })
-      const json = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setDeleteError(json.error || t("settings_delete_account_generic_error"))
+        setDeleteError(t("settings_delete_account_generic_error"))
         setIsDeleting(false)
         return
       }
@@ -141,9 +140,8 @@ export function AccountDangerZone() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ confirmEmail: wipeEmail.trim() }),
       })
-      const json = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setWipeError(json.error || t("settings_delete_account_generic_error"))
+        setWipeError(t("settings_delete_account_generic_error"))
         setIsWiping(false)
         return
       }

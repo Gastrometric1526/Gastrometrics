@@ -97,15 +97,43 @@ export function myReferralLink(accountId: string): { code: string; link: string 
 // ─── Registro del invitado ───
 
 /** Se llama al crear la cuenta. Ignora códigos inválidos o propios sin romper el registro. */
-export async function recordReferralAtSignup(inviteeId: string, rawCode: string | null | undefined): Promise<void> {
+export async function recordReferralAtSignup(
+  inviteeId: string,
+  rawCode: string | null | undefined,
+  invitee: { email?: string; name?: string; language?: string } = {},
+): Promise<boolean> {
   const code = normalizeReferralCode(rawCode)
-  if (!code) return
+  if (!code) return false
   const referrer = await lookupReferrer(code)
-  if (!referrer || referrer.id === inviteeId) return
+  if (!referrer || referrer.id === inviteeId) return false
   const referral: InviteeReferral = { by: referrer.id, code, at: new Date().toISOString(), status: "registered" }
   await patchMeta(inviteeId, { referral })
   const { error } = await getSupabaseAdminClient().from("product_events").insert({ event_name: EVENT, business_id: `${referrer.id}:${inviteeId}` } as never)
   if (error) console.error("[referrals] No se pudo registrar el evento de invitación:", error)
+
+  // Aviso al dueño de GastroMetrics: cuenta nueva por invitación (docs/184). Va aparte del
+  // aviso general de cuenta nueva para que se vea de un vistazo quién está trayendo gente.
+  try {
+    const referrerInfo = await getMeta(referrer.id)
+    const total = (await referralPairs()).filter((p) => p.referrerId === referrer.id).length
+    await sendOwnerNotification({
+      subject: `Cuenta nueva por invitación: ${invitee.email || inviteeId}`,
+      rows: [
+        ["Cuenta nueva", invitee.email || inviteeId],
+        ["Nombre", invitee.name || null],
+        ["Idioma", invitee.language || null],
+        ["Invitada por", `${referrer.firstName || "—"} (${referrerInfo?.email || referrer.id})`],
+        ["Código", code],
+        ["Invitaciones de esa persona", String(total)],
+        ["Regalo", `${REFERRAL.giftDays} días de ${getPlanBySlug(REFERRAL.giftPlanSlug).name}, al abrir la app`],
+      ],
+      footnote: "Quien invitó gana su mes cuando esta cuenta guarde una receta con costo o elija un plan en sus primeros 30 días. Detalle en /admin → Activación → Referidos.",
+      label: "cuenta nueva por invitación",
+    })
+  } catch (notifyError) {
+    console.error("[referrals] No se pudo avisar al dueño de la cuenta por invitación:", notifyError)
+  }
+  return true
 }
 
 // ─── Aplicar lo ganado ───

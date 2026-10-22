@@ -84,7 +84,7 @@ function PaymentPageInner() {
         return
       }
       if (!res.ok || !data.url) {
-        setErrorMessage(data.error || t("signup_payment_generic_error"))
+        setErrorMessage(t("signup_payment_generic_error"))
         setIsProcessing(false)
         return
       }
@@ -164,7 +164,7 @@ function PaymentPageInner() {
                   if (!res?.ok || !result?.planSlug) {
                     toast({
                       title: t("planes_downgrade_error_title"),
-                      description: result?.error || t("planes_downgrade_error_desc"),
+                      description: t("planes_downgrade_error_desc"),
                       variant: "destructive",
                     })
                     return
