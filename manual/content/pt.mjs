@@ -459,6 +459,7 @@ export default {
         ]],
         ["p", "Se o seu plano tem data de vencimento (por exemplo, o mês de cozinha fundadora), o menu lateral mostra quantos dias faltam, abaixo do seu plano. Três dias antes e no próprio dia avisamos você no app: você pode escolher o plano com o qual quer continuar e <strong>programar o pagamento</strong>, cobrado no dia em que seu plano vence. Seu plano só muda quando a Stripe confirma o pagamento; caso contrário, sua conta passa para o Foodie e você mantém todos os seus dados."],
         ["info", "Importar é grátis", "Importar suas receitas e ingredientes a partir de texto, Excel, PDF (com texto ou escaneado), fotos ou cupons está incluído em todos os planos, inclusive no Foodie, e não tem limite. O que muda com o plano é o que você faz depois: a partir do Home Cook você pode atualizar o preço dos ingredientes que já tem com um cupom ou uma lista, e a partir do Chef de Partie ler suas contagens de estoque."],
+        ["p", "Em <strong>Meu plano</strong> (e também em <strong>Convidar</strong>), o cartão <strong>Seu plano</strong> mostra de relance quando seu plano vence, sua <strong>próxima cobrança</strong> (data e valor) e, se você ganhou meses convidando colegas, de quando até quando eles correm. Se não houver nada programado, mostra a data em que sua conta passaria para o Foodie. Dali mesmo você entra em Convidar."],
         ["figure", "12-mi-plan.jpg", "Meu Plano: seu plano atual, o que ele inclui e como gerenciar sua assinatura."],
         ["h3", "Pagar, mudar ou cancelar"],
         ["p", "Os pagamentos são processados pelo Stripe. Em <strong>Meu Plano</strong> você pode mudar de plano ou abrir o portal de pagamentos para atualizar o cartão ou cancelar. As mudanças aparecem sozinhas na sua conta e você recebe um e-mail de confirmação."],
@@ -482,6 +483,7 @@ export default {
         ["p", "Seu prêmio nunca rebaixa seu plano. No Foodie você recebe um mês de Chef de Partie. Se já tem Chef de Partie com data, somam-se 30 dias; se tem um plano inferior com data, sobe para Chef de Partie. Se tem um plano melhor com data —por exemplo, o mês de cozinha fundadora com Chef Ejecutivo— seus meses <strong>ficam guardados</strong> e começam sozinhos quando seu plano atual terminar. Se você paga seu plano, recebe um mês do seu plano como crédito na próxima fatura."],
         ["tip", "Lembretes", "Se seu colega ainda não começou, avisamos você por e-mail no dia 3 e no dia 14. Em Convidar você vê quantos dias faltam e pode lembrá-lo pelo WhatsApp com um toque."],
         ["info", "As regras, sempre à mão", "Toque no <strong>?</strong> ao lado do título de Convidar para ver todas as regras. Se não começar em 30 dias, o convite vence. Só contam contas novas de pessoas reais."],
+        ["p", "As regras do programa também estão nos <strong>Termos de Uso, seção 4.7</strong>, e a Política de Privacidade explica o que vê quem convidou você: apenas seu primeiro nome, a data de cadastro e o status do convite, nunca suas receitas nem seus dados."],
       ],
     },
     {

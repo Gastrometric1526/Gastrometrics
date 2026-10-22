@@ -22,6 +22,7 @@ import { sendReferralEmail } from "@/lib/services/notify-referral"
 import { getScheduledRenewal } from "@/lib/services/scheduled-renewal"
 import { runFounderGrant } from "@/lib/services/founder-grant"
 import { getPlanBySlug } from "@/lib/plans"
+import { planTimeline } from "@/lib/plan-timeline"
 import {
   REFERRAL,
   activationStep,
@@ -361,6 +362,21 @@ export async function referralOverview(accountId: string, now = Date.now()) {
   }
   const rewards = (info?.meta.referral_rewards as RewardRecord[] | undefined) || []
   const state = await planState(accountId)
+  const bankDays = Number(info?.meta.referral_bank_days) || 0
+  // Vencimiento y siguiente cobro (docs/180), para la tarjeta «Tu plan» de /invita y /mi-plan.
+  const [{ data: billing }, scheduled] = await Promise.all([
+    admin.from("account_plans").select("current_period_end, cancel_at_period_end").eq("account_id", accountId).maybeSingle(),
+    getScheduledRenewal(accountId),
+  ])
+  const timeline = planTimeline({
+    planSlug: state.planSlug,
+    expiresAt: state.expiresAt,
+    hasStripeSubscription: state.hasStripeSubscription,
+    currentPeriodEnd: billing?.current_period_end ?? null,
+    cancelAtPeriodEnd: Boolean(billing?.cancel_at_period_end),
+    scheduled: scheduled ? { planSlug: scheduled.planSlug, startsAt: scheduled.startsAt } : null,
+    bankDays,
+  })
   return {
     code,
     link,
@@ -368,7 +384,8 @@ export async function referralOverview(accountId: string, now = Date.now()) {
     rewardsEarned: rewards.filter((r) => r.kind !== "none").length,
     rewardsThisYear: rewardsInLastYear(rewards, now),
     maxRewardsPerYear: REFERRAL.maxRewardsPerYear,
-    bankDays: Number(info?.meta.referral_bank_days) || 0,
+    bankDays,
+    timeline,
     /** Cuándo empiezan los meses guardados: al vencer el plan actual. */
     bankStartsAt: state.expiresAt,
     planSlug: state.planSlug,

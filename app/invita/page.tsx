@@ -7,16 +7,17 @@
  */
 
 import { useEffect, useState } from "react"
-import { Copy, Check, Gift, Mail, MessageCircle, HelpCircle, Clock, CheckCircle2, XCircle, PiggyBank } from "lucide-react"
+import { Copy, Check, Gift, Mail, MessageCircle, HelpCircle, Clock, CheckCircle2, XCircle } from "lucide-react"
 import { Sidebar } from "@/components/sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { InvitaTour } from "@/components/page-tours"
 import { ReferralRulesDialog } from "@/components/referral-rules-dialog"
+import { PlanTimelineCard } from "@/components/plan-timeline-card"
+import type { PlanTimeline } from "@/lib/plan-timeline"
 import { useLanguage } from "@/contexts/language-context"
 import { formatDate } from "@/lib/date-format"
-import { getPlanBySlug } from "@/lib/plans"
 import type { TranslationKey } from "@/lib/i18n/translations"
 
 type Invite = { name: string; status: "registered" | "active" | "rewarded" | "expired"; registeredAt: string; day: number; daysLeft: number }
@@ -31,6 +32,7 @@ type Overview = {
   bankStartsAt: string | null
   planSlug: string
   giftDays: number
+  timeline: PlanTimeline
 }
 
 const STATUS_KEY: Record<Invite["status"], TranslationKey> = {
@@ -68,7 +70,6 @@ export default function InvitaPage() {
   const remindUrl = (name: string) =>
     `https://wa.me/?text=${encodeURIComponent(t("invita_remind_message").replace("{name}", name).replace("{link}", data?.link || ""))}`
 
-  const timedPlan = data && data.planSlug !== "foodie" && data.bankStartsAt
   const capReached = data ? data.rewardsThisYear >= data.maxRewardsPerYear : false
 
   return (
@@ -138,6 +139,8 @@ export default function InvitaPage() {
             )}
           </section>
 
+          {data?.timeline && <PlanTimelineCard planSlug={data.planSlug} timeline={data.timeline} bankDays={data.bankDays} />}
+
           {data && (
             <section data-tour="invita-rewards" className="space-y-3">
               <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
@@ -148,19 +151,6 @@ export default function InvitaPage() {
                   {t("invita_rewards_year").replace("{n}", String(data.rewardsThisYear)).replace("{max}", String(data.maxRewardsPerYear))}
                 </p>
               </div>
-              {data.bankDays > 0 && data.bankStartsAt && (
-                <p className="flex items-start gap-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
-                  <PiggyBank className="mt-0.5 h-4 w-4 shrink-0" />
-                  {t("invita_bank_note").replace("{days}", String(data.bankDays)).replace("{date}", formatDate(data.bankStartsAt))}
-                </p>
-              )}
-              {data.bankDays === 0 && timedPlan && (
-                <p className="text-sm text-muted-foreground">
-                  {t("invita_timed_plan_note")
-                    .replace("{plan}", getPlanBySlug(data.planSlug).name)
-                    .replace("{date}", formatDate(data.bankStartsAt))}
-                </p>
-              )}
               {capReached && <p className="text-sm text-amber-700 dark:text-amber-400">{t("invita_cap_reached")}</p>}
             </section>
           )}

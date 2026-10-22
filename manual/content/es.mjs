@@ -460,6 +460,7 @@ export default {
         ]],
         ["p", "Si tu plan tiene fecha de vencimiento (por ejemplo, el mes de cocina fundadora), el menú lateral te muestra cuántos días quedan debajo de tu plan. Tres días antes y el mismo día te avisamos en la app: puedes elegir el plan con el que quieres seguir y <strong>programar el pago</strong>, que se cobra el día que vence tu plan. Tu plan solo cambia cuando Stripe confirma el pago; si no, tu cuenta pasa a Foodie y conservas todos tus datos."],
         ["info", "Importar es gratis", "Importar tus recetas e ingredientes desde texto, Excel, PDF (con texto o escaneado), fotos o tickets está incluido en todos los planes, también en Foodie, y no tiene límite. Lo que cambia con el plan es lo que haces después: desde Home Cook puedes actualizar el precio de los ingredientes que ya tienes con un ticket o una lista, y desde Chef de Partie leer tus conteos de inventario."],
+        ["p", "En <strong>Mi Plan</strong> (y también en <strong>Invita</strong>), la tarjeta <strong>Tu plan</strong> te dice en una mirada cuándo vence tu plan, cuál es tu <strong>siguiente cobro</strong> (fecha y monto) y, si ganaste meses invitando colegas, desde y hasta cuándo corren. Si no hay nada programado, te dice la fecha en que tu cuenta pasaría a Foodie. Desde ahí mismo entras a Invita."],
         ["figure", "12-mi-plan.jpg", "Mi Plan: tu plan actual, lo que incluye y cómo gestionar tu suscripción."],
         ["h3", "Pagar, cambiar o cancelar"],
         ["p", "Los pagos se procesan con Stripe. Desde <strong>Mi Plan</strong> puedes cambiar de plan o abrir el portal de pagos para actualizar tu tarjeta o cancelar. Los cambios se reflejan solos en tu cuenta y te llega un correo de confirmación."],
@@ -483,6 +484,7 @@ export default {
         ["p", "Tu premio nunca baja tu plan. En Foodie recibes un mes de Chef de Partie. Si ya tienes Chef de Partie con fecha, se suman 30 días; si tienes un plan más bajo con fecha, subes a Chef de Partie. Si tienes un plan mejor con fecha —por ejemplo, el mes de cocina fundadora con Chef Ejecutivo— tus meses <strong>se guardan</strong> y empiezan solos cuando termina tu plan actual. Si pagas tu plan, recibes un mes de tu plan como saldo a favor en tu próxima factura."],
         ["tip", "Recordatorios", "Si tu colega no ha empezado, te avisamos por correo a los 3 y a los 14 días. En Invita ves cuántos días le quedan y puedes recordarle por WhatsApp con un toque."],
         ["info", "Las reglas, siempre a mano", "Toca el <strong>?</strong> junto al título de Invita para ver todas las reglas. Si no empieza en 30 días, la invitación vence. Solo cuentan cuentas nuevas de personas reales."],
+        ["p", "Las reglas del programa también están en los <strong>Términos de Uso, sección 4.7</strong>, y la Política de Privacidad explica qué ve quien te invitó: solo tu nombre de pila, tu fecha de registro y el estado de la invitación, nunca tus recetas ni tus datos."],
       ],
     },
     {

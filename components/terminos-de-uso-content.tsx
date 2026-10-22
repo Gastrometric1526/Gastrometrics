@@ -80,6 +80,12 @@ export function TerminosDeUsoContent() {
             <h3 className="text-lg font-semibold text-foreground">{t("terminos_s4_6_title")}</h3>
             <p className="text-muted-foreground">{t("terminos_s4_6_body")}</p>
           </div>
+
+          {/* Referidos (docs/179). */}
+          <div id="referidos" className="space-y-2 scroll-mt-24">
+            <h3 className="text-lg font-semibold text-foreground">{t("terminos_s4_7_title")}</h3>
+            <p className="text-muted-foreground">{t("terminos_s4_7_body")}</p>
+          </div>
         </section>
 
         <section className="space-y-3">

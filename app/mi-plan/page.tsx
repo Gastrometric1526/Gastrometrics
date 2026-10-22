@@ -8,6 +8,7 @@ import { Sidebar } from "@/components/sidebar"
 import { AuthGuard } from "@/components/auth-guard"
 import { PlansGrid } from "@/components/plans-grid"
 import { MiPlanTour } from "@/components/page-tours"
+import { PlanTimelineFromApi } from "@/components/plan-timeline-card"
 import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
 import { useAllBusinesses } from "@/lib/storage/businesses"
@@ -203,6 +204,11 @@ export default function MiPlanPage() {
                 </div>
               </div>
             )}
+
+            {/* Tu plan (docs/180): vencimiento, siguiente cobro, meses ganados y entrada a Invita. */}
+            <div className="max-w-2xl">
+              <PlanTimelineFromApi />
+            </div>
 
             {/* Barra de uso — solo negocios, ver nota junto a useAllBusinesses() arriba. */}
             <div className="max-w-xs border border-hairline rounded-xl p-4 space-y-2">

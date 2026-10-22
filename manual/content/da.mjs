@@ -459,6 +459,7 @@ export default {
         ]],
         ["p", "Hvis din plan har en udløbsdato (fx måneden som stiftende køkken), viser menuen, hvor mange dage der er tilbage, under din plan. Tre dage før og på selve dagen minder vi dig om det i appen: du kan vælge den plan, du vil fortsætte med, og <strong>planlægge betalingen</strong>, som trækkes den dag, din plan udløber. Din plan skifter kun, når Stripe bekræfter betalingen; ellers skifter din konto til Foodie, og du beholder alle dine data."],
         ["info", "Import er gratis", "Import af dine opskrifter og ingredienser fra tekst, Excel, PDF (med tekst eller scannet), fotos eller kvitteringer er med i alle planer, også Foodie, og uden grænse. Det, der ændrer sig med planen, er det, du gør bagefter: fra Home Cook kan du opdatere prisen på de ingredienser, du allerede har, med en kvittering eller en liste, og fra Chef de Partie læse dine lageroptællinger."],
+        ["p", "I <strong>Min plan</strong> (og også i <strong>Inviter</strong>) viser kortet <strong>Din plan</strong> med ét blik, hvornår din plan udløber, din <strong>næste opkrævning</strong> (dato og beløb) og, hvis du har optjent måneder ved at invitere kolleger, fra hvornår til hvornår de løber. Er intet planlagt, viser det datoen, hvor din konto ville gå over til Foodie. Herfra går du direkte til Inviter."],
         ["figure", "12-mi-plan.jpg", "Min plan: din nuværende plan, hvad den indeholder, og hvordan du administrerer dit abonnement."],
         ["h3", "Betal, skift eller opsig"],
         ["p", "Betalinger behandles af Stripe. Under <strong>Min plan</strong> kan du skifte plan eller åbne betalingsportalen for at opdatere dit kort eller opsige. Ændringer vises automatisk på din konto, og du får en bekræftelse på e-mail."],
@@ -482,6 +483,7 @@ export default {
         ["p", "Din belønning sænker aldrig din plan. På Foodie får du en måned med Chef de Partie. Har du allerede Chef de Partie med slutdato, lægges 30 dage til; har du en lavere plan med slutdato, rykker du op til Chef de Partie. Har du en bedre plan med slutdato —for eksempel måneden som stiftende køkken med Chef Ejecutivo— <strong>gemmes</strong> dine måneder og starter automatisk, når din nuværende plan slutter. Betaler du for din plan, får du en måned af din plan som kredit på din næste faktura."],
         ["tip", "Påmindelser", "Er din kollega ikke kommet i gang, skriver vi til dig på dag 3 og dag 14. I Inviter ser du, hvor mange dage de har tilbage, og kan minde dem om det på WhatsApp med ét tryk."],
         ["info", "Reglerne, altid ved hånden", "Tryk på <strong>?</strong> ved siden af titlen i Inviter for at se alle reglerne. Kommer de ikke i gang inden for 30 dage, udløber invitationen. Kun nye konti for rigtige personer tæller."],
+        ["p", "Programmets regler står også i <strong>Brugsvilkårene, afsnit 4.7</strong>, og Privatlivspolitikken forklarer, hvad den, der inviterede dig, ser: kun dit fornavn, din tilmeldingsdato og invitationens status, aldrig dine opskrifter eller data."],
       ],
     },
     {

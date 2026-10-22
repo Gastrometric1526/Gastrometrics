@@ -569,6 +569,10 @@ export function HomeContent() {
                       </Link>
                     </AccordionContent>
                   </AccordionItem>
+                  <AccordionItem value="item-referral" className="border-border">
+                    <AccordionTrigger className="text-foreground hover:text-primary">{t("landing_faq_q13")}</AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground">{t("landing_faq_a13")}</AccordionContent>
+                  </AccordionItem>
                 </Accordion>
               </CardContent>
             </Card>

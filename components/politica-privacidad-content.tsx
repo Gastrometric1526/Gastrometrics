@@ -36,6 +36,7 @@ export function PoliticaPrivacidadContent() {
         <section className="space-y-3">
           <h2 className="text-2xl font-semibold text-foreground">{t("privacidad_s2_title")}</h2>
           <p className="text-muted-foreground">{t("privacidad_s2_body")}</p>
+          <p className="text-muted-foreground">{t("privacidad_s2_referral")}</p>
         </section>
 
         <section className="space-y-3">

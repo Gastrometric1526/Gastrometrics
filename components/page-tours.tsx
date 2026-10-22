@@ -419,6 +419,8 @@ export function MiPlanTour({ hasManageButton }: { hasManageButton: boolean }) {
       description: t("tour_miplan_header_desc"),
       selector: '[data-tour="miplan-header"]',
     },
+    // Tu plan: vencimiento, siguiente cobro y meses ganados (docs/180).
+    { id: "timeline", title: t("tour_plan_timeline_title"), description: t("tour_plan_timeline_desc"), selector: '[data-tour="plan-timeline"]' },
     ...(hasManageButton
       ? [
           {
@@ -542,6 +544,7 @@ export function InvitaTour() {
   const steps: TourStep[] = [
     { id: "header", title: t("tour_invita_header_title"), description: t("tour_invita_header_desc"), selector: '[data-tour="invita-header"]' },
     { id: "link", title: t("tour_invita_link_title"), description: t("tour_invita_link_desc"), selector: '[data-tour="invita-link"]' },
+    { id: "timeline", title: t("tour_plan_timeline_title"), description: t("tour_plan_timeline_desc"), selector: '[data-tour="plan-timeline"]' },
     { id: "list", title: t("tour_invita_list_title"), description: t("tour_invita_list_desc"), selector: '[data-tour="invita-list"]' },
     { id: "rules", title: t("tour_invita_rules_title"), description: t("tour_invita_rules_desc"), selector: '[data-tour="invita-rules"]' },
   ]

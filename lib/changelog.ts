@@ -32,6 +32,60 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-22b",
+    tutorialHref: tourHref("mi-plan"),
+    content: {
+      es: {
+        title: "Mira cuándo vence tu plan y tu siguiente cobro",
+        items: [
+          "Nuevo en Mi Plan y en Invita: la tarjeta «Tu plan» te dice cuándo vence tu plan, cuál es tu siguiente cobro y desde y hasta cuándo corren los meses que ganaste invitando.",
+          "Desde Mi Plan entras directo a Invita para ganar más meses.",
+          "Actualizamos los Términos de Uso (sección 4.7, programa de referidos) y la Política de Privacidad (qué ve quien te invitó).",
+        ],
+      },
+      en: {
+        title: "See when your plan ends and your next charge",
+        items: [
+          "New in My Plan and Invite: the \"Your plan\" card shows when your plan ends, your next charge, and from when to when the months you earned by inviting run.",
+          "From My Plan you can go straight to Invite to earn more months.",
+          "We updated the Terms of Use (section 4.7, referral program) and the Privacy Policy (what the person who invited you can see).",
+        ],
+      },
+      da: {
+        title: "Se, hvornår din plan udløber, og din næste opkrævning",
+        items: [
+          "Nyt i Min plan og Inviter: kortet \"Din plan\" viser, hvornår din plan udløber, din næste opkrævning, og fra hvornår til hvornår de måneder, du har optjent ved at invitere, løber.",
+          "Fra Min plan går du direkte til Inviter for at optjene flere måneder.",
+          "Vi har opdateret Brugsvilkårene (afsnit 4.7, henvisningsprogram) og Privatlivspolitikken (hvad den, der inviterede dig, kan se).",
+        ],
+      },
+      fr: {
+        title: "Voyez quand votre forfait se termine et votre prochain prélèvement",
+        items: [
+          "Nouveau dans Mon forfait et Inviter : la carte « Votre forfait » indique quand votre forfait se termine, votre prochain prélèvement, et la période des mois gagnés en invitant.",
+          "Depuis Mon forfait, vous accédez directement à Inviter pour gagner plus de mois.",
+          "Nous avons mis à jour les Conditions d'utilisation (section 4.7, programme de parrainage) et la Politique de confidentialité (ce que voit la personne qui vous a invité).",
+        ],
+      },
+      pt: {
+        title: "Veja quando seu plano vence e sua próxima cobrança",
+        items: [
+          "Novo em Meu plano e Convidar: o cartão \"Seu plano\" mostra quando seu plano vence, sua próxima cobrança e de quando até quando correm os meses que você ganhou convidando.",
+          "De Meu plano você vai direto para Convidar para ganhar mais meses.",
+          "Atualizamos os Termos de Uso (seção 4.7, programa de indicação) e a Política de Privacidade (o que vê quem convidou você).",
+        ],
+      },
+      zh: {
+        title: "查看套餐到期时间和下次扣费",
+        items: [
+          "「我的套餐」和「邀请」页面新增「你的套餐」卡片：显示套餐何时到期、下次扣费，以及通过邀请赚到的月份的起止日期。",
+          "从「我的套餐」可以直接进入「邀请」，赚取更多月份。",
+          "我们更新了《使用条款》（第 4.7 条，推荐计划）和《隐私政策》（邀请你的人能看到什么）。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-10-22",
     tutorialHref: tourHref("invita"),
     content: {
