@@ -23,6 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/aviso-de-responsabilidad",
     "/recursos",
     "/resenas",
+    "/calculadora-food-cost",
   ]
 
   const featureRoutes = featurePages.map((f) => `/caracteristicas/${f.slug}`)

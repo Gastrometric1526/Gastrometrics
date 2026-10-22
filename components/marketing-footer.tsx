@@ -48,6 +48,10 @@ export function MarketingFooter() {
           <Link href="/resenas" className="hover:text-foreground transition-colors">
             {t("reviews_page_title")}
           </Link>
+          {/* Calculadora gratis (docs/178). */}
+          <Link href="/calculadora-food-cost" className="hover:text-foreground transition-colors">
+            {t("calc_footer_link")}
+          </Link>
           <a
             href={TRUSTPILOT_URL}
             target="_blank"

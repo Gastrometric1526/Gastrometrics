@@ -21,7 +21,7 @@ import { countOwnRecipesAllBusinesses } from "@/lib/storage/recipes"
 import { usePlanStatus, planExpiryOf } from "@/lib/plan-status"
 import { useTeamPreview } from "@/lib/plan-access"
 
-const QUIET_PREFIXES = ["/login", "/signup", "/forgot-password", "/reset-password", "/planes", "/about", "/contacto", "/admin", "/recursos", "/caracteristicas", "/software", "/resenas", "/terminos", "/politica", "/aviso"]
+const QUIET_PREFIXES = ["/login", "/signup", "/forgot-password", "/reset-password", "/planes", "/about", "/contacto", "/admin", "/recursos", "/caracteristicas", "/software", "/resenas", "/calculadora-food-cost", "/terminos", "/politica", "/aviso"]
 
 function isQuiet(pathname: string | null): boolean {
   if (!pathname || pathname === "/") return true
