@@ -38,10 +38,10 @@ import {
   FileText,
   ExternalLink,
   Download,
-  Eraser,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { setCurrentCurrencyCode } from "@/lib/currency"
+import { AccountDangerZone } from "@/components/account-danger-zone"
 import { SettingsTour } from "@/components/page-tours"
 import { hasStoredPassword, verifyPassword } from "@/lib/utils/password-hash"
 import { useActiveMembership } from "@/lib/plan-access"
@@ -107,7 +107,7 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
   const router = useRouter()
-  const { user, userProfile: realUserProfile, updateUserProfile, logout } = useAuth()
+  const { user, userProfile: realUserProfile, updateUserProfile } = useAuth()
   const { language, setLanguage, t } = useLanguage()
   // Herramientas de desarrollo (Respaldo y Restauración + Reset) tocan TODO el
   // localStorage del navegador sin distinguir de quién es cada dato — quedan fuera de
@@ -132,25 +132,6 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
   const [businessType, setBusinessType] = useState("Restaurante")
   const [businessSize, setBusinessSize] = useState("")
   const [experience, setExperience] = useState("")
-  // Eliminar cuenta (self-service, ver app/api/account/delete/route.ts) — reemplaza
-  // al viejo "Restablecer Todo" de la pestaña Desarrollador: ese solo limpiaba
-  // localStorage (arquitectura previa a la migración a Supabase, ver docs/60), así
-  // que no borraba ningún dato real y encima redirigía a la landing page sin haber
-  // hecho nada de lo que el usuario esperaba. Esto sí borra la cuenta de verdad.
-  const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false)
-  const [deleteAccountConfirmEmail, setDeleteAccountConfirmEmail] = useState("")
-  const [deleteAccountError, setDeleteAccountError] = useState("")
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
-
-  // Borrar todo el contenido (mantiene la cuenta) — mismo patrón de confirmación por
-  // correo que "Eliminar cuenta", pero es una acción separada e independiente (ver
-  // app/api/account/wipe-content/route.ts).
-  const [showWipeContentConfirm, setShowWipeContentConfirm] = useState(false)
-  const [wipeContentConfirmEmail, setWipeContentConfirmEmail] = useState("")
-  const [wipeContentError, setWipeContentError] = useState("")
-  const [isWipingContent, setIsWipingContent] = useState(false)
-  const [wipeContentDone, setWipeContentDone] = useState(false)
-
   // Descargar respaldo completo — corre en el navegador (lib/backup/export-account-
   // backup.ts), puede tardar varios segundos si hay muchas recetas/menús (genera un PDF
   // por cada uno), por eso el estado de progreso.
@@ -325,69 +306,6 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
     setShowEmailConfirm(false)
     setEmailConfirmPassword("")
     setEmailConfirmError("")
-  }
-
-  const handleDeleteAccount = async () => {
-    if (!user?.email || deleteAccountConfirmEmail.trim().toLowerCase() !== user.email.toLowerCase()) {
-      setDeleteAccountError(t("settings_delete_account_error_mismatch"))
-      return
-    }
-    setDeleteAccountError("")
-    setIsDeletingAccount(true)
-    try {
-      const res = await fetch("/api/account/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmEmail: deleteAccountConfirmEmail.trim() }),
-      })
-      const json = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        setDeleteAccountError(json.error || t("settings_delete_account_generic_error"))
-        setIsDeletingAccount(false)
-        return
-      }
-
-      await logout()
-      // Navegación dura (mismo criterio que el "Cerrar sesión" del sidebar): la
-      // cuenta ya no existe, así que no hay nada que un router.push de React
-      // pudiera perder contra el guard de páginas protegidas.
-      window.location.href = "/"
-    } catch (error) {
-      console.error("Error eliminando la cuenta:", error)
-      setDeleteAccountError(t("settings_delete_account_generic_error"))
-      setIsDeletingAccount(false)
-    }
-  }
-
-  const handleWipeContent = async () => {
-    if (!user?.email || wipeContentConfirmEmail.trim().toLowerCase() !== user.email.toLowerCase()) {
-      setWipeContentError(t("settings_delete_account_error_mismatch"))
-      return
-    }
-    setWipeContentError("")
-    setIsWipingContent(true)
-    try {
-      const res = await fetch("/api/account/wipe-content", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmEmail: wipeContentConfirmEmail.trim() }),
-      })
-      const json = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        setWipeContentError(json.error || t("settings_delete_account_generic_error"))
-        setIsWipingContent(false)
-        return
-      }
-      // Navegación dura, mismo criterio que "Eliminar cuenta": todas las cachés
-      // reactivas en memoria (recetas, ingredientes, negocios, etc.) quedan apuntando
-      // a datos que ya no existen — un router.push normal las dejaría desactualizadas
-      // hasta un refresh manual.
-      window.location.href = "/dashboard"
-    } catch (error) {
-      console.error("Error borrando el contenido de la cuenta:", error)
-      setWipeContentError(t("settings_delete_account_generic_error"))
-      setIsWipingContent(false)
-    }
   }
 
   const handleExportBackup = async () => {
@@ -871,158 +789,8 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Eraser className="h-5 w-5 text-destructive" />
-                    {t("settings_wipe_content_title")}
-                  </CardTitle>
-                  <CardDescription>{t("settings_wipe_content_desc")}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {wipeContentDone ? (
-                    <p className="text-sm text-foreground">{t("settings_wipe_content_done")}</p>
-                  ) : !showWipeContentConfirm ? (
-                    <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground">{t("settings_wipe_content_body")}</p>
-                      <Button
-                        variant="destructive"
-                        onClick={() => {
-                          setWipeContentError("")
-                          setWipeContentConfirmEmail("")
-                          setShowWipeContentConfirm(true)
-                        }}
-                        className="gap-2"
-                      >
-                        <Eraser className="h-4 w-4" />
-                        {t("settings_wipe_content_button")}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 space-y-3">
-                        <div className="flex items-start gap-3">
-                          <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
-                          <div className="space-y-2 flex-1">
-                            <h4 className="font-semibold text-destructive">{t("settings_confirm_title")}</h4>
-                            <p className="text-sm text-muted-foreground">{t("settings_wipe_content_confirm_intro")}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="wipe-content-email" className="text-sm">
-                          {t("settings_delete_account_confirm_input_label").replace("{email}", user?.email || "")}
-                        </Label>
-                        <Input
-                          id="wipe-content-email"
-                          type="email"
-                          autoComplete="off"
-                          value={wipeContentConfirmEmail}
-                          onChange={(e) => setWipeContentConfirmEmail(e.target.value)}
-                          placeholder={user?.email || ""}
-                        />
-                        {wipeContentError && <p className="text-sm text-destructive">{wipeContentError}</p>}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => setShowWipeContentConfirm(false)}
-                          disabled={isWipingContent}
-                          className="flex-1"
-                        >
-                          {t("common_cancel")}
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          onClick={handleWipeContent}
-                          disabled={isWipingContent || !wipeContentConfirmEmail}
-                          className="flex-1 gap-2"
-                        >
-                          {isWipingContent && <Loader2 className="h-4 w-4 animate-spin" />}
-                          {isWipingContent ? t("settings_wipe_content_wiping") : t("settings_wipe_content_confirm_button")}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Trash2 className="h-5 w-5 text-destructive" />
-                    {t("settings_delete_account_title")}
-                  </CardTitle>
-                  <CardDescription>{t("settings_delete_account_desc")}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {!showDeleteAccountConfirm ? (
-                    <div data-tour="settings-account-delete" className="space-y-3">
-                      <p className="text-sm text-muted-foreground">{t("settings_delete_account_body")}</p>
-                      <Button
-                        variant="destructive"
-                        onClick={() => {
-                          setDeleteAccountError("")
-                          setDeleteAccountConfirmEmail("")
-                          setShowDeleteAccountConfirm(true)
-                        }}
-                        className="gap-2"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        {t("settings_delete_account_button")}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 space-y-3">
-                        <div className="flex items-start gap-3">
-                          <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
-                          <div className="space-y-2 flex-1">
-                            <h4 className="font-semibold text-destructive">{t("settings_confirm_title")}</h4>
-                            <p className="text-sm text-muted-foreground">{t("settings_delete_account_confirm_intro")}</p>
-                            <Badge variant="destructive" className="mt-2">
-                              {t("settings_delete_account_grace_notice")}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="delete-account-email" className="text-sm">
-                          {t("settings_delete_account_confirm_input_label").replace("{email}", user?.email || "")}
-                        </Label>
-                        <Input
-                          id="delete-account-email"
-                          type="email"
-                          autoComplete="off"
-                          value={deleteAccountConfirmEmail}
-                          onChange={(e) => setDeleteAccountConfirmEmail(e.target.value)}
-                          placeholder={user?.email || ""}
-                        />
-                        {deleteAccountError && <p className="text-sm text-destructive">{deleteAccountError}</p>}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => setShowDeleteAccountConfirm(false)}
-                          disabled={isDeletingAccount}
-                          className="flex-1"
-                        >
-                          {t("common_cancel")}
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          onClick={handleDeleteAccount}
-                          disabled={isDeletingAccount || !deleteAccountConfirmEmail}
-                          className="flex-1 gap-2"
-                        >
-                          {isDeletingAccount && <Loader2 className="h-4 w-4 animate-spin" />}
-                          {isDeletingAccount ? t("settings_delete_account_deleting") : t("settings_delete_account_confirm_button")}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              {/* Borrar contenido y eliminar cuenta, compartido con Mi Plan (docs/182). */}
+              <AccountDangerZone />
             </TabsContent>
             )}
           </div>

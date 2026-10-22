@@ -442,6 +442,8 @@ export function MiPlanTour({ hasManageButton }: { hasManageButton: boolean }) {
       description: t("tour_miplan_grid_desc"),
       selector: '[data-tour="miplan-grid"]',
     },
+    // Cancelar suscripción, borrar contenido y eliminar cuenta (docs/182).
+    { id: "account", title: t("tour_miplan_account_title"), description: t("tour_miplan_account_desc"), selector: '[data-tour="miplan-account"]' },
     // Vencimiento, cuenta regresiva y pago programado (docs/165).
     {
       id: "expiry",

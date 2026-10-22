@@ -1,13 +1,14 @@
 /**
  * Programa de referidos «Regala un mes, gana un mes» (docs/179) — decisiones del dueño:
- * - Quien entra por el enlace de alguien recibe 30 días de Chef de Partie, sin tarjeta
+ * - Quien entra por el enlace de alguien recibe 30 días de Chef Ejecutivo, sin tarjeta
  *   y sin pedir nada. Al terminar vuelve solo a Foodie (cancelación gratuita), salvo que
  *   decida pagar.
  * - Quien invitó gana un mes cuando el invitado se ACTIVA (1 receta con costo, o paga un
  *   plan) dentro de sus 30 días. Si no se activa, la invitación vence sin premio.
- * - El premio nunca pisa un plan mejor: si quien invita tiene un plan gratis por tiempo más
- *   alto (cocinas fundadoras, /admin), el mes se guarda y empieza cuando termine; si ya
- *   paga con Stripe, recibe un mes de su plan como saldo a favor.
+ * - El premio es Chef Ejecutivo (el plan más alto, docs/182): con Foodie empieza hoy; con un
+ *   plan por tiempo (cocinas fundadoras, /admin) se suman 30 días al final, subiendo a
+ *   Chef Ejecutivo si era menor; si ya paga con Stripe, recibe un mes de su plan como saldo
+ *   a favor. El «banco» de meses guardados queda solo por si algún día hay un plan mayor.
  * - Tope: 12 meses ganados por año.
  * Distinto de Equipo: aquí cada quien tiene su propia cuenta y su propio negocio.
  *
@@ -18,7 +19,8 @@
 import { getPlanBySlug, plans } from "@/lib/plans"
 
 export const REFERRAL = {
-  giftPlanSlug: "chef-de-partie",
+  // Chef Ejecutivo para los dos lados (decisión del dueño, docs/182; antes Chef de Partie).
+  giftPlanSlug: "chef-ejecutivo",
   giftDays: 30,
   /** Días que tiene el invitado para activarse (= su mes gratis). */
   activationWindowDays: 30,
@@ -90,7 +92,7 @@ export function rewardAction(state: PlanState, now: number, days: number = REFER
   // Plan sin vencimiento y sin Stripe (asignado para siempre desde /admin o tester): no hay cómo usar un mes más.
   if (expiresAt === null) return { kind: "none", reason: "permanent_plan" }
   if (rank(state.planSlug) > rank(gift)) return { kind: "bank", days }
-  // Mismo plan, o uno menor por tiempo: Chef de Partie hasta el vencimiento actual + los días ganados.
+  // Mismo plan, o uno menor por tiempo: el plan del premio hasta el vencimiento actual + los días ganados.
   return { kind: state.planSlug === gift ? "extend" : "grant", planSlug: gift, expiresAt: new Date(expiresAt + days * DAY_MS).toISOString() }
 }
 

@@ -10,6 +10,8 @@ import { PlansGrid } from "@/components/plans-grid"
 import { MiPlanTour } from "@/components/page-tours"
 import { PlanTimelineCard } from "@/components/plan-timeline-card"
 import { ReferralSection, type ReferralOverview } from "@/components/referral-section"
+import { CancelSubscriptionCard } from "@/components/cancel-subscription-card"
+import { AccountDangerZone } from "@/components/account-danger-zone"
 import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
 import { useAllBusinesses } from "@/lib/storage/businesses"
@@ -264,6 +266,25 @@ export default function MiPlanPage() {
             <div id="planes-grid" data-tour="miplan-grid" className="border-t border-hairline pt-8 space-y-4">
               <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("mi_plan_change_title")}</h2>
               <PlansGrid freeRedirectTo="/mi-plan" />
+            </div>
+
+            {/* Tu cuenta (docs/182): cancelar la suscripción, borrar el contenido o eliminar la cuenta. */}
+            <div id="cuenta" data-tour="miplan-account" className="max-w-3xl border-t border-hairline pt-8 space-y-4 scroll-mt-24">
+              <div className="space-y-1">
+                <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("mi_plan_account_title")}</h2>
+                <p className="text-sm text-text-3">{t("mi_plan_account_desc")}</p>
+              </div>
+              {referral?.timeline.kind === "paid" && !cancelAtPeriodEnd && (
+                <CancelSubscriptionCard
+                  planName={currentPlan.name}
+                  periodEnd={referral.timeline.nextChargeAt}
+                  onCancelled={() => {
+                    setCancelAtPeriodEnd(true)
+                    setCurrentPeriodEnd(referral.timeline.kind === "paid" ? referral.timeline.nextChargeAt : null)
+                  }}
+                />
+              )}
+              <AccountDangerZone />
             </div>
           </div>
         </div>

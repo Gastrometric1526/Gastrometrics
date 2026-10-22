@@ -32,6 +32,54 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-22c",
+    tutorialHref: tourHref("mi-plan"),
+    content: {
+      es: {
+        title: "Ahora ganas Chef Ejecutivo, y tu cuenta en Mi Plan",
+        items: [
+          "«Regala un mes, gana un mes» mejora: tu colega recibe 30 días de Chef Ejecutivo, el plan más completo, y tú también ganas Chef Ejecutivo cuando empieza. Si ya tienes un plan con fecha (como las cocinas fundadoras), los 30 días se suman al final.",
+          "En Mi Plan, al final, la nueva sección «Tu cuenta»: cancela tu suscripción (sigues con tu plan hasta el fin del período pagado), borra todo tu contenido o elimina tu cuenta.",
+        ],
+      },
+      en: {
+        title: "You now earn Chef Ejecutivo, and your account is in My Plan",
+        items: [
+          "\"Give a month, get a month\" gets better: your colleague gets 30 days of Chef Ejecutivo, the most complete plan, and you also earn Chef Ejecutivo when they get started. If you already have a plan with an end date (like founding kitchens), the 30 days are added at the end.",
+          "At the bottom of My Plan, the new \"Your account\" section: cancel your subscription (you keep your plan until the end of the paid period), delete all your content or delete your account.",
+        ],
+      },
+      da: {
+        title: "Nu får du Chef Ejecutivo, og din konto ligger i Min plan",
+        items: [
+          "\"Giv en måned, få en måned\" bliver bedre: din kollega får 30 dage med Chef Ejecutivo, den mest komplette plan, og du får også Chef Ejecutivo, når de kommer i gang. Har du allerede en plan med slutdato (som stiftende køkkener), lægges de 30 dage til i slutningen.",
+          "Nederst i Min plan finder du den nye sektion \"Din konto\": opsig dit abonnement (du beholder din plan til udgangen af den betalte periode), slet alt dit indhold eller slet din konto.",
+        ],
+      },
+      fr: {
+        title: "Vous gagnez désormais Chef Ejecutivo, et votre compte est dans Mon forfait",
+        items: [
+          "« Offrez un mois, gagnez un mois » s'améliore : votre collègue reçoit 30 jours de Chef Ejecutivo, le forfait le plus complet, et vous gagnez aussi Chef Ejecutivo quand il démarre. Si vous avez déjà un forfait avec une date de fin (comme les cuisines fondatrices), les 30 jours s'ajoutent à la fin.",
+          "En bas de Mon forfait, la nouvelle section « Votre compte » : résiliez votre abonnement (vous gardez votre forfait jusqu'à la fin de la période payée), effacez tout votre contenu ou supprimez votre compte.",
+        ],
+      },
+      pt: {
+        title: "Agora você ganha Chef Ejecutivo, e sua conta está em Meu plano",
+        items: [
+          "\"Dê um mês, ganhe um mês\" fica melhor: seu colega recebe 30 dias de Chef Ejecutivo, o plano mais completo, e você também ganha Chef Ejecutivo quando ele começa. Se você já tem um plano com data (como as cozinhas fundadoras), os 30 dias se somam ao final.",
+          "No fim de Meu plano, a nova seção \"Sua conta\": cancele sua assinatura (você continua com seu plano até o fim do período pago), apague todo o seu conteúdo ou exclua sua conta.",
+        ],
+      },
+      zh: {
+        title: "现在奖励升级为 Chef Ejecutivo，账户管理也在「我的套餐」",
+        items: [
+          "「送一个月，得一个月」升级：你的同行获得 30 天功能最全的 Chef Ejecutivo，对方开始使用时你也获得 Chef Ejecutivo。如果你已有带到期日的套餐（例如创始厨房），这 30 天会加在到期日之后。",
+          "「我的套餐」底部新增「你的账户」：取消订阅（套餐保持到已付费周期结束）、清空所有内容或删除账户。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-10-22b",
     tutorialHref: tourHref("mi-plan"),
     content: {
@@ -92,54 +140,54 @@ export const CHANGELOG: ChangelogEntry[] = [
       es: {
         title: "Regala un mes, gana un mes",
         items: [
-          "Nuevo: «Invita» en el menú lateral. Comparte tu enlace con otro chef o cocina: recibe 30 días de Chef de Partie gratis, sin tarjeta y sin compromiso. Al terminar vuelve a Foodie sola si no quiere seguir.",
+          "Nuevo: «Invita» en el menú lateral. Comparte tu enlace con otro chef o cocina: recibe 30 días de Chef Ejecutivo gratis, sin tarjeta y sin compromiso. Al terminar vuelve a Foodie sola si no quiere seguir.",
           "Tú ganas un mes cuando tu invitado empieza de verdad (guarda una receta con costo o elige un plan) dentro de sus primeros 30 días. Hasta 12 meses al año.",
-          "Si eres cocina fundadora o ya tienes un plan mejor, no pierdes nada: tus meses ganados se guardan y empiezan cuando termine tu plan actual. Si pagas, se descuentan de tu próxima factura.",
+          "Si eres cocina fundadora, no pierdes nada: cada mes que ganes se suma al final de tu Chef Ejecutivo. Si pagas, se descuenta de tu próxima factura.",
           "Toca el «?» en Invita para ver todas las reglas.",
         ],
       },
       en: {
         title: "Give a month, get a month",
         items: [
-          "New: \"Invite\" in the side menu. Share your link with another chef or kitchen: they get 30 days of Chef de Partie free, no card, no commitment. When it ends they go back to Foodie on their own if they don't want to continue.",
+          "New: \"Invite\" in the side menu. Share your link with another chef or kitchen: they get 30 days of Chef Ejecutivo free, no card, no commitment. When it ends they go back to Foodie on their own if they don't want to continue.",
           "You earn a month when your guest really gets started (saves a recipe with cost or picks a plan) within their first 30 days. Up to 12 months a year.",
-          "If you're a founding kitchen or already have a better plan, you lose nothing: the months you earn are saved and start when your current plan ends. If you pay, they come off your next invoice.",
+          "If you're a founding kitchen, you lose nothing: every month you earn is added to the end of your Chef Ejecutivo. If you pay, it comes off your next invoice.",
           "Tap the \"?\" in Invite to see all the rules.",
         ],
       },
       da: {
         title: "Giv en måned, få en måned",
         items: [
-          "Nyt: \"Inviter\" i sidemenuen. Del dit link med en anden kok eller et køkken: de får 30 dage med Chef de Partie gratis, uden kort og uden binding. Når perioden slutter, går de selv tilbage til Foodie, hvis de ikke vil fortsætte.",
+          "Nyt: \"Inviter\" i sidemenuen. Del dit link med en anden kok eller et køkken: de får 30 dage med Chef Ejecutivo gratis, uden kort og uden binding. Når perioden slutter, går de selv tilbage til Foodie, hvis de ikke vil fortsætte.",
           "Du får en måned, når din gæst kommer rigtigt i gang (gemmer en opskrift med kostpris eller vælger en plan) inden for de første 30 dage. Op til 12 måneder om året.",
-          "Er du et stiftende køkken eller har du allerede en bedre plan, mister du intet: de måneder, du optjener, gemmes og starter, når din nuværende plan slutter. Betaler du, trækkes de fra din næste faktura.",
+          "Er du et stiftende køkken, mister du intet: hver måned, du optjener, lægges til i slutningen af din Chef Ejecutivo. Betaler du, trækkes den fra din næste faktura.",
           "Tryk på \"?\" i Inviter for at se alle reglerne.",
         ],
       },
       fr: {
         title: "Offrez un mois, gagnez un mois",
         items: [
-          "Nouveau : « Inviter » dans le menu latéral. Partagez votre lien avec un autre chef ou une autre cuisine : il reçoit 30 jours de Chef de Partie gratuits, sans carte et sans engagement. À la fin, il repasse tout seul à Foodie s'il ne veut pas continuer.",
+          "Nouveau : « Inviter » dans le menu latéral. Partagez votre lien avec un autre chef ou une autre cuisine : il reçoit 30 jours de Chef Ejecutivo gratuits, sans carte et sans engagement. À la fin, il repasse tout seul à Foodie s'il ne veut pas continuer.",
           "Vous gagnez un mois quand votre invité démarre vraiment (enregistre une recette avec coût ou choisit un forfait) dans ses 30 premiers jours. Jusqu'à 12 mois par an.",
-          "Si vous êtes une cuisine fondatrice ou avez déjà un meilleur forfait, vous ne perdez rien : les mois gagnés sont mis de côté et commencent à la fin de votre forfait actuel. Si vous payez, ils sont déduits de votre prochaine facture.",
+          "Si vous êtes une cuisine fondatrice, vous ne perdez rien : chaque mois gagné s'ajoute à la fin de votre Chef Ejecutivo. Si vous payez, il est déduit de votre prochaine facture.",
           "Touchez le « ? » dans Inviter pour voir toutes les règles.",
         ],
       },
       pt: {
         title: "Dê um mês, ganhe um mês",
         items: [
-          "Novo: \"Convidar\" no menu lateral. Compartilhe seu link com outro chef ou cozinha: a pessoa recebe 30 dias de Chef de Partie grátis, sem cartão e sem compromisso. Ao terminar, volta sozinha para o Foodie se não quiser continuar.",
+          "Novo: \"Convidar\" no menu lateral. Compartilhe seu link com outro chef ou cozinha: a pessoa recebe 30 dias de Chef Ejecutivo grátis, sem cartão e sem compromisso. Ao terminar, volta sozinha para o Foodie se não quiser continuar.",
           "Você ganha um mês quando seu convidado começa de verdade (salva uma receita com custo ou escolhe um plano) nos primeiros 30 dias. Até 12 meses por ano.",
-          "Se você é uma cozinha fundadora ou já tem um plano melhor, não perde nada: os meses ganhos ficam guardados e começam quando seu plano atual terminar. Se você paga, são descontados da próxima fatura.",
+          "Se você é uma cozinha fundadora, não perde nada: cada mês que ganhar se soma ao final do seu Chef Ejecutivo. Se você paga, é descontado da próxima fatura.",
           "Toque no \"?\" em Convidar para ver todas as regras.",
         ],
       },
       zh: {
         title: "送一个月，得一个月",
         items: [
-          "新功能：侧边菜单中的「邀请」。把你的链接分享给其他厨师或厨房：对方免费获得 30 天 Chef de Partie，无需银行卡、没有任何承诺。结束后如果不想继续，会自动回到 Foodie。",
+          "新功能：侧边菜单中的「邀请」。把你的链接分享给其他厨师或厨房：对方免费获得 30 天 Chef Ejecutivo，无需银行卡、没有任何承诺。结束后如果不想继续，会自动回到 Foodie。",
           "当你邀请的人在前 30 天内真正开始使用（保存一份带成本的食谱或选择一个套餐）时，你获得一个月。每年最多 12 个月。",
-          "如果你是创始厨房或已经有更好的套餐，你不会损失任何东西：赚到的月份会被保存，在当前套餐结束时开始。如果你是付费用户，会从下一张账单中扣除。",
+          "如果你是创始厨房，你不会损失任何东西：每赚到一个月，都会加在你的 Chef Ejecutivo 之后。如果你是付费用户，会从下一张账单中扣除。",
           "点击「邀请」页面中的「?」查看全部规则。",
         ],
       },

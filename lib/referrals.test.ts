@@ -26,24 +26,24 @@ describe("códigos de invitación (docs/179)", () => {
 })
 
 describe("qué recibe una cuenta al ganar un mes", () => {
-  it("Foodie: 30 días de Chef de Partie desde hoy", () => {
+  it("Foodie: 30 días de Chef Ejecutivo desde hoy", () => {
     const r = rewardAction({ planSlug: "foodie", expiresAt: null, hasStripeSubscription: false }, NOW)
-    expect(r).toEqual({ kind: "grant", planSlug: "chef-de-partie", expiresAt: iso(NOW + 30 * DAY) })
+    expect(r).toEqual({ kind: "grant", planSlug: "chef-ejecutivo", expiresAt: iso(NOW + 30 * DAY) })
   })
 
-  it("cocina fundadora con Chef Ejecutivo por tiempo: el mes se guarda", () => {
+  it("cocina fundadora con Chef Ejecutivo por tiempo: se suman 30 días al final", () => {
     const r = rewardAction({ planSlug: "chef-ejecutivo", expiresAt: iso(NOW + 120 * DAY), hasStripeSubscription: false }, NOW)
-    expect(r).toEqual({ kind: "bank", days: 30 })
+    expect(r).toEqual({ kind: "extend", planSlug: "chef-ejecutivo", expiresAt: iso(NOW + 150 * DAY) })
   })
 
-  it("ya tiene Chef de Partie por tiempo: se suman 30 días", () => {
+  it("plan menor por tiempo (Chef de Partie): sube a Chef Ejecutivo hasta su vencimiento + 30 días", () => {
     const r = rewardAction({ planSlug: "chef-de-partie", expiresAt: iso(NOW + 10 * DAY), hasStripeSubscription: false }, NOW)
-    expect(r).toEqual({ kind: "extend", planSlug: "chef-de-partie", expiresAt: iso(NOW + 40 * DAY) })
+    expect(r).toEqual({ kind: "grant", planSlug: "chef-ejecutivo", expiresAt: iso(NOW + 40 * DAY) })
   })
 
-  it("plan menor por tiempo (Home Cook): sube a Chef de Partie hasta su vencimiento + 30 días", () => {
+  it("plan menor por tiempo (Home Cook): sube a Chef Ejecutivo hasta su vencimiento + 30 días", () => {
     const r = rewardAction({ planSlug: "home-cook", expiresAt: iso(NOW + 5 * DAY), hasStripeSubscription: false }, NOW)
-    expect(r).toEqual({ kind: "grant", planSlug: "chef-de-partie", expiresAt: iso(NOW + 35 * DAY) })
+    expect(r).toEqual({ kind: "grant", planSlug: "chef-ejecutivo", expiresAt: iso(NOW + 35 * DAY) })
   })
 
   it("plan gratis ya vencido: como Foodie", () => {
@@ -62,7 +62,7 @@ describe("qué recibe una cuenta al ganar un mes", () => {
 describe("meses guardados", () => {
   it("se usan cuando el plan gratis vence y la cuenta no paga", () => {
     const state = { planSlug: "chef-ejecutivo", expiresAt: iso(NOW - 1000), hasStripeSubscription: false }
-    expect(bankApplication(state, 60, NOW)).toEqual({ planSlug: "chef-de-partie", expiresAt: iso(NOW + 60 * DAY) })
+    expect(bankApplication(state, 60, NOW)).toEqual({ planSlug: "chef-ejecutivo", expiresAt: iso(NOW + 60 * DAY) })
   })
   it("no se usan mientras el plan mejor sigue vigente, ni si paga", () => {
     expect(bankApplication({ planSlug: "chef-ejecutivo", expiresAt: iso(NOW + DAY), hasStripeSubscription: false }, 30, NOW)).toBeNull()

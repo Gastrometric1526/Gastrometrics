@@ -2,7 +2,7 @@
 
 /**
  * Aviso del registro cuando la persona llega por el enlace de un colega (docs/179):
- * «Fulano te regala un mes de Chef de Partie». El código viene de ?ref= o de la cookie
+ * «Fulano te regala un mes de Chef Ejecutivo». El código viene de ?ref= o de la cookie
  * que dejó /r/<código>.
  */
 
