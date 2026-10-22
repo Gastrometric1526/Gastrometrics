@@ -20,6 +20,7 @@ import { EmailClicksPanel } from "@/components/admin/email-clicks-panel"
 import { OcrUsagePanel } from "@/components/admin/ocr-usage-panel"
 import { BusinessHealthPanel } from "@/components/admin/business-health-panel"
 import { ActivationPanel } from "@/components/admin/activation-panel"
+import { ReferralsPanel } from "@/components/admin/referrals-panel"
 import { ProductUpdatesPanel } from "@/components/admin/product-updates-panel"
 import { LegalUpdatePanel } from "@/components/admin/legal-update-panel"
 
@@ -253,8 +254,9 @@ export default function AdminPage() {
           <TabsContent value="negocios" className="mt-6">
             <BusinessHealthPanel />
           </TabsContent>
-          <TabsContent value="activacion" className="mt-6">
+          <TabsContent value="activacion" className="mt-6 space-y-6">
             <ActivationPanel />
+            <ReferralsPanel />
           </TabsContent>
           <TabsContent value="novedades" className="mt-6 space-y-6">
             <ProductUpdatesPanel />

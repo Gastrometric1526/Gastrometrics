@@ -45,6 +45,8 @@ export interface SignUpOptions {
   // Aviso de Responsabilidad" del paso 4 del registro — app/api/auth/signup/route.ts
   // rechaza la creación de la cuenta si esto no llega como true (ver docs/118).
   acceptedTerms: boolean
+  // Código de quien invitó (programa de referidos, docs/179), si llegó por su enlace.
+  referralCode?: string | null
 }
 
 interface AuthContextType {
@@ -274,6 +276,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password,
         acceptedTerms: options.acceptedTerms === true,
+        referralCode: options.referralCode || undefined,
         profile: {
           fullName: profile.fullName,
           nationality: profile.nationality,

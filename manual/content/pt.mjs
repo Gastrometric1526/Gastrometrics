@@ -10,7 +10,7 @@ export default {
     coverTitle: "Calcule, venda e cresça com a Gastrometrics",
     coverLede: "O guia completo para transformar suas receitas em preços justos, controlar seu estoque e entender os números da sua cozinha.",
     coverModules: ["Ingredientes", "Ficha Técnica", "Estoque", "Cardápios", "Pedidos de Compra", "Vendas", "Relatórios", "Equipe"],
-    edition: "Edição setembro 2026",
+    edition: "Edição outubro 2026",
   },
   chapters: [
     {
@@ -465,6 +465,23 @@ export default {
         ["p", "Sempre que seu plano muda —porque você mudou, porque a equipe da Gastrometrics ajustou ou porque um plano atribuído venceu— avisamos por e-mail e com uma janela ao abrir o Dashboard, com a lista exata do que você <strong>ganha</strong>, do que <strong>perde</strong> e do que seu plano inclui agora. Se perder acesso a uma seção, seus dados não são apagados: voltam a ficar disponíveis se você subir de plano de novo. A mudança também aparece em <strong>Notificações</strong> no Painel e, ao fechar a janela, começa um <strong>tour curto do novo plano</strong>: ele aponta no menu cada módulo com novidade. Se um módulo ainda não aparece porque faltam receitas (capítulo 2), o tour diz quantas você precisa em vez de levar a algo oculto."],
         ["p", "Se cancelar, você mantém o acesso completo até o fim do período já pago. O Meu Plano mostra a data exata."],
         ["info", "Quando algo está bloqueado", "Você verá um cadeado e um botão para o Meu Plano. Se usa o app como parte de uma equipe, a mensagem indica que é o dono da conta quem controla esse acesso."],
+      ],
+    },
+    {
+      id: "invita",
+      title: "Convidar: dê um mês, ganhe um mês",
+      intro: "Convide outro chef ou cozinha para o Gastrometrics. Seu colega testa grátis e você ganha um mês quando ele começa de verdade.",
+      blocks: [
+        ["h3", "Como convidar"],
+        ["steps", ["Abra <strong>Convidar</strong> no menu lateral.", "Copie seu link ou envie com os botões de WhatsApp ou e-mail.", "Seu colega se cadastra com esse link: vê um aviso com seu nome e recebe 30 dias de Chef de Partie, sem cartão."]],
+        ["h3", "O que cada um ganha"],
+        ["table", ["Quem", "O que recebe"], [
+          ["Seu colega", "30 dias de Chef de Partie grátis, sem cartão e sem compromisso. Ao terminar, volta sozinho para o Foodie, sem cobrança; se quiser continuar, escolhe um plano."],
+          ["Você", "Um mês quando seu colega começa de verdade nos primeiros 30 dias: salva uma receita com custo ou escolhe um plano pago. Até 12 meses por ano."],
+        ]],
+        ["p", "Seu prêmio nunca rebaixa seu plano. No Foodie você recebe um mês de Chef de Partie. Se já tem Chef de Partie com data, somam-se 30 dias; se tem um plano inferior com data, sobe para Chef de Partie. Se tem um plano melhor com data —por exemplo, o mês de cozinha fundadora com Chef Ejecutivo— seus meses <strong>ficam guardados</strong> e começam sozinhos quando seu plano atual terminar. Se você paga seu plano, recebe um mês do seu plano como crédito na próxima fatura."],
+        ["tip", "Lembretes", "Se seu colega ainda não começou, avisamos você por e-mail no dia 3 e no dia 14. Em Convidar você vê quantos dias faltam e pode lembrá-lo pelo WhatsApp com um toque."],
+        ["info", "As regras, sempre à mão", "Toque no <strong>?</strong> ao lado do título de Convidar para ver todas as regras. Se não começar em 30 dias, o convite vence. Só contam contas novas de pessoas reais."],
       ],
     },
     {

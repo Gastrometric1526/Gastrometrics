@@ -24,6 +24,8 @@ import { renderEmailTemplate, escapeHtml } from "@/lib/services/email-templates"
 import { getEmailLabels, fillLabel, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { sendAccountCreatedNotification } from "@/lib/services/notify-signup"
+import { recordReferralAtSignup } from "@/lib/services/referrals"
+import { REFERRAL } from "@/lib/referrals"
 
 export async function POST(request: Request) {
   // Límite por IP contra registro masivo (cuentas de spam, o correr Resend a cero
@@ -109,6 +111,22 @@ export async function POST(request: Request) {
   if (error || !data?.properties?.action_link) {
     console.error("[api/auth/signup] Error creando la cuenta:", error)
     return NextResponse.json({ error: error?.message || "No se pudo crear la cuenta." }, { status: 400 })
+  }
+
+  // Invitación de un colega (docs/179): el código llega del formulario o de la cookie que
+  // dejó /r/<código>. Nunca rompe el registro si el código no sirve.
+  const cookieCode = (request.headers.get("cookie") || "")
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${REFERRAL.cookieName}=`))
+    ?.slice(REFERRAL.cookieName.length + 1)
+  const referralCode = typeof body?.referralCode === "string" && body.referralCode ? body.referralCode : cookieCode
+  if (referralCode && data.user?.id) {
+    try {
+      await recordReferralAtSignup(data.user.id, referralCode)
+    } catch (referralError) {
+      console.error("[api/auth/signup] Error registrando la invitación:", referralError)
+    }
   }
 
   // Best-effort: la cuenta ya se creó arriba sin importar si este correo sale o no.

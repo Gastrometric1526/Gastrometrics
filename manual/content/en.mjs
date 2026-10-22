@@ -10,7 +10,7 @@ export default {
     coverTitle: "Cost, sell and grow with Gastrometrics",
     coverLede: "The complete guide to turning your recipes into fair prices, keeping your inventory under control and understanding the numbers behind your kitchen.",
     coverModules: ["Ingredients", "Recipe Sheet", "Inventory", "Menus", "Purchase Orders", "Sales", "Reports", "Team"],
-    edition: "September 2026 edition",
+    edition: "October 2026 edition",
   },
   chapters: [
     {
@@ -465,6 +465,23 @@ export default {
         ["p", "Whenever your plan changes —because you changed it, because the Gastrometrics team adjusted it, or because an assigned plan expired— we let you know by email and with a window when you open the Dashboard, listing exactly what you <strong>gain</strong>, what you <strong>lose</strong> and what your plan includes now. If you lose access to a section, your data isn't deleted: it becomes available again if you upgrade later. The change also shows up under <strong>Notifications</strong> on the Dashboard and, when you close the window, a <strong>short tour of your new plan</strong> starts: it points to each menu module with something new. If a module isn't visible yet because you need more recipes (chapter 2), the tour tells you how many you need instead of pointing to something hidden."],
         ["p", "If you cancel, you keep full access until the end of the period you've already paid for. My Plan shows you the exact date."],
         ["info", "When something is locked", "You'll see a padlock and a button to My Plan. If you use the app as part of a team, the message tells you it's the account owner who controls that access."],
+      ],
+    },
+    {
+      id: "invita",
+      title: "Invite: give a month, get a month",
+      intro: "Invite another chef or kitchen to Gastrometrics. Your colleague tries it free and you earn a month when they really get started.",
+      blocks: [
+        ["h3", "How to invite"],
+        ["steps", ["Open <strong>Invite</strong> in the side menu.", "Copy your link or send it with the WhatsApp or email buttons.", "Your colleague signs up with that link: they see a note with your name and get 30 days of Chef de Partie, no card."]],
+        ["h3", "What each of you gets"],
+        ["table", ["Who", "What they get"], [
+          ["Your colleague", "30 days of Chef de Partie free, no card, no commitment. When it ends they go back to Foodie on their own, with no charge; if they want to continue, they pick a plan."],
+          ["You", "A month when your colleague really gets started within their first 30 days: saves a recipe with cost or picks a paid plan. Up to 12 months a year."],
+        ]],
+        ["p", "Your reward never lowers your plan. On Foodie you get a month of Chef de Partie. If you already have Chef de Partie with an end date, 30 days are added; if you have a lower plan with an end date, you move up to Chef de Partie. If you have a better plan with an end date —for example, the founding-kitchen month on Chef Ejecutivo— your months <strong>are saved</strong> and start automatically when your current plan ends. If you pay for your plan, you get one month of your plan as credit on your next invoice."],
+        ["tip", "Reminders", "If your colleague hasn't started, we email you on day 3 and day 14. In Invite you see how many days they have left and can remind them on WhatsApp with one tap."],
+        ["info", "The rules, always at hand", "Tap the <strong>?</strong> next to the Invite title to see all the rules. If they don't get started within 30 days, the invitation expires. Only new accounts of real people count."],
       ],
     },
     {

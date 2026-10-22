@@ -200,6 +200,14 @@ export function PlanExpiryDialog() {
           </DialogDescription>
         </DialogHeader>
 
+        {!failed && status.referralBankDays > 0 && (
+          <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-foreground">
+            {t("plan_expiry_bank_note")
+              .replace("{days}", String(status.referralBankDays))
+              .replace("{date}", expiresLabel)}
+          </p>
+        )}
+
         {!failed && (
           <ul className="space-y-1.5 rounded-lg bg-muted/40 p-3 text-sm">
             {lost.map((item) => (

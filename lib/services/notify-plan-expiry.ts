@@ -25,6 +25,7 @@ import { recordPlanChangeNotice } from "./plan-change-notice"
 import { getEmailLabels, fillLabel, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { withEmailTracking } from "@/lib/email-tracking"
 import { formatDate as formatDMY } from "@/lib/date-format"
+import { applyDueReferralBank } from "./referrals"
 
 async function getAccountEmailAndLanguage(accountId: string): Promise<{ email: string; language: string } | null> {
   const admin = getSupabaseAdminClient()
@@ -146,6 +147,12 @@ export async function runExpiredPlanDowngrades(): Promise<{ candidates: number; 
   let downgraded = 0
   for (const row of expired ?? []) {
     if (!row.plan_expires_at) continue
+    // Meses ganados con referidos (docs/179): en vez de Foodie, empieza Chef de Partie.
+    try {
+      if (await applyDueReferralBank(row.account_id)) continue
+    } catch (bankError) {
+      console.error("[notify-plan-expiry] Error aplicando meses guardados de referidos:", bankError)
+    }
     const { data: updated, error: updateError } = await admin
       .from("account_plans")
       .update({ plan_slug: "foodie", plan_expires_at: null })

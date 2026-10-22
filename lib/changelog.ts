@@ -32,6 +32,66 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-22",
+    tutorialHref: tourHref("invita"),
+    content: {
+      es: {
+        title: "Regala un mes, gana un mes",
+        items: [
+          "Nuevo: «Invita» en el menú lateral. Comparte tu enlace con otro chef o cocina: recibe 30 días de Chef de Partie gratis, sin tarjeta y sin compromiso. Al terminar vuelve a Foodie sola si no quiere seguir.",
+          "Tú ganas un mes cuando tu invitado empieza de verdad (guarda una receta con costo o elige un plan) dentro de sus primeros 30 días. Hasta 12 meses al año.",
+          "Si eres cocina fundadora o ya tienes un plan mejor, no pierdes nada: tus meses ganados se guardan y empiezan cuando termine tu plan actual. Si pagas, se descuentan de tu próxima factura.",
+          "Toca el «?» en Invita para ver todas las reglas.",
+        ],
+      },
+      en: {
+        title: "Give a month, get a month",
+        items: [
+          "New: \"Invite\" in the side menu. Share your link with another chef or kitchen: they get 30 days of Chef de Partie free, no card, no commitment. When it ends they go back to Foodie on their own if they don't want to continue.",
+          "You earn a month when your guest really gets started (saves a recipe with cost or picks a plan) within their first 30 days. Up to 12 months a year.",
+          "If you're a founding kitchen or already have a better plan, you lose nothing: the months you earn are saved and start when your current plan ends. If you pay, they come off your next invoice.",
+          "Tap the \"?\" in Invite to see all the rules.",
+        ],
+      },
+      da: {
+        title: "Giv en måned, få en måned",
+        items: [
+          "Nyt: \"Inviter\" i sidemenuen. Del dit link med en anden kok eller et køkken: de får 30 dage med Chef de Partie gratis, uden kort og uden binding. Når perioden slutter, går de selv tilbage til Foodie, hvis de ikke vil fortsætte.",
+          "Du får en måned, når din gæst kommer rigtigt i gang (gemmer en opskrift med kostpris eller vælger en plan) inden for de første 30 dage. Op til 12 måneder om året.",
+          "Er du et stiftende køkken eller har du allerede en bedre plan, mister du intet: de måneder, du optjener, gemmes og starter, når din nuværende plan slutter. Betaler du, trækkes de fra din næste faktura.",
+          "Tryk på \"?\" i Inviter for at se alle reglerne.",
+        ],
+      },
+      fr: {
+        title: "Offrez un mois, gagnez un mois",
+        items: [
+          "Nouveau : « Inviter » dans le menu latéral. Partagez votre lien avec un autre chef ou une autre cuisine : il reçoit 30 jours de Chef de Partie gratuits, sans carte et sans engagement. À la fin, il repasse tout seul à Foodie s'il ne veut pas continuer.",
+          "Vous gagnez un mois quand votre invité démarre vraiment (enregistre une recette avec coût ou choisit un forfait) dans ses 30 premiers jours. Jusqu'à 12 mois par an.",
+          "Si vous êtes une cuisine fondatrice ou avez déjà un meilleur forfait, vous ne perdez rien : les mois gagnés sont mis de côté et commencent à la fin de votre forfait actuel. Si vous payez, ils sont déduits de votre prochaine facture.",
+          "Touchez le « ? » dans Inviter pour voir toutes les règles.",
+        ],
+      },
+      pt: {
+        title: "Dê um mês, ganhe um mês",
+        items: [
+          "Novo: \"Convidar\" no menu lateral. Compartilhe seu link com outro chef ou cozinha: a pessoa recebe 30 dias de Chef de Partie grátis, sem cartão e sem compromisso. Ao terminar, volta sozinha para o Foodie se não quiser continuar.",
+          "Você ganha um mês quando seu convidado começa de verdade (salva uma receita com custo ou escolhe um plano) nos primeiros 30 dias. Até 12 meses por ano.",
+          "Se você é uma cozinha fundadora ou já tem um plano melhor, não perde nada: os meses ganhos ficam guardados e começam quando seu plano atual terminar. Se você paga, são descontados da próxima fatura.",
+          "Toque no \"?\" em Convidar para ver todas as regras.",
+        ],
+      },
+      zh: {
+        title: "送一个月，得一个月",
+        items: [
+          "新功能：侧边菜单中的「邀请」。把你的链接分享给其他厨师或厨房：对方免费获得 30 天 Chef de Partie，无需银行卡、没有任何承诺。结束后如果不想继续，会自动回到 Foodie。",
+          "当你邀请的人在前 30 天内真正开始使用（保存一份带成本的食谱或选择一个套餐）时，你获得一个月。每年最多 12 个月。",
+          "如果你是创始厨房或已经有更好的套餐，你不会损失任何东西：赚到的月份会被保存，在当前套餐结束时开始。如果你是付费用户，会从下一张账单中扣除。",
+          "点击「邀请」页面中的「?」查看全部规则。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-10-20b",
     tutorialHref: tourHref("ingredientes"),
     content: {

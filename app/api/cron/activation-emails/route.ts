@@ -70,6 +70,7 @@ import { sendDailySignupDigest } from "@/lib/services/notify-signup"
 import { runEngagementEmails } from "@/lib/services/notify-engagement"
 import { runPendingFounderGrants } from "@/lib/services/founder-grant"
 import { runScheduledRenewalChecks } from "@/lib/services/scheduled-renewal"
+import { runReferralChecks } from "@/lib/services/referrals"
 
 // Muchos correos en serie con pausa entre envíos (lib/services/send-email.ts): se pide
 // el máximo de Vercel Hobby para que la ejecución no se corte a la mitad.
@@ -204,6 +205,8 @@ export async function GET(request: Request) {
   const scheduledRenewals = await step("pagos programados", () => runScheduledRenewalChecks())
   // Planes asignados que ya vencieron: pasan a Foodie con correo y aviso (docs/139).
   const expiredDowngrades = await step("planes vencidos a Foodie", () => runExpiredPlanDowngrades())
+  // Referidos (docs/179): regalos pendientes, activaciones (premio), recordatorios y vencimientos.
+  const referrals = await step("referidos", () => runReferralChecks())
 
   // Encuesta de experiencia (docs/145): antes solo a las 4 h de uso real, y el 75 % de las
   // cuentas no llega a 2 h — nadie la recibía. Ahora también con 3 recetas propias o 3
@@ -243,7 +246,7 @@ export async function GET(request: Request) {
   const engagement = await step("correos de valor", () => runEngagementEmails())
   const reengagement = await step("recordatorios", () => runReengagementReminders())
 
-  const steps = { signupDigest, activation, founderGrants, planExpiry, scheduledRenewals, expiredDowngrades, experienceSurvey, deletionPurge, engagement, reengagement }
+  const steps = { signupDigest, activation, founderGrants, planExpiry, scheduledRenewals, expiredDowngrades, referrals, experienceSurvey, deletionPurge, engagement, reengagement }
   const failed = Object.entries(steps)
     .filter(([, v]) => v && typeof v === "object" && "error" in v)
     .map(([k]) => k)

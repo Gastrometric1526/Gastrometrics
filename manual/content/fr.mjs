@@ -10,7 +10,7 @@ export default {
     coverTitle: "Calculez, vendez et grandissez avec Gastrometrics",
     coverLede: "Le guide complet pour transformer vos recettes en prix justes, maîtriser votre inventaire et comprendre les chiffres de votre cuisine.",
     coverModules: ["Ingrédients", "Fiche Technique", "Inventaire", "Menus", "Commandes d'Achat", "Ventes", "Rapports", "Équipe"],
-    edition: "Édition septembre 2026",
+    edition: "Édition octobre 2026",
   },
   chapters: [
     {
@@ -465,6 +465,23 @@ export default {
         ["p", "Chaque fois que votre forfait change —parce que vous l'avez changé, parce que l'équipe Gastrometrics l'a ajusté ou parce qu'un forfait attribué a expiré— nous vous prévenons par e-mail et par une fenêtre à l'ouverture du Dashboard, avec la liste exacte de ce que vous <strong>gagnez</strong>, de ce que vous <strong>perdez</strong> et de ce que comprend désormais votre forfait. Si vous perdez l'accès à une section, vos données ne sont pas supprimées : elles redeviennent disponibles si vous changez à nouveau de forfait. Le changement apparaît aussi dans <strong>Notifications</strong> du Tableau de bord et, en fermant la fenêtre, une <strong>courte visite guidée du nouveau forfait</strong> démarre : elle vous montre dans le menu chaque module qui a du nouveau. Si un module n'apparaît pas encore parce qu'il vous manque des recettes (chapitre 2), la visite vous indique combien il en faut au lieu de pointer vers quelque chose de caché."],
         ["p", "Si vous résiliez, vous gardez un accès complet jusqu'à la fin de la période déjà payée. Mon forfait vous indique la date exacte."],
         ["info", "Quand quelque chose est verrouillé", "Vous voyez un cadenas et un bouton vers Mon forfait. Si vous utilisez l'application au sein d'une équipe, le message vous indique que c'est le propriétaire du compte qui contrôle cet accès."],
+      ],
+    },
+    {
+      id: "invita",
+      title: "Inviter : offrez un mois, gagnez un mois",
+      intro: "Invitez un autre chef ou une autre cuisine sur Gastrometrics. Votre collègue essaie gratuitement et vous gagnez un mois quand il démarre vraiment.",
+      blocks: [
+        ["h3", "Comment inviter"],
+        ["steps", ["Ouvrez <strong>Inviter</strong> dans le menu latéral.", "Copiez votre lien ou envoyez-le avec les boutons WhatsApp ou e-mail.", "Votre collègue s'inscrit avec ce lien : il voit un message avec votre nom et reçoit 30 jours de Chef de Partie, sans carte."]],
+        ["h3", "Ce que chacun reçoit"],
+        ["table", ["Qui", "Ce qu'il reçoit"], [
+          ["Votre collègue", "30 jours de Chef de Partie gratuits, sans carte et sans engagement. À la fin, il repasse tout seul à Foodie, sans frais ; s'il veut continuer, il choisit un forfait."],
+          ["Vous", "Un mois quand votre collègue démarre vraiment dans ses 30 premiers jours : il enregistre une recette avec coût ou choisit un forfait payant. Jusqu'à 12 mois par an."],
+        ]],
+        ["p", "Votre récompense ne fait jamais baisser votre forfait. Sur Foodie, vous recevez un mois de Chef de Partie. Si vous avez déjà Chef de Partie avec une date de fin, 30 jours s'ajoutent ; si vous avez un forfait inférieur avec une date de fin, vous passez à Chef de Partie. Si vous avez un meilleur forfait avec une date de fin —par exemple le mois de cuisine fondatrice sur Chef Ejecutivo— vos mois <strong>sont mis de côté</strong> et commencent automatiquement à la fin de votre forfait actuel. Si vous payez votre forfait, vous recevez un mois de votre forfait en crédit sur votre prochaine facture."],
+        ["tip", "Rappels", "Si votre collègue n'a pas démarré, nous vous écrivons au 3e et au 14e jour. Dans Inviter, vous voyez combien de jours il lui reste et pouvez le relancer sur WhatsApp en un geste."],
+        ["info", "Les règles, toujours à portée de main", "Touchez le <strong>?</strong> à côté du titre d'Inviter pour voir toutes les règles. S'il ne démarre pas dans les 30 jours, l'invitation expire. Seuls les nouveaux comptes de vraies personnes comptent."],
       ],
     },
     {

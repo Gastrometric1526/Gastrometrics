@@ -38,6 +38,7 @@ import {
   HelpCircle,
   Boxes,
   Sparkles,
+  Gift,
   Users,
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
@@ -141,6 +142,8 @@ function useNavigationItems() {
     },
     { title: t("nav_estadisticas"), href: "/estadisticas", icon: BarChart3, description: t("nav_estadisticas_desc"), locked: lockedByHref["/estadisticas"].locked, feature: lockedByHref["/estadisticas"].feature as FeatureKey | null },
     { title: t("nav_negocios"), href: "/negocios", icon: Building2, description: t("nav_negocios_desc"), locked: false, feature: null },
+    // Referidos (docs/179): de la cuenta, nunca de un invitado de equipo (se filtra abajo).
+    { title: t("nav_invita"), href: "/invita", icon: Gift, description: t("nav_invita_desc"), locked: false, feature: null },
   )
 
   // Vista previa de Equipo del dueño, o sesión real de un invitado (ver
@@ -171,6 +174,7 @@ function useNavigationItems() {
     return items
       .filter((item) => {
         if (item.href === "/dashboard" || item.href === "/negocios") return hasScopeDashboard
+        if (item.href === "/invita") return false
         const required = hrefFeatureMap[item.href]
         if (!required) return true
         return required.some((f) => allowed.has(f))

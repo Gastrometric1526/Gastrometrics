@@ -536,3 +536,15 @@ export function NegociosTour() {
 
   return <PageTour steps={steps} storageKey="tour_completed_negocios" />
 }
+
+export function InvitaTour() {
+  const { t } = useLanguage()
+  const steps: TourStep[] = [
+    { id: "header", title: t("tour_invita_header_title"), description: t("tour_invita_header_desc"), selector: '[data-tour="invita-header"]' },
+    { id: "link", title: t("tour_invita_link_title"), description: t("tour_invita_link_desc"), selector: '[data-tour="invita-link"]' },
+    { id: "list", title: t("tour_invita_list_title"), description: t("tour_invita_list_desc"), selector: '[data-tour="invita-list"]' },
+    { id: "rules", title: t("tour_invita_rules_title"), description: t("tour_invita_rules_desc"), selector: '[data-tour="invita-rules"]' },
+  ]
+
+  return <PageTour steps={steps} storageKey="tour_completed_invita" />
+}

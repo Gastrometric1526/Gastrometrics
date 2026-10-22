@@ -10,7 +10,7 @@ export default {
     coverTitle: "Kalkulér, sælg og voks med Gastrometrics",
     coverLede: "Den komplette guide til at gøre dine opskrifter til fair priser, holde styr på dit lager og forstå tallene bag dit køkken.",
     coverModules: ["Ingredienser", "Opskriftsark", "Lager", "Menuer", "Indkøbsordrer", "Salg", "Rapporter", "Team"],
-    edition: "Udgave september 2026",
+    edition: "Udgave oktober 2026",
   },
   chapters: [
     {
@@ -465,6 +465,23 @@ export default {
         ["p", "Hver gang din plan ændres —fordi du selv ændrede den, fordi Gastrometrics-teamet justerede den, eller fordi en tildelt plan udløb— får du besked på e-mail og i et vindue, når du åbner Dashboardet, med en præcis liste over, hvad du <strong>får</strong>, hvad du <strong>mister</strong>, og hvad din plan nu omfatter. Mister du adgang til en sektion, slettes dine data ikke: de bliver tilgængelige igen, hvis du opgraderer senere. Ændringen vises også under <strong>Notifikationer</strong> på Dashboard, og når du lukker vinduet, starter en <strong>kort rundvisning i din nye plan</strong>: den peger på hvert menumodul med noget nyt. Hvis et modul ikke vises endnu, fordi du mangler opskrifter (kapitel 2), fortæller rundvisningen, hvor mange du mangler, i stedet for at pege på noget skjult."],
         ["p", "Opsiger du, beholder du fuld adgang til slutningen af den periode, du allerede har betalt for. Min plan viser dig den præcise dato."],
         ["info", "Når noget er låst", "Du ser en hængelås og en knap til Min plan. Bruger du appen som en del af et team, fortæller beskeden, at det er kontoens ejer, der styrer den adgang."],
+      ],
+    },
+    {
+      id: "invita",
+      title: "Inviter: giv en måned, få en måned",
+      intro: "Inviter en anden kok eller et køkken til Gastrometrics. Din kollega prøver gratis, og du får en måned, når de kommer rigtigt i gang.",
+      blocks: [
+        ["h3", "Sådan inviterer du"],
+        ["steps", ["Åbn <strong>Inviter</strong> i sidemenuen.", "Kopiér dit link eller send det med knapperne til WhatsApp eller e-mail.", "Din kollega tilmelder sig med linket: de ser en besked med dit navn og får 30 dage med Chef de Partie, uden kort."]],
+        ["h3", "Hvad hver af jer får"],
+        ["table", ["Hvem", "Hvad de får"], [
+          ["Din kollega", "30 dage med Chef de Partie gratis, uden kort og uden binding. Når perioden slutter, går de selv tilbage til Foodie uden betaling; vil de fortsætte, vælger de en plan."],
+          ["Dig", "En måned, når din kollega kommer rigtigt i gang inden for de første 30 dage: gemmer en opskrift med kostpris eller vælger en betalt plan. Op til 12 måneder om året."],
+        ]],
+        ["p", "Din belønning sænker aldrig din plan. På Foodie får du en måned med Chef de Partie. Har du allerede Chef de Partie med slutdato, lægges 30 dage til; har du en lavere plan med slutdato, rykker du op til Chef de Partie. Har du en bedre plan med slutdato —for eksempel måneden som stiftende køkken med Chef Ejecutivo— <strong>gemmes</strong> dine måneder og starter automatisk, når din nuværende plan slutter. Betaler du for din plan, får du en måned af din plan som kredit på din næste faktura."],
+        ["tip", "Påmindelser", "Er din kollega ikke kommet i gang, skriver vi til dig på dag 3 og dag 14. I Inviter ser du, hvor mange dage de har tilbage, og kan minde dem om det på WhatsApp med ét tryk."],
+        ["info", "Reglerne, altid ved hånden", "Tryk på <strong>?</strong> ved siden af titlen i Inviter for at se alle reglerne. Kommer de ikke i gang inden for 30 dage, udløber invitationen. Kun nye konti for rigtige personer tæller."],
       ],
     },
     {

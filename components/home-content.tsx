@@ -23,6 +23,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { AnimatedNumber } from "@/components/animated-number"
 import { LandingAdminPdfPreview } from "@/components/landing-admin-pdf-preview"
 import { LandingRecipeDemo } from "@/components/landing-recipe-demo"
+import { LandingReferralSection } from "@/components/landing-referral-section"
 import {
   ChefHat,
   Calculator,
@@ -472,6 +473,9 @@ export function HomeContent() {
             </figure>
           </div>
         </section>
+
+        {/* Regala un mes, gana un mes (docs/179). */}
+        <LandingReferralSection />
 
         {/* Opiniones reales de chefs (docs/173): solo con 3 o más publicadas con permiso. */}
         <PublicReviews

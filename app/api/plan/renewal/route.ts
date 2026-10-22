@@ -11,6 +11,7 @@ import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { verifyScheduledRenewal, cancelScheduledRenewal } from "@/lib/services/scheduled-renewal"
+import { applyDueReferralBank } from "@/lib/services/referrals"
 
 export const dynamic = "force-dynamic"
 
@@ -27,6 +28,10 @@ export async function GET() {
 
   try {
     const renewal = await verifyScheduledRenewal(userId)
+    // Meses ganados con referidos (docs/179): si el plan gratis ya venció, empiezan ahora.
+    const bankApplied = await applyDueReferralBank(userId).catch(() => false)
+    const { data: authData } = await getSupabaseAdminClient().auth.admin.getUserById(userId)
+    const referralBankDays = Number((authData?.user?.app_metadata as Record<string, unknown> | undefined)?.referral_bank_days) || 0
     const { data: planRow } = await getSupabaseAdminClient()
       .from("account_plans")
       .select("plan_slug, plan_expires_at, stripe_subscription_id")
@@ -41,7 +46,8 @@ export async function GET() {
         renewal.status === "scheduled" || renewal.status === "payment_failed"
           ? { status: renewal.status, planSlug: renewal.renewal.planSlug, startsAt: renewal.renewal.startsAt }
           : null,
-      justApplied: renewal.status === "applied" ? renewal.planSlug : null,
+      justApplied: renewal.status === "applied" ? renewal.planSlug : bankApplied ? planRow?.plan_slug ?? null : null,
+      referralBankDays,
     })
   } catch (error) {
     console.error("[api/plan/renewal GET] Error:", error)

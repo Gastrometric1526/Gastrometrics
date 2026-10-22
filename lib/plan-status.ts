@@ -16,6 +16,8 @@ export interface PlanStatus {
   planExpiresAt: string | null
   hasSubscription: boolean
   renewal: { status: "scheduled" | "payment_failed"; planSlug: string; startsAt: string } | null
+  /** Días de Chef de Partie ganados con referidos que empiezan al vencer el plan actual (docs/179). */
+  referralBankDays: number
 }
 
 /** Abre la ventana de vencimiento desde cualquier parte (el indicador del menú lateral). */
@@ -47,6 +49,7 @@ export async function refreshPlanStatus(userId: string): Promise<void> {
           planExpiresAt: data.planExpiresAt,
           hasSubscription: Boolean(data.hasSubscription),
           renewal: data.renewal,
+          referralBankDays: Number(data.referralBankDays) || 0,
         },
       }
       emit()

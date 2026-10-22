@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { setCurrentPlanSlug } from "@/lib/plan-access"
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ReferralSignupBanner, readReferralCode } from "@/components/referral-signup-banner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Progress } from "@/components/ui/progress"
@@ -68,6 +69,11 @@ function SignupPageInner() {
   const allSignupPlans = getLocalizedPlans(language)
   const selectablePlans = allSignupPlans.filter((plan) => !plan.comingSoon)
   const planFromUrl = searchParams.get("plan")
+  // Invitación de un colega (docs/179): ?ref= o la cookie de /r/<código>.
+  const [referralCode, setReferralCode] = useState<string | null>(null)
+  useEffect(() => {
+    setReferralCode(readReferralCode(searchParams.get("ref")))
+  }, [searchParams])
   // Si llegan con ?plan=chef-ejecutivo (o cualquier slug que no exista) desde afuera,
   // cae a "foodie" en vez de dejar seleccionado algo no comprable.
   const initialPlanSlug = selectablePlans.some((plan) => plan.slug === planFromUrl) ? planFromUrl! : "foodie"
@@ -182,7 +188,7 @@ function SignupPageInner() {
           businessSize: formData.businessSize!,
           industryExperience: formData.industryExperience!,
         },
-        { preferredLanguage: language, productUpdatesOptIn, acceptedTerms },
+        { preferredLanguage: language, productUpdatesOptIn, acceptedTerms, referralCode },
       )
 
       // Contraseña local (ver lib/utils/password-hash.ts) para el chequeo de "confirma
@@ -293,6 +299,8 @@ function SignupPageInner() {
             <h1 className="text-3xl font-bold text-foreground">Gastrometrics</h1>
           </div>
         </div>
+
+        <ReferralSignupBanner code={referralCode} />
 
         {/* Progress Bar */}
         <div className="space-y-2">

@@ -17,6 +17,7 @@ import { ThemeInitializer } from "@/components/theme-initializer"
 import { AnalyticsTracker } from "@/components/analytics-tracker"
 import { PresenceTracker } from "@/components/presence-tracker"
 import { FounderGrantTrigger } from "@/components/founder-grant-trigger"
+import { ReferralTrigger } from "@/components/referral-trigger"
 import { PlanExpiryDialog } from "@/components/plan-expiry-dialog"
 import { FeedbackOrchestrator } from "@/components/feedback/feedback-orchestrator"
 import { ModuleActivityTracker } from "@/components/module-activity-tracker"
@@ -121,6 +122,7 @@ export default function RootLayout({
                   <PresenceTracker />
                   {/* 100 cocinas fundadoras automático (docs/158) */}
                   <FounderGrantTrigger />
+                  <ReferralTrigger />
                   {/* Vencimiento del plan y pago programado (docs/165) */}
                   <PlanExpiryDialog />
                   {/* Calificación y preguntas cortas en momentos de valor (docs/173) */}
