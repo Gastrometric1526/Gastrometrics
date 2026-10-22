@@ -459,7 +459,7 @@ export default {
         ]],
         ["p", "Se o seu plano tem data de vencimento (por exemplo, o mês de cozinha fundadora), o menu lateral mostra quantos dias faltam, abaixo do seu plano. Três dias antes e no próprio dia avisamos você no app: você pode escolher o plano com o qual quer continuar e <strong>programar o pagamento</strong>, cobrado no dia em que seu plano vence. Seu plano só muda quando a Stripe confirma o pagamento; caso contrário, sua conta passa para o Foodie e você mantém todos os seus dados."],
         ["info", "Importar é grátis", "Importar suas receitas e ingredientes a partir de texto, Excel, PDF (com texto ou escaneado), fotos ou cupons está incluído em todos os planos, inclusive no Foodie, e não tem limite. O que muda com o plano é o que você faz depois: a partir do Home Cook você pode atualizar o preço dos ingredientes que já tem com um cupom ou uma lista, e a partir do Chef de Partie ler suas contagens de estoque."],
-        ["p", "Em <strong>Meu plano</strong> (e também em <strong>Convidar</strong>), o cartão <strong>Seu plano</strong> mostra de relance quando seu plano vence, sua <strong>próxima cobrança</strong> (data e valor) e, se você ganhou meses convidando colegas, de quando até quando eles correm. Se não houver nada programado, mostra a data em que sua conta passaria para o Foodie. Dali mesmo você entra em Convidar."],
+        ["p", "<strong>Meu plano</strong> reúne tudo em uma só página: no topo, o cartão <strong>Seu plano</strong> mostra de relance quando seu plano vence, sua <strong>próxima cobrança</strong> (data e valor) e, se você ganhou meses convidando colegas, de quando até quando eles correm. Se não houver nada programado, mostra a data em que sua conta passaria para o Foodie. Abaixo está \"Dê um mês, ganhe um mês\" (próximo capítulo) e, no final, <strong>Mudar de plano</strong>."],
         ["figure", "12-mi-plan.jpg", "Meu Plano: seu plano atual, o que ele inclui e como gerenciar sua assinatura."],
         ["h3", "Pagar, mudar ou cancelar"],
         ["p", "Os pagamentos são processados pelo Stripe. Em <strong>Meu Plano</strong> você pode mudar de plano ou abrir o portal de pagamentos para atualizar o cartão ou cancelar. As mudanças aparecem sozinhas na sua conta e você recebe um e-mail de confirmação."],
@@ -474,7 +474,7 @@ export default {
       intro: "Convide outro chef ou cozinha para o Gastrometrics. Seu colega testa grátis e você ganha um mês quando ele começa de verdade.",
       blocks: [
         ["h3", "Como convidar"],
-        ["steps", ["Abra <strong>Convidar</strong> no menu lateral.", "Copie seu link ou envie com os botões de WhatsApp ou e-mail.", "Seu colega se cadastra com esse link: vê um aviso com seu nome e recebe 30 dias de Chef de Partie, sem cartão."]],
+        ["steps", ["Abra <strong>Meu plano</strong>: logo abaixo do seu plano está \"Dê um mês, ganhe um mês\". O atalho <strong>Convidar</strong> do menu lateral leva você direto para lá.", "Copie seu link ou envie com os botões de WhatsApp ou e-mail.", "Seu colega se cadastra com esse link: vê um aviso com seu nome e recebe 30 dias de Chef de Partie, sem cartão."]],
         ["h3", "O que cada um ganha"],
         ["table", ["Quem", "O que recebe"], [
           ["Seu colega", "30 dias de Chef de Partie grátis, sem cartão e sem compromisso. Ao terminar, volta sozinho para o Foodie, sem cobrança; se quiser continuar, escolhe um plano."],

@@ -8,7 +8,8 @@ import { Sidebar } from "@/components/sidebar"
 import { AuthGuard } from "@/components/auth-guard"
 import { PlansGrid } from "@/components/plans-grid"
 import { MiPlanTour } from "@/components/page-tours"
-import { PlanTimelineFromApi } from "@/components/plan-timeline-card"
+import { PlanTimelineCard } from "@/components/plan-timeline-card"
+import { ReferralSection, type ReferralOverview } from "@/components/referral-section"
 import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
 import { useAllBusinesses } from "@/lib/storage/businesses"
@@ -35,6 +36,23 @@ export default function MiPlanPage() {
   // cancelAtPeriodEnd de arriba, que es solo para una suscripción REAL de Stripe.
   const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null)
   const [isCancellingExpiring, setIsCancellingExpiring] = useState(false)
+  // Tu plan + Regala un mes, gana un mes (docs/180/181): una sola llamada para los dos.
+  const [referral, setReferral] = useState<ReferralOverview | null>(null)
+  const [referralFailed, setReferralFailed] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/referral/me")
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((json: ReferralOverview) => {
+        setReferral(json)
+        // /invita y el atajo del menú llegan con #invita: la sección aparece después de
+        // cargar, así que el salto del navegador no la alcanza; se hace aquí.
+        if (window.location.hash === "#invita") {
+          requestAnimationFrame(() => document.getElementById("invita")?.scrollIntoView({ behavior: "smooth", block: "start" }))
+        }
+      })
+      .catch(() => setReferralFailed(true))
+  }, [])
 
   // Barra de uso (docs/04 del paquete de diseño: "plan actual, barras de uso...").
   // Solo negocios — es el único de los tres (negocios/usuarios/recetas) con un tope
@@ -205,13 +223,16 @@ export default function MiPlanPage() {
               </div>
             )}
 
-            {/* Tu plan (docs/180): vencimiento, siguiente cobro, meses ganados y entrada a Invita. */}
-            <div className="max-w-2xl">
-              <PlanTimelineFromApi />
-            </div>
+            {/* Tu plan (docs/180) y uso, lado a lado en pantallas anchas. */}
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start max-w-5xl">
+              {referral?.timeline ? (
+                <PlanTimelineCard planSlug={referral.planSlug} timeline={referral.timeline} bankDays={referral.bankDays} />
+              ) : (
+                <div />
+              )}
 
             {/* Barra de uso — solo negocios, ver nota junto a useAllBusinesses() arriba. */}
-            <div className="max-w-xs border border-hairline rounded-xl p-4 space-y-2">
+            <div className="border border-hairline rounded-xl p-4 space-y-2">
               <div className="flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-text-4" />
                 <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">
@@ -233,7 +254,15 @@ export default function MiPlanPage() {
               </div>
             </div>
 
-            <div id="planes-grid" data-tour="miplan-grid">
+            </div>
+
+            {/* Invitar y cambiar de plan, en la misma página (docs/181). */}
+            <div className="max-w-3xl border-t border-hairline pt-8">
+              <ReferralSection data={referral} failed={referralFailed} />
+            </div>
+
+            <div id="planes-grid" data-tour="miplan-grid" className="border-t border-hairline pt-8 space-y-4">
+              <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("mi_plan_change_title")}</h2>
               <PlansGrid freeRedirectTo="/mi-plan" />
             </div>
           </div>

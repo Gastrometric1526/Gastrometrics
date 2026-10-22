@@ -459,7 +459,7 @@ export default {
         ]],
         ["p", "Hvis din plan har en udløbsdato (fx måneden som stiftende køkken), viser menuen, hvor mange dage der er tilbage, under din plan. Tre dage før og på selve dagen minder vi dig om det i appen: du kan vælge den plan, du vil fortsætte med, og <strong>planlægge betalingen</strong>, som trækkes den dag, din plan udløber. Din plan skifter kun, når Stripe bekræfter betalingen; ellers skifter din konto til Foodie, og du beholder alle dine data."],
         ["info", "Import er gratis", "Import af dine opskrifter og ingredienser fra tekst, Excel, PDF (med tekst eller scannet), fotos eller kvitteringer er med i alle planer, også Foodie, og uden grænse. Det, der ændrer sig med planen, er det, du gør bagefter: fra Home Cook kan du opdatere prisen på de ingredienser, du allerede har, med en kvittering eller en liste, og fra Chef de Partie læse dine lageroptællinger."],
-        ["p", "I <strong>Min plan</strong> (og også i <strong>Inviter</strong>) viser kortet <strong>Din plan</strong> med ét blik, hvornår din plan udløber, din <strong>næste opkrævning</strong> (dato og beløb) og, hvis du har optjent måneder ved at invitere kolleger, fra hvornår til hvornår de løber. Er intet planlagt, viser det datoen, hvor din konto ville gå over til Foodie. Herfra går du direkte til Inviter."],
+        ["p", "<strong>Min plan</strong> samler alt på én side: øverst viser kortet <strong>Din plan</strong> med ét blik, hvornår din plan udløber, din <strong>næste opkrævning</strong> (dato og beløb) og, hvis du har optjent måneder ved at invitere kolleger, fra hvornår til hvornår de løber. Er intet planlagt, viser det datoen, hvor din konto ville gå over til Foodie. Nedenunder ligger \"Giv en måned, få en måned\" (næste kapitel) og til sidst <strong>Skift plan</strong>."],
         ["figure", "12-mi-plan.jpg", "Min plan: din nuværende plan, hvad den indeholder, og hvordan du administrerer dit abonnement."],
         ["h3", "Betal, skift eller opsig"],
         ["p", "Betalinger behandles af Stripe. Under <strong>Min plan</strong> kan du skifte plan eller åbne betalingsportalen for at opdatere dit kort eller opsige. Ændringer vises automatisk på din konto, og du får en bekræftelse på e-mail."],
@@ -474,7 +474,7 @@ export default {
       intro: "Inviter en anden kok eller et køkken til Gastrometrics. Din kollega prøver gratis, og du får en måned, når de kommer rigtigt i gang.",
       blocks: [
         ["h3", "Sådan inviterer du"],
-        ["steps", ["Åbn <strong>Inviter</strong> i sidemenuen.", "Kopiér dit link eller send det med knapperne til WhatsApp eller e-mail.", "Din kollega tilmelder sig med linket: de ser en besked med dit navn og får 30 dage med Chef de Partie, uden kort."]],
+        ["steps", ["Åbn <strong>Min plan</strong>: \"Giv en måned, få en måned\" ligger lige under din plan. Genvejen <strong>Inviter</strong> i sidemenuen fører dig direkte derhen.", "Kopiér dit link eller send det med knapperne til WhatsApp eller e-mail.", "Din kollega tilmelder sig med linket: de ser en besked med dit navn og får 30 dage med Chef de Partie, uden kort."]],
         ["h3", "Hvad hver af jer får"],
         ["table", ["Hvem", "Hvad de får"], [
           ["Din kollega", "30 dage med Chef de Partie gratis, uden kort og uden binding. Når perioden slutter, går de selv tilbage til Foodie uden betaling; vil de fortsætte, vælger de en plan."],

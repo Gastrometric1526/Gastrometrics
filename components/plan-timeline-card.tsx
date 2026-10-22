@@ -2,14 +2,11 @@
 
 /**
  * «Tu plan» (docs/180): cuándo vence, cuál es el siguiente cobro y desde/hasta cuándo
- * corren los meses ganados por invitar. En /invita (con los datos que ya trae la página)
- * y en /mi-plan (PlanTimelineFromApi, que los pide a /api/referral/me), junto a la
- * entrada a Invita.
+ * corren los meses ganados por invitar. Arriba de Mi Plan, sobre la sección de invitar
+ * (docs/181).
  */
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { CalendarClock, CreditCard, Gift, PiggyBank, ArrowRight } from "lucide-react"
+import { CalendarClock, CreditCard, Gift, PiggyBank } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { formatDate } from "@/lib/date-format"
 import { getPlanBySlug } from "@/lib/plans"
@@ -33,14 +30,10 @@ export function PlanTimelineCard({
   planSlug,
   timeline,
   bankDays,
-  inviteCta = false,
-  rewardsEarned = 0,
 }: {
   planSlug: string
   timeline: PlanTimeline
   bankDays: number
-  inviteCta?: boolean
-  rewardsEarned?: number
 }) {
   const { t } = useLanguage()
   const plan = getPlanBySlug(planSlug)
@@ -101,33 +94,6 @@ export function PlanTimelineCard({
           </>
         )}
       </ul>
-      {inviteCta && (
-        <Link
-          href="/invita"
-          className="flex items-center justify-between gap-3 rounded-lg bg-canvas-alt px-3 py-2.5 text-sm hover:bg-muted transition-colors"
-        >
-          <span className="flex items-center gap-2 text-foreground">
-            <Gift className="h-4 w-4 text-text-3" />
-            {rewardsEarned > 0 ? t("plan_timeline_invite_earned").replace("{n}", String(rewardsEarned)) : t("plan_timeline_invite_cta")}
-          </span>
-          <ArrowRight className="h-4 w-4 text-text-3" />
-        </Link>
-      )}
     </section>
   )
-}
-
-type Overview = { planSlug: string; timeline: PlanTimeline; bankDays: number; rewardsEarned: number }
-
-/** Versión que pide sus propios datos (para /mi-plan). */
-export function PlanTimelineFromApi({ inviteCta = true }: { inviteCta?: boolean }) {
-  const [data, setData] = useState<Overview | null>(null)
-  useEffect(() => {
-    fetch("/api/referral/me")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json) => json?.timeline && setData(json))
-      .catch(() => {})
-  }, [])
-  if (!data) return null
-  return <PlanTimelineCard planSlug={data.planSlug} timeline={data.timeline} bankDays={data.bankDays} rewardsEarned={data.rewardsEarned} inviteCta={inviteCta} />
 }

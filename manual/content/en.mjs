@@ -459,7 +459,7 @@ export default {
         ]],
         ["p", "If your plan has an end date (for example, the founding kitchen month), the sidebar shows how many days are left under your plan. Three days before and on the day itself we remind you in the app: you can pick the plan you want to keep and <strong>schedule the payment</strong>, which is charged the day your plan ends. Your plan only changes once Stripe confirms the payment; otherwise your account switches to Foodie and you keep all your data."],
         ["info", "Importing is free", "Importing your recipes and ingredients from text, Excel, PDF (with text or scanned), photos or receipts is included in every plan, Foodie too, with no limit. What changes with the plan is what you do next: from Home Cook you can update the price of the ingredients you already have with a receipt or a list, and from Chef de Partie read your inventory counts."],
-        ["p", "In <strong>My Plan</strong> (and also in <strong>Invite</strong>), the <strong>Your plan</strong> card shows at a glance when your plan ends, your <strong>next charge</strong> (date and amount) and, if you earned months by inviting colleagues, from when to when they run. If nothing is scheduled, it shows the date your account would move to Foodie. You can go to Invite right from there."],
+        ["p", "<strong>My Plan</strong> brings everything together on one page: at the top, the <strong>Your plan</strong> card shows at a glance when your plan ends, your <strong>next charge</strong> (date and amount) and, if you earned months by inviting colleagues, from when to when they run. If nothing is scheduled, it shows the date your account would move to Foodie. Below it is \"Give a month, get a month\" (next chapter) and, at the end, <strong>Change plan</strong>."],
         ["figure", "12-mi-plan.jpg", "My Plan: your current plan, what it includes and how to manage your subscription."],
         ["h3", "Paying, changing or cancelling"],
         ["p", "Payments are processed by Stripe. From <strong>My Plan</strong> you can change plans or open the billing portal to update your card or cancel. Changes show up in your account automatically and you get a confirmation email."],
@@ -474,7 +474,7 @@ export default {
       intro: "Invite another chef or kitchen to Gastrometrics. Your colleague tries it free and you earn a month when they really get started.",
       blocks: [
         ["h3", "How to invite"],
-        ["steps", ["Open <strong>Invite</strong> in the side menu.", "Copy your link or send it with the WhatsApp or email buttons.", "Your colleague signs up with that link: they see a note with your name and get 30 days of Chef de Partie, no card."]],
+        ["steps", ["Open <strong>My Plan</strong>: \"Give a month, get a month\" is right below your plan. The <strong>Invite</strong> shortcut in the side menu takes you straight there.", "Copy your link or send it with the WhatsApp or email buttons.", "Your colleague signs up with that link: they see a note with your name and get 30 days of Chef de Partie, no card."]],
         ["h3", "What each of you gets"],
         ["table", ["Who", "What they get"], [
           ["Your colleague", "30 days of Chef de Partie free, no card, no commitment. When it ends they go back to Foodie on their own, with no charge; if they want to continue, they pick a plan."],

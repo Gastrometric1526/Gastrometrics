@@ -20,7 +20,6 @@ export const TOUR_PAGES: Record<string, string> = {
   "mi-plan": "/mi-plan",
   "procesar-ordenes": "/procesar-ordenes",
   negocios: "/negocios",
-  invita: "/invita",
 }
 
 export const TOUR_KEY_PREFIX = "tour_completed_"

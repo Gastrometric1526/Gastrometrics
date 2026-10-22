@@ -208,7 +208,7 @@ export async function sendReferralEmail(input: {
   const account = await accountInfo(input.accountId)
   if (!account) return
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
-  const actionUrl = input.actionUrl || withEmailTracking(`${siteUrl}${input.type.startsWith("gift") ? "/dashboard" : "/invita"}`, `referral_${input.type}`)
+  const actionUrl = input.actionUrl || withEmailTracking(`${siteUrl}${input.type.startsWith("gift") ? "/dashboard" : "/mi-plan#invita"}`, `referral_${input.type}`)
   const { subject, html } = renderReferralEmail({
     type: input.type,
     language: account.language,
