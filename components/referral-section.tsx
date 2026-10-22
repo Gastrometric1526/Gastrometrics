@@ -28,6 +28,7 @@ export type ReferralOverview = {
   bankDays: number
   planSlug: string
   timeline: PlanTimeline
+  payments?: import("@/lib/payment-notice").PaymentRecord[]
 }
 
 const STATUS_KEY: Record<Invite["status"], TranslationKey> = {

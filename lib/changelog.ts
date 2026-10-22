@@ -32,6 +32,60 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-22d",
+    tutorialHref: tourHref("mi-plan"),
+    content: {
+      es: {
+        title: "Te confirmamos cada cobro",
+        items: [
+          "Cada vez que Stripe cobra tu plan, te llega un correo «Pago confirmado» con el monto, la fecha, tu siguiente cobro y la factura, y lo ves también al entrar a la app.",
+          "Si un cobro no se puede hacer, te avisamos que no se te cobró nada y te dejamos actualizar tu tarjeta con un toque, antes de perder tu plan.",
+          "En Mi Plan, la tarjeta «Tu plan» muestra tus últimos cobros, pagados o fallidos.",
+        ],
+      },
+      en: {
+        title: "We confirm every charge",
+        items: [
+          "Every time Stripe charges your plan, you get a \"Payment confirmed\" email with the amount, date, your next charge and the invoice, and you also see it when you open the app.",
+          "If a charge can't be made, we let you know nothing was charged and let you update your card with one tap, before you lose your plan.",
+          "In My Plan, the \"Your plan\" card shows your recent charges, paid or failed.",
+        ],
+      },
+      da: {
+        title: "Vi bekræfter hver opkrævning",
+        items: [
+          "Hver gang Stripe opkræver din plan, får du en e-mail \"Betaling bekræftet\" med beløb, dato, din næste opkrævning og fakturaen, og du ser det også, når du åbner appen.",
+          "Kan en opkrævning ikke gennemføres, fortæller vi dig, at intet er opkrævet, og lader dig opdatere dit kort med ét tryk, før du mister din plan.",
+          "I Min plan viser kortet \"Din plan\" dine seneste opkrævninger, betalte eller mislykkede.",
+        ],
+      },
+      fr: {
+        title: "Nous confirmons chaque prélèvement",
+        items: [
+          "Chaque fois que Stripe prélève votre forfait, vous recevez un e-mail « Paiement confirmé » avec le montant, la date, votre prochain prélèvement et la facture, et vous le voyez aussi en ouvrant l'application.",
+          "Si un prélèvement échoue, nous vous indiquons que rien n'a été prélevé et vous permettons de mettre à jour votre carte en un geste, avant de perdre votre forfait.",
+          "Dans Mon forfait, la carte « Votre forfait » affiche vos derniers prélèvements, payés ou échoués.",
+        ],
+      },
+      pt: {
+        title: "Confirmamos cada cobrança",
+        items: [
+          "Sempre que a Stripe cobra seu plano, você recebe um e-mail \"Pagamento confirmado\" com o valor, a data, sua próxima cobrança e a fatura, e também vê isso ao abrir o app.",
+          "Se uma cobrança não puder ser feita, avisamos que nada foi cobrado e deixamos você atualizar o cartão com um toque, antes de perder seu plano.",
+          "Em Meu plano, o cartão \"Seu plano\" mostra suas últimas cobranças, pagas ou com falha.",
+        ],
+      },
+      zh: {
+        title: "每一笔扣费我们都会确认",
+        items: [
+          "每次 Stripe 为你的套餐扣费，你都会收到「付款成功」邮件，包含金额、日期、下次扣费和发票；打开应用时也会看到。",
+          "如果扣费失败，我们会告诉你没有收取任何费用，并让你一键更新银行卡，避免失去套餐。",
+          "在「我的套餐」中，「你的套餐」卡片会显示最近的扣费记录，包括成功和失败。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-10-22c",
     tutorialHref: tourHref("mi-plan"),
     content: {

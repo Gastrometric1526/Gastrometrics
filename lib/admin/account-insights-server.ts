@@ -14,6 +14,8 @@ import { isTesterEmail } from "@/lib/tester-allowlist";
 import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client";
 import { CLICK_PREFIX } from "@/lib/email-tracking";
 import type { FeatureKey } from "@/lib/plans";
+import { adminReferralSummary } from "@/lib/services/referrals";
+import type { PaymentRecord } from "@/lib/payment-notice";
 
 async function allRows<T>(
   build: (
@@ -31,6 +33,7 @@ async function allRows<T>(
   }
   return out;
 }
+
 
 export async function getAccountInsights(userId: string) {
   const admin = getSupabaseAdminClient();
@@ -367,6 +370,9 @@ export async function getAccountInsights(userId: string) {
     activation,
     recentActivity,
     billing,
+    // Referidos de la cuenta y cobros confirmados a la persona (docs/183).
+    referral: await adminReferralSummary(userId).catch(() => null),
+    paymentConfirmations: ((appMeta.payment_history as PaymentRecord[] | undefined) || []).slice(0, 12),
     // Respuestas a las preguntas cortas (docs/173).
     surveyAnswers: activity
       .filter((a) => a.module === "encuesta")

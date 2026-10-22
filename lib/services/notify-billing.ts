@@ -27,7 +27,7 @@ import { formatDate as formatDMY, formatDateTime } from "@/lib/date-format"
 // para cambios de plan hechos a mano desde /admin (app/api/admin/account-plan/route.ts)
 // — ese cambio lo hizo el propio dueño, avisarle de su propia acción sería ruido.
 export async function sendOwnerBillingNotification(input: {
-  event: "new_subscription" | "plan_changed" | "cancelled"
+  event: "new_subscription" | "plan_changed" | "cancelled" | "payment_succeeded" | "payment_failed"
   accountId: string
   fromPlanSlug?: string
   toPlanSlug?: string
@@ -42,6 +42,9 @@ export async function sendOwnerBillingNotification(input: {
     new_subscription: "Nueva suscripción pagada",
     plan_changed: "Cambio de plan pagado",
     cancelled: "Suscripción cancelada",
+    // Confirmación de cobros (docs/183).
+    payment_succeeded: "Cobro recibido",
+    payment_failed: "Cobro fallido",
   }[input.event]
 
   const fromPlanName = input.fromPlanSlug ? getPlanBySlug(input.fromPlanSlug).name : null

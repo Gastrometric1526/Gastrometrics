@@ -25,6 +25,8 @@ import { getStripeClient } from "@/lib/stripe/client"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getPlanBySlug } from "@/lib/plans"
 import { sendPlanChangedEmail, sendSubscriptionCancelledEmail, sendOwnerBillingNotification } from "@/lib/services/notify-billing"
+import { confirmPayment } from "@/lib/services/payment-notice"
+import { isNewPaymentFailure, paidRecordFromInvoice, type InvoiceLike } from "@/lib/payment-notice"
 import { recordPlanChangeNotice } from "@/lib/services/plan-change-notice"
 import {
   getScheduledRenewal,
@@ -229,6 +231,27 @@ export async function POST(request: Request) {
       const planSlug = subscription.metadata?.planSlug
       const accountId = subscription.metadata?.accountId || (await findAccountIdByStripeCustomer(customerId))
 
+      // Cobro fallido (docs/183): Stripe pasa la suscripción a past_due/unpaid cuando un
+      // cobro falla. Se le confirma a la persona («no se te cobró nada») y al dueño.
+      const previousStatus = (event.data as { previous_attributes?: { status?: string } }).previous_attributes?.status
+      if (accountId && isNewPaymentFailure(subscription.status, previousStatus)) {
+        try {
+          const periodEnd = subscription.items?.data?.[0]?.current_period_end ?? 0
+          await confirmPayment(accountId, {
+            status: "failed",
+            amountCents: subscription.items?.data?.[0]?.price?.unit_amount ?? null,
+            currency: "usd",
+            planSlug: planSlug || null,
+            at: new Date().toISOString(),
+            invoiceUrl: null,
+            nextAt: null,
+            key: `sub:${subscription.id}:failed:${periodEnd}`,
+          })
+        } catch (paymentError) {
+          console.error("[api/webhooks/stripe] Error confirmando el cobro fallido:", paymentError)
+        }
+      }
+
       // Suscripción de un pago programado que todavía no se cobró (docs/165): no se toca
       // el plan con su estado (en prueba o activo sin pagar); se revisa la factura en Stripe.
       if (accountId && (await getScheduledRenewal(accountId))?.subscriptionId === subscription.id) {
@@ -342,7 +365,8 @@ export async function POST(request: Request) {
     // Cobro confirmado de una factura (docs/165): activa al instante un pago programado.
     // Si este evento no está suscrito en Stripe, lo cubren /api/plan/renewal y el cron.
     case "invoice.paid": {
-      const invoice = event.data.object as {
+      const invoice = event.data.object as InvoiceLike & {
+        customer?: string | { id: string } | null
         subscription?: string | { id: string } | null
         parent?: {
           subscription_details?: { subscription?: string | { id: string } | null; metadata?: Record<string, string> | null } | null
@@ -354,6 +378,17 @@ export async function POST(request: Request) {
       const subscriptionId = typeof rawSub === "string" ? rawSub : rawSub?.id
       if (accountId && subscriptionId && (await getScheduledRenewal(accountId))?.subscriptionId === subscriptionId) {
         await verifyScheduledRenewal(accountId)
+      }
+      // Cobro hecho (docs/183): confirmación a la persona (correo + aviso en la app) y al
+      // dueño, cada vez que Stripe cobra de verdad (no las facturas de $0).
+      try {
+        const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id
+        const payer = accountId || (customerId ? await findAccountIdByStripeCustomer(customerId) : null)
+        const planFromMeta = details?.metadata?.planSlug
+        const record = paidRecordFromInvoice(invoice, planFromMeta || (payer ? await getCurrentPlanSlug(payer) : null), Date.now())
+        if (payer && record) await confirmPayment(payer, record)
+      } catch (paymentError) {
+        console.error("[api/webhooks/stripe] Error confirmando el cobro:", paymentError)
       }
       break
     }

@@ -26,6 +26,7 @@ import {
   Sparkles,
   User,
   Users,
+  Gift,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -261,7 +262,7 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
     }
   };
 
-  const { account, plan, usage, content, team, emails, feedback, emailClicks, limits, activation, recentActivity, billing, surveyAnswers } = data;
+  const { account, plan, usage, content, team, emails, feedback, emailClicks, limits, activation, recentActivity, billing, surveyAnswers, referral, paymentConfirmations } = data;
   const accountAge = daysSince(account.createdAt) ?? 0;
   const lastSeen =
     usage.lastSeenAt || usage.lastActivityAt || account.lastSignInAt;
@@ -919,6 +920,52 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
                 </ul>
               )}
             </>
+          )}
+          {/* Cobros confirmados a la persona por correo y en la app (docs/183). */}
+          {paymentConfirmations.length > 0 && (
+            <div className="space-y-1 border-t pt-2">
+              <p className="text-xs font-medium text-muted-foreground">{t("admin_insights_payment_confirmations")}</p>
+              <ul className="space-y-1 text-sm">
+                {paymentConfirmations.map((p) => (
+                  <li key={p.key} className="flex justify-between gap-2">
+                    <span className={p.status === "paid" ? "text-foreground" : "text-destructive"}>
+                      {date(p.at)} · {p.status === "paid" ? `$${((p.amountCents ?? 0) / 100).toFixed(2)} · ${t("admin_insights_payment_paid")}` : t("admin_insights_payment_failed")}
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{p.seen ? t("admin_insights_payment_seen") : t("admin_insights_payment_unseen")}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </Section>
+        {/* Referidos de la cuenta (docs/179, docs/183). */}
+        <Section icon={Gift} title={t("admin_insights_section_referral")}>
+          {!referral ? (
+            <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
+          ) : (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label={t("admin_insights_referral_code")} value={referral.code} />
+                <Field label={t("admin_insights_referral_invited_by")} value={referral.invitedBy || "—"} />
+                <Field label={t("admin_insights_referral_invites")} value={String(referral.invites.length)} />
+                <Field
+                  label={t("admin_insights_referral_rewards")}
+                  value={`${referral.rewardsEarned} (${referral.rewardsThisYear}/12)`}
+                />
+              </div>
+              {referral.invites.length > 0 && (
+                <ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
+                  {referral.invites.map((inv, i) => (
+                    <li key={i} className="flex justify-between gap-2">
+                      <span className="truncate text-foreground">{inv.email || "—"}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {date(inv.registeredAt)} · {t(`invita_status_${inv.status}` as TranslationKey) || inv.status}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           )}
         </Section>
       </div>

@@ -6,11 +6,13 @@
  * (docs/181).
  */
 
-import { CalendarClock, CreditCard, Gift, PiggyBank } from "lucide-react"
+import { CalendarClock, CreditCard, Gift, PiggyBank, CheckCircle2, AlertTriangle } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { formatDate } from "@/lib/date-format"
 import { getPlanBySlug } from "@/lib/plans"
 import type { PlanTimeline } from "@/lib/plan-timeline"
+import type { PaymentRecord } from "@/lib/payment-notice"
+import { formatMoney } from "@/components/payment-notice-dialog"
 
 const price = (slug: string | null) => {
   const cents = getPlanBySlug(slug).priceUsdCents
@@ -30,10 +32,12 @@ export function PlanTimelineCard({
   planSlug,
   timeline,
   bankDays,
+  payments = [],
 }: {
   planSlug: string
   timeline: PlanTimeline
   bankDays: number
+  payments?: PaymentRecord[]
 }) {
   const { t } = useLanguage()
   const plan = getPlanBySlug(planSlug)
@@ -94,6 +98,30 @@ export function PlanTimelineCard({
           </>
         )}
       </ul>
+      {/* Cobros confirmados (docs/183): hechos o fallidos, con la factura. */}
+      {payments.length > 0 && (
+        <div className="space-y-1.5 border-t border-hairline pt-3" data-tour="plan-payments">
+          <p className="text-xs font-medium text-text-4">{t("plan_timeline_payments_title")}</p>
+          <ul className="space-y-1">
+            {payments.map((p) => (
+              <li key={p.key} className="flex flex-wrap items-center gap-x-2 text-sm">
+                {p.status === "paid" ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <AlertTriangle className="h-4 w-4 text-destructive" />}
+                <span className="text-foreground tabular-nums">{formatDate(p.at)}</span>
+                <span className="text-text-3">
+                  {p.status === "paid"
+                    ? t("plan_timeline_payment_paid").replace("{amount}", formatMoney(p.amountCents, p.currency))
+                    : t("plan_timeline_payment_failed")}
+                </span>
+                {p.invoiceUrl && (
+                  <a href={p.invoiceUrl} target="_blank" rel="noopener noreferrer" className="text-text-3 underline underline-offset-2 hover:text-foreground">
+                    {t("payment_notice_invoice")}
+                  </a>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   )
 }

@@ -23,6 +23,7 @@ import { getScheduledRenewal } from "@/lib/services/scheduled-renewal"
 import { runFounderGrant } from "@/lib/services/founder-grant"
 import { getPlanBySlug } from "@/lib/plans"
 import { planTimeline } from "@/lib/plan-timeline"
+import type { PaymentRecord } from "@/lib/payment-notice"
 import {
   REFERRAL,
   activationStep,
@@ -386,6 +387,8 @@ export async function referralOverview(accountId: string, now = Date.now()) {
     maxRewardsPerYear: REFERRAL.maxRewardsPerYear,
     bankDays,
     timeline,
+    /** Últimos cobros de Stripe, hechos o fallidos (docs/183), para «Tu plan». */
+    payments: ((info?.meta.payment_history as PaymentRecord[] | undefined) || []).slice(0, 3),
     /** Cuándo empiezan los meses guardados: al vencer el plan actual. */
     bankStartsAt: state.expiresAt,
     planSlug: state.planSlug,
@@ -411,4 +414,29 @@ export async function adminReferralList(now = Date.now()) {
     })
   }
   return out
+}
+
+/** Referidos de una cuenta para la radiografía de /admin (docs/183). */
+export async function adminReferralSummary(accountId: string, now = Date.now()) {
+  const info = await getMeta(accountId)
+  const own = info?.meta.referral as InviteeReferral | undefined
+  const pairs = (await referralPairs()).filter((p) => p.referrerId === accountId || p.inviteeId === accountId)
+  const invitedBy = own ? (await getMeta(own.by))?.email ?? null : null
+  const invites: { email: string | null; status: string; registeredAt: string }[] = []
+  for (const pair of pairs.filter((p) => p.referrerId === accountId).reverse()) {
+    const invitee = await getMeta(pair.inviteeId)
+    const referral = invitee?.meta.referral as InviteeReferral | undefined
+    invites.push({ email: invitee?.email ?? null, status: referral?.status ?? "—", registeredAt: referral?.at ?? pair.at })
+  }
+  const rewards = (info?.meta.referral_rewards as RewardRecord[] | undefined) || []
+  return {
+    code: referralCodeFor(accountId),
+    invitedBy,
+    invitedStatus: own?.status ?? null,
+    giftAt: own?.giftAt ?? null,
+    invites,
+    rewardsEarned: rewards.filter((r) => r.kind !== "none").length,
+    rewardsThisYear: rewardsInLastYear(rewards, now),
+    bankDays: Number(info?.meta.referral_bank_days) || 0,
+  }
 }

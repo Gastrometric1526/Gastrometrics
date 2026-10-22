@@ -19,6 +19,7 @@ import { PresenceTracker } from "@/components/presence-tracker"
 import { FounderGrantTrigger } from "@/components/founder-grant-trigger"
 import { ReferralTrigger } from "@/components/referral-trigger"
 import { PlanExpiryDialog } from "@/components/plan-expiry-dialog"
+import { PaymentNoticeDialog } from "@/components/payment-notice-dialog"
 import { FeedbackOrchestrator } from "@/components/feedback/feedback-orchestrator"
 import { ModuleActivityTracker } from "@/components/module-activity-tracker"
 import { PwaBackGuard } from "@/components/pwa-back-guard"
@@ -125,6 +126,7 @@ export default function RootLayout({
                   <ReferralTrigger />
                   {/* Vencimiento del plan y pago programado (docs/165) */}
                   <PlanExpiryDialog />
+                  <PaymentNoticeDialog />
                   {/* Calificación y preguntas cortas en momentos de valor (docs/173) */}
                   <FeedbackOrchestrator />
                   <SubRecipePricePrompt />

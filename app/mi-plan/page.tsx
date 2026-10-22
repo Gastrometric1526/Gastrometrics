@@ -228,7 +228,7 @@ export default function MiPlanPage() {
             {/* Tu plan (docs/180) y uso, lado a lado en pantallas anchas. */}
             <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start max-w-5xl">
               {referral?.timeline ? (
-                <PlanTimelineCard planSlug={referral.planSlug} timeline={referral.timeline} bankDays={referral.bankDays} />
+                <PlanTimelineCard planSlug={referral.planSlug} timeline={referral.timeline} bankDays={referral.bankDays} payments={referral.payments} />
               ) : (
                 <div />
               )}
