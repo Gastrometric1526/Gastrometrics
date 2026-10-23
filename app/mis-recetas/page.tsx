@@ -70,6 +70,7 @@ import {
   type TrashedRecipe,
 } from "@/lib/storage/recipes"
 import { SUBRECIPE_CLASSIFICATION, classifications as recipeClassifications } from "@/types/recipe"
+import { unitMarginPercent } from "@/lib/recipe-pricing"
 import { getClassificationLabel } from "@/lib/classification-labels"
 import { useLanguage } from "@/contexts/language-context"
 import { syncSubRecipeToIngredient, deleteSubRecipeIngredient } from "@/lib/subrecipe/core"
@@ -96,7 +97,15 @@ const sortOptions = [
   { value: "cost-desc", labelKey: "ingredientes_sort_cost_desc", icon: TrendingUp },
   { value: "recent", labelKey: "ingredientes_sort_recent", icon: Clock },
   { value: "oldest", labelKey: "misrecetas_sort_oldest", icon: Clock },
+  // Margen como en la Ficha (sin ISV y menos comisión, docs/190).
+  { value: "margin-desc", labelKey: "misrecetas_sort_margin_desc", icon: TrendingUp },
+  { value: "margin-asc", labelKey: "misrecetas_sort_margin_asc", icon: TrendingUp },
 ] as const
+
+const marginOf = (r: Recipe) => {
+  const unitCost = r.costPerServing || (r.totalCost || 0) / (r.yieldAmount > 0 ? r.yieldAmount : 1)
+  return (r.unitPrice || 0) > 0 ? unitMarginPercent(r, r.unitPrice || 0, unitCost) : -Infinity
+}
 
 export default function MisRecetasPage() {
   const router = useRouter()
@@ -262,6 +271,14 @@ export default function MisRecetasPage() {
           return new Date(b.metadata?.updatedAt || 0).getTime() - new Date(a.metadata?.updatedAt || 0).getTime()
         case "oldest":
           return new Date(a.metadata?.updatedAt || 0).getTime() - new Date(b.metadata?.updatedAt || 0).getTime()
+        // Las recetas sin precio van siempre al final.
+        case "margin-desc":
+          return marginOf(b) - marginOf(a) || 0
+        case "margin-asc": {
+          const ma = marginOf(a), mb = marginOf(b)
+          if (ma === -Infinity || mb === -Infinity) return ma === mb ? 0 : ma === -Infinity ? 1 : -1
+          return ma - mb
+        }
         default:
           return 0
       }

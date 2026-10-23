@@ -37,7 +37,12 @@ export function roundUpToStep(value: number, step: number): number {
 /** Cantidad de una línea escalada al PAX (sin cambio si el multiplicador es 1). */
 export function scaleLineQuantity(quantity: number, unit: string | undefined, multiplier: number): number {
   if (multiplier === 1) return quantity
-  return roundUpToStep(quantity * multiplier, paxStep(unit))
+  const scaled = quantity * multiplier
+  // El escalón nunca pasa del 10 % de la cantidad (docs/190): con 0.1 fijo, 0.002 g de
+  // azafrán se volvían 0.1 g (50 veces más). Sigue redondeando siempre hacia arriba.
+  let step = paxStep(unit)
+  while (step > scaled / 10 && step > 1e-6) step /= 10
+  return roundUpToStep(scaled, step)
 }
 
 /** Línea escalada con su extensión recalculada a partir de la cantidad redondeada. */

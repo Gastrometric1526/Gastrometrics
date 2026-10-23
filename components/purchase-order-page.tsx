@@ -55,6 +55,7 @@ import type { PurchaseOrder } from "@/types/purchase-order"
 import { buildPackageContentLookup, inventoryItemValue } from "@/lib/inventory-value"
 import { formatDate, toIsoDate } from "@/lib/date-format"
 import { getPackageContent } from "@/lib/beverage"
+import { suggestedRestockQuantity } from "@/lib/inventory-status"
 
 export function PurchaseOrderPage() {
   const router = useRouter()
@@ -416,8 +417,7 @@ export function PurchaseOrderPage() {
             : ingredient?.pricing?.pricePerUnit || item.price || 0
         // Repone hasta el doble del mínimo configurado, para dejar margen antes de
         // volver a caer en alerta en vez de comprar justo lo mínimo otra vez.
-        const targetStock = item.minStock * 2
-        const quantity = Math.max(targetStock - (item.currentStock || 0), item.minStock)
+        const quantity = suggestedRestockQuantity(item.currentStock, item.minStock)
         const { presentation, presentationQuantity } = computePresentationQuantity(
           (ingredient as Ingredient | undefined) || ({ presentation: item.presentation, unit: item.unit } as Ingredient),
           quantity,
@@ -552,6 +552,7 @@ export function PurchaseOrderPage() {
       recipes: editingOrder?.recipes || [],
       items: data.items.map((item) => ({
         id: item.id,
+        ...(item.ingredientId ? { ingredientId: item.ingredientId } : {}),
         name: item.ingredientName,
         totalQuantity: item.quantity,
         unit: item.unit,
@@ -563,6 +564,10 @@ export function PurchaseOrderPage() {
         presentationQuantity: item.presentationQuantity,
       })),
       total: data.total,
+      subtotal: data.subtotal,
+      tax: data.tax,
+      expectedDeliveryDate: data.expectedDeliveryDate || undefined,
+      notes: data.notes || undefined,
       status: data.status,
       supplier: data.supplier,
       createdAt: editingOrder?.createdAt || new Date().toISOString(),
@@ -600,11 +605,15 @@ export function PurchaseOrderPage() {
 
     if (isNowReceived && !wasAlreadyReceived) {
       const { matchedCount, unmatchedNames } = await receivePurchaseOrderIntoInventory(
-        order.items.map((item) => ({ name: item.name, quantity: item.totalQuantity })),
+        order.items.map((item) => ({ ingredientId: item.ingredientId, name: item.name, quantity: item.totalQuantity })),
         businessId,
       )
       if (unmatchedNames.length > 0) {
-        console.warn("[ordenes-compra] Ingredientes de la orden sin ítem de inventario correspondiente:", unmatchedNames)
+        // Antes solo quedaba en la consola (docs/190): la persona creía que todo se había sumado.
+        toast({
+          title: t("ordenes_toast_stock_unmatched_title"),
+          description: t("ordenes_toast_stock_unmatched_desc").replace("{names}", unmatchedNames.join(", ")),
+        })
       }
       if (matchedCount > 0) {
         setInventoryItems(getInventory(businessId))
@@ -624,11 +633,11 @@ export function PurchaseOrderPage() {
         orderNumber: editingOrder.name,
         supplier: editingOrder.supplier || "",
         orderDate: editingOrder.date,
-        expectedDeliveryDate: "",
+        expectedDeliveryDate: editingOrder.expectedDeliveryDate || "",
         status: editingOrder.status || "pending",
         items: editingOrder.items.map((item, index) => ({
           id: item.id || `item-${index}`,
-          ingredientId: "",
+          ingredientId: item.ingredientId || "",
           ingredientName: item.name,
           quantity: item.totalQuantity,
           unit: item.unit,
@@ -638,10 +647,11 @@ export function PurchaseOrderPage() {
           presentation: item.presentation,
           presentationQuantity: item.presentationQuantity,
         })),
-        subtotal: editingOrder.total,
-        tax: 0,
+        // Órdenes guardadas antes de docs/190 no tienen subtotal/impuesto: el total era el subtotal.
+        subtotal: editingOrder.subtotal ?? editingOrder.total,
+        tax: editingOrder.tax ?? 0,
         total: editingOrder.total,
-        notes: "",
+        notes: editingOrder.notes || "",
       }
     : null
 

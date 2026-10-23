@@ -18,7 +18,7 @@ describe("Modificador de PAX (docs/189)", () => {
     expect(scaleLineQuantity(0.005, "kilogramos", 2)).toBe(0.01)
     expect(scaleLineQuantity(0.002, "kilogramos", 1.5)).toBe(0.003)
     expect(scaleLineQuantity(0.03, "litros", 2.5)).toBe(0.075)
-    expect(scaleLineQuantity(0.0004, "kilogramos", 3)).toBe(0.002) // 1.2 g → 2 g, siempre hacia arriba
+    expect(scaleLineQuantity(0.0004, "kilogramos", 3)).toBe(0.0012) // 1.2 g: el escalón baja para no inflar cantidades mínimas (docs/190)
   })
 
   it("g/ml/oz/unidad redondean a 0.1 hacia arriba", () => {

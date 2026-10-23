@@ -72,6 +72,7 @@ import { ensureSalesImportsLoaded, getSalesImports } from "@/lib/storage/sales-i
 import { computeTheoreticalStock } from "@/lib/theoretical-stock"
 import type { SalesImport } from "@/types/sales-import"
 import { buildPackageContentLookup, inventoryTotalValue } from "@/lib/inventory-value"
+import { stockStatus } from "@/lib/inventory-status"
 
 // Algunos ingredientes guardados antes de que el precio/contenido neto vivieran bajo
 // `pricing` pudieron quedar con esos campos"planos"en la fila real — por eso el código
@@ -388,7 +389,12 @@ export default function InventoryPage() {
     // (syncInventoryWithDatabase, más abajo) — este formulario es donde el usuario
     // edita el ítem a mano, sus valores deben ganar.
     const newItem: InventoryItem = {
-      id: selectedItem?.id || uuidv4(),
+      // Un producto nuevo con el nombre de un ingrediente usa el id de ese ingrediente
+      // (docs/190): con un id al azar no se restaba en las órdenes de compra ni entraba
+      // en el stock teórico (los dos buscan por id de ingrediente).
+      id:
+        selectedItem?.id ||
+        (matchingIngredient && !items.some((item) => item.id === matchingIngredient.id) ? matchingIngredient.id : uuidv4()),
       name: data.name,
       category: data.category,
       currentStock: data.currentStock,
@@ -408,14 +414,7 @@ export default function InventoryPage() {
       // null si no se ingresa nada) directo contra minStock — `null <= minStock`
       // coerce null a 0, así que un ítem recién creado sin stock ingresado quedaba
       // marcado"crítico"en vez de"sin contar todavía".
-      status:
-        data.currentStock === null || data.currentStock === undefined
-          ? "normal"
-          : data.currentStock <= data.minStock
-            ? "critical"
-            : data.currentStock <= data.minStock * 2
-              ? "low"
-              : "normal",
+      status: stockStatus(data.currentStock, data.minStock),
       presentation: matchingIngredient?.presentation || existingItem?.presentation || undefined,
     }
 

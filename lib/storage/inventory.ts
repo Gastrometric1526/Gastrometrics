@@ -9,6 +9,7 @@ import type { Database } from "@/types/database"
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
 import { getIngredients } from "./ingredients"
 import { buildPackageContentLookup, inventoryTotalValue } from "@/lib/inventory-value"
+import { stockStatus } from "@/lib/inventory-status"
 
 type InventoryItemRow = Database["public"]["Tables"]["inventory_items"]["Row"]
 type InventorySnapshotRow = Database["public"]["Tables"]["inventory_snapshots"]["Row"]
@@ -278,17 +279,7 @@ export function getInventoryStats(businessId?: string | null): {
  */
 export function updateInventoryStatus(items: InventoryItem[]): InventoryItem[] {
   return items.map((item) => {
-    if (item.currentStock === null) {
-      return { ...item, status: "normal" }
-    }
-
-    if (item.currentStock <= item.minStock) {
-      return { ...item, status: "critical" }
-    } else if (item.currentStock <= item.minStock * 2) {
-      return { ...item, status: "low" }
-    } else {
-      return { ...item, status: "normal" }
-    }
+    return { ...item, status: stockStatus(item.currentStock, item.minStock) }
   })
 }
 
@@ -302,23 +293,29 @@ export function updateInventoryStatus(items: InventoryItem[]): InventoryItem[] {
  * persistido en la orden — ver comentario en purchase-order-page.tsx).
  */
 export async function receivePurchaseOrderIntoInventory(
-  items: { name: string; quantity: number }[],
+  items: { ingredientId?: string; name: string; quantity: number }[],
   businessId?: string | null,
 ): Promise<{ matchedCount: number; unmatchedNames: string[] }> {
   const inventory = getInventory(businessId)
+  const norm = (s: string) => s.trim().toLowerCase()
 
-  // Suma cantidades cuando la misma orden repite el mismo ingrediente en más de una línea.
-  const totalsByName = new Map<string, number>()
-  for (const item of items) {
-    if (!item.name || !item.quantity) continue
-    totalsByName.set(item.name, (totalsByName.get(item.name) || 0) + item.quantity)
+  // Se empareja primero por id de ingrediente (docs/190) y si no, por nombre sin
+  // distinguir mayúsculas ni espacios. Suma cantidades si la orden repite el ingrediente.
+  const totals = new Map<string, { item: InventoryItem | undefined; name: string; quantity: number }>()
+  for (const line of items) {
+    if (!line.name || !line.quantity) continue
+    const item =
+      (line.ingredientId ? inventory.find((inv) => inv.id === line.ingredientId) : undefined) ??
+      inventory.find((inv) => norm(inv.name) === norm(line.name))
+    const key = item ? `id:${item.id}` : `name:${norm(line.name)}`
+    const prev = totals.get(key)
+    totals.set(key, { item, name: line.name, quantity: (prev?.quantity || 0) + line.quantity })
   }
 
   let matchedCount = 0
   const unmatchedNames: string[] = []
 
-  for (const [name, quantity] of totalsByName.entries()) {
-    const match = inventory.find((inv) => inv.name === name)
+  for (const { item: match, name, quantity } of totals.values()) {
     if (!match) {
       unmatchedNames.push(name)
       continue
@@ -327,7 +324,7 @@ export async function receivePurchaseOrderIntoInventory(
     // Mismos umbrales que updateInventoryStatus() de arriba — se recalcula acá porque
     // status es un campo guardado, no derivado al leer.
     const newStatus: InventoryItem["status"] =
-      newStock <= match.minStock ? "critical" : newStock <= match.minStock * 2 ? "low" : "normal"
+      stockStatus(newStock, match.minStock)
     const receipts = [...(match.stockReceipts ?? []), { quantity, at: new Date().toISOString() }]
     await updateInventoryItem(match.id, { currentStock: newStock, status: newStatus, stockReceipts: receipts }, businessId)
     matchedCount++

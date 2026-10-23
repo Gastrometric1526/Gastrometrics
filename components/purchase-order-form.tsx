@@ -465,6 +465,11 @@ export function PurchaseOrderForm({
             </Button>
           </div>
 
+          {/* Ingrediente sin precio en la base (docs/190): el botón queda deshabilitado y antes no decía por qué. */}
+          {newItem.ingredientId && !newItem.unitPrice && (
+            <p className="mt-2 text-xs text-muted-foreground">{t("pof_price_needed_hint")}</p>
+          )}
+
           {(newItem.totalPrice ?? 0) > 0 && (
             <div className="mt-4 p-3 bg-muted rounded-lg">
               <p className="text-sm">

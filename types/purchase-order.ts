@@ -1,5 +1,8 @@
 export interface PurchaseOrderItem {
   id?: string
+  // Ingrediente de origen (docs/190): permite sumar al inventario aunque el ingrediente se
+  // haya renombrado después de hacer la orden. Las órdenes viejas no lo tienen.
+  ingredientId?: string
   name: string
   totalQuantity: number
   unit: string
@@ -31,6 +34,12 @@ export interface PurchaseOrder {
   status?: "pending" | "approved" | "ordered" | "received" | "cancelled"
   supplier?: string
   createdAt?: string
+  // Guardados desde docs/190: antes el formulario los mostraba pero no se guardaban, y al
+  // editar una orden con impuesto el impuesto se perdía (subtotal = total, impuesto 0).
+  subtotal?: number
+  tax?: number
+  expectedDeliveryDate?: string
+  notes?: string
 }
 
 // New types for PDF processing

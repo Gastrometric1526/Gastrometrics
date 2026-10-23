@@ -32,6 +32,72 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-23d",
+    tutorialHref: tourHref("ordenes-compra"),
+    content: {
+      es: {
+        title: "Órdenes de compra e inventario más confiables",
+        items: [
+          "Órdenes de compra: al editar una orden ya no se pierde el impuesto, y las notas y la fecha de entrega esperada ahora se guardan.",
+          "Al marcar una orden como «Recibida», se suma al Inventario aunque hayas renombrado el ingrediente, y si algún producto no está en Inventario te decimos cuál.",
+          "Inventario: un producto que agregas a mano con el nombre de un ingrediente queda conectado a ese ingrediente (stock teórico y órdenes sugeridas).",
+          "Mis Recetas: ahora puedes ordenarlas por margen.",
+          "PAX: las cantidades muy pequeñas (por ejemplo, unos miligramos de azafrán) ya no se redondean de más.",
+        ],
+      },
+      en: {
+        title: "More reliable purchase orders and inventory",
+        items: [
+          "Purchase orders: editing an order no longer drops its sales tax, and notes and the expected delivery date are now saved.",
+          "When you mark an order as \"Received\", it's added to Inventory even if you renamed the ingredient, and if a product isn't in Inventory we tell you which.",
+          "Inventory: a product you add manually with an ingredient's name is linked to that ingredient (theoretical stock and suggested orders).",
+          "My Recipes: you can now sort them by margin.",
+          "PAX: very small quantities (a few milligrams of saffron, for example) are no longer rounded up too much.",
+        ],
+      },
+      da: {
+        title: "Mere pålidelige indkøbsordrer og lager",
+        items: [
+          "Indkøbsordrer: når du redigerer en ordre, forsvinder momsen ikke længere, og noter og forventet leveringsdato gemmes nu.",
+          "Når du markerer en ordre som »Modtaget«, lægges den på Lager, selv om du har omdøbt ingrediensen, og hvis en vare ikke findes på Lager, fortæller vi dig hvilken.",
+          "Lager: en vare, du tilføjer manuelt med en ingrediens' navn, kobles til den ingrediens (teoretisk lager og foreslåede ordrer).",
+          "Mine Opskrifter: du kan nu sortere dem efter margin.",
+          "PAX: meget små mængder (fx nogle få milligram safran) rundes ikke længere for meget op.",
+        ],
+      },
+      fr: {
+        title: "Des bons de commande et un inventaire plus fiables",
+        items: [
+          "Bons de commande : modifier une commande ne fait plus perdre la taxe, et les notes et la date de livraison prévue sont maintenant enregistrées.",
+          "Quand vous marquez une commande comme « Reçue », elle s'ajoute à l'Inventaire même si vous avez renommé l'ingrédient, et si un produit n'y est pas, nous vous indiquons lequel.",
+          "Inventaire : un produit ajouté à la main avec le nom d'un ingrédient est relié à cet ingrédient (stock théorique et commandes suggérées).",
+          "Mes Recettes : vous pouvez maintenant les trier par marge.",
+          "PAX : les très petites quantités (quelques milligrammes de safran, par exemple) ne sont plus trop arrondies.",
+        ],
+      },
+      pt: {
+        title: "Ordens de compra e estoque mais confiáveis",
+        items: [
+          "Ordens de compra: ao editar uma ordem, o imposto não se perde mais, e as notas e a data de entrega prevista agora são salvas.",
+          "Ao marcar uma ordem como «Recebido», ela é somada ao Estoque mesmo que você tenha renomeado o ingrediente, e se algum produto não estiver no Estoque, avisamos qual.",
+          "Estoque: um produto que você adiciona à mão com o nome de um ingrediente fica ligado a esse ingrediente (estoque teórico e ordens sugeridas).",
+          "Minhas Receitas: agora você pode ordená-las por margem.",
+          "PAX: quantidades muito pequenas (alguns miligramas de açafrão, por exemplo) não são mais arredondadas demais.",
+        ],
+      },
+      zh: {
+        title: "采购订单和库存更可靠",
+        items: [
+          "采购订单：编辑订单时不再丢失税费，备注和预计交货日期现在也会保存。",
+          "将订单标记为“已收货”后，即使你改过食材名称也会计入库存；如有商品不在库存中，我们会告诉你是哪些。",
+          "库存：手动添加且名称与某个食材相同的商品，会与该食材关联（理论库存和建议订单）。",
+          "我的配方：现在可以按毛利排序。",
+          "人数调整器：极小的用量（例如几毫克藏红花）不再被过度取整。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-10-23c",
     tutorialHref: tourHref("ficha-tecnica"),
     content: {
