@@ -395,7 +395,7 @@ export default {
         ["h3", "Overblik"],
         ["p", "Generelle tal, lagerværdi og varer med alarm, gennemsnitlig kostpris og margin, opskrifter pr. klassifikation, mest brugte ingredienser, opskrifterne med bedste og dårligste margin samt hver ingrediens' prishistorik med ændring."],
         ["h3", "Økonomi"],
-        ["p", "Sælger du drikkevarer, adskiller kortet <strong>Køkken vs. bar</strong> salg, teoretisk og faktisk omkostning for hvert område (kapitel 6). Resultatopgørelse (P&L), din teoretiske mod reelle food cost ud fra dine salg, prisændringer pr. leverandør og <strong>Menu Engineering</strong>, som klassificerer hver ret ved at sammenligne den med gennemsnittet af din egen menu:"],
+        ["p", "Sælger du drikkevarer, adskiller kortet <strong>Køkken vs. bar</strong> salg, teoretisk og faktisk omkostning for hvert område (kapitel 6). Resultatopgørelse (P&L), din teoretiske mod reelle food cost ud fra dine salg, prisændringer pr. leverandør og <strong>Menu Engineering</strong>, som klassificerer hver ret med Kasavana og Smiths standardmetode: den er populær, hvis den sælger mindst 70 % af sin lige andel, og dens dækningsbidrag er højt, hvis dækningsbidraget pr. ret (pris − kostpris) er over gennemsnittet pr. solgt ret. Omkostningsprocenter, Prime Cost og resultatopgørelsen måles på nettosalget, uden den moms der er inkluderet i priserne (som i opskriftskortet):"],
         ["table", ["Kategori", "Popularitet", "Margin", "Hvad du kan gøre"], [
           ["Stjerne", "Høj", "Høj", "Beskyt den, og fremhæv den på menuen."],
           ["Malkeko", "Høj", "Lav", "Den sælger godt: gennemgå kostprisen, eller hæv prisen lidt."],

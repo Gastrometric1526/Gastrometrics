@@ -21,7 +21,7 @@ import type { SalesImport } from "@/types/sales-import"
 import type { Recipe } from "@/types/recipe"
 import type { Menu } from "@/lib/types/menus"
 import { getDateLocale } from "@/lib/i18n/translations"
-import { formatDate, formatDayMonth, formatMonthYear, formatWeekdayDate } from "@/lib/date-format"
+import { formatDate, formatDayMonth, formatMonthYear, formatWeekdayDate, toIsoDate } from "@/lib/date-format"
 
 type RangeOption = "7" | "30" | "90" | "all" | "custom"
 
@@ -71,7 +71,7 @@ export function SalesHistoryBreakdown({
     const limit = Number.parseInt(range, 10)
     const cutoff = new Date()
     cutoff.setDate(cutoff.getDate() - limit)
-    const cutoffStr = cutoff.toISOString().slice(0, 10)
+    const cutoffStr = toIsoDate(cutoff)
     return allPeriods.filter((p) => p.endDate >= cutoffStr)
   }, [allPeriods, range, customFrom, customTo])
 

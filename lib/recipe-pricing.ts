@@ -56,13 +56,14 @@ export function suggestedUnitPrice(recipe: Recipe, unitCost: number, ctx: Pricin
   if (customProfit !== undefined) {
     unitProfit = customProfit
   } else {
+    // `??` y no `||`: un rubro en 0 % es válido (docs/187); antes volvía al defecto.
     const rubros =
-      (recipe.publicServices || 10) +
-      (recipe.marketing || 10) +
-      (recipe.operationalCosts || 30) +
-      (recipe.laborCosts || 25) +
+      (recipe.publicServices ?? 10) +
+      (recipe.marketing ?? 10) +
+      (recipe.operationalCosts ?? 30) +
+      (recipe.laborCosts ?? 25) +
       isv +
-      (recipe.contributionMargin || 30)
+      (recipe.contributionMargin ?? 30)
     unitProfit = unitCost * (rubros / 100) + (ctx.fixedCostPerPlate || 0)
   }
   return roundSalePrice(cover(unitCost + unitProfit), ctx.currencyCode)

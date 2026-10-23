@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { getPackageContent } from "@/lib/beverage"
 import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -230,14 +231,18 @@ export function PurchaseOrderForm({
   const handleIngredientSelect = (ingredientId: string) => {
     const ingredient = availableIngredients.find((ing) => ing.id === ingredientId)
     if (ingredient) {
+      const content = getPackageContent(ingredient)
+      const unitPrice = content > 0 && (ingredient.pricing?.purchasePrice || 0) > 0 ? ingredient.pricing.purchasePrice / content : ingredient.pricing?.pricePerUnit || 0
       setNewItem((prev) => ({
         ...prev,
         ingredientId,
         ingredientName: ingredient.name,
         unit: ingredient.unit || "kg",
-        unitPrice: ingredient.pricing?.pricePerUnit || 0,
+        // Precio de compra por unidad (envase ÷ contenido físico), sin la merma: en una orden
+        // se compra la cantidad física (docs/187).
+        unitPrice,
         supplier: ingredient.supplier,
-        totalPrice: (prev.quantity || 1) * (ingredient.pricing?.pricePerUnit || 0),
+        totalPrice: (prev.quantity || 1) * unitPrice,
       }))
     }
   }
@@ -447,7 +452,7 @@ export function PurchaseOrderForm({
             </div>
             <div className="space-y-2">
               <Label>{t("pof_unit_price_label")}</Label>
-              <NumericInput min={0} decimalPlaces={2} value={newItem.unitPrice || 0} onChange={(value) => handleNewItemChange("unitPrice", value)} />
+              <NumericInput min={0} decimalPlaces={4} value={newItem.unitPrice || 0} onChange={(value) => handleNewItemChange("unitPrice", value)} />
             </div>
             <Button
               type="button"

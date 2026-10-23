@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Edit, Trash2, Lock, Info, Wine } from "lucide-react"
 import type { Ingredient, Presentation, Unit } from "@/types/ingredient"
 import { units, presentations, unitAbbreviations } from "@/types/ingredient"
-import { convertBetweenUnits } from "@/lib/utils/calculations"
+import { convertIngredientUnit, unitFactor } from "@/lib/unit-change"
+import { persistUnitChangeSideEffects } from "@/lib/storage/unit-change"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { setDashboardData } from "@/utils/dashboard-data"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -100,39 +101,18 @@ export function IngredientsTable({
   const handleUnitChange = useCallback(
     (ingredient: Ingredient, newUnit: Unit) => {
       if (ingredient.unit === newUnit) return
-
-      // Special handling for"unidad"- ingredients measured by individual units
-      let convertedContent: number
-      const currentContent = ingredient.pricing?.netContent || 0
-
-      if (ingredient.unit === "unidad" || newUnit === "unidad") {
-        // When converting from/to"unidad", maintain the numeric value but adjust context
-        convertedContent = currentContent
-      } else {
-        // Normal unit conversion for weight/volume measurements
-        convertedContent = convertBetweenUnits(currentContent, ingredient.unit, newUnit)
+      // De/hacia «unidad» no hay conversión posible: se conserva el número (como antes).
+      // Entre masas y volúmenes se convierte el ingrediente, sus líneas de receta, el
+      // inventario y su historial, sin cambiar ningún costo (docs/187). Antes las recetas
+      // quedaban con la cantidad vieja leída en la unidad nueva.
+      const factor = unitFactor(ingredient.unit, newUnit) ?? 1
+      updateById(ingredient.id, (ing) => convertIngredientUnit(ing, newUnit, factor))
+      if (factor !== 1) {
+        void persistUnitChangeSideEffects([{ ingredientId: ingredient.id, newUnit, factor }], businessId)
       }
-
-      const purchasePrice = ingredient.pricing?.purchasePrice || 0
-      const newPricePerUnit = convertedContent > 0 ? purchasePrice / convertedContent : 0
-
-      updateById(ingredient.id, (ing) => ({
-        ...ing,
-        unit: newUnit,
-        pricing: {
-          ...ing.pricing,
-          netContent: Math.round(convertedContent * 10000) / 10000, // 4 decimales de precisión interna
-          pricePerUnit: Math.round(newPricePerUnit * 10000) / 10000, // 4 decimales de precisión interna
-        },
-        metadata: {
-          ...ing.metadata,
-          updatedAt: new Date().toISOString(),
-          version: (ing.metadata?.version || 0) + 1,
-        },
-      }))
       onUnitChange?.()
     },
-    [updateById, onUnitChange],
+    [updateById, onUnitChange, businessId],
   )
 
   const handlePresentationChange = useCallback(

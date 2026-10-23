@@ -78,6 +78,9 @@ import { OCR_LANG } from "@/lib/recipe-import/ocr"
 import { IngredientsTable } from "@/components/ingredients/ingredients-table"
 import { IngredientesTour } from "@/components/page-tours"
 import { convertAllIngredientsToSystem } from "@/lib/utils/calculations"
+import { convertIngredientUnit, unitFactor } from "@/lib/unit-change"
+import { usableContentAfterMerma } from "@/lib/merma-categories"
+import { persistUnitChangeSideEffects, type UnitChange } from "@/lib/storage/unit-change"
 import { updateIngredientPriceAndRecalculate, requestSubRecipePricePrompt, type RecalculationResult } from "@/lib/recalculate"
 import { ActivityTracker } from "@/lib/activity-tracker"
 import { trackEvent } from "@/lib/analytics/track-event"
@@ -817,13 +820,18 @@ export default function IngredientesPage() {
     try {
       const currentTimestamp = new Date().toISOString()
 
-      // Calculate price per unit
-      const pricePerUnit = (formData.pricing?.purchasePrice || 0) / (formData.pricing?.netContent || 1)
+      // Precio por unidad sobre el contenido APROVECHABLE (docs/187): si el ingrediente tiene
+      // merma activa, el contenido escrito es el del envase y se le aplica la merma.
+      const enteredContent = formData.pricing?.netContent || 1
+      const usableContent = usableContentAfterMerma(enteredContent, formData.merma, formData.category || "OTROS")
+      const pricePerUnit = (formData.pricing?.purchasePrice || 0) / (usableContent || 1)
 
       const ingredientData: Ingredient = {
         ...formData,
+        ...(formData.merma?.enabled ? { originalNetContent: enteredContent } : {}),
         pricing: {
           ...formData.pricing!,
+          netContent: usableContent,
           pricePerUnit,
           lastUpdated: currentTimestamp,
         },
@@ -839,7 +847,13 @@ export default function IngredientesPage() {
         // ya tenía esta lógica escrita, pero ninguna pantalla la llamaba).
         const oldPurchasePrice = ingredientToEdit.pricing?.purchasePrice || 0
         const newPurchasePrice = ingredientData.pricing?.purchasePrice || 0
-        const priceChanged = oldPurchasePrice !== newPurchasePrice
+        // BUG CORREGIDO (docs/187): también cuenta un cambio de contenido neto (p. ej. de
+        // 500 g a 1000 g), que cambia el precio por unidad aunque el precio sea el mismo;
+        // antes las recetas se quedaban con el costo viejo.
+        const oldUnitPrice = ingredientToEdit.pricing?.pricePerUnit || 0
+        const newUnitPrice = ingredientData.pricing?.pricePerUnit || 0
+        const contentOnlyChanged = oldPurchasePrice === newPurchasePrice && Math.abs(oldUnitPrice - newUnitPrice) > 1e-9
+        const priceChanged = oldPurchasePrice !== newPurchasePrice || contentOnlyChanged
 
         // Update existing ingredient
         const updatedIngredients = ingredients.map((ing) =>
@@ -852,8 +866,8 @@ export default function IngredientesPage() {
         if (priceChanged) {
           const confirmRecalculate = window.confirm(
             t("ingredientes_confirm_price_changed")
-              .replace("{old}", formatCurrency(oldPurchasePrice))
-              .replace("{new}", formatCurrency(newPurchasePrice)),
+              .replace("{old}", contentOnlyChanged ? formatCurrency(oldUnitPrice) : formatCurrency(oldPurchasePrice))
+              .replace("{new}", contentOnlyChanged ? formatCurrency(newUnitPrice) : formatCurrency(newPurchasePrice)),
           )
 
           if (confirmRecalculate) {
@@ -1006,7 +1020,14 @@ export default function IngredientesPage() {
   // Handle edit
   const handleEdit = (ingredient: Ingredient) => {
     setIngredientToEdit(ingredient)
-    setFormData(ingredient)
+    // Con merma activa, el formulario muestra el contenido FÍSICO del envase (docs/187);
+    // al guardar se vuelve a aplicar la merma. Antes mostraba lo aprovechable y, si la
+    // persona lo «corregía» al tamaño real, la merma se perdía sin aviso.
+    setFormData(
+      ingredient.merma?.enabled && ingredient.originalNetContent
+        ? { ...ingredient, pricing: { ...ingredient.pricing, netContent: ingredient.originalNetContent } }
+        : ingredient,
+    )
     setCurrentStep(0)
     setShowEditDialog(true)
   }
@@ -1153,10 +1174,30 @@ export default function IngredientesPage() {
     }
   }, [businessId])
 
+  // Convierte todo el catálogo a un sistema sin cambiar costos (docs/187): la unidad nueva
+  // la decide convertAllIngredientsToSystem; aquí se convierten contenido, precio por
+  // unidad, recetas, inventario e historial. Antes solo se guardaba la unidad nueva.
+  const convertCatalogToSystem = useCallback(
+    (targetSystem: "metric" | "imperial") => {
+      const targets = convertAllIngredientsToSystem(ingredients, targetSystem)
+      const changes: UnitChange[] = []
+      const updatedIngredients = ingredients.map((ing, i) => {
+        const newUnit = targets[i]?.unit
+        const factor = newUnit ? unitFactor(ing.unit, newUnit) : null
+        if (!newUnit || newUnit === ing.unit || !factor) return ing
+        changes.push({ ingredientId: ing.id, newUnit, factor })
+        return convertIngredientUnit(ing, newUnit, factor)
+      })
+      void persistUnitChangeSideEffects(changes, businessId)
+      return updatedIngredients
+    },
+    [ingredients, businessId],
+  )
+
   const convertToMetric = useCallback(() => {
     try {
       console.log("Iniciando conversión a métrico...")
-      const updatedIngredients = convertAllIngredientsToSystem(ingredients, "metric")
+      const updatedIngredients = convertCatalogToSystem("metric")
       console.log("Ingredientes convertidos:", updatedIngredients)
 
       // Forzar actualización del estado
@@ -1188,12 +1229,12 @@ export default function IngredientesPage() {
       console.error("Error al convertir a métrico:", error)
       showError(t("ingredientes_toast_convert_metric_error"))
     }
-  }, [ingredients, businessId, showSuccess, showError, t])
+  }, [convertCatalogToSystem, businessId, showSuccess, showError, t])
 
   const convertToImperial = useCallback(() => {
     try {
       console.log("Iniciando conversión a imperial...")
-      const updatedIngredients = convertAllIngredientsToSystem(ingredients, "imperial")
+      const updatedIngredients = convertCatalogToSystem("imperial")
       console.log("Ingredientes convertidos:", updatedIngredients)
 
       // Forzar actualización del estado
@@ -1225,11 +1266,11 @@ export default function IngredientesPage() {
       console.error("Error al convertir a imperial:", error)
       showError(t("ingredientes_toast_convert_imperial_error"))
     }
-  }, [ingredients, businessId, showSuccess, showError, t])
+  }, [convertCatalogToSystem, businessId, showSuccess, showError, t])
 
   const handleMassUnitConversion = useCallback(
     (targetSystem: "metric" | "imperial") => {
-      const updatedIngredients = convertAllIngredientsToSystem(ingredients, targetSystem)
+      const updatedIngredients = convertCatalogToSystem(targetSystem)
 
       setIngredients(updatedIngredients)
       saveIngredients(updatedIngredients, businessId)
@@ -1260,7 +1301,7 @@ export default function IngredientesPage() {
           .replace("{units}", baseUnits),
       )
     },
-    [ingredients, businessId, showSuccess, t],
+    [convertCatalogToSystem, businessId, showSuccess, t],
   )
 
   if (!authChecked) {

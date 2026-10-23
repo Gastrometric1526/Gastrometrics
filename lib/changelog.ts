@@ -32,6 +32,66 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-23",
+    tutorialHref: tourHref("estadisticas"),
+    content: {
+      es: {
+        title: "Cálculos revisados y más precisos",
+        items: [
+          "Reportes → Finanzas: el food cost, el Prime Cost y el estado de resultados ahora se miden sobre las ventas netas, sin el ISV incluido en tus precios (igual que en la Ficha Técnica). Si tus porcentajes cambiaron, es por esto: antes el impuesto se contaba como venta.",
+          "Menu Engineering usa el método estándar de la industria (Kasavana y Smith): un plato muy vendido pero con poco margen por plato ahora aparece como «Vaca lechera», no como «Estrella».",
+          "Órdenes de compra: la merma ya no se cobra dos veces en el costo ni pide envases de más, y los precios por gramo o mililitro mantienen sus decimales.",
+          "Ingredientes: cambiar de métrico a imperial (o la unidad de un ingrediente) convierte también tus recetas e inventario, sin cambiar ningún costo. Un rubro en 0 % se respeta, y las fechas de hoy usan tu hora local.",
+        ],
+      },
+      en: {
+        title: "Reviewed, more accurate calculations",
+        items: [
+          "Reports → Finance: food cost, Prime Cost and the income statement are now measured on net sales, without the sales tax included in your prices (same as the recipe card). If your percentages changed, this is why: tax used to be counted as sales.",
+          "Menu Engineering uses the industry-standard method (Kasavana and Smith): a dish that sells a lot but earns little per plate now shows as a \"Cash Cow\", not a \"Star\".",
+          "Purchase orders: waste is no longer charged twice in the cost or ordering extra packages, and prices per gram or milliliter keep their decimals.",
+          "Ingredients: switching between metric and imperial (or an ingredient's unit) also converts your recipes and inventory, without changing any cost. A 0% cost line is respected, and today's dates use your local time.",
+        ],
+      },
+      da: {
+        title: "Gennemgåede og mere præcise beregninger",
+        items: [
+          "Rapporter → Økonomi: food cost, Prime Cost og resultatopgørelsen måles nu på nettosalget, uden den moms der er inkluderet i dine priser (som i opskriftskortet). Har dine procenter ændret sig, er det derfor: momsen blev tidligere talt med som salg.",
+          "Menu Engineering bruger branchens standardmetode (Kasavana og Smith): en ret, der sælger meget men tjener lidt pr. ret, vises nu som «Malkeko», ikke som «Stjerne».",
+          "Indkøbsordrer: svind tælles ikke længere to gange i omkostningen eller bestiller ekstra emballager, og priser pr. gram eller milliliter beholder deres decimaler.",
+          "Ingredienser: skift mellem metrisk og imperial (eller en ingrediens' enhed) konverterer også dine opskrifter og dit lager uden at ændre nogen omkostning. En post på 0 % respekteres, og dagens dato bruger din lokale tid.",
+        ],
+      },
+      fr: {
+        title: "Calculs révisés et plus précis",
+        items: [
+          "Rapports → Finances : le food cost, le Prime Cost et le compte de résultat se mesurent désormais sur les ventes nettes, sans la taxe incluse dans vos prix (comme dans la fiche technique). Si vos pourcentages ont changé, c'est pour cela : la taxe était comptée comme vente.",
+          "Le Menu Engineering utilise la méthode standard du secteur (Kasavana et Smith) : un plat très vendu mais peu rentable par assiette apparaît maintenant comme « Vache à lait », et non comme « Étoile ».",
+          "Bons de commande : la perte n'est plus comptée deux fois dans le coût ni ne fait commander d'emballages en trop, et les prix au gramme ou au millilitre gardent leurs décimales.",
+          "Ingrédients : passer du métrique à l'impérial (ou changer l'unité d'un ingrédient) convertit aussi vos recettes et votre inventaire, sans changer aucun coût. Un poste à 0 % est respecté, et la date du jour utilise votre heure locale.",
+        ],
+      },
+      pt: {
+        title: "Cálculos revisados e mais precisos",
+        items: [
+          "Relatórios → Finanças: o food cost, o Prime Cost e o DRE agora são medidos sobre as vendas líquidas, sem o imposto incluído nos seus preços (como na ficha técnica). Se seus percentuais mudaram, é por isso: antes o imposto era contado como venda.",
+          "O Menu Engineering usa o método padrão do setor (Kasavana e Smith): um prato que vende muito mas rende pouco por prato agora aparece como «Vaca leiteira», não como «Estrela».",
+          "Ordens de compra: a perda não é mais cobrada duas vezes no custo nem pede embalagens a mais, e os preços por grama ou mililitro mantêm seus decimais.",
+          "Ingredientes: trocar entre métrico e imperial (ou a unidade de um ingrediente) também converte suas receitas e seu estoque, sem mudar nenhum custo. Uma rubrica em 0 % é respeitada, e a data de hoje usa seu horário local.",
+        ],
+      },
+      zh: {
+        title: "计算已复核，更加精确",
+        items: [
+          "报表 → 财务：食材成本率、Prime Cost 和损益表现在按净销售额计算，不含价格中包含的税费（与配方卡一致）。如果你的百分比有变化，原因就在这里：以前税费被算作销售额。",
+          "菜单工程采用行业标准方法（Kasavana 与 Smith）：销量高但单份利润低的菜品现在显示为「摇钱树」，而不是「明星」。",
+          "采购单：损耗不再在成本中重复计算，也不会多订包装；按克或毫升计的价格会保留小数。",
+          "原料：在公制与英制之间切换（或更改原料单位）时，会同时换算你的配方和库存，任何成本都不会改变。0% 的费用项会被保留，今天的日期使用你的本地时间。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-10-22d",
     tutorialHref: tourHref("mi-plan"),
     content: {

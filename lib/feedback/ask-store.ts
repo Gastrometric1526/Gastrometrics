@@ -9,6 +9,7 @@
  * preguntar, sin interrumpir lo que la persona está haciendo.
  */
 
+import { toIsoDate } from "@/lib/date-format"
 import { emptyAskState, type AskState, type ValueMoment } from "@/lib/feedback/ask-rules"
 
 export const VALUE_MOMENT_EVENT = "gm:value-moment"
@@ -43,7 +44,7 @@ export function saveAskState(userId: string, state: AskState): void {
 export function touchActiveDay(userId: string): number {
   const daysKey = `gm_active_days:${userId}`
   try {
-    const today = new Date().toISOString().slice(0, 10)
+    const today = toIsoDate(new Date())
     const days = JSON.parse(window.localStorage.getItem(daysKey) || "[]") as string[]
     const next = days.includes(today) ? days : [...days, today].slice(-60)
     window.localStorage.setItem(daysKey, JSON.stringify(next))

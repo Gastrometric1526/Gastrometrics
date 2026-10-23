@@ -109,6 +109,19 @@ describe("aggregateSalesByDish", () => {
 })
 
 describe("classifyMenuEngineering", () => {
+  it("Kasavana y Smith: un plato muy vendido con poco margen por unidad es vaca, no estrella (docs/187)", () => {
+    // Totales: 1100 u, margen 1700 → margen promedio por plato 1.545; umbral de popularidad 0.7 × 1100/3 = 256.7
+    const dishes = [
+      { recipeId: "a", name: "Muy vendido", quantitySold: 1000, revenue: 2000, theoreticalCost: 1000, contributionMargin: 1000, contributionMarginPercent: 50, unitPrice: 2, unitCost: 1 },
+      { recipeId: "b", name: "Caro", quantitySold: 60, revenue: 1200, theoreticalCost: 600, contributionMargin: 600, contributionMarginPercent: 50, unitPrice: 20, unitCost: 10 },
+      { recipeId: "c", name: "Medio", quantitySold: 40, revenue: 200, theoreticalCost: 100, contributionMargin: 100, contributionMarginPercent: 50, unitPrice: 5, unitCost: 2.5 },
+    ]
+    const byName = Object.fromEntries(classifyMenuEngineering(dishes).map((d) => [d.name, d.classification]))
+    expect(byName["Muy vendido"]).toBe("vaca") // antes: estrella (margen total 1000 ≥ promedio de totales 566)
+    expect(byName["Caro"]).toBe("puzzle")
+    expect(byName["Medio"]).toBe("puzzle")
+  })
+
   it("clasifica en los 4 cuadrantes contra el promedio del propio menu", () => {
     const dishes = [
       { recipeId: "star", name: "Estrella", quantitySold: 100, revenue: 1000, theoreticalCost: 300, contributionMargin: 700, contributionMarginPercent: 70, unitPrice: 10, unitCost: 3 },
@@ -274,5 +287,28 @@ describe("computeSupplierPriceVariance", () => {
     ]
     const result = computeSupplierPriceVariance(ingredients)
     expect(result.map((r) => r.ingredientId)).toEqual(["down", "up"])
+  })
+})
+
+describe("venta neta sin ISV (docs/187)", () => {
+  it("con Food Cost % e ISV 15 %, el margen se mide sobre la venta sin impuesto, como en la Ficha", () => {
+    const recipes = [{ id: "r1", name: "Plato", pricingMethod: "food_cost", isv: 15 }] as unknown as Recipe[]
+    const imp = makeImport({ lines: [{ rawDishName: "Plato", recipeId: "r1", quantity: 1, revenue: 115, theoreticalCost: 30 } as never] })
+    const [dish] = aggregateSalesByDish([imp], recipes)
+    expect(dish.tax).toBeCloseTo(15, 6)
+    expect(dish.contributionMargin).toBeCloseTo(70, 6) // 100 netos − 30
+    expect(dish.contributionMarginPercent).toBeCloseTo(70, 6) // antes: 85/115 = 73.9 %
+  })
+  it("una factura ya registra el subtotal sin impuesto: no se le descuenta otra vez", () => {
+    const recipes = [{ id: "r1", name: "Plato", pricingMethod: "food_cost", isv: 15 }] as unknown as Recipe[]
+    const imp = makeImport({ source: "invoice", lines: [{ rawDishName: "Plato", recipeId: "r1", quantity: 1, revenue: 100, theoreticalCost: 30 } as never] })
+    const [dish] = aggregateSalesByDish([imp], recipes)
+    expect(dish.tax).toBe(0)
+    expect(dish.contributionMargin).toBeCloseTo(70, 6)
+  })
+  it("método de 6 rubros: el ISV es un rubro sobre el costo, no se descuenta (decisión del dueño, docs/156)", () => {
+    const recipes = [{ id: "r1", name: "Plato", pricingMethod: "gastrometrics", isv: 15 }] as unknown as Recipe[]
+    const imp = makeImport({ lines: [{ rawDishName: "Plato", recipeId: "r1", quantity: 1, revenue: 115, theoreticalCost: 30 } as never] })
+    expect(aggregateSalesByDish([imp], recipes)[0].tax).toBe(0)
   })
 })

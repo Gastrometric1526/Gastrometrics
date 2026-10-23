@@ -45,7 +45,7 @@ import { AccountDangerZone } from "@/components/account-danger-zone"
 import { SettingsTour } from "@/components/page-tours"
 import { hasStoredPassword, verifyPassword } from "@/lib/utils/password-hash"
 import { useActiveMembership } from "@/lib/plan-access"
-import { formatDate } from "@/lib/date-format"
+import { formatDate, toIsoDate } from "@/lib/date-format"
 
 interface UserSettings {
   name: string
@@ -315,7 +315,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
     try {
       const { exportAccountBackup, downloadBlob } = await import("@/lib/backup/export-account-backup")
       const blob = await exportAccountBackup((p) => setExportBackupStage(p.stage))
-      const today = new Date().toISOString().slice(0, 10)
+      const today = toIsoDate(new Date())
       downloadBlob(blob, `gastrometrics-respaldo-${today}.zip`)
     } catch (error) {
       console.error("Error generando el respaldo:", error)

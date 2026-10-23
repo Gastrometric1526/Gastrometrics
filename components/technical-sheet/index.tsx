@@ -422,11 +422,14 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
           procedure: mergedProcedure.length > 0 ? mergedProcedure : [""],
           observations: undefined,
         })
-        setContributionMargin(existingRecipe.contributionMargin || 30)
-        setPublicServices(existingRecipe.publicServices || 10)
-        setMarketing(existingRecipe.marketing || 10)
-        setOperationalCosts(existingRecipe.operationalCosts || 30)
-        setLaborCosts(existingRecipe.laborCosts || 25)
+        // BUG CORREGIDO (docs/187): con `||` un rubro guardado en 0 % volvía al valor por
+        // defecto al reabrir la receta (y cambiaba el precio). `??` solo usa el defecto
+        // cuando el rubro no existe (recetas viejas).
+        setContributionMargin(existingRecipe.contributionMargin ?? 30)
+        setPublicServices(existingRecipe.publicServices ?? 10)
+        setMarketing(existingRecipe.marketing ?? 10)
+        setOperationalCosts(existingRecipe.operationalCosts ?? 30)
+        setLaborCosts(existingRecipe.laborCosts ?? 25)
         setIsv(existingRecipe.isv || 0)
         setPricingMethod(existingRecipe.pricingMethod || LEGACY_PRICING_METHOD)
         setTargetFoodCostPercent(

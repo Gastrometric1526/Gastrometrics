@@ -25,6 +25,12 @@ export interface SalesImportLine {
   // el POS no traía columna de fecha: el desglose por día cae a periodStart del lote
   // (o importedAt) como aproximación — ver resolveLineDate en lib/sales-analytics.ts.
   date?: string | null
+  /**
+   * El importe ya viene SIN impuesto (docs/187): las facturas registran el subtotal. Las
+   * ventas manuales y del POS llevan el precio de carta, que en el método Food Cost %
+   * incluye el ISV. lib/sales-analytics.ts lo pone al leer una importación de factura.
+   */
+  netOfTax?: boolean
 }
 
 export interface SalesImport {

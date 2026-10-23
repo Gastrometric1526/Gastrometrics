@@ -53,7 +53,8 @@ import { unitAbbreviations } from "@/types/ingredient"
 import { getUnitLabel } from "@/lib/ingredient-labels"
 import type { PurchaseOrder } from "@/types/purchase-order"
 import { buildPackageContentLookup, inventoryItemValue } from "@/lib/inventory-value"
-import { formatDate } from "@/lib/date-format"
+import { formatDate, toIsoDate } from "@/lib/date-format"
+import { getPackageContent } from "@/lib/beverage"
 
 export function PurchaseOrderPage() {
   const router = useRouter()
@@ -241,7 +242,7 @@ export function PurchaseOrderPage() {
           ingredientName: item.ingredientName,
           quantity: Math.round(item.quantity * 100) / 100,
           unit: item.unit,
-          unitPrice: Math.round(item.unitPrice * 100) / 100,
+          unitPrice: Math.round(item.unitPrice * 1e6) / 1e6, // precio por g/ml: centavos lo arruinaban (docs/187)
           totalPrice: Math.round(item.totalPrice * 100) / 100,
           supplier: item.supplier || "",
           category: item.category,
@@ -256,7 +257,7 @@ export function PurchaseOrderPage() {
       setSuggestedFormData({
         orderNumber: `OC ${menu.name} · ${orderDateLabel()}`,
         supplier: "",
-        orderDate: new Date().toISOString().split("T")[0],
+        orderDate: toIsoDate(new Date()),
         expectedDeliveryDate: "",
         status: "pending",
         items,
@@ -319,7 +320,7 @@ export function PurchaseOrderPage() {
           ingredientName: item.ingredientName,
           quantity: Math.round(item.quantity * 100) / 100,
           unit: item.unit,
-          unitPrice: Math.round(item.unitPrice * 100) / 100,
+          unitPrice: Math.round(item.unitPrice * 1e6) / 1e6, // precio por g/ml: centavos lo arruinaban (docs/187)
           totalPrice: Math.round(item.totalPrice * 100) / 100,
           supplier: item.supplier || "",
           category: item.category,
@@ -334,7 +335,7 @@ export function PurchaseOrderPage() {
       setSuggestedFormData({
         orderNumber: `OC ${recipe.name} · ${orderDateLabel()}`,
         supplier: "",
-        orderDate: new Date().toISOString().split("T")[0],
+        orderDate: toIsoDate(new Date()),
         expectedDeliveryDate: "",
         status: "pending",
         items,
@@ -406,7 +407,13 @@ export function PurchaseOrderPage() {
     const items: PurchaseOrderFormItem[] = sortPurchaseOrderItemsBySupplier(
       lowStockItems.map((item, index) => {
         const ingredient = ingredients.find((ing) => ing.id === item.id)
-        const unitPrice = ingredient?.pricing?.pricePerUnit || item.price || 0
+        // Se compra stock físico: precio de compra por unidad (envase ÷ contenido físico), no
+        // el precio con merma (docs/187).
+        const packageContent = ingredient ? getPackageContent(ingredient) : 0
+        const unitPrice =
+          ingredient && packageContent > 0 && (ingredient.pricing?.purchasePrice || 0) > 0
+            ? ingredient.pricing.purchasePrice / packageContent
+            : ingredient?.pricing?.pricePerUnit || item.price || 0
         // Repone hasta el doble del mínimo configurado, para dejar margen antes de
         // volver a caer en alerta en vez de comprar justo lo mínimo otra vez.
         const targetStock = item.minStock * 2
@@ -422,7 +429,7 @@ export function PurchaseOrderPage() {
           ingredientName: item.name,
           quantity: Math.round(quantity * 100) / 100,
           unit: item.unit,
-          unitPrice: Math.round(unitPrice * 100) / 100,
+          unitPrice: Math.round(unitPrice * 1e6) / 1e6,
           totalPrice: Math.round(quantity * unitPrice * 100) / 100,
           supplier: ingredient?.supplier || item.supplier || "",
           presentation,
@@ -444,7 +451,7 @@ export function PurchaseOrderPage() {
     setSuggestedFormData({
       orderNumber: `${t("ordenes_suggested_order_name")} · ${orderDateLabel()}`,
       supplier: headerSupplier,
-      orderDate: new Date().toISOString().split("T")[0],
+      orderDate: toIsoDate(new Date()),
       expectedDeliveryDate: "",
       status: "pending",
       items,

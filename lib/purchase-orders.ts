@@ -13,6 +13,7 @@ import {
 } from "./storage/purchase-orders"
 import { computePresentationQuantity } from "./utils/presentation-quantity"
 import { accumulateRecipeConsumption, indexById, type ConsumptionMap } from "./recipe-consumption"
+import { getPackageContent } from "./beverage"
 
 export interface PurchaseOrderItem {
   ingredientId: string
@@ -163,7 +164,14 @@ export function buildPurchaseOrderData({
     // (gramos) — inflaba el costo total miles de veces (ver mismo bug ya corregido en
     // lib/recalculate.ts). El precio correcto por unidad base es pricePerUnit
     // (purchasePrice ÷ contenido neto), igual que en el resto de la app.
-    const unitPrice = ingredient.pricing?.pricePerUnit || 0
+    // BUG CORREGIDO (docs/187): `quantity` ya es la cantidad BRUTA (con la merma sumada,
+    // grossUpMerma), así que se paga a precio de compra (precio del envase ÷ contenido
+    // físico). Con pricePerUnit, que ya incluye la merma, la merma se cobraba dos veces.
+    const packageContent = getPackageContent(ingredient)
+    const unitPrice =
+      packageContent > 0 && (ingredient.pricing?.purchasePrice || 0) > 0
+        ? ingredient.pricing.purchasePrice / packageContent
+        : ingredient.pricing?.pricePerUnit || 0
     const totalPrice = quantity * unitPrice
     const { presentation, presentationQuantity } = computePresentationQuantity(ingredient, quantity)
 

@@ -13,6 +13,8 @@ import type { BusinessExpenses } from "@/types/business"
 import type { Ingredient } from "@/types/ingredient"
 import type { Menu } from "@/lib/types/menus"
 import { snapshotValue } from "@/lib/inventory-value"
+import { taxIncludedIn } from "@/lib/food-cost-pricing"
+import { LEGACY_PRICING_METHOD } from "@/types/business"
 
 // ============== DESEMPEÑO POR PLATO ==============
 
@@ -21,11 +23,24 @@ export interface DishPerformance {
   name: string
   quantitySold: number
   revenue: number
+  /**
+   * ISV incluido en `revenue` (docs/187), con la misma regla que la Ficha Técnica: en el
+   * método Food Cost % el precio lleva el ISV encima y ese dinero es del Estado. Los % de
+   * costo y el margen se miden sobre la venta neta (revenue − tax), igual que en la Ficha.
+   */
+  tax?: number
   theoreticalCost: number
   contributionMargin: number
   contributionMarginPercent: number
   unitPrice: number
   unitCost: number
+}
+
+/** ISV incluido en el importe de una venta de esa receta (0 si no aplica). */
+export function saleTaxIncluded(revenue: number, recipe: Pick<Recipe, "pricingMethod" | "isv"> | undefined): number {
+  if (!recipe || !(recipe.isv && recipe.isv > 0)) return 0
+  const method = recipe.pricingMethod || LEGACY_PRICING_METHOD
+  return method === "food_cost" ? taxIncludedIn(revenue, recipe.isv) : 0
 }
 
 // menus es opcional (parámetro nuevo, docs/90) — el registro manual de ventas es el
@@ -45,10 +60,12 @@ function aggregateLines(lines: SalesImportLine[], recipes: Recipe[], menus: Menu
     const menu = !line.recipeId && line.menuId ? menus.find((m) => m.id === line.menuId) : undefined
     const name = recipe?.name || menu?.name || line.rawDishName
 
+    const tax = line.netOfTax ? 0 : saleTaxIncluded(line.revenue, recipe)
     const existing = map.get(key)
     if (existing) {
       existing.quantitySold += line.quantity
       existing.revenue += line.revenue
+      existing.tax = (existing.tax || 0) + tax
       existing.theoreticalCost += line.theoreticalCost
     } else {
       map.set(key, {
@@ -56,6 +73,7 @@ function aggregateLines(lines: SalesImportLine[], recipes: Recipe[], menus: Menu
         name,
         quantitySold: line.quantity,
         revenue: line.revenue,
+        tax,
         theoreticalCost: line.theoreticalCost,
         contributionMargin: 0,
         contributionMarginPercent: 0,
@@ -67,11 +85,12 @@ function aggregateLines(lines: SalesImportLine[], recipes: Recipe[], menus: Menu
 
   return Array.from(map.values())
     .map((d) => {
-      const contributionMargin = d.revenue - d.theoreticalCost
+      const netRevenue = d.revenue - (d.tax || 0)
+      const contributionMargin = netRevenue - d.theoreticalCost
       return {
         ...d,
         contributionMargin,
-        contributionMarginPercent: d.revenue > 0 ? (contributionMargin / d.revenue) * 100 : 0,
+        contributionMarginPercent: netRevenue > 0 ? (contributionMargin / netRevenue) * 100 : 0,
         unitPrice: d.quantitySold > 0 ? d.revenue / d.quantitySold : 0,
         unitCost: d.quantitySold > 0 ? d.theoreticalCost / d.quantitySold : 0,
       }
@@ -79,9 +98,14 @@ function aggregateLines(lines: SalesImportLine[], recipes: Recipe[], menus: Menu
     .sort((a, b) => b.revenue - a.revenue)
 }
 
+/** Líneas de una importación; las de factura ya vienen sin impuesto (subtotal). */
+function linesOf(imp: SalesImport): SalesImportLine[] {
+  return imp.source === "invoice" ? imp.lines.map((line) => ({ ...line, netOfTax: true })) : imp.lines
+}
+
 export function aggregateSalesByDish(salesImports: SalesImport[], recipes: Recipe[], menus: Menu[] = []): DishPerformance[] {
   return aggregateLines(
-    salesImports.flatMap((imp) => imp.lines),
+    salesImports.flatMap(linesOf),
     recipes,
     menus,
   )
@@ -144,6 +168,12 @@ function mondayOf(date: Date): Date {
   return d
 }
 
+// BUG CORREGIDO (docs/187): las fechas de inicio/fin se sacaban con toISOString(), que
+// pasa a UTC. En zonas horarias al este de UTC (Dinamarca, China) la medianoche local es
+// el día anterior en UTC: el mes «empezaba» el 31 y la semana el domingo. Se arma la
+// fecha con los componentes locales.
+const ymdLocal = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+
 function periodBounds(dateStr: string, granularity: SalesGranularity): { key: string; start: string; end: string } {
   if (granularity === "day") return { key: dateStr, start: dateStr, end: dateStr }
 
@@ -153,16 +183,16 @@ function periodBounds(dateStr: string, granularity: SalesGranularity): { key: st
     const monday = mondayOf(d)
     const sunday = new Date(monday)
     sunday.setDate(sunday.getDate() + 6)
-    const start = monday.toISOString().slice(0, 10)
-    const end = sunday.toISOString().slice(0, 10)
+    const start = ymdLocal(monday)
+    const end = ymdLocal(sunday)
     return { key: start, start, end }
   }
 
   if (granularity === "month") {
     const y = d.getFullYear()
     const m = d.getMonth()
-    const start = new Date(y, m, 1).toISOString().slice(0, 10)
-    const end = new Date(y, m + 1, 0).toISOString().slice(0, 10)
+    const start = ymdLocal(new Date(y, m, 1))
+    const end = ymdLocal(new Date(y, m + 1, 0))
     return { key: `${y}-${String(m + 1).padStart(2, "0")}`, start, end }
   }
 
@@ -180,7 +210,7 @@ export function aggregateSalesByPeriod(
   const byPeriod = new Map<string, { start: string; end: string; lines: SalesImportLine[] }>()
 
   salesImports.forEach((imp) => {
-    imp.lines.forEach((line) => {
+    linesOf(imp).forEach((line) => {
       const date = resolveLineDate(imp, line)
       const { key, start, end } = periodBounds(date, granularity)
       const existing = byPeriod.get(key)
@@ -195,7 +225,8 @@ export function aggregateSalesByPeriod(
       const revenue = dishes.reduce((sum, d) => sum + d.revenue, 0)
       const theoreticalCost = dishes.reduce((sum, d) => sum + d.theoreticalCost, 0)
       const quantitySold = dishes.reduce((sum, d) => sum + d.quantitySold, 0)
-      const contributionMargin = revenue - theoreticalCost
+      const netRevenue = revenue - dishes.reduce((sum, d) => sum + (d.tax || 0), 0)
+      const contributionMargin = netRevenue - theoreticalCost
       return {
         periodKey,
         startDate: start,
@@ -204,7 +235,7 @@ export function aggregateSalesByPeriod(
         theoreticalCost,
         quantitySold,
         contributionMargin,
-        contributionMarginPercent: revenue > 0 ? (contributionMargin / revenue) * 100 : 0,
+        contributionMarginPercent: netRevenue > 0 ? (contributionMargin / netRevenue) * 100 : 0,
         dishes,
       }
     })
@@ -215,7 +246,7 @@ export function aggregateSalesByDay(salesImports: SalesImport[], recipes: Recipe
   const byDate = new Map<string, SalesImportLine[]>()
 
   salesImports.forEach((imp) => {
-    imp.lines.forEach((line) => {
+    linesOf(imp).forEach((line) => {
       const date = resolveLineDate(imp, line)
       const existing = byDate.get(date)
       if (existing) existing.push(line)
@@ -229,14 +260,15 @@ export function aggregateSalesByDay(salesImports: SalesImport[], recipes: Recipe
       const revenue = dishes.reduce((sum, d) => sum + d.revenue, 0)
       const theoreticalCost = dishes.reduce((sum, d) => sum + d.theoreticalCost, 0)
       const quantitySold = dishes.reduce((sum, d) => sum + d.quantitySold, 0)
-      const contributionMargin = revenue - theoreticalCost
+      const netRevenue = revenue - dishes.reduce((sum, d) => sum + (d.tax || 0), 0)
+      const contributionMargin = netRevenue - theoreticalCost
       return {
         date,
         revenue,
         theoreticalCost,
         quantitySold,
         contributionMargin,
-        contributionMarginPercent: revenue > 0 ? (contributionMargin / revenue) * 100 : 0,
+        contributionMarginPercent: netRevenue > 0 ? (contributionMargin / netRevenue) * 100 : 0,
         dishes,
       }
     })
@@ -244,10 +276,16 @@ export function aggregateSalesByDay(salesImports: SalesImport[], recipes: Recipe
 }
 
 // ============== MENU ENGINEERING (estrella / vaca / puzzle / perro) ==============
-// Clasificacion clasica de 4 cuadrantes: popularidad (cantidad vendida) x
-// rentabilidad (margen de contribucion), cada uno contra el promedio del propio
-// menu — no contra un umbral fijo, porque lo que es "alta popularidad" depende
-// enteramente del volumen de cada negocio.
+// Método de Kasavana y Smith (1982), el estándar de la industria (docs/187):
+// - Popularidad: un plato es popular si su participación en las ventas (unidades del
+//   plato ÷ unidades totales) es al menos el 70 % de una participación pareja (1 ÷ n).
+//   Equivale a: unidades ≥ 0.7 × (unidades totales ÷ n).
+// - Rentabilidad: margen de contribución POR PLATO (precio − costo) contra el margen
+//   promedio ponderado del menú (margen total ÷ unidades totales).
+// BUG CORREGIDO: antes se comparaba el margen TOTAL de cada plato contra el promedio de
+// los totales y la popularidad contra el 100 % del promedio. El margen total ya mezcla la
+// popularidad: un plato que se vende mucho pero deja poco por unidad salía «estrella»
+// en vez de «vaca».
 
 export type MenuEngineeringClass = "estrella" | "vaca" | "puzzle" | "perro"
 
@@ -255,15 +293,34 @@ export interface MenuEngineeringEntry extends DishPerformance {
   classification: MenuEngineeringClass
 }
 
+export const MENU_ENGINEERING_POPULARITY_FACTOR = 0.7
+
+export interface MenuEngineeringThresholds {
+  dishCount: number
+  /** Unidades mínimas para ser popular: 70 % de la venta pareja. */
+  popularityThreshold: number
+  /** Margen de contribución promedio ponderado por plato vendido. */
+  averageUnitMargin: number
+}
+
+export function menuEngineeringThresholds(dishes: DishPerformance[]): MenuEngineeringThresholds {
+  const totalQty = dishes.reduce((s, d) => s + d.quantitySold, 0)
+  const totalMargin = dishes.reduce((s, d) => s + d.contributionMargin, 0)
+  return {
+    dishCount: dishes.length,
+    popularityThreshold: dishes.length > 0 ? (totalQty / dishes.length) * MENU_ENGINEERING_POPULARITY_FACTOR : 0,
+    averageUnitMargin: totalQty > 0 ? totalMargin / totalQty : 0,
+  }
+}
+
 export function classifyMenuEngineering(dishes: DishPerformance[]): MenuEngineeringEntry[] {
   if (dishes.length === 0) return []
-
-  const avgPopularity = dishes.reduce((s, d) => s + d.quantitySold, 0) / dishes.length
-  const avgMargin = dishes.reduce((s, d) => s + d.contributionMargin, 0) / dishes.length
+  const { popularityThreshold, averageUnitMargin } = menuEngineeringThresholds(dishes)
 
   return dishes.map((d) => {
-    const highPopularity = d.quantitySold >= avgPopularity
-    const highMargin = d.contributionMargin >= avgMargin
+    const unitMargin = d.quantitySold > 0 ? d.contributionMargin / d.quantitySold : 0
+    const highPopularity = d.quantitySold >= popularityThreshold
+    const highMargin = unitMargin >= averageUnitMargin
     let classification: MenuEngineeringClass
     if (highPopularity && highMargin) classification = "estrella"
     else if (highPopularity && !highMargin) classification = "vaca"

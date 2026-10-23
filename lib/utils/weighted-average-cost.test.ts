@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest"
 import { computeWeightedAverageCost } from "./weighted-average-cost"
 
 // Cubre el método de costo móvil agregado esta sesión (register-inventory-modal.tsx):
-// cada compra pondera el costo por unidad contra la cantidad ya comprada históricamente.
+// cada compra pondera el costo por unidad contra el stock que había antes (docs/187).
 describe("computeWeightedAverageCost", () => {
   it("la primera compra registrada establece el promedio en su propio costo por unidad", () => {
     const result = computeWeightedAverageCost({
@@ -34,6 +34,20 @@ describe("computeWeightedAverageCost", () => {
     // (1000*0.032 + 500*0.04) / 1500 = 0.034666...
     expect(result.weightedAverageCost).toBeCloseTo(0.034667, 5)
     expect(result.weightedAverageQuantity).toBe(1500)
+  })
+
+  it("costo móvil: pondera contra lo que queda en stock, no contra todo lo comprado (docs/187)", () => {
+    // Quedaban 100 g de los 1000 comprados a 0.032; se compran 900 g a 0.04 → (100×0.032 + 900×0.04) / 1000
+    const result = computeWeightedAverageCost({
+      previousStock: 100,
+      newStock: 1000,
+      purchasePrice: 40,
+      netContent: 1000,
+      previousWeightedAverageCost: 0.032,
+      previousWeightedAverageQuantity: 1000,
+    })
+    expect(result.weightedAverageCost).toBeCloseTo(0.0392, 6) // antes: 0.0358 (pesaban los 1000 g ya usados)
+    expect(result.weightedAverageQuantity).toBe(1000)
   })
 
   it("si el stock no aumento (conteo igual o menor) no hay compra que ponderar, el promedio no cambia", () => {

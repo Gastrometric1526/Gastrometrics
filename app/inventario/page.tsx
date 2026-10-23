@@ -298,11 +298,9 @@ export default function InventoryPage() {
               minStock: minStockValue,
               unit: matchingIngredient?.unit || ing.unit,
               price: purchasePrice,
-              location: [
-                t("inventario_location_main_warehouse"),
-                t("inventario_location_secondary_warehouse"),
-                t("inventario_location_kitchen"),
-              ][Math.floor(Math.random() * 3)],
+              // BUG CORREGIDO (docs/187): antes se elegía una ubicación AL AZAR entre
+              // bodega principal, secundaria y cocina. Ahora la bodega principal por defecto.
+              location: t("inventario_location_main_warehouse"),
               supplier: ing.supplier || t("ingredientes_default_supplier"),
               lastUpdated: new Date().toISOString(),
               status: "normal",

@@ -155,3 +155,22 @@ export function getAllMermaCategories() {
     percentage,
   }))
 }
+
+/**
+ * Contenido aprovechable de un envase según la merma configurada del ingrediente (docs/187),
+ * con la misma regla que la ventana de merma: personalizada si no usa la global y tiene
+ * valor; si no, la de su categoría. Nunca menos de 0.1 (igual que la ventana).
+ */
+export function usableContentAfterMerma(
+  originalContent: number,
+  merma: { enabled?: boolean; useGlobal?: boolean; customType?: string; customPercentage?: number; customValue?: number } | undefined,
+  category: string,
+): number {
+  if (!merma?.enabled || !(originalContent > 0)) return originalContent
+  const pct = merma.customPercentage || 0
+  const qty = merma.customValue || 0
+  if (!merma.useGlobal && (pct > 0 || qty > 0)) {
+    return Math.max(0.1, merma.customType === "percentage" ? originalContent * (1 - pct / 100) : originalContent - qty)
+  }
+  return Math.max(0.1, calculateCategoryMerma(originalContent, category))
+}

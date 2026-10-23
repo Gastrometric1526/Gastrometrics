@@ -29,6 +29,10 @@ describe("suggestedUnitPrice", () => {
     // 100 + 100 × (10+10+30+25+0+30)% = 205 → 205
     expect(suggestedUnitPrice(base({ pricingMethod: "gastrometrics" }), 100, HNL)).toBe(205)
   })
+  it("un rubro en 0 % se respeta (antes volvía al valor por defecto, docs/187)", () => {
+    // 100 + 100 × (0+0+30+25+0+30)% = 185
+    expect(suggestedUnitPrice(base({ pricingMethod: "gastrometrics", publicServices: 0, marketing: 0 }), 100, HNL)).toBe(185)
+  })
 })
 
 describe("applyPriceRule", () => {

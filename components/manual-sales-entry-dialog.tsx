@@ -28,7 +28,7 @@ import { getMenuUnitPriceAndCost } from "@/lib/menus"
 import type { Recipe } from "@/types/recipe"
 import type { Menu } from "@/lib/types/menus"
 import type { SalesImport, SalesImportLine } from "@/types/sales-import"
-import { formatDate } from "@/lib/date-format"
+import { formatDate, toIsoDate } from "@/lib/date-format"
 
 interface ManualSalesEntryDialogProps {
   open: boolean
@@ -53,8 +53,9 @@ interface DraftLine {
 
 const NONE_VALUE = "__none__"
 
+// Fecha local, no UTC (docs/187): en Honduras, después de las 6 p. m. el UTC ya es mañana.
 function todayIso(): string {
-  return new Date().toISOString().slice(0, 10)
+  return toIsoDate(new Date())
 }
 
 /**

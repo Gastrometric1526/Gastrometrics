@@ -395,7 +395,7 @@ export default {
         ["h3", "Vue d'ensemble"],
         ["p", "Chiffres généraux, valeur de l'inventaire et produits en alerte, coût et marge moyens, recettes par classification, ingrédients les plus utilisés, recettes à la meilleure et à la pire marge, et l'historique de prix de chaque ingrédient avec sa variation."],
         ["h3", "Finances"],
-        ["p", "Si vous vendez des boissons, la carte <strong>Cuisine vs bar</strong> sépare les ventes, le coût théorique et le coût réel de chaque zone (chapitre 6). Compte de résultat (P&L), food cost théorique face au réel d'après vos ventes, variation des prix par fournisseur et <strong>Menu Engineering</strong>, qui classe chaque plat en le comparant à la moyenne de votre propre menu :"],
+        ["p", "Si vous vendez des boissons, la carte <strong>Cuisine vs bar</strong> sépare les ventes, le coût théorique et le coût réel de chaque zone (chapitre 6). Compte de résultat (P&L), food cost théorique face au réel d'après vos ventes, variation des prix par fournisseur et <strong>Menu Engineering</strong>, qui classe chaque plat avec la méthode standard de Kasavana et Smith : il est populaire s'il vend au moins 70 % de sa part égale, et sa marge est élevée si sa marge par plat (prix − coût) dépasse la marge moyenne par plat vendu. Les pourcentages de coût, le Prime Cost et le compte de résultat se mesurent sur les ventes nettes, sans la taxe incluse dans les prix (comme dans la fiche technique) :"],
         ["table", ["Catégorie", "Popularité", "Marge", "Que faire"], [
           ["Étoile", "Haute", "Haute", "Protégez-le et mettez-le en avant sur votre carte."],
           ["Vache à lait", "Haute", "Basse", "Il se vend bien : revoyez son coût ou augmentez un peu son prix."],

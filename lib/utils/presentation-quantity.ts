@@ -12,11 +12,13 @@ export interface PresentationQuantity {
 }
 
 export function computePresentationQuantity(
-  ingredient: Pick<Ingredient, "presentation" | "unit"> & { pricing?: { netContent?: number } },
+  ingredient: Pick<Ingredient, "presentation" | "unit"> & { originalNetContent?: number; pricing?: { netContent?: number } },
   baseQuantity: number,
 ): PresentationQuantity {
   const presentation = ingredient?.presentation || null
-  const netContent = ingredient?.pricing?.netContent
+  // Contenido FÍSICO del envase (docs/187): con merma activa, pricing.netContent es lo
+  // aprovechable (menor), y dividir la cantidad bruta entre eso pedía envases de más.
+  const netContent = ingredient?.originalNetContent || ingredient?.pricing?.netContent
 
   if (!presentation || !netContent || netContent <= 0) {
     return { presentation, presentationQuantity: null, baseQuantity, baseUnit: ingredient?.unit || "" }

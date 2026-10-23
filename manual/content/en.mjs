@@ -395,7 +395,7 @@ export default {
         ["h3", "Overview"],
         ["p", "General counts, inventory value and items on alert, average cost and margin, recipes by classification, most-used ingredients, the recipes with the best and worst margin, and each ingredient's price history with its change."],
         ["h3", "Finance"],
-        ["p", "If you sell drinks, the <strong>Kitchen vs. bar</strong> card separates sales, theoretical cost and actual cost for each area (chapter 6). Profit and loss statement (P&L), your theoretical versus real food cost based on your sales, price changes by supplier, and <strong>Menu Engineering</strong>, which classifies each dish by comparing it with the average of your own menu:"],
+        ["p", "If you sell drinks, the <strong>Kitchen vs. bar</strong> card separates sales, theoretical cost and actual cost for each area (chapter 6). Profit and loss statement (P&L), your theoretical versus real food cost based on your sales, price changes by supplier, and <strong>Menu Engineering</strong>, which classifies each dish with Kasavana and Smith's standard method: it's popular if it sells at least 70% of its even share, and its margin is high if its margin per plate (price − cost) beats the average margin per plate sold. Cost percentages, Prime Cost and the P&L are measured on net sales, without the sales tax included in prices (same as the recipe card):"],
         ["table", ["Category", "Popularity", "Margin", "What to do"], [
           ["Star", "High", "High", "Protect it and feature it on your menu."],
           ["Cash cow", "High", "Low", "It sells well: review its cost or raise its price a little."],

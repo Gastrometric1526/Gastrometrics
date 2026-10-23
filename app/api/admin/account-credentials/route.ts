@@ -20,6 +20,7 @@
  *   persona por un canal seguro. La cuenta debería cambiarla apenas entre.
  */
 
+import { randomInt } from "crypto"
 import { NextResponse } from "next/server"
 import { Resend } from "resend"
 import { sendWithRetry } from "@/lib/services/send-email"
@@ -59,7 +60,8 @@ const TEMP_PASSWORD_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz2345
 function generateTempPassword(length = 12): string {
   let out = ""
   for (let i = 0; i < length; i++) {
-    out += TEMP_PASSWORD_CHARS[Math.floor(Math.random() * TEMP_PASSWORD_CHARS.length)]
+    // crypto.randomInt (docs/187): Math.random no es seguro para contraseñas.
+    out += TEMP_PASSWORD_CHARS[randomInt(TEMP_PASSWORD_CHARS.length)]
   }
   return out
 }

@@ -40,15 +40,19 @@ export function splitSalesByArea(dishes: DishPerformance[], recipes: Recipe[]): 
   const recipesById = new Map(recipes.map((recipe) => [recipe.id, recipe]))
   const empty = (): AreaTotals => ({ revenue: 0, theoreticalCost: 0, costPercent: 0, mixPercent: 0, dishCount: 0 })
   const split: KitchenBarSplit = { kitchen: empty(), bar: empty() }
+  const netByArea = { kitchen: 0, bar: 0 }
   for (const dish of dishes) {
     const area = split[getDishArea(dish, recipesById)]
     area.revenue += dish.revenue
     area.theoreticalCost += dish.theoreticalCost
     area.dishCount += 1
+    netByArea[getDishArea(dish, recipesById)] += dish.revenue - (dish.tax || 0)
   }
   const total = split.kitchen.revenue + split.bar.revenue
-  for (const area of [split.kitchen, split.bar]) {
-    area.costPercent = area.revenue > 0 ? (area.theoreticalCost / area.revenue) * 100 : 0
+  for (const key of ["kitchen", "bar"] as const) {
+    const area = split[key]
+    // % de costo sobre la venta sin ISV (docs/187), igual que la Ficha Técnica.
+    area.costPercent = netByArea[key] > 0 ? (area.theoreticalCost / netByArea[key]) * 100 : 0
     area.mixPercent = total > 0 ? (area.revenue / total) * 100 : 0
   }
   return split

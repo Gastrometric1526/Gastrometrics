@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { saleTaxIncluded } from "@/lib/sales-analytics"
 import { v4 as uuidv4 } from "uuid"
 import { Plus, Receipt, Search, Trash2, Pencil, Download, DollarSign, FileText, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -54,12 +55,13 @@ import type { Invoice, InvoiceLineItem } from "@/types/invoice"
 import type { Recipe } from "@/types/recipe"
 import type { Menu } from "@/lib/types/menus"
 import type { SalesImport, SalesImportLine } from "@/types/sales-import"
-import { formatDate } from "@/lib/date-format"
+import { formatDate, toIsoDate } from "@/lib/date-format"
 
 const NONE_VALUE = "__none__"
 
+// Fecha local, no UTC (docs/187): en Honduras, después de las 6 p. m. el UTC ya es mañana.
 function todayIso(): string {
-  return new Date().toISOString().slice(0, 10)
+  return toIsoDate(new Date())
 }
 
 interface DraftItem {
@@ -119,10 +121,17 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
 
   const sourceOptions = useMemo(
     () => [
-      ...recipes.map((r) => ({ id: `recipe:${r.id}`, name: r.name, price: r.unitPrice || 0 })),
+      // Precio SIN impuesto (docs/187): la factura suma el impuesto encima, y en el método
+      // Food Cost % el precio de carta ya incluye el ISV — antes se cobraba dos veces.
+      ...recipes.map((r) => ({ id: `recipe:${r.id}`, name: r.name, price: (r.unitPrice || 0) - saleTaxIncluded(r.unitPrice || 0, r) })),
       ...menus.map((m) => {
-        const priceAndCost = getMenuUnitPriceAndCost(m, recipes)
-        return { id: `menu:${m.id}`, name: m.name, price: priceAndCost?.price || 0 }
+        const enabled = m.items.filter((item) => item.enabled)
+        const net = enabled.reduce((sum, item) => {
+          const recipe = recipes.find((r) => r.id === item.recipeId)
+          const price = item.priceOverride ?? recipe?.unitPrice ?? 0
+          return sum + price - saleTaxIncluded(price, recipe)
+        }, 0)
+        return { id: `menu:${m.id}`, name: m.name, price: net }
       }),
     ],
     [recipes, menus],

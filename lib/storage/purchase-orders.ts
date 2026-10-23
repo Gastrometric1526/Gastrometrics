@@ -3,6 +3,7 @@
  * comentario de cabecera de lib/storage/businesses.ts para el patrón general).
  */
 
+import { toIsoDate } from "@/lib/date-format"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { createBusinessScopedCache } from "./supabase-cache"
 import type { Database } from "@/types/database"
@@ -138,7 +139,7 @@ export async function duplicatePurchaseOrder(businessId: string, orderId: string
   const newOrder: PurchaseOrder = {
     ...order,
     id: `OC-${Date.now()}`,
-    date: new Date().toISOString().split("T")[0],
+    date: toIsoDate(new Date()),
     number: Date.now(),
   }
 

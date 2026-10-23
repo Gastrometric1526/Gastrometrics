@@ -35,3 +35,13 @@ describe("computePresentationQuantity", () => {
     expect(result.presentationQuantity).toBeNull()
   })
 })
+
+describe("envases con merma (docs/187)", () => {
+  it("usa el contenido físico del envase, no el aprovechable", () => {
+    // Saco de 1000 g con 20 % de merma (aprovechable 800 g). La cantidad que llega ya es bruta.
+    const r = computePresentationQuantity({ presentation: "Saco", unit: "gramos", originalNetContent: 1000, pricing: { netContent: 800 } }, 1600)
+    expect(r.presentationQuantity).toBe(2)
+    const r2 = computePresentationQuantity({ presentation: "Saco", unit: "gramos", originalNetContent: 1000, pricing: { netContent: 800 } }, 1700)
+    expect(r2.presentationQuantity).toBe(2) // antes: ceil(1700 / 800) = 3 sacos
+  })
+})

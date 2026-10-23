@@ -38,6 +38,7 @@ import { getSalesImports, deleteSalesImport, ensureSalesImportsLoaded } from "@/
 import {
   aggregateSalesByDish,
   classifyMenuEngineering,
+  menuEngineeringThresholds,
   computeCOGS,
   computePrimeCost,
   prorateMonthlyExpense,
@@ -202,24 +203,25 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
   const areaSplit = useMemo(() => splitSalesByArea(dishPerformance, recipes), [dishPerformance, recipes])
   const hasBarSales = areaSplit.bar.dishCount > 0
   const [menuEngineeringArea, setMenuEngineeringArea] = useState<SalesArea | "all">("all")
-  const menuEngineering = useMemo(
-    () => classifyMenuEngineering(filterDishesByArea(dishPerformance, recipes, hasBarSales ? menuEngineeringArea : "all")),
+  const menuEngineeringDishes = useMemo(
+    () => filterDishesByArea(dishPerformance, recipes, hasBarSales ? menuEngineeringArea : "all"),
     [dishPerformance, recipes, menuEngineeringArea, hasBarSales],
   )
-  const avgPopularity =
-    dishPerformance.length > 0 ? dishPerformance.reduce((s, d) => s + d.quantitySold, 0) / dishPerformance.length : 0
-  const avgMargin =
-    dishPerformance.length > 0
-      ? dishPerformance.reduce((s, d) => s + d.contributionMargin, 0) / dishPerformance.length
-      : 0
+  const menuEngineering = useMemo(() => classifyMenuEngineering(menuEngineeringDishes), [menuEngineeringDishes])
+  // Los mismos umbrales que usa la clasificación, sobre la misma lista (docs/187).
+  const { popularityThreshold: avgPopularity, averageUnitMargin: avgMargin } = menuEngineeringThresholds(menuEngineeringDishes)
 
   const totalRevenue = useMemo(() => dishPerformance.reduce((sum, d) => sum + d.revenue, 0), [dishPerformance])
   const totalTheoreticalCost = useMemo(
     () => dishPerformance.reduce((sum, d) => sum + d.theoreticalCost, 0),
     [dishPerformance],
   )
-  const theoreticalCostPercent = totalRevenue > 0 ? (totalTheoreticalCost / totalRevenue) * 100 : 0
-  const totalContributionMargin = totalRevenue - totalTheoreticalCost
+  // Venta neta sin el ISV incluido en los precios (docs/187), misma base que la Ficha
+  // Técnica: el % de costo, el Prime Cost y el P&L se miden sobre lo que es del negocio.
+  const totalTax = useMemo(() => dishPerformance.reduce((sum, d) => sum + (d.tax || 0), 0), [dishPerformance])
+  const netRevenue = totalRevenue - totalTax
+  const theoreticalCostPercent = netRevenue > 0 ? (totalTheoreticalCost / netRevenue) * 100 : 0
+  const totalContributionMargin = netRevenue - totalTheoreticalCost
 
   const cogsResult = useMemo(
     () =>
@@ -245,11 +247,11 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
     [inventoryHistory, purchaseOrders, period, ingredients],
   )
 
-  const realCostPercent = totalRevenue > 0 ? (cogsResult.cogs / totalRevenue) * 100 : 0
+  const realCostPercent = netRevenue > 0 ? (cogsResult.cogs / netRevenue) * 100 : 0
   const variance = computeVariance(realCostPercent, theoreticalCostPercent)
 
   const laborCostForPeriod = prorateMonthlyExpense(business?.expenses?.laborCosts || 0, period.start, period.end)
-  const primeCostResult = computePrimeCost(cogsResult.cogs, laborCostForPeriod, totalRevenue)
+  const primeCostResult = computePrimeCost(cogsResult.cogs, laborCostForPeriod, netRevenue)
 
   const inventoryTurnover = computeInventoryTurnover(
     cogsResult.cogs,
@@ -260,13 +262,13 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
   const pnl = useMemo(
     () =>
       buildSimplifiedPnL({
-        revenue: totalRevenue,
+        revenue: netRevenue,
         cogs: cogsResult.cogs,
         expenses: business?.expenses,
         periodStart: period.start,
         periodEnd: period.end,
       }),
-    [totalRevenue, cogsResult.cogs, business, period],
+    [netRevenue, cogsResult.cogs, business, period],
   )
 
   const supplierVariance = useMemo(() => computeSupplierPriceVariance(ingredients), [ingredients])
@@ -821,7 +823,7 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
       <FinanzasCalculationDialog
         open={isCalcInfoOpen}
         onOpenChange={setIsCalcInfoOpen}
-        totalRevenue={totalRevenue}
+        totalRevenue={netRevenue}
         totalTheoreticalCost={totalTheoreticalCost}
         theoreticalCostPercent={theoreticalCostPercent}
         cogsResult={cogsResult}
@@ -836,7 +838,7 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
         inventoryTurnover={inventoryTurnover}
         pnl={pnl}
         supplierVarianceExample={supplierVariance[0] || null}
-        dishCount={dishPerformance.length}
+        dishCount={menuEngineeringDishes.length}
         avgPopularity={avgPopularity}
         avgMargin={avgMargin}
       />

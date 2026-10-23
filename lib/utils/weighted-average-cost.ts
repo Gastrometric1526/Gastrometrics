@@ -35,15 +35,19 @@ export function computeWeightedAverageCost({
 
   const pricePerUnitThisPurchase = purchasePrice / (netContent || 1)
 
+  // Costo promedio móvil (docs/187): lo que había en stock ANTES de la compra, a su costo
+  // promedio, más lo comprado a su precio, entre el stock nuevo. BUG CORREGIDO: antes se
+  // ponderaba contra TODO lo comprado en la historia (nunca se restaba lo consumido), así
+  // que las compras viejas pesaban para siempre y el promedio casi no se movía.
+  const onHand = Math.max(0, previousStock)
   const weightedAverageCost =
-    previousWeightedAverageQuantity > 0
-      ? (previousWeightedAverageQuantity * (previousWeightedAverageCost ?? pricePerUnitThisPurchase) +
-          purchasedQuantity * pricePerUnitThisPurchase) /
-        (previousWeightedAverageQuantity + purchasedQuantity)
+    onHand > 0 && previousWeightedAverageCost !== undefined
+      ? (onHand * previousWeightedAverageCost + purchasedQuantity * pricePerUnitThisPurchase) / (onHand + purchasedQuantity)
       : pricePerUnitThisPurchase
 
   return {
     weightedAverageCost,
-    weightedAverageQuantity: previousWeightedAverageQuantity + purchasedQuantity,
+    // Se conserva el campo por compatibilidad: ahora es el stock sobre el que se calculó.
+    weightedAverageQuantity: onHand + purchasedQuantity,
   }
 }
