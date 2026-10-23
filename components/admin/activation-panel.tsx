@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useLanguage } from "@/contexts/language-context"
 import { formatDate } from "@/lib/date-format"
 import { Rocket, Clock3, Timer } from "lucide-react"
+import { useAdminTick } from "@/components/admin/live"
 
 interface ActivationAccount {
   email: string
@@ -42,6 +43,8 @@ export function ActivationPanel() {
   const { t, language } = useLanguage()
   const [data, setData] = useState<ActivationData | null>(null)
 
+  // En vivo (docs/192): se vuelve a cargar en cada actualización automática.
+  const tick = useAdminTick()
   useEffect(() => {
     fetch("/api/admin/activation")
       .then((res) => res.json())
@@ -49,7 +52,7 @@ export function ActivationPanel() {
         if (!json.error) setData(json)
       })
       .catch((error) => console.error("Error cargando activación:", error))
-  }, [])
+  }, [tick])
 
   const formatDuration = (hours: number): string => {
     if (hours >= 48) {

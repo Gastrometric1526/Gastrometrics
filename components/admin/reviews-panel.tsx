@@ -13,6 +13,7 @@ import { formatDate } from "@/lib/date-format"
 import { MIN_PUBLISHED_REVIEWS, parseReviewMessage } from "@/lib/reviews"
 import type { QuestionSummary } from "@/lib/feedback/survey-summary"
 import type { TranslationKey } from "@/lib/i18n/translations"
+import { useAdminTick } from "@/components/admin/live"
 
 interface ReviewRow {
   id: string
@@ -41,6 +42,8 @@ export function ReviewsPanel() {
   const [survey, setSurvey] = useState<QuestionSummary[] | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
 
+  // En vivo (docs/192).
+  const tick = useAdminTick()
   useEffect(() => {
     fetch("/api/admin/feedback")
       .then((res) => res.json())
@@ -57,7 +60,7 @@ export function ReviewsPanel() {
       .then((res) => res.json())
       .then((json) => setSurvey(Array.isArray(json.summary) ? json.summary : []))
       .catch(() => setSurvey([]))
-  }, [])
+  }, [tick])
 
   const togglePublish = async (id: string, publish: boolean) => {
     setBusy(id)

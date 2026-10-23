@@ -18,6 +18,7 @@ import {
 import { Mail, Send, Loader2, CheckCircle2, AlertTriangle, RotateCw } from "lucide-react"
 import { CHANGELOG, LATEST_CHANGELOG_VERSION, getChangelogEntriesSince, getDefaultEmailSinceVersion } from "@/lib/changelog"
 import { useLanguage } from "@/contexts/language-context"
+import { useAdminTick } from "@/components/admin/live"
 
 export function ProductUpdatesPanel() {
   const { t } = useLanguage()
@@ -45,6 +46,8 @@ export function ProductUpdatesPanel() {
   const [resendResult, setResendResult] = useState<string | null>(null)
   const [resendError, setResendError] = useState<string | null>(null)
 
+  // En vivo (docs/192): se vuelve a cargar en cada actualización automática.
+  const tick = useAdminTick()
   useEffect(() => {
     fetch("/api/admin/product-update-email")
       .then((res) => res.json())
@@ -53,7 +56,7 @@ export function ProductUpdatesPanel() {
       })
       .catch(() => setCount(null))
       .finally(() => setLoadingCount(false))
-  }, [])
+  }, [tick])
 
   const handleSend = async () => {
     setConfirmOpen(false)

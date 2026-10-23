@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -11,6 +11,7 @@ import { type TranslationKey } from "@/lib/i18n/translations"
 import { getPlanBySlug } from "@/lib/plans"
 import { Trophy } from "lucide-react"
 import { formatDate } from "@/lib/date-format"
+import { useAdminTick } from "@/components/admin/live"
 
 interface UserUsage {
   userId: string
@@ -64,10 +65,18 @@ export function TopUsersPanel() {
   const [data, setData] = useState<TopUsersData | null>(null)
   const [failed, setFailed] = useState(false)
 
+  // En vivo (docs/192): en cada actualización se vuelve a pedir sin vaciar la tabla; solo
+  // se vacía cuando cambian los filtros.
+  const tick = useAdminTick()
+  const lastParamsRef = useRef("")
   useEffect(() => {
     let cancelled = false
-    setData(null)
-    setFailed(false)
+    const paramsKey = `${days}|${sort}`
+    if (lastParamsRef.current !== paramsKey) {
+      lastParamsRef.current = paramsKey
+      setData(null)
+      setFailed(false)
+    }
     fetch(`/api/admin/top-users?days=${days}&sort=${sort}`)
       .then((res) => res.json())
       .then((json) => {
@@ -82,7 +91,7 @@ export function TopUsersPanel() {
     return () => {
       cancelled = true
     }
-  }, [days, sort])
+  }, [days, sort, tick])
 
   const moduleLabel = (m: string) => (MODULE_LABEL_KEY[m] ? t(MODULE_LABEL_KEY[m]) : m)
 

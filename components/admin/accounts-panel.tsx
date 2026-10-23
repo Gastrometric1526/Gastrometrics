@@ -46,6 +46,7 @@ import {
   Gift,
 } from "lucide-react"
 import { formatDate, formatDateTime } from "@/lib/date-format"
+import { useAdminLiveReload } from "@/components/admin/live"
 
 // Umbral de "inactivo" en la lista de Cuentas: sin actividad registrada en los últimos
 // 14 días (y no en línea ahora mismo) — pedido implícito al agregar "tiempo en la app":
@@ -186,9 +187,11 @@ export function AccountsPanel() {
   // llamada MÁS RECIENTE puede escribir en el estado.
   const requestSeqRef = useRef(0)
 
-  const loadList = async (targetPage: number, targetSearch: string, targetPlan: string, targetSort: string) => {
+  const appliedListParamsRef = useRef({ page: 1, search: "", plan: "todos", sort: "" })
+  const loadList = async (targetPage: number, targetSearch: string, targetPlan: string, targetSort: string, silent = false) => {
     const requestId = ++requestSeqRef.current
-    setLoadingList(true)
+    appliedListParamsRef.current = { page: targetPage, search: targetSearch, plan: targetPlan, sort: targetSort }
+    if (!silent) setLoadingList(true)
     try {
       const planParam = targetPlan && targetPlan !== "todos" ? `&plan=${encodeURIComponent(targetPlan)}` : ""
       const sortParam = targetSort ? `&sort=${encodeURIComponent(targetSort)}` : ""
@@ -216,6 +219,13 @@ export function AccountsPanel() {
     loadList(page, search, planFilter, sortBy)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page])
+
+  // En vivo (docs/192): la lista se actualiza sola con la última búsqueda aplicada. El
+  // formulario de plan de una cuenta abierta no se toca (no se pierden cambios sin aplicar).
+  useAdminLiveReload(() => {
+    const p = appliedListParamsRef.current
+    loadList(p.page, p.search, p.plan, p.sort, true)
+  })
 
   // Presencia: se sondea aparte de la lista completa (cada ~25s), solo para las
   // cuentas ya cargadas en la página actual — así el punto de "en línea" se mantiene

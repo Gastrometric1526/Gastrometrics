@@ -7,7 +7,7 @@
  * mensajes. Datos: /api/admin/account-insights (lib/admin/account-insights-server.ts).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -41,6 +41,7 @@ import {
 import { MODULE_LABEL_KEY } from "@/components/admin/top-users-panel";
 import type { AccountInsights } from "@/lib/admin/account-insights-server";
 import { formatDate, formatDateTime, formatDayMonth } from "@/lib/date-format"
+import { useAdminTick } from "@/components/admin/live"
 
 const DAY_MS = 86_400_000
 
@@ -196,18 +197,25 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
   const [data, setData] = useState<AccountInsights | null>(null);
   const [error, setError] = useState(false);
 
+  // En vivo (docs/192): se actualiza sola sin vaciarse; solo se vacía al abrir otra cuenta.
+  const tick = useAdminTick();
+  const lastUserRef = useRef<string | null>(null);
   useEffect(() => {
     let cancelled = false;
-    setData(null);
-    setError(false);
+    const switched = lastUserRef.current !== userId;
+    if (switched) {
+      lastUserRef.current = userId;
+      setData(null);
+      setError(false);
+    }
     fetch(`/api/admin/account-insights?userId=${encodeURIComponent(userId)}`)
       .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((json) => !cancelled && setData(json))
-      .catch(() => !cancelled && setError(true));
+      .catch(() => !cancelled && switched && setError(true));
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, tick]);
 
   if (error)
     return (

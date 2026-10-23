@@ -8,6 +8,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts"
 import { Eye, CalendarDays, CalendarRange } from "lucide-react"
 import { BUSINESS_TYPES, BUSINESS_SIZES, EXPERIENCE_LEVELS, COUNTRIES } from "@/lib/types/user"
+import { useAdminTick } from "@/components/admin/live"
 
 interface AnalyticsData {
   totalAllTime: number
@@ -68,6 +69,8 @@ export function AnalyticsPanel() {
   const { t } = useLanguage()
   const [data, setData] = useState<AnalyticsData | null>(null)
 
+  // En vivo (docs/192): se vuelve a cargar en cada actualización automática.
+  const tick = useAdminTick()
   useEffect(() => {
     fetch("/api/admin/analytics")
       .then((res) => res.json())
@@ -75,7 +78,7 @@ export function AnalyticsPanel() {
         if (!json.error) setData(json)
       })
       .catch((error) => console.error("Error cargando analíticas:", error))
-  }, [])
+  }, [tick])
 
   const hasData = !!data && data.totalAllTime > 0
 

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton"
 import { useLanguage } from "@/contexts/language-context"
 import { ScanText } from "lucide-react"
+import { useAdminTick } from "@/components/admin/live"
 
 interface Stat {
   average: number
@@ -34,12 +35,14 @@ export function OcrUsagePanel() {
   const [data, setData] = useState<OcrUsage | null>(null)
   const [failed, setFailed] = useState(false)
 
+  // En vivo (docs/192): se vuelve a cargar en cada actualización automática.
+  const tick = useAdminTick()
   useEffect(() => {
     fetch("/api/admin/ocr-usage")
       .then((res) => res.json())
       .then((json) => (json.error ? setFailed(true) : setData(json)))
       .catch(() => setFailed(true))
-  }, [])
+  }, [tick])
 
   const stat = (label: string, value: number | string | null) => (
     <div className="rounded-lg border p-3">

@@ -22,6 +22,7 @@ import { useLanguage } from "@/contexts/language-context"
 import type { Feedback, FeedbackStatus, FeedbackType } from "@/types/feedback"
 import { Archive, ArchiveRestore, Bug, Inbox, Lightbulb, MessageCircleWarning, Smile, Trash2 } from "lucide-react"
 import { formatDateTime } from "@/lib/date-format"
+import { useAdminLiveReload } from "@/components/admin/live"
 
 const typeConfigDefs: Record<FeedbackType, { labelKey: "admin_type_suggestion" | "admin_type_complaint" | "admin_type_bug" | "admin_type_experience"; icon: typeof Lightbulb; color: string }> = {
   sugerencia: { labelKey: "admin_type_suggestion", icon: Lightbulb, color: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
@@ -99,6 +100,8 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
     loadData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+  // En vivo (docs/192): los mensajes nuevos aparecen solos.
+  useAdminLiveReload(loadData)
 
   const inbox = feedback.filter((f) => !archived.has(f.id))
   const archivedItems = feedback.filter((f) => archived.has(f.id))

@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLanguage } from "@/contexts/language-context"
-import { ArrowLeft, Lock, LayoutDashboard, Users, Inbox, LineChart, TrendingUp, Mail, CheckCircle2, ChevronRight } from "lucide-react"
+import { ArrowLeft, Lock, LayoutDashboard, Users, Inbox, LineChart, TrendingUp, Mail, CheckCircle2, ChevronRight, RefreshCw } from "lucide-react"
 import { StatsPanel, type AdminStats } from "@/components/admin/stats-panel"
+import { AdminLiveProvider, useAdminLive } from "@/components/admin/live"
+import { useToast } from "@/hooks/use-toast"
 import { AccountsPanel } from "@/components/admin/accounts-panel"
 import { FeedbackPanel } from "@/components/admin/feedback-panel"
 import { AnalyticsPanel } from "@/components/admin/analytics-panel"
@@ -47,8 +49,20 @@ const ADMIN_SESSION_STORAGE_KEY = "gm_admin_unlocked"
 // Comunicación), con sub-pestañas y la pestaña guardada en la URL. La lógica de cada
 // panel vive en components/admin/*-panel.tsx; este archivo mantiene el candado y el layout.
 
+// En vivo (docs/192): todo el panel cuelga del proveedor que dispara las actualizaciones.
 export default function AdminPage() {
+  return (
+    <AdminLiveProvider>
+      <AdminPageInner />
+    </AdminLiveProvider>
+  )
+}
+
+function AdminPageInner() {
   const { t } = useLanguage()
+  const { toast } = useToast()
+  const { tick, lastUpdatedAt, refreshNow } = useAdminLive()
+  const lastUnreadRef = useRef<number | null>(null)
 
   const [unlocked, setUnlocked] = useState(false)
   const [checkedSession, setCheckedSession] = useState(false)
@@ -102,11 +116,20 @@ export default function AdminPage() {
         if (!Array.isArray(data.feedback)) return
         const archived = new Set<string>(Array.isArray(data.archivedIds) ? data.archivedIds : [])
         const inbox = data.feedback.filter((f: { id: string }) => !archived.has(f.id))
+        const nuevo = inbox.filter((f: { status?: string }) => f.status === "nuevo").length
         setFeedbackCounts({
           total: inbox.length,
-          nuevo: inbox.filter((f: { status?: string }) => f.status === "nuevo").length,
+          nuevo,
           bug: inbox.filter((f: { type?: string }) => f.type === "bug").length,
         })
+        // Aviso cuando llega un mensaje nuevo mientras el panel está abierto (docs/192).
+        if (lastUnreadRef.current !== null && nuevo > lastUnreadRef.current) {
+          toast({
+            title: t("admin_live_new_message_title"),
+            description: t("admin_live_new_message_desc").replace("{count}", String(nuevo - lastUnreadRef.current)),
+          })
+        }
+        lastUnreadRef.current = nuevo
       })
       .catch(() => {})
     fetch("/api/admin/legal-update-email")
@@ -115,7 +138,7 @@ export default function AdminPage() {
         if (!data.error && typeof data.pendingCount === "number") setLegalPending(data.pendingCount)
       })
       .catch(() => {})
-  }, [unlocked])
+  }, [unlocked, tick])
 
   useEffect(() => {
     // La cookie httpOnly no se puede leer desde JS — se le pregunta al servidor si
@@ -246,17 +269,20 @@ export default function AdminPage() {
             <h1 className="text-3xl font-bold text-foreground">{t("admin_page_title")}</h1>
             <p className="text-muted-foreground">{t("admin_page_subtitle")}</p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={async () => {
-              await fetch("/api/admin/verify", { method: "DELETE" })
-              sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY)
-              setUnlocked(false)
-            }}
-          >
-            {t("admin_logout")}
-          </Button>
+          <div className="flex flex-col items-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                await fetch("/api/admin/verify", { method: "DELETE" })
+                sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY)
+                setUnlocked(false)
+              }}
+            >
+              {t("admin_logout")}
+            </Button>
+            <LiveIndicator lastUpdatedAt={lastUpdatedAt} onRefresh={refreshNow} />
+          </div>
         </div>
 
         <Tabs value={tab} onValueChange={(v) => goTo(v as AdminTab)}>
@@ -431,4 +457,24 @@ type AdminTab = (typeof ADMIN_TABS)[number]
 /** Una línea que dice para qué sirve la sección (docs/191). */
 function TabIntro({ text }: { text: string }) {
   return <p className="text-sm text-muted-foreground -mt-2">{text}</p>
+}
+
+/** «En vivo · actualizado …» con el botón para actualizar ya (docs/192). */
+function LiveIndicator({ lastUpdatedAt, onRefresh }: { lastUpdatedAt: number; onRefresh: () => void }) {
+  const { t } = useLanguage()
+  const d = new Date(lastUpdatedAt)
+  const time = [d.getHours(), d.getMinutes(), d.getSeconds()].map((n) => String(n).padStart(2, "0")).join(":")
+  return (
+    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <span className="relative flex h-2 w-2">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+      </span>
+      <span>{t("admin_live_updated").replace("{time}", time)}</span>
+      <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={onRefresh}>
+        <RefreshCw className="h-3.5 w-3.5" />
+        {t("admin_live_refresh")}
+      </Button>
+    </div>
+  )
 }

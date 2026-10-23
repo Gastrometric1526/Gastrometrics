@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Scale, Send, Loader2, CheckCircle2, AlertTriangle } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
+import { useAdminLiveReload } from "@/components/admin/live"
 
 /**
  * Único punto donde se dispara el correo de aviso legal a usuarios EXISTENTES sobre
@@ -35,8 +36,8 @@ export function LegalUpdatePanel() {
   const [result, setResult] = useState<{ sentCount: number; skippedCount: number; failedCount: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const loadCount = () => {
-    setLoadingCount(true)
+  const loadCount = (silent = false) => {
+    if (!silent) setLoadingCount(true)
     fetch("/api/admin/legal-update-email")
       .then((res) => res.json())
       .then((json) => {
@@ -55,6 +56,8 @@ export function LegalUpdatePanel() {
   useEffect(() => {
     loadCount()
   }, [])
+  // En vivo (docs/192).
+  useAdminLiveReload(() => loadCount(true))
 
   const handleSend = async () => {
     setConfirmOpen(false)

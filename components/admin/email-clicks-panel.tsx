@@ -8,6 +8,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { type TranslationKey } from "@/lib/i18n/translations"
 import { MousePointerClick } from "lucide-react"
 import { formatDateTime } from "@/lib/date-format"
+import { useAdminTick } from "@/components/admin/live"
 
 interface ClickData {
   days: number
@@ -44,12 +45,14 @@ export function EmailClicksPanel() {
   const [data, setData] = useState<ClickData | null>(null)
   const [failed, setFailed] = useState(false)
 
+  // En vivo (docs/192): se vuelve a cargar en cada actualización automática.
+  const tick = useAdminTick()
   useEffect(() => {
     fetch("/api/admin/email-clicks")
       .then((res) => res.json())
       .then((json) => (json.error ? setFailed(true) : setData(json)))
       .catch(() => setFailed(true))
-  }, [])
+  }, [tick])
 
   const label = (type: string) => (TYPE_LABEL[type] ? t(TYPE_LABEL[type]) : type)
 

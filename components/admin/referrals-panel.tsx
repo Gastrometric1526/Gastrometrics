@@ -7,6 +7,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { formatDate } from "@/lib/date-format"
 import { Gift } from "lucide-react"
 import type { TranslationKey } from "@/lib/i18n/translations"
+import { useAdminTick } from "@/components/admin/live"
 
 interface Row {
   referrer: string | null
@@ -30,12 +31,14 @@ export function ReferralsPanel() {
   const [rows, setRows] = useState<Row[] | null>(null)
   const [failed, setFailed] = useState(false)
 
+  // En vivo (docs/192): se vuelve a cargar en cada actualización automática.
+  const tick = useAdminTick()
   useEffect(() => {
     fetch("/api/admin/referrals")
       .then((res) => res.json())
       .then((json) => (json.error ? setFailed(true) : setRows(json.referrals || [])))
       .catch(() => setFailed(true))
-  }, [])
+  }, [tick])
 
   const count = (status: string) => rows?.filter((r) => r.status === status).length ?? 0
 

@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useLanguage } from "@/contexts/language-context"
 import { BellOff } from "lucide-react"
 import { formatDate } from "@/lib/date-format"
+import { useAdminTick } from "@/components/admin/live"
 
 interface DormantBusiness {
   id: string
@@ -35,6 +36,8 @@ export function BusinessHealthPanel() {
   const { t, language } = useLanguage()
   const [data, setData] = useState<BusinessHealthData | null>(null)
 
+  // En vivo (docs/192): se vuelve a cargar en cada actualización automática.
+  const tick = useAdminTick()
   useEffect(() => {
     fetch("/api/admin/business-health")
       .then((res) => res.json())
@@ -42,7 +45,7 @@ export function BusinessHealthPanel() {
         if (!json.error) setData(json)
       })
       .catch((error) => console.error("Error cargando salud de negocios:", error))
-  }, [])
+  }, [tick])
 
   return (
     <Card>
