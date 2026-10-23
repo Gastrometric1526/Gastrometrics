@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AccountInsightsPanel } from "@/components/admin/account-insights"
+import { AdminSubTabs } from "@/components/admin/sub-tabs"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -137,6 +138,7 @@ export function AccountsPanel() {
   const [loadingList, setLoadingList] = useState(false)
 
   const [selected, setSelected] = useState<AccountRow | null>(null)
+  const [detailTab, setDetailTab] = useState("radiografia")
   const [detail, setDetail] = useState<AccountDetail | null>(null)
   const [businesses, setBusinesses] = useState<AccountBusiness[]>([])
   const [team, setTeam] = useState<AccountTeamMember[]>([])
@@ -261,6 +263,7 @@ export function AccountsPanel() {
 
   const loadDetail = async (account: AccountRow) => {
     setSelected(account)
+    setDetailTab("radiografia")
     setLoadingDetail(true)
     try {
       const [planRes, businessesRes, teamRes] = await Promise.all([
@@ -562,8 +565,36 @@ export function AccountsPanel() {
             </div>
           ) : (
             <>
-              {/* Radiografía completa de la cuenta (docs/166). */}
-              <AccountInsightsPanel userId={selected.userId} />
+              {/* Ficha de la cuenta en sub-pestañas (docs/191): antes todo iba apilado en una
+                  sola página larga. Si la cuenta pidió borrarse, el aviso queda arriba siempre. */}
+              {detail?.deletionRequestedAt && (
+                <div className="rounded-lg border border-warning/40 bg-warning-soft p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-warning" />
+                    <h3 className="text-sm font-semibold text-foreground">{t("admin_accounts_pending_deletion_title")}</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {t("admin_accounts_pending_deletion_desc").replace(
+                      "{date}",
+                      formatDate(detail.deletionRequestedAt),
+                    )}
+                  </p>
+                  <Button size="sm" onClick={handleReactivateAccount} disabled={reactivatingAccount}>
+                    {reactivatingAccount ? t("admin_accounts_applying") : t("admin_accounts_reactivate_button")}
+                  </Button>
+                </div>
+              )}
+
+              <AdminSubTabs
+                value={detailTab}
+                onChange={setDetailTab}
+                items={[
+                  { value: "radiografia", label: t("admin_acc_sub_overview"), content: <AccountInsightsPanel userId={selected.userId} /> },
+                  {
+                    value: "plan",
+                    label: t("admin_acc_sub_plan"),
+                    content: (
+                      <>
               {detail && (
                 <div className="rounded-lg border border-border p-4 space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
@@ -673,6 +704,14 @@ export function AccountsPanel() {
                 </div>
               )}
 
+                      </>
+                    ),
+                  },
+                  {
+                    value: "acceso",
+                    label: t("admin_acc_sub_access"),
+                    content: (
+                      <>
               {/* Asistencia real a la cuenta — correo y contraseña (docs/86). */}
               <div className="rounded-lg border border-border p-4 space-y-4">
                 <div className="flex items-center gap-2">
@@ -724,6 +763,14 @@ export function AccountsPanel() {
                 </div>
               </div>
 
+                      </>
+                    ),
+                  },
+                  {
+                    value: "negocios",
+                    label: t("admin_acc_sub_businesses"),
+                    content: (
+                      <>
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">{t("admin_accounts_businesses_title")}</h3>
                 {businesses.length === 0 ? (
@@ -775,24 +822,14 @@ export function AccountsPanel() {
                 )}
               </div>
 
-              {detail?.deletionRequestedAt && (
-                <div className="rounded-lg border border-warning/40 bg-warning-soft p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-warning" />
-                    <h3 className="text-sm font-semibold text-foreground">{t("admin_accounts_pending_deletion_title")}</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {t("admin_accounts_pending_deletion_desc").replace(
-                      "{date}",
-                      formatDate(detail.deletionRequestedAt),
-                    )}
-                  </p>
-                  <Button size="sm" onClick={handleReactivateAccount} disabled={reactivatingAccount}>
-                    {reactivatingAccount ? t("admin_accounts_applying") : t("admin_accounts_reactivate_button")}
-                  </Button>
-                </div>
-              )}
-
+                      </>
+                    ),
+                  },
+                  {
+                    value: "eliminar",
+                    label: t("admin_accounts_danger_zone_title"),
+                    content: (
+                      <>
               <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-destructive" />
@@ -804,6 +841,11 @@ export function AccountsPanel() {
                   {t("admin_accounts_delete_button")}
                 </Button>
               </div>
+                      </>
+                    ),
+                  },
+                ]}
+              />
             </>
           )}
         </CardContent>

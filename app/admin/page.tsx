@@ -9,8 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLanguage } from "@/contexts/language-context"
-import { ArrowLeft, Lock, LayoutDashboard, Users, Inbox, LineChart, BellOff, Rocket, Mail, Star } from "lucide-react"
-import { StatsPanel } from "@/components/admin/stats-panel"
+import { ArrowLeft, Lock, LayoutDashboard, Users, Inbox, LineChart, TrendingUp, Mail, CheckCircle2, ChevronRight } from "lucide-react"
+import { StatsPanel, type AdminStats } from "@/components/admin/stats-panel"
 import { AccountsPanel } from "@/components/admin/accounts-panel"
 import { FeedbackPanel } from "@/components/admin/feedback-panel"
 import { AnalyticsPanel } from "@/components/admin/analytics-panel"
@@ -23,6 +23,7 @@ import { ActivationPanel } from "@/components/admin/activation-panel"
 import { ReferralsPanel } from "@/components/admin/referrals-panel"
 import { ProductUpdatesPanel } from "@/components/admin/product-updates-panel"
 import { LegalUpdatePanel } from "@/components/admin/legal-update-panel"
+import { AdminSubTabs } from "@/components/admin/sub-tabs"
 
 // Candado de acceso — pedido explícito: agregar algún control de acceso a /admin,
 // que hoy cualquiera con el link puede ver. SIN backend no existe un sistema de roles
@@ -41,9 +42,10 @@ import { LegalUpdatePanel } from "@/components/admin/legal-update-panel"
 const ADMIN_SESSION_STORAGE_KEY = "gm_admin_unlocked"
 
 // Panel administrativo — pedido explícito: "ahi debo poder manejar TODO" (ver docs/63).
-// Reestructurado en pestañas (Resumen/Cuentas/Feedback) — la lógica de cada una vive en
-// components/admin/*-panel.tsx, este archivo solo mantiene el candado de acceso y el
-// layout de pestañas.
+// Desde docs/191 se organiza en 6 secciones según lo que hace el dueño (Resumen con
+// pendientes del día, Cuentas, Buzón y reseñas, Crecimiento, Uso de la app,
+// Comunicación), con sub-pestañas y la pestaña guardada en la URL. La lógica de cada
+// panel vive en components/admin/*-panel.tsx; este archivo mantiene el candado y el layout.
 
 export default function AdminPage() {
   const { t } = useLanguage()
@@ -55,6 +57,65 @@ export default function AdminPage() {
   const [lockedUntil, setLockedUntil] = useState<number | null>(null)
   const [lockoutSecondsLeft, setLockoutSecondsLeft] = useState(0)
   const [feedbackCounts, setFeedbackCounts] = useState({ total: 0, nuevo: 0, bug: 0 })
+  const [stats, setStats] = useState<AdminStats | null>(null)
+  const [legalPending, setLegalPending] = useState<number | null>(null)
+  const [tab, setTab] = useState<AdminTab>("resumen")
+  const [subTab, setSubTab] = useState<Record<string, string>>({})
+
+  // Pestaña en la URL (?tab=crecimiento&sub=referidos, docs/191): al recargar se vuelve
+  // a la misma sección y se puede enlazar. Se lee de window (no useSearchParams) para no
+  // exigir <Suspense> en esta página.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const fromUrl = params.get("tab") as AdminTab | null
+    if (fromUrl && ADMIN_TABS.includes(fromUrl)) {
+      setTab(fromUrl)
+      const sub = params.get("sub")
+      if (sub) setSubTab({ [fromUrl]: sub })
+    }
+  }, [])
+
+  const goTo = (next: AdminTab, sub?: string) => {
+    setTab(next)
+    if (sub) setSubTab((prev) => ({ ...prev, [next]: sub }))
+    const params = new URLSearchParams(window.location.search)
+    params.set("tab", next)
+    if (sub) params.set("sub", sub)
+    else params.delete("sub")
+    window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`)
+  }
+  const setSub = (group: AdminTab, sub: string) => goTo(group, sub)
+
+  // Contadores y pendientes desde el inicio (docs/191): antes «sin revisar», «reportes
+  // de error» y el número de la pestaña Buzón quedaban en 0 hasta abrir el Buzón.
+  useEffect(() => {
+    if (!unlocked) return
+    fetch("/api/admin/stats")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.error) setStats(data)
+      })
+      .catch(() => {})
+    fetch("/api/admin/feedback")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!Array.isArray(data.feedback)) return
+        const archived = new Set<string>(Array.isArray(data.archivedIds) ? data.archivedIds : [])
+        const inbox = data.feedback.filter((f: { id: string }) => !archived.has(f.id))
+        setFeedbackCounts({
+          total: inbox.length,
+          nuevo: inbox.filter((f: { status?: string }) => f.status === "nuevo").length,
+          bug: inbox.filter((f: { type?: string }) => f.type === "bug").length,
+        })
+      })
+      .catch(() => {})
+    fetch("/api/admin/legal-update-email")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.error && typeof data.pendingCount === "number") setLegalPending(data.pendingCount)
+      })
+      .catch(() => {})
+  }, [unlocked])
 
   useEffect(() => {
     // La cookie httpOnly no se puede leer desde JS — se le pregunta al servidor si
@@ -198,7 +259,7 @@ export default function AdminPage() {
           </Button>
         </div>
 
-        <Tabs defaultValue="resumen">
+        <Tabs value={tab} onValueChange={(v) => goTo(v as AdminTab)}>
           <TabsList className="flex h-auto flex-wrap justify-start">
             <TabsTrigger value="resumen" className="gap-1.5">
               <LayoutDashboard className="h-4 w-4" />
@@ -208,62 +269,166 @@ export default function AdminPage() {
               <Users className="h-4 w-4" />
               {t("admin_tab_accounts")}
             </TabsTrigger>
-            <TabsTrigger value="feedback" className="gap-1.5">
+            <TabsTrigger value="buzon" className="gap-1.5">
               <Inbox className="h-4 w-4" />
-              {t("admin_tab_feedback")} ({feedbackCounts.total})
+              {t("admin_tab_inbox_group")}
+              {feedbackCounts.nuevo > 0 && (
+                <span className="ml-1 rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground tabular-nums">
+                  {feedbackCounts.nuevo}
+                </span>
+              )}
             </TabsTrigger>
-            <TabsTrigger value="resenas" className="gap-1.5">
-              <Star className="h-4 w-4" />
-              {t("admin_tab_reviews")}
+            <TabsTrigger value="crecimiento" className="gap-1.5">
+              <TrendingUp className="h-4 w-4" />
+              {t("admin_tab_growth")}
             </TabsTrigger>
-            <TabsTrigger value="analiticas" className="gap-1.5">
+            <TabsTrigger value="uso" className="gap-1.5">
               <LineChart className="h-4 w-4" />
-              {t("admin_tab_analytics")}
+              {t("admin_tab_usage")}
             </TabsTrigger>
-            <TabsTrigger value="negocios" className="gap-1.5">
-              <BellOff className="h-4 w-4" />
-              {t("admin_tab_business_health")}
-            </TabsTrigger>
-            <TabsTrigger value="activacion" className="gap-1.5">
-              <Rocket className="h-4 w-4" />
-              {t("admin_tab_activation")}
-            </TabsTrigger>
-            <TabsTrigger value="novedades" className="gap-1.5">
+            <TabsTrigger value="comunicacion" className="gap-1.5">
               <Mail className="h-4 w-4" />
-              {t("admin_tab_product_updates")}
+              {t("admin_tab_comms")}
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="resumen" className="mt-6">
-            <StatsPanel feedbackCounts={feedbackCounts} />
+
+          <TabsContent value="resumen" className="mt-6 space-y-6">
+            <TabIntro text={t("admin_tabdesc_resumen")} />
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">{t("admin_todo_title")}</CardTitle>
+                <CardDescription>{t("admin_todo_desc")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const items = [
+                {
+                  key: "unread",
+                  count: feedbackCounts.nuevo,
+                  label: t("admin_todo_unread").replace("{count}", String(feedbackCounts.nuevo)),
+                  onClick: () => goTo("buzon", "mensajes"),
+                },
+                {
+                  key: "bugs",
+                  count: feedbackCounts.bug,
+                  label: t("admin_todo_bugs").replace("{count}", String(feedbackCounts.bug)),
+                  onClick: () => goTo("buzon", "mensajes"),
+                },
+                {
+                  key: "expiring",
+                  count: stats?.expiringSoon.length ?? 0,
+                  label: t("admin_todo_expiring").replace("{count}", String(stats?.expiringSoon.length ?? 0)),
+                  onClick: () => goTo("cuentas"),
+                },
+                {
+                  key: "legal",
+                  count: legalPending ?? 0,
+                  label: t("admin_todo_legal").replace("{count}", String(legalPending ?? 0)),
+                  onClick: () => goTo("comunicacion", "legal"),
+                },
+              ].filter((item) => item.count > 0)
+                  if (items.length === 0) {
+                    return (
+                      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <CheckCircle2 className="h-4 w-4 text-success" />
+                        {t("admin_todo_clear")}
+                      </p>
+                    )
+                  }
+                  return (
+                    <ul className="divide-y divide-border">
+                      {items.map((item) => (
+                        <li key={item.key}>
+                          <button
+                            type="button"
+                            onClick={item.onClick}
+                            className="flex w-full items-center justify-between gap-3 py-2.5 text-left text-sm hover:text-primary"
+                          >
+                            <span>{item.label}</span>
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              {t("admin_todo_go")}
+                              <ChevronRight className="h-3.5 w-3.5" />
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )
+                })()}
+              </CardContent>
+            </Card>
+            <StatsPanel feedbackCounts={feedbackCounts} stats={stats} />
           </TabsContent>
-          <TabsContent value="cuentas" className="mt-6">
+
+          <TabsContent value="cuentas" className="mt-6 space-y-6">
+            <TabIntro text={t("admin_tabdesc_accounts")} />
             <AccountsPanel />
           </TabsContent>
-          <TabsContent value="feedback" className="mt-6">
-            <FeedbackPanel onCountsChange={setFeedbackCounts} />
+
+          <TabsContent value="buzon" className="mt-6 space-y-6">
+            <TabIntro text={t("admin_tabdesc_inbox")} />
+            <AdminSubTabs
+              value={subTab.buzon || "mensajes"}
+              onChange={(v) => setSub("buzon", v)}
+              items={[
+                { value: "mensajes", label: `${t("admin_tab_feedback")} (${feedbackCounts.total})`, content: <FeedbackPanel onCountsChange={setFeedbackCounts} /> },
+                { value: "resenas", label: t("admin_tab_reviews"), content: <ReviewsPanel /> },
+              ]}
+            />
           </TabsContent>
-          <TabsContent value="resenas" className="mt-6">
-            <ReviewsPanel />
+
+          <TabsContent value="crecimiento" className="mt-6 space-y-6">
+            <TabIntro text={t("admin_tabdesc_growth")} />
+            <AdminSubTabs
+              value={subTab.crecimiento || "activacion"}
+              onChange={(v) => setSub("crecimiento", v)}
+              items={[
+                { value: "activacion", label: t("admin_tab_activation"), content: <ActivationPanel /> },
+                { value: "referidos", label: t("admin_sub_referrals"), content: <ReferralsPanel /> },
+                { value: "usuarios", label: t("admin_sub_top_users"), content: <TopUsersPanel /> },
+                { value: "inactivos", label: t("admin_sub_inactive"), content: <BusinessHealthPanel /> },
+              ]}
+            />
           </TabsContent>
-          <TabsContent value="analiticas" className="mt-6 space-y-6">
-            <TopUsersPanel />
-            <EmailClicksPanel />
-            <OcrUsagePanel />
-            <AnalyticsPanel />
+
+          <TabsContent value="uso" className="mt-6 space-y-6">
+            <TabIntro text={t("admin_tabdesc_usage")} />
+            <AdminSubTabs
+              value={subTab.uso || "embudo"}
+              onChange={(v) => setSub("uso", v)}
+              items={[
+                { value: "embudo", label: t("admin_sub_funnel"), content: <AnalyticsPanel /> },
+                { value: "correos", label: t("admin_sub_email_clicks"), content: <EmailClicksPanel /> },
+                { value: "importaciones", label: t("admin_sub_imports"), content: <OcrUsagePanel /> },
+              ]}
+            />
           </TabsContent>
-          <TabsContent value="negocios" className="mt-6">
-            <BusinessHealthPanel />
-          </TabsContent>
-          <TabsContent value="activacion" className="mt-6 space-y-6">
-            <ActivationPanel />
-            <ReferralsPanel />
-          </TabsContent>
-          <TabsContent value="novedades" className="mt-6 space-y-6">
-            <ProductUpdatesPanel />
-            <LegalUpdatePanel />
+
+          <TabsContent value="comunicacion" className="mt-6 space-y-6">
+            <TabIntro text={t("admin_tabdesc_comms")} />
+            <AdminSubTabs
+              value={subTab.comunicacion || "novedades"}
+              onChange={(v) => setSub("comunicacion", v)}
+              items={[
+                { value: "novedades", label: t("admin_tab_product_updates"), content: <ProductUpdatesPanel /> },
+                {
+                  value: "legal",
+                  label: legalPending ? `${t("admin_sub_legal")} (${legalPending})` : t("admin_sub_legal"),
+                  content: <LegalUpdatePanel />,
+                },
+              ]}
+            />
           </TabsContent>
         </Tabs>
       </div>
     </div>
   )
+}
+
+const ADMIN_TABS = ["resumen", "cuentas", "buzon", "crecimiento", "uso", "comunicacion"] as const
+type AdminTab = (typeof ADMIN_TABS)[number]
+
+/** Una línea que dice para qué sirve la sección (docs/191). */
+function TabIntro({ text }: { text: string }) {
+  return <p className="text-sm text-muted-foreground -mt-2">{text}</p>
 }

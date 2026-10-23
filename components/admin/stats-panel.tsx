@@ -10,7 +10,7 @@ import { getPlanBySlug } from "@/lib/plans"
 import { Users, Building2, MailWarning, Bug, Clock, CreditCard, UserCog, Receipt, CalendarClock } from "lucide-react"
 import { formatDate } from "@/lib/date-format"
 
-interface Stats {
+export interface AdminStats {
   totalUsers: number
   totalBusinesses: number
   totalTeamMembers: number
@@ -38,18 +38,27 @@ const PLAN_BAR_COLORS: Array<"blue" | "green" | "amber" | "red"> = ["blue", "gre
 const COUNTRY_BAR_COLORS: Array<"blue" | "green" | "amber" | "red"> = ["blue", "green", "amber", "red"]
 
 /** Estadísticas globales reales (no "este navegador") — pedido explícito del dueño del proyecto, ver docs/63. Rediseñado en docs/71. */
-export function StatsPanel({ feedbackCounts }: { feedbackCounts: { total: number; nuevo: number; bug: number } }) {
+export function StatsPanel({
+  feedbackCounts,
+  stats: providedStats,
+}: {
+  feedbackCounts: { total: number; nuevo: number; bug: number }
+  /** Si la página ya cargó las estadísticas (docs/191), no se vuelven a pedir. */
+  stats?: AdminStats | null
+}) {
   const { t, language } = useLanguage()
-  const [stats, setStats] = useState<Stats | null>(null)
+  const [ownStats, setOwnStats] = useState<AdminStats | null>(null)
+  const stats = providedStats !== undefined ? providedStats : ownStats
 
   useEffect(() => {
+    if (providedStats !== undefined) return
     fetch("/api/admin/stats")
       .then((res) => res.json())
       .then((data) => {
-        if (!data.error) setStats(data)
+        if (!data.error) setOwnStats(data)
       })
       .catch((error) => console.error("Error cargando estadísticas:", error))
-  }, [])
+  }, [providedStats])
 
   const mrr = stats
     ? (stats.estimatedMrrUsdCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })
