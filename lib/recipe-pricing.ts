@@ -78,6 +78,21 @@ export function unitMarginPercent(recipe: Recipe, price: number, unitCost: numbe
   return netSales > 0 ? ((netSales - unitCost - commission) / netSales) * 100 : 0
 }
 
+/** Ganancia por plato en dinero, como en la Ficha: venta sin ISV (Food Cost) − costo − comisión (docs/188). */
+export function unitMarginAmount(recipe: Recipe, price: number, unitCost: number): number {
+  if (!(price > 0)) return 0
+  const isvPerUnit = pricingMethodOf(recipe) === "food_cost" ? taxIncludedIn(price, recipe.isv || 0) : 0
+  return price - isvPerUnit - price * commissionFraction(recipe) - unitCost
+}
+
+/** «Costo %» de la Ficha: costo ÷ venta sin ISV (Food Cost) × 100 (docs/188). */
+export function unitCostPercent(recipe: Recipe, price: number, unitCost: number): number {
+  if (!(price > 0)) return 0
+  const isvPerUnit = pricingMethodOf(recipe) === "food_cost" ? taxIncludedIn(price, recipe.isv || 0) : 0
+  const netSales = price - isvPerUnit
+  return netSales > 0 ? (unitCost / netSales) * 100 : 0
+}
+
 /** Precio que la receta tiene hoy: el escrito a mano, o si no, el guardado. */
 export function currentUnitPrice(recipe: Recipe): number {
   return positive(recipe.customUnitPrice) ?? positive(recipe.unitPrice) ?? 0

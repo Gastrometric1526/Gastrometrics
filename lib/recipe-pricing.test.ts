@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { applyPriceRule, suggestedUnitPrice, unitMarginPercent } from "./recipe-pricing"
+import { applyPriceRule, suggestedUnitPrice, unitCostPercent, unitMarginAmount, unitMarginPercent } from "./recipe-pricing"
 import type { Recipe } from "@/types/recipe"
 
 const base = (over: Partial<Recipe> = {}): Recipe =>
@@ -81,5 +81,22 @@ describe("unitMarginPercent", () => {
   it("en Food Cost descuenta el ISV incluido y la comisión", () => {
     // precio 115 con ISV 15 % → venta neta 100; costo 30 → margen 70 %
     expect(Math.round(unitMarginPercent(base({ isv: 15 }), 115, 30))).toBe(70)
+  })
+})
+
+describe("unitMarginAmount / unitCostPercent (docs/188: Dashboard y Estadísticas = Ficha)", () => {
+  it("Food Cost % con ISV incluido y comisión: L115 → ISV 15, venta neta 100, comisión 11.5", () => {
+    const r = base({ isv: 15, salesCommissionPercent: 10 })
+    expect(unitMarginAmount(r, 115, 30)).toBeCloseTo(58.5, 6)
+    expect(unitCostPercent(r, 115, 30)).toBeCloseTo(30, 6)
+  })
+  it("6 rubros: el ISV es un rubro sobre el costo, no se descuenta del precio", () => {
+    const r = base({ pricingMethod: "gastrometrics", isv: 15 })
+    expect(unitMarginAmount(r, 100, 40)).toBeCloseTo(60, 6)
+    expect(unitCostPercent(r, 100, 40)).toBeCloseTo(40, 6)
+  })
+  it("sin precio no hay margen ni costo %", () => {
+    expect(unitMarginAmount(base(), 0, 10)).toBe(0)
+    expect(unitCostPercent(base(), 0, 10)).toBe(0)
   })
 })

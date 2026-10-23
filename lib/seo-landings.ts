@@ -91,7 +91,7 @@ export const seoLandings: SeoLanding[] = [
     description:
       "Calculate the real cost of every dish, a suggested selling price and your food cost. Recipe cards, sub-recipes, waste, inventory and menus. Free plan forever.",
     h1: "Recipe costing software for restaurants and kitchens",
-    lead: "Add your ingredients with their real price, build the recipe card and Gastrometrics works out the cost of each dish, the cost per portion and a suggested selling price. No spreadsheets.",
+    lead: "Add your ingredients with their real price, build the recipe sheet and Gastrometrics works out the cost of each dish, the cost per portion and a suggested selling price. No spreadsheets.",
     ctaButton: "Create a free account",
     sections: [
       {
@@ -120,7 +120,7 @@ export const seoLandings: SeoLanding[] = [
     ],
     faqTitle: "Frequently asked questions",
     faq: [
-      { q: "Is it free?", a: "Yes. The Foodie plan is free forever and includes the ingredient database, unlimited recipe cards, imports and the kitchen PDF. Paid plans add waste tracking, inventory, menus, purchase orders and finance." },
+      { q: "Is it free?", a: "Yes. The Foodie plan is free forever and includes the ingredient database, unlimited recipe sheets, imports and the kitchen PDF. Paid plans add waste tracking, inventory, menus, purchase orders and finance." },
       { q: "How is the suggested selling price calculated?", a: "With Food Cost %: price = cost per portion ÷ target food cost, plus sales tax if you use it and covering the sales commission. With the 6-category method: cost plus each category's percentage and your fixed cost per dish. Both round up." },
       { q: "What happens when an ingredient price goes up?", a: "Every recipe that uses it is recalculated automatically, at any sub-recipe level. If the new cost leaves your price short, it rises to the suggested price; if the cost drops, your price stays and your margin grows." },
       { q: "Do I need to install anything?", a: "No. It runs in the browser on your computer or phone, and you can install it as an app if you like." },
@@ -280,14 +280,14 @@ export const seoLandings: SeoLanding[] = [
     languageName: "中文",
     navLabel: "配方成本核算软件",
     title: "餐厅配方成本核算软件 — Gastrometrics",
-    description: "计算每道菜的真实成本、建议售价和食材成本率。技术卡、子配方、损耗、库存和菜单。永久免费套餐。",
+    description: "计算每道菜的真实成本、建议售价和食材成本率。技术配方表、子配方、损耗、库存和菜单。永久免费套餐。",
     h1: "面向餐厅和厨房的配方成本核算软件",
-    lead: "录入原料的真实价格，建立技术卡，Gastrometrics 会自动算出每道菜的成本、每份成本和建议售价。无需电子表格。",
+    lead: "录入食材的真实价格，建立技术配方表，Gastrometrics 会自动算出每道菜的成本、每份成本和建议售价。无需电子表格。",
     ctaButton: "免费注册",
     sections: [
       {
         h2: "每道菜的真实成本，随时更新",
-        body: "每种原料都记录采购价、净含量和损耗，因此每克或每毫升的成本都是真实的。原料涨价时，所有用到它的配方都会自动重新计算，包括通过子配方使用它的配方；只有当新成本让售价不够时，售价才会上调。",
+        body: "每种食材都记录采购价、净含量和损耗，因此每克或每毫升的成本都是真实的。食材涨价时，所有用到它的配方都会自动重新计算，包括通过子配方使用它的配方；只有当新成本让售价不够时，售价才会上调。",
       },
       {
         h2: "按食材成本率或固定成本定价",
@@ -300,10 +300,10 @@ export const seoLandings: SeoLanding[] = [
     ],
     featuresTitle: "包含的功能",
     features: [
-      "技术卡：总成本、每份成本和建议售价",
-      "子配方（酱汁、底料）可作为原料使用",
-      "按原料管理损耗",
-      "从 Excel、PDF、文本、照片和小票导入原料和配方",
+      "技术配方表：总成本、每份成本和建议售价",
+      "子配方（酱汁、底料）可作为食材使用",
+      "按食材管理损耗",
+      "从 Excel、PDF、文本、照片和小票导入食材和配方",
       "库存、菜单和采购单",
       "每个配方的厨房版 PDF 和管理版 PDF",
       "6 种语言、21 种货币",
@@ -311,13 +311,13 @@ export const seoLandings: SeoLanding[] = [
     ],
     faqTitle: "常见问题",
     faq: [
-      { q: "免费吗？", a: "是的。Foodie 套餐永久免费，包含原料库、不限数量的技术卡、导入功能和厨房版 PDF。付费套餐增加损耗管理、库存、菜单、采购单和财务功能。" },
+      { q: "免费吗？", a: "是的。Foodie 套餐永久免费，包含食材库、不限数量的技术配方表、导入功能和厨房版 PDF。付费套餐增加损耗管理、库存、菜单、采购单和财务功能。" },
       { q: "建议售价是怎么计算的？", a: "食材成本率法：售价 = 每份成本 ÷ 目标食材成本率，如有税费则加上，并覆盖销售佣金。6 项费用法：成本加上各项费用的百分比以及每道菜的固定成本。两种方法都向上取整。" },
-      { q: "原料涨价时会怎样？", a: "所有用到它的配方都会自动重新计算，任何层级的子配方都包括在内。如果新成本让售价不够，售价会上调到建议价；如果成本下降，售价保持不变，利润率提高。" },
+      { q: "食材涨价时会怎样？", a: "所有用到它的配方都会自动重新计算，任何层级的子配方都包括在内。如果新成本让售价不够，售价会上调到建议价；如果成本下降，售价保持不变，利润率提高。" },
       { q: "需要安装吗？", a: "不需要。在电脑或手机的浏览器中即可使用，也可以按需安装为应用。" },
     ],
     closingTitle: "今天就从第一道菜开始",
-    closingBody: "免费注册，录入原料，几分钟内就能看到第一份配方的真实成本。",
+    closingBody: "免费注册，录入食材，几分钟内就能看到第一份配方的真实成本。",
     otherLanguages: "其他语言",
   },
 ]

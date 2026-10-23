@@ -393,7 +393,7 @@ export default {
       blocks: [
         ["figure", "11-reportes.jpg", "Relatórios: panorama geral do negócio com indicadores e gráficos."],
         ["h3", "Panorama"],
-        ["p", "Contagens gerais, valor do estoque e produtos em alerta, custo e margem médios, receitas por classificação, ingredientes mais usados, as receitas com melhor e pior margem, e o histórico de preço de cada ingrediente com sua variação."],
+        ["p", "Contagens gerais, valor do estoque e produtos em alerta, custo e margem médios, receitas por classificação, ingredientes mais usados, as receitas com melhor e pior margem, e o histórico de preço de cada ingrediente com sua variação. O custo % e a margem são medidos como na ficha técnica: sem o imposto incluído no preço e descontando a comissão."],
         ["h3", "Finanças"],
         ["p", "Se você vende bebidas, o cartão <strong>Cozinha vs. bar</strong> separa vendas, custo teórico e custo real de cada área (capítulo 6). Demonstrativo de resultados (DRE), comparação entre seu food cost teórico e o real segundo as vendas, variação de preços por fornecedor e análise de <strong>Menu Engineering</strong>, que classifica cada prato com o método padrão de Kasavana e Smith: é popular se vende pelo menos 70 % da sua parte igual, e sua margem é alta se a margem por prato (preço − custo) supera a margem média por prato vendido. Os percentuais de custo, o Prime Cost e o DRE são medidos sobre as vendas líquidas, sem o imposto incluído nos preços (como na ficha técnica):"],
         ["table", ["Categoria", "Popularidade", "Margem", "O que fazer"], [

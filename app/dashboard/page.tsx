@@ -59,6 +59,7 @@ import { ensureInventoryLoaded, getInventory } from "@/lib/storage/inventory"
 import { getOrSeedExampleRecipe } from "@/lib/services/seed-example-recipe"
 import { formatDate, formatDateTime } from "@/lib/date-format"
 import { PublicReviews } from "@/components/public-reviews"
+import { unitMarginPercent } from "@/lib/recipe-pricing"
 
 export default function DashboardPage() {
   const { isLoggedIn, authChecked, user } = useAuth()
@@ -150,9 +151,10 @@ export default function DashboardPage() {
     const averageMargin =
       pricedRecipes.length > 0
         ? pricedRecipes.reduce((sum, recipe) => {
-            const totalSales = (recipe.unitPrice || 0) * (recipe.yieldAmount || 1)
-            const margin = totalSales > 0 ? ((totalSales - (recipe.totalCost || 0)) / totalSales) * 100 : 0
-            return sum + margin
+            // Mismo margen que la Ficha (venta sin ISV y menos comisión, docs/188); antes
+            // contaba el ISV incluido en el precio como ganancia.
+            const unitCost = (recipe.totalCost || 0) / (recipe.yieldAmount || 1)
+            return sum + unitMarginPercent(recipe, recipe.unitPrice || 0, unitCost)
           }, 0) / pricedRecipes.length
         : null
 

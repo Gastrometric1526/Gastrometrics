@@ -71,6 +71,7 @@ import { getCategoryLabel, getUnitLabel } from "@/lib/ingredient-labels"
 import { buildPackageContentLookup, inventoryItemValue } from "@/lib/inventory-value"
 import { formatUnitPrice } from "@/lib/currency"
 import { formatDate } from "@/lib/date-format"
+import { unitCostPercent, unitMarginAmount } from "@/lib/recipe-pricing"
 
 const chartTokens = ["chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "chart-6", "chart-7"] as const
 
@@ -271,15 +272,18 @@ function EstadisticasContent() {
   )
   const subRecipeIngredientsCount = ingredients.length - realIngredients.length
 
+  // Costo % y margen por plato medidos como en la Ficha Técnica: sobre la venta sin el
+  // ISV incluido en precios Food Cost % y menos la comisión (docs/188). Antes el ISV
+  // contaba como venta: el costo % salía más bajo y el margen más alto que en la Ficha.
   const avgCostPercent = useMemo(() => {
     if (recipesWithPricing.length === 0) return 0
-    const total = recipesWithPricing.reduce((sum, r) => sum + ((r.costPerServing || 0) / (r.unitPrice || 1)) * 100, 0)
+    const total = recipesWithPricing.reduce((sum, r) => sum + unitCostPercent(r, r.unitPrice || 0, r.costPerServing || 0), 0)
     return total / recipesWithPricing.length
   }, [recipesWithPricing])
 
   const avgMargin = useMemo(() => {
     if (recipesWithPricing.length === 0) return 0
-    const total = recipesWithPricing.reduce((sum, r) => sum + ((r.unitPrice || 0) - (r.costPerServing || 0)), 0)
+    const total = recipesWithPricing.reduce((sum, r) => sum + marginOf(r), 0)
     return total / recipesWithPricing.length
   }, [recipesWithPricing])
 
@@ -336,7 +340,7 @@ function EstadisticasContent() {
   const topMarginRecipes = useMemo(
     () =>
       [...recipesWithPricing]
-        .sort((a, b) => (b.unitPrice! - b.costPerServing!) - (a.unitPrice! - a.costPerServing!))
+        .sort((a, b) => marginOf(b) - marginOf(a))
         .slice(0, 5),
     [recipesWithPricing],
   )
@@ -344,7 +348,7 @@ function EstadisticasContent() {
   const lowMarginRecipes = useMemo(
     () =>
       [...recipesWithPricing]
-        .sort((a, b) => (a.unitPrice! - a.costPerServing!) - (b.unitPrice! - b.costPerServing!))
+        .sort((a, b) => marginOf(a) - marginOf(b))
         .slice(0, 5),
     [recipesWithPricing],
   )
@@ -659,7 +663,7 @@ function EstadisticasContent() {
                             <div key={r.id} className="flex items-center justify-between text-sm bg-muted/20 rounded-lg px-3 py-2">
                               <span className="truncate pr-2">{r.name}</span>
                               <span className="font-semibold text-foreground tabular-nums shrink-0">
-                                {formatCurrency((r.unitPrice || 0) - (r.costPerServing || 0))}
+                                {formatCurrency(marginOf(r))}
                               </span>
                             </div>
                           ))
@@ -681,7 +685,7 @@ function EstadisticasContent() {
                           <p className="text-sm text-muted-foreground">{t("estadisticas_need_priced_recipes")}</p>
                         ) : (
                           lowMarginRecipes.map((r) => {
-                            const margin = (r.unitPrice || 0) - (r.costPerServing || 0)
+                            const margin = marginOf(r)
                             return (
                               <div key={r.id} className="flex items-center justify-between text-sm bg-muted/20 rounded-lg px-3 py-2">
                                 <span className="truncate pr-2">{r.name}</span>
@@ -1003,6 +1007,9 @@ function EstadisticasContent() {
 // useSearchParams() exige un límite de Suspense para poder prerenderizarse — sin este
 // wrapper, `next build` fallaba con "missing-suspense-with-csr-bailout" al generar esta
 // página estática (ver docs/19 y docs/20, pendiente de prerenderizado).
+
+const marginOf = (r: Recipe) => unitMarginAmount(r, r.unitPrice || 0, r.costPerServing || 0)
+
 export default function EstadisticasPage() {
   return (
     <Suspense fallback={null}>

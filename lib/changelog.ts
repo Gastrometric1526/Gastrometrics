@@ -32,6 +32,60 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-23b",
+    tutorialHref: tourHref("estadisticas"),
+    content: {
+      es: {
+        title: "Textos más claros en todos los idiomas",
+        items: [
+          "Reportes y Dashboard: el margen promedio y el costo % ahora se miden igual que en la Ficha Técnica, sin el ISV incluido en tus precios y descontando la comisión.",
+          "Revisamos la ortografía y la gramática de toda la app, los correos y el manual en los 6 idiomas, y unificamos los nombres: cada cosa se llama igual en todas las pantallas.",
+          "Los mensajes de error ahora te dicen qué hacer para resolverlo.",
+        ],
+      },
+      en: {
+        title: "Clearer wording in every language",
+        items: [
+          "Reports and Dashboard: average margin and cost % are now measured the same way as on the Recipe Sheet, without the sales tax included in your prices and after commission.",
+          "We reviewed spelling and grammar across the app, emails and manual in all 6 languages, and unified names so each thing is called the same on every screen.",
+          "Error messages now tell you what to do to fix the problem.",
+        ],
+      },
+      da: {
+        title: "Klarere tekster på alle sprog",
+        items: [
+          "Rapporter og Dashboard: gennemsnitlig avance og omkostnings-% måles nu som i opskriftsarket, uden momsen i dine priser og efter kommission.",
+          "Vi har gennemgået stavning og grammatik i hele appen, e-mails og manualen på alle 6 sprog og ensrettet navnene, så hver ting hedder det samme på alle skærme.",
+          "Fejlbeskeder fortæller dig nu, hvad du skal gøre for at løse problemet.",
+        ],
+      },
+      fr: {
+        title: "Des textes plus clairs dans toutes les langues",
+        items: [
+          "Rapports et Dashboard : la marge moyenne et le coût % se mesurent désormais comme dans la fiche technique, hors taxe incluse dans vos prix et après commission.",
+          "Nous avons revu l'orthographe et la grammaire de toute l'application, des e-mails et du manuel dans les 6 langues, et unifié les noms : chaque élément porte le même nom sur tous les écrans.",
+          "Les messages d'erreur vous indiquent maintenant quoi faire pour résoudre le problème.",
+        ],
+      },
+      pt: {
+        title: "Textos mais claros em todos os idiomas",
+        items: [
+          "Relatórios e Dashboard: a margem média e o custo % agora são medidos como na ficha técnica, sem o imposto incluído nos seus preços e descontando a comissão.",
+          "Revisamos a ortografia e a gramática de todo o app, dos e-mails e do manual nos 6 idiomas, e unificamos os nomes: cada coisa tem o mesmo nome em todas as telas.",
+          "As mensagens de erro agora dizem o que fazer para resolver o problema.",
+        ],
+      },
+      zh: {
+        title: "所有语言的文字更清晰",
+        items: [
+          "报表和仪表盘：平均利润率和成本率现在与技术配方表的计算方式一致，不含价格中包含的税费，并扣除佣金。",
+          "我们检查了应用、邮件和使用手册在 6 种语言中的拼写和语法，并统一了名称：同一功能在所有页面上名称一致。",
+          "错误提示现在会告诉你如何解决问题。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-10-23",
     tutorialHref: tourHref("estadisticas"),
     content: {
@@ -47,7 +101,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       en: {
         title: "Reviewed, more accurate calculations",
         items: [
-          "Reports → Finance: food cost, Prime Cost and the income statement are now measured on net sales, without the sales tax included in your prices (same as the recipe card). If your percentages changed, this is why: tax used to be counted as sales.",
+          "Reports → Finance: food cost, Prime Cost and the income statement are now measured on net sales, without the sales tax included in your prices (same as the recipe sheet). If your percentages changed, this is why: tax used to be counted as sales.",
           "Menu Engineering uses the industry-standard method (Kasavana and Smith): a dish that sells a lot but earns little per plate now shows as a \"Cash Cow\", not a \"Star\".",
           "Purchase orders: waste is no longer charged twice in the cost or ordering extra packages, and prices per gram or milliliter keep their decimals.",
           "Ingredients: switching between metric and imperial (or an ingredient's unit) also converts your recipes and inventory, without changing any cost. A 0% cost line is respected, and today's dates use your local time.",
@@ -86,7 +140,7 @@ export const CHANGELOG: ChangelogEntry[] = [
           "报表 → 财务：食材成本率、Prime Cost 和损益表现在按净销售额计算，不含价格中包含的税费（与配方卡一致）。如果你的百分比有变化，原因就在这里：以前税费被算作销售额。",
           "菜单工程采用行业标准方法（Kasavana 与 Smith）：销量高但单份利润低的菜品现在显示为「摇钱树」，而不是「明星」。",
           "采购单：损耗不再在成本中重复计算，也不会多订包装；按克或毫升计的价格会保留小数。",
-          "原料：在公制与英制之间切换（或更改原料单位）时，会同时换算你的配方和库存，任何成本都不会改变。0% 的费用项会被保留，今天的日期使用你的本地时间。",
+          "食材：在公制与英制之间切换（或更改食材单位）时，会同时换算你的配方和库存，任何成本都不会改变。0% 的费用项会被保留，今天的日期使用你的本地时间。",
         ],
       },
     },
@@ -300,9 +354,9 @@ export const CHANGELOG: ChangelogEntry[] = [
         title: "送一个月，得一个月",
         items: [
           "新功能：侧边菜单中的「邀请」。把你的链接分享给其他厨师或厨房：对方免费获得 30 天 Chef Ejecutivo，无需银行卡、没有任何承诺。结束后如果不想继续，会自动回到 Foodie。",
-          "当你邀请的人在前 30 天内真正开始使用（保存一份带成本的食谱或选择一个套餐）时，你获得一个月。每年最多 12 个月。",
+          "当你邀请的人在前 30 天内真正开始使用（保存一份带成本的配方或选择一个套餐）时，你获得一个月。每年最多 12 个月。",
           "如果你是创始厨房，你不会损失任何东西：每赚到一个月，都会加在你的 Chef Ejecutivo 之后。如果你是付费用户，会从下一张账单中扣除。",
-          "点击「邀请」页面中的「?」查看全部规则。",
+          "点击「邀请」页面中的「？」查看全部规则。",
         ],
       },
     },
@@ -349,7 +403,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       zh: {
         title: "再也不会丢失正在做的内容",
         items: [
-          "如果未保存就关闭或离开新原料、库存盘点、菜单或采购单，回来时可以恢复：原料 24 小时，库存和采购单 3 天，菜单 7 天。",
+          "如果未保存就关闭或离开新食材、库存盘点、菜单或采购单，回来时可以恢复：食材 24 小时，库存和采购单 3 天，菜单 7 天。",
           "应用、PDF 和邮件中的所有日期现在都以 日/月/年 显示，任何语言都一样。日期输入框也是：输入 日/月/年 或在日历中选择。",
         ],
       },
@@ -433,7 +487,7 @@ export const CHANGELOG: ChangelogEntry[] = [
         items: [
           "When an ingredient goes up, the dishes that use it through a sub-recipe (for example, the ones with the sauce instead of loose tomato) are now recalculated too, at any level. Their prices follow the usual rule: they only go up.",
           "If a sub-recipe has a sale price you wrote by hand and its cost goes up, the app asks whether you also want to raise that price: all, one by one or none, and you can remember your choice.",
-          "In each sub-recipe's Technical Sheet you choose what happens to its price when the cost goes up: ask me, always update or never update. That's also where you uncheck a remembered choice.",
+          "In each sub-recipe's Recipe Sheet you choose what happens to its price when the cost goes up: ask me, always update or never update. That's also where you uncheck a remembered choice.",
           "Saving a sub-recipe instantly recalculates the recipes that use it.",
         ],
       },
@@ -467,9 +521,9 @@ export const CHANGELOG: ChangelogEntry[] = [
       zh: {
         title: "子配方：整条链上的成本保持最新",
         items: [
-          "原料涨价时，通过子配方使用它的菜品（例如用酱汁而不是直接用番茄的菜）现在也会在任何层级重新计算。它们的价格遵循一贯规则：只升不降。",
-          "如果某个子配方有您手动填写的售价且成本上涨，应用会询问是否也提高该售价：全部、逐个或都不，并且可以记住您的选择。",
-          "在每个子配方的技术卡中，您可以选择成本上涨时售价如何处理：每次询问、始终更新或从不更新。也可以在那里取消已记住的选择。",
+          "食材涨价时，通过子配方使用它的菜品（例如用酱汁而不是直接用番茄的菜）现在也会在任何层级重新计算。它们的价格遵循一贯规则：只升不降。",
+          "如果某个子配方有你手动填写的售价且成本上涨，应用会询问是否也提高该售价：全部、逐个或都不，并且可以记住你的选择。",
+          "在每个子配方的技术配方表中，你可以选择成本上涨时售价如何处理：每次询问、始终更新或从不更新。也可以在那里取消已记住的选择。",
           "保存子配方时，会立即重新计算使用它的配方。",
         ],
       },
@@ -496,10 +550,10 @@ export const CHANGELOG: ChangelogEntry[] = [
         items: [
           "Your prices no longer drop on their own: if an ingredient's cost rises and a recipe falls short, its price moves up to the new suggested price. If the cost drops, the price stays (as if you had typed it) and Notifications tells you how much your margin rose.",
           "Food Cost % is now the recommended pricing method for new recipes and businesses. Your saved recipes keep their method and price.",
-          "Sales tax in Food Cost %: price = cost ÷ target × (1 + tax). The Technical Sheet shows the tax included and measures margin on sales before tax.",
+          "Sales tax in Food Cost %: price = cost ÷ target × (1 + tax). The Recipe Sheet shows the tax included and measures margin on sales before tax.",
           "When your plan changes you get a notification and a short tutorial showing what your new plan unlocks and where everything is.",
           "100 founding kitchens: the first 100 new accounts get Executive Chef free for 30 days.",
-          "The Technical Sheet and Ingredients fit fully on your phone, with no sideways scrolling.",
+          "The Recipe Sheet and Ingredients fit fully on your phone, with no sideways scrolling.",
           "Notification and Activity dates in your language, and when importing ingredients we warn you if a content in g or ml looks wrong.",
           "Follow us on Instagram and Facebook (@gastrometrics.app) for costing tips and news: the links are at the bottom of the site.",
         ],
@@ -521,7 +575,7 @@ export const CHANGELOG: ChangelogEntry[] = [
         title: "Des prix qui protègent votre marge",
         items: [
           "Vos prix ne baissent plus tout seuls : si le coût d'un ingrédient augmente et qu'une recette devient insuffisante, son prix passe au nouveau prix suggéré. Si le coût baisse, le prix reste (comme si vous l'aviez saisi) et Notifications vous indique de combien votre marge a augmenté.",
-          "Le Food Cost % est désormais la méthode de prix recommandée pour les nouvelles recettes et entreprises. Vos recettes enregistrées gardent leur méthode et leur prix.",
+          "Le Food Cost % est désormais la méthode de prix recommandée pour les nouvelles recettes et établissements. Vos recettes enregistrées gardent leur méthode et leur prix.",
           "TVA dans le Food Cost % : prix = coût ÷ objectif × (1 + TVA). La fiche technique affiche la TVA incluse et mesure la marge sur les ventes hors taxe.",
           "Quand votre forfait change, vous recevez une notification et un court tutoriel sur ce que votre nouveau forfait débloque et où tout se trouve.",
           "100 cuisines fondatrices : les 100 premiers nouveaux comptes reçoivent Chef Exécutif gratuitement pendant 30 jours.",
@@ -546,12 +600,12 @@ export const CHANGELOG: ChangelogEntry[] = [
       zh: {
         title: "守护利润率的定价",
         items: [
-          "售价不再自动下降：如果食材成本上涨导致食谱售价不够，售价会调整到新的建议售价。如果成本下降，售价保持不变（就像你手动输入的一样），并会在“通知”中告诉你利润率提高了多少。",
-          "食材成本率（Food Cost %）现在是新食谱和新店铺的推荐定价方法。已保存的食谱保留原来的方法和售价。",
-          "食材成本率中的税：售价 = 成本 ÷ 目标 × (1 + 税率)。技术卡会显示含税金额，并按不含税销售额计算利润率。",
-          "更换方案时，你会收到一条通知和一个简短教程，介绍新方案解锁的功能及其位置。",
-          "100 家创始厨房：前 100 个新账户可免费使用行政主厨方案 30 天。",
-          "技术卡和食材页面在手机上可完整显示，无需左右滑动。",
+          "售价不再自动下降：如果食材成本上涨导致配方售价不够，售价会调整到新的建议售价。如果成本下降，售价保持不变（就像你手动输入的一样），并会在“通知”中告诉你利润率提高了多少。",
+          "食材成本率（Food Cost %）现在是新配方和新店铺的推荐定价方法。已保存的配方保留原来的方法和售价。",
+          "食材成本率中的税：售价 = 成本 ÷ 目标 × (1 + 税率)。技术配方表会显示含税金额，并按不含税销售额计算利润率。",
+          "更换套餐时，你会收到一条通知和一个简短教程，介绍新套餐解锁的功能及其位置。",
+          "100 家创始厨房：前 100 个新账户可免费使用行政主厨套餐 30 天。",
+          "技术配方表和食材页面在手机上可完整显示，无需左右滑动。",
           "通知和动态的日期以你的语言显示；导入食材时，如果以克或毫升计的含量看起来有误，我们会提醒你。",
           "在 Instagram 和 Facebook（@gastrometrics.app）关注我们，获取成本核算技巧和最新消息：链接在网站底部。",
         ],
@@ -639,13 +693,13 @@ export const CHANGELOG: ChangelogEntry[] = [
       zh: {
         title: "小票、技术配方表与配方合集",
         items: [
-          "支持完整的 Excel 文件（.xlsx、.xlsm 或 .xls）：应用会自动选择原料表或技术配方表，能识别“换算”“配方单位”等列，没有价格的商品可按 0 导入，稍后补充。",
-          "Home Cook 起，使用任何价目表（例如供应商的价目表）都可以更新已有原料的价格，并重新计算配方。",
+          "支持完整的 Excel 文件（.xlsx、.xlsm 或 .xls）：应用会自动选择食材表或技术配方表，能识别“换算”“配方单位”等列，没有价格的商品可按 0 导入，稍后补充。",
+          "Home Cook 起，使用任何价目表（例如供应商的价目表）都可以更新已有食材的价格，并重新计算配方。",
           "库存：在“登记库存”中可以从照片、PDF 或 Excel 读取盘点表，数量会自动填入。",
-          "全新的识别结果核对界面：直接显示已理解的配方，照片在旁边，顶部有摘要，每种原料都显示状态（“已在原料库”“新原料”或“请核对”）。",
-          "新功能：可通过超市小票或发票的照片或 PDF 导入原料。应用会识别每件商品及其价格，忽略合计和税费，导入前可修改名称和价格。",
-          "Home Cook 起，使用小票还可以更新已有原料的价格，相关配方会自动重新计算。",
-          "多页 PDF 配方合集：应用会自动选择第一页含配方的页面，你也可以更换页面。如果技术配方表带有成本，会作为新原料的价格。",
+          "全新的识别结果核对界面：直接显示已理解的配方，照片在旁边，顶部有摘要，每种食材都显示状态（“已在食材库”“新食材”或“请核对”）。",
+          "新功能：可通过超市小票或发票的照片或 PDF 导入食材。应用会识别每件商品及其价格，忽略合计和税费，导入前可修改名称和价格。",
+          "Home Cook 起，使用小票还可以更新已有食材的价格，相关配方会自动重新计算。",
+          "多页 PDF 配方合集：应用会自动选择第一页含配方的页面，你也可以更换页面。如果技术配方表带有成本，会作为新食材的价格。",
           "更好地识别真实的技术配方表：带成本或营养列的表格、分两行书写的名称、双栏配方卡，以及“c”“t”“T”等缩写。",
           "横向拍摄的照片会自动旋转。",
           "从你现有的资料直接导入（文本、Excel、PDF、照片和小票），所有套餐（包括 Foodie）均包含。",
@@ -709,11 +763,11 @@ export const CHANGELOG: ChangelogEntry[] = [
       zh: {
         title: "几分钟搬入你的数据",
         items: [
-          "导入原料不再需要模板：按原样上传 Excel 或 CSV，或从表格、邮件、WhatsApp 粘贴清单。带货币符号的价格（“¥8.50”“1,250.75”）都能正确读取，导入前可看到哪些会导入、哪些会跳过。",
-          "如果清单没有分类，会根据原料名称自动建议。",
+          "导入食材不再需要模板：按原样上传 Excel 或 CSV，或从表格、邮件、WhatsApp 粘贴清单。带货币符号的价格（“¥8.50”“1,250.75”）都能正确读取，导入前可看到哪些会导入、哪些会跳过。",
+          "如果清单没有分类，会根据食材名称自动建议。",
           "“导入配方”现已支持 Excel 和 PDF（包括扫描版 PDF），以及文本和照片。",
           "无需选择配方语言：默认使用应用当前的语言；如果配方是其他语言（6 种之一），应用会自动识别并用正确的语言读取。",
-          "“之路”和引导教程会直接带你去导入：先导入原料，再一份接一份地导入配方。",
+          "“之路”和引导教程会直接带你去导入：先导入食材，再一份接一份地导入配方。",
         ],
       },
     },
@@ -774,10 +828,10 @@ export const CHANGELOG: ChangelogEntry[] = [
       zh: {
         title: "导入你的配方，更轻松地开始",
         items: [
-          "新功能：“我的配方”中的“导入配方”。按原样粘贴配方（或上传文件），即可转换为技术配方表，自动匹配你原料库中的原料，并把数量换算为对应单位。",
+          "新功能：“我的配方”中的“导入配方”。按原样粘贴配方（或上传文件），即可转换为技术配方表，自动匹配你食材库中的食材，并把数量换算为对应单位。",
           "你也可以用手机相机给配方拍照：应用会识别文字、标出不确定的行供你修正，并转换为技术配方表。照片在你自己的设备上识别。",
-          "菜单会逐步完善：创建最初的几个配方后会出现高级模块，仪表板会显示“你的 Gastrometrics 之路”。想看到全部，可以点击按钮显示所有模块。",
-          "原料引导教程现在结束时会打开批量导入，让你一次性导入整份清单（仍可逐个添加）。",
+          "菜单会逐步完善：创建最初的几个配方后会出现高级模块，仪表盘会显示“你的 Gastrometrics 之路”。想看到全部，可以点击按钮显示所有模块。",
+          "食材引导教程现在结束时会打开批量导入，让你一次性导入整份清单（仍可逐个添加）。",
           "登录时新增“在此设备上记住我”选项。",
         ],
       },
@@ -818,7 +872,7 @@ export const CHANGELOG: ChangelogEntry[] = [
         items: [
           "Résumé hebdomadaire : chaque lundi, vos chiffres clés (food cost moyen, valeur du stock, produits sous le minimum et plats à faible marge).",
           "Alertes utiles : nous vous prévenons quand un produit atteint son minimum ou quand un plat ne respecte plus son objectif de food cost.",
-          "Nous vous écrivons aussi si votre invité n'a pas rejoint l'équipe, si une nouvelle entreprise n'a toujours pas de recettes ou quand vous franchissez une étape.",
+          "Nous vous écrivons aussi si votre invité n'a pas rejoint l'équipe, si un nouvel établissement n'a toujours pas de recettes ou quand vous franchissez une étape.",
           "Les e-mails arrivent avec des textes différents pour ne pas recevoir toujours le même. Vous pouvez les désactiver dans Paramètres → Notifications.",
         ],
       },
@@ -944,12 +998,12 @@ export const CHANGELOG: ChangelogEntry[] = [
         ],
       },
       zh: {
-        title: "更多样的邮件和更清晰的方案变更",
+        title: "更多样的邮件和更清晰的套餐变更",
         items: [
           "提醒邮件不再每次都是同样的文字：每种提醒有三个不同版本，你不会连续两次收到同一封。",
-          "当你的方案变化时，邮件和仪表板弹窗会准确列出你获得了什么、失去了什么以及方案现在包含的内容。降级时你的数据永远不会被删除。",
-          "如果 Gastrometrics 团队分配的方案到期，你的账户会自动转为免费方案，我们会用同样的清单通知你。",
-          "已修复：方案变更邮件只显示方案的第一项功能。",
+          "当你的套餐变化时，邮件和仪表盘弹窗会准确列出你获得了什么、失去了什么以及套餐现在包含的内容。降级时你的数据永远不会被删除。",
+          "如果 Gastrometrics 团队分配的套餐到期，你的账户会自动转为免费套餐，我们会用同样的清单通知你。",
+          "已修复：套餐变更邮件只显示套餐的第一项功能。",
         ],
       },
     },
@@ -987,9 +1041,9 @@ export const CHANGELOG: ChangelogEntry[] = [
       fr: {
         title: "Encore des nouveautés dans Gastrometrics",
         items: [
-          "Migrer une recette vers une autre entreprise vous demande désormais : emporter aussi ses ingrédients et sous-recettes, ou seulement la recette. Si vous choisissez seulement la recette, sa fiche s'ouvre dans cette entreprise pour que vous choisissiez les ingrédients dans sa propre base.",
-          "Corrigé : en migrant une recette avec ses ingrédients, ceux-ci n'étaient pas enregistrés dans l'entreprise de destination. C'est désormais le cas, sans dupliquer ceux qui existaient déjà.",
-          "PDF : la photo du plat est plus grande et n'est plus déformée dans les trois fiches techniques (l'administrative l'inclut désormais), et le logo de votre entreprise apparaît sur tous les PDF, y compris la carte client.",
+          "Migrer une recette vers un autre établissement vous demande désormais : emporter aussi ses ingrédients et sous-recettes, ou seulement la recette. Si vous choisissez seulement la recette, sa fiche s'ouvre dans cet établissement pour que vous choisissiez les ingrédients dans sa propre base.",
+          "Corrigé : en migrant une recette avec ses ingrédients, ceux-ci n'étaient pas enregistrés dans l'établissement de destination. C'est désormais le cas, sans dupliquer ceux qui existaient déjà.",
+          "PDF : la photo du plat est plus grande et n'est plus déformée dans les trois fiches techniques (l'administrative l'inclut désormais), et le logo de votre établissement apparaît sur tous les PDF, y compris la carte client.",
           "Les photos que vous ajoutez à une recette sont optimisées automatiquement : elles sont bien plus légères et s'affichent toujours dans le PDF.",
         ],
       },
@@ -1005,8 +1059,8 @@ export const CHANGELOG: ChangelogEntry[] = [
       zh: {
         title: "Gastrometrics 更多新功能",
         items: [
-          "把配方迁移到另一个商户时，现在会询问：是否同时带上原料和子配方，还是只迁移配方。若只迁移配方，会在该商户中打开配方表，由你从该商户自己的数据库选择原料。",
-          "已修复：连同原料迁移配方时，原料没有保存到目标商户。现在会正确保存，且不会重复已有的原料。",
+          "把配方迁移到另一个商户时，现在会询问：是否同时带上食材和子配方，还是只迁移配方。若只迁移配方，会在该商户中打开配方表，由你从该商户自己的数据库选择食材。",
+          "已修复：连同食材迁移配方时，食材没有保存到目标商户。现在会正确保存，且不会重复已有的食材。",
           "PDF：三种技术配方表中的菜品照片更大且不再变形（管理版现在也包含照片），你的商户标志会出现在所有 PDF 上，包括给客人的菜单。",
           "上传到配方的照片会自动优化：体积小得多，并且始终能在 PDF 中显示。",
         ],
@@ -1099,15 +1153,15 @@ export const CHANGELOG: ChangelogEntry[] = [
       zh: {
         title: "Gastrometrics 新功能：饮品与酒吧",
         items: [
-          "像核算厨房一样核算酒吧：新增原料分类（烈酒、葡萄酒、生啤与瓶装啤酒、软饮与调酒辅料）并带有典型损耗，配方表中新增“酒吧 · 鸡尾酒 / 葡萄酒 / 啤酒 / 无酒精饮品 / 咖啡与茶”分类。",
+          "像核算厨房一样核算酒吧：新增食材分类（烈酒、葡萄酒、生啤与瓶装啤酒、软饮与调酒辅料）并带有典型损耗，配方表中新增“酒吧 · 鸡尾酒 / 葡萄酒 / 啤酒 / 无酒精饮品 / 咖啡与茶”分类。",
           "选择酒吧分类后，售价按酒水成本率计算（常见值：鸡尾酒 20%、葡萄酒 30%、啤酒 24%），不会改变菜品的目标值。",
-          "原料页新增“按杯或按瓶销售”按钮：几秒内创建一杯葡萄酒、一口杯或一整瓶的配方，每份成本已自动计算。",
+          "食材页新增“按杯或按瓶销售”按钮：几秒内创建一杯葡萄酒、一口杯或一整瓶的配方，每份成本已自动计算。",
           "酒吧库存：可用小数按瓶盘点（2.3 = 2 瓶整瓶加开封那瓶的十分之三）或用秤称重，并以瓶为单位查看库存、最低量和短缺。",
           "报表 → 财务：厨房与酒吧分开显示（各自的销售额、理论成本和实际成本），菜单工程也可按区域查看。",
           "建议售价现在会按你的货币取整（例如美元或欧元取到下一个 0.50，而不再总是取到 5）。",
           "已修正库存价值和实际成本：现在按每个包装的价格除以其容量计算。",
           "技术配方表新增外卖或刷卡佣金：填写平台或银行抽取的百分比，建议售价会将其覆盖；你可以看到每道菜的佣金和实得金额。",
-          "过敏原：在每种原料上勾选，它们会自动显示在你的配方、配方 PDF 以及客人菜单上每道菜的下方。",
+          "过敏原：在每种食材上勾选，它们会自动显示在你的配方、配方 PDF 以及客人菜单上每道菜的下方。",
           "新增“饮品单”菜单类型，包含 鸡尾酒、葡萄酒、啤酒 和 无酒精饮品 阶段。",
           "修复：库存盘点现在也会更新手动添加的产品；每克或每毫升的价格最多显示 4 位小数（以前显示为 0.00）；阶段、分类、菜单类型和菜单阶段始终以你的语言显示。",
         ],
@@ -1139,7 +1193,7 @@ export const CHANGELOG: ChangelogEntry[] = [
           "Helpful email reminders (optional): if you haven't signed in for a few days, we'll remind you about an unfinished recipe, your next inventory count, checking your reports or updating prices. Never more than one every few days, with one-click unsubscribe.",
           "All emails and dates in the app now always follow the language you have selected.",
           "The Sous Chef plan now includes Team: invite 1 person with per-tool permissions (Chef Ejecutivo, up to 4).",
-          "New in Inventory: theoretical stock. Each item shows how much should be left based on your recorded sales and, when you count again, the difference from what was expected, so you can spot shrinkage or missing stock.",
+          "New in Inventory: theoretical stock. Each item shows how much should be left based on your recorded sales and, when you count again, the difference from what was expected, so you can spot waste or missing stock.",
           "Purchase orders generated from a menu or recipe now subtract what you already have in inventory and calculate sub-recipe quantities correctly.",
         ],
       },
@@ -1185,14 +1239,14 @@ export const CHANGELOG: ChangelogEntry[] = [
       zh: {
         title: "Gastrometrics 新功能",
         items: [
-          "食谱不再丢失：在技术配方表中创建食谱时，内容会自动保存 24 小时。即使你关闭标签页或切换到其他模块，回来时也会原样恢复，在其他设备上同样可以找到。",
-          "新增“清空技术配方表”按钮，可一键清空并从头开始新食谱。",
+          "配方不再丢失：在技术配方表中创建配方时，内容会自动保存 24 小时。即使你关闭标签页或切换到其他模块，回来时也会原样恢复，在其他设备上同样可以找到。",
+          "新增“清空技术配方表”按钮，可一键清空并从头开始新配方。",
           "用户手册已全面重新设计，并用 6 种语言重写，配有全新截图、章节目录和分步示例。可在 设置 → 用户手册（PDF）中打开。",
-          "实用的邮件提醒（可选）：如果你几天没有登录，我们会提醒你未完成的食谱、下一次库存盘点、查看报表或更新价格。每隔几天最多一封，并可一键退订。",
+          "实用的邮件提醒（可选）：如果你几天没有登录，我们会提醒你未完成的配方、下一次库存盘点、查看报表或更新价格。每隔几天最多一封，并可一键退订。",
           "应用中的所有邮件和日期现在都会始终使用你所选择的语言。",
-          "Sous Chef 方案现已包含团队功能：可邀请 1 人并按工具分配权限（Chef Ejecutivo 方案最多 4 人）。",
+          "Sous Chef 套餐现已包含团队功能：可邀请 1 人并按工具分配权限（Chef Ejecutivo 套餐最多 4 人）。",
           "库存新功能：理论库存。每个产品会根据已登记的销售显示应剩数量，再次盘点时显示与预期的差异，帮助发现损耗或短缺。",
-          "从菜单或食谱生成的采购订单现在会扣除已有库存，并正确计算子配方的用量。",
+          "从菜单或配方生成的采购订单现在会扣除已有库存，并正确计算子配方的用量。",
         ],
       },
     },
@@ -1254,9 +1308,9 @@ export const CHANGELOG: ChangelogEntry[] = [
         title: "GastroMetrics 更新内容",
         items: [
           "销售界面现在有完整的销售历史记录——可以按日、周、月或年分组，支持自定义日期范围，还可以一键导出为PDF。",
-          "客户开票功能现已并入销售模块（\"发票\"标签页），和手动登记、POS导入放在一起——以前是单独的一个页面。",
+          "客户开票功能现已并入销售模块（“发票”标签页），和手动登记、POS导入放在一起——以前是单独的一个页面。",
           "无论使用哪种货币，全应用的数字始终使用小数点显示。",
-          "设置中的新功能：你可以将全部内容（食谱、食材、菜单等）一键下载为一个完整的备份文件，也可以在需要时删除账户中的全部内容。",
+          "设置中的新功能：你可以将全部内容（配方、食材、菜单等）一键下载为一个完整的备份文件，也可以在需要时删除账户中的全部内容。",
           "发票现在会清楚提示这不是官方税务凭证，让你准确了解这份文件是什么、不是什么。",
         ],
       },
@@ -1304,7 +1358,7 @@ export const CHANGELOG: ChangelogEntry[] = [
         title: "GastroMetrics 更新内容",
         items: [
           "用户手册（设置 → 用户手册）已经完全重做，使用了应用当前真实界面的截图——旧版本里的截图还是好几次更新之前的。",
-          "手册现在还说明了菜单中按方案显示的锁定状态，以及如何将 GastroMetrics 安装到手机上作为应用使用——这两项功能在上一版手册编写时还不存在。",
+          "手册现在还说明了菜单中按套餐显示的锁定状态，以及如何将 GastroMetrics 安装到手机上作为应用使用——这两项功能在上一版手册编写时还不存在。",
         ],
       },
     },
@@ -1370,7 +1424,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       zh: {
         title: "GastroMetrics 更新内容",
         items: [
-          "现在可以清楚地看到你的方案包含哪些功能：方案未包含的模块会在菜单中显示为“变暗”状态，并提示需要升级到哪个方案才能解锁——不用点进去才发现打不开。",
+          "现在可以清楚地看到你的套餐包含哪些功能：套餐未包含的模块会在菜单中显示为“变暗”状态，并提示需要升级到哪个套餐才能解锁——不用点进去才发现打不开。",
           "首次使用时，欢迎教程现在会一步步引导你：先带你去录入食材，完成后有一个按钮直接带你创建第一份技术配方表。",
           "修复了库存模块的一个真实问题：直接在表格中编辑产品（分类、名称、最低库存、价格）看起来保存了，但改动其实被悄悄丢失了。现在可以正确保存。",
           "食材、采购订单和菜单中的价格与数量字段，不再会因误操作而接受负数。",
@@ -1497,7 +1551,7 @@ export const CHANGELOG: ChangelogEntry[] = [
         items: [
           "仪表盘现在会告诉你今天该做什么：低于最低库存的食材、没有销售价格的配方，以及你的平均利润率——点击即可直达每一项。",
           "子配方的页面不再显示销售价格或利润明细——只显示真实成本，这才是唯一适用于它们的信息。",
-          "技术单会在数据看起来像错误时提前提醒你（例如某个用量相对产量明显过高），避免它出现在 PDF 里。",
+          "技术配方表会在数据看起来像错误时提前提醒你（例如某个用量相对产量明显过高），避免它出现在 PDF 里。",
           "新增“快速单据”版本，用于与供应商或合伙人分享，不含成本和价格。",
           "你可以在“设置 → 通知”中选择是否要通过邮件接收这些更新。",
         ],

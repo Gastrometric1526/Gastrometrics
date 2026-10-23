@@ -199,7 +199,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       ],
       locked: [
         "Prisopdatering fra kvitteringer eller lister",
-        "Spildsystem",
+        "Svindsystem",
         "Administrativ PDF (med omkostninger og rentabilitet)",
         "Fakturering til kunder",
         "Indkøbsordrer",
@@ -211,10 +211,10 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     "home-cook": {
       price: "$15/md",
       tagline: "For dig der allerede beregner omkostninger seriøst",
-      description: "Alt fra Foodie, plus spildsystem, fakturering, manuelle indkøbsordrer og administrativ PDF.",
+      description: "Alt fra Foodie, plus svindsystem, fakturering, manuelle indkøbsordrer og administrativ PDF.",
       features: [
         "Alt fra Foodie-planen",
-        "Spildsystem",
+        "Svindsystem",
         "Fakturering til kunder",
         "Manuelle indkøbsordrer",
         "Administrativ PDF (med omkostninger og rentabilitet)",
@@ -272,7 +272,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
   fr: {
     foodie: {
       price: "Gratuit",
-      tagline: "Pour commencer à organiser tes recettes",
+      tagline: "Pour commencer à organiser vos recettes",
       description: "Base de données d'ingrédients, fiches techniques illimitées, import de recettes et d'ingrédients et PDF pour la cuisine.",
       features: [
         "Base de données d'ingrédients",
@@ -323,7 +323,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     },
     "sous-chef": {
       price: "70 $/mois",
-      tagline: "Le contrôle total de ton établissement",
+      tagline: "Le contrôle total de votre établissement",
       description:
         "Tout ce qui précède, plus les finances complètes : P&L réel, import des ventes POS, Menu Engineering et variance des prix fournisseurs.",
       features: [
@@ -439,8 +439,8 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     foodie: {
       price: "免费",
       tagline: "开始整理你的配方",
-      description: "食材数据库、无限配方卡、配方和原料导入以及厨房版PDF。",
-      features: ["食材数据库", "无限配方卡", "从你现有的资料直接导入配方和原料：Excel、PDF、文本、照片和小票", "导出厨房版PDF（食材和步骤，不含成本）"],
+      description: "食材数据库、无限配方卡、配方和食材导入以及厨房版PDF。",
+      features: ["食材数据库", "无限配方卡", "从你现有的资料直接导入配方和食材：Excel、PDF、文本、照片和小票", "导出厨房版PDF（食材和步骤，不含成本）"],
       locked: ["通过小票或价目表更新价格", "损耗系统", "管理版PDF（含成本和利润率）", "客户开票", "采购订单", "库存", "菜单", "统计与财务"],
     },
     "home-cook": {

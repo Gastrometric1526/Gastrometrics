@@ -394,7 +394,7 @@ export default {
       blocks: [
         ["figure", "11-reportes.jpg", "Reportes: panorama general del negocio con sus indicadores y gráficas."],
         ["h3", "Panorama"],
-        ["p", "Conteos generales, valor del inventario y productos en alerta, costo y margen promedio, recetas por clasificación, ingredientes más usados, las recetas con mejor y peor margen, y el historial de precio de cada ingrediente con su variación."],
+        ["p", "Conteos generales, valor del inventario y productos en alerta, costo y margen promedio, recetas por clasificación, ingredientes más usados, las recetas con mejor y peor margen, y el historial de precio de cada ingrediente con su variación. El costo % y el margen se miden igual que en la Ficha Técnica: sin el ISV incluido en el precio y descontando la comisión."],
         ["h3", "Finanzas"],
         ["p", "Si vendes bebidas, la tarjeta <strong>Cocina vs. barra</strong> separa ventas, costo teórico y costo real de cada área (capítulo 6). Estado de resultados (P&L), comparación entre tu food cost teórico y el real según tus ventas, variación de precios por proveedor y análisis de <strong>Menu Engineering</strong>, que clasifica cada plato con el método estándar de Kasavana y Smith: es popular si vende al menos el 70 % de lo que le tocaría con ventas parejas, y su margen es alto si su margen por plato (precio − costo) supera el margen promedio por plato vendido. Los porcentajes de costo, el Prime Cost y el P&L se miden sobre las ventas netas, sin el ISV incluido en los precios (igual que en la Ficha Técnica):"],
         ["table", ["Categoría", "Popularidad", "Margen", "Qué hacer"], [

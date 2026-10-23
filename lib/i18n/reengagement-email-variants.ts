@@ -124,7 +124,7 @@ export const REENGAGEMENT_VARIANTS: Record<EmailLang, Record<ReengagementType, R
     inventory_count: [
       {
         subject: "It's been {days} days since your last inventory count",
-        preheader: "Counting often is the cheapest way to find shrinkage.",
+        preheader: "Counting often is the cheapest way to find waste.",
         heading: "How much is really in your storeroom?",
         body: "Your last count was <strong>{days} days</strong> ago. Since then you've surely sold, bought and thrown things away. A quick count shows you the gap between what should be left and what's really there.",
         cta: "Do a count",
@@ -435,14 +435,14 @@ export const REENGAGEMENT_VARIANTS: Record<EmailLang, Record<ReengagementType, R
   zh: {
     unfinished_recipe: [
       {
-        subject: "“{recipe}” 就差一点点了",
+        subject: "“{recipe}”就差一点点了",
         preheader: "你的草稿仍然保存着，但不会太久。",
         heading: "最难的部分你已经完成了",
         body: "<strong>{recipe}</strong> 的配方表几乎完成了。只需检查并保存，就能得到它的真实成本和建议售价。草稿会在你最后一次修改后保留 24 小时，抓紧时间吧。",
         cta: "继续编辑配方表",
       },
       {
-        subject: "要保存 “{recipe}” 还是放弃它？",
+        subject: "要保存 “{recipe}”还是放弃它？",
         preheader: "只要几分钟，你的配方就永久完成成本核算。",
         heading: "你的草稿即将过期",
         body: "你在技术配方表中留下了未完成的 <strong>{recipe}</strong>。今天完成它，就会连同成本、毛利和厨房用 PDF 一起保存。否则草稿会在 24 小时后自动删除。",
@@ -483,18 +483,18 @@ export const REENGAGEMENT_VARIANTS: Record<EmailLang, Record<ReengagementType, R
     ],
     update_prices: [
       {
-        subject: "{count} 种原料的价格已超过一个月未更新",
+        subject: "{count} 种食材的价格已超过一个月未更新",
         preheader: "旧价格会让你的毛利看起来比实际更好。",
         heading: "供应商涨价了吗？",
-        body: "你有 <strong>{count} 种原料</strong>超过 30 天没有更新。只要修改一个价格，Gastrometrics 就会立即重新计算所有用到它的配方，包括成本和建议售价。",
+        body: "你有 <strong>{count} 种食材</strong>超过 30 天没有更新。只要修改一个价格，Gastrometrics 就会立即重新计算所有用到它的配方，包括成本和建议售价。",
         cta: "检查价格",
       },
       {
         subject: "你的配方可能还在用旧价格核算",
         preheader: "更新一个价格，所有配方都会自动重新计算。",
         heading: "让你的成本保持最新",
-        body: "价格在变，而电子表格永远察觉不到——只要你告诉 Gastrometrics，它就能察觉。<strong>{count} 种原料</strong>的价格已超过 30 天。更新它们，看看你的真实毛利。",
-        cta: "更新我的原料",
+        body: "价格在变，而电子表格永远察觉不到——只要你告诉 Gastrometrics，它就能察觉。<strong>{count} 种食材</strong>的价格已超过 30 天。更新它们，看看你的真实毛利。",
+        cta: "更新我的食材",
       },
     ],
     we_miss_you: [
@@ -502,7 +502,7 @@ export const REENGAGEMENT_VARIANTS: Record<EmailLang, Record<ReengagementType, R
         subject: "你的配方还在原来的地方",
         preheader: "随时回来：一切都保存着。",
         heading: "你的厨房还在这里",
-        body: "你已经 <strong>{days} 天</strong>没有访问 Gastrometrics 了。什么都没丢：你的配方、原料和库存都保持原样。回来后的好第一步：更新你最常购买的原料价格。",
+        body: "你已经 <strong>{days} 天</strong>没有访问 Gastrometrics 了。什么都没丢：你的配方、食材和库存都保持原样。回来后的好第一步：更新你最常购买的食材价格。",
         cta: "进入我的账户",
       },
       {

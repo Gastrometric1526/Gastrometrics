@@ -28,7 +28,7 @@ describe("diffPlanCapabilities (docs/139)", () => {
     const d = diffPlanCapabilities("home-cook", "home-cook", "en")
     expect(d.gained).toEqual([])
     expect(d.lost).toEqual([])
-    expect(d.now).toContain("Shrinkage system")
+    expect(d.now).toContain("Waste system")
     expect(diffPlanCapabilities("foodie", "home-cook", "zh").gained).toContain("损耗系统")
     expect(diffPlanCapabilities("home-cook", "sous-chef", "es").gained).toContain("Hasta 2 negocios")
     expect(diffPlanCapabilities("home-cook", "sous-chef", "es").lost).toEqual([])

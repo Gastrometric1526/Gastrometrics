@@ -406,10 +406,10 @@ export const ENGAGEMENT_COPY: Record<EmailLang, Record<EngagementType, Engagemen
       ],
     },
     empty_business: {
-      eyebrow: "Votre entreprise",
+      eyebrow: "Votre établissement",
       variants: [
-        v("{business} n'a encore aucune recette", "Commencez par votre plat le plus vendu.", "Votre entreprise est prête pour sa première recette", "Vous avez créé <strong>{business}</strong> il y a {days} jours, mais elle n'a encore aucune recette. Ajoutez votre plat le plus vendu et voyez son coût réel en quelques minutes.", "Ajouter une recette"),
-        v("On continue avec {business} ?", "Une recette et vous voyez le coût réel.", "Vous êtes près d'avoir vos chiffres", "<strong>{business}</strong> est toujours vide. Si vous avez déjà des recettes dans votre Dashboard, vous pouvez les déplacer vers cette entreprise avec leurs ingrédients.", "Ouvrir {business}"),
+        v("{business} n'a encore aucune recette", "Commencez par votre plat le plus vendu.", "Votre établissement est prêt pour sa première recette", "Vous avez créé <strong>{business}</strong> il y a {days} jours, mais elle n'a encore aucune recette. Ajoutez votre plat le plus vendu et voyez son coût réel en quelques minutes.", "Ajouter une recette"),
+        v("On continue avec {business} ?", "Une recette et vous voyez le coût réel.", "Vous êtes près d'avoir vos chiffres", "<strong>{business}</strong> est toujours vide. Si vous avez déjà des recettes dans votre Dashboard, vous pouvez les déplacer vers cet établissement avec leurs ingrédients.", "Ouvrir {business}"),
         v("{business} vous attend", "Recettes, coûts et menus au même endroit.", "Donnez vie à {business}", "Il y a {days} jours, vous avez créé <strong>{business}</strong>. Commencez par une recette : c'est la première étape pour chiffrer tout votre menu.", "Commencer"),
       ],
     },
@@ -492,17 +492,17 @@ export const ENGAGEMENT_COPY: Record<EmailLang, Record<EngagementType, Engagemen
     margin_alert: {
       eyebrow: "毛利",
       variants: [
-        v("{count} 道菜赚得没有你想的多", "成本上涨了，价格却没变。", "这些菜品的毛利正在流失", "这些菜品的成本已超过你核算时设定的目标。可能某种原料涨价了，而售价没变：", "检查价格"),
-        v("请检查这 {count} 道菜的价格", "你的实际食材成本率高于目标。", "你的毛利在缩小", "按照当前原料价格，这些菜品赚得比你计划的少：", "调整我的菜品"),
+        v("{count} 道菜赚得没有你想的多", "成本上涨了，价格却没变。", "这些菜品的毛利正在流失", "这些菜品的成本已超过你核算时设定的目标。可能某种食材涨价了，而售价没变：", "检查价格"),
+        v("请检查这 {count} 道菜的价格", "你的实际食材成本率高于目标。", "你的毛利在缩小", "按照当前食材价格，这些菜品赚得比你计划的少：", "调整我的菜品"),
         v("注意 {count} 道菜的毛利", "每道菜的小差距，一个月就是一大笔。", "有些菜品值得调整", "每道菜的小差距乘以整个月，就是流失的钱。以下是偏离目标最多的菜品：", "查看我的配方"),
       ],
     },
     unused_feature: {
-      eyebrow: "你的方案",
+      eyebrow: "你的套餐",
       variants: [
-        v("你的方案包含{feature}，但你还没用过", "你已经拥有它，只差试一试。", "{feature}在等你", "你的 {plan} 方案包含<strong>{feature}</strong>，但你还没打开过。它是厨房里最省时间的功能之一。", "立即试用"),
-        v("你试过{feature}了吗？", "它已包含在你的 {plan} 方案中。", "充分利用你的方案", "使用 {plan} 方案，你已经拥有<strong>{feature}</strong>。如果不知道从哪里开始，该部分的教程会一步步引导你。", "打开{feature}"),
-        v("你方案中能为你节省数小时的功能", "{feature}，已包含在 {plan} 中。", "你拥有它，但还没用过", "很多老板很晚才发现<strong>{feature}</strong>，希望早点用上。它已经在你的 {plan} 方案中，随时可用。", "查看{feature}"),
+        v("你的套餐包含{feature}，但你还没用过", "你已经拥有它，只差试一试。", "{feature}在等你", "你的 {plan} 套餐包含<strong>{feature}</strong>，但你还没打开过。它是厨房里最省时间的功能之一。", "立即试用"),
+        v("你试过{feature}了吗？", "它已包含在你的 {plan} 套餐中。", "充分利用你的套餐", "使用 {plan} 套餐，你已经拥有<strong>{feature}</strong>。如果不知道从哪里开始，该部分的教程会一步步引导你。", "打开{feature}"),
+        v("你的套餐中能为你节省数小时的功能", "{feature}，已包含在 {plan} 中。", "你拥有它，但还没用过", "很多老板很晚才发现<strong>{feature}</strong>，希望早点用上。它已经在你的 {plan} 套餐中，随时可用。", "查看{feature}"),
       ],
     },
     milestone: {
@@ -525,7 +525,7 @@ export const ENGAGEMENT_COPY: Record<EmailLang, Record<EngagementType, Engagemen
       eyebrow: "你的商户",
       variants: [
         v("{business} 还没有配方", "从你最畅销的菜开始。", "你的商户已准备好迎接第一个配方", "你在 {days} 天前创建了<strong>{business}</strong>，但它还没有配方。添加你最畅销的菜，几分钟内就能看到真实成本。", "添加配方"),
-        v("继续完善 {business} 吗？", "一个配方就能看到真实成本。", "离拥有数据只差一步", "<strong>{business}</strong> 仍然是空的。如果你的仪表板中已有配方，可以连同原料一起迁移到这个商户。", "打开 {business}"),
+        v("继续完善 {business} 吗？", "一个配方就能看到真实成本。", "离拥有数据只差一步", "<strong>{business}</strong> 仍然是空的。如果你的仪表盘中已有配方，可以连同食材一起迁移到这个商户。", "打开 {business}"),
         v("{business} 在等你", "配方、成本和菜单集中在一处。", "让 {business} 动起来", "{days} 天前你创建了<strong>{business}</strong>。从一个配方开始：这是核算整份菜单成本的第一步。", "立即开始"),
       ],
     },

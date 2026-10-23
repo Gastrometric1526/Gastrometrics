@@ -211,7 +211,7 @@ export default {
         ["figure", "06-mis-recetas.jpg", "Mes Recettes : toutes vos recettes avec leur coût, leur rendement et des actions rapides."],
         ["list", [
           "<strong>Dupliquer</strong> crée une copie dans le même établissement, avec « (copie) » dans le nom.",
-          "<strong>Migrer</strong> copie la recette vers une autre de vos entreprises. Elle vous demande s'il faut emporter aussi ses ingrédients et sous-recettes (en réutilisant ceux qui existent déjà) ou seulement la recette : dans ce cas, sa fiche s'ouvre dans l'entreprise pour que vous choisissiez les ingrédients dans sa propre base (ceux qui portent le même nom sont liés automatiquement).",
+          "<strong>Migrer</strong> copie la recette vers un autre de vos établissements. Elle vous demande s'il faut emporter aussi ses ingrédients et sous-recettes (en réutilisant ceux qui existent déjà) ou seulement la recette : dans ce cas, sa fiche s'ouvre dans l'établissement pour que vous choisissiez les ingrédients dans sa propre base (ceux qui portent le même nom sont liés automatiquement).",
           "<strong>Supprimer</strong> l'envoie à la <strong>corbeille</strong>, où vous pouvez la récupérer pendant 30 jours avant sa suppression automatique.",
         ]],
       ],
@@ -393,7 +393,7 @@ export default {
       blocks: [
         ["figure", "11-reportes.jpg", "Rapports : vue d'ensemble de l'activité avec ses indicateurs et graphiques."],
         ["h3", "Vue d'ensemble"],
-        ["p", "Chiffres généraux, valeur de l'inventaire et produits en alerte, coût et marge moyens, recettes par classification, ingrédients les plus utilisés, recettes à la meilleure et à la pire marge, et l'historique de prix de chaque ingrédient avec sa variation."],
+        ["p", "Chiffres généraux, valeur de l'inventaire et produits en alerte, coût et marge moyens, recettes par classification, ingrédients les plus utilisés, recettes à la meilleure et à la pire marge, et l'historique de prix de chaque ingrédient avec sa variation. Le coût % et la marge se mesurent comme dans la fiche technique : hors taxe incluse dans le prix et après commission."],
         ["h3", "Finances"],
         ["p", "Si vous vendez des boissons, la carte <strong>Cuisine vs bar</strong> sépare les ventes, le coût théorique et le coût réel de chaque zone (chapitre 6). Compte de résultat (P&L), food cost théorique face au réel d'après vos ventes, variation des prix par fournisseur et <strong>Menu Engineering</strong>, qui classe chaque plat avec la méthode standard de Kasavana et Smith : il est populaire s'il vend au moins 70 % de sa part égale, et sa marge est élevée si sa marge par plat (prix − coût) dépasse la marge moyenne par plat vendu. Les pourcentages de coût, le Prime Cost et le compte de résultat se mesurent sur les ventes nettes, sans la taxe incluse dans les prix (comme dans la fiche technique) :"],
         ["table", ["Catégorie", "Popularité", "Marge", "Que faire"], [
@@ -455,7 +455,7 @@ export default {
           ["Home Cook", "15 $ / mois", "1", "1", "Pertes, commandes d'achat manuelles, fiche administrative, factures et mise à jour des prix depuis des tickets ou des listes."],
           ["Chef de Partie", "35 $ / mois", "1", "1", "Inventaire (avec comptage depuis une photo, un PDF ou Excel), menus, commandes suggérées, Rapports · Vue d'ensemble et saisie manuelle des ventes."],
           ["Sous Chef", "70 $ / mois", "2", "2", "Rapports · Finances, P&L, Menu Engineering, import de la caisse et Équipe (vous + 1 personne)."],
-          ["Chef Ejecutivo", "120 $ / mois", "5", "5", "Équipe jusqu'à 4 personnes en plus de vous. Disponible pour les entreprises, sur demande."],
+          ["Chef Ejecutivo", "120 $ / mois", "5", "5", "Équipe jusqu'à 4 personnes en plus de vous. Disponible pour les établissements, sur demande."],
         ]],
         ["p", "Si votre formule a une date d'expiration (par exemple, le mois de cuisine fondatrice), le menu latéral affiche le nombre de jours restants sous votre formule. Trois jours avant et le jour même, nous vous le rappelons dans l'application : vous pouvez choisir la formule à garder et <strong>programmer le paiement</strong>, prélevé le jour où votre formule expire. Votre formule ne change que lorsque Stripe confirme le paiement ; sinon, votre compte passe à Foodie et vous gardez toutes vos données."],
         ["info", "L'import est gratuit", "Importer vos recettes et ingrédients depuis du texte, Excel, un PDF (avec texte ou scanné), des photos ou des tickets est inclus dans tous les forfaits, Foodie compris, sans limite. Ce qui change avec le forfait, c'est ce que vous faites ensuite : dès Home Cook, vous pouvez mettre à jour le prix des ingrédients que vous avez déjà avec un ticket ou une liste, et dès Chef de Partie lire vos comptages d'inventaire."],
@@ -515,7 +515,7 @@ export default {
         ["cards", [
           ["Chaque lundi", "Résumé hebdomadaire", "Vos chiffres clés : food cost moyen, valeur du stock, produits sous le minimum et plats à faible marge."],
           ["Alerte", "Stock bas et marge", "Si un produit atteint son minimum ou si un plat ne respecte plus son objectif de food cost."],
-          ["Équipe", "Invitations et entreprises", "Si votre invité ne s'est pas connecté, ou si une nouvelle entreprise n'a toujours pas de recettes."],
+          ["Équipe", "Invitations et établissements", "Si votre invité ne s'est pas connecté, ou si un nouvel établissement n'a toujours pas de recettes."],
           ["Étapes", "Progrès et votre forfait", "Quand vous atteignez 10, 25 ou 50 recettes, et si votre forfait inclut quelque chose que vous n'avez pas encore essayé."],
         ]],
         ["p", "Nous n'envoyons jamais plus d'un rappel tous les quelques jours. Chaque e-mail contient un lien pour vous désabonner en un clic, ou vous pouvez décocher la case dans Paramètres → Notifications."],
