@@ -70,6 +70,7 @@ import {
   type RecipeDraft,
 } from "@/lib/storage/recipe-draft"
 import { formatDateTime } from "@/lib/date-format"
+import { paxMultiplierFor, refreshSnapshotLines, scaleLineQuantity, scaleRecipeLine } from "@/lib/pax-scaling"
 
 interface TechnicalSheetProps {
   mode: "new" | "view" | "edit"
@@ -523,14 +524,20 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     // en vez del rendimiento real ya declarado. Ver hallazgo: "modificador de PAX
     // no funciona" — daba números ~10x más altos de lo esperado.
     const baseYield = recipe.yieldAmount > 0 ? recipe.yieldAmount : recipe.servings || 1
-    const paxMultiplier = paxModifier > 0 ? paxModifier / baseYield : 1
-    const productionCost = recipe.ingredients.reduce((sum, ing) => sum + (ing.extension || 0), 0) * paxMultiplier
+    const paxMultiplier = paxMultiplierFor(paxModifier, baseYield)
+    // Con PAX activo, el costo se calcula con las MISMAS cantidades redondeadas que se
+    // guardan y salen en el PDF (lib/pax-scaling.ts, docs/189). Antes la pantalla usaba
+    // costo × multiplicador sin redondear y el costo/precio cambiaba un poco al guardar.
+    const productionCost = recipe.ingredients.reduce(
+      (sum, ing) => sum + ((paxMultiplier !== 1 ? scaleRecipeLine(ing, paxMultiplier).extension : ing.extension) || 0),
+      0,
+    )
 
     // Cantidad de cada ingrediente ya escalada al pax objetivo, redondeada hacia arriba
-    // (nunca quedarse corto en cocina) — precisión a 1 decimal para no distorsionar
-    // ingredientes de baja cantidad como especias. Ver 09-sesion-continuidad.md.
+    // (nunca quedarse corto en cocina) con un escalón según la unidad: 0.001 en kg/L/lb/gal,
+    // 0.1 en g/ml/oz/unidad (lib/pax-scaling.ts).
     const scaledIngredientQuantities = recipe.ingredients.map((ing) =>
-      paxMultiplier !== 1 ? Math.ceil(ing.quantity * paxMultiplier * 10) / 10 : ing.quantity,
+      scaleLineQuantity(ing.quantity, ing.unit, paxMultiplier),
     )
 
     const yieldByWeight =
@@ -764,10 +771,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     }
     const validIngredients = recipe.ingredients.filter((ing) => ing.ingredientId && ing.quantity > 0)
     const effectiveYield = recipe.yieldAmount > 0 ? recipe.yieldAmount : calculations.yieldByWeight
-    const scaledIngredients = validIngredients.map((ing) => {
-      const scaledQuantity = Math.ceil(ing.quantity * calculations.paxMultiplier * 10) / 10
-      return { ...ing, quantity: scaledQuantity, extension: scaledQuantity * (ing.unitCost || 0) }
-    })
+    const scaledIngredients = validIngredients.map((ing) => scaleRecipeLine(ing, calculations.paxMultiplier))
     onScaledPreviewChange({
       ...recipe,
       yieldAmount: effectiveYield * calculations.paxMultiplier,
@@ -1048,14 +1052,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       // handleRestoreOriginalSize más abajo.
       const paxIsActive = paxModifier > 0 && calculations.paxMultiplier !== 1
       const scaledIngredients = paxIsActive
-        ? validIngredients.map((ing) => {
-            const scaledQuantity = Math.ceil(ing.quantity * calculations.paxMultiplier * 10) / 10
-            return {
-              ...ing,
-              quantity: scaledQuantity,
-              extension: scaledQuantity * (ing.unitCost || 0),
-            }
-          })
+        ? validIngredients.map((ing) => scaleRecipeLine(ing, calculations.paxMultiplier))
         : validIngredients
       const scaledYieldAmount = paxIsActive ? effectiveYield * calculations.paxMultiplier : effectiveYield
       const originalSnapshot = paxIsActive
@@ -1262,7 +1259,9 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     setRecipe((prev) => ({
       ...prev,
       yieldAmount,
-      ingredients,
+      // Precios de hoy y unidad actual de cada ingrediente (docs/189): la copia original
+      // se congeló al escalar y no la toca la cascada de precios.
+      ingredients: refreshSnapshotLines(ingredients, availableIngredients),
       originalSnapshot: undefined,
     }))
     setPaxModifier(0)
@@ -1270,7 +1269,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       title: t("ficha_tecnica_toast_recipe_restored_title"),
       description: t("ficha_tecnica_toast_recipe_restored_desc"),
     })
-  }, [recipe.originalSnapshot, toast, t])
+  }, [recipe.originalSnapshot, availableIngredients, toast, t])
 
   const handleUnitProfitChange = useCallback((value: string) => {
     setCustomUnitProfitInput(value)

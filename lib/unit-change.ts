@@ -57,15 +57,24 @@ export function convertIngredientUnit(ingredient: Ingredient, newUnit: string, f
 /** Convierte las líneas de receta de un ingrediente. Devuelve solo las recetas que cambiaron. */
 export function convertRecipeLines(recipes: Recipe[], ingredientId: string, newUnit: string, f: number): Recipe[] {
   const changed: Recipe[] = []
+  const convert = (lines: Recipe["ingredients"]) =>
+    lines.map((line) =>
+      line.ingredientId === ingredientId
+        ? { ...line, quantity: round((line.quantity || 0) * f), unitCost: round((line.unitCost || 0) / f, 8), unit: newUnit }
+        : line,
+    )
   for (const recipe of recipes) {
-    if (!recipe.ingredients?.some((line) => line.ingredientId === ingredientId)) continue
+    const inLines = recipe.ingredients?.some((line) => line.ingredientId === ingredientId)
+    // La copia «receta original» del modificador de PAX también (docs/189): si no, al
+    // restaurarla la cantidad quedaba en la unidad vieja (0.2 kg leído como 0.2 g).
+    const inSnapshot = recipe.originalSnapshot?.ingredients?.some((line) => line.ingredientId === ingredientId)
+    if (!inLines && !inSnapshot) continue
     changed.push({
       ...recipe,
-      ingredients: recipe.ingredients.map((line) =>
-        line.ingredientId === ingredientId
-          ? { ...line, quantity: round((line.quantity || 0) * f), unitCost: round((line.unitCost || 0) / f, 8), unit: newUnit }
-          : line,
-      ),
+      ingredients: inLines ? convert(recipe.ingredients) : recipe.ingredients,
+      ...(inSnapshot && recipe.originalSnapshot
+        ? { originalSnapshot: { ...recipe.originalSnapshot, ingredients: convert(recipe.originalSnapshot.ingredients) } }
+        : {}),
     })
   }
   return changed

@@ -32,6 +32,66 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-23c",
+    tutorialHref: tourHref("ficha-tecnica"),
+    content: {
+      es: {
+        title: "Modificador de PAX más preciso",
+        items: [
+          "Ficha Técnica: al escalar a más o menos personas, las cantidades en kilos o litros se redondean al gramo o mililitro (antes 0.01 kg de sal podía salir 0.1 kg) y ya no suben un escalón de más por un error de decimales.",
+          "El costo y el precio que ves con el PAX activo son exactamente los que se guardan y salen en el PDF.",
+          "«Restaurar receta original» trae los precios de hoy, y respeta los cambios de unidad de tus ingredientes.",
+          "Órdenes de compra desde un menú: un plato con 0 porciones ya no se compra.",
+        ],
+      },
+      en: {
+        title: "More accurate PAX modifier",
+        items: [
+          "Recipe Sheet: when scaling to more or fewer people, quantities in kilos or liters are rounded to the gram or milliliter (0.01 kg of salt used to become 0.1 kg) and no longer go one step too high because of a decimal error.",
+          "The cost and price you see with PAX active are exactly the ones saved and printed in the PDF.",
+          "\"Restore original recipe\" brings today's prices and respects unit changes in your ingredients.",
+          "Purchase orders from a menu: a dish with 0 servings is no longer ordered.",
+        ],
+      },
+      da: {
+        title: "Mere præcis PAX-modifikator",
+        items: [
+          "Opskriftsark: når du skalerer til flere eller færre personer, rundes mængder i kilo eller liter til nærmeste gram eller milliliter (før kunne 0.01 kg salt blive til 0.1 kg), og de stiger ikke længere et trin for meget på grund af en decimalfejl.",
+          "Omkostningen og prisen, du ser med PAX aktiv, er præcis dem, der gemmes og vises i PDF'en.",
+          "»Gendan original opskrift« henter dagens priser og tager højde for enhedsændringer på dine ingredienser.",
+          "Indkøbsordrer fra en menu: en ret med 0 portioner bestilles ikke længere.",
+        ],
+      },
+      fr: {
+        title: "Modificateur de PAX plus précis",
+        items: [
+          "Fiche technique : en ajustant à plus ou moins de personnes, les quantités en kilos ou en litres sont arrondies au gramme ou au millilitre (avant, 0.01 kg de sel pouvait devenir 0.1 kg) et ne montent plus d'un cran de trop à cause d'une erreur de décimales.",
+          "Le coût et le prix affichés avec le PAX actif sont exactement ceux qui sont enregistrés et imprimés dans le PDF.",
+          "« Restaurer la recette originale » reprend les prix du jour et respecte les changements d'unité de vos ingrédients.",
+          "Bons de commande depuis un menu : un plat à 0 portion n'est plus commandé.",
+        ],
+      },
+      pt: {
+        title: "Modificador de PAX mais preciso",
+        items: [
+          "Ficha técnica: ao ajustar para mais ou menos pessoas, as quantidades em quilos ou litros são arredondadas ao grama ou mililitro (antes, 0.01 kg de sal podia virar 0.1 kg) e não sobem mais um degrau a mais por erro de decimais.",
+          "O custo e o preço que você vê com o PAX ativo são exatamente os que são salvos e saem no PDF.",
+          "«Restaurar receita original» traz os preços de hoje e respeita as mudanças de unidade dos seus ingredientes.",
+          "Ordens de compra a partir de um cardápio: um prato com 0 porções não é mais comprado.",
+        ],
+      },
+      zh: {
+        title: "人数调整器更精确",
+        items: [
+          "技术配方表：按人数放大或缩小时，以公斤或升计的用量会精确到克或毫升（以前 0.01 kg 的盐可能变成 0.1 kg），也不会再因小数误差多进一位。",
+          "人数调整器启用时看到的成本和价格，与保存后及 PDF 中的完全一致。",
+          "“恢复原始配方”会使用当前价格，并考虑食材单位的更改。",
+          "从菜单生成采购订单：份数为 0 的菜品不再采购。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-10-23b",
     tutorialHref: tourHref("estadisticas"),
     content: {

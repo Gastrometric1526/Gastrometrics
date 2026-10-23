@@ -127,7 +127,10 @@ export function buildPurchaseOrderData({
       warnings.push(`Recipe not found: ${recipeId}`)
       return
     }
-    const compax = compaxByRecipeId[recipeId] || 1
+    // `??`, no `||` (docs/189): un plato puesto en 0 porciones en el menú no se compra;
+    // con `||` el 0 se volvía 1 y pedía la receta completa.
+    const compax = compaxByRecipeId[recipeId] ?? 1
+    if (!(compax > 0)) return
     recipesSummary.push({ recipeId: recipe.id, recipeName: recipe.name, compax })
     accumulateRecipeConsumption(recipe, compax, recipesById, ingredientsById, accumulator, {
       grossUpMerma: true,

@@ -1074,7 +1074,7 @@ const translations = {
       "\"Paso\" es el momento del menú en que se sirve (Entrada, Plato Fuerte, Postre, etc.). \"Rendimiento\" es cuántas porciones produce la receta tal como está escrita. Este número es la base sobre la que se calcula todo lo demás, incluido el Modificador de PAX. Si el rendimiento no tiene sentido frente a la cantidad de algún ingrediente, te avisamos antes de que guardes.",
     tour_ficha_pax_title: "Modificador de PAX",
     tour_ficha_pax_desc:
-      "Escribe aquí cuántas personas quieres servir y la receta se escala automáticamente a partir del Rendimiento, ingredientes, costos y precio se recalculan solos, sin botón que apretar. Las cantidades ya escaladas aparecen debajo de cada ingrediente en la tabla.",
+      "Escribe aquí cuántas personas quieres servir y la receta se escala sola a partir del Rendimiento: ingredientes, costos y precio se recalculan sin apretar ningún botón. Las cantidades escaladas aparecen debajo de cada ingrediente y siempre se redondean hacia arriba: al gramo o mililitro en kg y L, y a 0.1 en g, ml, oz y unidades.",
     tour_ficha_ingredients_table_title: "Ingredientes de la receta",
     tour_ficha_ingredients_table_desc:
       "Agrega cada ingrediente con su cantidad. El costo por medida y la extensión (el costo total de ese ingrediente) se calculan solos con lo que ya cargaste en tu Base de Datos de Ingredientes.",
@@ -5163,7 +5163,7 @@ const translations = {
       "\"Course\" is when it's served in the menu (Starter, Main Course, Dessert, etc.). \"Yield\" is how many portions the recipe produces as written. This number is the base everything else is calculated from, including the PAX modifier. If the yield doesn't make sense against the quantity of some ingredient, we'll warn you before you save.",
     tour_ficha_pax_title: "PAX Modifier",
     tour_ficha_pax_desc:
-      "Type how many people you want to serve here and the recipe scales automatically from the Yield, ingredients, costs and price recalculate on their own, no button to press. The already-scaled quantities appear under each ingredient in the table.",
+      "Type how many people you want to serve and the recipe scales on its own from the Yield: ingredients, costs and price recalculate with no button to press. Scaled quantities appear under each ingredient and are always rounded up: to the gram or milliliter in kg and L, and to 0.1 in g, ml, oz and units.",
     tour_ficha_ingredients_table_title: "Recipe ingredients",
     tour_ficha_ingredients_table_desc:
       "Add each ingredient with its quantity. The cost per measure and the extension (that ingredient's total cost) are calculated for you from what you already entered in your Ingredient Database.",
@@ -9231,7 +9231,7 @@ const translations = {
     tour_ficha_paso_title: "Trin og udbytte",
     tour_ficha_paso_desc: "\"Trin\" er det tidspunkt i menuen, hvor retten serveres (forret, hovedret, dessert osv.). \"Udbytte\" er hvor mange portioner opskriften giver, som den er skrevet. Dette tal er grundlaget for alle andre beregninger, inklusive PAX-modifikatoren. Hvis udbyttet ikke giver mening i forhold til mængden af en ingrediens, advarer vi dig, før du gemmer.",
     tour_ficha_pax_title: "PAX-modifikator",
-    tour_ficha_pax_desc: "Skriv her, hvor mange personer du vil servere, og opskriften skaleres automatisk ud fra udbyttet, ingredienser, omkostninger og pris genberegnes af sig selv, uden nogen knap at trykke på. De allerede skalerede mængder vises under hver ingrediens i tabellen.",
+    tour_ficha_pax_desc: "Skriv, hvor mange personer du vil servere, og opskriften skaleres af sig selv ud fra udbyttet: ingredienser, omkostninger og pris genberegnes uden at trykke på nogen knap. De skalerede mængder vises under hver ingrediens og rundes altid op: til nærmeste gram eller milliliter i kg og L, og til 0.1 i g, ml, oz og stk.",
     tour_ficha_ingredients_table_title: "Opskriftens ingredienser",
     tour_ficha_ingredients_table_desc: "Tilføj hver ingrediens med sin mængde. Prisen pr. mål og den samlede pris for ingrediensen beregnes automatisk ud fra det, du allerede har lagt ind i din ingrediensdatabase.",
     tour_ficha_pricing_title: "Beregning af salgspris",
@@ -13288,7 +13288,7 @@ const translations = {
     tour_ficha_paso_title: "Étape et rendement",
     tour_ficha_paso_desc: "« Étape » est le moment du menu où le plat est servi (Entrée, Plat principal, Dessert, etc.). « Rendement » correspond au nombre de portions produites par la recette telle qu'écrite. Ce nombre est la base de tous les autres calculs, y compris le modificateur de PAX. Si le rendement n'a pas de sens par rapport à la quantité d'un ingrédient, nous vous prévenons avant l'enregistrement.",
     tour_ficha_pax_title: "Modificateur de PAX",
-    tour_ficha_pax_desc: "Indiquez ici combien de personnes vous souhaitez servir et la recette se met à l'échelle automatiquement à partir du Rendement, les ingrédients, les coûts et le prix se recalculent seuls, sans bouton à presser. Les quantités déjà mises à l'échelle apparaissent sous chaque ingrédient du tableau.",
+    tour_ficha_pax_desc: "Indiquez combien de personnes vous voulez servir et la recette s'ajuste seule à partir du Rendement : ingrédients, coûts et prix se recalculent sans appuyer sur aucun bouton. Les quantités ajustées apparaissent sous chaque ingrédient et sont toujours arrondies au-dessus : au gramme ou au millilitre en kg et L, et à 0.1 en g, ml, oz et unités.",
     tour_ficha_ingredients_table_title: "Ingrédients de la recette",
     tour_ficha_ingredients_table_desc: "Ajoutez chaque ingrédient avec sa quantité. Le coût par mesure et l'extension (le coût total de cet ingrédient) se calculent automatiquement à partir de votre base de données d'ingrédients.",
     tour_ficha_pricing_title: "Calcul du prix de vente",
@@ -17347,7 +17347,7 @@ const translations = {
     tour_ficha_paso_title: "Etapa e Rendimento",
     tour_ficha_paso_desc: "\"Etapa\" é o momento do cardápio em que é servida (Entrada, Prato Principal, Sobremesa, etc.). \"Rendimento\" é quantas porções a receita produz do jeito que está escrita. Esse número é a base sobre a qual tudo o mais é calculado, incluindo o Modificador de PAX. Se o rendimento não fizer sentido em relação à quantidade de algum ingrediente, a gente avisa antes de você salvar.",
     tour_ficha_pax_title: "Modificador de PAX",
-    tour_ficha_pax_desc: "Escreva aqui quantas pessoas você quer servir e a receita se ajusta automaticamente a partir do Rendimento, ingredientes, custos e preço se recalculam sozinhos, sem botão para apertar. As quantidades já ajustadas aparecem abaixo de cada ingrediente na tabela.",
+    tour_ficha_pax_desc: "Escreva quantas pessoas você quer servir e a receita se ajusta sozinha a partir do Rendimento: ingredientes, custos e preço se recalculam sem apertar nenhum botão. As quantidades ajustadas aparecem abaixo de cada ingrediente e sempre são arredondadas para cima: ao grama ou mililitro em kg e L, e a 0.1 em g, ml, oz e unidades.",
     tour_ficha_ingredients_table_title: "Ingredientes da receita",
     tour_ficha_ingredients_table_desc: "Adicione cada ingrediente com sua quantidade. O custo por medida e a extensão (o custo total daquele ingrediente) são calculados sozinhos com o que você já cadastrou no seu Banco de Dados de Ingredientes.",
     tour_ficha_pricing_title: "Cálculo do Preço de Venda",
@@ -21390,7 +21390,7 @@ const translations = {
     tour_ficha_paso_title: "阶段与产量",
     tour_ficha_paso_desc: "“阶段”指该菜品在菜单中上桌的时机（前菜、主菜、甜点等）。“产量”指按当前配方制作出的份数，此数字是所有其他计算（包括人数调整器）的基础。如果产量与某个食材的用量明显不符，保存前我们会提醒你。",
     tour_ficha_pax_title: "人数调整器",
-    tour_ficha_pax_desc: "在此填写你想要供应的人数，配方会根据产量自动按比例调整，食材、成本和价格都会自动重新计算，无需点击任何按钮。已调整的用量会显示在表格中每种食材下方。",
+    tour_ficha_pax_desc: "在此填写你想要供应的人数，配方会根据产量自动缩放：食材、成本和价格都会自动重新计算，无需点击任何按钮。缩放后的用量显示在每种食材下方，并始终向上取整：kg 和 L 精确到克或毫升，g、ml、oz 和个精确到 0.1。",
     tour_ficha_ingredients_table_title: "配方食材",
     tour_ficha_ingredients_table_desc: "添加每种食材及其用量，单位成本和该食材的总成本会根据你已录入食材数据库中的信息自动计算。",
     tour_ficha_pricing_title: "销售价格计算",
