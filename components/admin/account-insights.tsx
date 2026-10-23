@@ -947,7 +947,9 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
               <div className="grid grid-cols-2 gap-3">
                 <Field label={t("admin_insights_referral_code")} value={referral.code} />
                 <Field label={t("admin_insights_referral_invited_by")} value={referral.invitedBy || "—"} />
+                <Field label={t("admin_insights_referral_sent")} value={String(referral.sent)} />
                 <Field label={t("admin_insights_referral_invites")} value={String(referral.invites.length)} />
+                <Field label={t("admin_insights_referral_active")} value={String(referral.active)} />
                 <Field
                   label={t("admin_insights_referral_rewards")}
                   value={`${referral.rewardsEarned} (${referral.rewardsThisYear}/12)`}

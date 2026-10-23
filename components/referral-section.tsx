@@ -44,10 +44,15 @@ export function ReferralSection({ data, failed }: { data: ReferralOverview | nul
   const [rulesOpen, setRulesOpen] = useState(false)
 
   const shareText = data ? t("invita_share_message").replace("{link}", data.link) : ""
+  // Cuenta cada invitación enviada para /admin (docs/186). Nunca bloquea el botón.
+  const track = (channel: "copy" | "whatsapp" | "email" | "remind") => {
+    fetch("/api/referral/share", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ channel }), keepalive: true }).catch(() => {})
+  }
   const copy = async () => {
     if (!data) return
     try {
       await navigator.clipboard.writeText(data.link)
+      track("copy")
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
@@ -105,13 +110,13 @@ export function ReferralSection({ data, failed }: { data: ReferralOverview | nul
             </div>
             <div className="flex flex-wrap gap-2">
               <Button asChild variant="outline" size="sm" className="gap-2" disabled={!data}>
-                <a href={`https://wa.me/?text=${encodeURIComponent(shareText)}`} target="_blank" rel="noopener noreferrer">
+                <a href={`https://wa.me/?text=${encodeURIComponent(shareText)}`} target="_blank" rel="noopener noreferrer" onClick={() => track("whatsapp")}>
                   <MessageCircle className="h-4 w-4" />
                   {t("invita_share_whatsapp")}
                 </a>
               </Button>
               <Button asChild variant="outline" size="sm" className="gap-2" disabled={!data}>
-                <a href={`mailto:?subject=${encodeURIComponent(t("invita_share_subject"))}&body=${encodeURIComponent(shareText)}`}>
+                <a href={`mailto:?subject=${encodeURIComponent(t("invita_share_subject"))}&body=${encodeURIComponent(shareText)}`} onClick={() => track("email")}>
                   <Mail className="h-4 w-4" />
                   {t("invita_share_email")}
                 </a>
@@ -166,7 +171,7 @@ export function ReferralSection({ data, failed }: { data: ReferralOverview | nul
                 </Badge>
                 {invite.status === "registered" && (
                   <Button asChild variant="ghost" size="sm" className="gap-1">
-                    <a href={remindUrl(invite.name)} target="_blank" rel="noopener noreferrer">
+                    <a href={remindUrl(invite.name)} target="_blank" rel="noopener noreferrer" onClick={() => track("remind")}>
                       <MessageCircle className="h-4 w-4" />
                       {t("invita_remind")}
                     </a>

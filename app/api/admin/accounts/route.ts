@@ -27,6 +27,7 @@ import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
 import { plans } from "@/lib/plans"
+import { referralCountsFor } from "@/lib/services/referrals"
 
 const PAGE_SIZE = 25
 const PLAN_ORDER = new Map(plans.map((plan, index) => [plan.slug, index]))
@@ -196,6 +197,11 @@ export async function GET(request: Request) {
       importSummaryByUser.set(row.owner_id, prev)
     }
 
+    // Invitaciones de referidos por cuenta (docs/186): enviadas, cuentas creadas y activas.
+    const referralCounts = await referralCountsFor(pageUsers.map((u) => u.id)).catch((e) => {
+      console.error("[api/admin/accounts] Error contando invitaciones:", e)
+      return new Map()
+    })
     const accounts = pageUsers.map((u) => ({
       userId: u.id,
       email: u.email,
@@ -205,6 +211,9 @@ export async function GET(request: Request) {
       planExpiresAt: planByUser.get(u.id)?.plan_expires_at || null,
       businessCount: businessCountByUser.get(u.id) || 0,
       teamMemberCount: teamCountByUser.get(u.id) || 0,
+      referralSent: referralCounts.get(u.id)?.sent || 0,
+      referralCreated: referralCounts.get(u.id)?.created || 0,
+      referralActive: referralCounts.get(u.id)?.active || 0,
       recipeCount: recipeCountByUser.get(u.id) || 0,
       ingredientCount: ingredientCountByUser.get(u.id) || 0,
       posImportCount: importSummaryByUser.get(u.id)?.posCount || 0,

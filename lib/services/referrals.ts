@@ -457,8 +457,11 @@ export async function adminReferralSummary(accountId: string, now = Date.now()) 
     invites.push({ email: invitee?.email ?? null, status: referral?.status ?? "—", registeredAt: referral?.at ?? pair.at })
   }
   const rewards = (info?.meta.referral_rewards as RewardRecord[] | undefined) || []
+  const counts = (await referralCountsFor([accountId])).get(accountId) || { sent: 0, created: 0, active: 0 }
   return {
     code: referralCodeFor(accountId),
+    sent: counts.sent,
+    active: counts.active,
     invitedBy,
     invitedStatus: own?.status ?? null,
     giftAt: own?.giftAt ?? null,
@@ -467,4 +470,53 @@ export async function adminReferralSummary(accountId: string, now = Date.now()) 
     rewardsThisYear: rewardsInLastYear(rewards, now),
     bankDays: Number(info?.meta.referral_bank_days) || 0,
   }
+}
+
+// ─── Invitaciones enviadas (docs/186) ───
+
+export const REFERRAL_SHARE_CHANNELS = ["copy", "whatsapp", "email", "remind"] as const
+export type ReferralShareChannel = (typeof REFERRAL_SHARE_CHANNELS)[number]
+const SHARE_EVENT = "referral_share"
+
+/** Cada vez que alguien copia su enlace o lo manda por WhatsApp/correo (o le recuerda a un invitado). */
+export async function recordReferralShare(accountId: string, channel: ReferralShareChannel): Promise<void> {
+  const { error } = await getSupabaseAdminClient().from("product_events").insert({ event_name: SHARE_EVENT, business_id: `${accountId}:${channel}` } as never)
+  if (error) console.error("[referrals] No se pudo registrar la invitación enviada:", error)
+}
+
+export interface ReferralCounts {
+  /** Veces que compartió su enlace (copiar, WhatsApp, correo). */
+  sent: number
+  /** Cuentas creadas con su enlace. */
+  created: number
+  /** De esas, las que ya empezaron (receta con costo o plan pagado) o le dieron su mes. */
+  active: number
+}
+
+/** Conteos de invitaciones por cuenta, para /admin. */
+export async function referralCountsFor(accountIds: string[]): Promise<Map<string, ReferralCounts>> {
+  const out = new Map<string, ReferralCounts>()
+  if (!accountIds.length) return out
+  const wanted = new Set(accountIds)
+  const get = (id: string) => out.get(id) || (out.set(id, { sent: 0, created: 0, active: 0 }), out.get(id)!)
+  const { data, error } = await getSupabaseAdminClient().from("product_events").select("event_name, business_id").in("event_name", [SHARE_EVENT, EVENT])
+  if (error) throw error
+  const rows = (data ?? []) as unknown as { event_name: string; business_id: string | null }[]
+  const invitees: { referrerId: string; inviteeId: string }[] = []
+  for (const r of rows) {
+    const [a, b] = (r.business_id || "").split(":")
+    if (!a || !wanted.has(a)) continue
+    if (r.event_name === SHARE_EVENT && b !== "remind") get(a).sent++
+    if (r.event_name === EVENT && b) {
+      get(a).created++
+      invitees.push({ referrerId: a, inviteeId: b })
+    }
+  }
+  await Promise.all(
+    invitees.map(async ({ referrerId, inviteeId }) => {
+      const status = ((await getMeta(inviteeId))?.meta.referral as InviteeReferral | undefined)?.status
+      if (status === "active" || status === "rewarded") get(referrerId).active++
+    }),
+  )
+  return out
 }

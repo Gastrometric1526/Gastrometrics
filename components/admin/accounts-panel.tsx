@@ -42,6 +42,7 @@ import {
   Copy,
   Check,
   LifeBuoy,
+  Gift,
 } from "lucide-react"
 import { formatDate, formatDateTime } from "@/lib/date-format"
 
@@ -59,6 +60,10 @@ interface AccountRow {
   planExpiresAt: string | null
   businessCount: number
   teamMemberCount: number
+  /** Invitaciones de referidos (docs/186). */
+  referralSent: number
+  referralCreated: number
+  referralActive: number
   recipeCount: number
   ingredientCount: number
   posImportCount: number
@@ -968,6 +973,7 @@ export function AccountsPanel() {
             <TableHeader>
               <TableRow>
                 <TableHead>{t("admin_accounts_table_email")}</TableHead>
+                <TableHead>{t("admin_accounts_table_last_online")}</TableHead>
                 <TableHead>
                   <Globe className="h-3.5 w-3.5 inline mr-1" />
                   {t("admin_accounts_table_country")}
@@ -984,6 +990,10 @@ export function AccountsPanel() {
                 <TableHead>
                   <Users className="h-3.5 w-3.5 inline mr-1" />
                   {t("admin_accounts_table_team")}
+                </TableHead>
+                <TableHead>
+                  <Gift className="h-3.5 w-3.5 inline mr-1" />
+                  {t("admin_accounts_table_invites")}
                 </TableHead>
                 <TableHead>
                   <FileText className="h-3.5 w-3.5 inline mr-1" />
@@ -1003,7 +1013,7 @@ export function AccountsPanel() {
               {loadingList && accounts.length === 0
                 ? Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={`skeleton-${i}`}>
-                      {Array.from({ length: 12 }).map((__, j) => (
+                      {Array.from({ length: 14 }).map((__, j) => (
                         <TableCell key={j}>
                           <Skeleton className="h-4 w-full" />
                         </TableCell>
@@ -1032,6 +1042,16 @@ export function AccountsPanel() {
                           {a.email}
                         </span>
                       </TableCell>
+                      {/* Última vez en línea, visible (antes solo en el título del punto). */}
+                      <TableCell className="whitespace-nowrap text-muted-foreground">
+                        {presenceByUserId[a.userId]?.online ? (
+                          <span className="font-medium text-green-600">{t("admin_accounts_online")}</span>
+                        ) : presenceByUserId[a.userId]?.lastSeenAt ? (
+                          formatDateTime(presenceByUserId[a.userId]!.lastSeenAt as string)
+                        ) : (
+                          <span className="text-xs">{t("admin_accounts_never_seen")}</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-muted-foreground">
                         {countryName(a.country) || (
                           <span className="text-xs">{t("admin_accounts_no_country")}</span>
@@ -1053,6 +1073,18 @@ export function AccountsPanel() {
                       <TableCell className="text-muted-foreground">{getPlanBySlug(a.planSlug).name}</TableCell>
                       <TableCell className="text-muted-foreground">{a.businessCount}</TableCell>
                       <TableCell className="text-muted-foreground">{a.teamMemberCount}</TableCell>
+                      <TableCell className="whitespace-nowrap text-muted-foreground">
+                        {a.referralSent || a.referralCreated ? (
+                          <span title={t("admin_accounts_invites_title")}>
+                            {t("admin_accounts_invites_cell")
+                              .replace("{sent}", String(a.referralSent))
+                              .replace("{created}", String(a.referralCreated))
+                              .replace("{active}", String(a.referralActive))}
+                          </span>
+                        ) : (
+                          <span className="text-xs">—</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-muted-foreground">{a.recipeCount}</TableCell>
                       <TableCell className="text-muted-foreground">{a.ingredientCount}</TableCell>
                       <TableCell className="text-muted-foreground">
