@@ -24,6 +24,7 @@ import { AnimatedNumber } from "@/components/animated-number"
 import { LandingAdminPdfPreview } from "@/components/landing-admin-pdf-preview"
 import { LandingRecipeDemo } from "@/components/landing-recipe-demo"
 import { LandingReferralSection } from "@/components/landing-referral-section"
+import { LandingAppTour, LandingPriceStory, LandingInContext } from "@/components/landing-showcase"
 import {
   ChefHat,
   Calculator,
@@ -31,8 +32,6 @@ import {
   ArrowRight,
   Star,
   CheckCircle2,
-  Smartphone,
-  Download,
   UtensilsCrossed,
   Store,
   Building2,
@@ -121,7 +120,7 @@ export function HomeContent() {
   const sources = ["landing_source1", "landing_source2", "landing_source3", "landing_source4"] as const
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="gm-landing-root min-h-screen bg-background">
       <MarketingHeader />
 
       <main>
@@ -172,6 +171,10 @@ export function HomeContent() {
           </div>
         </section>
 
+        {/* Mira por dentro (docs/193): la app real con un restaurante de ejemplo, que se
+            recorre sola y también se toca — antes de pedir la cuenta. */}
+        <LandingAppTour />
+
         {/* Tus primeros 10 minutos (docs/147) — el mismo camino que "Tu camino" del
             Dashboard: quien llega sabe exactamente qué va a hacer al crear la cuenta y
             cuánto le toma (reduce el esfuerzo percibido). Reemplaza los "tres pasos" que
@@ -202,6 +205,10 @@ export function HomeContent() {
         </section>
 
         <LandingRecipeDemo />
+
+        {/* Cambias un precio, lo demás se ajusta solo (docs/193): la regla real de docs/162
+            contada al hacer scroll. */}
+        <LandingPriceStory />
 
         {/* La fuga invisible — el mejor gancho (docs/03), ahora con la cifra más fuerte
             de la ex-sección "Investigación" incrustada como dato de apoyo en vez de
@@ -318,34 +325,10 @@ export function HomeContent() {
           </div>
         </section>
 
-        {/* Sección propia y visible de la app instalable — pedido explícito del dueño
-            del proyecto: antes esto solo vivía en un punto chico del hero ("Instalable
-            en tu celular") y en una respuesta de FAQ colapsada por default, ninguna de
-            las dos lo suficientemente explícita. */}
-        <section className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-20">
-          <div className="rounded-2xl border border-hairline bg-canvas-alt px-6 py-8 md:px-10 md:py-10 grid grid-cols-1 md:grid-cols-[auto_1fr] gap-6 md:gap-10 items-center">
-            <div className="w-14 h-14 rounded-2xl bg-primary-soft flex items-center justify-center shrink-0">
-              <Smartphone className="h-7 w-7 text-primary" />
-            </div>
-            <div className="space-y-3">
-              <p className="text-xs font-medium uppercase tracking-[0.14em] text-primary">{t("landing_mobile_kicker")}</p>
-              <h2 className="text-2xl md:text-3xl font-semibold tracking-[-0.02em] text-foreground leading-[1.15]">
-                {t("landing_mobile_title")}
-              </h2>
-              <p className="text-text-3 max-w-xl">{t("landing_mobile_desc")}</p>
-              <ul className="text-sm text-text-3 space-y-1.5 pt-1">
-                <li className="flex items-start gap-2">
-                  <Download className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                  <span>{t("landing_mobile_step_android")}</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Download className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                  <span>{t("landing_mobile_step_ios")}</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </section>
+        {/* Donde estés (docs/193): personas usándola en la cocina, el mercado y fuera del
+            trabajo, con la app en el teléfono. Incluye cómo instalarla — antes era una sección
+            aparte solo de texto (pedido del dueño de que la app instalable se vea). */}
+        <LandingInContext />
 
         {/* ¿Qué plan le sirve a cada negocio? (docs/145) — pedido del dueño: decir qué
             funciones encajan con cada tipo de negocio según el plan. Las funciones

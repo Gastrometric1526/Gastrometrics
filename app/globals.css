@@ -448,3 +448,27 @@
     opacity: 1;
   }
 }
+
+/* Landing «Mira por dentro» (docs/193, components/landing-showcase.tsx). Solo transform/opacity. */
+@keyframes gm-kenburns {
+  from { transform: scale(1); }
+  to { transform: scale(1.045); }
+}
+@keyframes gm-phone-scroll {
+  0%, 14% { transform: translateY(0); }
+  86%, 100% { transform: translateY(var(--gm-travel, 0)); }
+}
+@keyframes gm-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.gm-fade-up { animation: fadeInUp 0.45s ease-out both; }
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .gm-anim { animation: none !important; transition: none !important; }
+}
+/* El contenedor general de app/layout.tsx tiene overflow-y:auto, que rompe position:sticky
+   (la historia de precios de la landing deja su panel fijo al hacer scroll). Solo cuando ese
+   contenedor tiene la landing adentro se cambia a clip, que no crea contenedor de scroll. */
+div:has(> .gm-landing-root) { overflow-x: clip; overflow-y: visible; }
