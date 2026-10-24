@@ -23,6 +23,7 @@ import { Resend } from "resend"
 import { sendWithRetry } from "@/lib/services/send-email"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { selectAll } from "@/lib/admin/select-all"
 import { normalizeEmailLang } from "@/lib/i18n/email-labels"
 import {
   CHANGELOG,
@@ -49,10 +50,10 @@ async function getOptedInAccounts() {
     page += 1
   }
 
-  const { data: profileRows, error: profilesError } = await admin
-    .from("profiles")
-    .select("id, preferred_language, product_updates_opt_in")
-    .eq("product_updates_opt_in", true)
+  const { data: profileRows, error: profilesError } = await selectAll<{ id: string; preferred_language: string | null; product_updates_opt_in: boolean }>(
+    (from, to) =>
+      admin.from("profiles").select("id, preferred_language, product_updates_opt_in").eq("product_updates_opt_in", true).order("id").range(from, to),
+  )
   if (profilesError) throw profilesError
 
   const optedInIds = new Set((profileRows ?? []).map((r) => r.id))

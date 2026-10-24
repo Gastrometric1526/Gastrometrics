@@ -8,6 +8,7 @@
 
 import type { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { fetchAllPages } from "@/lib/services/notify-reengagement"
+import { selectAll } from "@/lib/admin/select-all"
 import { plans as PLAN_CATALOG } from "@/lib/plans"
 import type { MetricAccount } from "@/lib/activation-metrics"
 
@@ -29,7 +30,9 @@ export async function loadAdminMetricAccounts(admin: ReturnType<typeof getSupaba
   }
 
   const paidSlugs = new Set(PLAN_CATALOG.filter((p) => p.priceUsdCents > 0).map((p) => p.slug))
-  const { data: plans, error: plansError } = await admin.from("account_plans").select("account_id, plan_slug, stripe_subscription_id")
+  const { data: plans, error: plansError } = await selectAll<{ account_id: string; plan_slug: string; stripe_subscription_id: string | null }>((from, to) =>
+    admin.from("account_plans").select("account_id, plan_slug, stripe_subscription_id").order("account_id").range(from, to),
+  )
   if (plansError) throw plansError
   const paying = new Set((plans ?? []).filter((p) => paidSlugs.has(p.plan_slug) && p.stripe_subscription_id).map((p) => p.account_id))
 

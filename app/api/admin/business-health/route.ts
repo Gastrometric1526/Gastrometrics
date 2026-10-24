@@ -26,6 +26,7 @@
 import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { selectAll } from "@/lib/admin/select-all"
 
 const DORMANT_DAYS = 30
 const DORMANT_MS = DORMANT_DAYS * 24 * 60 * 60 * 1000
@@ -40,8 +41,12 @@ export async function GET() {
 
     const [{ data: businessRows, error: businessError }, { data: activityRows, error: activityError }] =
       await Promise.all([
-        admin.from("businesses").select("id, name, owner_id, created_at, data"),
-        admin.from("activity_log").select("business_id, created_at").not("business_id", "is", null),
+        selectAll<{ id: string; name: string; owner_id: string; created_at: string; data: unknown }>((from, to) =>
+          admin.from("businesses").select("id, name, owner_id, created_at, data").order("id").range(from, to),
+        ),
+        selectAll<{ business_id: string; created_at: string }>((from, to) =>
+          admin.from("activity_log").select("business_id, created_at").not("business_id", "is", null).order("id").range(from, to),
+        ),
       ])
     if (businessError) throw businessError
     if (activityError) throw activityError

@@ -28,6 +28,7 @@
 import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { selectAll } from "@/lib/admin/select-all"
 import { plans } from "@/lib/plans"
 import { COUNTRIES } from "@/lib/types/user"
 
@@ -71,11 +72,15 @@ export async function GET() {
       salesImportRowsResult,
     ] = await Promise.all([
       admin.from("businesses").select("id", { count: "exact", head: true }),
-      admin.from("account_plans").select("account_id, plan_slug, plan_expires_at, stripe_subscription_id"),
-      admin.from("team_members").select("owner_id"),
-      admin.from("profiles").select("nationality"),
-      admin.from("user_presence").select("total_active_seconds"),
-      admin.from("sales_imports").select("owner_id, data"),
+      selectAll<{ account_id: string; plan_slug: string; plan_expires_at: string | null; stripe_subscription_id: string | null }>((from, to) =>
+        admin.from("account_plans").select("account_id, plan_slug, plan_expires_at, stripe_subscription_id").order("account_id").range(from, to),
+      ),
+      selectAll<{ owner_id: string }>((from, to) => admin.from("team_members").select("owner_id").order("id").range(from, to)),
+      selectAll<{ nationality: string | null }>((from, to) => admin.from("profiles").select("nationality").order("id").range(from, to)),
+      selectAll<{ total_active_seconds: number | null }>((from, to) =>
+        admin.from("user_presence").select("total_active_seconds").order("user_id").range(from, to),
+      ),
+      selectAll<{ owner_id: string; data: unknown }>((from, to) => admin.from("sales_imports").select("owner_id, data").order("id").range(from, to)),
     ])
 
     const planCounts: Record<string, number> = {}

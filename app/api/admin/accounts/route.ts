@@ -25,6 +25,7 @@
 import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { selectAll } from "@/lib/admin/select-all"
 import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
 import { plans } from "@/lib/plans"
 import { referralCountsFor } from "@/lib/services/referrals"
@@ -66,9 +67,13 @@ export async function GET(request: Request) {
     }
 
     const [{ data: allPlanRows }, { data: allProfileRows }, { data: allPresenceRows }] = await Promise.all([
-      admin.from("account_plans").select("account_id, plan_slug, plan_expires_at, stripe_subscription_id"),
-      admin.from("profiles").select("id, nationality"),
-      admin.from("user_presence").select("user_id, total_active_seconds"),
+      selectAll<{ account_id: string; plan_slug: string; plan_expires_at: string | null; stripe_subscription_id: string | null }>((from, to) =>
+        admin.from("account_plans").select("account_id, plan_slug, plan_expires_at, stripe_subscription_id").order("account_id").range(from, to),
+      ),
+      selectAll<{ id: string; nationality: string | null }>((from, to) => admin.from("profiles").select("id, nationality").order("id").range(from, to)),
+      selectAll<{ user_id: string; total_active_seconds: number | null }>((from, to) =>
+        admin.from("user_presence").select("user_id, total_active_seconds").order("user_id").range(from, to),
+      ),
     ])
     const planByUser = new Map(allPlanRows?.map((r) => [r.account_id, r]) ?? [])
     const countryByUser = new Map(allProfileRows?.map((r) => [r.id, r.nationality || null]) ?? [])

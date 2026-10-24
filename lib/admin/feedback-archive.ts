@@ -7,11 +7,14 @@
  */
 
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { selectAll } from "@/lib/admin/select-all"
 
 export const ARCHIVED_EVENT = "feedback_archived"
 
 export async function getArchivedFeedbackIds(): Promise<string[]> {
-  const { data, error } = await getSupabaseAdminClient().from("product_events").select("business_id").eq("event_name", ARCHIVED_EVENT)
+  const { data, error } = await selectAll((from, to) =>
+    getSupabaseAdminClient().from("product_events").select("business_id").eq("event_name", ARCHIVED_EVENT).order("id").range(from, to),
+  )
   if (error) throw error
   const rows = (data ?? []) as unknown as { business_id: string | null }[] // product_events no está en types/database.ts
   return rows.map((r) => r.business_id).filter((id): id is string => Boolean(id))

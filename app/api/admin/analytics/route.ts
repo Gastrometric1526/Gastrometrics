@@ -11,6 +11,7 @@
 import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { selectAll } from "@/lib/admin/select-all"
 
 export async function GET() {
   if (!(await hasAdminSession())) {
@@ -25,18 +26,24 @@ export async function GET() {
 
     const [{ count: totalAllTime }, last30dRows, eventRows, profileRows] = await Promise.all([
       admin.from("page_views").select("id", { count: "exact", head: true }),
-      admin.from("page_views").select("path, created_at, language").gte("created_at", since30d),
+      selectAll<{ path: string; created_at: string; language: string | null }>((from, to) =>
+        admin.from("page_views").select("path, created_at, language").gte("created_at", since30d).order("id").range(from, to),
+      ),
       // Eventos de embudo (ver supabase/migrations/0029_product_events.sql) — no falla
       // toda la ruta si la tabla todavía no existe (migración sin correr): se pide
       // aparte y se ignora el error acá, no en el Promise.all de arriba.
-      admin.from("product_events").select("event_name").gte("created_at", since30d),
+      selectAll<{ event_name: string }>((from, to) =>
+        admin.from("product_events").select("event_name").gte("created_at", since30d).order("id").range(from, to),
+      ),
       // Perfil de negocios — pedido explícito del dueño del proyecto: ver en /admin
       // qué contestó la gente en el cuestionario del registro (paso 3 de
       // app/signup/page.tsx: tipo/tamaño de negocio, experiencia) y de dónde son
       // (nationality). Todas las cuentas reales tienen esto (obligatorio en el
       // registro desde el principio), así que se trae completo, no solo 30 días —
       // es la composición actual de la base, no una tendencia reciente.
-      admin.from("profiles").select("business_type, business_size, industry_experience, nationality"),
+      selectAll<{ business_type: string | null; business_size: string | null; industry_experience: string | null; nationality: string | null }>((from, to) =>
+        admin.from("profiles").select("business_type, business_size, industry_experience, nationality").order("id").range(from, to),
+      ),
     ])
 
     const rows = last30dRows.data ?? []

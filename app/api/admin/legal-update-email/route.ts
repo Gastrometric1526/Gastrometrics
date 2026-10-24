@@ -15,6 +15,7 @@
 import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { selectAll } from "@/lib/admin/select-all"
 import { normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { sendLegalUpdateNotice } from "@/lib/services/notify-legal-update"
 
@@ -34,7 +35,9 @@ async function getAllAccountsWithLanguage() {
     page += 1
   }
 
-  const { data: profileRows, error: profilesError } = await admin.from("profiles").select("id, preferred_language")
+  const { data: profileRows, error: profilesError } = await selectAll<{ id: string; preferred_language: string | null }>((from, to) =>
+    admin.from("profiles").select("id, preferred_language").order("id").range(from, to),
+  )
   if (profilesError) throw profilesError
   const langById = new Map((profileRows ?? []).map((r) => [r.id, r.preferred_language]))
 
@@ -53,10 +56,9 @@ export async function GET() {
     // Cuántos YA lo recibieron, para que el panel muestre "N de M pendientes" en vez
     // de un número que siempre parece "todos otra vez" tras la primera corrida.
     const admin = getSupabaseAdminClient()
-    const { data: alreadySentRows, error: alreadySentError } = await admin
-      .from("activation_emails_sent")
-      .select("account_id")
-      .eq("email_type", "legal_update_notice")
+    const { data: alreadySentRows, error: alreadySentError } = await selectAll<{ account_id: string }>((from, to) =>
+      admin.from("activation_emails_sent").select("account_id").eq("email_type", "legal_update_notice").order("id").range(from, to),
+    )
     if (alreadySentError) throw alreadySentError
     const alreadySentIds = new Set((alreadySentRows ?? []).map((r) => r.account_id))
 

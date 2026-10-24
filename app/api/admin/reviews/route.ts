@@ -7,6 +7,7 @@
 import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { selectAll } from "@/lib/admin/select-all"
 import { parseReviewMessage } from "@/lib/reviews"
 
 export const dynamic = "force-dynamic"
@@ -14,7 +15,9 @@ const PUBLISHED_EVENT = "review_published"
 
 export async function GET() {
   if (!(await hasAdminSession())) return NextResponse.json({ error: "No autorizado." }, { status: 401 })
-  const { data, error } = await getSupabaseAdminClient().from("product_events").select("business_id").eq("event_name", PUBLISHED_EVENT)
+  const { data, error } = await selectAll((from, to) =>
+    getSupabaseAdminClient().from("product_events").select("business_id").eq("event_name", PUBLISHED_EVENT).order("id").range(from, to),
+  )
   if (error) return NextResponse.json({ error: "No se pudo leer." }, { status: 500 })
   const rows = (data ?? []) as unknown as { business_id: string | null }[] // product_events no está en types/database.ts
   return NextResponse.json({ publishedIds: rows.map((r) => r.business_id).filter(Boolean) })

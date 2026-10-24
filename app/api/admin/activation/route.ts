@@ -19,6 +19,7 @@
 import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { selectAll } from "@/lib/admin/select-all"
 import { loadAdminMetricAccounts } from "@/lib/admin-metric-accounts"
 import { median, summarizeTimeToFirstCost } from "@/lib/activation-metrics"
 
@@ -33,12 +34,16 @@ export async function GET() {
     // Alta, pago y primer costo de cada cuenta (docs/153: Tiempo hasta el primer costo).
     const allUsers = await loadAdminMetricAccounts(admin)
 
-    const { data: recipeCreatedRows, error: activityError } = await admin
-      .from("activity_log")
-      .select("user_id, created_at")
-      .eq("module", "recetas")
-      .eq("action", "created")
-      .order("created_at", { ascending: true })
+    const { data: recipeCreatedRows, error: activityError } = await selectAll<{ user_id: string; created_at: string }>((from, to) =>
+      admin
+        .from("activity_log")
+        .select("user_id, created_at")
+        .eq("module", "recetas")
+        .eq("action", "created")
+        .order("created_at", { ascending: true })
+        .order("id")
+        .range(from, to),
+    )
     if (activityError) throw activityError
 
     // Primera fila por cuenta — las filas ya vienen ordenadas ascendente, así que la

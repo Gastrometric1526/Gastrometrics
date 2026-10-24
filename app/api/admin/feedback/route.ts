@@ -10,6 +10,7 @@
 import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { selectAll } from "@/lib/admin/select-all"
 import { getArchivedFeedbackIds, setFeedbackArchived } from "@/lib/admin/feedback-archive"
 
 export const dynamic = "force-dynamic"
@@ -20,7 +21,9 @@ export async function GET() {
   }
 
   const admin = getSupabaseAdminClient()
-  const { data, error } = await admin.from("feedback").select("*").order("created_at", { ascending: false })
+  const { data, error } = await selectAll((from, to) =>
+    admin.from("feedback").select("*").order("created_at", { ascending: false }).order("id").range(from, to),
+  )
 
   if (error) {
     console.error("[api/admin/feedback] Error cargando feedback:", error)

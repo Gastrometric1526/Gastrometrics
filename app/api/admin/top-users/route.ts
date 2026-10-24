@@ -18,6 +18,7 @@
 import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { selectAll } from "@/lib/admin/select-all"
 import { rankUsersByUsage, type ActivityRow, type TopUsersSort } from "@/lib/admin/top-users"
 
 const PAGE = 1000
@@ -56,8 +57,12 @@ export async function GET(request: Request) {
     }
 
     const [{ data: presenceRows, error: presenceError }, { data: planRows, error: planError }] = await Promise.all([
-      admin.from("user_presence").select("user_id, total_active_seconds, last_seen_at"),
-      admin.from("account_plans").select("account_id, plan_slug"),
+      selectAll<{ user_id: string; total_active_seconds: number | null; last_seen_at: string | null }>((from, to) =>
+        admin.from("user_presence").select("user_id, total_active_seconds, last_seen_at").order("user_id").range(from, to),
+      ),
+      selectAll<{ account_id: string; plan_slug: string }>((from, to) =>
+        admin.from("account_plans").select("account_id, plan_slug").order("account_id").range(from, to),
+      ),
     ])
     if (presenceError) throw presenceError
     if (planError) throw planError
