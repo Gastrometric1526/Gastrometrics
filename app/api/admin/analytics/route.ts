@@ -12,6 +12,7 @@ import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { selectAll } from "@/lib/admin/select-all"
+import { isInternalProductEvent } from "@/lib/services/cron-runs"
 
 export async function GET() {
   if (!(await hasAdminSession())) {
@@ -79,6 +80,8 @@ export async function GET() {
     // respuesta, mismo criterio que el resto de esta ruta.
     const eventCounts = new Map<string, number>()
     for (const row of eventRows.data ?? []) {
+      // Sin los eventos internos (tareas programadas, reseñas publicadas, archivo del buzón).
+      if (isInternalProductEvent(row.event_name)) continue
       eventCounts.set(row.event_name, (eventCounts.get(row.event_name) || 0) + 1)
     }
     const productEvents = [...eventCounts.entries()]

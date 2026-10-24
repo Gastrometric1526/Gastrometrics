@@ -44,8 +44,10 @@ import {
   Check,
   LifeBuoy,
   Gift,
+  FileDown,
 } from "lucide-react"
-import { formatDate, formatDateTime } from "@/lib/date-format"
+import { formatDate, formatDateTime, fileDate } from "@/lib/date-format"
+import { accountsToCsv, type CsvAccount } from "@/lib/admin/accounts-csv"
 import { useAdminLiveReload } from "@/components/admin/live"
 
 // Umbral de "inactivo" en la lista de Cuentas: sin actividad registrada en los últimos
@@ -252,6 +254,52 @@ export function AccountsPanel() {
     const interval = setInterval(poll, 25_000)
     return () => clearInterval(interval)
   }, [accounts])
+
+  // Exportar a Excel (docs/195): todas las cuentas con la búsqueda, el plan y el orden aplicados.
+  const [exporting, setExporting] = useState(false)
+  const exportCsv = async () => {
+    setExporting(true)
+    try {
+      const { search: s, plan, sort } = appliedListParamsRef.current
+      const planParam = plan && plan !== "todos" ? `&plan=${encodeURIComponent(plan)}` : ""
+      const sortParam = sort ? `&sort=${encodeURIComponent(sort)}` : ""
+      const res = await fetch(`/api/admin/accounts?all=1&search=${encodeURIComponent(s)}${planParam}${sortParam}`)
+      const data = await res.json()
+      if (!res.ok || !Array.isArray(data.accounts)) throw new Error()
+      const rows: CsvAccount[] = (data.accounts as AccountRow[]).map((a) => ({
+        email: a.email,
+        createdAt: a.createdAt,
+        emailConfirmed: a.emailConfirmed,
+        planName: getPlanBySlug(a.planSlug)?.name || a.planSlug,
+        planExpiresAt: a.planExpiresAt,
+        hasActiveSubscription: a.hasActiveSubscription,
+        country: a.country ? countryName(a.country) || a.country : null,
+        businessCount: a.businessCount,
+        teamMemberCount: a.teamMemberCount,
+        recipeCount: a.recipeCount,
+        ingredientCount: a.ingredientCount,
+        posImportCount: a.posImportCount,
+        manualSalesCount: a.manualSalesCount,
+        lastSalesAt: [a.lastPosImportAt, a.lastManualSalesAt].filter(Boolean).sort().pop() || null,
+        totalActiveSeconds: a.totalActiveSeconds,
+        referralSent: a.referralSent,
+        referralCreated: a.referralCreated,
+        referralActive: a.referralActive,
+      }))
+      const csv = accountsToCsv(rows, t("admin_export_headers").split("|"))
+      const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }))
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `gastrometrics-cuentas-${fileDate(new Date())}.csv`
+      link.click()
+      URL.revokeObjectURL(url)
+      toast({ title: t("admin_export_done").replace("{count}", String(rows.length)) })
+    } catch {
+      toast({ title: t("admin_export_error"), variant: "destructive" })
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -979,8 +1027,16 @@ export function AccountsPanel() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("admin_accounts_list_title")}</CardTitle>
-        <CardDescription>{t("admin_accounts_subtitle")}</CardDescription>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="space-y-1.5">
+            <CardTitle>{t("admin_accounts_list_title")}</CardTitle>
+            <CardDescription>{t("admin_accounts_subtitle")}</CardDescription>
+          </div>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={exportCsv} disabled={exporting}>
+            <FileDown className="h-4 w-4" />
+            {exporting ? t("admin_export_working") : t("admin_export_csv")}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <form onSubmit={handleSearchSubmit} className="flex flex-wrap gap-2">

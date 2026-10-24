@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLanguage } from "@/contexts/language-context"
-import { ArrowLeft, Lock, LayoutDashboard, Users, Inbox, LineChart, TrendingUp, Mail, CheckCircle2, ChevronRight, RefreshCw } from "lucide-react"
+import { ArrowLeft, Lock, LayoutDashboard, Users, Inbox, LineChart, TrendingUp, Mail, RefreshCw, DollarSign, HeartPulse } from "lucide-react"
 import { StatsPanel, type AdminStats } from "@/components/admin/stats-panel"
 import { AdminLiveProvider, useAdminLive } from "@/components/admin/live"
 import { useToast } from "@/hooks/use-toast"
@@ -26,6 +26,10 @@ import { ReferralsPanel } from "@/components/admin/referrals-panel"
 import { ProductUpdatesPanel } from "@/components/admin/product-updates-panel"
 import { LegalUpdatePanel } from "@/components/admin/legal-update-panel"
 import { AdminSubTabs } from "@/components/admin/sub-tabs"
+import { OverviewPanel } from "@/components/admin/overview-panel"
+import { RevenuePanel } from "@/components/admin/revenue-panel"
+import { HealthPanel } from "@/components/admin/health-panel"
+import { RetentionPanel } from "@/components/admin/retention-panel"
 
 // Candado de acceso — pedido explícito: agregar algún control de acceso a /admin,
 // que hoy cualquiera con el link puede ver. SIN backend no existe un sistema de roles
@@ -295,6 +299,10 @@ function AdminPageInner() {
               <Users className="h-4 w-4" />
               {t("admin_tab_accounts")}
             </TabsTrigger>
+            <TabsTrigger value="ingresos" className="gap-1.5">
+              <DollarSign className="h-4 w-4" />
+              {t("admin_tab_revenue")}
+            </TabsTrigger>
             <TabsTrigger value="buzon" className="gap-1.5">
               <Inbox className="h-4 w-4" />
               {t("admin_tab_inbox_group")}
@@ -316,74 +324,26 @@ function AdminPageInner() {
               <Mail className="h-4 w-4" />
               {t("admin_tab_comms")}
             </TabsTrigger>
+            <TabsTrigger value="sistema" className="gap-1.5">
+              <HeartPulse className="h-4 w-4" />
+              {t("admin_tab_system")}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="resumen" className="mt-6 space-y-6">
             <TabIntro text={t("admin_tabdesc_resumen")} />
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">{t("admin_todo_title")}</CardTitle>
-                <CardDescription>{t("admin_todo_desc")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {(() => {
-                  const items = [
-                {
-                  key: "unread",
-                  count: feedbackCounts.nuevo,
-                  label: t("admin_todo_unread").replace("{count}", String(feedbackCounts.nuevo)),
-                  onClick: () => goTo("buzon", "mensajes"),
-                },
-                {
-                  key: "bugs",
-                  count: feedbackCounts.bug,
-                  label: t("admin_todo_bugs").replace("{count}", String(feedbackCounts.bug)),
-                  onClick: () => goTo("buzon", "mensajes"),
-                },
-                {
-                  key: "expiring",
-                  count: stats?.expiringSoon.length ?? 0,
-                  label: t("admin_todo_expiring").replace("{count}", String(stats?.expiringSoon.length ?? 0)),
-                  onClick: () => goTo("cuentas"),
-                },
-                {
-                  key: "legal",
-                  count: legalPending ?? 0,
-                  label: t("admin_todo_legal").replace("{count}", String(legalPending ?? 0)),
-                  onClick: () => goTo("comunicacion", "legal"),
-                },
-              ].filter((item) => item.count > 0)
-                  if (items.length === 0) {
-                    return (
-                      <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <CheckCircle2 className="h-4 w-4 text-success" />
-                        {t("admin_todo_clear")}
-                      </p>
-                    )
-                  }
-                  return (
-                    <ul className="divide-y divide-border">
-                      {items.map((item) => (
-                        <li key={item.key}>
-                          <button
-                            type="button"
-                            onClick={item.onClick}
-                            className="flex w-full items-center justify-between gap-3 py-2.5 text-left text-sm hover:text-primary"
-                          >
-                            <span>{item.label}</span>
-                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                              {t("admin_todo_go")}
-                              <ChevronRight className="h-3.5 w-3.5" />
-                            </span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )
-                })()}
-              </CardContent>
-            </Card>
+            <OverviewPanel
+              feedbackCounts={feedbackCounts}
+              expiringSoon={stats?.expiringSoon.length ?? 0}
+              legalPending={legalPending ?? 0}
+              goTo={(next, sub) => goTo(next as AdminTab, sub)}
+            />
             <StatsPanel feedbackCounts={feedbackCounts} stats={stats} />
+          </TabsContent>
+
+          <TabsContent value="ingresos" className="mt-6 space-y-6">
+            <TabIntro text={t("admin_tabdesc_revenue")} />
+            <RevenuePanel estimatedMrrUsdCents={stats?.estimatedMrrUsdCents} />
           </TabsContent>
 
           <TabsContent value="cuentas" className="mt-6 space-y-6">
@@ -406,9 +366,10 @@ function AdminPageInner() {
           <TabsContent value="crecimiento" className="mt-6 space-y-6">
             <TabIntro text={t("admin_tabdesc_growth")} />
             <AdminSubTabs
-              value={subTab.crecimiento || "activacion"}
+              value={subTab.crecimiento || "retencion"}
               onChange={(v) => setSub("crecimiento", v)}
               items={[
+                { value: "retencion", label: t("admin_sub_retention"), content: <RetentionPanel /> },
                 { value: "activacion", label: t("admin_tab_activation"), content: <ActivationPanel /> },
                 { value: "referidos", label: t("admin_sub_referrals"), content: <ReferralsPanel /> },
                 { value: "usuarios", label: t("admin_sub_top_users"), content: <TopUsersPanel /> },
@@ -445,13 +406,18 @@ function AdminPageInner() {
               ]}
             />
           </TabsContent>
+
+          <TabsContent value="sistema" className="mt-6 space-y-6">
+            <TabIntro text={t("admin_tabdesc_system")} />
+            <HealthPanel />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
   )
 }
 
-const ADMIN_TABS = ["resumen", "cuentas", "buzon", "crecimiento", "uso", "comunicacion"] as const
+const ADMIN_TABS = ["resumen", "cuentas", "ingresos", "buzon", "crecimiento", "uso", "comunicacion", "sistema"] as const
 type AdminTab = (typeof ADMIN_TABS)[number]
 
 /** Una línea que dice para qué sirve la sección (docs/191). */

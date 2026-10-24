@@ -54,6 +54,7 @@
  * antes de los recordatorios. ?engagementDryRun=1 muestra qué se mandaría.
  */
 
+import { recordCronRun } from "@/lib/services/cron-runs"
 import { NextResponse } from "next/server"
 import { isAuthorizedCronRequest } from "@/lib/cron-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
@@ -250,5 +251,6 @@ export async function GET(request: Request) {
   const failed = Object.entries(steps)
     .filter(([, v]) => v && typeof v === "object" && "error" in v)
     .map(([k]) => k)
+  await recordCronRun("activation-emails", failed)
   return NextResponse.json({ ok: failed.length === 0, checkedAt: new Date().toISOString(), failed, ...steps })
 }

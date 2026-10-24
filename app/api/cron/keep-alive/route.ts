@@ -18,6 +18,7 @@
  * ya que no expone ni modifica ningún dato real.
  */
 
+import { recordCronRun } from "@/lib/services/cron-runs"
 import { NextResponse } from "next/server"
 import { isAuthorizedCronRequest } from "@/lib/cron-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
@@ -44,9 +45,11 @@ export async function GET(request: Request) {
       .select("account_id", { head: true, count: "exact" })
       .limit(1)
     if (error) throw error
+    await recordCronRun("keep-alive")
     return NextResponse.json({ ok: true, pingedAt: new Date().toISOString() })
   } catch (error) {
     console.error("[api/cron/keep-alive] Error haciendo ping a Supabase:", error)
+    await recordCronRun("keep-alive", ["ping"])
     return NextResponse.json({ ok: false, error: "Error al conectar con Supabase." }, { status: 500 })
   }
 }

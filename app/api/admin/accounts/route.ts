@@ -26,11 +26,23 @@ import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { selectAll } from "@/lib/admin/select-all"
+import { fetchAllByIds } from "@/lib/services/notify-reengagement"
 import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
 import { plans } from "@/lib/plans"
 import { referralCountsFor } from "@/lib/services/referrals"
 
 const PAGE_SIZE = 25
+
+type OwnedRow = { id: string; owner_id: string; business_id: string | null }
+
+/** Filas de una tabla para un grupo de cuentas/negocios, sin el tope de 1000 filas (docs/194). */
+async function byIds<T>(
+  ids: string[],
+  build: (chunk: string[], from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: unknown }>,
+): Promise<{ data: T[] }> {
+  if (ids.length === 0) return { data: [] }
+  return { data: await fetchAllByIds<T>(ids, build) }
+}
 const PLAN_ORDER = new Map(plans.map((plan, index) => [plan.slug, index]))
 
 export async function GET(request: Request) {
@@ -102,17 +114,19 @@ export async function GET(request: Request) {
     }
 
     const total = filtered.length
-    const pageUsers = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+    // ?all=1 (exportar a Excel, docs/195): todas las cuentas filtradas, sin paginar.
+    const exportAll = url.searchParams.get("all") === "1"
+    const pageUsers = exportAll ? filtered : filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
     const ids = pageUsers.map((u) => u.id)
 
     const [businessRows, teamRows, ownedRecipeRows, ownedIngredientRows, salesImportRows] = await Promise.all([
-      ids.length ? admin.from("businesses").select("id, owner_id").in("owner_id", ids) : Promise.resolve({ data: [] as { id: string; owner_id: string }[] }),
-      ids.length ? admin.from("team_members").select("owner_id").in("owner_id", ids) : Promise.resolve({ data: [] as { owner_id: string }[] }),
-      ids.length ? admin.from("recipes").select("id, owner_id, business_id").in("owner_id", ids) : Promise.resolve({ data: [] as { id: string; owner_id: string; business_id: string | null }[] }),
-      ids.length ? admin.from("ingredients").select("id, owner_id, business_id").in("owner_id", ids) : Promise.resolve({ data: [] as { id: string; owner_id: string; business_id: string | null }[] }),
-      ids.length
-        ? admin.from("sales_imports").select("owner_id, data").in("owner_id", ids)
-        : Promise.resolve({ data: [] as { owner_id: string; data: Record<string, unknown> }[] }),
+      byIds<{ id: string; owner_id: string }>(ids, (chunk, from, to) => admin.from("businesses").select("id, owner_id").in("owner_id", chunk).order("id").range(from, to)),
+      byIds<{ owner_id: string }>(ids, (chunk, from, to) => admin.from("team_members").select("owner_id").in("owner_id", chunk).order("id").range(from, to)),
+      byIds<OwnedRow>(ids, (chunk, from, to) => admin.from("recipes").select("id, owner_id, business_id").in("owner_id", chunk).order("id").range(from, to)),
+      byIds<OwnedRow>(ids, (chunk, from, to) => admin.from("ingredients").select("id, owner_id, business_id").in("owner_id", chunk).order("id").range(from, to)),
+      byIds<{ owner_id: string; data: Record<string, unknown> }>(ids, (chunk, from, to) =>
+        admin.from("sales_imports").select("owner_id, data").in("owner_id", chunk).order("id").range(from, to),
+      ),
     ])
 
     const businessCountByUser = new Map<string, number>()
@@ -144,12 +158,12 @@ export async function GET(request: Request) {
     // (no a quien la escribió) — con "main"/sin negocio, sigue siendo owner_id
     // directo, que ahí sí es siempre correcto (no hay ambigüedad de negocio).
     const [bizRecipeRows, bizIngredientRows] = await Promise.all([
-      businessIdsInPage.length
-        ? admin.from("recipes").select("id, owner_id, business_id").in("business_id", businessIdsInPage)
-        : Promise.resolve({ data: [] as { id: string; owner_id: string; business_id: string | null }[] }),
-      businessIdsInPage.length
-        ? admin.from("ingredients").select("id, owner_id, business_id").in("business_id", businessIdsInPage)
-        : Promise.resolve({ data: [] as { id: string; owner_id: string; business_id: string | null }[] }),
+      byIds<OwnedRow>(businessIdsInPage, (chunk, from, to) =>
+        admin.from("recipes").select("id, owner_id, business_id").in("business_id", chunk).order("id").range(from, to),
+      ),
+      byIds<OwnedRow>(businessIdsInPage, (chunk, from, to) =>
+        admin.from("ingredients").select("id, owner_id, business_id").in("business_id", chunk).order("id").range(from, to),
+      ),
     ])
 
     function countByOwningAccount(

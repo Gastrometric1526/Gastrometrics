@@ -1393,7 +1393,7 @@ export default function IngredientesPage() {
               <div className="flex flex-wrap items-center gap-2 md:gap-3">
                 {ingredients.some((ing) => ing.merma?.enabled) && (
                   <div className="flex items-center gap-2 px-3 py-2 bg-success-soft border rounded-md">
-                    <div className="w-2 h-2 bg-success-soft0 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
                     <span className="text-sm font-medium text-success">
                       {t("ingredientes_merma_system_active_badge")}
                     </span>

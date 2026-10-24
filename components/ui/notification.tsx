@@ -73,17 +73,17 @@ export function Notification({ notification, onClose }: NotificationProps) {
     switch (notification.type) {
       case "success":
         return {
-          progressBar: "bg-success-soft0 dark:bg-green-400",
+          progressBar: "bg-success dark:bg-green-400",
           badge: "bg-success-soft text-success",
         }
       case "error":
         return {
-          progressBar: "bg-danger-soft0 dark:bg-red-400",
+          progressBar: "bg-destructive dark:bg-red-400",
           badge: "bg-danger-soft text-destructive",
         }
       case "warning":
         return {
-          progressBar: "bg-warning-soft0 dark:bg-amber-400",
+          progressBar: "bg-warning dark:bg-amber-400",
           badge: "bg-warning-soft text-warning",
         }
       case "info":

@@ -20,9 +20,9 @@ export function ProgressBar({
 }) {
   const colorClasses = {
     blue: "bg-blue-500",
-    green: "bg-success-soft0",
-    red: "bg-danger-soft0",
-    amber: "bg-warning-soft0",
+    green: "bg-success",
+    red: "bg-destructive",
+    amber: "bg-warning",
   }
 
   return (
