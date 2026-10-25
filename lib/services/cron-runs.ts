@@ -10,7 +10,7 @@ export const CRON_EVENT_PREFIX = "cron:"
 
 /** Eventos internos de product_events que no son del embudo de producto. */
 export function isInternalProductEvent(name: string): boolean {
-  return name.startsWith(CRON_EVENT_PREFIX) || name === "review_published" || name === "feedback_archived" || name === "business_created_notified" || name === "account_purged"
+  return name.startsWith(CRON_EVENT_PREFIX) || name === "review_published" || name === "feedback_archived" || name === "business_created_notified" || name === "account_purged" || name === "plan_expiry_today_sent"
 }
 
 export async function recordCronRun(job: string, failedSteps: string[] = []): Promise<void> {
