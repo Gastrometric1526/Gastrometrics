@@ -123,7 +123,7 @@ export function LandingProblem() {
 
 // ─── Cómo funciona: 3 pasos con mini animación ──────────────────────────────
 
-/** Pantalla real del celular, recorriéndose sola mientras el paso está en pantalla. */
+/** Pantalla real del celular, que baja y sube sola sin parar (no se reinicia al hacer scroll). */
 function StepPhone({ on, screen }: { on: boolean; screen: string }) {
   const { language } = useLanguage()
   const lang = mediaLang(language)
@@ -131,7 +131,7 @@ function StepPhone({ on, screen }: { on: boolean; screen: string }) {
     <div className="relative h-56 overflow-hidden rounded-xl bg-canvas-alt border border-hairline">
       <div className="absolute left-1/2 top-4 w-[150px] -translate-x-1/2">
         <PhoneFrame className="!p-[5px] !rounded-[1.6rem]">
-          {on && <PhoneScreen src={`/landing/${lang}/phone-${screen}.webp`} alt="" play={on} duration={7000} navSrc={`/landing/${lang}/phone-nav-${screen}.webp`} />}
+          {on && <PhoneScreen src={`/landing/${lang}/phone-${screen}.webp`} alt="" play={on} loop duration={7000} navSrc={`/landing/${lang}/phone-nav-${screen}.webp`} />}
         </PhoneFrame>
       </div>
     </div>

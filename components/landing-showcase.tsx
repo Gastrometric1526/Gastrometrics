@@ -110,7 +110,25 @@ export function PhoneFrame({ children, className = "" }: { children: React.React
 }
 
 /** Captura alta de celular que el teléfono recorre sola hacia abajo (como si alguien la usara). */
-export function PhoneScreen({ src, alt, play, duration, navSrc }: { src: string; alt: string; play: boolean; duration: number; navSrc?: string }) {
+export function PhoneScreen({
+  src,
+  alt,
+  play,
+  duration,
+  navSrc,
+  paused = false,
+  loop = false,
+}: {
+  src: string
+  alt: string
+  play: boolean
+  duration: number
+  navSrc?: string
+  /** Congela el recorrido donde va (no lo reinicia); al quitarlo sigue desde ahí. */
+  paused?: boolean
+  /** Baja y vuelve a subir sin parar mientras se vea. */
+  loop?: boolean
+}) {
   const boxRef = useRef<HTMLDivElement>(null)
   const imgRef = useRef<HTMLImageElement>(null)
   const [travel, setTravel] = useState(0)
@@ -127,7 +145,8 @@ export function PhoneScreen({ src, alt, play, duration, navSrc }: { src: string;
   }, [src])
   const style = {
     "--gm-travel": `-${travel}px`,
-    animation: play && travel > 0 ? `gm-phone-scroll ${duration}ms ease-in-out forwards` : undefined,
+    animation: play && travel > 0 ? `gm-phone-scroll ${duration}ms ease-in-out ${loop ? "infinite alternate" : "forwards"}` : undefined,
+    animationPlayState: paused ? "paused" : "running",
   } as CSSProperties
   return (
     <div ref={boxRef} className="absolute inset-0 overflow-hidden">
@@ -170,19 +189,32 @@ export function LandingAppTour() {
     rootMargin: "400px 0px",
     once: true,
   })
-  const [stageRef, visible] = useInView<HTMLDivElement>({ threshold: 0.35 })
+  // Solo se pausa cuando el escenario salió por completo de la pantalla (no al hacer un poco de
+  // scroll), y al volver sigue donde iba: no reinicia la pantalla ni sus animaciones.
+  const [stageRef, visible] = useInView<HTMLDivElement>({ threshold: 0 })
   const [active, setActive] = useState(0)
   const [playing, setPlaying] = useState(true)
   const [hovering, setHovering] = useState(false)
   const [seen, setSeen] = useState<Set<number>>(() => new Set([0, 1]))
   const tabsRef = useRef<HTMLDivElement>(null)
 
-  const running = playing && !hovering && visible && !reduced
+  const engaged = playing && !reduced // animaciones puestas (pausadas o corriendo)
+  const running = engaged && !hovering && visible
 
+  // Tiempo ya corrido de la pantalla actual: al pausar se guarda y al seguir se espera solo lo
+  // que falta. (Este efecto va antes del temporizador: al cambiar de pantalla vuelve a 0.)
+  const elapsed = useRef(0)
+  useEffect(() => {
+    elapsed.current = 0
+  }, [active])
   useEffect(() => {
     if (!running) return
-    const id = window.setTimeout(() => setActive((a) => (a + 1) % TOUR.length), STEP_MS)
-    return () => window.clearTimeout(id)
+    const start = performance.now()
+    const id = window.setTimeout(() => setActive((a) => (a + 1) % TOUR.length), Math.max(0, STEP_MS - elapsed.current))
+    return () => {
+      window.clearTimeout(id)
+      elapsed.current += performance.now() - start
+    }
   }, [running, active])
 
   useEffect(() => {
@@ -239,12 +271,13 @@ export function LandingAppTour() {
                 {label(i)}
                 {isActive && (
                   <span
-                    key={`${active}-${running}`}
+                    key={active}
                     aria-hidden="true"
                     className="gm-anim absolute left-3 right-3 bottom-1 h-[2px] origin-left rounded-full bg-primary"
                     style={{
-                      animation: running ? `gm-progress ${STEP_MS}ms linear forwards` : undefined,
-                      transform: running ? undefined : "scaleX(1)",
+                      animation: engaged ? `gm-progress ${STEP_MS}ms linear forwards` : undefined,
+                      animationPlayState: running ? "running" : "paused",
+                      transform: engaged ? undefined : "scaleX(1)",
                     }}
                   />
                 )}
@@ -303,7 +336,8 @@ export function LandingAppTour() {
                       transformOrigin: "30% 0%",
                       // La que sale se queda acercada mientras se desvanece (sin salto).
                       transform: i === active ? undefined : "scale(1.045)",
-                      animation: i === active && running ? `gm-kenburns ${STEP_MS}ms ease-out forwards` : undefined,
+                      animation: i === active && engaged ? `gm-kenburns ${STEP_MS}ms ease-out forwards` : undefined,
+                      animationPlayState: running ? "running" : "paused",
                     }}
                   />
                 ) : null,
@@ -327,7 +361,8 @@ export function LandingAppTour() {
                     <PhoneScreen
                       src={`/landing/${lang}/phone-${s.id}.webp`}
                       alt={i === active ? alt(i) : ""}
-                      play={i === active && running}
+                      play={i === active && engaged}
+                      paused={!running}
                       duration={STEP_MS}
                       navSrc={`/landing/${lang}/phone-nav-${s.id}.webp`}
                     />

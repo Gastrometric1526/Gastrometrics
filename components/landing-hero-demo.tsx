@@ -84,7 +84,8 @@ export function LandingHeroDemo() {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
     setReduced(mq.matches)
     if (mq.matches) setShown(99)
-    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { threshold: 0.15 })
+    // Se pausa solo cuando salió por completo de la pantalla, y sigue donde iba.
+    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { threshold: 0 })
     if (ref.current) io.observe(ref.current)
     return () => io.disconnect()
   }, [])
