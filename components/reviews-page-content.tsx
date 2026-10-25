@@ -2,30 +2,22 @@
 
 /** Página /resenas (docs/173): todas las opiniones publicadas, o una invitación si aún no hay suficientes. */
 
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PublicReviews } from "@/components/public-reviews"
 import { useLanguage } from "@/contexts/language-context"
 import { GOOGLE_REVIEW_URL, TRUSTPILOT_URL } from "@/lib/site-links"
+import { CtaBand, MarketingPage, PAGE_WIDTH, PageHero } from "@/components/marketing-ui"
 
 export function ReviewsPageContent() {
   const { t } = useLanguage()
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-5xl mx-auto px-6 py-12 space-y-8">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" />
-          {t("common_back")}
-        </Link>
-        <header className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">{t("reviews_page_title")}</h1>
-          <p className="text-muted-foreground">{t("reviews_page_desc")}</p>
-        </header>
+    <MarketingPage>
+      <PageHero kicker={t("reviews_kicker")} title={t("reviews_page_title")} subtitle={t("reviews_page_desc")} />
+      <div className={`${PAGE_WIDTH} pb-8`}>
         <PublicReviews
           variant="page"
           fallback={
-            <div className="rounded-xl border border-border bg-card p-8 text-center space-y-3">
+            <div className="max-w-2xl mx-auto rounded-2xl border border-hairline bg-canvas-alt p-8 text-center space-y-4">
               <p className="text-foreground">{t("reviews_empty")}</p>
               <div className="flex flex-wrap justify-center gap-2">
                 <Button asChild>
@@ -46,6 +38,12 @@ export function ReviewsPageContent() {
           }
         />
       </div>
-    </div>
+      <CtaBand
+        title={t("landing_closing_title")}
+        desc={t("landing_closing_desc")}
+        primary={{ href: "/signup", label: t("landing_closing_cta") }}
+        note={t("landing_closing_sub")}
+      />
+    </MarketingPage>
   )
 }

@@ -257,5 +257,102 @@ export function buildDemo(lang, ownerId) {
   }
   const salesRows = [{ id: sale.id, business_id: null, owner_id: ownerId, data: sale, created_at: sale.importedAt }]
 
-  return { currency: cur, tables: { ingredients: ingredientRows, recipes: recipeRows, inventory_items: inventoryRows, sales_imports: salesRows } }
+
+  // Menús (lib/types/menus.ts) y órdenes de compra (types/purchase-order.ts), para las páginas
+  // de Características (docs/196).
+  const MENU_NAMES = {
+    lunch: { es: "Almuerzo ejecutivo", en: "Executive lunch", da: "Frokostmenu", fr: "Déjeuner du jour", pt: "Almoço executivo", zh: "商务午餐" },
+    dinner: { es: "Cena del fin de semana", en: "Weekend dinner", da: "Weekendmiddag", fr: "Dîner du week-end", pt: "Jantar de fim de semana", zh: "周末晚餐" },
+  }
+  const STEP_NAMES = {
+    starter: { es: "Entrada", en: "Starter", da: "Forret", fr: "Entrée", pt: "Entrada", zh: "前菜" },
+    main: { es: "Plato fuerte", en: "Main course", da: "Hovedret", fr: "Plat principal", pt: "Prato principal", zh: "主菜" },
+    drink: { es: "Bebida", en: "Drink", da: "Drik", fr: "Boisson", pt: "Bebida", zh: "饮品" },
+  }
+  const L = (o) => o[lang] || o.en
+  const steps = [
+    { id: "st-1", name: L(STEP_NAMES.starter), order: 1 },
+    { id: "st-2", name: L(STEP_NAMES.main), order: 2 },
+    { id: "st-3", name: L(STEP_NAMES.drink), order: 3 },
+  ]
+  const item = (id, recipeKey, stepId, section) => ({ id, recipeId: `demo-recipe-${recipeKey}`, stepId, section, enabled: true, priceOverride: null, plannedQuantity: 40 })
+  const menus = [
+    {
+      id: "demo-menu-lunch",
+      name: L(MENU_NAMES.lunch),
+      menuType: "Almuerzo",
+      serviceDate: daysAgo(-3).toISOString().slice(0, 10),
+      plannedServings: 40,
+      steps,
+      items: [item("mi-1", "tomato-soup", "st-1", "entrada"), item("mi-2", "caesar", "st-1", "entrada"), item("mi-3", "grilled-chicken", "st-2", "fuerte"), item("mi-4", "alfredo", "st-2", "fuerte"), item("mi-5", "lemonade", "st-3", "bebida")],
+      createdAt: iso(daysAgo(12)),
+      updatedAt: iso(daysAgo(2)),
+    },
+    {
+      id: "demo-menu-dinner",
+      name: L(MENU_NAMES.dinner),
+      menuType: "Cena",
+      serviceDate: daysAgo(-5).toISOString().slice(0, 10),
+      plannedServings: 60,
+      steps,
+      items: [item("md-1", "caesar", "st-1", "entrada"), item("md-2", "burger", "st-2", "fuerte"), item("md-3", "alfredo", "st-2", "fuerte"), item("md-4", "lemonade", "st-3", "bebida")],
+      createdAt: iso(daysAgo(20)),
+      updatedAt: iso(daysAgo(4)),
+    },
+  ]
+  const menuRows = menus.map((m) => {
+    const { id, name, ...rest } = m
+    return { id, business_id: null, owner_id: ownerId, name, data: { ...rest, businessId: "main" }, created_at: m.createdAt, updated_at: m.updatedAt }
+  })
+
+  const orderItems = ["chicken", "cream", "lemon", "tomato", "parmesan"].map((k, i) => {
+    const g = ing[k]
+    const qty = [4, 3, 5, 6, 1][i]
+    return {
+      id: `poi-${k}`,
+      ingredientId: g.id,
+      name: g.name,
+      totalQuantity: qty,
+      unit: g.unit,
+      costPerUnit: g.pricePerUnit,
+      purchaseCost: round(qty * g.pricePerUnit, 2),
+      quantityToBuy: qty,
+      supplier: SUPPLIER[lang] || SUPPLIER.en,
+    }
+  })
+  const subtotal = round(orderItems.reduce((sum, i) => sum + i.purchaseCost, 0), 2)
+  const orders = [
+    {
+      id: "demo-po-1",
+      name: L(MENU_NAMES.lunch),
+      number: 12,
+      date: daysAgo(1).toISOString().slice(0, 10),
+      recipes: [{ id: "demo-recipe-grilled-chicken", name: recipes[0].name, yield: 40 }],
+      items: orderItems,
+      subtotal,
+      tax: 0,
+      total: subtotal,
+      status: "pending",
+      supplier: SUPPLIER[lang] || SUPPLIER.en,
+      createdAt: iso(daysAgo(1)),
+      expectedDeliveryDate: daysAgo(-1).toISOString().slice(0, 10),
+    },
+    {
+      id: "demo-po-2",
+      name: L(MENU_NAMES.dinner),
+      number: 11,
+      date: daysAgo(6).toISOString().slice(0, 10),
+      recipes: [{ id: "demo-recipe-burger", name: recipes[2].name, yield: 60 }],
+      items: orderItems.slice(0, 3),
+      subtotal: round(orderItems.slice(0, 3).reduce((sum, i) => sum + i.purchaseCost, 0), 2),
+      tax: 0,
+      total: round(orderItems.slice(0, 3).reduce((sum, i) => sum + i.purchaseCost, 0), 2),
+      status: "received",
+      supplier: SUPPLIER[lang] || SUPPLIER.en,
+      createdAt: iso(daysAgo(6)),
+    },
+  ]
+  const orderRows = orders.map((o) => ({ id: o.id, business_id: null, owner_id: ownerId, data: o, created_at: o.createdAt }))
+
+  return { currency: cur, tables: { ingredients: ingredientRows, recipes: recipeRows, inventory_items: inventoryRows, sales_imports: salesRows, menus: menuRows, purchase_orders: orderRows } }
 }

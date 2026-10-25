@@ -10,6 +10,7 @@ import { plans, getLocalizedPlan } from "@/lib/plans"
 import { setCurrentPlanSlug } from "@/lib/plan-access"
 import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
+import { AuthShell } from "@/components/auth-shell"
 
 // Paso de pago después de crear la cuenta, solo para planes pagos (el plan Foodie/gratis
 // va directo al dashboard desde signup). Conectado a Stripe Checkout real vía
@@ -97,7 +98,7 @@ function PaymentPageInner() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
+    <AuthShell wide="2xl">
       <div className="w-full max-w-3xl">
         <Link
           href={backHref}
@@ -209,6 +210,6 @@ function PaymentPageInner() {
           </Card>
         </div>
       </div>
-    </div>
+    </AuthShell>
   )
 }

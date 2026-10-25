@@ -5,11 +5,18 @@ import { MarketingHeader } from "@/components/marketing-header"
 import { MarketingFooter } from "@/components/marketing-footer"
 import { InstallAppButton } from "@/components/install-app-button"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { getLocalizedPlans } from "@/lib/plans"
 import type { TranslationKey } from "@/lib/i18n/translations"
+import { useLanguage } from "@/contexts/language-context"
+import { LandingRecipeDemo } from "@/components/landing-recipe-demo"
+import { LandingReferralSection } from "@/components/landing-referral-section"
+import { LandingAppTour, LandingPriceStory, LandingInContext } from "@/components/landing-showcase"
+import { LandingHeroDemo } from "@/components/landing-hero-demo"
+import { LandingTrustStrip, LandingProblem, LandingHowItWorks, LandingBento, LandingRiskAndFounder, LandingClosing } from "@/components/landing-sections"
+import { ChefHat, ArrowRight, CheckCircle2, UtensilsCrossed, Store, Building2, Wine } from "lucide-react"
+import { PublicReviews } from "@/components/public-reviews"
 
 // Qué plan encaja con cada tipo de negocio (docs/145) — funciones reales de cada plan.
 const BUSINESS_FIT = [
@@ -19,104 +26,24 @@ const BUSINESS_FIT = [
   { key: "restaurant", icon: Store, plan: "sous-chef" },
   { key: "group", icon: Building2, plan: "chef-ejecutivo" },
 ] as const
-import { useLanguage } from "@/contexts/language-context"
-import { AnimatedNumber } from "@/components/animated-number"
-import { LandingAdminPdfPreview } from "@/components/landing-admin-pdf-preview"
-import { LandingRecipeDemo } from "@/components/landing-recipe-demo"
-import { LandingReferralSection } from "@/components/landing-referral-section"
-import { LandingAppTour, LandingPriceStory, LandingInContext } from "@/components/landing-showcase"
-import {
-  ChefHat,
-  Calculator,
-  BarChart3,
-  ArrowRight,
-  Star,
-  CheckCircle2,
-  UtensilsCrossed,
-  Store,
-  Building2,
-  Wine,
-  Tag,
-  RefreshCw,
-  Camera,
-  ShoppingCart,
-  Gift,
-  CreditCard,
-  ShieldCheck,
-  LifeBuoy,
-} from "lucide-react"
-import { TRUSTPILOT_URL } from "@/lib/site-links"
-import { PublicReviews } from "@/components/public-reviews"
 
-// Landing recortada — docs/80-rediseno-visual-y-logo-oficial.md fue el diseño
-// original (hero + investigación + fuga invisible + tres pasos + seis módulos + un
-// vistazo por dentro + planes + Trustpilot + cierre); esta versión sigue el hallazgo
-// de una auditoría externa (ver docs/98, Parte 3.2 y 3.6: "el comprador no compra
-// módulos, compra alivio de un dolor" — recortar a hero + antes/después + 3
-// beneficios + prueba social + CTA único + precios más abajo). Se quitaron la
-// sección aparte de cuatro cifras, la grilla de seis módulos, y el segundo bloque de
-// capturas (Inventario/Menu Engineering/tipos de PDF) — ver los comentarios en cada
-// sección para el detalle de qué se fusionó y qué se cortó del todo. El FAQ se
-// conserva (responde preguntas reales de compra, no vende funciones).
-// docs/147 (reescritura de contenido): hero con un CTA a /signup y la demo como salida
-// de menor compromiso, "Tus primeros 10 minutos" (qué hace la persona al crear la
-// cuenta), seis beneficios que reflejan la app actual, reversión de riesgo, nota del
-// fundador en lugar de testimonios de relleno y dos preguntas nuevas en el FAQ.
+// Landing rediseñada (docs/196, pedido del dueño: «rediseña todo, que tenga coherencia, que
+// una persona entienda qué es GastroMetrics, cómo funciona, y la convenza o le dé
+// curiosidad»). El orden sigue las preguntas que se hace quien llega, una por sección:
+//   ¿Qué es? → portada con una ficha técnica que se arma sola (LandingHeroDemo).
+//   ¿Por qué me importa? → la fuga invisible, con cifras y fuentes (LandingProblem).
+//   ¿Cómo funciona? → 3 pasos con mini animación (LandingHowItWorks).
+//   ¿Cómo se ve? → recorrido por la app real (LandingAppTour, docs/193).
+//   ¿Qué más hace? → bento de beneficios (LandingBento).
+//   ¿Qué lo hace distinto? → cambias un precio y todo se ajusta (LandingPriceStory).
+//   ¿Lo puedo probar ya? → la calculadora sin cuenta (LandingRecipeDemo).
+//   ¿Me sirve a mí? → donde estés, para quién, planes.
+//   ¿Qué arriesgo? → sin riesgo + nota del fundador; dudas → FAQ; cierre.
+// Un solo llamado a la acción («Crear mi cuenta gratis» → /signup), repetido. Sin
+// testimonios inventados: las opiniones reales salen solo desde 3 publicadas (docs/173).
 export function HomeContent() {
   const { t, language } = useLanguage()
   const plans = getLocalizedPlans(language)
-  const sousChef = plans.find((p) => p.slug === "sous-chef")
-
-  const stats = [
-    { value: 42, prefix: "", suffix: "%", descKey: "landing_stat1_desc", sourceKey: "landing_stat1_source" },
-    { value: 35, prefix: "+", suffix: "%", descKey: "landing_stat2_desc", sourceKey: "landing_stat2_source" },
-    { value: 7, prefix: "$", suffix: "", descKey: "landing_stat3_desc", sourceKey: "landing_stat3_source" },
-    { value: 26, prefix: "", suffix: "%", descKey: "landing_stat4_desc", sourceKey: "landing_stat4_source" },
-  ] as const
-
-  const leakItems = ["landing_leak_item1", "landing_leak_item2", "landing_leak_item3", "landing_leak_item4"] as const
-
-  const steps = [
-    { titleKey: "landing_step1_title", descKey: "landing_step1_desc", timeKey: "landing_step1_time" },
-    { titleKey: "landing_step2_title", descKey: "landing_step2_desc", timeKey: "landing_step2_time" },
-    { titleKey: "landing_step3_title", descKey: "landing_step3_desc", timeKey: "landing_step3_time" },
-  ] as const
-
-  // Tres beneficios orientados a resultado, no a módulo — reemplaza la grilla de seis
-  // módulos (hallazgo de auditoría externa, ver docs/98: "el comprador no compra
-  // módulos, compra alivio de un dolor"; PDF 3.6 "Foco de producto"). Cada uno mapea
-  // a lo que el propio PDF señala como más sólido del producto: costeo real, ventas
-  // sin POS (docs/90, "una de las mejores decisiones de producto"), y el motor de
-  // recálculo en cascada (antes enterrado como la frase de cierre de la grilla vieja).
-  // docs/147: seis resultados (no módulos) que cubren lo que la app hace hoy —
-  // importación de recetas por texto/foto, precio sugerido, ventas sin POS e inventario.
-  const benefits = [
-    { icon: Calculator, titleKey: "landing_benefit1_title", descKey: "landing_benefit1_desc" },
-    { icon: Tag, titleKey: "landing_benefit2_title", descKey: "landing_benefit2_desc" },
-    { icon: RefreshCw, titleKey: "landing_benefit3_title", descKey: "landing_benefit3_desc" },
-    { icon: Camera, titleKey: "landing_benefit4_title", descKey: "landing_benefit4_desc" },
-    { icon: BarChart3, titleKey: "landing_benefit5_title", descKey: "landing_benefit5_desc" },
-    { icon: ShoppingCart, titleKey: "landing_benefit6_title", descKey: "landing_benefit6_desc" },
-  ] as const
-
-  // Reversión de riesgo (docs/147): responde las objeciones antes de que aparezcan.
-  const risks = [
-    { icon: Gift, titleKey: "landing_risk1_title", descKey: "landing_risk1_desc" },
-    { icon: CreditCard, titleKey: "landing_risk2_title", descKey: "landing_risk2_desc" },
-    { icon: ShieldCheck, titleKey: "landing_risk3_title", descKey: "landing_risk3_desc" },
-    { icon: LifeBuoy, titleKey: "landing_risk4_title", descKey: "landing_risk4_desc" },
-  ] as const
-
-  // Mismas tres cifras que la tarjeta real de Estadísticas → Finanzas
-  // (components/estadisticas-finanzas-tab.tsx: realCostPercent, theoreticalCostPercent,
-  // variance) — antes esta tarjeta mostraba barras de kg por ingrediente comparando
-  // "teórico" contra "real" por semana, una funcionalidad que no existe en ningún lado
-  // de la app real (la única comparación teórico-vs-real real es esta, agregada en
-  // dinero/porcentaje, no por ingrediente ni en kilogramos).
-  const realCostPercent = 34.8
-  const theoreticalCostPercent = 30.6
-  const costVariance = realCostPercent - theoreticalCostPercent
-
   const sources = ["landing_source1", "landing_source2", "landing_source3", "landing_source4"] as const
 
   return (
@@ -124,210 +51,53 @@ export function HomeContent() {
       <MarketingHeader />
 
       <main>
-        {/* Hero — producto real, no ilustración (docs/03: "Producto, no ilustración").
-            Texto arriba, tarjeta ancha abajo (en vez de las 2 columnas lado a lado de
-            antes) — la réplica del PDF administrativo es más alta/densa que la tarjeta
-            simple que reemplaza, y no cabía bien al lado del texto sin verse apretada. */}
-        <section className="max-w-[1200px] mx-auto px-6 md:px-10 pt-16 md:pt-24 pb-16 md:pb-24 space-y-12">
-          <div className="space-y-6 text-center max-w-2xl mx-auto">
-            <p className="text-xs font-medium uppercase tracking-[0.14em] text-primary">{t("landing_hero_kicker")}</p>
-            <h1 className="text-4xl md:text-5xl xl:text-[64px] font-semibold tracking-[-0.045em] leading-[1.04] text-balance">
-              <span className="text-foreground">{t("landing_hero_title_line1")}</span>{" "}
-              <span className="text-primary">{t("landing_hero_title_line2")}</span>
-            </h1>
-            <p className="text-lg text-text-3 max-w-xl mx-auto">{t("landing_hero_desc")}</p>
-            {/* Una sola acción principal (docs/98: "CTA único"): crear la cuenta, con
-                el texto exacto de lo que pasa ("Crear mi cuenta gratis" → /signup).
-                Debajo, en texto, la salida de menor compromiso para quien todavía duda:
-                la demo real (#calculadora, LandingRecipeDemo), que sí calcula — docs/147. */}
-            <div className="flex flex-col items-center gap-3">
-              <Link href="/signup">
-                <Button size="lg" className="text-base px-6 py-3 bg-primary text-primary-foreground hover:bg-primary/90">
-                  {t("landing_hero_cta_primary")}
-                </Button>
-              </Link>
-              <Link href="#calculadora" className="text-sm text-text-3 hover:text-primary inline-flex items-center gap-1">
-                {t("landing_hero_cta_secondary")}
-                <ArrowRight className="h-3.5 w-3.5 rotate-90" />
-              </Link>
+        {/* Portada: titular claro (qué y para qué), un solo botón y el producto en
+            movimiento al lado — se entiende qué es antes de leer el resto. */}
+        <section className="relative overflow-hidden">
+          <div aria-hidden="true" className="absolute inset-x-0 top-0 h-[520px] bg-[radial-gradient(60%_60%_at_80%_10%,hsl(var(--primary)/0.10),transparent_70%)]" />
+          <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6 md:px-10 pt-12 md:pt-20 pb-16 md:pb-24 space-y-12 md:space-y-16">
+            <div className="space-y-6 text-center max-w-3xl mx-auto">
+              <p className="text-xs font-medium uppercase tracking-[0.14em] text-primary">{t("landing_hero_kicker")}</p>
+              <h1 className="text-[40px] leading-[1.04] md:text-6xl xl:text-[72px] font-semibold tracking-[-0.045em] text-balance">
+                <span className="text-foreground">{t("landing_hero_title_line1")}</span>{" "}
+                <span className="text-primary">{t("landing_hero_title_line2")}</span>
+              </h1>
+              <p className="text-lg text-text-3 max-w-2xl mx-auto text-pretty">{t("landing_hero_desc")}</p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link href="/signup">
+                  <Button size="lg" className="text-base px-7 py-3 bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.7)]">
+                    {t("landing_hero_cta_primary")} <ArrowRight className="ml-1.5 h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link href="#como-funciona" className="text-sm font-medium text-foreground hover:text-primary inline-flex items-center gap-1 px-3 py-2">
+                  {t("landing_hero_cta_how")} <ArrowRight className="h-3.5 w-3.5 rotate-90" />
+                </Link>
+              </div>
+              <p className="text-sm text-text-4">
+                {t("landing_hero_micro_free")} · {t("landing_hero_micro_nocard")} ·{" "}
+                <Link href="#calculadora" className="underline underline-offset-4 hover:text-primary">
+                  {t("landing_hero_cta_secondary")}
+                </Link>
+              </p>
             </div>
-            <p className="text-sm text-text-4 flex flex-wrap justify-center gap-x-2">
-              <span>{t("landing_hero_micro_free")}</span>
-              <span aria-hidden="true">·</span>
-              <span>{t("landing_hero_micro_nocard")}</span>
-              <span aria-hidden="true">·</span>
-              <span>{t("landing_hero_micro_langs")}</span>
-              <span aria-hidden="true">·</span>
-              <span>{t("landing_hero_micro_app")}</span>
-            </p>
-          </div>
-
-          {/* Réplica del PDF Administrativo real — ver components/landing-admin-pdf-
-              preview.tsx para el porqué del cambio (antes esta tarjeta imitaba solo la
-              pantalla de Ficha Técnica; el dueño del proyecto pidió que muestre lo mismo
-              que trae el PDF administrativo, ya que ahí están todos los datos juntos). */}
-          <div className="max-w-3xl mx-auto">
-            <LandingAdminPdfPreview />
+            <LandingHeroDemo />
           </div>
         </section>
 
-        {/* Mira por dentro (docs/193): la app real con un restaurante de ejemplo, que se
-            recorre sola y también se toca — antes de pedir la cuenta. */}
+        <LandingTrustStrip />
+
+        <LandingProblem />
+
+        <LandingHowItWorks />
+
         <LandingAppTour />
 
-        {/* Tus primeros 10 minutos (docs/147) — el mismo camino que "Tu camino" del
-            Dashboard: quien llega sabe exactamente qué va a hacer al crear la cuenta y
-            cuánto le toma (reduce el esfuerzo percibido). Reemplaza los "tres pasos" que
-            terminaban en comparar inventario cada semana, que es lo último, no lo primero. */}
-        <section className="bg-canvas-alt border-y border-hairline">
-          <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 space-y-10">
-            <div className="max-w-2xl space-y-3">
-              <p className="text-xs font-medium uppercase tracking-[0.14em] text-primary">{t("landing_start_kicker")}</p>
-              <h2 className="text-3xl md:text-[40px] font-semibold tracking-[-0.038em] text-foreground">{t("landing_steps_title")}</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-hairline border border-hairline rounded-2xl overflow-hidden">
-              {steps.map((step, i) => (
-                <div key={step.titleKey} className="bg-card p-6 space-y-3">
-                  <span className="text-text-4 text-sm tabular-nums">{String(i + 1).padStart(2, "0")}</span>
-                  <p className="text-lg font-semibold text-foreground">{t(step.titleKey)}</p>
-                  <p className="text-sm text-text-3 leading-relaxed">{t(step.descKey)}</p>
-                  <Badge variant="secondary" className="bg-secondary text-muted-foreground font-medium">{t(step.timeKey)}</Badge>
-                </div>
-              ))}
-            </div>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-              <p className="text-sm text-text-3 max-w-2xl">{t("landing_start_reveal")}</p>
-              <Link href="/signup" className="shrink-0">
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90">{t("landing_start_cta")}</Button>
-              </Link>
-            </div>
-          </div>
-        </section>
+        <LandingBento />
+
+        <LandingPriceStory />
 
         <LandingRecipeDemo />
 
-        {/* Cambias un precio, lo demás se ajusta solo (docs/193): la regla real de docs/162
-            contada al hacer scroll. */}
-        <LandingPriceStory />
-
-        {/* La fuga invisible — el mejor gancho (docs/03), ahora con la cifra más fuerte
-            de la ex-sección "Investigación" incrustada como dato de apoyo en vez de
-            una sección aparte con cuatro tarjetas (hallazgo de auditoría externa, ver
-            docs/98: recortar a "hero + antes/después + 3 beneficios", no una landing
-            larga por secciones). Las otras tres cifras de `stats` ya no se muestran
-            como número individual, pero sus fuentes completas (las mismas cuatro
-            organizaciones) siguen citadas abajo en "Fuentes de las cifras citadas" —
-            no se inventó ni se ocultó ninguna fuente, solo se dejó de dedicarle una
-            tarjeta grande a cada cifra. */}
-        <section className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-          <div className="space-y-6">
-            <p className="text-xs font-medium uppercase tracking-[0.14em] text-primary">{t("landing_leak_kicker")}</p>
-            <h2 className="text-3xl md:text-[40px] font-semibold tracking-[-0.038em] text-foreground leading-[1.08]">{t("landing_leak_title")}</h2>
-            <p className="text-text-3 leading-relaxed">{t("landing_leak_body")}</p>
-            <p className="text-sm text-foreground bg-canvas-alt border border-hairline rounded-xl px-4 py-3">
-              <AnimatedNumber value={stats[0].value} suffix={stats[0].suffix} className="font-semibold text-primary tabular-nums" />{" "}
-              {t(stats[0].descKey)} <span className="text-text-4">— {t(stats[0].sourceKey)}</span>
-            </p>
-            <ol className="divide-y divide-hairline border-t border-hairline">
-              {leakItems.map((key, i) => (
-                <li key={key} className="flex gap-4 py-4">
-                  <span className="text-text-4 text-sm tabular-nums shrink-0">{String(i + 1).padStart(2, "0")}</span>
-                  <span className="text-sm text-foreground">{t(key)}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
-
-          {/* Mismas tres cifras y misma etiqueta que la tarjeta real de Estadísticas
-              → Finanzas (finanzas_card_real_food_cost/theoretical_food_cost/variance,
-              components/estadisticas-finanzas-tab.tsx) — antes esta tarjeta mostraba
-              barras de kilogramos por ingrediente ("Teórico 22.3 kg" / "Real 26.4 kg"
-              para "Queso duro", etc.), una comparación que no existe en ningún lado de
-              la app real. La única comparación teórico-vs-real real es esta, agregada
-              en porcentaje de food cost, no por ingrediente ni en peso. */}
-          <Card className="border-hairline bg-card">
-            <CardContent className="p-6 space-y-5">
-              <div>
-                <p className="text-sm font-semibold text-foreground">{t("landing_leak_compare_title")}</p>
-                <p className="text-xs text-text-4">{t("landing_leak_compare_subtitle")}</p>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("finanzas_card_real_food_cost")}</p>
-                  <AnimatedNumber
-                    value={realCostPercent}
-                    decimals={1}
-                    suffix="%"
-                    className="block text-xl font-semibold text-foreground tabular-nums mt-1"
-                  />
-                </div>
-                <div>
-                  <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("finanzas_card_theoretical_food_cost")}</p>
-                  <AnimatedNumber
-                    value={theoreticalCostPercent}
-                    decimals={1}
-                    suffix="%"
-                    className="block text-xl font-semibold text-foreground tabular-nums mt-1"
-                  />
-                </div>
-                <div>
-                  <p className="text-[10.5px] font-medium uppercase tracking-[0.09em] text-text-4">{t("finanzas_card_variance")}</p>
-                  <AnimatedNumber
-                    value={costVariance}
-                    decimals={1}
-                    prefix="+"
-                    suffix="%"
-                    className="block text-xl font-semibold text-warning tabular-nums mt-1"
-                  />
-                  <p className="text-[11px] text-warning mt-0.5">{t("finanzas_variance_acceptable")}</p>
-                </div>
-              </div>
-              <p className="text-xs text-text-4 pt-1 border-t border-hairline">{t("landing_leak_compare_caption")}</p>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* Beneficios — resultado, no módulos (ver comentario del array `benefits`). */}
-        <section className="bg-canvas-alt border-y border-hairline">
-          <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 space-y-10">
-            <div className="max-w-2xl space-y-3">
-              <h2 className="text-3xl md:text-[40px] font-semibold tracking-[-0.038em] text-foreground">{t("landing_benefits_title")}</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-hairline border border-hairline rounded-2xl overflow-hidden">
-              {benefits.map((benefit) => (
-                <div key={benefit.titleKey} className="bg-card p-6 space-y-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary-soft flex items-center justify-center">
-                    <benefit.icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <p className="text-lg font-semibold text-foreground">{t(benefit.titleKey)}</p>
-                  <p className="text-sm text-text-3 leading-relaxed">{t(benefit.descKey)}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Empezar no te cuesta nada (docs/147) — reversión de riesgo justo después de
-            los beneficios, cuando aparece la duda "¿y cuánto me cuesta probar?". */}
-        <section className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 space-y-10">
-          <div className="max-w-2xl space-y-3">
-            <h2 className="text-3xl md:text-[40px] font-semibold tracking-[-0.038em] text-foreground">{t("landing_risk_title")}</h2>
-            <p className="text-text-3">{t("landing_risk_subtitle")}</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {risks.map((risk) => (
-              <div key={risk.titleKey} className="rounded-2xl border border-hairline bg-card p-5 space-y-2">
-                <risk.icon className="h-5 w-5 text-primary" />
-                <p className="text-base font-semibold text-foreground">{t(risk.titleKey)}</p>
-                <p className="text-sm text-text-3 leading-relaxed">{t(risk.descKey)}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Donde estés (docs/193): personas usándola en la cocina, el mercado y fuera del
-            trabajo, con la app en el teléfono. Incluye cómo instalarla — antes era una sección
-            aparte solo de texto (pedido del dueño de que la app instalable se vea). */}
         <LandingInContext />
 
         {/* ¿Qué plan le sirve a cada negocio? (docs/145) — pedido del dueño: decir qué
@@ -418,54 +188,13 @@ export function HomeContent() {
           </div>
         </section>
 
-        {/* Hecho en la cocina (docs/147) — antes aquí había tres testimonios de relleno
-            con la etiqueta "Espacio reservado", que en una landing pública restan
-            confianza. Ahora: la nota del fundador (autoridad y cercanía reales, sin
-            inventar reseñas) y el enlace a las reseñas verificadas de Trustpilot. */}
-        <section className="bg-canvas-alt border-y border-hairline">
-          <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-10 items-center">
-            <div className="space-y-4">
-              <h2 className="text-3xl md:text-[40px] font-semibold tracking-[-0.038em] text-foreground leading-[1.08]">{t("landing_trust_title")}</h2>
-              {/* docs/173: antes aquí iban 5 estrellas llenas con «Reseñas verificadas en
-                  Trustpilot», sin reseñas detrás. Las estrellas reales (promedio de opiniones
-                  publicadas) salen en el bloque de opiniones de abajo, desde 3 publicadas. */}
-              <p className="text-text-3">{t("landing_trust_subtitle")}</p>
-              <div className="flex flex-wrap gap-x-5 gap-y-2">
-                <a
-                  href={TRUSTPILOT_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1"
-                >
-                  {t("landing_trust_link")} <ArrowRight className="h-3.5 w-3.5" />
-                </a>
-                <Link href="/contacto" className="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1">
-                  {t("landing_founder_contact")} <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-            </div>
-            <figure className="rounded-2xl border border-hairline bg-card p-6 md:p-8 space-y-5">
-              <ChefHat className="h-6 w-6 text-primary" />
-              <blockquote className="text-lg md:text-xl text-foreground leading-relaxed tracking-[-0.01em]">
-                “{t("landing_founder_quote")}”
-              </blockquote>
-              <figcaption>
-                <p className="text-sm font-semibold text-foreground">{t("landing_founder_name")}</p>
-                <p className="text-xs text-text-4">{t("landing_founder_role")}</p>
-              </figcaption>
-            </figure>
-          </div>
-        </section>
+        <LandingRiskAndFounder />
 
         {/* Regala un mes, gana un mes (docs/179). */}
         <LandingReferralSection />
 
         {/* Opiniones reales de chefs (docs/173): solo con 3 o más publicadas con permiso. */}
-        <PublicReviews
-          variant="landing"
-          max={3}
-          wrapperClassName="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-20"
-        />
+        <PublicReviews variant="landing" max={3} wrapperClassName="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-20" />
 
         {/* FAQ — no forma parte del paquete de diseño, se conserva porque responde
             preguntas reales de compra (privacidad, POS, monedas, planes). */}
@@ -586,20 +315,7 @@ export function HomeContent() {
           </div>
         </section>
 
-        {/* Cierre (docs/03: «Cuesta menos medir la fuga que seguir pagándola»). */}
-        <section className="border-t border-hairline">
-          <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 text-center space-y-6">
-            <h2 className="text-3xl md:text-[44px] font-semibold tracking-[-0.04em] text-foreground max-w-2xl mx-auto leading-[1.08]">
-              {t("landing_closing_title")}
-            </h2>
-            <Link href="/signup">
-              <Button size="lg" className="text-base px-7 py-3 bg-primary text-primary-foreground hover:bg-primary/90">
-                {t("landing_closing_cta")}
-              </Button>
-            </Link>
-            <p className="text-sm text-text-4">{t("landing_closing_sub")}</p>
-          </div>
-        </section>
+        <LandingClosing />
 
         {/* Fuentes de las cifras citadas (docs/03: "Footer con las cuatro fuentes
             completas"). */}

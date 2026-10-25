@@ -30,6 +30,7 @@ import { OverviewPanel } from "@/components/admin/overview-panel"
 import { RevenuePanel } from "@/components/admin/revenue-panel"
 import { HealthPanel } from "@/components/admin/health-panel"
 import { RetentionPanel } from "@/components/admin/retention-panel"
+import { AccountHistoryPanel } from "@/components/admin/account-history-panel"
 
 // Candado de acceso — pedido explícito: agregar algún control de acceso a /admin,
 // que hoy cualquiera con el link puede ver. SIN backend no existe un sistema de roles
@@ -348,7 +349,14 @@ function AdminPageInner() {
 
           <TabsContent value="cuentas" className="mt-6 space-y-6">
             <TabIntro text={t("admin_tabdesc_accounts")} />
-            <AccountsPanel />
+            <AdminSubTabs
+              value={subTab.cuentas || "lista"}
+              onChange={(v) => setSub("cuentas", v)}
+              items={[
+                { value: "lista", label: t("admin_sub_accounts_list"), content: <AccountsPanel /> },
+                { value: "historial", label: t("admin_sub_accounts_history"), content: <AccountHistoryPanel /> },
+              ]}
+            />
           </TabsContent>
 
           <TabsContent value="buzon" className="mt-6 space-y-6">

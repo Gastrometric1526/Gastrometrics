@@ -14,6 +14,7 @@ import { GastrometricsLogo } from "@/components/gastrometrics-logo"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { consumeAuthHashFromUrl } from "@/lib/supabase/consume-auth-hash"
 import { storePasswordHash } from "@/lib/utils/password-hash"
+import { AuthShell } from "@/components/auth-shell"
 
 // Página a la que Supabase redirige desde el link del correo de recuperación (ver
 // app/forgot-password/page.tsx) — el link ya trae consigo una sesión de recuperación
@@ -82,7 +83,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <AuthShell>
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <div className="flex flex-col items-center justify-center gap-2">
@@ -169,6 +170,6 @@ export default function ResetPasswordPage() {
           )}
         </Card>
       </div>
-    </div>
+    </AuthShell>
   )
 }

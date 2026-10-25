@@ -102,6 +102,22 @@ export async function GET(request: Request) {
           (activeSecondsByUser.get(b.id) || 0) - (activeSecondsByUser.get(a.id) || 0) ||
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       )
+    } else if (sort === "expiring") {
+      // Por vencer (pedido del dueño, docs/197): primero los planes con fecha de vencimiento,
+      // de la más próxima a la más lejana (los ya vencidos arriba); después el resto, más
+      // nuevas primero.
+      const expiresAt = (id: string) => {
+        const v = planByUser.get(id)?.plan_expires_at
+        return v ? new Date(v).getTime() : null
+      }
+      filtered.sort((a, b) => {
+        const ea = expiresAt(a.id)
+        const eb = expiresAt(b.id)
+        if (ea !== null && eb !== null) return ea - eb
+        if (ea !== null) return -1
+        if (eb !== null) return 1
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      })
     } else if (sort === "plan") {
       filtered.sort((a, b) => {
         const planA = planByUser.get(a.id)?.plan_slug || "foodie"

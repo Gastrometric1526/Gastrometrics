@@ -1,90 +1,88 @@
 "use client"
 
+/**
+ * Artículo de /recursos/[slug], rediseñado en docs/196: portada como el resto del sitio, texto
+ * a ancho de lectura con índice lateral en escritorio, la pantalla REAL del módulo relacionado
+ * a mitad del artículo y el cierre de la landing.
+ */
+
 import Link from "next/link"
-import { MarketingHeader } from "@/components/marketing-header"
-import { MarketingFooter } from "@/components/marketing-footer"
-import { Button } from "@/components/ui/button"
 import type { ResourceArticleDef } from "@/lib/resource-articles"
 import { getFeaturePage } from "@/lib/feature-pages"
 import { useLanguage } from "@/contexts/language-context"
-import { ArrowLeft, ArrowRight, CheckCircle, BookOpen } from "lucide-react"
+import { ArrowRight } from "lucide-react"
+import { CtaBand, MarketingPage, PAGE_WIDTH, PageHero, RealScreen, Reveal } from "@/components/marketing-ui"
 
 export function ResourceArticleContent({ article }: { article: ResourceArticleDef }) {
   const { t } = useLanguage()
   const relatedFeature = article.relatedFeatureSlug ? getFeaturePage(article.relatedFeatureSlug) : null
+  const shot = relatedFeature?.screenshots.find((s) => s.screen !== "pdf")
+  const middle = Math.ceil(article.sections.length / 2)
 
   return (
-    <div className="min-h-screen bg-background">
-      <MarketingHeader />
+    <MarketingPage>
+      <PageHero kicker={t("resource_guide_label")} title={t(article.titleKey)} subtitle={t(article.taglineKey)} back={{ href: "/recursos", label: t("resource_back_to_index") }} />
 
-      <main className="container mx-auto px-4 py-16 space-y-12 max-w-3xl">
-        <div>
-          <Link href="/recursos">
-            <Button variant="ghost" size="sm" className="gap-2 -ml-3 mb-6">
-              <ArrowLeft className="h-4 w-4" />
-              {t("resource_back_to_index")}
-            </Button>
-          </Link>
-
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
-              <BookOpen className="h-7 w-7 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground text-balance">{t(article.titleKey)}</h1>
-              <p className="text-lg text-muted-foreground">{t(article.taglineKey)}</p>
-            </div>
+      <div className={`${PAGE_WIDTH} pb-12 grid gap-12 lg:grid-cols-[220px_minmax(0,1fr)]`}>
+        <nav aria-label={t("resource_toc")} className="hidden lg:block">
+          <div className="sticky top-24 space-y-3">
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-text-4">{t("resource_toc")}</p>
+            <ol className="space-y-2 border-l border-hairline">
+              {article.sections.map((section, i) => (
+                <li key={section.headingKey}>
+                  <a href={`#s${i + 1}`} className="-ml-px block border-l border-transparent pl-3 text-sm text-text-3 hover:border-primary hover:text-foreground">
+                    {t(section.headingKey)}
+                  </a>
+                </li>
+              ))}
+            </ol>
           </div>
+        </nav>
 
-          <p className="text-lg text-muted-foreground leading-relaxed">{t(article.introKey)}</p>
-        </div>
-
-        <div className="space-y-10">
-          {article.sections.map((section) => (
-            <section key={section.headingKey} className="space-y-3">
-              <h2 className="text-2xl font-bold text-foreground">{t(section.headingKey)}</h2>
-              <p className="text-muted-foreground leading-relaxed whitespace-pre-line">{t(section.bodyKey)}</p>
-            </section>
+        <article className="max-w-[720px] space-y-10">
+          <p className="text-lg text-foreground leading-relaxed text-pretty">{t(article.introKey)}</p>
+          {article.sections.map((section, i) => (
+            <div key={section.headingKey} className="space-y-10">
+              <Reveal as="section" id={`s${i + 1}`} className="scroll-mt-24 space-y-3">
+                <h2 className="text-2xl font-semibold tracking-[-0.02em] text-foreground">{t(section.headingKey)}</h2>
+                <p className="text-text-3 leading-relaxed whitespace-pre-line text-pretty">{t(section.bodyKey)}</p>
+              </Reveal>
+              {shot && relatedFeature && i === middle - 1 && (
+                <Reveal as="section">
+                  <figure className="space-y-3">
+                    <RealScreen screen={shot.screen} alt={t(shot.altKey)} url={`gastrometrics.org${shot.route}`} focus={shot.focus} />
+                    <figcaption className="text-sm text-text-3 text-center text-pretty">{t(shot.captionKey)}</figcaption>
+                  </figure>
+                </Reveal>
+              )}
+            </div>
           ))}
-        </div>
 
-        {relatedFeature && (
-          <div className="rounded-lg border border-border bg-muted/30 p-5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
-            <p className="text-sm text-foreground">
-              {t("resource_related_feature_prefix")} <span className="font-semibold">{t(relatedFeature.titleKey)}</span>
-            </p>
-            <Link href={`/caracteristicas/${relatedFeature.slug}`}>
-              <Button variant="outline" size="sm" className="gap-2 shrink-0 bg-transparent">
-                {t("resource_related_feature_cta")}
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
-          </div>
-        )}
+          {relatedFeature && (
+            <Reveal>
+              <Link
+                href={`/caracteristicas/${relatedFeature.slug}`}
+                className="group flex flex-col sm:flex-row sm:items-center gap-4 justify-between rounded-2xl border border-hairline bg-canvas-alt p-5 hover:border-primary/40 transition-colors"
+              >
+                <span className="text-sm text-foreground">
+                  {t("resource_related_feature_prefix")} <span className="font-semibold">{t(relatedFeature.titleKey)}</span>
+                </span>
+                <span className="text-sm font-medium text-primary inline-flex items-center gap-1 shrink-0">
+                  {t("resource_related_feature_cta")} <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+            </Reveal>
+          )}
+        </article>
+      </div>
 
-        <section className="text-center space-y-6 py-8 border-t border-border/50">
-          <div className="space-y-3">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground">{t(article.ctaHeadingKey)}</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">{t(article.ctaBodyKey)}</p>
-          </div>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/signup">
-              <Button size="lg" className="text-lg px-8 py-3 bg-primary text-primary-foreground hover:bg-primary/90">
-                <CheckCircle className="mr-2 h-5 w-5" />
-                {t("about_cta_button1")}
-              </Button>
-            </Link>
-            <Link href="/recursos">
-              <Button size="lg" variant="outline" className="text-lg px-8 py-3 border-border hover:bg-accent hover:text-accent-foreground bg-transparent">
-                {t("resource_view_all")}
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-          </div>
-        </section>
-      </main>
-
-      <MarketingFooter />
-    </div>
+      <CtaBand
+        title={t(article.ctaHeadingKey)}
+        desc={t(article.ctaBodyKey)}
+        primary={{ href: "/signup", label: t("about_cta_button1") }}
+        secondary={{ href: "/recursos", label: t("resource_view_all") }}
+        note={t("landing_closing_sub")}
+      />
+    </MarketingPage>
   )
 }

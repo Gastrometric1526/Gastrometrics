@@ -15,8 +15,16 @@ export interface FeatureStepDef {
   descKey: TranslationKey
 }
 
+/**
+ * Captura REAL de la app en el idioma de la página (docs/196): `screen` = pantalla de
+ * public/landing/{idioma}/desk-{screen}.webp, o "pdf" para el PDF real de la Ficha Técnica
+ * (pdf-ficha.webp). Las genera manual/scripts/landing-media.mjs con un restaurante de ejemplo.
+ */
 export interface FeatureScreenshotDef {
-  src: string
+  screen: string
+  /** Ruta que se muestra en la barra del navegador del marco. */
+  route: string
+  focus?: [number, number]
   altKey: TranslationKey
   captionKey: TranslationKey
 }
@@ -50,7 +58,8 @@ export const featurePages: FeaturePageDef[] = [
       "feat_fichas_highlight4",
     ],
     screenshots: [
-      { src: "/screenshots/ficha-tecnica-top.png", altKey: "feat_fichas_shot1_alt", captionKey: "feat_fichas_shot1_caption" },
+      { screen: "ficha", route: "/ficha-tecnica", altKey: "feat_fichas_shot1_alt", captionKey: "feat_fichas_shot1_caption" },
+      { screen: "pdf", route: "", altKey: "feat_fichas_shot2_alt", captionKey: "feat_fichas_shot2_caption" },
     ],
   },
   {
@@ -71,7 +80,7 @@ export const featurePages: FeaturePageDef[] = [
       "feat_costeo_highlight4",
     ],
     screenshots: [
-      { src: "/screenshots/ficha-tecnica-costeo.png", altKey: "feat_costeo_shot1_alt", captionKey: "feat_costeo_shot1_caption" },
+      { screen: "precio", route: "/ficha-tecnica", altKey: "feat_costeo_shot1_alt", captionKey: "feat_costeo_shot1_caption" },
     ],
   },
   {
@@ -91,8 +100,8 @@ export const featurePages: FeaturePageDef[] = [
       "feat_ingredientes_highlight4",
     ],
     screenshots: [
-      { src: "/screenshots/ingredientes.png", altKey: "feat_ingredientes_shot1_alt", captionKey: "feat_ingredientes_shot1_caption" },
-      { src: "/screenshots/inventario.png", altKey: "feat_ingredientes_shot2_alt", captionKey: "feat_ingredientes_shot2_caption" },
+      { screen: "ingredientes", route: "/ingredientes", altKey: "feat_ingredientes_shot1_alt", captionKey: "feat_ingredientes_shot1_caption" },
+      { screen: "inventario", route: "/inventario", altKey: "feat_ingredientes_shot2_alt", captionKey: "feat_ingredientes_shot2_caption" },
     ],
   },
   {
@@ -112,7 +121,7 @@ export const featurePages: FeaturePageDef[] = [
       "feat_menus_highlight4",
     ],
     screenshots: [
-      { src: "/screenshots/menus.png", altKey: "feat_menus_shot1_alt", captionKey: "feat_menus_shot1_caption" },
+      { screen: "menus", route: "/menus", altKey: "feat_menus_shot1_alt", captionKey: "feat_menus_shot1_caption" },
     ],
   },
   {
@@ -132,7 +141,7 @@ export const featurePages: FeaturePageDef[] = [
       "feat_ordenes_highlight4",
     ],
     screenshots: [
-      { src: "/screenshots/ordenes-compra.png", altKey: "feat_ordenes_shot1_alt", captionKey: "feat_ordenes_shot1_caption" },
+      { screen: "ordenes", route: "/ordenes-compra", altKey: "feat_ordenes_shot1_alt", captionKey: "feat_ordenes_shot1_caption" },
     ],
   },
   {
@@ -152,7 +161,7 @@ export const featurePages: FeaturePageDef[] = [
       "feat_estadisticas_highlight4",
     ],
     screenshots: [
-      { src: "/screenshots/estadisticas.png", altKey: "feat_estadisticas_shot1_alt", captionKey: "feat_estadisticas_shot1_caption" },
+      { screen: "reportes", route: "/estadisticas", altKey: "feat_estadisticas_shot1_alt", captionKey: "feat_estadisticas_shot1_caption" },
     ],
   },
 ]

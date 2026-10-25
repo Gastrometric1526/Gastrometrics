@@ -6,11 +6,8 @@
  */
 
 import { useState } from "react"
-import Link from "next/link"
 import { Calculator, Scale } from "lucide-react"
-import { MarketingHeader } from "@/components/marketing-header"
-import { MarketingFooter } from "@/components/marketing-footer"
-import { Button } from "@/components/ui/button"
+import { CtaBand, MarketingPage, PageHero } from "@/components/marketing-ui"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -57,14 +54,9 @@ export function FoodCostCalculatorContent() {
   const realCost = realCostWithWaste(num(purchase), num(waste))
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <MarketingHeader />
-      <main className="flex-1">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14 space-y-8">
-          <header className="space-y-2 text-center">
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">{t("calc_title")}</h1>
-            <p className="text-muted-foreground">{t("calc_subtitle")}</p>
-          </header>
+    <MarketingPage>
+      <PageHero kicker={t("calc_kicker")} title={t("calc_title")} subtitle={t("calc_subtitle")} />
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-4 space-y-8">
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>
@@ -147,17 +139,13 @@ export function FoodCostCalculatorContent() {
             </Card>
           </div>
 
-          <section className="rounded-2xl border border-primary/20 bg-primary/5 p-8 text-center space-y-3">
-            <h2 className="text-2xl font-semibold text-foreground">{t("calc_cta_title")}</h2>
-            <p className="max-w-2xl mx-auto text-muted-foreground">{t("calc_cta_body")}</p>
-            <Button asChild size="lg">
-              <Link href="/signup">{t("calc_cta_button")}</Link>
-            </Button>
-            <p className="text-xs text-muted-foreground">{t("calc_cta_note")}</p>
-          </section>
         </div>
-      </main>
-      <MarketingFooter />
-    </div>
+      <CtaBand
+        title={t("calc_cta_title")}
+        desc={t("calc_cta_body")}
+        primary={{ href: "/signup", label: t("calc_cta_button") }}
+        note={t("calc_cta_note")}
+      />
+    </MarketingPage>
   )
 }

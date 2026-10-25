@@ -43,6 +43,7 @@ import {
   type UserRegistrationData,
 } from "@/lib/types/user"
 import { registrationStep1Schema, registrationStep2Schema, registrationStep3Schema } from "@/lib/validations/auth"
+import { AuthShell } from "@/components/auth-shell"
 
 // BUG CORREGIDO: useSearchParams() (para leer ?plan=) exige un límite de Suspense
 // por encima para poder pre-renderizarse estáticamente — sin él, `next build` fallaba
@@ -258,7 +259,7 @@ function SignupPageInner() {
 
   if (showCheckEmail) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
+      <AuthShell>
         <div className="w-full max-w-md space-y-6 text-center">
           <div className="flex flex-col items-center justify-center gap-2">
             <GastrometricsLogo className="h-16 w-16" variant="brand" />
@@ -277,12 +278,12 @@ function SignupPageInner() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </AuthShell>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
+    <AuthShell wide="xl">
       <div className="w-full max-w-2xl space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -873,6 +874,6 @@ function SignupPageInner() {
           </p>
         </div>
       </div>
-    </div>
+    </AuthShell>
   )
 }

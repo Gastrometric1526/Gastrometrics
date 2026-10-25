@@ -55,6 +55,18 @@ import { useAdminLiveReload } from "@/components/admin/live"
 // saber quién pasa más tiempo es más útil todavía si también se ve quién dejó de volver.
 const INACTIVE_THRESHOLD_MS = 14 * 24 * 60 * 60 * 1000
 
+/** «Vence 26/10/2026» bajo el plan: rojo si ya venció o vence en 3 días, ámbar en 14 (docs/197). */
+function ExpiryHint({ at }: { at: string }) {
+  const { t } = useLanguage()
+  const days = (new Date(at).getTime() - Date.now()) / 86_400_000
+  const tone = days < 0 ? "text-destructive" : days <= 3 ? "text-destructive" : days <= 14 ? "text-warning" : "text-muted-foreground"
+  return (
+    <span className={`block text-xs ${tone}`}>
+      {(days < 0 ? t("admin_accounts_expired_on") : t("admin_accounts_expires_on")).replace("{date}", formatDate(at))}
+    </span>
+  )
+}
+
 interface AccountRow {
   userId: string
   email: string
@@ -137,7 +149,16 @@ export function AccountsPanel() {
   const [search, setSearch] = useState("")
   const [planFilter, setPlanFilter] = useState("todos")
   // Por defecto, las cuentas que más usan la app primero (pedido del dueño, docs/160).
-  const [sortBy, setSortBy] = useState<"recent" | "time" | "plan">("time")
+  const [sortBy, setSortBy] = useState<"recent" | "time" | "plan" | "expiring">(() => {
+    // Desde «Planes que vencen pronto» del Resumen se llega ya ordenada por vencimiento (docs/197).
+    try {
+      if (typeof window !== "undefined" && sessionStorage.getItem("gm_admin_accounts_sort") === "expiring") {
+        sessionStorage.removeItem("gm_admin_accounts_sort")
+        return "expiring"
+      }
+    } catch {}
+    return "time"
+  })
   const [loadingList, setLoadingList] = useState(false)
 
   const [selected, setSelected] = useState<AccountRow | null>(null)
@@ -314,7 +335,7 @@ export function AccountsPanel() {
   }
 
   const handleSortChange = (value: string) => {
-    setSortBy(value as "recent" | "time" | "plan")
+    setSortBy(value as "recent" | "time" | "plan" | "expiring")
     setPage(1)
     loadList(1, search, planFilter, value)
   }
@@ -1068,6 +1089,7 @@ export function AccountsPanel() {
               <SelectItem value="time">{t("admin_accounts_sort_time")}</SelectItem>
               <SelectItem value="recent">{t("admin_accounts_sort_recent")}</SelectItem>
               <SelectItem value="plan">{t("admin_accounts_sort_plan")}</SelectItem>
+              <SelectItem value="expiring">{t("admin_accounts_sort_expiring")}</SelectItem>
             </SelectContent>
           </Select>
           <Button type="submit" disabled={loadingList} className="shrink-0 gap-2">
@@ -1178,7 +1200,10 @@ export function AccountsPanel() {
                             )}
                         </span>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{getPlanBySlug(a.planSlug).name}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {getPlanBySlug(a.planSlug).name}
+                        {a.planExpiresAt && <ExpiryHint at={a.planExpiresAt} />}
+                      </TableCell>
                       <TableCell className="text-muted-foreground">{a.businessCount}</TableCell>
                       <TableCell className="text-muted-foreground">{a.teamMemberCount}</TableCell>
                       <TableCell className="whitespace-nowrap text-muted-foreground">

@@ -5,6 +5,10 @@ import { Check } from "lucide-react"
 import { GastrometricsLogo } from "@/components/gastrometrics-logo"
 import { getSeoLanding, seoLandings } from "@/lib/seo-landings"
 import { canonicalSiteUrl } from "@/lib/site-url"
+import { LaptopFrame } from "@/components/landing-showcase"
+
+// Capturas reales de la app en el idioma de la página (docs/196); español si no hay.
+const MEDIA_LANGS = ["es", "en", "da", "fr", "pt", "zh"]
 
 // Páginas de búsqueda por idioma (docs/173): llegan del servidor ya en su idioma, con
 // hreflang entre ellas y datos estructurados (SoftwareApplication + FAQPage).
@@ -30,6 +34,9 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
 export default function SoftwareLandingPage({ params }: { params: { slug: string } }) {
   const page = getSeoLanding(params.slug)
   if (!page) notFound()
+
+  const lang2 = page.htmlLang.slice(0, 2)
+  const mediaLang = MEDIA_LANGS.includes(lang2) ? lang2 : "es"
 
   const jsonLd = [
     {
@@ -66,17 +73,26 @@ export default function SoftwareLandingPage({ params }: { params: { slug: string
         </div>
       </header>
 
-      <section className="mx-auto max-w-5xl px-6 py-14 md:py-20 space-y-5">
-        <h1 className="text-3xl md:text-5xl font-semibold tracking-tight leading-tight">{page.h1}</h1>
-        <p className="max-w-3xl text-lg text-muted-foreground">{page.lead}</p>
-        <Link href="/signup" className="inline-flex rounded-full bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90">
-          {page.ctaButton}
-        </Link>
+      <section className="relative overflow-hidden">
+        <div aria-hidden="true" className="absolute inset-x-0 top-0 h-[460px] bg-[radial-gradient(60%_60%_at_80%_0%,hsl(var(--primary)/0.10),transparent_70%)]" />
+        <div className="relative mx-auto max-w-5xl px-6 pt-14 md:pt-20 pb-12 space-y-10">
+          <div className="space-y-5 text-center max-w-3xl mx-auto">
+            <h1 className="text-[34px] md:text-5xl font-semibold tracking-[-0.042em] leading-[1.06] text-balance">{page.h1}</h1>
+            <p className="text-lg text-text-3 text-pretty">{page.lead}</p>
+            <Link href="/signup" className="inline-flex rounded-full bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90 shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.7)]">
+              {page.ctaButton}
+            </Link>
+          </div>
+          <LaptopFrame url="gastrometrics.org/ficha-tecnica">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`/landing/${mediaLang}/desk-ficha.webp`} alt={page.h1} className="absolute inset-0 h-full w-full object-cover object-top" decoding="async" />
+          </LaptopFrame>
+        </div>
       </section>
 
       <section className="mx-auto max-w-5xl px-6 pb-12 grid gap-8 md:grid-cols-3">
         {page.sections.map((s) => (
-          <article key={s.h2} className="space-y-2">
+          <article key={s.h2} className="space-y-2 rounded-2xl border border-hairline bg-card p-6">
             <h2 className="text-xl font-semibold">{s.h2}</h2>
             <p className="text-muted-foreground leading-relaxed">{s.body}</p>
           </article>
@@ -101,7 +117,7 @@ export default function SoftwareLandingPage({ params }: { params: { slug: string
         <h2 className="text-2xl font-semibold">{page.faqTitle}</h2>
         <div className="space-y-4">
           {page.faq.map((f) => (
-            <details key={f.q} className="rounded-lg border border-border p-4">
+            <details key={f.q} className="rounded-2xl border border-hairline bg-card p-5">
               <summary className="cursor-pointer font-medium">{f.q}</summary>
               <p className="mt-2 text-muted-foreground leading-relaxed">{f.a}</p>
             </details>
@@ -110,10 +126,11 @@ export default function SoftwareLandingPage({ params }: { params: { slug: string
       </section>
 
       <section className="mx-auto max-w-5xl px-6 pb-16">
-        <div className="rounded-2xl bg-primary/5 border border-primary/20 p-8 space-y-3 text-center">
-          <h2 className="text-2xl font-semibold">{page.closingTitle}</h2>
-          <p className="text-muted-foreground">{page.closingBody}</p>
-          <Link href="/signup" className="inline-flex rounded-full bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90">
+        <div className="relative overflow-hidden rounded-3xl bg-foreground px-6 py-14 md:px-12 space-y-5 text-center">
+          <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(50%_80%_at_50%_0%,hsl(var(--primary)/0.35),transparent_70%)]" />
+          <h2 className="relative text-2xl md:text-4xl font-semibold tracking-[-0.03em] text-background text-balance">{page.closingTitle}</h2>
+          <p className="relative text-background/70 max-w-xl mx-auto">{page.closingBody}</p>
+          <Link href="/signup" className="relative inline-flex rounded-full bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90">
             {page.ctaButton}
           </Link>
         </div>

@@ -32,7 +32,7 @@ import { applyPriceRule, suggestedUnitPrice } from "@/lib/recipe-pricing"
 // ─── utilidades ──────────────────────────────────────────────────────────────
 
 const LANDING_LANGS: LanguageCode[] = ["es", "en", "da", "fr", "pt", "zh"]
-const mediaLang = (lang: LanguageCode) => (LANDING_LANGS.includes(lang) ? lang : "es")
+export const mediaLang = (lang: LanguageCode) => (LANDING_LANGS.includes(lang) ? lang : "es")
 
 function useReducedMotion() {
   const [reduced, setReduced] = useState(false)
@@ -84,7 +84,7 @@ function useInView<T extends Element>(options: IntersectionObserverInit & { once
 
 // ─── marcos de dispositivo ──────────────────────────────────────────────────
 
-function LaptopFrame({ children, url }: { children: React.ReactNode; url: string }) {
+export function LaptopFrame({ children, url }: { children: React.ReactNode; url: string }) {
   return (
     <div className="rounded-[18px] border border-hairline bg-card shadow-[0_30px_80px_-30px_rgba(15,23,42,0.35)] overflow-hidden">
       <div className="flex items-center gap-2 px-4 h-9 border-b border-hairline bg-canvas-alt">
@@ -98,7 +98,7 @@ function LaptopFrame({ children, url }: { children: React.ReactNode; url: string
   )
 }
 
-function PhoneFrame({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+export function PhoneFrame({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={`relative rounded-[2.4rem] bg-neutral-900 p-[7px] shadow-[0_30px_60px_-20px_rgba(15,23,42,0.45)] ${className}`}>
       <div className="relative aspect-[390/844] rounded-[2rem] overflow-hidden bg-white">
@@ -110,7 +110,7 @@ function PhoneFrame({ children, className = "" }: { children: React.ReactNode; c
 }
 
 /** Captura alta de celular que el teléfono recorre sola hacia abajo (como si alguien la usara). */
-function PhoneScreen({ src, alt, play, duration, navSrc }: { src: string; alt: string; play: boolean; duration: number; navSrc?: string }) {
+export function PhoneScreen({ src, alt, play, duration, navSrc }: { src: string; alt: string; play: boolean; duration: number; navSrc?: string }) {
   const boxRef = useRef<HTMLDivElement>(null)
   const imgRef = useRef<HTMLImageElement>(null)
   const [travel, setTravel] = useState(0)

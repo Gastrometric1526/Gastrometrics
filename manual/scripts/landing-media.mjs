@@ -15,7 +15,8 @@
  */
 import puppeteer from "puppeteer-core"
 import path from "path"
-import { mkdirSync, statSync } from "fs"
+import { mkdirSync, statSync, readdirSync, readFileSync, rmSync, writeFileSync } from "fs"
+import os from "os"
 import { fileURLToPath } from "url"
 import { buildDemo } from "./landing-demo-data.mjs"
 
@@ -37,6 +38,8 @@ const SCREENS = [
   { id: "precio", route: RECIPE, anchor: '[data-tour="ficha-pricing"]' },
   { id: "inventario", route: "/inventario" },
   { id: "reportes", route: "/estadisticas" },
+  { id: "menus", route: "/menus" },
+  { id: "ordenes", route: "/ordenes-compra" },
 ]
 
 const TOURS = ["onboarding_completed", ...["ficha-tecnica", "ingredientes", "inventario", "mis-recetas", "menus", "estadisticas", "ordenes-compra", "settings-dialog", "equipo", "mi-plan", "procesar-ordenes", "business-detail", "negocios", "dashboard"].map((k) => `tour_completed_${k}`)]
@@ -177,6 +180,74 @@ const withRetry = async (file, take) => {
   }
 }
 
+
+// ── PDF real de la Ficha Técnica (docs/196) ──
+// Exporta el PDF administrativo de la hamburguesa como lo haría una persona (botón «Exportar
+// PDF» → «Administrativo» → exportar) y convierte su primera página en imagen con pdf.js.
+const PDF_TMP = path.join(os.tmpdir(), "gm-landing-pdf")
+async function capturePdf(dir) {
+  rmSync(PDF_TMP, { recursive: true, force: true })
+  mkdirSync(PDF_TMP, { recursive: true })
+  const cdp = await page.createCDPSession()
+  await cdp.send("Browser.setDownloadBehavior", { behavior: "allow", downloadPath: PDF_TMP })
+  await load(RECIPE)
+  const exportLabel = await page.evaluate(() => {
+    const btn = [...document.querySelectorAll("button")].find((b) => b.querySelector("svg.lucide-file-down, svg.lucide-download, svg.lucide-file-text") && b.closest("main"))
+    return btn ? btn.textContent.trim() : null
+  })
+  // El botón de la cabecera de «Ver receta» lleva el texto ficha_tecnica_export_pdf.
+  const clicked = await page.evaluate((label) => {
+    const btns = [...document.querySelectorAll("main button")]
+    const btn = btns.find((b) => b.textContent.trim() === label) || btns.find((b) => /PDF/i.test(b.textContent))
+    if (btn) btn.click()
+    return !!btn
+  }, exportLabel)
+  if (!clicked) return console.log("  ! no se encontró «Exportar PDF»")
+  await page.waitForSelector('[role="dialog"]', { timeout: 10000 }).catch(() => {})
+  await sleep(600)
+  // Primera opción = Administrativo; luego el botón principal del diálogo.
+  await page.evaluate(() => {
+    const dialog = document.querySelector('[role="dialog"]')
+    const options = dialog ? [...dialog.querySelectorAll("[class*='cursor-pointer'], [role='radio']")] : []
+    if (options[0]) options[0].click()
+  })
+  await sleep(400)
+  await page.evaluate(() => {
+    const dialog = document.querySelector('[role="dialog"]')
+    const buttons = dialog ? [...dialog.querySelectorAll("button")] : []
+    const last = buttons.filter((b) => !b.disabled && /PDF/i.test(b.textContent)).pop() || buttons.pop()
+    if (last) last.click()
+  })
+  let file = null
+  for (let i = 0; i < 30 && !file; i++) {
+    await sleep(500)
+    file = readdirSync(PDF_TMP).find((f) => f.endsWith(".pdf"))
+  }
+  if (!file) return console.log("  ! no se descargó el PDF")
+  const b64 = readFileSync(path.join(PDF_TMP, file)).toString("base64")
+  const viewer = await browser.newPage()
+  await viewer.setViewport({ width: 1000, height: 1400 })
+  await viewer.setContent(`<html><body style="margin:0;background:#fff"><canvas id="c"></canvas><script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script></body></html>`)
+  await viewer.waitForFunction(() => window.pdfjsLib, { timeout: 30000 })
+  const size = await viewer.evaluate(async (data) => {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js"
+    const bytes = Uint8Array.from(atob(data), (c) => c.charCodeAt(0))
+    const doc = await pdfjsLib.getDocument({ data: bytes }).promise
+    const pg = await doc.getPage(1)
+    const vp = pg.getViewport({ scale: 1.6 })
+    const c = document.getElementById("c")
+    c.width = vp.width
+    c.height = vp.height
+    await pg.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise
+    return [vp.width, vp.height]
+  }, b64)
+  await viewer.setViewport({ width: Math.ceil(size[0]), height: Math.ceil(size[1]) })
+  const canvas = await viewer.$("#c")
+  await canvas.screenshot({ path: path.join(dir, "pdf-ficha.webp"), type: "webp", quality: 82 })
+  await viewer.close()
+  console.log("  ✓ pdf-ficha.webp")
+}
+
 for (const lang of LANGS) {
   currentLang = lang
   demo = buildDemo(lang, "demo-owner")
@@ -212,7 +283,10 @@ for (const lang of LANGS) {
     console.log("  ✓", file)
   }
 
-  // ── Celular ──
+  if (!ONLY || ONLY.includes("pdf-ficha.webp")) await capturePdf(dir).catch((e) => console.log("  ! PDF:", e.message))
+
+  // ── Celular ── (se salta si LANDING_ONLY no pide capturas de celular)
+  if (ONLY && !ONLY.some((f) => f.startsWith("phone-"))) continue
   await page.emulate({
     viewport: { width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
     userAgent:

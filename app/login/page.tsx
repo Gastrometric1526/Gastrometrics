@@ -17,6 +17,7 @@ import { bootstrapPasswordHashIfMissing } from "@/lib/utils/password-hash"
 import { consumePendingSignupPlan } from "@/lib/pending-signup-plan"
 import { Checkbox } from "@/components/ui/checkbox"
 import { setRememberChoice } from "@/lib/remember-me"
+import { AuthShell } from "@/components/auth-shell"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -130,7 +131,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <AuthShell>
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -268,6 +269,6 @@ export default function LoginPage() {
           <p>{t("login_terms_notice")}</p>
         </div>
       </div>
-    </div>
+    </AuthShell>
   )
 }

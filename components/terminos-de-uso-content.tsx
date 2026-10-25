@@ -1,19 +1,18 @@
 "use client"
 
-import { MarketingHeader } from "@/components/marketing-header"
-import { MarketingFooter } from "@/components/marketing-footer"
+import { MarketingPage } from "@/components/marketing-ui"
 import { useLanguage } from "@/contexts/language-context"
 
 export function TerminosDeUsoContent() {
   const { t } = useLanguage()
 
   return (
-    <div className="min-h-screen bg-background">
-      <MarketingHeader />
+    <MarketingPage>
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_60%_at_80%_0%,hsl(var(--primary)/0.08),transparent_70%)]" />
 
-      <main className="container mx-auto px-4 py-16 max-w-3xl space-y-10">
+      <div className="relative mx-auto px-4 sm:px-6 pt-12 md:pt-16 pb-20 max-w-3xl space-y-10">
         <div className="space-y-3">
-          <h1 className="text-4xl font-bold text-foreground">{t("terminos_page_title")}</h1>
+          <h1 className="text-[34px] md:text-5xl font-semibold tracking-[-0.04em] leading-[1.08] text-foreground text-balance">{t("terminos_page_title")}</h1>
           <p className="text-muted-foreground">{t("terminos_last_updated")}</p>
           <p className="text-sm font-medium text-foreground bg-muted/50 rounded-md px-3 py-2">{t("terminos_binding_notice")}</p>
           <p className="text-sm text-muted-foreground">
@@ -29,23 +28,23 @@ export function TerminosDeUsoContent() {
         </div>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold text-foreground">{t("terminos_s1_title")}</h2>
+          <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("terminos_s1_title")}</h2>
           <p className="text-muted-foreground">{t("terminos_s1_body")}</p>
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold text-foreground">{t("terminos_s2_title")}</h2>
+          <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("terminos_s2_title")}</h2>
           <p className="text-muted-foreground">{t("terminos_s2_body")}</p>
           <p className="text-sm font-medium text-foreground bg-muted/50 rounded-md px-3 py-2">{t("terminos_s2_highlight")}</p>
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold text-foreground">{t("terminos_s3_title")}</h2>
+          <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("terminos_s3_title")}</h2>
           <p className="text-muted-foreground">{t("terminos_s3_body")}</p>
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-2xl font-semibold text-foreground">{t("terminos_s4_title")}</h2>
+          <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("terminos_s4_title")}</h2>
 
           <div className="space-y-2">
             <h3 className="text-lg font-semibold text-foreground">{t("terminos_s4_1_title")}</h3>
@@ -89,17 +88,17 @@ export function TerminosDeUsoContent() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold text-foreground">{t("terminos_s5_title")}</h2>
+          <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("terminos_s5_title")}</h2>
           <p className="text-muted-foreground">{t("terminos_s5_body")}</p>
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold text-foreground">{t("terminos_s6_title")}</h2>
+          <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("terminos_s6_title")}</h2>
           <p className="text-muted-foreground">{t("terminos_s6_body")}</p>
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold text-foreground">{t("terminos_s7_title")}</h2>
+          <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("terminos_s7_title")}</h2>
           <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
             <li>{t("terminos_s7_item1")}</li>
             <li>{t("terminos_s7_item2")}</li>
@@ -110,52 +109,52 @@ export function TerminosDeUsoContent() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold text-foreground">{t("terminos_s8_title")}</h2>
+          <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("terminos_s8_title")}</h2>
           <p className="text-muted-foreground">{t("terminos_s8_body")}</p>
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold text-foreground">{t("terminos_s9_title")}</h2>
+          <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("terminos_s9_title")}</h2>
           <p className="text-muted-foreground">{t("terminos_s9_body")}</p>
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold text-foreground">{t("terminos_s10_title")}</h2>
+          <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("terminos_s10_title")}</h2>
           <p className="text-muted-foreground">{t("terminos_s10_body")}</p>
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold text-foreground">{t("terminos_s11_title")}</h2>
+          <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("terminos_s11_title")}</h2>
           <p className="text-muted-foreground">{t("terminos_s11_body")}</p>
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold text-foreground">{t("terminos_s12_title")}</h2>
+          <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("terminos_s12_title")}</h2>
           <p className="text-muted-foreground">{t("terminos_s12_body")}</p>
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold text-foreground">{t("terminos_s13_title")}</h2>
+          <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("terminos_s13_title")}</h2>
           <p className="text-muted-foreground">{t("terminos_s13_body")}</p>
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold text-foreground">{t("terminos_s14_title")}</h2>
+          <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("terminos_s14_title")}</h2>
           <p className="text-muted-foreground">{t("terminos_s14_body")}</p>
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold text-foreground">{t("terminos_s15_title")}</h2>
+          <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("terminos_s15_title")}</h2>
           <p className="text-muted-foreground">{t("terminos_s15_body")}</p>
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold text-foreground">{t("terminos_s16_title")}</h2>
+          <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("terminos_s16_title")}</h2>
           <p className="text-muted-foreground">{t("terminos_s16_body")}</p>
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold text-foreground">{t("terminos_contact_label")}</h2>
+          <h2 className="text-xl md:text-2xl font-semibold tracking-[-0.02em] text-foreground">{t("terminos_contact_label")}</h2>
           <p className="text-muted-foreground">
             <a href="/contacto" className="text-primary hover:underline">
               /contacto
@@ -163,9 +162,8 @@ export function TerminosDeUsoContent() {
             · <span className="text-foreground">gastrometrics@outlook.com</span>
           </p>
         </section>
-      </main>
+      </div>
 
-      <MarketingFooter />
-    </div>
+    </MarketingPage>
   )
 }

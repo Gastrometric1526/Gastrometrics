@@ -14,6 +14,7 @@
  */
 
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { ACCOUNT_PURGED_EVENT, encodePurgedRecord } from "@/lib/admin/account-ledger"
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const GRACE_PERIOD_DAYS = 30
@@ -24,7 +25,7 @@ export async function runAccountDeletionPurge(): Promise<{ candidates: number; p
 
   const { data: candidates, error } = await admin
     .from("profiles")
-    .select("id")
+    .select("id, deletion_requested_at, nationality")
     .not("deletion_requested_at", "is", null)
     .lte("deletion_requested_at", cutoff.toISOString())
   if (error) throw error
@@ -39,12 +40,27 @@ export async function runAccountDeletionPurge(): Promise<{ candidates: number; p
       continue
     }
 
+    // Registro sin datos personales para el historial de /admin (docs/197): fechas, plan y país.
+    const [{ data: authUser }, { data: planRow }] = await Promise.all([
+      admin.auth.admin.getUserById(row.id),
+      admin.from("account_plans").select("plan_slug").eq("account_id", row.id).maybeSingle(),
+    ])
+    const record = encodePurgedRecord({
+      createdAt: authUser?.user?.created_at ?? null,
+      requestedAt: row.deletion_requested_at ?? null,
+      purgedAt: new Date().toISOString(),
+      plan: planRow?.plan_slug ?? "foodie",
+      country: row.nationality ?? null,
+    })
+
     const { error: deleteError } = await admin.auth.admin.deleteUser(row.id)
     if (deleteError) {
       console.error("[purge-deleted-accounts] Error purgando la cuenta:", deleteError)
       continue
     }
     purged++
+    const { error: ledgerError } = await admin.from("product_events").insert({ event_name: ACCOUNT_PURGED_EVENT, business_id: record } as never) // product_events no está en types/database.ts
+    if (ledgerError) console.error("[purge-deleted-accounts] No se pudo anotar la baja en el historial:", ledgerError)
   }
 
   return { candidates: candidates?.length ?? 0, purged }

@@ -4,8 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { plans } from "@/lib/plans"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { MarketingHeader } from "@/components/marketing-header"
-import { MarketingFooter } from "@/components/marketing-footer"
+import { MarketingPage, PageHero } from "@/components/marketing-ui"
 import { Sidebar } from "@/components/sidebar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -188,12 +187,6 @@ export function ContactoContent({ initialType, initialPlan }: { initialType?: st
 
   const content = (
     <div className="max-w-2xl mx-auto">
-      {!isLoggedIn && (
-        <div className="text-center space-y-3 mb-10">
-          <h1 className="text-4xl font-bold text-foreground">{t("contacto_page_title")}</h1>
-          <p className="text-lg text-muted-foreground">{t("contacto_page_subtitle")}</p>
-        </div>
-      )}
       {isLoggedIn && (
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">{t("contacto_page_title")}</h1>
@@ -369,10 +362,9 @@ export function ContactoContent({ initialType, initialPlan }: { initialType?: st
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <MarketingHeader />
-      <main className="container mx-auto px-4 py-16 flex-1">{content}</main>
-      <MarketingFooter />
-    </div>
+    <MarketingPage>
+      <PageHero kicker={t("contacto_kicker")} title={t("contacto_page_title")} subtitle={t("contacto_page_subtitle")} />
+      <div className="px-4 pb-20">{content}</div>
+    </MarketingPage>
   )
 }

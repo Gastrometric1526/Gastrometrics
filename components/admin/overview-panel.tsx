@@ -40,7 +40,13 @@ export function OverviewPanel({
     { key: "system", count: health.data?.problems.length ?? 0, label: t("admin_todo_system"), tone: "bad" as const, onClick: () => goTo("sistema") },
     { key: "bugs", count: feedbackCounts.bug, label: t("admin_todo_bugs_short"), tone: "bad" as const, onClick: () => goTo("buzon", "mensajes") },
     { key: "unread", count: feedbackCounts.nuevo, label: t("admin_todo_unread_short"), tone: "warn" as const, onClick: () => goTo("buzon", "mensajes") },
-    { key: "expiring", count: expiringSoon, label: t("admin_todo_expiring_short"), tone: "warn" as const, onClick: () => goTo("cuentas") },
+    { key: "expiring", count: expiringSoon, label: t("admin_todo_expiring_short"), tone: "warn" as const, onClick: () => {
+        // Abre Cuentas ya ordenada «por vencer» (docs/197).
+        try {
+          sessionStorage.setItem("gm_admin_accounts_sort", "expiring")
+        } catch {}
+        goTo("cuentas", "lista")
+      } },
     { key: "cancel", count: rev?.scheduledCancellations.length ?? 0, label: t("admin_todo_cancel_scheduled"), tone: "warn" as const, onClick: () => goTo("ingresos") },
     { key: "legal", count: legalPending, label: t("admin_todo_legal_short"), tone: "info" as const, onClick: () => goTo("comunicacion", "legal") },
   ].filter((i) => i.count > 0)

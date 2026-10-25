@@ -1,15 +1,18 @@
 "use client"
 
+/**
+ * Página de detalle de cada módulo (/caracteristicas/[slug]), rediseñada en docs/196 con las
+ * piezas de la landing (components/marketing-ui.tsx): portada, la pantalla REAL del módulo en
+ * el idioma de la página (no capturas viejas en español), cómo funciona paso a paso junto a la
+ * captura, resumen, artículo relacionado, los demás módulos y el cierre.
+ */
+
 import Link from "next/link"
-import Image from "next/image"
-import { MarketingHeader } from "@/components/marketing-header"
-import { MarketingFooter } from "@/components/marketing-footer"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import type { FeaturePageDef } from "@/lib/feature-pages"
+import { featurePages, type FeaturePageDef, type FeatureScreenshotDef } from "@/lib/feature-pages"
 import { resourceArticles } from "@/lib/resource-articles"
 import { useLanguage } from "@/contexts/language-context"
-import { ChefHat, Calculator, Package, UtensilsCrossed, ShoppingCart, BarChart3, ArrowRight, ArrowLeft, CheckCircle, BookOpen } from "lucide-react"
+import { ChefHat, Calculator, Package, UtensilsCrossed, ShoppingCart, BarChart3, ArrowRight, CheckCircle2, BookOpen } from "lucide-react"
+import { CtaBand, MarketingPage, PAGE_WIDTH, PageHero, RealPdf, RealScreen, Reveal, SectionHeading } from "@/components/marketing-ui"
 
 const icons: Record<string, typeof ChefHat> = {
   "fichas-tecnicas": ChefHat,
@@ -20,124 +23,149 @@ const icons: Record<string, typeof ChefHat> = {
   estadisticas: BarChart3,
 }
 
+function Shot({ shot }: { shot: FeatureScreenshotDef }) {
+  const { t } = useLanguage()
+  return (
+    <figure className="space-y-3">
+      {shot.screen === "pdf" ? (
+        <div className="mx-auto max-w-md py-4">
+          <RealPdf alt={t(shot.altKey)} />
+        </div>
+      ) : (
+        <RealScreen screen={shot.screen} alt={t(shot.altKey)} url={`gastrometrics.org${shot.route}`} focus={shot.focus} />
+      )}
+      <figcaption className="text-sm text-text-3 text-center text-pretty">{t(shot.captionKey)}</figcaption>
+    </figure>
+  )
+}
+
 export function CaracteristicasDetailContent({ feature }: { feature: FeaturePageDef }) {
   const { t } = useLanguage()
 
   const Icon = icons[feature.slug] ?? ChefHat
   const relatedArticle = resourceArticles.find((a) => a.relatedFeatureSlug === feature.slug)
+  const [mainShot, ...moreShots] = feature.screenshots
+  const others = featurePages.filter((f) => f.slug !== feature.slug)
 
   return (
-    <div className="min-h-screen bg-background">
-      <MarketingHeader />
-
-      <main className="container mx-auto px-4 py-16 space-y-16 max-w-4xl">
-        <div>
-          <Link href="/about">
-            <Button variant="ghost" size="sm" className="gap-2 -ml-3 mb-6">
-              <ArrowLeft className="h-4 w-4" />
-              {t("feat_back_to_about")}
-            </Button>
-          </Link>
-
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
-              <Icon className="h-7 w-7 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground">{t(feature.titleKey)}</h1>
-              <p className="text-lg text-muted-foreground">{t(feature.taglineKey)}</p>
-            </div>
-          </div>
-
-          <p className="text-lg text-muted-foreground leading-relaxed">{t(feature.introKey)}</p>
+    <MarketingPage>
+      <PageHero kicker={t(feature.taglineKey)} title={t(feature.titleKey)} subtitle={t(feature.introKey)} back={{ href: "/about", label: t("feat_back_to_about") }}>
+        <div className="flex justify-center pt-1">
+          <span className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <Icon className="h-6 w-6 text-primary" />
+          </span>
         </div>
+      </PageHero>
 
-        <section className="space-y-6">
-          <h2 className="text-2xl font-bold text-foreground">{t("feat_how_it_works")}</h2>
-          <div className="space-y-6">
-            {feature.steps.map((step, index) => (
-              <div key={step.titleKey} className="flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 font-semibold text-sm">
-                  {index + 1}
-                </div>
-                <div className="space-y-1">
-                  <h3 className="font-semibold text-foreground">{t(step.titleKey)}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{t(step.descKey)}</p>
-                </div>
-              </div>
+      {mainShot && (
+        <div className={`${PAGE_WIDTH} pb-16 md:pb-20`}>
+          <Reveal className="max-w-5xl mx-auto">
+            <Shot shot={mainShot} />
+          </Reveal>
+        </div>
+      )}
+
+      <section className="bg-canvas-alt border-y border-hairline">
+        <div className={`${PAGE_WIDTH} py-16 md:py-24 grid gap-12 lg:grid-cols-[1fr_1.15fr] lg:items-start`}>
+          <div className="space-y-10">
+            <SectionHeading kicker={t(feature.titleKey)} title={t("feat_how_it_works")} />
+            <ol className="space-y-7">
+              {feature.steps.map((step, index) => (
+                <Reveal as="li" key={step.titleKey} delay={index * 90} className="flex gap-4">
+                  <span className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 font-semibold text-sm tabular-nums">{index + 1}</span>
+                  <div className="space-y-1">
+                    <h3 className="font-semibold text-foreground">{t(step.titleKey)}</h3>
+                    <p className="text-text-3 leading-relaxed text-pretty">{t(step.descKey)}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </ol>
+          </div>
+          <div className="space-y-10 lg:sticky lg:top-24">
+            {moreShots.length > 0 ? (
+              moreShots.map((shot) => (
+                <Reveal key={shot.screen}>
+                  <Shot shot={shot} />
+                </Reveal>
+              ))
+            ) : (
+              <Reveal className="rounded-2xl border border-hairline bg-card p-6 md:p-8 space-y-4">
+                <p className="text-xs font-medium uppercase tracking-[0.14em] text-primary">{t("feat_summary_title")}</p>
+                <ul className="space-y-3">
+                  {feature.highlightKeys.map((key) => (
+                    <li key={key} className="flex items-start gap-3 text-foreground">
+                      <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                      <span className="text-pretty">{t(key)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Reveal>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {moreShots.length > 0 && (
+        <section className={`${PAGE_WIDTH} py-16 md:py-20 space-y-8`}>
+          <SectionHeading title={t("feat_summary_title")} />
+          <ul className="grid gap-4 sm:grid-cols-2">
+            {feature.highlightKeys.map((key, i) => (
+              <Reveal as="li" key={key} delay={i * 70} className="flex items-start gap-3 rounded-2xl border border-hairline bg-card p-5 text-foreground">
+                <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <span className="text-pretty">{t(key)}</span>
+              </Reveal>
             ))}
-          </div>
+          </ul>
         </section>
+      )}
 
-        <section className="space-y-6">
-          {feature.screenshots.map((shot) => (
-            <figure key={shot.src} className="space-y-2">
-              <div className="rounded-xl border border-border overflow-hidden bg-card">
-                <Image
-                  src={shot.src}
-                  alt={t(shot.altKey)}
-                  width={1440}
-                  height={900}
-                  className="w-full h-auto"
-                  sizes="(max-width: 768px) 100vw, 896px"
-                />
-              </div>
-              <figcaption className="text-sm text-muted-foreground text-center">{t(shot.captionKey)}</figcaption>
-            </figure>
-          ))}
-        </section>
-
-        <section className="space-y-4">
-          <h2 className="text-2xl font-bold text-foreground">{t("feat_summary_title")}</h2>
-          <Card className="border-border bg-card">
-            <CardContent className="pt-6">
-              <ul className="space-y-3">
-                {feature.highlightKeys.map((key) => (
-                  <li key={key} className="flex items-start gap-3 text-foreground">
-                    <CheckCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <span>{t(key)}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </section>
-
+      <section className={`${PAGE_WIDTH} ${moreShots.length > 0 ? "pb-4" : "py-16 md:py-20"} space-y-10`}>
         {relatedArticle && (
-          <div className="rounded-lg border border-border bg-muted/30 p-5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
-            <p className="text-sm text-foreground flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-primary shrink-0" />
-              {t("resource_related_article_prefix")} <span className="font-semibold">{t(relatedArticle.titleKey)}</span>
-            </p>
-            <Link href={`/recursos/${relatedArticle.slug}`}>
-              <Button variant="outline" size="sm" className="gap-2 shrink-0 bg-transparent">
-                {t("resource_read_article")}
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
+          <Reveal>
+            <Link
+              href={`/recursos/${relatedArticle.slug}`}
+              className="group flex flex-col sm:flex-row sm:items-center gap-4 justify-between rounded-2xl border border-hairline bg-card p-5 md:p-6 hover:border-primary/40 transition-colors"
+            >
+              <span className="flex items-center gap-3 text-foreground">
+                <span className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                </span>
+                <span className="text-sm">
+                  {t("resource_related_article_prefix")} <span className="font-semibold">{t(relatedArticle.titleKey)}</span>
+                </span>
+              </span>
+              <span className="text-sm font-medium text-primary inline-flex items-center gap-1 shrink-0">
+                {t("resource_read_article")} <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+              </span>
             </Link>
-          </div>
+          </Reveal>
         )}
 
-        <section className="text-center space-y-6 py-8 border-t border-border/50">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground">{t("feat_ready_title")}</h2>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/signup">
-              <Button size="lg" className="text-lg px-8 py-3 bg-primary text-primary-foreground hover:bg-primary/90">
-                <CheckCircle className="mr-2 h-5 w-5" />
-                {t("about_cta_button1")}
-              </Button>
-            </Link>
-            <Link href="/about">
-              <Button size="lg" variant="outline" className="text-lg px-8 py-3 border-border hover:bg-accent hover:text-accent-foreground bg-transparent">
-                {t("feat_view_all_modules")}
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
+        <div className="space-y-5">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-text-4">{t("feat_other_modules")}</p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {others.map((f, i) => {
+              const OtherIcon = icons[f.slug] ?? ChefHat
+              return (
+                <Reveal key={f.slug} delay={i * 60}>
+                  <Link href={`/caracteristicas/${f.slug}`} className="group flex h-full items-center gap-3 rounded-xl border border-hairline bg-card p-4 hover:border-primary/40 transition-colors">
+                    <OtherIcon className="h-5 w-5 text-primary shrink-0" />
+                    <span className="text-sm font-medium text-foreground group-hover:text-primary">{t(f.titleKey)}</span>
+                  </Link>
+                </Reveal>
+              )
+            })}
           </div>
-        </section>
-      </main>
+        </div>
+      </section>
 
-      <MarketingFooter />
-    </div>
+      <CtaBand
+        title={t("feat_ready_title")}
+        desc={t("landing_closing_desc")}
+        primary={{ href: "/signup", label: t("about_cta_button1") }}
+        secondary={{ href: "/about", label: t("feat_view_all_modules") }}
+        note={t("landing_closing_sub")}
+      />
+    </MarketingPage>
   )
 }

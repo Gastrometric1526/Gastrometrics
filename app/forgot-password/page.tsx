@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useLanguage } from "@/contexts/language-context"
 import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react"
 import { GastrometricsLogo } from "@/components/gastrometrics-logo"
+import { AuthShell } from "@/components/auth-shell"
 
 // Recuperación de contraseña real — antes de esto, "¿Olvidaste tu contraseña?" en
 // /login apuntaba a /contacto porque no había backend real de recuperación (ver
@@ -50,7 +51,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <AuthShell>
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
           <Link
@@ -123,6 +124,6 @@ export default function ForgotPasswordPage() {
           )}
         </Card>
       </div>
-    </div>
+    </AuthShell>
   )
 }
