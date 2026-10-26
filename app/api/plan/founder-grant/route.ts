@@ -8,6 +8,7 @@
 import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { runFounderGrant } from "@/lib/services/founder-grant"
+import { notifyOwnerAccountConfirmed } from "@/lib/services/notify-signup"
 
 export async function POST() {
   const supabase = getSupabaseServerClient()
@@ -15,6 +16,10 @@ export async function POST() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: "No autorizado." }, { status: 401 })
+
+  // Primera carga después de confirmar el correo: aviso al dueño de la cuenta nueva (docs/201).
+  // Idempotente y nunca lanza.
+  await notifyOwnerAccountConfirmed(user.id)
 
   try {
     return NextResponse.json(await runFounderGrant(user.id))

@@ -4,10 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 // tick antes de responder, como la red, para que tres llamadas a la vez se crucen igual
 // que en producción (docs/163: 3 correos en el mismo segundo).
 type Plan = { account_id: string; plan_slug: string; stripe_subscription_id: string | null; plan_expires_at?: string }
-const db: { plans: Map<string, Plan>; metadata: Record<string, unknown>; createdAt: string } = {
+const db: { plans: Map<string, Plan>; metadata: Record<string, unknown>; createdAt: string; confirmed: boolean; others: { id: string; confirmed: boolean }[] } = {
   plans: new Map(),
   metadata: {},
   createdAt: "",
+  confirmed: true,
+  // Cuentas anteriores (todas con created_at ≤ la de u1): 27 confirmadas → u1 es la #28.
+  others: [],
 }
 const tick = () => new Promise((r) => setTimeout(r, 0))
 
@@ -16,10 +19,12 @@ function query(table: string) {
   let op: "select" | "update" | "insert" | "upsert" = "select"
   let payload: Record<string, unknown> = {}
   let countHead = false
+  let ranged = false
   const run = async () => {
     await tick()
     if (table === "profiles") {
       if (countHead) return { count: 28, error: null }
+      if (ranged) return { data: [...db.others.map((o) => ({ id: o.id })), { id: "u1" }], error: null }
       return { data: { created_at: db.createdAt, full_name: "Chef" }, error: null }
     }
     const id = filters.find((f) => f[1] === "account_id")?.[2] as string
@@ -47,6 +52,8 @@ function query(table: string) {
     eq: (c: string, v: unknown) => (filters.push(["eq", c, v]), b),
     is: (c: string, v: unknown) => (filters.push(["is", c, v]), b),
     lte: () => b,
+    order: () => b,
+    range: () => ((ranged = true), b),
     maybeSingle: () => run(),
     then: (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) => run().then(res, rej),
   }
@@ -59,7 +66,15 @@ const admin = {
     admin: {
       getUserById: async () => {
         await tick()
-        return { data: { user: { id: "u1", email: "chef@example.com", created_at: db.createdAt, app_metadata: { ...db.metadata } } }, error: null }
+        return {
+          data: { user: { id: "u1", email: "chef@example.com", created_at: db.createdAt, email_confirmed_at: db.confirmed ? db.createdAt : null, app_metadata: { ...db.metadata } } },
+          error: null,
+        }
+      },
+      listUsers: async ({ page = 1, perPage = 200 }: { page?: number; perPage?: number } = {}) => {
+        await tick()
+        const all = [...db.others.map((o) => ({ id: o.id, email_confirmed_at: o.confirmed ? db.createdAt : null })), { id: "u1", email_confirmed_at: db.confirmed ? db.createdAt : null }]
+        return { data: { users: all.slice((page - 1) * perPage, page * perPage) }, error: null }
       },
       updateUserById: async (_id: string, attrs: { app_metadata: Record<string, unknown> }) => {
         await tick()
@@ -92,6 +107,8 @@ describe("runFounderGrant con llamadas simultáneas (docs/163)", () => {
     db.plans = new Map()
     db.metadata = {}
     db.createdAt = created
+    db.confirmed = true
+    db.others = Array.from({ length: 27 }, (_, i) => ({ id: `c${i}`, confirmed: true }))
     sendPlanChangedEmail.mockClear()
     recordPlanChangeNotice.mockClear()
     sendOwnerNotification.mockClear()
@@ -111,6 +128,21 @@ describe("runFounderGrant con llamadas simultáneas (docs/163)", () => {
     const results = await Promise.all([runFounderGrant("u1", now), runFounderGrant("u1", now), runFounderGrant("u1", now)])
     expect(results.filter((r) => r.action === "grant")).toHaveLength(1)
     expect(sendOwnerNotification).toHaveBeenCalledTimes(1)
+  })
+
+  it("sin el correo confirmado no se le da todavía (docs/201)", async () => {
+    db.confirmed = false
+    const result = await runFounderGrant("u1", now)
+    expect(result.action).toBe("wait")
+    expect(sendOwnerNotification).not.toHaveBeenCalled()
+  })
+
+  it("la posición cuenta solo cuentas confirmadas (docs/201)", async () => {
+    // 27 confirmadas + 200 sin confirmar antes: sigue siendo la #28, dentro de las 100.
+    db.others = [...db.others, ...Array.from({ length: 200 }, (_, i) => ({ id: `n${i}`, confirmed: false }))]
+    const result = await runFounderGrant("u1", now)
+    expect(result.action).toBe("grant")
+    expect(result.ordinal).toBe(28)
   })
 
   it("una llamada después de concedido no vuelve a avisar", async () => {

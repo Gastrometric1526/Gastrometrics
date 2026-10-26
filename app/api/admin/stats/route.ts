@@ -31,6 +31,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { selectAll } from "@/lib/admin/select-all"
 import { plans } from "@/lib/plans"
 import { COUNTRIES } from "@/lib/types/user"
+import { isConfirmedAccount } from "@/lib/admin/confirmed-accounts"
 
 // Cuántos países se muestran con nombre propio en la distribución antes de agrupar el
 // resto en "Otros" — a esta escala de usuarios, más de 8 barras ya no se lee como
@@ -49,14 +50,22 @@ export async function GET() {
     // barato — no hay endpoint de "count" aparte en esta versión del SDK. Se guarda
     // el correo de cada cuenta (no solo el total) para poder nombrar cuentas en
     // "planes por vencer" más abajo sin una segunda pasada de paginación.
+    // Solo cuentas con el correo confirmado (docs/201); las demás se informan aparte.
     let totalUsers = 0
+    let unconfirmedUsers = 0
+    const confirmedIds = new Set<string>()
     const emailByUserId = new Map<string, string>()
     let page = 1
     while (true) {
       const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 })
       if (error) throw error
-      totalUsers += data.users.length
       for (const u of data.users) {
+        if (!isConfirmedAccount(u)) {
+          unconfirmedUsers += 1
+          continue
+        }
+        totalUsers += 1
+        confirmedIds.add(u.id)
         if (u.email) emailByUserId.set(u.id, u.email)
       }
       if (data.users.length < 200) break
@@ -76,15 +85,17 @@ export async function GET() {
         admin.from("account_plans").select("account_id, plan_slug, plan_expires_at, stripe_subscription_id").order("account_id").range(from, to),
       ),
       selectAll<{ owner_id: string }>((from, to) => admin.from("team_members").select("owner_id").order("id").range(from, to)),
-      selectAll<{ nationality: string | null }>((from, to) => admin.from("profiles").select("nationality").order("id").range(from, to)),
+      selectAll<{ id: string; nationality: string | null }>((from, to) => admin.from("profiles").select("id, nationality").order("id").range(from, to)),
       selectAll<{ total_active_seconds: number | null }>((from, to) =>
         admin.from("user_presence").select("total_active_seconds").order("user_id").range(from, to),
       ),
       selectAll<{ owner_id: string; data: unknown }>((from, to) => admin.from("sales_imports").select("owner_id, data").order("id").range(from, to)),
     ])
 
+    // Planes, países y equipo solo de cuentas confirmadas.
+    const planRows = (planRowsResult.data ?? []).filter((row) => confirmedIds.has(row.account_id))
     const planCounts: Record<string, number> = {}
-    for (const row of planRowsResult.data ?? []) {
+    for (const row of planRows) {
       planCounts[row.plan_slug] = (planCounts[row.plan_slug] || 0) + 1
     }
 
@@ -113,7 +124,7 @@ export async function GET() {
     // eligieron país, no cuentan aquí (no hay forma de saber su país sin eso).
     const countryCounts = new Map<string, number>()
     for (const row of profileRowsResult.data ?? []) {
-      if (!row.nationality) continue
+      if (!row.nationality || !confirmedIds.has(row.id)) continue
       countryCounts.set(row.nationality, (countryCounts.get(row.nationality) || 0) + 1)
     }
     const sortedCountries = [...countryCounts.entries()].sort((a, b) => b[1] - a[1])
@@ -131,12 +142,13 @@ export async function GET() {
     const totalActiveSeconds = (presenceRowsResult.data ?? []).reduce((sum, row) => sum + (row.total_active_seconds || 0), 0)
     const avgActiveSecondsPerUser = totalUsers > 0 ? Math.round(totalActiveSeconds / totalUsers) : 0
 
-    const totalTeamMembers = (teamRowsResult.data ?? []).length
+    const teamRows = (teamRowsResult.data ?? []).filter((row) => confirmedIds.has(row.owner_id))
+    const totalTeamMembers = teamRows.length
 
     // Uso real de equipo: cuántas cuentas DISTINTAS tienen al menos un miembro
     // invitado (sin importar cuántos), no cuántas filas de team_members existen en
     // total (eso ya lo da totalTeamMembers arriba).
-    const accountsWithTeamSet = new Set((teamRowsResult.data ?? []).map((row) => row.owner_id))
+    const accountsWithTeamSet = new Set(teamRows.map((row) => row.owner_id))
     const teamUsage = {
       accountsWithTeam: accountsWithTeamSet.size,
       soloAccounts: Math.max(0, totalUsers - accountsWithTeamSet.size),
@@ -148,7 +160,7 @@ export async function GET() {
     const paidPlanSlugs = new Set(plans.filter((p) => p.priceUsdCents > 0).map((p) => p.slug))
     let onStripe = 0
     let manualOverride = 0
-    for (const row of planRowsResult.data ?? []) {
+    for (const row of planRows) {
       if (!paidPlanSlugs.has(row.plan_slug)) continue
       if (row.stripe_subscription_id) onStripe += 1
       else manualOverride += 1
@@ -163,7 +175,7 @@ export async function GET() {
     // hoy ese dato solo se ve abriendo cada cuenta una por una desde Cuentas.
     const EXPIRING_SOON_WINDOW_MS = 14 * 24 * 60 * 60 * 1000
     const now = Date.now()
-    const expiringSoon = (planRowsResult.data ?? [])
+    const expiringSoon = planRows
       .filter((row) => {
         if (!row.plan_expires_at) return false
         const expiresAtMs = new Date(row.plan_expires_at).getTime()
@@ -199,6 +211,7 @@ export async function GET() {
 
     return NextResponse.json({
       totalUsers,
+      unconfirmedUsers,
       totalBusinesses: totalBusinesses || 0,
       totalTeamMembers: totalTeamMembers || 0,
       planDistribution,

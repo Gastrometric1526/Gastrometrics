@@ -58,6 +58,7 @@ export function OverviewPanel({
       <KpiGrid cols={6}>
         <KpiCard
           label={t("admin_ov_accounts")}
+          help={t("admin_ov_accounts_help")}
           icon={Users}
           loading={retention.loading && !ret}
           value={ret?.totalAccounts ?? "—"}

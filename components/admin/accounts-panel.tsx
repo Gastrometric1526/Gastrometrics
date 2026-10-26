@@ -148,6 +148,11 @@ export function AccountsPanel() {
   const [pageSize, setPageSize] = useState(25)
   const [search, setSearch] = useState("")
   const [planFilter, setPlanFilter] = useState("todos")
+  // Confirmadas por defecto (docs/201); «Sin confirmar» para dar soporte. En un ref para que
+  // todas las llamadas a loadList lo usen sin cambiar su firma.
+  const [confirmFilter, setConfirmFilter] = useState<"yes" | "no" | "all">("yes")
+  const confirmRef = useRef<"yes" | "no" | "all">("yes")
+  const [confirmCounts, setConfirmCounts] = useState<{ yes: number; no: number } | null>(null)
   // Por defecto, las cuentas que más usan la app primero (pedido del dueño, docs/160).
   const [sortBy, setSortBy] = useState<"recent" | "time" | "plan" | "expiring">(() => {
     // Desde «Planes que vencen pronto» del Resumen se llega ya ordenada por vencimiento (docs/197).
@@ -219,7 +224,7 @@ export function AccountsPanel() {
       const planParam = targetPlan && targetPlan !== "todos" ? `&plan=${encodeURIComponent(targetPlan)}` : ""
       const sortParam = targetSort ? `&sort=${encodeURIComponent(targetSort)}` : ""
       const res = await fetch(
-        `/api/admin/accounts?page=${targetPage}&search=${encodeURIComponent(targetSearch)}${planParam}${sortParam}`,
+        `/api/admin/accounts?page=${targetPage}&search=${encodeURIComponent(targetSearch)}${planParam}${sortParam}&confirmed=${confirmRef.current}`,
       )
       const data = await res.json()
       if (requestId !== requestSeqRef.current) return
@@ -227,6 +232,7 @@ export function AccountsPanel() {
         setAccounts(data.accounts)
         setTotal(data.total || 0)
         setPageSize(data.pageSize || 25)
+        if (typeof data.confirmedTotal === "number") setConfirmCounts({ yes: data.confirmedTotal, no: data.unconfirmedTotal || 0 })
       }
     } catch (error) {
       console.error("Error listando cuentas:", error)
@@ -284,7 +290,7 @@ export function AccountsPanel() {
       const { search: s, plan, sort } = appliedListParamsRef.current
       const planParam = plan && plan !== "todos" ? `&plan=${encodeURIComponent(plan)}` : ""
       const sortParam = sort ? `&sort=${encodeURIComponent(sort)}` : ""
-      const res = await fetch(`/api/admin/accounts?all=1&search=${encodeURIComponent(s)}${planParam}${sortParam}`)
+      const res = await fetch(`/api/admin/accounts?all=1&search=${encodeURIComponent(s)}${planParam}${sortParam}&confirmed=${confirmRef.current}`)
       const data = await res.json()
       if (!res.ok || !Array.isArray(data.accounts)) throw new Error()
       const rows: CsvAccount[] = (data.accounts as AccountRow[]).map((a) => ({
@@ -332,6 +338,14 @@ export function AccountsPanel() {
     setPlanFilter(value)
     setPage(1)
     loadList(1, search, value, sortBy)
+  }
+
+  const handleConfirmFilterChange = (value: string) => {
+    const v = value as "yes" | "no" | "all"
+    confirmRef.current = v
+    setConfirmFilter(v)
+    setPage(1)
+    loadList(1, search, planFilter, sortBy)
   }
 
   const handleSortChange = (value: string) => {
@@ -1079,6 +1093,16 @@ export function AccountsPanel() {
                   {plan.name}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          <Select value={confirmFilter} onValueChange={handleConfirmFilterChange}>
+            <SelectTrigger className="w-52 shrink-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="yes">{t("admin_accounts_filter_confirmed").replace("{count}", String(confirmCounts?.yes ?? "…"))}</SelectItem>
+              <SelectItem value="no">{t("admin_accounts_filter_unconfirmed").replace("{count}", String(confirmCounts?.no ?? "…"))}</SelectItem>
+              <SelectItem value="all">{t("admin_accounts_filter_confirm_all")}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={handleSortChange}>

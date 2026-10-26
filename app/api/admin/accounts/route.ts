@@ -54,6 +54,9 @@ export async function GET(request: Request) {
   const search = (url.searchParams.get("search") || "").trim().toLowerCase()
   const planFilter = (url.searchParams.get("plan") || "").trim()
   const sort = (url.searchParams.get("sort") || "time").trim()
+  // Por defecto solo cuentas confirmadas (docs/201): sin confirmar no son usuarios. «no» las
+  // muestra para dar soporte; «all», todas.
+  const confirmedFilter = (url.searchParams.get("confirmed") || "yes").trim()
   const page = Math.max(1, Number(url.searchParams.get("page")) || 1)
 
   try {
@@ -71,7 +74,7 @@ export async function GET(request: Request) {
           id: u.id,
           email: u.email || "",
           created_at: u.created_at,
-          email_confirmed_at: u.email_confirmed_at || null,
+          email_confirmed_at: u.email_confirmed_at || u.confirmed_at || null,
         })),
       )
       if (data.users.length < 200) break
@@ -91,7 +94,11 @@ export async function GET(request: Request) {
     const countryByUser = new Map(allProfileRows?.map((r) => [r.id, r.nationality || null]) ?? [])
     const activeSecondsByUser = new Map(allPresenceRows?.map((r) => [r.user_id, r.total_active_seconds || 0]) ?? [])
 
+    const confirmedTotal = allUsers.filter((u) => u.email_confirmed_at).length
+    const unconfirmedTotal = allUsers.length - confirmedTotal
     let filtered = search ? allUsers.filter((u) => u.email.toLowerCase().includes(search)) : allUsers
+    if (confirmedFilter === "yes") filtered = filtered.filter((u) => u.email_confirmed_at)
+    else if (confirmedFilter === "no") filtered = filtered.filter((u) => !u.email_confirmed_at)
     if (planFilter) {
       // Cuentas sin fila en account_plans están en "foodie" por default en toda la app.
       filtered = filtered.filter((u) => (planByUser.get(u.id)?.plan_slug || "foodie") === planFilter)
@@ -260,7 +267,7 @@ export async function GET(request: Request) {
       totalActiveSeconds: activeSecondsByUser.get(u.id) || 0,
     }))
 
-    return NextResponse.json({ accounts, total, page, pageSize: PAGE_SIZE })
+    return NextResponse.json({ accounts, total, page, pageSize: PAGE_SIZE, confirmedTotal, unconfirmedTotal })
   } catch (error) {
     console.error("[api/admin/accounts] Error listando cuentas:", error)
     return NextResponse.json({ error: "No se pudieron listar las cuentas." }, { status: 500 })

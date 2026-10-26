@@ -111,15 +111,30 @@ export async function recordReferralAtSignup(
   const { error } = await getSupabaseAdminClient().from("product_events").insert({ event_name: EVENT, business_id: `${referrer.id}:${inviteeId}` } as never)
   if (error) console.error("[referrals] No se pudo registrar el evento de invitación:", error)
 
-  // Aviso al dueño de GastroMetrics: cuenta nueva por invitación (docs/184). Va aparte del
-  // aviso general de cuenta nueva para que se vea de un vistazo quién está trayendo gente.
+  return true
+}
+
+/**
+ * Aviso al dueño de GastroMetrics: cuenta nueva por invitación (docs/184). Va aparte del aviso
+ * general de cuenta nueva para que se vea de un vistazo quién está trayendo gente. Desde
+ * docs/201 sale al CONFIRMAR el correo (lo llama notifyOwnerAccountConfirmed), no al
+ * registrarse: sin confirmar no es un usuario. Nunca lanza.
+ */
+export async function notifyOwnerReferralSignup(inviteeId: string, invitee: { email?: string; name?: string; language?: string } = {}): Promise<void> {
   try {
+    const info = await getMeta(inviteeId)
+    const referral = info?.meta.referral as InviteeReferral | undefined
+    if (!referral?.by) return
+    const referrer = { id: referral.by, firstName: "" }
+    const code = referral.code
+    const { data: refProfile } = await getSupabaseAdminClient().from("profiles").select("full_name").eq("id", referral.by).maybeSingle()
+    referrer.firstName = firstName(refProfile?.full_name)
     const referrerInfo = await getMeta(referrer.id)
     const total = (await referralPairs()).filter((p) => p.referrerId === referrer.id).length
     await sendOwnerNotification({
-      subject: `Cuenta nueva por invitación: ${invitee.email || inviteeId}`,
+      subject: `Cuenta nueva por invitación: ${invitee.email || info?.email || inviteeId}`,
       rows: [
-        ["Cuenta nueva", invitee.email || inviteeId],
+        ["Cuenta nueva", invitee.email || info?.email || inviteeId],
         ["Nombre", invitee.name || null],
         ["Idioma", invitee.language || null],
         ["Invitada por", `${referrer.firstName || "—"} (${referrerInfo?.email || referrer.id})`],
@@ -133,7 +148,6 @@ export async function recordReferralAtSignup(
   } catch (notifyError) {
     console.error("[referrals] No se pudo avisar al dueño de la cuenta por invitación:", notifyError)
   }
-  return true
 }
 
 // ─── Aplicar lo ganado ───

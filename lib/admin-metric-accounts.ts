@@ -4,6 +4,8 @@
  * criterio que /api/admin/stats; los testers con plan regalado no cuentan) y su primer
  * costo (primera receta guardada con costo > 0, sin contar la receta de ejemplo que la
  * app siembra sola, lib/services/seed-example-recipe.ts).
+ *
+ * Solo cuentas con el correo confirmado (docs/201): sin confirmar no son usuarios.
  */
 
 import type { getSupabaseAdminClient } from "@/lib/supabase/admin"
@@ -11,6 +13,7 @@ import { fetchAllPages } from "@/lib/services/notify-reengagement"
 import { selectAll } from "@/lib/admin/select-all"
 import { plans as PLAN_CATALOG } from "@/lib/plans"
 import type { MetricAccount } from "@/lib/activation-metrics"
+import { isConfirmedAccount } from "@/lib/admin/confirmed-accounts"
 
 export interface AdminMetricAccount extends MetricAccount {
   email: string
@@ -25,7 +28,10 @@ export async function loadAdminMetricAccounts(admin: ReturnType<typeof getSupaba
   for (let page = 1; ; page += 1) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 })
     if (error) throw error
-    users.push(...data.users.map((u) => ({ id: u.id, email: u.email || "", createdAt: u.created_at, emailConfirmed: Boolean(u.email_confirmed_at) })))
+    for (const u of data.users) {
+      if (!isConfirmedAccount(u)) continue
+      users.push({ id: u.id, email: u.email || "", createdAt: u.created_at, emailConfirmed: true })
+    }
     if (data.users.length < 200) break
   }
 

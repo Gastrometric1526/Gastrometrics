@@ -4,6 +4,9 @@
  *
  * - La posición de la cuenta sale de profiles.created_at (la fila se crea al registrarse):
  *   cuenta todas las cuentas, también las que ya existían antes del programa.
+ * - Desde docs/201 (pedido del dueño) solo cuentan las cuentas con el correo CONFIRMADO, y el
+ *   plan solo se da cuando la persona confirma: sin confirmar no puede entrar, no es usuario.
+ *   Las que ya lo recibieron lo conservan.
  * - "Una sola vez" se guarda en app_metadata.founder_grant del usuario (Supabase Auth),
  *   sin migración nueva. Si llegan varias llamadas a la vez, el candado es el cambio
  *   condicional de account_plans (solo cambia si sigue en Foodie): una sola avisa (docs/163).
@@ -16,6 +19,21 @@ import { FOUNDER_PROGRAM, founderDecision, type FounderDecision } from "@/lib/fo
 import { sendPlanChangedEmail } from "@/lib/services/notify-billing"
 import { recordPlanChangeNotice } from "@/lib/services/plan-change-notice"
 import { sendOwnerNotification, hondurasTime } from "@/lib/services/notify-owner"
+import { isConfirmedAccount } from "@/lib/admin/confirmed-accounts"
+import { selectAll } from "@/lib/admin/select-all"
+
+/** Ids de las cuentas con el correo confirmado (Supabase Auth). */
+async function confirmedAccountIds(): Promise<Set<string>> {
+  const admin = getSupabaseAdminClient()
+  const ids = new Set<string>()
+  for (let page = 1; ; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 })
+    if (error) throw error
+    for (const u of data.users) if (isConfirmedAccount(u)) ids.add(u.id)
+    if (data.users.length < 200) break
+  }
+  return ids
+}
 
 export type FounderGrantResult = FounderDecision & { ordinal?: number; planSlug?: string }
 
@@ -23,16 +41,20 @@ async function accountOrdinal(createdAt: string): Promise<number | null> {
   const admin = getSupabaseAdminClient()
   // Cuentas eliminadas no cuentan (docs/165): las borradas desde /admin ya no tienen fila;
   // las que pidieron su eliminación (30 días de gracia) se excluyen aquí.
-  const { count, error } = await admin
-    .from("profiles")
-    .select("id", { count: "exact", head: true })
-    .lte("created_at", createdAt)
-    .is("deletion_requested_at", null)
-  if (error) {
+  // Y solo las confirmadas (docs/201).
+  try {
+    const [confirmed, { data, error }] = await Promise.all([
+      confirmedAccountIds(),
+      selectAll<{ id: string }>((from, to) =>
+        admin.from("profiles").select("id").lte("created_at", createdAt).is("deletion_requested_at", null).order("created_at").range(from, to),
+      ),
+    ])
+    if (error) throw error
+    return (data ?? []).filter((p) => confirmed.has(p.id)).length
+  } catch (error) {
     console.error("[founder-grant] No se pudo contar las cuentas:", error)
     return null
   }
-  return count ?? null
 }
 
 export async function runFounderGrant(accountId: string, now = Date.now()): Promise<FounderGrantResult> {
@@ -44,7 +66,13 @@ export async function runFounderGrant(accountId: string, now = Date.now()): Prom
   ])
   const authUser = authData?.user
   if (authError || !authUser) return { action: "skip", reason: "before_program" }
+  // Sin confirmar el correo todavía no es usuario: se le da cuando confirme (docs/201).
+  if (!isConfirmedAccount(authUser)) return { action: "wait", waitMs: 60_000 }
   const createdAt = profile?.created_at || authUser.created_at
+  // Atajos antes de contar posiciones (contar recorre todas las cuentas): ya la recibió o es
+  // de antes del programa.
+  if ((authUser.app_metadata as Record<string, unknown> | undefined)?.founder_grant) return { action: "skip", reason: "already_granted" }
+  if (new Date(createdAt).getTime() < new Date(FOUNDER_PROGRAM.startsAt).getTime()) return { action: "skip", reason: "before_program" }
   const ordinal = await accountOrdinal(createdAt)
   if (ordinal === null) return { action: "wait", waitMs: 60_000 }
 
@@ -145,7 +173,6 @@ export async function runPendingFounderGrants(now = Date.now()): Promise<{ check
     .gte("created_at", new Date(FOUNDER_PROGRAM.startsAt).toISOString())
     .lte("created_at", new Date(now - FOUNDER_PROGRAM.delayMs).toISOString())
     .order("created_at", { ascending: true })
-    .limit(FOUNDER_PROGRAM.maxAccounts)
   if (error) throw error
   let granted = 0
   for (const row of data ?? []) {

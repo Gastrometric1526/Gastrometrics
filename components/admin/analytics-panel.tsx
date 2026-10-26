@@ -32,6 +32,7 @@ interface AnalyticsData {
 // supabase/migrations/0029_product_events.sql para el nombre real de cada evento.
 const EVENT_LABEL_KEYS: Record<string, string> = {
   signup_completed: "admin_analytics_event_signup",
+  account_confirmed: "admin_analytics_event_confirmed", // docs/201: la cuenta cuenta desde aquí
   first_ingredient_created: "admin_analytics_event_first_ingredient",
   first_recipe_created: "admin_analytics_event_first_recipe",
   first_pdf_exported: "admin_analytics_event_first_pdf",

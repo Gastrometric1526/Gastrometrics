@@ -62,10 +62,12 @@ export function buildAccountHistory(input: HistoryInput, now = Date.now()): { ev
 
   for (const u of input.users) events.push({ at: u.createdAt, type: "created", email: u.email, plan: plan(u.id) })
 
-  for (const c of input.planChanges)
+  // `users` trae solo cuentas confirmadas (docs/201): lo de cuentas sin confirmar no se cuenta.
+  const deletionRequests = input.deletionRequests.filter((d) => emailById.has(d.id))
+  for (const c of input.planChanges.filter((c) => emailById.has(c.userId)))
     events.push({ at: c.at, type: "plan_changed", email: emailById.get(c.userId) ?? null, plan: c.to, fromPlan: c.from, toPlan: c.to, source: c.source })
 
-  for (const d of input.deletionRequests)
+  for (const d of deletionRequests)
     events.push({
       at: d.requestedAt,
       type: "deletion_requested",
@@ -88,14 +90,14 @@ export function buildAccountHistory(input: HistoryInput, now = Date.now()): { ev
 
   const since30 = now - 30 * DAY
   const in30 = (iso: string | null | undefined) => !!iso && new Date(iso).getTime() >= since30
-  const pendingIds = new Set(input.deletionRequests.map((d) => d.id))
+  const pendingIds = new Set(deletionRequests.map((d) => d.id))
 
   return {
     events,
     summary: {
       activeAccounts: input.users.filter((u) => !pendingIds.has(u.id)).length,
       created30d: input.users.filter((u) => in30(u.createdAt)).length,
-      deletionPending: input.deletionRequests.length,
+      deletionPending: deletionRequests.length,
       purgedTotal: input.purged.length,
       purged30d: input.purged.filter((p) => in30(p.purgedAt)).length,
       canceledTotal: input.subscriptions.filter((s) => s.status === "canceled").length,

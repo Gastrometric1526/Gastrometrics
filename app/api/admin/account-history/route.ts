@@ -12,6 +12,7 @@ import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
 import { selectAll } from "@/lib/admin/select-all"
 import { ACCOUNT_PURGED_EVENT, decodePurgedRecord } from "@/lib/admin/account-ledger"
 import { buildAccountHistory, type HistoryInput } from "@/lib/admin/account-history"
+import { isConfirmedAccount } from "@/lib/admin/confirmed-accounts"
 
 export const dynamic = "force-dynamic"
 
@@ -52,7 +53,8 @@ export async function GET() {
     for (let page = 1; ; page += 1) {
       const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 })
       if (error) throw error
-      users.push(...data.users.map((u) => ({ id: u.id, email: u.email || "", createdAt: u.created_at })))
+      // Solo cuentas confirmadas (docs/201): sin confirmar no son usuarios.
+      for (const u of data.users) if (isConfirmedAccount(u)) users.push({ id: u.id, email: u.email || "", createdAt: u.created_at })
       if (data.users.length < 200) break
     }
 

@@ -23,7 +23,6 @@ import { CURRENT_LEGAL_VERSION } from "@/lib/legal"
 import { renderEmailTemplate, escapeHtml } from "@/lib/services/email-templates"
 import { getEmailLabels, fillLabel, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
-import { sendAccountCreatedNotification } from "@/lib/services/notify-signup"
 import { recordReferralAtSignup } from "@/lib/services/referrals"
 import { REFERRAL } from "@/lib/referrals"
 
@@ -159,33 +158,14 @@ export async function POST(request: Request) {
     }
   }
 
-  // Aviso al dueño de la cuenta nueva. BUG CORREGIDO (docs/142): se lanzaba sin `await`,
-  // y en Vercel la función puede congelarse apenas responde — el correo a veces no
-  // llegaba a salir, sin ningún error. Ahora se espera (con reintentos dentro de
-  // sendWithRetry); si aun así falla, no rompe el registro: queda el evento
-  // owner_signup_notify_failed en Analíticas y el resumen diario del cron
-  // (sendDailySignupDigest) vuelve a avisar de esta cuenta.
-  let ownerNotified = false
-  try {
-    ownerNotified = await sendAccountCreatedNotification({
-      email,
-      fullName: profile.fullName || undefined,
-      businessType: profile.businessType || undefined,
-      nationality: profile.nationality || undefined,
-      language: preferredLanguage,
-    })
-  } catch (notifyError) {
-    console.error("[api/auth/signup] Error inesperado notificando la nueva cuenta:", notifyError)
-  }
+  // El aviso al dueño ya no sale aquí (docs/201): una cuenta sin confirmar no es un usuario.
+  // Sale al confirmar el correo (notifyOwnerAccountConfirmed, primera carga del Dashboard), y
+  // el resumen diario del cron lista las cuentas confirmadas en 24 h.
 
   // Evento de embudo (ver supabase/migrations/0029_product_events.sql) — server-side
   // acá en vez de un trackEvent() de cliente en app/signup/page.tsx: esta ruta ya sabe
   // con certeza que la cuenta se creó de verdad. También se espera (mismo motivo que arriba).
-  const events = [{ event_name: "signup_completed" }]
-  if (!ownerNotified && process.env.RESEND_API_KEY && process.env.FEEDBACK_NOTIFY_TO) {
-    events.push({ event_name: "owner_signup_notify_failed" })
-  }
-  const { error: eventError } = await admin.from("product_events").insert(events)
+  const { error: eventError } = await admin.from("product_events").insert([{ event_name: "signup_completed" }] as never) // product_events no está en types/database.ts
   if (eventError) console.error("[api/auth/signup] Error registrando eventos de registro:", eventError)
 
   return NextResponse.json({ ok: true })
