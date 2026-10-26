@@ -125,6 +125,21 @@ export const featurePages: FeaturePageDef[] = [
     ],
   },
   {
+    // MEP — mise en place de cada menú (docs/202, docs/204).
+    slug: "mep",
+    titleKey: "feat_mep_title",
+    taglineKey: "feat_mep_tagline",
+    introKey: "feat_mep_intro",
+    steps: [
+      { titleKey: "feat_mep_step1_title", descKey: "feat_mep_step1_desc" },
+      { titleKey: "feat_mep_step2_title", descKey: "feat_mep_step2_desc" },
+      { titleKey: "feat_mep_step3_title", descKey: "feat_mep_step3_desc" },
+      { titleKey: "feat_mep_step4_title", descKey: "feat_mep_step4_desc" },
+    ],
+    highlightKeys: ["feat_mep_highlight1", "feat_mep_highlight2", "feat_mep_highlight3", "feat_mep_highlight4"],
+    screenshots: [{ screen: "mep", route: "/mep", altKey: "feat_mep_shot1_alt", captionKey: "feat_mep_shot1_caption" }],
+  },
+  {
     slug: "ordenes-compra",
     titleKey: "feat_ordenes_title",
     taglineKey: "feat_ordenes_tagline",
@@ -133,12 +148,15 @@ export const featurePages: FeaturePageDef[] = [
       { titleKey: "feat_ordenes_step1_title", descKey: "feat_ordenes_step1_desc" },
       { titleKey: "feat_ordenes_step2_title", descKey: "feat_ordenes_step2_desc" },
       { titleKey: "feat_ordenes_step3_title", descKey: "feat_ordenes_step3_desc" },
+      // Enviar por WhatsApp o correo (docs/202).
+      { titleKey: "feat_ordenes_step4_title", descKey: "feat_ordenes_step4_desc" },
     ],
     highlightKeys: [
       "feat_ordenes_highlight1",
       "feat_ordenes_highlight2",
       "feat_ordenes_highlight3",
       "feat_ordenes_highlight4",
+      "feat_ordenes_highlight5",
     ],
     screenshots: [
       { screen: "ordenes", route: "/ordenes-compra", altKey: "feat_ordenes_shot1_alt", captionKey: "feat_ordenes_shot1_caption" },
@@ -153,12 +171,15 @@ export const featurePages: FeaturePageDef[] = [
       { titleKey: "feat_estadisticas_step1_title", descKey: "feat_estadisticas_step1_desc" },
       { titleKey: "feat_estadisticas_step2_title", descKey: "feat_estadisticas_step2_desc" },
       { titleKey: "feat_estadisticas_step3_title", descKey: "feat_estadisticas_step3_desc" },
+      // Proveedores y Merma (docs/202).
+      { titleKey: "feat_estadisticas_step4_title", descKey: "feat_estadisticas_step4_desc" },
     ],
     highlightKeys: [
       "feat_estadisticas_highlight1",
       "feat_estadisticas_highlight2",
       "feat_estadisticas_highlight3",
       "feat_estadisticas_highlight4",
+      "feat_estadisticas_highlight5",
     ],
     screenshots: [
       { screen: "reportes", route: "/estadisticas", altKey: "feat_estadisticas_shot1_alt", captionKey: "feat_estadisticas_shot1_caption" },

@@ -47,7 +47,7 @@ export function QuestionCard({ question, onFinish }: { question: QuestionDef; on
       role="dialog"
       aria-label={t(k("title"))}
       data-feedback-card
-      className="fixed bottom-20 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-xl border border-border bg-card p-4 shadow-lg md:bottom-6"
+      className="fixed bottom-[calc(7.75rem+env(safe-area-inset-bottom))] right-4 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-xl border border-border bg-card p-4 shadow-lg md:bottom-20"
     >
       {done ? (
         <p className="text-sm font-medium text-foreground">{t("feedback_thanks")}</p>

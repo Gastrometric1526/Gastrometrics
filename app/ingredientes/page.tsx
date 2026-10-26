@@ -1188,120 +1188,63 @@ export default function IngredientesPage() {
         changes.push({ ingredientId: ing.id, newUnit, factor })
         return convertIngredientUnit(ing, newUnit, factor)
       })
-      void persistUnitChangeSideEffects(changes, businessId)
-      return updatedIngredients
+      return { updatedIngredients, changes }
     },
-    [ingredients, businessId],
+    [ingredients],
   )
 
-  const convertToMetric = useCallback(() => {
-    try {
-      console.log("Iniciando conversión a métrico...")
-      const updatedIngredients = convertCatalogToSystem("metric")
-      console.log("Ingredientes convertidos:", updatedIngredients)
-
-      // Forzar actualización del estado
+  // Conversión métrico ⇄ imperial del catálogo (switch y conversión masiva). Espera a que se
+  // guarden los ingredientes y sus recetas, inventario e historial (docs/204): antes los
+  // guardados no se esperaban, el aviso de éxito salía antes de saber si se guardó y un error
+  // quedaba sin manejar — la pantalla mostraba todo convertido aunque la base no.
+  const applySystemConversion = useCallback(
+    async (targetSystem: "metric" | "imperial", successToast: (count: number) => void) => {
+      const previous = ingredients
+      const previousSystem = activeSystem
+      const { updatedIngredients, changes } = convertCatalogToSystem(targetSystem)
       setIngredients([...updatedIngredients])
+      setActiveSystem(targetSystem)
+      try {
+        await saveIngredients(updatedIngredients, businessId)
+        await persistUnitChangeSideEffects(changes, businessId)
+        successToast(updatedIngredients.length)
+        window.dispatchEvent(
+          new CustomEvent("ingredientsUpdated", {
+            detail: { businessId: businessId || "main", data: updatedIngredients, action: "unit-conversion", targetSystem },
+          }),
+        )
+        setIngredients([...getIngredients(businessId)])
+      } catch (error) {
+        console.error("[ingredientes] Error al convertir el sistema de unidades:", error)
+        setIngredients(previous)
+        setActiveSystem(previousSystem)
+        showError(targetSystem === "metric" ? t("ingredientes_toast_convert_metric_error") : t("ingredientes_toast_convert_imperial_error"))
+      }
+    },
+    [ingredients, activeSystem, convertCatalogToSystem, businessId, showError, t],
+  )
 
-      saveIngredients(updatedIngredients, businessId)
+  const convertToMetric = useCallback(
+    () => applySystemConversion("metric", (count) => showSuccess(t("ingredientes_toast_converted_metric").replace("{count}", String(count)))),
+    [applySystemConversion, showSuccess, t],
+  )
 
-      // Actualizar el sistema activo
-      setActiveSystem("metric")
-
-      // Mostrar notificación de éxito
-      showSuccess(t("ingredientes_toast_converted_metric").replace("{count}", String(updatedIngredients.length)))
-
-      // Disparar evento para sincronizar con otros componentes
-      window.dispatchEvent(
-        new CustomEvent("ingredientsUpdated", {
-          detail: { businessId: businessId || "main", data: updatedIngredients, action: "unit-conversion" },
-        }),
-      )
-
-      // Forzar re-render después de un breve delay
-      setTimeout(() => {
-        const currentData = getIngredients(businessId)
-        if (currentData) {
-          setIngredients([...currentData])
-        }
-      }, 100)
-    } catch (error) {
-      console.error("Error al convertir a métrico:", error)
-      showError(t("ingredientes_toast_convert_metric_error"))
-    }
-  }, [convertCatalogToSystem, businessId, showSuccess, showError, t])
-
-  const convertToImperial = useCallback(() => {
-    try {
-      console.log("Iniciando conversión a imperial...")
-      const updatedIngredients = convertCatalogToSystem("imperial")
-      console.log("Ingredientes convertidos:", updatedIngredients)
-
-      // Forzar actualización del estado
-      setIngredients([...updatedIngredients])
-
-      saveIngredients(updatedIngredients, businessId)
-
-      // Actualizar el sistema activo
-      setActiveSystem("imperial")
-
-      // Mostrar notificación de éxito
-      showSuccess(t("ingredientes_toast_converted_imperial").replace("{count}", String(updatedIngredients.length)))
-
-      // Disparar evento para sincronizar con otros componentes
-      window.dispatchEvent(
-        new CustomEvent("ingredientsUpdated", {
-          detail: { businessId: businessId || "main", data: updatedIngredients, action: "unit-conversion" },
-        }),
-      )
-
-      // Forzar re-render después de un breve delay
-      setTimeout(() => {
-        const currentData = getIngredients(businessId)
-        if (currentData) {
-          setIngredients([...currentData])
-        }
-      }, 100)
-    } catch (error) {
-      console.error("Error al convertir a imperial:", error)
-      showError(t("ingredientes_toast_convert_imperial_error"))
-    }
-  }, [convertCatalogToSystem, businessId, showSuccess, showError, t])
+  const convertToImperial = useCallback(
+    () => applySystemConversion("imperial", (count) => showSuccess(t("ingredientes_toast_converted_imperial").replace("{count}", String(count)))),
+    [applySystemConversion, showSuccess, t],
+  )
 
   const handleMassUnitConversion = useCallback(
-    (targetSystem: "metric" | "imperial") => {
-      const updatedIngredients = convertCatalogToSystem(targetSystem)
-
-      setIngredients(updatedIngredients)
-      saveIngredients(updatedIngredients, businessId)
-
-      setActiveSystem(targetSystem)
-
-      // Disparar evento de actualización
-      if (typeof window !== "undefined") {
-        const event = new CustomEvent("ingredientsUpdated", {
-          detail: {
-            businessId: businessId || "main",
-            action: "mass_unit_conversion",
-            targetSystem,
-          },
-        })
-        window.dispatchEvent(event)
-      }
-
-      const systemName =
-        targetSystem === "metric" ? t("ingredientes_system_metric_name") : t("ingredientes_system_imperial_name")
-      const baseUnits =
-        targetSystem === "metric" ? t("ingredientes_units_metric_base") : t("ingredientes_units_imperial_base")
-
-      showSuccess(
-        t("ingredientes_toast_mass_conversion_title").replace("{system}", systemName),
-        t("ingredientes_toast_mass_conversion_desc")
-          .replace("{count}", String(updatedIngredients.length))
-          .replace("{units}", baseUnits),
-      )
-    },
-    [convertCatalogToSystem, businessId, showSuccess, t],
+    (targetSystem: "metric" | "imperial") =>
+      applySystemConversion(targetSystem, (count) => {
+        const systemName = targetSystem === "metric" ? t("ingredientes_system_metric_name") : t("ingredientes_system_imperial_name")
+        const baseUnits = targetSystem === "metric" ? t("ingredientes_units_metric_base") : t("ingredientes_units_imperial_base")
+        showSuccess(
+          t("ingredientes_toast_mass_conversion_title").replace("{system}", systemName),
+          t("ingredientes_toast_mass_conversion_desc").replace("{count}", String(count)).replace("{units}", baseUnits),
+        )
+      }),
+    [applySystemConversion, showSuccess, t],
   )
 
   if (!authChecked) {

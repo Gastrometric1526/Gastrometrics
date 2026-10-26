@@ -49,6 +49,7 @@ import {
 import { formatDate, formatDateTime, fileDate } from "@/lib/date-format"
 import { accountsToCsv, type CsvAccount } from "@/lib/admin/accounts-csv"
 import { useAdminLiveReload } from "@/components/admin/live"
+import { AdminResendConfirmation } from "@/components/admin/admin-resend-confirmation"
 
 // Umbral de "inactivo" en la lista de Cuentas: sin actividad registrada en los últimos
 // 14 días (y no en línea ahora mismo) — pedido implícito al agregar "tiempo en la app":
@@ -642,6 +643,11 @@ export function AccountsPanel() {
               {t("admin_accounts_created")} {formatDate(detail.createdAt)}
               {" · "}
               {detail.emailConfirmed ? t("admin_accounts_confirmed") : t("admin_accounts_unconfirmed")}
+              {!detail.emailConfirmed && (
+                <span className="ml-2 inline-block align-middle">
+                  <AdminResendConfirmation userId={selected.userId} />
+                </span>
+              )}
               {" · "}
               {t("admin_accounts_table_country")}: {countryName(selected.country) || t("admin_accounts_no_country")}
               {" · "}

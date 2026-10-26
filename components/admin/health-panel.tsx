@@ -7,6 +7,11 @@ import { useLanguage } from "@/contexts/language-context"
 import { formatDateTime } from "@/lib/date-format"
 import type { TranslationKey } from "@/lib/i18n/translations"
 import { AdminCard, BarList, ErrorState, LoadingBlock, SimpleTable, StatusPill, type Status, useAdminData } from "@/components/admin/ui"
+import { AdminResendConfirmation } from "@/components/admin/admin-resend-confirmation"
+import { EMAIL_LABELS } from "@/lib/i18n/email-labels"
+
+/** Asuntos del correo de confirmación en los 6 idiomas. */
+const CONFIRMATION_SUBJECTS = new Set(Object.values(EMAIL_LABELS).map((l) => l.e01_subject))
 
 export interface HealthResponse {
   checkedAt: string
@@ -176,10 +181,13 @@ export function HealthPanel() {
               { key: "subject", label: t("admin_col_subject") },
               { key: "status", label: t("admin_col_status") },
               { key: "date", label: t("admin_col_date"), align: "right" },
+              { key: "action", label: "" },
             ]}
             rows={data.provider.problems.map((p, i) => ({
               key: `${p.to}-${i}`,
               cells: {
+                // Correo de confirmación que no llegó: se puede reenviar desde aquí (docs/204).
+                action: CONFIRMATION_SUBJECTS.has(p.subject) ? <AdminResendConfirmation email={p.to.split(",")[0].trim()} /> : null,
                 to: p.to,
                 subject: <span className="text-muted-foreground">{p.subject}</span>,
                 status: <StatusPill status={p.status === "delivery_delayed" ? "warn" : "bad"} label={tt(`admin_health_email_${p.status}`)} />,

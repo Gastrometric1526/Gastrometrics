@@ -18,6 +18,7 @@ import { consumePendingSignupPlan } from "@/lib/pending-signup-plan"
 import { Checkbox } from "@/components/ui/checkbox"
 import { setRememberChoice } from "@/lib/remember-me"
 import { AuthShell } from "@/components/auth-shell"
+import { ResendConfirmationButton } from "@/components/resend-confirmation-button"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -25,6 +26,8 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [loginError, setLoginError] = useState("")
+  // Cuenta sin confirmar: se ofrece reenviar el correo (docs/204).
+  const [needsConfirmation, setNeedsConfirmation] = useState(false)
   const [isDevLoggingIn, setIsDevLoggingIn] = useState(false)
   const router = useRouter()
   const { login } = useAuth()
@@ -80,6 +83,8 @@ export default function LoginPage() {
       // era explicarlo.
       if (message.includes("email not confirmed") || message.includes("confirm")) {
         setLoginError(t("login_error_email_not_confirmed"))
+        setNeedsConfirmation(true)
+        setNeedsConfirmation(true)
       } else if (message.includes("invalid") || message.includes("credentials")) {
         setLoginError(t("login_error_invalid_credentials"))
       } else {
@@ -208,6 +213,7 @@ export default function LoginPage() {
                   {loginError}
                 </p>
               )}
+              {needsConfirmation && email && <ResendConfirmationButton email={email} className="w-full" />}
 
               <Button
                 type="submit"

@@ -33,6 +33,7 @@ import {
   ChefHat,
   TrendingUp,
   ArrowDown,
+  ListChecks,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AnimatedNumber } from "@/components/animated-number"
@@ -246,6 +247,9 @@ function BentoImport({ on }: { on: boolean }) {
 function BentoReports({ on }: { on: boolean }) {
   return <RealCrop on={on} screen="reportes" focus={[50, 70]} zoom={1.15} alt="" />
 }
+function BentoMep({ on }: { on: boolean }) {
+  return <RealCrop on={on} screen="mep" focus={[30, 38]} zoom={1.3} height="h-56" alt="" />
+}
 function BentoStock({ on }: { on: boolean }) {
   return <RealCrop on={on} screen="inventario" focus={[50, 70]} zoom={1.0} height="h-56" alt="" />
 }
@@ -259,7 +263,9 @@ export function LandingBento() {
     { key: "3", icon: RefreshCw, span: "", Visual: BentoCascade },
     { key: "4", icon: Camera, span: "md:col-span-2", Visual: BentoImport },
     { key: "5", icon: BarChart3, span: "", Visual: BentoReports },
-    { key: "6", icon: ShoppingCart, span: "md:col-span-3", Visual: BentoStock },
+    { key: "6", icon: ShoppingCart, span: "md:col-span-2", Visual: BentoStock },
+    // MEP (docs/202): una hoja de mise en place por sección.
+    { key: "7", icon: ListChecks, span: "", Visual: BentoMep },
   ]
   return (
     <section ref={ref} className="max-w-[1200px] mx-auto px-4 sm:px-6 md:px-10 py-16 md:py-24 space-y-10">

@@ -23,7 +23,7 @@ import { useTeamPreview } from "@/lib/plan-access"
 
 const QUIET_PREFIXES = ["/login", "/signup", "/forgot-password", "/reset-password", "/planes", "/about", "/contacto", "/admin", "/recursos", "/caracteristicas", "/software", "/resenas", "/calculadora-food-cost", "/terminos", "/politica", "/aviso"]
 
-function isQuiet(pathname: string | null): boolean {
+export function isQuiet(pathname: string | null): boolean {
   if (!pathname || pathname === "/") return true
   return QUIET_PREFIXES.some((p) => pathname.startsWith(p))
 }

@@ -116,11 +116,18 @@ export function ManualSalesTab({ businessId, onSalesChanged }: ManualSalesTabPro
   const confirmDelete = async () => {
     if (!entryToDelete) return
     setIsDeleting(true)
-    await deleteSalesImport(entryToDelete.id, businessId)
-    setSalesImports(getSalesImports(businessId))
-    toast({ title: t("manual_sales_toast_deleted_title") })
-    setIsDeleting(false)
-    setEntryToDelete(null)
+    // Si falla, se avisa y el botón no se queda en «Eliminando…» (docs/204).
+    try {
+      await deleteSalesImport(entryToDelete.id, businessId)
+      setSalesImports(getSalesImports(businessId))
+      toast({ title: t("manual_sales_toast_deleted_title") })
+      setEntryToDelete(null)
+    } catch (error) {
+      console.error("[manual-sales] No se pudo eliminar la venta:", error)
+      toast({ title: t("finanzas_delete_import_error"), variant: "destructive" })
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (

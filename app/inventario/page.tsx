@@ -166,9 +166,12 @@ export default function InventoryPage() {
     updatePricesFromDB = false,
   ) => {
     return inventoryItems.map((item): InventoryItem => {
-      const matchingIngredient = ingredientsList.find((ing) => ing.name === item.name)
-
-      const hasCustomMinStock = customMinStocks[item.id] !== undefined
+      // Por id primero (el producto usa el id de su ingrediente, docs/190) y por nombre si no:
+      // antes solo por nombre, y al renombrar un ingrediente su precio dejaba de actualizarse aquí.
+      const matchingIngredient = ingredientsList.find((ing) => ing.id === item.id) || ingredientsList.find((ing) => ing.name === item.name)
+      const minStock = customMinStocks[item.id] !== undefined ? customMinStocks[item.id] : item.minStock
+      // Semáforo: la regla única de lib/inventory-status.ts (docs/190), en vez de una copia aquí.
+      const status = stockStatus(item.currentStock, minStock)
 
       if (matchingIngredient) {
         let updatedPrice = item.price
@@ -186,32 +189,13 @@ export default function InventoryPage() {
           presentation: item.presentation || matchingIngredient.presentation,
           unit: item.unit || matchingIngredient.unit,
           price: updatedPrice,
-          minStock: hasCustomMinStock ? customMinStocks[item.id] : item.minStock,
+          minStock,
           currentStock: item.currentStock,
-          status:
-            item.currentStock !== null &&
-            item.currentStock <= (hasCustomMinStock ? customMinStocks[item.id] : item.minStock)
-              ? "critical"
-              : item.currentStock !== null &&
-                  item.currentStock <= (hasCustomMinStock ? customMinStocks[item.id] : item.minStock) * 2
-                ? "low"
-                : "normal",
+          status,
         }
       }
 
-      return {
-        ...item,
-        minStock: hasCustomMinStock ? customMinStocks[item.id] : item.minStock,
-        currentStock: item.currentStock,
-        status:
-          item.currentStock !== null &&
-          item.currentStock <= (hasCustomMinStock ? customMinStocks[item.id] : item.minStock)
-            ? "critical"
-            : item.currentStock !== null &&
-                item.currentStock <= (hasCustomMinStock ? customMinStocks[item.id] : item.minStock) * 2
-              ? "low"
-              : "normal",
-      }
+      return { ...item, minStock, currentStock: item.currentStock, status }
     })
   }
 
@@ -263,7 +247,13 @@ export default function InventoryPage() {
           })
 
           setItems(preservedInventory)
-          saveInventory(preservedInventory, businessId)
+          // Solo se guarda si la sincronización cambió algo (precio, unidad, presentación,
+          // mínimo o estado, docs/204). Antes se reescribía todo el inventario cada vez que se
+          // abría la página, aunque nada hubiera cambiado: escrituras de más y riesgo de pisar
+          // lo que otro miembro del equipo acababa de guardar.
+          const keyOf = (i: InventoryItem) => JSON.stringify([i.id, i.price, i.unit, i.presentation, i.minStock, i.status, i.supplier, i.location])
+          const before = new Map(storedInventory.map((i) => [i.id, keyOf(i)]))
+          if (preservedInventory.some((i) => before.get(i.id) !== keyOf(i))) saveInventory(preservedInventory, businessId)
         } else {
           const newInventoryItems = ingredients.map((ingredient): InventoryItem => {
             const ing = ingredient as LegacyIngredient

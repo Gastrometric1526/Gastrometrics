@@ -12,7 +12,7 @@ import { featurePages } from "@/lib/feature-pages"
 import { CURRENCY_OPTIONS } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
 import type { TranslationKey } from "@/lib/i18n/translations"
-import { ChefHat, Package, BarChart3, UtensilsCrossed, ShoppingCart, Building2, Globe, Calculator, ArrowRight, CheckCircle2 } from "lucide-react"
+import { ChefHat, Package, BarChart3, UtensilsCrossed, ShoppingCart, Building2, Globe, Calculator, ArrowRight, CheckCircle2, ListChecks } from "lucide-react"
 import { CtaBand, MarketingPage, PAGE_WIDTH, PageHero, RealPdf, RealScreen, Reveal, SectionHeading } from "@/components/marketing-ui"
 
 const detailPageSlugs = new Set(featurePages.map((f) => f.slug))
@@ -33,6 +33,7 @@ const moduleDefs: ModuleDef[] = [
   { slug: "costeo", icon: Calculator, titleKey: "about_m_costeo_title", descKey: "about_m_costeo_desc", pointKeys: ["about_m_costeo_point1", "about_m_costeo_point2", "about_m_costeo_point3"], screen: "precio", route: "/ficha-tecnica" },
   { slug: "ingredientes-inventario", icon: Package, titleKey: "about_m_ingredientes_title", descKey: "about_m_ingredientes_desc", pointKeys: ["about_m_ingredientes_point1", "about_m_ingredientes_point2", "about_m_ingredientes_point3"], screen: "inventario", route: "/inventario" },
   { slug: "menus", icon: UtensilsCrossed, titleKey: "about_m_menus_title", descKey: "about_m_menus_desc", pointKeys: ["about_m_menus_point1", "about_m_menus_point2", "about_m_menus_point3"], screen: "menus", route: "/menus" },
+  { slug: "mep", icon: ListChecks, titleKey: "about_m_mep_title", descKey: "about_m_mep_desc", pointKeys: ["about_m_mep_point1", "about_m_mep_point2", "about_m_mep_point3"], screen: "mep", route: "/mep" },
   { slug: "ordenes-compra", icon: ShoppingCart, titleKey: "about_m_ordenes_title", descKey: "about_m_ordenes_desc", pointKeys: ["about_m_ordenes_point1", "about_m_ordenes_point2", "about_m_ordenes_point3"], screen: "ordenes", route: "/ordenes-compra" },
   { slug: "estadisticas", icon: BarChart3, titleKey: "about_m_estadisticas_title", descKey: "about_m_estadisticas_desc", pointKeys: ["about_m_estadisticas_point1", "about_m_estadisticas_point2", "about_m_estadisticas_point3"], screen: "reportes", route: "/estadisticas" },
 ]

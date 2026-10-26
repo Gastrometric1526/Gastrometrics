@@ -515,7 +515,8 @@ function generateAdministrativePDF(
   }
 
   // Column 2
-  const stepText = sanitizeText(recipe.step)
+  // Etapa/Estación traducida (docs/204): antes salía el valor guardado en español en todos los idiomas.
+  const stepText = sanitizeText(recipe.step ? getRecipeStepLabel(recipe.step, getCurrentPdfLanguage()) : "")
   if (stepText) {
     doc.setFont("helvetica", "bold")
     doc.setTextColor(...COLORS.darkGray)
@@ -1366,7 +1367,7 @@ function generateNormalPDF(
   doc.setFontSize(11)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(...COLORS.secondary)
-  doc.text(`${classificationLabel(recipe)}${recipe.step ? ` | ${sanitizeText(recipe.step)}` : ""}`, margin, yPosition)
+  doc.text(`${classificationLabel(recipe)}${recipe.step ? ` | ${sanitizeText(getRecipeStepLabel(recipe.step, getCurrentPdfLanguage()))}` : ""}`, margin, yPosition)
   yPosition += 7
 
   // ===== YIELD/SERVINGS (Plain text) =====

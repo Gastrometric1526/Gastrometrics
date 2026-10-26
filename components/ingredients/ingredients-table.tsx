@@ -10,6 +10,7 @@ import type { Ingredient, Presentation, Unit } from "@/types/ingredient"
 import { units, presentations, unitAbbreviations } from "@/types/ingredient"
 import { convertIngredientUnit, unitFactor } from "@/lib/unit-change"
 import { persistUnitChangeSideEffects } from "@/lib/storage/unit-change"
+import { useToast } from "@/hooks/use-toast"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { setDashboardData } from "@/utils/dashboard-data"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -67,6 +68,7 @@ export function IngredientsTable({
   mermaSystemEnabled,
 }: Props) {
   const { t, language } = useLanguage()
+  const { toast } = useToast()
   const [wacInfoIngredientId, setWacInfoIngredientId] = useState<string | null>(null)
   // "Vender por copa / botella" (docs/136) — solo en ingredientes con categoría de barra.
   const [sellIngredient, setSellIngredient] = useState<Ingredient | null>(null)
@@ -108,11 +110,15 @@ export function IngredientsTable({
       const factor = unitFactor(ingredient.unit, newUnit) ?? 1
       updateById(ingredient.id, (ing) => convertIngredientUnit(ing, newUnit, factor))
       if (factor !== 1) {
-        void persistUnitChangeSideEffects([{ ingredientId: ingredient.id, newUnit, factor }], businessId)
+        // Recetas, inventario e historial: si no se guardan, se avisa (docs/204; antes el error quedaba sin manejar).
+        persistUnitChangeSideEffects([{ ingredientId: ingredient.id, newUnit, factor }], businessId).catch((error) => {
+          console.error("[ingredients-table] No se pudo guardar el cambio de unidad:", error)
+          toast({ title: t("ingredientes_toast_unit_change_error"), variant: "destructive" })
+        })
       }
       onUnitChange?.()
     },
-    [updateById, onUnitChange, businessId],
+    [updateById, onUnitChange, businessId, toast, t],
   )
 
   const handlePresentationChange = useCallback(

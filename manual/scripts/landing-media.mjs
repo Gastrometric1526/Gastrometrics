@@ -40,6 +40,7 @@ const SCREENS = [
   { id: "reportes", route: "/estadisticas" },
   { id: "menus", route: "/menus" },
   { id: "ordenes", route: "/ordenes-compra" },
+  { id: "mep", route: "/mep?menu=demo-menu-lunch" },
 ]
 
 const TOURS = ["onboarding_completed", ...["ficha-tecnica", "ingredientes", "inventario", "mis-recetas", "menus", "estadisticas", "ordenes-compra", "settings-dialog", "equipo", "mi-plan", "procesar-ordenes", "business-detail", "negocios", "dashboard"].map((k) => `tour_completed_${k}`)]

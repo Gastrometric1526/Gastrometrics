@@ -79,6 +79,13 @@ export function FichaTecnicaTour({ hasIngredients }: { hasIngredients: boolean }
       description: t("tour_ficha_save_desc"),
       selector: '[data-tour="ficha-save"]',
     },
+    {
+      // Chat de soporte (docs/204): botón de ayuda en la esquina, en todas las pantallas.
+      id: "support-chat",
+      title: t("tour_support_chat_title"),
+      description: t("tour_support_chat_desc"),
+      selector: '[data-tour="support-chat"]',
+    },
   ]
 
   return <PageTour steps={steps} storageKey="tour_completed_ficha-tecnica" />

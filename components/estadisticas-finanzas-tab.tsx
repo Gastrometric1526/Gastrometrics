@@ -49,6 +49,8 @@ import {
   type MenuEngineeringClass,
 } from "@/lib/sales-analytics"
 import { POSSalesImportDialog } from "@/components/pos-sales-import-dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useToast } from "@/hooks/use-toast"
 import { FinanzasCalculationDialog } from "@/components/finanzas-calculation-dialog"
 import { SalesHistoryBreakdown } from "@/components/sales-history-breakdown"
 import { useLanguage } from "@/contexts/language-context"
@@ -61,6 +63,7 @@ import { formatDateTime } from "@/lib/date-format"
 
 export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) {
   const { t, language } = useLanguage()
+  const { toast } = useToast()
 
   const classificationMeta: Record<MenuEngineeringClass, { label: string; icon: any; color: string; desc: string }> = {
     estrella: {
@@ -178,9 +181,26 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
     }
   }, [businessId, refreshKey])
 
-  const handleDeleteImport = async (id: string) => {
-    setSalesImports((prev) => prev.filter((i) => i.id !== id))
-    await deleteSalesImport(id, businessId)
+  // Borrar una importación quita todas sus ventas: se confirma antes (docs/204; antes era un
+  // solo toque en un ícono sin nombre) y, si falla, la fila vuelve y se avisa.
+  const [importToDelete, setImportToDelete] = useState<SalesImport | null>(null)
+  const [deletingImport, setDeletingImport] = useState(false)
+  const confirmDeleteImport = async () => {
+    if (!importToDelete) return
+    const target = importToDelete
+    setDeletingImport(true)
+    setSalesImports((prev) => prev.filter((i) => i.id !== target.id))
+    try {
+      await deleteSalesImport(target.id, businessId)
+      toast({ title: t("finanzas_delete_import_done") })
+    } catch (error) {
+      console.error("[finanzas] No se pudo eliminar la importación:", error)
+      setSalesImports(getSalesImports(businessId))
+      toast({ title: t("finanzas_delete_import_error"), variant: "destructive" })
+    } finally {
+      setDeletingImport(false)
+      setImportToDelete(null)
+    }
   }
 
   // Periodo cubierto: la union de todas las importaciones cargadas (mas simple y
@@ -801,7 +821,14 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
                       app/facturas/page.tsx), no desde acá — borrarla solo de este
                       lado dejaría la factura viva pero invisible para Finanzas. */}
                   {imp.source !== "invoice" && (
-                    <Button variant="ghost" size="sm" onClick={() => handleDeleteImport(imp.id)} className="shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setImportToDelete(imp)}
+                      className="shrink-0"
+                      aria-label={t("finanzas_delete_import_aria")}
+                      title={t("finanzas_delete_import_aria")}
+                    >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   )}
@@ -811,6 +838,30 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
           </Card>
         </>
       )}
+
+      <Dialog open={!!importToDelete} onOpenChange={(next) => !next && !deletingImport && setImportToDelete(null)}>
+        <DialogContent className="bg-card border-border max-w-md mx-4">
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <Trash2 className="h-5 w-5" />
+              {t("finanzas_delete_import_title")}
+            </DialogTitle>
+            <DialogDescription>
+              <strong>«{importToDelete ? salesImportDisplayName(importToDelete, t, language) : ""}»</strong>{" "}
+              {t("finanzas_delete_import_desc").replace("{count}", String(importToDelete?.lineCount ?? 0))}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setImportToDelete(null)} disabled={deletingImport} className="w-full sm:w-auto">
+              {t("common_cancel")}
+            </Button>
+            <Button variant="destructive" onClick={confirmDeleteImport} disabled={deletingImport} className="w-full sm:w-auto">
+              <Trash2 className="h-4 w-4 mr-2" />
+              {t("common_delete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <POSSalesImportDialog
         open={isImportOpen}

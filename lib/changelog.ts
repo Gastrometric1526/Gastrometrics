@@ -32,6 +32,66 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-26b",
+    tutorialHref: tourHref("ficha-tecnica"),
+    content: {
+      es: {
+        title: "Nuevo: chat de ayuda dentro de la app",
+        items: [
+          "Toca el botón de ayuda en la esquina: elige el tema de tu duda y, mientras escribes, te mostramos la parte del manual que la responde.",
+          "Si no te basta, mándala al equipo: te atendemos por orden de llegada y ves cuántas personas hay antes que tú. Puedes adjuntar fotos, PDF o Excel.",
+          "La respuesta te llega en el chat y por correo.",
+          "¿No te llegó el correo de confirmación? Ahora puedes pedirlo otra vez desde la pantalla de registro o al iniciar sesión.",
+        ],
+      },
+      en: {
+        title: "New: in-app help chat",
+        items: [
+          "Tap the help button in the corner: pick the topic of your question and, as you type, we show the part of the manual that answers it.",
+          "If that’s not enough, send it to the team: we reply in order of arrival and you see how many people are ahead of you. You can attach photos, PDF or Excel files.",
+          "The reply arrives in the chat and by email.",
+          "Didn’t get the confirmation email? You can now request it again from the sign-up screen or when you log in.",
+        ],
+      },
+      da: {
+        title: "Nyt: hjælpechat i appen",
+        items: [
+          "Tryk på hjælpeknappen i hjørnet: vælg emnet for dit spørgsmål, og mens du skriver, viser vi den del af manualen, der svarer på det.",
+          "Er det ikke nok, så send det til teamet: vi svarer i den rækkefølge, beskederne kommer ind, og du kan se, hvor mange der er foran dig. Du kan vedhæfte fotos, PDF eller Excel.",
+          "Svaret kommer i chatten og på e-mail.",
+          "Fik du ikke bekræftelsesmailen? Nu kan du bede om den igen fra tilmeldingen eller når du logger ind.",
+        ],
+      },
+      fr: {
+        title: "Nouveau : chat d’aide dans l’app",
+        items: [
+          "Touchez le bouton d’aide dans le coin : choisissez le sujet de votre question et, pendant que vous écrivez, nous affichons la partie du manuel qui y répond.",
+          "Si cela ne suffit pas, envoyez-la à l’équipe : nous répondons par ordre d’arrivée et vous voyez combien de personnes sont avant vous. Vous pouvez joindre des photos, PDF ou fichiers Excel.",
+          "La réponse arrive dans le chat et par e-mail.",
+          "Vous n’avez pas reçu l’e-mail de confirmation ? Vous pouvez maintenant le redemander depuis l’inscription ou à la connexion.",
+        ],
+      },
+      pt: {
+        title: "Novo: chat de ajuda dentro do app",
+        items: [
+          "Toque no botão de ajuda no canto: escolha o assunto da sua dúvida e, enquanto você escreve, mostramos a parte do manual que responde.",
+          "Se não bastar, mande para a equipe: atendemos por ordem de chegada e você vê quantas pessoas há antes de você. Você pode anexar fotos, PDF ou Excel.",
+          "A resposta chega no chat e por e-mail.",
+          "Não recebeu o e-mail de confirmação? Agora você pode pedir de novo na tela de cadastro ou ao entrar.",
+        ],
+      },
+      zh: {
+        title: "新功能：应用内帮助聊天",
+        items: [
+          "点击角落的帮助按钮：选择问题的主题，你输入时，我们会显示手册中能解答它的部分。",
+          "如果还不够，就发送给团队：我们按到达顺序回复，你能看到前面还有多少人。可以附加照片、PDF 或 Excel 文件。",
+          "回复会出现在聊天中，也会发送到你的邮箱。",
+          "没收到确认邮件？现在可以在注册页面或登录时重新发送。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-10-26",
     tutorialHref: tourHref("mep"),
     content: {

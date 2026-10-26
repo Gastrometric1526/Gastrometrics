@@ -21,6 +21,7 @@ import { ReferralTrigger } from "@/components/referral-trigger"
 import { PlanExpiryDialog } from "@/components/plan-expiry-dialog"
 import { PaymentNoticeDialog } from "@/components/payment-notice-dialog"
 import { FeedbackOrchestrator } from "@/components/feedback/feedback-orchestrator"
+import { SupportChat } from "@/components/support-chat"
 import { ModuleActivityTracker } from "@/components/module-activity-tracker"
 import { PwaBackGuard } from "@/components/pwa-back-guard"
 import { EmailClickTracker } from "@/components/email-click-tracker"
@@ -129,6 +130,8 @@ export default function RootLayout({
                   <PaymentNoticeDialog />
                   {/* Calificación y preguntas cortas en momentos de valor (docs/173) */}
                   <FeedbackOrchestrator />
+                  {/* Chat de soporte (docs/204) */}
+                  <SupportChat />
                   <SubRecipePricePrompt />
                   <Suspense fallback={null}>
                     <ModuleActivityTracker />

@@ -15,6 +15,7 @@ import { AdminLiveProvider, useAdminLive } from "@/components/admin/live"
 import { useToast } from "@/hooks/use-toast"
 import { AccountsPanel } from "@/components/admin/accounts-panel"
 import { FeedbackPanel } from "@/components/admin/feedback-panel"
+import { SupportInbox } from "@/components/admin/support-inbox"
 import { AnalyticsPanel } from "@/components/admin/analytics-panel"
 import { TopUsersPanel } from "@/components/admin/top-users-panel"
 import { ReviewsPanel } from "@/components/admin/reviews-panel"
@@ -76,6 +77,7 @@ function AdminPageInner() {
   const [lockedUntil, setLockedUntil] = useState<number | null>(null)
   const [lockoutSecondsLeft, setLockoutSecondsLeft] = useState(0)
   const [feedbackCounts, setFeedbackCounts] = useState({ total: 0, nuevo: 0, bug: 0 })
+  const [supportWaiting, setSupportWaiting] = useState(0)
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [legalPending, setLegalPending] = useState<number | null>(null)
   const [tab, setTab] = useState<AdminTab>("resumen")
@@ -113,6 +115,13 @@ function AdminPageInner() {
       .then((res) => res.json())
       .then((data) => {
         if (!data.error) setStats(data)
+      })
+      .catch(() => {})
+    // Conversaciones del chat de soporte esperando respuesta (docs/204).
+    fetch("/api/admin/support")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data.conversations)) setSupportWaiting(data.conversations.filter((c: { status: string }) => c.status === "waiting").length)
       })
       .catch(() => {})
     fetch("/api/admin/feedback")
@@ -307,9 +316,9 @@ function AdminPageInner() {
             <TabsTrigger value="buzon" className="gap-1.5">
               <Inbox className="h-4 w-4" />
               {t("admin_tab_inbox_group")}
-              {feedbackCounts.nuevo > 0 && (
+              {feedbackCounts.nuevo + supportWaiting > 0 && (
                 <span className="ml-1 rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground tabular-nums">
-                  {feedbackCounts.nuevo}
+                  {feedbackCounts.nuevo + supportWaiting}
                 </span>
               )}
             </TabsTrigger>
@@ -362,9 +371,10 @@ function AdminPageInner() {
           <TabsContent value="buzon" className="mt-6 space-y-6">
             <TabIntro text={t("admin_tabdesc_inbox")} />
             <AdminSubTabs
-              value={subTab.buzon || "mensajes"}
+              value={subTab.buzon || "chat"}
               onChange={(v) => setSub("buzon", v)}
               items={[
+                { value: "chat", label: `${t("admin_tab_support_chat")}${supportWaiting ? ` (${supportWaiting})` : ""}`, content: <SupportInbox onWaitingChange={setSupportWaiting} /> },
                 { value: "mensajes", label: `${t("admin_tab_feedback")} (${feedbackCounts.total})`, content: <FeedbackPanel onCountsChange={setFeedbackCounts} /> },
                 { value: "resenas", label: t("admin_tab_reviews"), content: <ReviewsPanel /> },
               ]}

@@ -44,6 +44,7 @@ import {
 } from "@/lib/types/user"
 import { registrationStep1Schema, registrationStep2Schema, registrationStep3Schema } from "@/lib/validations/auth"
 import { AuthShell } from "@/components/auth-shell"
+import { ResendConfirmationButton } from "@/components/resend-confirmation-button"
 
 // BUG CORREGIDO: useSearchParams() (para leer ?plan=) exige un límite de Suspense
 // por encima para poder pre-renderizarse estáticamente — sin él, `next build` fallaba
@@ -272,6 +273,8 @@ function SignupPageInner() {
               <h2 className="text-xl font-semibold text-foreground">{t("signup_check_email_title")}</h2>
               <p className="text-muted-foreground">{t("signup_check_email_desc")}</p>
               <p className="text-sm text-muted-foreground">{t("signup_check_email_spam_note")}</p>
+              {/* ¿No llegó? Reenviar (docs/204). */}
+              {formData.email && <ResendConfirmationButton email={formData.email} className="w-full" />}
               <Button onClick={() => router.push("/login")} className="w-full">
                 {t("signup_login_link")}
               </Button>

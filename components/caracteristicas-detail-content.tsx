@@ -11,7 +11,7 @@ import Link from "next/link"
 import { featurePages, type FeaturePageDef, type FeatureScreenshotDef } from "@/lib/feature-pages"
 import { resourceArticles } from "@/lib/resource-articles"
 import { useLanguage } from "@/contexts/language-context"
-import { ChefHat, Calculator, Package, UtensilsCrossed, ShoppingCart, BarChart3, ArrowRight, CheckCircle2, BookOpen } from "lucide-react"
+import { ChefHat, Calculator, Package, UtensilsCrossed, ShoppingCart, BarChart3, ArrowRight, CheckCircle2, BookOpen, ListChecks } from "lucide-react"
 import { CtaBand, MarketingPage, PAGE_WIDTH, PageHero, RealPdf, RealScreen, Reveal, SectionHeading } from "@/components/marketing-ui"
 
 const icons: Record<string, typeof ChefHat> = {
@@ -19,6 +19,7 @@ const icons: Record<string, typeof ChefHat> = {
   costeo: Calculator,
   "ingredientes-inventario": Package,
   menus: UtensilsCrossed,
+  mep: ListChecks,
   "ordenes-compra": ShoppingCart,
   estadisticas: BarChart3,
 }
@@ -143,7 +144,7 @@ export function CaracteristicasDetailContent({ feature }: { feature: FeaturePage
 
         <div className="space-y-5">
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-text-4">{t("feat_other_modules")}</p>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {others.map((f, i) => {
               const OtherIcon = icons[f.slug] ?? ChefHat
               return (

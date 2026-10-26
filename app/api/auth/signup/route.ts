@@ -15,7 +15,6 @@
  */
 
 import { NextResponse } from "next/server"
-import { Resend } from "resend"
 import { sendWithRetry } from "@/lib/services/send-email"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getPlanBySlug } from "@/lib/plans"
@@ -25,6 +24,7 @@ import { getEmailLabels, fillLabel, normalizeEmailLang } from "@/lib/i18n/email-
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { recordReferralAtSignup } from "@/lib/services/referrals"
 import { REFERRAL } from "@/lib/referrals"
+import { sendConfirmationEmail } from "@/lib/services/confirmation-email"
 
 export async function POST(request: Request) {
   // Límite por IP contra registro masivo (cuentas de spam, o correr Resend a cero
@@ -128,35 +128,9 @@ export async function POST(request: Request) {
     }
   }
 
-  // Best-effort: la cuenta ya se creó arriba sin importar si este correo sale o no.
-  if (process.env.RESEND_API_KEY) {
-    try {
-      const resend = new Resend(process.env.RESEND_API_KEY)
-      const labels = getEmailLabels(preferredLanguage)
-      const fullName = escapeHtml(profile.fullName || "chef")
-      const html = renderEmailTemplate("01-confirmacion-correo.html", {
-        htmlLang: preferredLanguage,
-        title: labels.e01_title,
-        preheader: labels.e01_preheader,
-        heading: fillLabel(labels.e01_heading, { fullName }),
-        body: fillLabel(labels.e01_body, { planName: escapeHtml(getPlanBySlug("foodie").name) }),
-        cta: labels.e01_cta,
-        footnote: labels.e01_footnote,
-        footerAddress: labels.footer_address,
-        footer2: labels.e01_footer2,
-        confirmUrl: data.properties.action_link,
-      })
-      const { error: sendError } = await sendWithRetry(resend, {
-        from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
-        to: [email],
-        subject: labels.e01_subject,
-        html,
-      })
-      if (sendError) console.error("[api/auth/signup] Resend rechazó el envío:", sendError)
-    } catch (emailError) {
-      console.error("[api/auth/signup] Error inesperado mandando el correo:", emailError)
-    }
-  }
+  // Best-effort: la cuenta ya se creó arriba sin importar si este correo sale o no. Se puede
+  // reenviar desde «Revisa tu correo», el inicio de sesión o /admin (docs/204).
+  await sendConfirmationEmail({ email, actionLink: data.properties.action_link, fullName: profile.fullName, language: preferredLanguage })
 
   // El aviso al dueño ya no sale aquí (docs/201): una cuenta sin confirmar no es un usuario.
   // Sale al confirmar el correo (notifyOwnerAccountConfirmed, primera carga del Dashboard), y
