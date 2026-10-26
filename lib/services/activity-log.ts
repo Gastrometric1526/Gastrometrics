@@ -87,24 +87,27 @@ function rowToEntry(row: ActivityLogRow): ActivityLogEntry {
   }
 }
 
-// Acciones que además cuentan como "pop-up de confirmación" (Notificaciones) — todo
-// menos "entered", que es puramente Actividad (entrar a un módulo no dispara ningún
-// toast).
-const NOTIFICATION_ACTIONS: ReadonlySet<ActivityAction> = new Set([
-  "created",
-  "updated",
-  "deleted",
-  "activated",
-  "deactivated",
-  "imported",
-  "invited",
-  "removed",
-  "access_updated",
-  "migrated",
-  "plan_changed",
-  "price_raised",
-  "margin_up",
-])
+/**
+ * Qué va en cada tarjeta (pedido del dueño, docs/206). Antes «Notificaciones» repetía la
+ * actividad (todo crear/editar/borrar) y «Actividad» se llenaba de «entró a tal módulo».
+ *
+ * - **Actividad reciente** = lo que HICIERON personas (tú o tu equipo): crear, editar,
+ *   borrar, importar, invitar… Sin «entró a un módulo» (se sigue guardando para /admin).
+ * - **Notificaciones** = lo que PASÓ SOLO o necesita tu atención: el precio que subió por
+ *   un cambio de costo, el margen que subió, el cambio de plan. El Dashboard le suma avisos
+ *   en vivo (plan por vencer, respuesta del soporte sin leer).
+ */
+export const NOTIFICATION_EVENT_ACTIONS: readonly ActivityAction[] = ["plan_changed", "price_raised", "margin_up"]
+const NOTIFICATION_ACTIONS: ReadonlySet<ActivityAction> = new Set(NOTIFICATION_EVENT_ACTIONS)
+/** Acciones que no se muestran en «Actividad reciente». */
+const HIDDEN_FROM_ACTIVITY: readonly ActivityAction[] = ["entered", "read", ...NOTIFICATION_EVENT_ACTIONS]
+
+/** A dónde lleva tocar una notificación guardada. */
+export function notificationHref(entry: ActivityLogEntry): string | null {
+  if (entry.action === "plan_changed") return "/mi-plan"
+  if (entry.action === "price_raised" || entry.action === "margin_up") return entry.businessId ? `/mis-recetas?business=${entry.businessId}` : "/mis-recetas"
+  return null
+}
 
 /**
  * Registra un evento real. Fire-and-forget deliberado (no se espera desde los
@@ -162,8 +165,12 @@ export async function getActivityLog(params: {
     .order("created_at", { ascending: false })
     .limit(limit)
 
+  // Por acción y no por is_notification: las filas viejas marcaban como notificación
+  // cualquier creación o edición (docs/206).
   if (params.notificationsOnly) {
-    query = query.eq("is_notification", true)
+    query = query.in("action", [...NOTIFICATION_EVENT_ACTIONS])
+  } else {
+    query = query.not("action", "in", `(${HIDDEN_FROM_ACTIVITY.join(",")})`)
   }
 
   const businessFilter =

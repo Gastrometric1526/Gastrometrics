@@ -71,7 +71,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { ActivityTracker } from "@/lib/activity-tracker"
-import { logActivity, getActivityLog, formatActivityEntry, type ActivityLogEntry } from "@/lib/services/activity-log"
+import { logActivity, getActivityLog, formatActivityEntry, notificationHref, type ActivityLogEntry } from "@/lib/services/activity-log"
 import { getMenus } from "@/lib/menus"
 import { addScenarioResult } from "@/lib/storage/menus.store"
 import { calculateScenario, generateRecommendation } from "@/lib/analytics/menuScenario"
@@ -1337,7 +1337,16 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                   {systemAlerts.length > 0 ? (
                     <div className="space-y-3">
                       {systemAlerts.map((alert) => (
-                        <div key={alert.id} className="flex items-start gap-3 p-3 rounded-lg border-2 bg-info-soft">
+                        <div
+                          key={alert.id}
+                          role={notificationHref(alert) ? "button" : undefined}
+                          tabIndex={notificationHref(alert) ? 0 : undefined}
+                          onClick={() => {
+                            const href = notificationHref(alert)
+                            if (href) router.push(href)
+                          }}
+                          className={`flex items-start gap-3 p-3 rounded-lg border-2 bg-info-soft ${notificationHref(alert) ? "cursor-pointer hover:opacity-90" : ""}`}
+                        >
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-blue-900 dark:text-blue-300">
                               {formatActivityEntry(alert, t)}

@@ -1,24 +1,42 @@
 "use client"
 
 /**
- * Chat de soporte dentro de la app (pedido del dueño, docs/204). Montado en app/layout.tsx.
+ * Chat de soporte dentro de la app (pedido del dueño, docs/204; interfaz y tickets, docs/205).
+ * Montado en app/layout.tsx.
  *
  * - No intrusivo: un botón chico y neutro en la esquina (encima de la barra inferior en el
- *   celular). Nunca se abre solo; solo muestra un punto cuando hay una respuesta sin leer.
+ *   celular). Nunca se abre solo; solo muestra un número cuando hay una respuesta sin leer.
  *   No aparece en páginas públicas, /admin ni en la Vista previa de equipo (mismo criterio que
  *   las preguntas cortas, components/feedback/feedback-orchestrator.tsx).
- * - Bot: pregunta de qué se trata (Ficha Técnica, Ingredientes…), y mientras la persona escribe
- *   le sugiere las secciones del manual que responden su duda (public/help/manual-<idioma>.json,
- *   lib/support/core.ts searchHelp) con el PDF del manual para descargar. Si no le basta, la
- *   manda a soporte.
- * - Fila por orden de llegada: «Hay N personas antes que tú».
- * - Adjuntos: fotos (se comprimen) y documentos en los formatos que la app ya acepta.
- * - Respuestas del dueño: llegan aquí y por correo (lib/services/support.ts).
+ * - Dos pestañas:
+ *   · Chat: el asistente pregunta de qué se trata, sugiere secciones del manual mientras la
+ *     persona escribe (public/help/manual-<idioma>.json, lib/support/core.ts searchHelp) y, si
+ *     no basta, la manda a soporte. Fila por orden de llegada («Hay N personas antes que tú»),
+ *     adjuntos en los formatos que la app ya acepta, respuestas aquí y por correo.
+ *   · Ticket: lo mismo que /contacto (sugerencia, queja, reporte de error o experiencia, con
+ *     captura opcional) → /api/feedback/submit → Buzón de /admin; la respuesta llega por correo.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { usePathname } from "next/navigation"
-import { BookOpen, CheckCircle2, Clock, FileText, Loader2, MessageCircleQuestion, Paperclip, Send, X } from "lucide-react"
+import {
+  BookOpen,
+  Bug,
+  CheckCircle2,
+  ChevronDown,
+  Clock,
+  FileText,
+  ImagePlus,
+  Lightbulb,
+  Loader2,
+  MessageCircleQuestion,
+  MessageCircleWarning,
+  Paperclip,
+  Send,
+  Smile,
+  Ticket,
+  X,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/contexts/auth-context"
@@ -27,7 +45,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useTeamPreview } from "@/lib/plan-access"
 import { isQuiet } from "@/components/feedback/feedback-orchestrator"
 import { compressImageToDataUrl } from "@/lib/utils/image-compress"
-import { formatDateTime } from "@/lib/date-format"
+import { formatDate, formatDateTime } from "@/lib/date-format"
 import { cn } from "@/lib/utils"
 import {
   ATTACHMENT_ACCEPT,
@@ -62,7 +80,21 @@ interface ChatState {
   position: number | null
 }
 
-/** Pregunta el panel al abrir (`gm:support:open`), p. ej. desde Ajustes o la página de Contacto. */
+type Tab = "chat" | "ticket"
+type TicketType = "sugerencia" | "queja" | "bug" | "experiencia"
+
+const TICKET_TYPES: { value: TicketType; icon: typeof Lightbulb }[] = [
+  { value: "bug", icon: Bug },
+  { value: "sugerencia", icon: Lightbulb },
+  { value: "queja", icon: MessageCircleWarning },
+  { value: "experiencia", icon: Smile },
+]
+const MAX_TICKET_IMAGE_BYTES = 10 * 1024 * 1024 // antes de comprimir, igual que /contacto
+
+/**
+ * Abre el panel desde cualquier parte: `window.dispatchEvent(new CustomEvent(SUPPORT_OPEN_EVENT,
+ * { detail: { tab: "ticket" } }))`.
+ */
 export const SUPPORT_OPEN_EVENT = "gm:support:open"
 
 const readFile = (file: File) =>
@@ -81,6 +113,7 @@ export function SupportChat() {
   const { toast } = useToast()
 
   const [open, setOpen] = useState(false)
+  const [tab, setTab] = useState<Tab>("chat")
   const [state, setState] = useState<ChatState | null>(null)
   const [category, setCategory] = useState<SupportCategory | null>(null)
   const [draft, setDraft] = useState("")
@@ -89,7 +122,16 @@ export function SupportChat() {
   const [startNew, setStartNew] = useState(false)
   const [helpIndex, setHelpIndex] = useState<HelpEntry[] | null>(null)
   const [expanded, setExpanded] = useState<number | null>(null)
+  // Ticket
+  const [ticketType, setTicketType] = useState<TicketType>("bug")
+  const [ticketMessage, setTicketMessage] = useState("")
+  const [ticketImage, setTicketImage] = useState<string | null>(null)
+  const [ticketBusy, setTicketBusy] = useState(false)
+  const [ticketSent, setTicketSent] = useState<string | null>(null)
+
   const fileInput = useRef<HTMLInputElement>(null)
+  const ticketFileInput = useRef<HTMLInputElement>(null)
+  const textArea = useRef<HTMLTextAreaElement>(null)
   const bottom = useRef<HTMLDivElement>(null)
 
   const hidden = !user || previewActive || isQuiet(pathname)
@@ -113,10 +155,22 @@ export function SupportChat() {
   }, [hidden, open, load])
 
   useEffect(() => {
-    const onOpen = () => setOpen(true)
+    const onOpen = (e: Event) => {
+      const wanted = (e as CustomEvent<{ tab?: Tab }>).detail?.tab
+      if (wanted === "ticket" || wanted === "chat") setTab(wanted)
+      setOpen(true)
+    }
     window.addEventListener(SUPPORT_OPEN_EVENT, onOpen)
     return () => window.removeEventListener(SUPPORT_OPEN_EVENT, onOpen)
   }, [])
+
+  // Escape cierra el panel.
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false)
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [open])
 
   // Índice del manual en el idioma de la cuenta (se baja solo al abrir el panel).
   useEffect(() => {
@@ -136,17 +190,25 @@ export function SupportChat() {
   const showThread = !!conversation && !(conversation.status === "closed" && startNew)
   const activeCategory = (showThread && conversation?.status !== "closed" ? (conversation?.category as SupportCategory) : category) ?? null
 
-  // Marca leída la respuesta del dueño cuando la persona abre el panel.
+  // Marca leída la respuesta del dueño cuando la persona abre el chat.
   useEffect(() => {
-    if (!open || !conversation || unread === 0) return
+    if (!open || tab !== "chat" || !conversation || unread === 0) return
     fetch("/api/support", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "read", conversationId: conversation.id }) })
       .then(() => setState((s) => (s?.conversation ? { ...s, conversation: { ...s.conversation, user_unread: 0 } } : s)))
       .catch(() => {})
-  }, [open, conversation, unread])
+  }, [open, tab, conversation, unread])
 
   useEffect(() => {
-    if (open) bottom.current?.scrollIntoView({ block: "end" })
-  }, [open, state?.messages.length, showThread])
+    if (open && tab === "chat") bottom.current?.scrollIntoView({ block: "end" })
+  }, [open, tab, state?.messages.length, showThread])
+
+  // El cuadro de texto crece con lo escrito (hasta 5 líneas).
+  useEffect(() => {
+    const el = textArea.current
+    if (!el) return
+    el.style.height = "auto"
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`
+  }, [draft, open, tab])
 
   const suggestions = useMemo(() => {
     if (!helpIndex || !activeCategory || showThread) return []
@@ -161,6 +223,8 @@ export function SupportChat() {
   }, [open, suggestionKey])
 
   if (hidden) return null
+
+  // ─── Chat ───
 
   const addFiles = async (list: FileList | null) => {
     if (!list) return
@@ -224,29 +288,75 @@ export function SupportChat() {
     load()
   }
 
-  const statusLine = () => {
-    if (!conversation || !showThread) return null
-    if (conversation.status === "waiting") {
-      const n = state?.position ?? 0
-      return (
-        <span className="flex items-center gap-1.5">
-          <Clock className="h-3.5 w-3.5" />
-          {n === 0 ? t("support_queue_next") : n === 1 ? t("support_queue_one") : t("support_queue_many").replace("{n}", String(n))}
-        </span>
-      )
+  // ─── Ticket (igual que /contacto) ───
+
+  const pickTicketImage = async (file: File | undefined) => {
+    if (!file) return
+    if (!file.type.startsWith("image/")) {
+      toast({ title: t("contacto_toast_invalid_file_title"), description: t("contacto_toast_invalid_file_desc"), variant: "destructive" })
+      return
     }
-    if (conversation.status === "answered")
-      return (
-        <span className="flex items-center gap-1.5">
-          <CheckCircle2 className="h-3.5 w-3.5" />
-          {t("support_status_answered")}
-        </span>
-      )
-    return <span>{t("support_status_closed")}</span>
+    if (file.size > MAX_TICKET_IMAGE_BYTES) {
+      toast({ title: t("contacto_toast_too_large_title"), description: t("contacto_toast_too_large_desc"), variant: "destructive" })
+      return
+    }
+    try {
+      setTicketImage(await compressImageToDataUrl(file))
+    } catch {
+      toast({ title: t("contacto_toast_image_error_title"), description: t("contacto_toast_image_error_desc"), variant: "destructive" })
+    } finally {
+      if (ticketFileInput.current) ticketFileInput.current.value = ""
+    }
   }
 
+  const sendTicket = async () => {
+    if (!ticketMessage.trim()) {
+      toast({ title: t("contacto_toast_missing_message_title"), description: t("contacto_toast_missing_message_desc"), variant: "destructive" })
+      return
+    }
+    setTicketBusy(true)
+    try {
+      const res = await fetch("/api/feedback/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: ticketType,
+          message: ticketMessage.trim(),
+          userName: user?.name,
+          userEmail: user?.email,
+          page: pathname,
+          imageDataUrl: ticketImage || undefined,
+          language,
+        }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.id) throw new Error()
+      setTicketSent(String(data.id))
+      setTicketMessage("")
+      setTicketImage(null)
+    } catch {
+      toast({ title: t("contacto_toast_send_error_title"), description: t("contacto_toast_send_error_desc"), variant: "destructive" })
+    } finally {
+      setTicketBusy(false)
+    }
+  }
+
+  // ─── Vista ───
+
+  const position = state?.position ?? 0
+  const queueText = position === 0 ? t("support_queue_next") : position === 1 ? t("support_queue_one") : t("support_queue_many").replace("{n}", String(position))
   const manualHref = `/api/manual?v=${(process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "dev").slice(0, 7)}`
   const canWrite = showThread ? conversation?.status !== "closed" : !!category
+  const shortTicket = (id: string) => `#${id.split("-").pop()?.toUpperCase() ?? id}`
+
+  const BotBubble = ({ children }: { children: ReactNode }) => (
+    <div className="flex items-end gap-2">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-text-4">
+        <MessageCircleQuestion className="h-4 w-4" />
+      </span>
+      <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted px-3 py-2">{children}</div>
+    </div>
+  )
 
   return (
     <>
@@ -256,7 +366,7 @@ export function SupportChat() {
           onClick={() => setOpen(true)}
           aria-label={t("support_open")}
           title={t("support_open")}
-          className="fixed right-3 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card text-text-4 shadow-md transition-colors hover:text-foreground md:bottom-5 md:right-5 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] print:hidden"
+          className="fixed right-3 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card text-text-4 shadow-md transition hover:-translate-y-0.5 hover:text-foreground hover:shadow-lg md:bottom-5 md:right-5 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] print:hidden"
           data-tour="support-chat"
         >
           <MessageCircleQuestion className="h-5 w-5" />
@@ -270,149 +380,320 @@ export function SupportChat() {
         <div
           role="dialog"
           aria-label={t("support_title")}
-          className="fixed right-3 z-50 flex h-[min(560px,calc(100dvh-7rem))] w-[calc(100vw-1.5rem)] max-w-sm flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xl md:bottom-5 md:right-5 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] print:hidden"
+          className="fixed right-3 z-50 flex h-[min(600px,calc(100dvh-7rem))] w-[calc(100vw-1.5rem)] max-w-[400px] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-200 md:bottom-5 md:right-5 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] print:hidden"
         >
-          <div className="flex items-start justify-between gap-2 border-b border-border px-4 py-3">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold">{t("support_title")}</p>
-              <div className="text-xs text-muted-foreground">{statusLine() ?? t("support_subtitle")}</div>
-            </div>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setOpen(false)} aria-label={t("support_close_panel")}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3 text-sm">
-            {state && !state.available ? (
-              <p className="text-muted-foreground">
-                {t("support_unavailable")}{" "}
-                <a href="/contacto" className="underline">
-                  {t("support_unavailable_link")}
-                </a>
-              </p>
-            ) : !state ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          {/* Encabezado */}
+          <div className="border-b border-border px-4 pb-3 pt-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-foreground">
+                  <MessageCircleQuestion className="h-5 w-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold leading-tight">{t("support_title")}</p>
+                  <p className="truncate text-xs text-muted-foreground">{tab === "chat" ? t("support_subtitle") : t("support_ticket_subtitle")}</p>
+                </div>
               </div>
-            ) : showThread ? (
-              <>
-                {state.messages.map((m) => (
-                  <div key={m.id} className={cn("flex", m.sender === "user" ? "justify-end" : "justify-start")}>
-                    <div className={cn("max-w-[85%] rounded-2xl px-3 py-2", m.sender === "user" ? "bg-muted" : "border border-border")}>
-                      {m.sender !== "user" && <p className="mb-0.5 text-[11px] font-medium text-muted-foreground">{t("support_from_team")}</p>}
-                      {m.body && <p className="whitespace-pre-wrap break-words">{m.body}</p>}
-                      <Attachments items={m.attachments} />
-                      <p className="mt-1 text-[10px] text-muted-foreground">{formatDateTime(m.created_at)}</p>
-                    </div>
-                  </div>
-                ))}
-                {conversation?.status === "closed" && (
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => setStartNew(true)}>
-                    {t("support_new_conversation")}
-                  </Button>
-                )}
-              </>
-            ) : (
-              <>
-                <div className="rounded-2xl border border-border px-3 py-2">
-                  <p className="mb-0.5 text-[11px] font-medium text-muted-foreground">{t("support_bot_name")}</p>
-                  <p>{t("support_bot_greeting")}</p>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {SUPPORT_CATEGORIES.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => setCategory(c.id)}
-                      className={cn(
-                        "rounded-full border px-3 py-1 text-xs transition-colors",
-                        category === c.id ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted",
-                      )}
-                    >
-                      {t(`support_cat_${c.id}` as TranslationKey)}
-                    </button>
-                  ))}
-                </div>
-                {category && (
-                  <div className="rounded-2xl border border-border px-3 py-2">
-                    <p className="mb-0.5 text-[11px] font-medium text-muted-foreground">{t("support_bot_name")}</p>
-                    <p>{category === "error" ? t("support_bot_ask_error") : category === "sugerencia" ? t("support_bot_ask_idea") : t("support_bot_ask")}</p>
-                  </div>
-                )}
-                {suggestions.length > 0 && (
-                  <div className="space-y-1.5">
-                    <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                      <BookOpen className="h-3.5 w-3.5" />
-                      {t("support_manual_suggest")}
-                    </p>
-                    {suggestions.map((s, i) => (
-                      <div key={`${s.chapterId}-${s.section}`} className="rounded-lg border border-border">
-                        <button type="button" className="w-full px-3 py-2 text-left" onClick={() => setExpanded(expanded === i ? null : i)} aria-expanded={expanded === i}>
-                          <p className="text-xs text-muted-foreground">{s.chapter}</p>
-                          <p className="font-medium">{s.section}</p>
-                        </button>
-                        {expanded === i && <p className="whitespace-pre-wrap border-t border-border px-3 py-2 text-xs leading-relaxed text-muted-foreground">{s.text}</p>}
-                      </div>
-                    ))}
-                    <a href={manualHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs underline">
-                      <FileText className="h-3.5 w-3.5" />
-                      {t("support_manual_download")}
-                    </a>
-                  </div>
-                )}
-              </>
-            )}
-            <div ref={bottom} />
+              <Button variant="ghost" size="sm" className="h-8 w-8 shrink-0 p-0" onClick={() => setOpen(false)} aria-label={t("support_close_panel")}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div role="tablist" className="mt-3 grid grid-cols-2 gap-1 rounded-lg bg-muted p-1 text-xs font-medium">
+              {(["chat", "ticket"] as Tab[]).map((k) => (
+                <button
+                  key={k}
+                  role="tab"
+                  type="button"
+                  aria-selected={tab === k}
+                  onClick={() => setTab(k)}
+                  className={cn(
+                    "flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 transition-colors",
+                    tab === k ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {k === "chat" ? <MessageCircleQuestion className="h-3.5 w-3.5" /> : <Ticket className="h-3.5 w-3.5" />}
+                  {k === "chat" ? t("support_tab_chat") : t("support_tab_ticket")}
+                  {k === "chat" && unread > 0 && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {state?.available && canWrite && (
-            <div className="space-y-2 border-t border-border p-3">
-              {files.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {files.map((f, i) => (
-                    <span key={i} className="inline-flex max-w-full items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs">
-                      <span className="truncate">{f.name}</span>
-                      <button type="button" aria-label={t("support_attach_remove")} onClick={() => setFiles(files.filter((_, j) => j !== i))}>
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
+          {tab === "chat" ? (
+            <>
+              {/* Estado de la conversación */}
+              {showThread && conversation && (
+                <div className="flex items-center gap-2 border-b border-border bg-muted/40 px-4 py-2 text-xs text-muted-foreground">
+                  {conversation.status === "waiting" ? <Clock className="h-3.5 w-3.5 shrink-0" /> : <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />}
+                  <span className="min-w-0 flex-1">
+                    {conversation.status === "waiting" ? queueText : conversation.status === "answered" ? t("support_status_answered") : t("support_status_closed")}
+                  </span>
+                  <span className="shrink-0 rounded-full border border-border bg-card px-2 py-0.5 text-[10px]">{t(`support_cat_${conversation.category}` as TranslationKey)}</span>
                 </div>
               )}
-              <Textarea
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey && !sending && window.matchMedia("(pointer: fine)").matches) {
-                    e.preventDefault()
-                    send()
-                  }
-                }}
-                placeholder={t("support_placeholder")}
-                aria-label={t("support_placeholder")}
-                rows={2}
-                maxLength={4000}
-                className="min-h-[60px] resize-none text-sm"
-              />
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1">
-                  <input ref={fileInput} type="file" accept={ATTACHMENT_ACCEPT} multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
-                  <Button type="button" variant="ghost" size="sm" className="h-8 gap-1 px-2 text-xs" onClick={() => fileInput.current?.click()} title={t("support_attach_hint")}>
-                    <Paperclip className="h-4 w-4" />
-                    {t("support_attach")}
-                  </Button>
-                  {showThread && conversation && conversation.status !== "closed" && (
-                    <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={closeConversation}>
-                      {t("support_resolved")}
-                    </Button>
+
+              <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4 text-sm">
+                {state && !state.available ? (
+                  <BotBubble>
+                    {t("support_unavailable")}{" "}
+                    <button type="button" className="underline" onClick={() => setTab("ticket")}>
+                      {t("support_unavailable_ticket")}
+                    </button>
+                  </BotBubble>
+                ) : !state ? (
+                  <div className="flex justify-center py-10">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : showThread ? (
+                  <>
+                    {state.messages.map((m, i) => {
+                      const day = formatDate(m.created_at)
+                      const newDay = i === 0 || formatDate(state.messages[i - 1].created_at) !== day
+                      const mine = m.sender === "user"
+                      return (
+                        <div key={m.id} className="space-y-3">
+                          {newDay && <p className="text-center text-[11px] text-muted-foreground">{day}</p>}
+                          {mine ? (
+                            <div className="flex justify-end">
+                              <div className="max-w-[85%] rounded-2xl rounded-br-md bg-foreground px-3 py-2 text-background">
+                                {m.body && <p className="whitespace-pre-wrap break-words">{m.body}</p>}
+                                <Attachments items={m.attachments} />
+                                <p className="mt-1 text-right text-[10px] opacity-60">{formatDateTime(m.created_at).split(" ").pop()}</p>
+                              </div>
+                            </div>
+                          ) : (
+                            <BotBubble>
+                              <p className="mb-0.5 text-[11px] font-medium text-muted-foreground">{t("support_from_team")}</p>
+                              {m.body && <p className="whitespace-pre-wrap break-words">{m.body}</p>}
+                              <Attachments items={m.attachments} />
+                              <p className="mt-1 text-[10px] text-muted-foreground">{formatDateTime(m.created_at).split(" ").pop()}</p>
+                            </BotBubble>
+                          )}
+                        </div>
+                      )
+                    })}
+                    {conversation?.status === "closed" && (
+                      <Button variant="outline" size="sm" className="w-full" onClick={() => setStartNew(true)}>
+                        {t("support_new_conversation")}
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <BotBubble>
+                      <p className="mb-0.5 text-[11px] font-medium text-muted-foreground">{t("support_bot_name")}</p>
+                      <p>{t("support_bot_greeting")}</p>
+                    </BotBubble>
+                    <div className="grid grid-cols-2 gap-1.5 pl-9">
+                      {SUPPORT_CATEGORIES.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => {
+                            setCategory(c.id)
+                            setExpanded(null)
+                            window.setTimeout(() => textArea.current?.focus(), 50)
+                          }}
+                          aria-pressed={category === c.id}
+                          className={cn(
+                            "rounded-lg border px-2.5 py-2 text-left text-xs leading-tight transition-colors",
+                            category === c.id ? "border-foreground bg-foreground text-background" : "border-border bg-card hover:bg-muted",
+                          )}
+                        >
+                          {t(`support_cat_${c.id}` as TranslationKey)}
+                        </button>
+                      ))}
+                    </div>
+                    {category && (
+                      <BotBubble>
+                        <p>{category === "error" ? t("support_bot_ask_error") : category === "sugerencia" ? t("support_bot_ask_idea") : t("support_bot_ask")}</p>
+                      </BotBubble>
+                    )}
+                    {suggestions.length > 0 && (
+                      <div className="space-y-1.5 pl-9">
+                        <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                          <BookOpen className="h-3.5 w-3.5" />
+                          {t("support_manual_suggest")}
+                        </p>
+                        {suggestions.map((s, i) => (
+                          <div key={`${s.chapterId}-${s.section}`} className="overflow-hidden rounded-lg border border-border bg-card">
+                            <button type="button" className="flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-muted/50" onClick={() => setExpanded(expanded === i ? null : i)} aria-expanded={expanded === i}>
+                              <span className="min-w-0 flex-1">
+                                <span className="block text-[11px] text-muted-foreground">{s.chapter}</span>
+                                <span className="block font-medium leading-snug">{s.section}</span>
+                              </span>
+                              <ChevronDown className={cn("mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform", expanded === i && "rotate-180")} />
+                            </button>
+                            {expanded === i && <p className="whitespace-pre-wrap border-t border-border px-3 py-2 text-xs leading-relaxed text-muted-foreground">{s.text}</p>}
+                          </div>
+                        ))}
+                        <div className="flex flex-wrap gap-x-3 gap-y-1">
+                          <a href={manualHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs underline">
+                            <FileText className="h-3.5 w-3.5" />
+                            {t("support_manual_download")}
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                    {category && (
+                      <p className="pl-9 text-[11px] text-muted-foreground">
+                        {t("support_prefer_ticket")}{" "}
+                        <button type="button" className="underline" onClick={() => setTab("ticket")}>
+                          {t("support_tab_ticket")}
+                        </button>
+                      </p>
+                    )}
+                  </>
+                )}
+                <div ref={bottom} />
+              </div>
+
+              {state?.available && canWrite && (
+                <div className="border-t border-border p-3">
+                  {files.length > 0 && (
+                    <div className="mb-2 flex flex-wrap gap-1.5">
+                      {files.map((f, i) => (
+                        <span key={i} className="inline-flex max-w-full items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs">
+                          <Paperclip className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{f.name}</span>
+                          <button type="button" aria-label={t("support_attach_remove")} onClick={() => setFiles(files.filter((_, j) => j !== i))}>
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
                   )}
+                  <div className="flex items-end gap-1.5 rounded-xl border border-border bg-background px-1.5 py-1.5 focus-within:ring-2 focus-within:ring-ring/30">
+                    <input ref={fileInput} type="file" accept={ATTACHMENT_ACCEPT} multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
+                    <Button type="button" variant="ghost" size="sm" className="h-8 w-8 shrink-0 p-0" onClick={() => fileInput.current?.click()} aria-label={t("support_attach")} title={t("support_attach_hint")}>
+                      <Paperclip className="h-4 w-4" />
+                    </Button>
+                    <Textarea
+                      ref={textArea}
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey && !sending && window.matchMedia("(pointer: fine)").matches) {
+                          e.preventDefault()
+                          send()
+                        }
+                      }}
+                      placeholder={t("support_placeholder")}
+                      aria-label={t("support_placeholder")}
+                      rows={1}
+                      maxLength={4000}
+                      className="min-h-[32px] flex-1 resize-none border-0 bg-transparent px-1 py-1.5 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-8 w-8 shrink-0 rounded-lg p-0"
+                      onClick={send}
+                      disabled={sending || (!draft.trim() && !files.length)}
+                      aria-label={showThread ? t("support_send") : t("support_send_to_team")}
+                      title={showThread ? t("support_send") : t("support_send_to_team")}
+                    >
+                      {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                    <span className="truncate">{showThread ? t("support_attach_hint") : t("support_send_hint")}</span>
+                    {showThread && conversation && conversation.status !== "closed" && (
+                      <button type="button" className="shrink-0 underline hover:text-foreground" onClick={closeConversation}>
+                        {t("support_resolved")}
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <Button type="button" size="sm" className="h-8 gap-1" onClick={send} disabled={sending || (!draft.trim() && !files.length)}>
-                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  {showThread ? t("support_send") : t("support_send_to_team")}
+              )}
+            </>
+          ) : ticketSent ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+              <CheckCircle2 className="h-10 w-10 text-foreground" />
+              <p className="text-base font-semibold">{t("support_ticket_sent_title")}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("support_ticket_sent_desc").replace("{id}", shortTicket(ticketSent)).replace("{email}", user?.email ?? "")}
+              </p>
+              <div className="mt-2 flex flex-wrap justify-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setTicketSent(null)}>
+                  {t("support_ticket_another")}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setTab("chat")}>
+                  {t("support_back_to_chat")}
                 </Button>
               </div>
             </div>
+          ) : (
+            <>
+              <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm">
+                <div>
+                  <p className="mb-2 text-xs font-medium text-muted-foreground">{t("contacto_type_label")}</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {TICKET_TYPES.map(({ value, icon: Icon }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        aria-pressed={ticketType === value}
+                        onClick={() => setTicketType(value)}
+                        className={cn(
+                          "flex items-start gap-2 rounded-lg border p-2.5 text-left transition-colors",
+                          ticketType === value ? "border-foreground bg-muted" : "border-border hover:bg-muted/60",
+                        )}
+                      >
+                        <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+                        <span className="min-w-0">
+                          <span className="block text-xs font-medium leading-tight">{t(`contacto_type_${value}_label` as TranslationKey)}</span>
+                          <span className="mt-0.5 block text-[11px] leading-tight text-muted-foreground">{t(`contacto_type_${value}_desc` as TranslationKey)}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="support-ticket-message" className="mb-2 block text-xs font-medium text-muted-foreground">
+                    {t("support_ticket_message_label")}
+                  </label>
+                  <Textarea
+                    id="support-ticket-message"
+                    value={ticketMessage}
+                    onChange={(e) => setTicketMessage(e.target.value)}
+                    placeholder={ticketType === "bug" ? t("support_ticket_ph_bug") : t("support_ticket_ph")}
+                    rows={5}
+                    maxLength={5000}
+                    className="resize-none text-sm"
+                  />
+                </div>
+                <div>
+                  <input ref={ticketFileInput} type="file" accept="image/*" className="hidden" onChange={(e) => pickTicketImage(e.target.files?.[0])} />
+                  {ticketImage ? (
+                    <div className="relative inline-block">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={ticketImage} alt={t("support_ticket_screenshot")} className="h-24 rounded-lg border border-border object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setTicketImage(null)}
+                        aria-label={t("support_attach_remove")}
+                        className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card shadow"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => ticketFileInput.current?.click()}>
+                      <ImagePlus className="h-4 w-4" />
+                      {t("support_ticket_screenshot")}
+                    </Button>
+                  )}
+                </div>
+                <p className="text-[11px] text-muted-foreground">{t("support_ticket_reply_to").replace("{email}", user?.email ?? "")}</p>
+              </div>
+              <div className="border-t border-border p-3">
+                <Button type="button" className="w-full gap-1.5" onClick={sendTicket} disabled={ticketBusy || !ticketMessage.trim()}>
+                  {ticketBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ticket className="h-4 w-4" />}
+                  {t("support_ticket_send")}
+                </Button>
+              </div>
+            </>
           )}
         </div>
       )}
@@ -432,7 +713,7 @@ export function Attachments({ items }: { items: SupportAttachment[] | null | und
             <img src={a.data} alt={a.name} className="h-20 w-20 rounded-md border border-border object-cover" />
           </a>
         ) : (
-          <a key={i} href={a.data} download={a.name} className="inline-flex max-w-full items-center gap-1 rounded-md border border-border px-2 py-1 text-xs underline">
+          <a key={i} href={a.data} download={a.name} className="inline-flex max-w-full items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground underline">
             <FileText className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate">{a.name}</span>
           </a>

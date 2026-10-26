@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-26c",
+    tutorialHref: tourHref("ficha-tecnica"),
+    content: {
+      es: { title: "La ayuda, más clara y con tickets", items: ["El panel de ayuda tiene dos pestañas: «Chat», para preguntar con el manual a la mano, y «Enviar un ticket», para mandar un reporte de error, una sugerencia, una queja o tu experiencia con una captura.", "Al enviar un ticket ves su número y te respondemos por correo.", "Dashboard más claro: «Actividad reciente» muestra lo que tú y tu equipo hicieron, y «Notificaciones» solo lo que pasó solo o necesita tu atención (precios que subieron por un costo, tu plan, respuestas de soporte). Toca un aviso para ir a resolverlo."] },
+      en: { title: "Clearer help, now with tickets", items: ["The help panel has two tabs: “Chat”, to ask with the manual at hand, and “Send a ticket”, to send a bug report, a suggestion, a complaint or your experience with a screenshot.", "When you send a ticket you see its number, and we reply by email.", "A clearer Dashboard: “Recent activity” shows what you and your team did, and “Notifications” only what happened on its own or needs your attention (prices raised by a cost change, your plan, support replies). Tap a notice to handle it."] },
+      da: { title: "Tydeligere hjælp, nu med sager", items: ["Hjælpepanelet har to faner: «Chat», hvor du spørger med manualen ved hånden, og «Send en sag», hvor du sender en fejlrapport, et forslag, en klage eller din oplevelse med et skærmbillede.", "Når du sender en sag, ser du dens nummer, og vi svarer på e-mail.", "Et tydeligere Dashboard: «Seneste aktivitet» viser, hvad du og dit team har gjort, og «Notifikationer» kun det, der skete af sig selv eller kræver din opmærksomhed (priser hævet efter en omkostning, dit abonnement, svar fra support). Tryk på en besked for at tage dig af den."] },
+      fr: { title: "Une aide plus claire, avec des tickets", items: ["Le panneau d’aide a deux onglets : « Chat », pour poser vos questions avec le manuel à portée de main, et « Envoyer un ticket », pour envoyer un rapport d’erreur, une suggestion, une réclamation ou votre expérience avec une capture.", "En envoyant un ticket, vous voyez son numéro et nous répondons par e-mail.", "Un tableau de bord plus clair : « Activité récente » montre ce que vous et votre équipe avez fait, et « Notifications » seulement ce qui s’est passé tout seul ou demande votre attention (prix augmentés par un coût, votre forfait, réponses du support). Touchez un avis pour vous en occuper."] },
+      pt: { title: "Ajuda mais clara, agora com chamados", items: ["O painel de ajuda tem duas abas: «Chat», para perguntar com o manual à mão, e «Enviar um chamado», para mandar um relatório de erro, uma sugestão, uma reclamação ou sua experiência com uma captura.", "Ao enviar um chamado você vê o número dele e respondemos por e-mail.", "Dashboard mais claro: «Atividade recente» mostra o que você e sua equipe fizeram, e «Notificações» só o que aconteceu sozinho ou precisa da sua atenção (preços que subiram por um custo, seu plano, respostas do suporte). Toque em um aviso para resolver."] },
+      zh: { title: "帮助更清晰，现在可以提交工单", items: ["帮助面板有两个标签：“聊天”，边看手册边提问；“提交工单”，附上截图提交错误报告、建议、投诉或使用体验。", "提交工单后会显示工单号，我们会通过邮件回复。", "仪表盘更清晰：“最近动态”显示你和团队做过的操作，“通知”只显示自动发生或需要你处理的事项（成本导致的涨价、套餐、支持回复）。点击提醒即可前往处理。"] },
+    },
+  },
+  {
     version: "2026-10-26b",
     tutorialHref: tourHref("ficha-tecnica"),
     content: {

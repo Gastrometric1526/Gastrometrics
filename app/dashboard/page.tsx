@@ -38,7 +38,10 @@ import { SettingsDialog } from "@/components/settings-dialog"
 import { Sidebar } from "@/components/sidebar"
 import { useTheme } from "next-themes"
 import { ActivityTracker } from "@/lib/activity-tracker"
-import { logActivity, getActivityLog, formatActivityEntry, type ActivityLogEntry } from "@/lib/services/activity-log"
+import { logActivity, getActivityLog, formatActivityEntry, notificationHref, type ActivityLogEntry } from "@/lib/services/activity-log"
+import { usePlanStatus, planExpiryOf } from "@/lib/plan-status"
+import { getPlanBySlug } from "@/lib/plans"
+import { SUPPORT_OPEN_EVENT } from "@/components/support-chat"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { AddBusinessDialog } from "@/components/add-business-dialog"
@@ -94,6 +97,10 @@ export default function DashboardPage() {
   >([])
 
   const router = useRouter()
+  // Avisos en vivo de «Notificaciones» (docs/206): plan por vencer y respuesta del soporte.
+  const planStatusLive = usePlanStatus()
+  const planExpiryLive = planExpiryOf(planStatusLive)
+  const [supportUnread, setSupportUnread] = useState(0)
   const { toast } = useToast()
   const { setTheme } = useTheme()
 
@@ -382,6 +389,32 @@ export default function DashboardPage() {
   // real de supabase/migrations/0017_activity_log.sql (ver docs/87) — ahora "Actividad
   // reciente" y "Notificaciones" muestran lo que hizo cualquier persona con acceso al
   // negocio (dueño o invitado de equipo), no solo lo que hizo esta sesión.
+  useEffect(() => {
+    if (!user) return
+    fetch("/api/support", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setSupportUnread(Number(d?.conversation?.user_unread) || 0))
+      .catch(() => {})
+  }, [user])
+
+  const liveAlerts: { key: string; text: string; onClick: () => void }[] = [
+    ...(supportUnread > 0
+      ? [{ key: "support", text: t("notif_support_reply"), onClick: () => window.dispatchEvent(new CustomEvent(SUPPORT_OPEN_EVENT, { detail: { tab: "chat" } })) }]
+      : []),
+    ...(planExpiryLive && planExpiryLive.daysLeft <= 7
+      ? [
+          {
+            key: "plan",
+            text: (planExpiryLive.daysLeft === 0 ? t("notif_plan_today") : planExpiryLive.daysLeft === 1 ? t("notif_plan_one_day") : t("notif_plan_days").replace("{days}", String(planExpiryLive.daysLeft))).replace(
+              "{plan}",
+              getPlanBySlug(planStatusLive?.planSlug ?? "").name,
+            ),
+            onClick: () => router.push("/mi-plan"),
+          },
+        ]
+      : []),
+  ]
+
   const loadUserActivity = async () => {
     if (!user) return
     try {
@@ -943,6 +976,7 @@ export default function DashboardPage() {
                     <Activity className="h-4 w-4 flex-shrink-0 text-text-4" />
                     <span className="truncate">{t("dashboard_recent_activity")}</span>
                   </CardTitle>
+                  <p className="text-xs text-text-4">{t("dashboard_activity_card_desc")}</p>
                 </CardHeader>
                 <CardContent className="p-4 h-full overflow-y-auto">
                   {recentActivity.length > 0 ? (
@@ -978,25 +1012,44 @@ export default function DashboardPage() {
                   <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
                     <Bell className="h-4 w-4 flex-shrink-0 text-text-4" />
                     <span className="truncate">{t("dashboard_notifications")}</span>
-                    {unreadNotifications > 0 && (
+                    {unreadNotifications + liveAlerts.length > 0 && (
                       <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-danger-soft text-destructive">
-                        {unreadNotifications}
+                        {unreadNotifications + liveAlerts.length}
                       </span>
                     )}
                   </CardTitle>
+                  <p className="text-xs text-text-4">{t("dashboard_notifications_card_desc")}</p>
                 </CardHeader>
                 <CardContent className="p-4 h-full overflow-y-auto">
-                  {systemAlerts.length > 0 ? (
+                  {systemAlerts.length + liveAlerts.length > 0 ? (
                     <div className="divide-y divide-hairline">
-                      {systemAlerts.map((alert) => (
-                        <div key={alert.id} className="flex items-start gap-3 py-3">
+                      {liveAlerts.map((a) => (
+                        <button key={a.key} type="button" onClick={a.onClick} className="flex w-full items-start gap-3 py-3 text-left hover:bg-muted/40 rounded-md">
                           <span className="h-1.5 w-1.5 rounded-full shrink-0 mt-1.5 bg-primary" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground">{formatActivityEntry(alert, t)}</p>
-                            <p className="text-xs text-text-4 mt-0.5">{ActivityTracker.formatTimeAgo(alert.createdAt, t, language)}</p>
+                            <p className="text-sm font-medium text-foreground">{a.text}</p>
+                            <p className="text-xs text-text-4 mt-0.5">{t("dashboard_notifications_now")}</p>
                           </div>
-                        </div>
+                        </button>
                       ))}
+                      {systemAlerts.map((alert) => {
+                        const href = notificationHref(alert)
+                        return (
+                          <button
+                            key={alert.id}
+                            type="button"
+                            disabled={!href}
+                            onClick={() => href && router.push(href)}
+                            className="flex w-full items-start gap-3 py-3 text-left enabled:hover:bg-muted/40 rounded-md disabled:cursor-default"
+                          >
+                            <span className="h-1.5 w-1.5 rounded-full shrink-0 mt-1.5 bg-text-4/60" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground">{formatActivityEntry(alert, t)}</p>
+                              <p className="text-xs text-text-4 mt-0.5">{ActivityTracker.formatTimeAgo(alert.createdAt, t, language)}</p>
+                            </div>
+                          </button>
+                        )
+                      })}
                     </div>
                   ) : (
                     <div className="text-center py-8">
