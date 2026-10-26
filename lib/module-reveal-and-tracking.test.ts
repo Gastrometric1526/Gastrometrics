@@ -5,10 +5,10 @@ import { withEmailTracking, isClickRow, sanitizeCampaign } from "./email-trackin
 
 describe("revelación progresiva de módulos (docs/145)", () => {
   it("0 recetas: ocultos Reportes, Ventas y los avanzados", () => {
-    expect(hiddenModulesFor(0).sort()).toEqual(["/equipo", "/estadisticas", "/inventario", "/menu-y-compras", "/menus", "/ventas"])
+    expect(hiddenModulesFor(0).sort()).toEqual(["/equipo", "/estadisticas", "/inventario", "/menu-y-compras", "/menus", "/mep", "/ventas"])
   })
   it("1–2 recetas: aparecen Reportes y Ventas", () => {
-    expect(hiddenModulesFor(2).sort()).toEqual(["/equipo", "/inventario", "/menu-y-compras", "/menus"])
+    expect(hiddenModulesFor(2).sort()).toEqual(["/equipo", "/inventario", "/menu-y-compras", "/menus", "/mep"])
   })
   it("3 recetas: todo visible", () => {
     expect(hiddenModulesFor(3)).toEqual([])

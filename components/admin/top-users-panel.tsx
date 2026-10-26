@@ -41,6 +41,7 @@ export const MODULE_LABEL_KEY: Record<string, TranslationKey> = {
   inventario: "nav_inventario",
   equipo: "nav_equipo",
   menus: "nav_menus",
+  mep: "nav_mep",
   ordenes_compra: "nav_ordenes_compra",
   estadisticas: "nav_estadisticas",
   negocios: "nav_negocios",

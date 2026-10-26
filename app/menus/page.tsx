@@ -489,6 +489,10 @@ export default function MenusPage() {
                                   {t("menus_action_export_internal")}
                                   {canExportAdminMenuPDF === false && <Lock className="ml-2 h-3 w-3 opacity-60" />}
                                 </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => router.push(`/mep?menu=${menu.id}${businessId ? `&business=${businessId}` : ""}`)}>
+                                  <ListChecks className="mr-2 h-4 w-4" />
+                                  {t("menus_open_mep")}
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                   data-tour="menus-generate-order"
                                   onClick={() => router.push(`/business/${businessId || "main"}/ordenes-compra?fromMenu=${menu.id}`)}
@@ -614,6 +618,17 @@ export default function MenusPage() {
                               {t("menus_action_edit")}
                             </Button>
                           </div>
+                          {/* MEP — lo que hay que producir para este menú (docs/202). */}
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            data-tour="menus-mep"
+                            className="w-full gap-2"
+                            onClick={() => router.push(`/mep?menu=${menu.id}${businessId ? `&business=${businessId}` : ""}`)}
+                          >
+                            <ListChecks className="h-4 w-4" />
+                            {t("menus_open_mep")}
+                          </Button>
                         </CardContent>
                       </Card>
                     )

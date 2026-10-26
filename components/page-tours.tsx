@@ -201,6 +201,12 @@ export function MenusTour() {
       selector: '[data-tour="menus-new"]',
     },
     {
+      id: "mep",
+      title: t("tour_menus_mep_title"),
+      description: t("tour_menus_mep_desc"),
+      selector: '[data-tour="menus-mep"]',
+    },
+    {
       id: "generate-order",
       title: t("tour_menus_generate_order_title"),
       description: t("tour_menus_generate_order_desc"),
@@ -217,6 +223,21 @@ export function MenusTour() {
   ]
 
   return <PageTour steps={steps} storageKey="tour_completed_menus" />
+}
+
+// MEP — mise en place de un menú (docs/202).
+export function MepTour() {
+  const { t } = useLanguage()
+  const steps: TourStep[] = [
+    { id: "header", title: t("tour_mep_header_title"), description: t("tour_mep_header_desc"), selector: '[data-tour="mep-header"]' },
+    { id: "menu", title: t("tour_mep_menu_title"), description: t("tour_mep_menu_desc"), selector: '[data-tour="mep-menu"]' },
+    { id: "areas", title: t("tour_mep_areas_title"), description: t("tour_mep_areas_desc"), selector: '[data-tour="mep-areas"]' },
+    { id: "preps", title: t("tour_mep_preps_title"), description: t("tour_mep_preps_desc"), selector: '[data-tour="mep-preps"]' },
+    { id: "dishes", title: t("tour_mep_dishes_title"), description: t("tour_mep_dishes_desc"), selector: '[data-tour="mep-dishes"]' },
+    { id: "progress", title: t("tour_mep_progress_title"), description: t("tour_mep_progress_desc"), selector: '[data-tour="mep-progress"]' },
+    { id: "share", title: t("tour_mep_share_title"), description: t("tour_mep_share_desc"), selector: '[data-tour="mep-share"]' },
+  ]
+  return <PageTour steps={steps} storageKey="tour_completed_mep" />
 }
 
 // canAccessFinance viene de useFeatureAccess("stats_finance") en app/estadisticas/page.tsx —
@@ -256,10 +277,24 @@ export function EstadisticasTour({
       beforeShow: clickTab("stats-tab-panorama"),
     },
     {
+      id: "suppliers",
+      title: t("tour_stats_suppliers_title"),
+      description: t("tour_stats_suppliers_desc"),
+      selector: '[data-tour="stats-suppliers"]',
+      beforeShow: clickTab("stats-tab-proveedores"),
+    },
+    {
       id: "price-history",
       title: t("tour_stats_price_history_title"),
       description: t("tour_stats_price_history_desc"),
       selector: '[data-tour="stats-price-history"]',
+    },
+    {
+      id: "merma",
+      title: t("tour_stats_merma_title"),
+      description: t("tour_stats_merma_desc"),
+      selector: '[data-tour="stats-merma"]',
+      beforeShow: clickTab("stats-tab-merma"),
     },
     ...(canAccessFinance
       ? [
@@ -296,6 +331,7 @@ export function OrdenesCompraTour() {
     { id: "auto-suggest", title: t("tour_ordenes_auto_suggest_title"), description: t("tour_ordenes_auto_suggest_desc"), selector: '[data-tour="ordenes-auto-suggest"]' },
     { id: "search", title: t("tour_ordenes_search_title"), description: t("tour_ordenes_search_desc"), selector: '[data-tour="ordenes-search"]' },
     { id: "row-pdf", title: t("tour_ordenes_row_pdf_title"), description: t("tour_ordenes_row_pdf_desc"), selector: '[data-tour="ordenes-row-pdf"]' },
+    { id: "row-send", title: t("tour_ordenes_row_send_title"), description: t("tour_ordenes_row_send_desc"), selector: '[data-tour="ordenes-row-send"]' },
   ]
 
   return <PageTour steps={steps} storageKey="tour_completed_ordenes-compra" />

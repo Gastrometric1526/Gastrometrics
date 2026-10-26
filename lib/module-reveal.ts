@@ -9,7 +9,7 @@
  * Etapas, según las recetas propias (no sub-recetas) de todos los negocios de la cuenta:
  *   0 recetas → Dashboard, Ficha Técnica, Mis Recetas, Ingredientes, Negocios
  *   1+        → + Reportes y Ventas
- *   3+        → + Inventario, Menús, Órdenes de compra y Equipo
+ *   3+        → + Inventario, Menús, MEP (docs/202), Órdenes de compra y Equipo
  * Lo recién revelado se marca "Nuevo" hasta que se visita. Siempre se puede ver todo
  * ("Ver todos los módulos", se recuerda por cuenta). No aplica a la Vista previa de
  * Equipo ni a miembros invitados: ellos ven lo que tienen permitido. Mientras las recetas
@@ -26,6 +26,7 @@ export const MODULE_STAGES: Record<string, number> = {
   "/ventas": 1,
   "/inventario": 3,
   "/menus": 3,
+  "/mep": 3,
   "/menu-y-compras": 3,
   "/equipo": 3,
 }

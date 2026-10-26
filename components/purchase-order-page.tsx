@@ -42,7 +42,9 @@ import { sortPurchaseOrderItemsBySupplier, sortPurchaseOrderItemsByCategory } fr
 import { computePresentationQuantity } from "@/lib/utils/presentation-quantity"
 import { ActivityTracker } from "@/lib/activity-tracker"
 import { getBusinessById } from "@/lib/storage/businesses"
-import { downloadPurchaseOrderPDF } from "@/lib/pdf/purchase-order-pdf-generator"
+import { downloadPurchaseOrderPDF, generatePurchaseOrderPDF, generatePurchaseOrderPDFFilename } from "@/lib/pdf/purchase-order-pdf-generator"
+import { ShareDocumentMenu } from "@/components/share-document-menu"
+import { purchaseOrderShareText } from "@/lib/share-text"
 import { Download } from "lucide-react"
 import { hasFeatureAccess, useFeatureAccess } from "@/lib/plan-access"
 import { FeatureLockedPage } from "@/components/feature-locked"
@@ -870,6 +872,33 @@ export function PurchaseOrderPage() {
                                 <Download className="h-3.5 w-3.5" />
                                 {t("ordenes_pdf_button")}
                               </Button>
+                              {/* Enviar por WhatsApp o correo, o compartir el PDF (docs/202). */}
+                              <ShareDocumentMenu
+                                tourId="ordenes-row-send"
+                                variant="outline"
+                                filename={generatePurchaseOrderPDFFilename(order)}
+                                subject={`${t("po_share_title")} #${order.number} — ${order.name}`}
+                                buildPdf={() => {
+                                  const business = getBusinessById(businessId || "main")
+                                  return generatePurchaseOrderPDF(order, { businessName: business?.name, businessLogo: business?.logo, businessId: businessId || "main" })
+                                }}
+                                shareText={() =>
+                                  purchaseOrderShareText({
+                                    order,
+                                    language,
+                                    money: formatCurrency,
+                                    dateLabel: (iso) => formatDate(iso),
+                                    labels: {
+                                      title: t("po_share_title"),
+                                      delivery: t("po_share_delivery"),
+                                      supplier: t("po_share_supplier"),
+                                      total: t("po_share_total"),
+                                      notes: t("po_share_notes"),
+                                      sentWith: t("share_sent_with"),
+                                    },
+                                  })
+                                }
+                              />
                               <Button variant="outline" size="sm" onClick={() => handleDuplicateOrder(order.id)}>
                                 {t("ordenes_duplicate_button")}
                               </Button>

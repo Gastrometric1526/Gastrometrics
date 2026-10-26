@@ -32,6 +32,78 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-26",
+    tutorialHref: tourHref("mep"),
+    content: {
+      es: {
+        title: "Nuevo: MEP (mise en place), envío de órdenes y precios por proveedor",
+        items: [
+          "MEP: elige un menú y ve todo lo que hay que producir, con las preparaciones base primero y después cada plato, ya calculado con sus porciones. Toca una receta para ver ingredientes, cantidades y procedimiento, y marca lo que va estando listo.",
+          "La MEP se descarga o se manda como PDF: la primera página es la lista completa y después va una receta por página.",
+          "Puedes agruparla por área de cocina (las clasificaciones de la Ficha Técnica: línea caliente, línea fría, pastelería…) e imprimir la hoja de cada sección para su equipo.",
+          "Órdenes de compra: nuevo botón «Enviar» para mandarlas por WhatsApp o por correo (tú eliges a quién). El PDF se sigue descargando como siempre.",
+          "Reportes → Proveedores: historial de precios de cada ingrediente, qué proveedor te lo vende más barato, cuánto podrías ahorrar y qué subió en los últimos 30 días.",
+          "Reportes → Merma: cuánto te cuesta la merma que configuraste (global o personalizada), en qué ingredientes pierdes más y dónde conviene activarla.",
+        ],
+      },
+      en: {
+        title: "New: MEP (mise en place), sending orders and prices by supplier",
+        items: [
+          "MEP: pick a menu and see everything to prepare, with base preps first and then each dish, already scaled to its portions. Tap a recipe to see ingredients, quantities and method, and check things off as they’re done.",
+          "Download or send the MEP as a PDF: the first page is the full list, followed by one recipe per page.",
+          "You can group it by kitchen area (the Recipe Sheet classifications: hot line, cold line, pastry…) and print each station’s sheet for its team.",
+          "Purchase orders: new “Send” button to share them by WhatsApp or email (you choose who). The PDF still downloads as always.",
+          "Reports → Suppliers: price history for each ingredient, which supplier sells it cheapest, how much you could save and what went up in the last 30 days.",
+          "Reports → Waste: what the waste you set (global or custom) costs you, where you lose the most and where it’s worth turning on.",
+        ],
+      },
+      da: {
+        title: "Nyt: MEP (mise en place), afsendelse af ordrer og priser pr. leverandør",
+        items: [
+          "MEP: vælg en menu og se alt, der skal laves, med grundtilberedningerne først og derefter hver ret, allerede beregnet efter portionerne. Tryk på en opskrift for at se ingredienser, mængder og fremgangsmåde, og sæt flueben, når noget er klar.",
+          "Download eller send MEP’en som PDF: første side er hele listen, derefter én opskrift pr. side.",
+          "Du kan gruppere den efter køkkenområde (opskriftskortets klassificeringer: varm linje, kold linje, konditori…) og udskrive hver stations ark til holdet.",
+          "Indkøbsordrer: ny knap “Send” til at dele dem på WhatsApp eller e-mail (du vælger modtager). PDF’en kan stadig downloades som altid.",
+          "Rapporter → Leverandører: prishistorik for hver ingrediens, hvilken leverandør der er billigst, hvor meget du kan spare, og hvad der steg de seneste 30 dage.",
+          "Rapporter → Svind: hvad det svind, du har sat (globalt eller tilpasset), koster dig, hvor du mister mest, og hvor det er værd at slå til.",
+        ],
+      },
+      fr: {
+        title: "Nouveau : MEP (mise en place), envoi des commandes et prix par fournisseur",
+        items: [
+          "MEP : choisissez un menu et voyez tout ce qu’il faut produire, avec d’abord les préparations de base puis chaque plat, déjà calculé selon les portions. Touchez une recette pour voir ingrédients, quantités et procédé, et cochez ce qui est prêt.",
+          "Téléchargez ou envoyez la MEP en PDF : la première page est la liste complète, puis une recette par page.",
+          "Vous pouvez la regrouper par poste de cuisine (les classifications de la fiche technique : chaud, froid, pâtisserie…) et imprimer la feuille de chaque section pour son équipe.",
+          "Commandes d’achat : nouveau bouton « Envoyer » pour les partager par WhatsApp ou e-mail (vous choisissez le destinataire). Le PDF se télécharge toujours comme avant.",
+          "Rapports → Fournisseurs : historique des prix de chaque ingrédient, le fournisseur le moins cher, l’économie possible et ce qui a augmenté sur 30 jours.",
+          "Rapports → Pertes : ce que vous coûtent les pertes configurées (globales ou personnalisées), où vous perdez le plus et où il vaut la peine de les activer.",
+        ],
+      },
+      pt: {
+        title: "Novo: MEP (mise en place), envio de pedidos e preços por fornecedor",
+        items: [
+          "MEP: escolha um cardápio e veja tudo o que é preciso produzir, com as preparações base primeiro e depois cada prato, já calculado com as porções. Toque numa receita para ver ingredientes, quantidades e modo de preparo, e marque o que já está pronto.",
+          "Baixe ou envie o MEP em PDF: a primeira página é a lista completa e depois vem uma receita por página.",
+          "Você pode agrupá-lo por área da cozinha (as classificações da Ficha Técnica: linha quente, linha fria, confeitaria…) e imprimir a folha de cada seção para a equipe.",
+          "Pedidos de compra: novo botão “Enviar” para mandar por WhatsApp ou e-mail (você escolhe para quem). O PDF continua sendo baixado como sempre.",
+          "Relatórios → Fornecedores: histórico de preços de cada ingrediente, qual fornecedor vende mais barato, quanto você poderia economizar e o que subiu nos últimos 30 dias.",
+          "Relatórios → Perdas: quanto custa a perda que você configurou (global ou personalizada), onde você perde mais e onde vale a pena ativá-la.",
+        ],
+      },
+      zh: {
+        title: "新功能：备料清单（MEP）、发送订单和按供应商比价",
+        items: [
+          "备料清单：选择一个菜单，就能看到需要准备的全部内容——先是基础备料，然后是每道菜，用量已按份数算好。点击配方可查看食材、用量和步骤，完成后可以打勾。",
+          "备料清单可以下载或以 PDF 发送：第一页是完整清单，之后每页一个配方。",
+          "可以按厨房区域分组（技术配方表的分类：热厨、冷厨、甜点……），并为每个工位打印清单交给团队。",
+          "采购订单：新增“发送”按钮，可通过 WhatsApp 或邮件发送（由你选择收件人）。PDF 仍可照常下载。",
+          "报表 → 供应商：每种食材的价格历史、哪家供应商最便宜、可以节省多少，以及最近 30 天涨价的食材。",
+          "报表 → 损耗：你设置的损耗（通用或自定义）带来的成本、损失最多的食材，以及建议启用损耗的地方。",
+        ],
+      },
+    },
+  },
+  {
     version: "2026-10-23d",
     tutorialHref: tourHref("ordenes-compra"),
     content: {

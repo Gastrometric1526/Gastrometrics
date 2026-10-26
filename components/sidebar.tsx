@@ -35,6 +35,7 @@ import {
   ChevronLeft,
   ChevronRight,
   UtensilsCrossed,
+  ListChecks,
   HelpCircle,
   Boxes,
   Sparkles,
@@ -124,6 +125,8 @@ function useNavigationItems() {
 
   items.push(
     { title: t("nav_menus"), href: "/menus", icon: UtensilsCrossed, description: t("nav_menus_desc"), locked: lockedByHref["/menus"].locked, feature: lockedByHref["/menus"].feature as FeatureKey | null },
+    // MEP — mise en place de cada menú (docs/202): mismo permiso y plan que Menús.
+    { title: t("nav_mep"), href: "/mep", icon: ListChecks, description: t("nav_mep_desc"), locked: lockedByHref["/menus"].locked, feature: lockedByHref["/menus"].feature as FeatureKey | null },
     {
       title: t("nav_ordenes_compra"),
       href: "/menu-y-compras",
@@ -163,6 +166,7 @@ function useNavigationItems() {
       "/ingredientes": ["ingredients"],
       "/inventario": ["inventory"],
       "/menus": ["menus"],
+      "/mep": ["menus"],
       "/menu-y-compras": ["purchase_orders_manual", "purchase_orders_auto"],
       "/estadisticas": ["stats_panorama", "stats_finance"],
       "/ventas": ["manual_sales", "stats_finance", "invoices"],
@@ -210,6 +214,7 @@ const getContextualHref = (baseHref: string, businessId: string | null) => {
     "/ingredientes",
     "/inventario",
     "/menus",
+    "/mep",
     "/menu-y-compras",
     "/estadisticas",
     "/ventas",

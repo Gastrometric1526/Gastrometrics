@@ -13,6 +13,10 @@ import { GastrometricsLogo } from "@/components/gastrometrics-logo"
 import { EstadisticasTour } from "@/components/page-tours"
 import { AuthGuard } from "@/components/auth-guard"
 import { EstadisticasFinanzasTab } from "@/components/estadisticas-finanzas-tab"
+import { EstadisticasProveedoresTab } from "@/components/estadisticas-proveedores-tab"
+import { EstadisticasMermaTab } from "@/components/estadisticas-merma-tab"
+import type { PurchaseOrder } from "@/types/purchase-order"
+import { Truck, Scale } from "lucide-react"
 import { useFeatureAccess } from "@/lib/plan-access"
 import { FeatureLockedPage, FeatureLockedInline } from "@/components/feature-locked"
 import { AdminRestrictedPage, AdminRestrictedInline } from "@/components/admin-restricted"
@@ -205,10 +209,11 @@ function EstadisticasContent() {
   const [inventoryStats, setInventoryStats] = useState({ totalItems: 0, criticalItems: 0, lowItems: 0, totalValue: 0 })
   const [purchaseOrdersTotal, setPurchaseOrdersTotal] = useState(0)
   const [purchaseOrdersCount, setPurchaseOrdersCount] = useState(0)
+  // Órdenes completas para Proveedores y Merma (docs/202).
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([])
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
   const [salesImportsCount, setSalesImportsCount] = useState(0)
   const [priceHistory, setPriceHistory] = useState<PriceChangeNotification[]>([])
-  const [selectedPriceIngredientId, setSelectedPriceIngredientId] = useState<string>("")
   const [isPanoramaInfoOpen, setIsPanoramaInfoOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -229,6 +234,7 @@ function EstadisticasContent() {
       setInventoryStats(getInventoryStats(businessId))
       setInventoryItems(getInventory(businessId))
       const orders = getPurchaseOrders(businessId)
+      setPurchaseOrders(orders)
       setPurchaseOrdersCount(orders.length)
       setPurchaseOrdersTotal(orders.reduce((sum, order) => sum + (order.total || 0), 0))
       // BUG CORREGIDO: hasAnyData no consideraba las ventas importadas del POS — un
@@ -402,44 +408,6 @@ function EstadisticasContent() {
     [realIngredients],
   )
 
-  // Ingredientes con historial de precio, agrupados y ordenados por cantidad de cambios
-  // (proxy de "más rotación": un ingrediente que se compra seguido acumula más cambios
-  // de precio registrados que uno que casi no se compra).
-  const priceHistoryByIngredient = useMemo(() => {
-    const map = new Map<string, PriceChangeNotification[]>()
-    priceHistory.forEach((entry) => {
-      const list = map.get(entry.ingredientId) || []
-      list.push(entry)
-      map.set(entry.ingredientId, list)
-    })
-    return Array.from(map.entries())
-      .map(([ingredientId, entries]) => ({
-        ingredientId,
-        ingredientName: entries[entries.length - 1].ingredientName,
-        entries,
-      }))
-      .sort((a, b) => b.entries.length - a.entries.length)
-  }, [priceHistory])
-
-  const selectedPriceHistory =
-    priceHistoryByIngredient.find((i) => i.ingredientId === selectedPriceIngredientId) || priceHistoryByIngredient[0]
-
-  const selectedPriceChartData = useMemo(() => {
-    if (!selectedPriceHistory) return []
-    const first = selectedPriceHistory.entries[0]
-    return [
-      { date: formatDate(first.timestamp), price: first.oldPrice },
-      ...selectedPriceHistory.entries.map((e) => ({ date: formatDate(e.timestamp), price: e.newPrice })),
-    ]
-  }, [selectedPriceHistory])
-
-  const selectedPriceChangePercent = useMemo(() => {
-    if (!selectedPriceHistory) return 0
-    const first = selectedPriceHistory.entries[0].oldPrice
-    const last = selectedPriceHistory.entries[selectedPriceHistory.entries.length - 1].newPrice
-    return first > 0 ? ((last - first) / first) * 100 : 0
-  }, [selectedPriceHistory])
-
   const hasAnyData =
     recipes.length > 0 ||
     ingredients.length > 0 ||
@@ -502,10 +470,10 @@ function EstadisticasContent() {
                 </Card>
               ) : (
                 <Tabs
-                  defaultValue={["panorama", "finanzas"].includes(searchParams.get("tab") || "") ? searchParams.get("tab")! : "panorama"}
+                  defaultValue={["panorama", "finanzas", "proveedores", "merma"].includes(searchParams.get("tab") || "") ? searchParams.get("tab")! : "panorama"}
                   className="w-full"
                 >
-                  <TabsList className="bg-card border border-border">
+                  <TabsList className="bg-card border border-border max-w-full overflow-x-auto justify-start no-scrollbar">
                     <TabsTrigger id="stats-tab-panorama" value="panorama" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       <BarChart3 className="h-4 w-4" />
                       {t("estadisticas_tab_panorama")}
@@ -513,6 +481,14 @@ function EstadisticasContent() {
                     <TabsTrigger id="stats-tab-finanzas" value="finanzas" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       <Wallet className="h-4 w-4" />
                       {t("estadisticas_tab_finanzas")}
+                    </TabsTrigger>
+                    <TabsTrigger id="stats-tab-proveedores" value="proveedores" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                      <Truck className="h-4 w-4" />
+                      {t("estadisticas_tab_proveedores")}
+                    </TabsTrigger>
+                    <TabsTrigger id="stats-tab-merma" value="merma" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                      <Scale className="h-4 w-4" />
+                      {t("estadisticas_tab_merma")}
                     </TabsTrigger>
                   </TabsList>
 
@@ -865,119 +841,14 @@ function EstadisticasContent() {
                     </Card>
                   </div>
 
-                  {/* Historial de Precios de Ingredientes */}
-                  <Card className="border-border bg-card" data-tour="stats-price-history">
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <History className="h-4 w-4 text-chart-1" />
-                        {t("estadisticas_price_history_title")}
-                      </CardTitle>
-                      <CardDescription>{t("estadisticas_price_history_desc")}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {priceHistoryByIngredient.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">{t("estadisticas_price_history_empty")}</p>
-                      ) : (
-                        <>
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                            <Select
-                              value={selectedPriceHistory?.ingredientId}
-                              onValueChange={setSelectedPriceIngredientId}
-                            >
-                              <SelectTrigger className="w-full sm:w-72">
-                                <SelectValue placeholder={t("estadisticas_price_history_select_placeholder")} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {priceHistoryByIngredient.map((i) => (
-                                  <SelectItem key={i.ingredientId} value={i.ingredientId}>
-                                    {i.ingredientName} · {i.entries.length} {t(i.entries.length !== 1 ? "estadisticas_price_change_plural" : "estadisticas_price_change_singular")}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {selectedPriceHistory && (
-                              <Badge
-                                variant={selectedPriceChangePercent > 0 ? "destructive" : "outline"}
-                                className={`w-fit gap-1 ${selectedPriceChangePercent < 0 ? "text-chart-2 border-chart-2/40" : ""}`}
-                              >
-                                {selectedPriceChangePercent > 0 ? (
-                                  <TrendingUp className="h-3 w-3" />
-                                ) : (
-                                  <TrendingDown className="h-3 w-3" />
-                                )}
-                                {selectedPriceChangePercent > 0 ? "+" : ""}
-                                {selectedPriceChangePercent.toFixed(1)}% {t("estadisticas_since_first_record_suffix")}
-                              </Badge>
-                            )}
-                          </div>
+                  </TabsContent>
 
-                          {selectedPriceChartData.length > 0 && (
-                            <ResponsiveContainer width="100%" height={240}>
-                              <LineChart data={selectedPriceChartData} margin={{ left: 8, right: 16, top: 8 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                                <YAxis
-                                  tick={{ fontSize: 11 }}
-                                  tickFormatter={(v: number) => formatCurrency(v)}
-                                  width={80}
-                                />
-                                <Tooltip
-                                  formatter={(v: any) => formatCurrency(Number(v))}
-                                  contentStyle={{ backgroundColor: "hsl(var(--popover))", borderColor: "hsl(var(--border))", borderRadius: 8 }}
-                                  labelStyle={{ color: "hsl(var(--popover-foreground))" }}
-                                  itemStyle={{ color: "hsl(var(--popover-foreground))" }}
-                                />
-                                <Line
-                                  type="monotone"
-                                  dataKey="price"
-                                  stroke="hsl(var(--chart-1))"
-                                  strokeWidth={2}
-                                  dot={{ r: 3 }}
-                                />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          )}
+                  <TabsContent value="proveedores" className="mt-4">
+                    <EstadisticasProveedoresTab businessId={businessId} ingredients={ingredients} orders={purchaseOrders} changes={priceHistory} />
+                  </TabsContent>
 
-                          <div className="pt-2 border-t border-border">
-                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                              {t("estadisticas_most_rotation_title")}
-                            </p>
-                            <div className="space-y-2">
-                              {priceHistoryByIngredient.slice(0, 5).map((i) => {
-                                const first = i.entries[0].oldPrice
-                                const last = i.entries[i.entries.length - 1].newPrice
-                                const pct = first > 0 ? ((last - first) / first) * 100 : 0
-                                return (
-                                  <button
-                                    key={i.ingredientId}
-                                    onClick={() => setSelectedPriceIngredientId(i.ingredientId)}
-                                    className={`w-full flex items-center justify-between text-sm rounded-lg px-3 py-2 transition-colors ${
-                                      i.ingredientId === selectedPriceHistory?.ingredientId
-                                        ? "bg-primary/10 ring-1 ring-primary/30"
-                                        : "bg-muted/20 hover:bg-muted/40"
-                                    }`}
-                                  >
-                                    <span className="truncate pr-2">{i.ingredientName}</span>
-                                    <span className="flex items-center gap-2 shrink-0">
-                                      <span className="text-xs text-muted-foreground">
-                                        {i.entries.length} {t(i.entries.length !== 1 ? "estadisticas_price_change_plural" : "estadisticas_price_change_singular")}
-                                      </span>
-                                      <span
-                                        className={`font-semibold tabular-nums ${pct > 0 ? "text-destructive" : pct < 0 ? "text-chart-2" : "text-foreground"}`}
-                                      >
-                                        {pct > 0 ? "+" : ""}
-                                        {pct.toFixed(1)}%
-                                      </span>
-                                    </span>
-                                  </button>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </CardContent>
-                  </Card>
+                  <TabsContent value="merma" className="mt-4">
+                    <EstadisticasMermaTab businessId={businessId} ingredients={ingredients} orders={purchaseOrders} changes={priceHistory} />
                   </TabsContent>
 
                   <TabsContent value="finanzas" className="mt-4">

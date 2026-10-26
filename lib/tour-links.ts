@@ -14,6 +14,7 @@ export const TOUR_PAGES: Record<string, string> = {
   inventario: "/inventario",
   "mis-recetas": "/mis-recetas",
   menus: "/menus",
+  mep: "/mep",
   estadisticas: "/estadisticas",
   "ordenes-compra": "/ordenes-compra",
   equipo: "/equipo",

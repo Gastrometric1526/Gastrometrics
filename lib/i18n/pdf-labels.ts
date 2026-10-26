@@ -138,6 +138,20 @@ export interface PdfLabels {
   granDia: string
   granSemana: string
   granMes: string
+  mepTitulo: string
+  mepMenu: string
+  mepFechaServicio: string
+  mepPersonas: string
+  mepPreparaciones: string
+  mepPreparacionesNota: string
+  mepPlatos: string
+  mepAProducir: string
+  mepSeUsaEn: string
+  mepListo: string
+  mepDeLaReceta: string
+  mepRecetas: string
+  mepPreparacionBase: string
+  mepReceta: string
   granAnio: string
 }
 
@@ -272,6 +286,20 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     granDia: "Día",
     granSemana: "Semana",
     granMes: "Mes",
+    mepTitulo: "MISE EN PLACE",
+    mepMenu: "Menú",
+    mepFechaServicio: "Fecha de servicio",
+    mepPersonas: "Personas",
+    mepPreparaciones: "PREPARACIONES BASE",
+    mepPreparacionesNota: "Prepáralas primero: las usan los platos.",
+    mepPlatos: "PLATOS",
+    mepAProducir: "A producir",
+    mepSeUsaEn: "Se usa en",
+    mepListo: "Listo",
+    mepDeLaReceta: "de la receta",
+    mepRecetas: "RECETAS",
+    mepPreparacionBase: "Preparación base",
+    mepReceta: "Receta",
     granAnio: "Año",
   },
   en: {
@@ -404,6 +432,20 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     granDia: "Day",
     granSemana: "Week",
     granMes: "Month",
+    mepTitulo: "MISE EN PLACE",
+    mepMenu: "Menu",
+    mepFechaServicio: "Service date",
+    mepPersonas: "Guests",
+    mepPreparaciones: "BASE PREPS",
+    mepPreparacionesNota: "Make these first: the dishes use them.",
+    mepPlatos: "DISHES",
+    mepAProducir: "To make",
+    mepSeUsaEn: "Used in",
+    mepListo: "Done",
+    mepDeLaReceta: "of the recipe",
+    mepRecetas: "RECIPES",
+    mepPreparacionBase: "Base prep",
+    mepReceta: "Recipe",
     granAnio: "Year",
   },
   da: {
@@ -536,6 +578,20 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     granDia: "Dag",
     granSemana: "Uge",
     granMes: "Maaned",
+    mepTitulo: "MISE EN PLACE",
+    mepMenu: "Menu",
+    mepFechaServicio: "Servicedato",
+    mepPersonas: "Gæster",
+    mepPreparaciones: "GRUNDTILBEREDNINGER",
+    mepPreparacionesNota: "Lav dem først: retterne bruger dem.",
+    mepPlatos: "RETTER",
+    mepAProducir: "Skal laves",
+    mepSeUsaEn: "Bruges i",
+    mepListo: "Klar",
+    mepDeLaReceta: "af opskriften",
+    mepRecetas: "OPSKRIFTER",
+    mepPreparacionBase: "Grundtilberedning",
+    mepReceta: "Opskrift",
     granAnio: "Aar",
   },
   fr: {
@@ -668,6 +724,20 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     granDia: "Jour",
     granSemana: "Semaine",
     granMes: "Mois",
+    mepTitulo: "MISE EN PLACE",
+    mepMenu: "Menu",
+    mepFechaServicio: "Date du service",
+    mepPersonas: "Couverts",
+    mepPreparaciones: "PRÉPARATIONS DE BASE",
+    mepPreparacionesNota: "À préparer en premier : les plats les utilisent.",
+    mepPlatos: "PLATS",
+    mepAProducir: "À produire",
+    mepSeUsaEn: "Utilisé dans",
+    mepListo: "Prêt",
+    mepDeLaReceta: "de la recette",
+    mepRecetas: "RECETTES",
+    mepPreparacionBase: "Préparation de base",
+    mepReceta: "Recette",
     granAnio: "Annee",
   },
   pt: {
@@ -800,6 +870,20 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     granDia: "Dia",
     granSemana: "Semana",
     granMes: "Mes",
+    mepTitulo: "MISE EN PLACE",
+    mepMenu: "Cardápio",
+    mepFechaServicio: "Data do serviço",
+    mepPersonas: "Pessoas",
+    mepPreparaciones: "PREPARAÇÕES BASE",
+    mepPreparacionesNota: "Prepare-as primeiro: os pratos as usam.",
+    mepPlatos: "PRATOS",
+    mepAProducir: "A produzir",
+    mepSeUsaEn: "Usado em",
+    mepListo: "Pronto",
+    mepDeLaReceta: "da receita",
+    mepRecetas: "RECEITAS",
+    mepPreparacionBase: "Preparação base",
+    mepReceta: "Receita",
     granAnio: "Ano",
   },
   zh: {
@@ -932,6 +1016,20 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     granDia: "日",
     granSemana: "周",
     granMes: "月",
+    mepTitulo: "备料清单",
+    mepMenu: "菜单",
+    mepFechaServicio: "服务日期",
+    mepPersonas: "人数",
+    mepPreparaciones: "基础备料",
+    mepPreparacionesNota: "请先准备：菜品会用到它们。",
+    mepPlatos: "菜品",
+    mepAProducir: "制作量",
+    mepSeUsaEn: "用于",
+    mepListo: "完成",
+    mepDeLaReceta: "倍配方",
+    mepRecetas: "配方",
+    mepPreparacionBase: "基础备料",
+    mepReceta: "配方",
     granAnio: "年",
   },
 }

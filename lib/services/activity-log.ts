@@ -23,6 +23,8 @@ export type ActivityModule =
   | "inventario"
   | "equipo"
   | "menus"
+  // MEP — mise en place de un menú (docs/202).
+  | "mep"
   | "ordenes_compra"
   | "estadisticas"
   | "negocios"
@@ -196,6 +198,7 @@ const MODULE_NAV_KEY: Record<ActivityModule, string> = {
   inventario: "nav_inventario",
   equipo: "nav_equipo",
   menus: "nav_menus",
+  mep: "nav_mep",
   ordenes_compra: "nav_ordenes_compra",
   estadisticas: "nav_estadisticas",
   negocios: "nav_negocios",
