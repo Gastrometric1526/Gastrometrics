@@ -77,6 +77,11 @@ import { addScenarioResult } from "@/lib/storage/menus.store"
 import { calculateScenario, generateRecommendation } from "@/lib/analytics/menuScenario"
 import type { Menu, MenuSection, ScenarioParams, ScenarioResult } from "@/lib/types/menus"
 import { formatCurrency, getCurrentCurrencyOption } from "@/lib/currency"
+import { useNavigationItems, BUSINESS_ROUTES } from "@/components/sidebar"
+import { moduleCardStyle } from "@/lib/module-card-style"
+import { getMinimumPlanForFeature } from "@/lib/plan-access"
+import { Lock } from "lucide-react"
+import type { TranslationKey } from "@/lib/i18n/translations"
 
 const roundToNextHundred = (num: number) => {
   return Math.ceil(num / 100) * 100
@@ -379,86 +384,33 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
     setScenarioParams((prev) => ({ ...prev, categoryWeights: newWeights }))
   }
 
-  const menuItems = useMemo(
-    () => [
-      {
-        href: `/ficha-tecnica?business=${params.id}`,
-        text: t("business_module_ficha_tecnica_title"),
-        icon: FileText,
-        description: t("business_module_ficha_tecnica_desc"),
-        bgColor: "bg-chart-1/10 group-hover:bg-chart-1/20",
-        textColor: "text-chart-1",
-      },
-      {
-        href: `/ingredientes?business=${params.id}`,
-        text: t("business_module_ingredientes_title"),
-        icon: Database,
-        description: t("business_module_ingredientes_desc"),
-        bgColor: "bg-chart-2/10 group-hover:bg-chart-2/20",
-        textColor: "text-chart-2",
-      },
-      {
-        href: `/menus?business=${params.id}`,
-        text: t("business_module_menus_title"),
-        icon: UtensilsCrossed,
-        description: t("business_module_menus_desc"),
-        bgColor: "bg-chart-3/10 group-hover:bg-chart-3/20",
-        textColor: "text-chart-3",
-      },
-      {
-        href: `/menu-y-compras?business=${params.id}`,
-        text: t("business_module_ordenes_title"),
-        icon: ShoppingCart,
-        description: t("business_module_ordenes_desc"),
-        bgColor: "bg-chart-4/10 group-hover:bg-chart-4/20",
-        textColor: "text-chart-4",
-      },
-      {
-        href: `/mis-recetas?business=${params.id}`,
-        text: t("business_module_mis_recetas_title"),
-        icon: UtensilsCrossed,
-        description: t("business_module_mis_recetas_desc"),
-        bgColor: "bg-chart-5/10 group-hover:bg-chart-5/20",
-        textColor: "text-chart-5",
-      },
-      {
-        href: `/inventario?business=${params.id}`,
-        text: t("business_module_inventario_title"),
-        icon: Store,
-        description: t("business_module_inventario_desc"),
-        bgColor: "bg-chart-6/10 group-hover:bg-chart-6/20",
-        textColor: "text-chart-6",
-      },
-      {
-        href: `/estadisticas?business=${params.id}`,
-        text: t("business_module_estadisticas_title"),
-        icon: BarChart3,
-        description: t("business_module_estadisticas_desc"),
-        bgColor: "bg-chart-7/10 group-hover:bg-chart-7/20",
-        textColor: "text-chart-7",
-      },
-    ],
-    [params.id, t],
-  ).filter((item) => {
-    // BUG CORREGIDO: mismo problema que la grilla de Acciones Rápidas del dashboard
-    // principal (ver app/dashboard/page.tsx) — sin esto, el dashboard de un negocio
-    // seguía mostrando las 7 tarjetas completas aunque el administrador solo le
-    // hubiera dado a esta persona acceso a una o dos herramientas.
-    if (!previewActive || !previewMember) return true
-    const hrefFeatureMap: Record<string, string[]> = {
-      "/ficha-tecnica": ["recipes"],
-      "/mis-recetas": ["recipes"],
-      "/ingredientes": ["ingredients"],
-      "/inventario": ["inventory"],
-      "/menus": ["menus"],
-      "/menu-y-compras": ["purchase_orders_manual", "purchase_orders_auto"],
-      "/estadisticas": ["stats_panorama", "stats_finance", "manual_sales"],
-    }
-    const base = item.href.split("?")[0]
-    const required = hrefFeatureMap[base]
-    if (!required) return true
-    return required.some((f) => previewMember.allowedFeatures.includes(f as any))
-  })
+  // Módulos de este negocio = los del menú lateral que trabajan con un negocio (docs/203), con
+  // ?business= y el mismo candado/filtro de Equipo. Antes era otra lista a mano (sin MEP ni
+  // Ventas). Se conservan los textos propios de cada módulo cuando existen.
+  const navItems = useNavigationItems()
+  const BUSINESS_TEXT: Record<string, { title: TranslationKey; desc: TranslationKey }> = {
+    "/ficha-tecnica": { title: "business_module_ficha_tecnica_title", desc: "business_module_ficha_tecnica_desc" },
+    "/ingredientes": { title: "business_module_ingredientes_title", desc: "business_module_ingredientes_desc" },
+    "/menus": { title: "business_module_menus_title", desc: "business_module_menus_desc" },
+    "/menu-y-compras": { title: "business_module_ordenes_title", desc: "business_module_ordenes_desc" },
+    "/mis-recetas": { title: "business_module_mis_recetas_title", desc: "business_module_mis_recetas_desc" },
+    "/inventario": { title: "business_module_inventario_title", desc: "business_module_inventario_desc" },
+    "/estadisticas": { title: "business_module_estadisticas_title", desc: "business_module_estadisticas_desc" },
+  }
+  const menuItems = navItems
+    .filter((item) => BUSINESS_ROUTES.includes(item.href))
+    .map((item) => {
+      const text = BUSINESS_TEXT[item.href]
+      return {
+        href: `${item.href}?business=${params.id}`,
+        text: text ? t(text.title) : item.title,
+        icon: item.icon,
+        description: text ? t(text.desc) : item.description,
+        ...moduleCardStyle(item.href),
+        locked: item.locked,
+        feature: item.feature,
+      }
+    })
 
   const handleConfigSave = () => {
     if (editedBusiness) {
@@ -721,18 +673,25 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6" data-tour="business-modules">
               {menuItems.map((action, index) => (
                 <Link key={index} href={action.href}>
-                  <Card className="border-border transition-all duration-300 bg-card group cursor-pointer h-56 overflow-hidden">
+                  <Card className={`border-border transition-all duration-300 bg-card group cursor-pointer h-56 overflow-hidden ${action.locked ? "opacity-70" : ""}`}>
                     <CardContent className="p-6 h-full flex flex-col justify-between">
                       <div className="space-y-4">
                         <div className={`p-4 rounded-lg ${action.bgColor} w-fit transition-all duration-300`}>
                           <action.icon className={`h-8 w-8 ${action.textColor}`} />
                         </div>
                         <div className="space-y-3 min-w-0">
-                          <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors leading-tight">
+                          <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors leading-tight flex items-center gap-1.5">
                             {action.text}
+                            {action.locked && <Lock className="h-4 w-4 shrink-0 text-muted-foreground" />}
                           </h3>
                           <p className="text-sm text-foreground/70 font-medium leading-relaxed line-clamp-3">
-                            {action.description}
+                            {action.locked
+                              ? (() => {
+                                  // Bloqueado por plan: mismo aviso que el menú lateral (la página dice cómo desbloquearlo).
+                                  const minPlan = action.feature ? getMinimumPlanForFeature(action.feature) : null
+                                  return minPlan ? t("sidebar_locked_feature_hint").replace("{plan}", minPlan.name) : t("sidebar_locked_feature_hint_generic")
+                                })()
+                              : action.description}
                           </p>
                         </div>
                       </div>

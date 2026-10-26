@@ -61,7 +61,12 @@ import { Lock } from "lucide-react"
 import { useModuleReveal } from "@/lib/module-reveal"
 import { PlanCountdownChip, PlanCountdownDot } from "@/components/plan-countdown-chip"
 
-function useNavigationItems() {
+/**
+ * Lista de módulos de la app (con candado por plan y filtro de Vista previa de Equipo). Es la
+ * única fuente: el menú lateral, las Acciones Rápidas del Dashboard y los módulos de cada negocio
+ * (docs/203) la usan, para que un módulo nuevo aparezca en todos lados a la vez.
+ */
+export function useNavigationItems() {
   const { t } = useLanguage()
   const canAccessTeam = useFeatureAccess("team")
   const { active: previewActive, member: previewMember } = useActiveMembership()
@@ -194,6 +199,19 @@ function useNavigationItems() {
   return items
 }
 
+/** Módulos que trabajan con el negocio elegido (se les pasa ?business=). */
+export const BUSINESS_ROUTES = [
+  "/ficha-tecnica",
+  "/mis-recetas",
+  "/ingredientes",
+  "/inventario",
+  "/menus",
+  "/mep",
+  "/menu-y-compras",
+  "/estadisticas",
+  "/ventas",
+]
+
 const getContextualHref = (baseHref: string, businessId: string | null) => {
   // Si estamos dentro del contexto de un negocio específico, mantenerlo al navegar
   // por el sidebar. El id puede venir de la ruta (/business/{id}) o, una vez ya
@@ -208,18 +226,7 @@ const getContextualHref = (baseHref: string, businessId: string | null) => {
   // pantalla. "Dashboard" y "Negocios" quedan siempre fuera de este contexto a
   // propósito: son el dashboard principal y la lista de negocios, comparten uno
   // solo entre todos los negocios.
-  const businessRoutes = [
-    "/ficha-tecnica",
-    "/mis-recetas",
-    "/ingredientes",
-    "/inventario",
-    "/menus",
-    "/mep",
-    "/menu-y-compras",
-    "/estadisticas",
-    "/ventas",
-  ]
-  if (businessRoutes.includes(baseHref)) {
+  if (BUSINESS_ROUTES.includes(baseHref)) {
     return `${baseHref}?business=${businessId}`
   }
   return baseHref

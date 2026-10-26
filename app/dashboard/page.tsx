@@ -51,6 +51,8 @@ import { refreshPlanStatus } from "@/lib/plan-status"
 import { useFeatureAccess, useActiveMembership, setCurrentPlanSlug, getMinimumPlanForFeature } from "@/lib/plan-access"
 import type { FeatureKey } from "@/lib/plans"
 import { Lock } from "lucide-react"
+import { useNavigationItems } from "@/components/sidebar"
+import { moduleCardStyle } from "@/lib/module-card-style"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { getAllBusinesses, refreshBusinesses } from "@/lib/storage/businesses"
 import { getRecipes, ensureRecipesLoaded, isSubRecipe } from "@/lib/storage/recipes"
@@ -517,144 +519,22 @@ export default function DashboardPage() {
     [toast, businesses, t],
   )
 
-  // Orden pensado como flujo de trabajo real: primero base de datos de ingredientes
-  // y ficha tecnica (de donde nace todo lo demas), luego recetas guardadas, menus,
-  // inventario, ordenes de compra (que ahora depende de menu+inventario, ver docs/31),
-  // y estadisticas al final, como cierre de analisis.
-  // BUG CORREGIDO: esta grilla de "Quick Actions" es una lista aparte de los items del
-  // sidebar (components/sidebar.tsx) — cuando se agregó Equipo al sidebar no se agregó
-  // acá, así que el panel de invitar/administrar equipo no aparecía en el dashboard
-  // principal aunque sí estuviera accesible desde el menú lateral. Igual que en el
-  // sidebar, solo se agrega si el plan de la cuenta incluye la función.
-  const menuItems = [
-    {
-      href: "/ingredientes",
-      text: t("nav_ingredientes"),
-      icon: Database,
-      description: t("nav_ingredientes_desc"),
-      bgColor: "bg-chart-2/10 group-hover:bg-chart-2/20",
-      textColor: "text-chart-2",
-      locked: false,
-      feature: null as FeatureKey | null,
-    },
-    {
-      href: "/ficha-tecnica",
-      text: t("nav_ficha_tecnica"),
-      icon: FileText,
-      description: t("nav_ficha_tecnica_desc"),
-      bgColor: "bg-chart-1/10 group-hover:bg-chart-1/20",
-      textColor: "text-chart-1",
-      locked: false,
-      feature: null as FeatureKey | null,
-    },
-    {
-      href: "/mis-recetas",
-      text: t("nav_mis_recetas"),
-      icon: UtensilsCrossed,
-      description: t("nav_mis_recetas_desc"),
-      bgColor: "bg-chart-5/10 group-hover:bg-chart-5/20",
-      textColor: "text-chart-5",
-      locked: false,
-      feature: null as FeatureKey | null,
-    },
-    {
-      href: "/menus",
-      text: t("nav_menus"),
-      icon: UtensilsCrossed,
-      description: t("nav_menus_desc"),
-      bgColor: "bg-chart-3/10 group-hover:bg-chart-3/20",
-      textColor: "text-chart-3",
-      locked: canAccessMenus === false,
-      feature: "menus" as FeatureKey | null,
-    },
-    {
-      href: "/inventario",
-      text: t("nav_inventario"),
-      icon: Store,
-      description: t("nav_inventario_desc"),
-      bgColor: "bg-chart-6/10 group-hover:bg-chart-6/20",
-      textColor: "text-chart-6",
-      locked: canAccessInventory === false,
-      feature: "inventory" as FeatureKey | null,
-    },
-    {
-      href: "/ordenes-compra",
-      text: t("nav_ordenes_compra"),
-      icon: ShoppingCart,
-      description: t("nav_ordenes_compra_desc"),
-      bgColor: "bg-chart-4/10 group-hover:bg-chart-4/20",
-      textColor: "text-chart-4",
-      locked: canAccessPurchaseOrdersManual === false && canAccessPurchaseOrdersAuto === false,
-      feature: "purchase_orders_manual" as FeatureKey | null,
-    },
-    {
-      href: "/estadisticas",
-      text: t("nav_estadisticas"),
-      icon: BarChart,
-      description: t("nav_estadisticas_desc"),
-      bgColor: "bg-chart-7/10 group-hover:bg-chart-7/20",
-      textColor: "text-chart-7",
-      locked: canAccessStatsPanorama === false,
-      feature: "stats_panorama" as FeatureKey | null,
-    },
-    // Pedido explícito del dueño del proyecto: que sea obvio dónde está el registro
-    // manual de ventas (docs/90) — enlace directo a su propio módulo (docs/124, separado
-    // de Reportes; antes de eso era una pestaña dentro de /estadisticas).
-    ...(canAccessManualSales
-      ? [
-          {
-            href: "/ventas",
-            text: t("dashboard_quick_manual_sales"),
-            icon: Receipt,
-            description: t("dashboard_quick_manual_sales_desc"),
-            bgColor: "bg-chart-2/10 group-hover:bg-chart-2/20",
-            textColor: "text-chart-2",
-            locked: false,
-            feature: null as FeatureKey | null,
-          },
-        ]
-      : []),
-    ...(canAccessTeam
-      ? [
-          {
-            href: "/equipo",
-            text: t("nav_equipo"),
-            icon: Users,
-            description: t("nav_equipo_desc"),
-            bgColor: "bg-chart-1/10 group-hover:bg-chart-1/20",
-            textColor: "text-chart-1",
-            locked: false,
-            feature: null as FeatureKey | null,
-          },
-        ]
-      : []),
-  ].filter((item) => {
-    // BUG CORREGIDO: esta grilla tenía su propio filtrado por plan (canAccessTeam,
-    // arriba) pero no sabía nada de una vista previa de Equipo activa — mostraba las
-    // 8 tarjetas completas sin importar qué le habilitó el administrador a esta
-    // persona, aunque el sidebar (al lado, en la misma pantalla) sí filtraba
-    // correctamente. Mismo mapeo href→FeatureKey que components/sidebar.tsx.
-    if (!previewActive || !previewMember) return true
-    const hrefFeatureMap: Record<string, string[]> = {
-      "/ficha-tecnica": ["recipes"],
-      "/mis-recetas": ["recipes"],
-      "/ingredientes": ["ingredients"],
-      "/inventario": ["inventory"],
-      "/menus": ["menus"],
-      "/ordenes-compra": ["purchase_orders_manual", "purchase_orders_auto"],
-      "/estadisticas": ["stats_panorama", "stats_finance"],
-      "/ventas": ["manual_sales", "stats_finance"],
-      // Delegable desde docs/75 — ver components/sidebar.tsx para el mismo mapeo.
-      "/equipo": ["team"],
-    }
-    const required = hrefFeatureMap[item.href]
-    if (!required) return true
-    return required.some((f) => previewMember.allowedFeatures.includes(f as any))
-  })
-    // El candado visual mide el plan de LA CUENTA — no aplica a una sesión de equipo
-    // (se rige por allowedFeatures, no por plan; lo no permitido ya quedó fuera del
-    // filtro de arriba). Mismo criterio que components/sidebar.tsx.
-    .map((item) => (previewActive && previewMember ? { ...item, locked: false } : item))
+  // Acciones Rápidas = los mismos módulos del menú lateral, en el mismo orden, con el mismo
+  // candado por plan y el mismo filtro de Vista previa de Equipo (docs/203). Antes era una
+  // lista aparte escrita a mano y se quedaba atrás cada vez que el menú sumaba un módulo
+  // (Equipo, Ventas, Negocios, Invita, MEP…).
+  const navItems = useNavigationItems()
+  const menuItems = navItems
+    .filter((item) => item.href !== "/dashboard")
+    .map((item) => ({
+      href: item.href,
+      text: item.title,
+      icon: item.icon,
+      description: item.description,
+      ...moduleCardStyle(item.href),
+      locked: item.locked,
+      feature: item.feature,
+    }))
 
   const handleBusinessClick = useCallback(
     (businessId: string) => {
