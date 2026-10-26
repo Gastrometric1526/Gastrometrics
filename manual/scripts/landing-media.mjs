@@ -123,8 +123,8 @@ await page.evaluateOnNewDocument((tours) => {
   } catch {}
   document.addEventListener("DOMContentLoaded", () => {
     const st = document.createElement("style")
-    // Botón flotante de feedback / instalar y avisos que tapan la pantalla.
-    st.textContent = 'div.fixed[class*="bottom-4"][class*="right-4"]{display:none!important}[data-sonner-toaster],[role=status],[data-feedback-card]{display:none!important}'
+    // Botón flotante de feedback / instalar, botón de ayuda (docs/204) y avisos que tapan la pantalla.
+    st.textContent = 'div.fixed[class*="bottom-4"][class*="right-4"]{display:none!important}[data-sonner-toaster],[role=status],[data-feedback-card],[data-tour=support-chat]{display:none!important}'
     document.head.appendChild(st)
   })
 }, TOURS)
