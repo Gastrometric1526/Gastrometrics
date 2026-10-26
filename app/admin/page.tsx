@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast"
 import { AccountsPanel } from "@/components/admin/accounts-panel"
 import { FeedbackPanel } from "@/components/admin/feedback-panel"
 import { SupportInbox } from "@/components/admin/support-inbox"
+import { FullReportButton } from "@/components/admin/full-report-button"
 import { AnalyticsPanel } from "@/components/admin/analytics-panel"
 import { TopUsersPanel } from "@/components/admin/top-users-panel"
 import { ReviewsPanel } from "@/components/admin/reviews-panel"
@@ -284,6 +285,8 @@ function AdminPageInner() {
             <p className="text-muted-foreground">{t("admin_page_subtitle")}</p>
           </div>
           <div className="flex flex-col items-end gap-2">
+            {/* Informe completo con todos los datos de /admin (docs/206) */}
+            <FullReportButton />
             <Button
               variant="outline"
               size="sm"
