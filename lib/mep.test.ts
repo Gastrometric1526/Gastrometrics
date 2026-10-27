@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { buildMep, formatMepAmount, groupByArea, groupDishesByStep } from "./mep"
+import { buildMep, flattenDish, formatMepAmount, groupByArea, groupDishesByStep } from "./mep"
 import type { Recipe, RecipeIngredient } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 import type { Menu } from "@/lib/types/menus"
@@ -81,5 +81,45 @@ describe("buildMep (docs/202)", () => {
     expect(groupDishesByStep(mep.dishes).map((g) => g.stepName)).toEqual(["Entrada", "Plato fuerte"])
     expect(formatMepAmount(2.4)).toBe("2.4")
     expect(formatMepAmount(1125.0000001)).toBe("1125")
+  })
+})
+
+describe("sub-recetas por plato (docs/207)", () => {
+  const mep = buildMep(menu, [fondo, salsa, pasta, ensalada], ingredients)
+
+  it("cada plato lleva sus sub-recetas en árbol con la cantidad de ESE plato", () => {
+    const pastaEntry = mep.dishes.find((d) => d.recipeId === "pasta")!
+    // pasta ×10: 200 g × 10 = 2000 g de salsa; salsa ×2: 400 ml × 2 = 800 ml de fondo
+    expect(pastaEntry.subs?.map((s) => [s.name, s.amount, s.yieldUnit, s.key])).toEqual([["salsa", 2000, "gramos", "sub:pasta/salsa"]])
+    expect(pastaEntry.subs?.[0].subs?.map((s) => [s.name, s.amount, s.key])).toEqual([["fondo", 800, "sub:pasta/salsa/fondo"]])
+    expect(pastaEntry.subs?.[0].lines.find((l) => l.ingredientId === "crema")?.quantity).toBe(1000)
+    const ensaladaEntry = mep.dishes.find((d) => d.recipeId === "ensalada")!
+    expect(ensaladaEntry.subs?.[0].amount).toBe(250) // 50 g × 5
+  })
+
+  it("avisa en qué otros platos se usa la misma sub-receta y aplana el árbol en orden", () => {
+    const pastaEntry = mep.dishes.find((d) => d.recipeId === "pasta")!
+    expect(pastaEntry.subs?.[0].usedBy).toEqual(["ensalada"])
+    expect(flattenDish(pastaEntry).map((x) => [x.entry.name, x.level])).toEqual([
+      ["pasta", 0],
+      ["salsa", 1],
+      ["fondo", 2],
+    ])
+  })
+})
+
+describe("PDF de la MEP con sub-recetas por plato (docs/207)", () => {
+  it("se arma por paso con el árbol y el total, y por área sin cambios", async () => {
+    const { generateMepPDF } = await import("@/lib/pdf/mep-pdf-generator")
+    const mep = buildMep(menu, [fondo, salsa, pasta, ensalada], ingredients)
+    const step = generateMepPDF({ menuName: "Almuerzo", servings: 40, preps: mep.preps, dishes: mep.dishes, groupBy: "step" })
+    // 1 hoja de lista + una receta por plato y por cada sub-receta del árbol (pasta: salsa, fondo; ensalada: salsa, fondo).
+    expect(step.getNumberOfPages()).toBeGreaterThanOrEqual(7)
+    const area = generateMepPDF({ menuName: "Almuerzo", servings: 40, preps: mep.preps, dishes: mep.dishes, groupBy: "area" })
+    expect(area.getNumberOfPages()).toBeGreaterThanOrEqual(4)
+    if (process.env.MEP_SAMPLE_OUT) {
+      const fs = await import("fs")
+      fs.writeFileSync(process.env.MEP_SAMPLE_OUT, Buffer.from(step.output("arraybuffer")))
+    }
   })
 })

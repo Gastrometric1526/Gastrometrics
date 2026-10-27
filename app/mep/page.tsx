@@ -2,8 +2,9 @@
 
 /**
  * MEP — Mise en place (docs/202). Pedido del dueño: un documento alineado con el menú que
- * diga qué producir. Arriba se elige el menú; abajo, primero las preparaciones base (las
- * sub-recetas que usan los platos, sumadas) y después los platos por paso del menú. Cada fila
+ * diga qué producir. Arriba se elige el menú; abajo, por paso del menú, cada plato con sus
+ * sub-recetas debajo como checklist (docs/207: la cantidad es la de ese plato y cada una se abre
+ * con su receta completa), y al final el total por sub-receta, plegado, para prepararlas juntas. Cada fila
  * muestra solo el nombre y para cuánto; al tocarla se abre con sus ingredientes y cantidades
  * ya escalados, el procedimiento y las observaciones. Se marcan «Listo» (se recuerda en este
  * aparato) y se mandan o descargan como PDF (página 1: la MEP; después, una receta por página).
@@ -47,7 +48,7 @@ import { useMenus, ensureMenusLoaded } from "@/lib/menus"
 import { useRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { useIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 import { getBusinessById } from "@/lib/storage/businesses"
-import { buildMep, formatMepAmount, groupByArea, groupDishesByStep, type MepEntry } from "@/lib/mep"
+import { buildMep, flattenDish, formatMepAmount, groupByArea, groupDishesByStep, type MepEntry } from "@/lib/mep"
 import { getClassificationLabel } from "@/lib/classification-labels"
 import type { Classification } from "@/types/recipe"
 import { amountWithUnit, mepShareText, shortUnit } from "@/lib/share-text"
@@ -93,6 +94,7 @@ function MepRow({
   onToggleOpen,
   businessId,
   tag,
+  level = 0,
 }: {
   entry: MepEntry
   done: boolean
@@ -102,30 +104,39 @@ function MepRow({
   businessId: string
   /** Agrupado por área: «Preparación base» o el paso del menú. */
   tag?: string | null
+  /** 0 = plato o total; 1+ = sub-receta dentro de un plato (más compacta). */
+  level?: number
 }) {
   const { t, language } = useLanguage()
   const amount = amountWithUnit(entry.amount, entry.yieldUnit, language, formatMepAmount)
   const scaled = Math.abs(entry.multiplier - 1) > 0.0005
+  const isSub = level > 0
   return (
     <div className={`rounded-xl border bg-card transition-colors ${done ? "border-primary/30 bg-primary/[0.03]" : "border-border"}`}>
-      <div className="flex items-center gap-3 p-3 sm:p-4">
+      <div className={`flex items-center gap-3 ${isSub ? "px-3 py-2" : "p-3 sm:p-4"}`}>
         <Checkbox
           checked={done}
           onCheckedChange={onToggleDone}
           aria-label={t("mep_mark_done")}
           data-mep-check={entry.key}
-          className="h-6 w-6 rounded-md shrink-0"
+          className={`${isSub ? "h-5 w-5" : "h-6 w-6"} rounded-md shrink-0`}
         />
         <button type="button" onClick={onToggleOpen} className="flex-1 min-w-0 text-left" aria-expanded={open} data-mep-toggle={entry.key}>
-          <p className={`font-semibold text-foreground leading-snug line-clamp-2 break-words ${done ? "line-through text-muted-foreground" : ""}`}>{entry.name}</p>
+          <p className={`${isSub ? "text-sm font-medium" : "font-semibold"} text-foreground leading-snug line-clamp-2 break-words ${done ? "line-through text-muted-foreground" : ""}`}>{entry.name}</p>
           {tag && <p className="text-[11px] font-medium uppercase tracking-wide text-primary/80 truncate">{tag}</p>}
           {entry.kind === "prep" && entry.usedBy.length > 0 && (
             <p className="text-xs text-muted-foreground truncate">
               {t("mep_used_in")}: {entry.usedBy.join(", ")}
             </p>
           )}
+          {entry.kind === "sub" && entry.usedBy.length > 0 && (
+            <p className="text-xs text-muted-foreground line-clamp-2">{t("mep_also_in").replace("{dishes}", entry.usedBy.join(", "))}</p>
+          )}
+          {entry.kind === "dish" && (entry.subs?.length ?? 0) > 0 && (
+            <p className="text-xs text-muted-foreground truncate">{entry.subs?.length === 1 ? t("mep_subs_count_one") : t("mep_subs_count").replace("{count}", String(entry.subs?.length ?? 0))}</p>
+          )}
         </button>
-        <Badge variant="secondary" className="shrink-0 tabular-nums text-xs sm:text-sm font-semibold px-2 sm:px-2.5 py-1">
+        <Badge variant="secondary" className={`shrink-0 tabular-nums font-semibold ${isSub ? "text-xs px-2 py-0.5" : "text-xs sm:text-sm px-2 sm:px-2.5 py-1"}`}>
           {amount}
         </Badge>
         <button
@@ -210,6 +221,56 @@ function MepRow({
   )
 }
 
+/** Un plato y, debajo, sus sub-recetas como checklist (en árbol), cada una con su receta completa al abrirla. */
+function MepDishTree({
+  dish,
+  done,
+  openKeys,
+  onToggleDone,
+  onToggleOpen,
+  businessId,
+}: {
+  dish: MepEntry
+  done: Set<string>
+  openKeys: Set<string>
+  onToggleDone: (key: string) => void
+  onToggleOpen: (key: string) => void
+  businessId: string
+}) {
+  const renderSubs = (list: MepEntry[] | undefined, level: number) =>
+    list && list.length > 0 ? (
+      <div className="ml-4 sm:ml-7 space-y-1.5 border-l-2 border-border pl-3 pt-1.5">
+        {list.map((sub) => (
+          <div key={sub.key} className="space-y-1.5">
+            <MepRow
+              entry={sub}
+              level={level}
+              done={done.has(sub.key)}
+              open={openKeys.has(sub.key)}
+              onToggleDone={() => onToggleDone(sub.key)}
+              onToggleOpen={() => onToggleOpen(sub.key)}
+              businessId={businessId}
+            />
+            {renderSubs(sub.subs, level + 1)}
+          </div>
+        ))}
+      </div>
+    ) : null
+  return (
+    <div>
+      <MepRow
+        entry={dish}
+        done={done.has(dish.key)}
+        open={openKeys.has(dish.key)}
+        onToggleDone={() => onToggleDone(dish.key)}
+        onToggleOpen={() => onToggleOpen(dish.key)}
+        businessId={businessId}
+      />
+      {renderSubs(dish.subs, 1)}
+    </div>
+  )
+}
+
 function MepContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -265,8 +326,14 @@ function MepContent() {
   useEffect(() => setArea("all"), [menu?.id])
   const visiblePreps = useMemo(() => (mep ? mep.preps.filter((e) => area === "all" || e.classification === area) : []), [mep, area])
   const visibleDishes = useMemo(() => (mep ? mep.dishes.filter((e) => area === "all" || e.classification === area) : []), [mep, area])
-  const visible = useMemo(() => [...visiblePreps, ...visibleDishes], [visiblePreps, visibleDishes])
-  const visibleAreas = useMemo(() => groupByArea(visible), [visible])
+  const areaEntries = useMemo(() => [...visiblePreps, ...visibleDishes], [visiblePreps, visibleDishes])
+  const visibleAreas = useMemo(() => groupByArea(areaEntries), [areaEntries])
+  // Lo que cuenta en el progreso: por área, totales y platos; por paso, cada plato con sus sub-recetas (docs/207).
+  const visible = useMemo(
+    () => (groupBy === "area" ? areaEntries : visibleDishes.flatMap((d) => flattenDish(d).map((x) => x.entry))),
+    [groupBy, areaEntries, visibleDishes],
+  )
+  const [showTotals, setShowTotals] = useState(false)
 
   const storageKey = menu ? `gm_mep_done:${businessId}:${menu.id}` : ""
   const [done, setDone] = useState<Set<string>>(new Set())
@@ -429,7 +496,7 @@ function MepContent() {
                               labels: {
                                 title: "MEP",
                                 people: t("mep_share_people"),
-                                preps: t("mep_preps_title"),
+                                preps: t("mep_subs_total_title"),
                                 dishes: t("mep_dishes_title"),
                                 usedIn: t("mep_used_in").toLowerCase(),
                                 sentWith: t("share_sent_with"),
@@ -575,57 +642,61 @@ function MepContent() {
                       ))
                     ) : (
                       <>
-                    {visiblePreps.length > 0 && (
-                      <section className="space-y-3" data-tour="mep-preps">
-                        <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                          <h2 className="text-lg font-semibold text-foreground">
-                            <span className="text-primary mr-1.5">1</span>
-                            {t("mep_preps_title")}
-                          </h2>
-                          <p className="text-xs text-muted-foreground">{t("mep_preps_hint")}</p>
-                        </div>
-                        <div className="space-y-2">
-                          {visiblePreps.map((entry) => (
-                            <MepRow
-                              key={entry.key}
-                              entry={entry}
-                              done={done.has(entry.key)}
-                              open={openKeys.has(entry.key)}
-                              onToggleDone={() => toggleDone(entry.key)}
-                              onToggleOpen={() => toggleOpen(entry.key)}
-                              businessId={businessId}
-                            />
-                          ))}
-                        </div>
-                      </section>
-                    )}
-
                     {visibleDishes.length > 0 && (
                       <section className="space-y-3" data-tour="mep-dishes">
-                        <h2 className="text-lg font-semibold text-foreground">
-                          <span className="text-primary mr-1.5">{visiblePreps.length > 0 ? 2 : 1}</span>
-                          {t("mep_dishes_title")}
-                        </h2>
-                        <div className="space-y-5">
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                          <h2 className="text-lg font-semibold text-foreground">{t("mep_dishes_title")}</h2>
+                          <p className="text-xs text-muted-foreground">{t("mep_dishes_tree_hint")}</p>
+                        </div>
+                        <div className="space-y-6">
                           {groupDishesByStep(visibleDishes).map((group, gi) => (
-                            <div key={`${group.stepName}-${gi}`} className="space-y-2">
+                            <div key={`${group.stepName}-${gi}`} className="space-y-3">
                               {group.stepName && (
                                 <p className="text-xs font-semibold uppercase tracking-wide text-primary">{stepLabel(group.stepName)}</p>
                               )}
                               {group.dishes.map((entry) => (
-                                <MepRow
+                                <MepDishTree
                                   key={entry.key}
-                                  entry={entry}
-                                  done={done.has(entry.key)}
-                                  open={openKeys.has(entry.key)}
-                                  onToggleDone={() => toggleDone(entry.key)}
-                                  onToggleOpen={() => toggleOpen(entry.key)}
+                                  dish={entry}
+                                  done={done}
+                                  openKeys={openKeys}
+                                  onToggleDone={toggleDone}
+                                  onToggleOpen={toggleOpen}
                                   businessId={businessId}
                                 />
                               ))}
                             </div>
                           ))}
                         </div>
+                      </section>
+                    )}
+
+                    {visiblePreps.length > 0 && (
+                      <section className="space-y-3 rounded-xl border border-dashed border-border p-3 sm:p-4" data-tour="mep-preps">
+                        <button type="button" onClick={() => setShowTotals((v) => !v)} className="flex w-full items-start justify-between gap-3 text-left" aria-expanded={showTotals}>
+                          <span className="min-w-0">
+                            <span className="block font-semibold text-foreground">
+                              {t("mep_subs_total_title")} <span className="text-sm font-normal text-muted-foreground">· {visiblePreps.length}</span>
+                            </span>
+                            <span className="block text-xs text-muted-foreground">{t("mep_subs_total_hint")}</span>
+                          </span>
+                          <ChevronDown className={`mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${showTotals ? "rotate-180" : ""}`} />
+                        </button>
+                        {showTotals && (
+                          <div className="space-y-2">
+                            {visiblePreps.map((entry) => (
+                              <MepRow
+                                key={entry.key}
+                                entry={entry}
+                                done={done.has(entry.key)}
+                                open={openKeys.has(entry.key)}
+                                onToggleDone={() => toggleDone(entry.key)}
+                                onToggleOpen={() => toggleOpen(entry.key)}
+                                businessId={businessId}
+                              />
+                            ))}
+                          </div>
+                        )}
                       </section>
                     )}
                       </>

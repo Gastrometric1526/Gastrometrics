@@ -5,7 +5,7 @@ import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors
 import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 import { drawBusinessLogo } from "./pdf-logo"
 import { formatDate, formatDateTime, fileDate } from "@/lib/date-format"
-import { formatMepAmount, groupByArea, groupDishesByStep, type MepEntry } from "@/lib/mep"
+import { flattenDish, formatMepAmount, groupByArea, groupDishesByStep, type MepEntry } from "@/lib/mep"
 import { amountWithUnit, shortUnit } from "@/lib/share-text"
 
 // PDF de la MEP (docs/202), pedido del dueño: la primera página es toda la mise en place
@@ -273,6 +273,43 @@ ${step(e.stepName)}` : ""}`,
     })
   } else {
     y = drawInfo(options.menuName)
+    // Por paso (docs/207): cada plato con sus sub-recetas debajo, sangradas, como checklist.
+    if (options.dishes.length) {
+      sectionTitle(labels.mepPlatos)
+      const body: unknown[][] = []
+      for (const group of groupDishesByStep(options.dishes)) {
+        if (group.stepName)
+          body.push([{ content: step(group.stepName).toUpperCase(), colSpan: 3, styles: { fillColor: COLORS.tint, textColor: COLORS.primary, fontStyle: "bold", fontSize: 8, minCellHeight: 6 } }])
+        for (const d of group.dishes) {
+          for (const { entry, level } of flattenDish(d)) {
+            const shared = entry.kind === "sub" && entry.usedBy.length ? `\n${labels.mepTambienEn}: ${sanitizeText(entry.usedBy.join(", "))}` : ""
+            body.push([
+              done.has(entry.key) ? "x" : "",
+              {
+                content: `${sanitizeText(entry.name)}${shared}`,
+                styles: level ? { fontStyle: "normal", fontSize: 8.5, cellPadding: { top: 1.6, bottom: 1.6, right: 2, left: 2 + level * 6 } } : { fontStyle: "bold" },
+              },
+              amount(entry),
+            ])
+          }
+        }
+      }
+      autoTable(doc, {
+        ...tableBase,
+        startY: y,
+        head: [["", labels.platoColumna, labels.mepAProducir]],
+        body: body as never,
+        columnStyles: { 0: { cellWidth: 9, textColor: [255, 255, 255] }, 1: { cellWidth: "auto" }, 2: { cellWidth: 40, halign: "right" } },
+        didDrawCell: (data) => {
+          // Las filas de paso (colSpan) no llevan casilla.
+          if ((data.row.raw as unknown[]).length === 1) return
+          checkboxCell.didDrawCell(data as never)
+        },
+      })
+      y = lastY() + 9
+    }
+
+    // Total por sub-receta, para prepararlas una sola vez para todos los platos.
     if (options.preps.length) {
       sectionTitle(labels.mepPreparaciones, labels.mepPreparacionesNota)
       autoTable(doc, {
@@ -286,30 +323,8 @@ ${step(e.stepName)}` : ""}`,
       y = lastY() + 9
     }
 
-    if (options.dishes.length) {
-      sectionTitle(labels.mepPlatos)
-      const body: (string | { content: string; colSpan: number; styles: Record<string, unknown> })[][] = []
-      for (const group of groupDishesByStep(options.dishes)) {
-        if (group.stepName)
-          body.push([{ content: step(group.stepName).toUpperCase(), colSpan: 3, styles: { fillColor: COLORS.tint, textColor: COLORS.primary, fontStyle: "bold", fontSize: 8, minCellHeight: 6 } }])
-        for (const d of group.dishes) body.push([done.has(d.key) ? "x" : "", sanitizeText(d.name), amount(d)])
-      }
-      autoTable(doc, {
-        ...tableBase,
-        startY: y,
-        head: [["", labels.platoColumna, labels.mepAProducir]],
-        body: body as never,
-        columnStyles: { 0: { cellWidth: 9, textColor: [255, 255, 255] }, 1: { cellWidth: "auto", fontStyle: "bold" }, 2: { cellWidth: 40, halign: "right" } },
-        didDrawCell: (data) => {
-          // Las filas de paso (colSpan) no llevan casilla.
-          if ((data.row.raw as unknown[]).length === 1) return
-          checkboxCell.didDrawCell(data as never)
-        },
-      })
-    }
-
-
-    const all = [...options.preps, ...options.dishes]
+    // Recetas: cada plato seguido de sus sub-recetas con la cantidad de ese plato.
+    const all = options.dishes.flatMap((d) => flattenDish(d).map((x) => x.entry))
     all.forEach((entry, index) => drawRecipe(entry, index, all.length))
   }
 

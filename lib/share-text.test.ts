@@ -13,20 +13,27 @@ describe("textos para compartir (docs/202)", () => {
     expect(shortUnit("porciones", "es")).toBe("porciones")
   })
 
-  it("MEP: preparaciones primero, después platos por paso, con casillas", () => {
+  it("MEP: cada plato con sus sub-recetas debajo (docs/207) y el total por sub-receta al final", () => {
     const text = mepShareText({
       menuName: "Almuerzo",
       dateLabel: "28/10/2026",
       servings: 40,
       preps: [entry({ name: "Salsa", kind: "prep", amount: 2250, yieldUnit: "gramos", usedBy: ["Pasta"] })],
-      dishes: [entry({ name: "Pasta", amount: 40, stepName: "Plato fuerte" })],
+      dishes: [
+        entry({
+          name: "Pasta",
+          amount: 40,
+          stepName: "Plato fuerte",
+          subs: [entry({ name: "Salsa", kind: "sub", amount: 2000, yieldUnit: "gramos", subs: [entry({ name: "Fondo", kind: "sub", amount: 800, yieldUnit: "mililitros" })] })],
+        }),
+      ],
       language: "es",
-      labels: { title: "MEP", people: "personas", preps: "Preparaciones base", dishes: "Platos", usedIn: "para", sentWith: "Enviado con GastroMetrics" },
+      labels: { title: "MEP", people: "personas", preps: "Total por sub-receta", dishes: "Platos", usedIn: "para", sentWith: "Enviado con GastroMetrics" },
     })
     expect(text).toContain("*MEP — Almuerzo*\n28/10/2026 · 40 personas")
-    expect(text).toContain("☐ Salsa — 2250 g (para Pasta)")
-    expect(text).toContain("_Plato fuerte_\n☐ Pasta — 40 porciones")
-    expect(text.indexOf("Salsa")).toBeLessThan(text.indexOf("Pasta —"))
+    expect(text).toContain("_Plato fuerte_\n☐ Pasta — 40 porciones\n    ☐ Salsa — 2000 g\n        ☐ Fondo — 800 ml")
+    expect(text).toContain("*Total por sub-receta*\n☐ Salsa — 2250 g (para Pasta)")
+    expect(text.indexOf("Pasta —")).toBeLessThan(text.indexOf("Total por sub-receta"))
   })
 
   it("orden de compra: cantidades, presentación, proveedor único arriba y total", () => {

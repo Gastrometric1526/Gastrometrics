@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-27",
+    tutorialHref: tourHref("mep"),
+    content: {
+      es: { title: "MEP: cada plato con sus sub-recetas", items: ["En la MEP, cada plato lleva debajo sus sub-recetas con la cantidad que necesita ese plato, como una checklist. Toca una para ver su receta completa.", "Al final, «Total por sub-receta» suma lo de todos los platos, por si la preparas de una vez. El PDF y el mensaje de WhatsApp siguen el mismo orden."] },
+      en: { title: "MEP: each dish with its sub-recipes", items: ["In the MEP, each dish has its sub-recipes below with the amount that dish needs, like a checklist. Tap one to see its full recipe.", "At the end, “Total per sub-recipe” adds up all dishes, in case you make it at once. The PDF and the WhatsApp message follow the same order."] },
+      da: { title: "MEP: hver ret med sine underopskrifter", items: ["I MEP har hver ret sine underopskrifter nedenfor med den mængde, retten skal bruge, som en tjekliste. Tryk på en for at se hele opskriften.", "Til sidst lægger «Total pr. underopskrift» alle retter sammen, hvis du laver den på én gang. PDF’en og WhatsApp-beskeden følger samme rækkefølge."] },
+      fr: { title: "MEP : chaque plat avec ses sous-recettes", items: ["Dans la MEP, chaque plat a ses sous-recettes en dessous avec la quantité dont il a besoin, comme une checklist. Touchez-en une pour voir la recette complète.", "À la fin, « Total par sous-recette » additionne tous les plats, si vous la préparez en une fois. Le PDF et le message WhatsApp suivent le même ordre."] },
+      pt: { title: "MEP: cada prato com suas sub-receitas", items: ["Na MEP, cada prato tem suas sub-receitas abaixo com a quantidade que esse prato precisa, como uma checklist. Toque em uma para ver a receita completa.", "No final, «Total por sub-receita» soma todos os pratos, caso você prepare de uma vez. O PDF e a mensagem do WhatsApp seguem a mesma ordem."] },
+      zh: { title: "MEP：每道菜及其子配方", items: ["在 MEP 中，每道菜下方列出子配方及该菜所需用量，就像一份清单。点击即可查看完整配方。", "最后的“各子配方合计”汇总所有菜品的用量，方便一次性准备。PDF 和 WhatsApp 消息采用相同顺序。"] },
+    },
+  },
+  {
     version: "2026-10-26c",
     tutorialHref: tourHref("ficha-tecnica"),
     content: {

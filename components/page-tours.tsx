@@ -239,8 +239,8 @@ export function MepTour() {
     { id: "header", title: t("tour_mep_header_title"), description: t("tour_mep_header_desc"), selector: '[data-tour="mep-header"]' },
     { id: "menu", title: t("tour_mep_menu_title"), description: t("tour_mep_menu_desc"), selector: '[data-tour="mep-menu"]' },
     { id: "areas", title: t("tour_mep_areas_title"), description: t("tour_mep_areas_desc"), selector: '[data-tour="mep-areas"]' },
-    { id: "preps", title: t("tour_mep_preps_title"), description: t("tour_mep_preps_desc"), selector: '[data-tour="mep-preps"]' },
     { id: "dishes", title: t("tour_mep_dishes_title"), description: t("tour_mep_dishes_desc"), selector: '[data-tour="mep-dishes"]' },
+    { id: "preps", title: t("tour_mep_preps_title"), description: t("tour_mep_preps_desc"), selector: '[data-tour="mep-preps"]' },
     { id: "progress", title: t("tour_mep_progress_title"), description: t("tour_mep_progress_desc"), selector: '[data-tour="mep-progress"]' },
     { id: "share", title: t("tour_mep_share_title"), description: t("tour_mep_share_desc"), selector: '[data-tour="mep-share"]' },
   ]

@@ -9,7 +9,7 @@ import type { PurchaseOrder } from "@/types/purchase-order"
 import { unitAbbreviations } from "@/types/ingredient"
 import { getPresentationLabel, getUnitLabel, getYieldUnitLabel } from "@/lib/ingredient-labels"
 import type { MepEntry } from "@/lib/mep"
-import { formatMepAmount, groupDishesByStep } from "@/lib/mep"
+import { flattenDish, formatMepAmount, groupDishesByStep } from "@/lib/mep"
 
 const SINGULAR_PORTION: Record<string, string> = { porciones: "porción", portions: "portion", portioner: "portion", porções: "porção" }
 
@@ -62,16 +62,17 @@ export function mepShareText(input: {
     out.push("", `— ${labels.sentWith}`)
     return out.join("\n")
   }
-  if (input.preps.length) {
-    out.push("", `*${labels.preps}*`)
-    for (const p of input.preps) out.push(`☐ ${p.name} — ${amount(p)}${p.usedBy.length ? ` (${labels.usedIn} ${p.usedBy.join(", ")})` : ""}`)
-  }
+  // Por paso (docs/207): cada plato y, debajo, sus sub-recetas con la cantidad de ese plato.
   if (input.dishes.length) {
     out.push("", `*${labels.dishes}*`)
     for (const group of groupDishesByStep(input.dishes)) {
       if (group.stepName) out.push(`_${input.stepLabel ? input.stepLabel(group.stepName) : group.stepName}_`)
-      for (const d of group.dishes) out.push(`☐ ${d.name} — ${amount(d)}`)
+      for (const d of group.dishes) for (const { entry, level } of flattenDish(d)) out.push(`${"    ".repeat(level)}☐ ${entry.name} — ${amount(entry)}`)
     }
+  }
+  if (input.preps.length) {
+    out.push("", `*${labels.preps}*`)
+    for (const p of input.preps) out.push(`☐ ${p.name} — ${amount(p)}${p.usedBy.length ? ` (${labels.usedIn} ${p.usedBy.join(", ")})` : ""}`)
   }
   out.push("", `— ${labels.sentWith}`)
   return out.join("\n")
