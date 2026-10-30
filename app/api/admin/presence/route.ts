@@ -7,11 +7,7 @@
 import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
-
-// "En línea" = actividad registrada en los últimos 3 minutos (el heartbeat del
-// navegador manda cada ~60s, ver components/presence-tracker.tsx — 3 min da margen
-// de sobra para latencia de red o un ciclo de heartbeat perdido).
-const ONLINE_THRESHOLD_MS = 3 * 60 * 1000
+import { isOnline } from "@/lib/admin/online-first"
 
 export async function POST(request: Request) {
   if (!(await hasAdminSession())) {
@@ -35,7 +31,7 @@ export async function POST(request: Request) {
     for (const id of userIds) presence[id] = { online: false, lastSeenAt: null }
     for (const row of data ?? []) {
       presence[row.user_id] = {
-        online: now - new Date(row.last_seen_at).getTime() < ONLINE_THRESHOLD_MS,
+        online: isOnline(row.last_seen_at, now),
         lastSeenAt: row.last_seen_at,
       }
     }

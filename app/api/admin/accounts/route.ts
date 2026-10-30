@@ -30,6 +30,7 @@ import { fetchAllByIds } from "@/lib/services/notify-reengagement"
 import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
 import { plans } from "@/lib/plans"
 import { referralCountsFor } from "@/lib/services/referrals"
+import { isOnline, onlineFirst } from "@/lib/admin/online-first"
 
 const PAGE_SIZE = 25
 
@@ -86,8 +87,8 @@ export async function GET(request: Request) {
         admin.from("account_plans").select("account_id, plan_slug, plan_expires_at, stripe_subscription_id").order("account_id").range(from, to),
       ),
       selectAll<{ id: string; nationality: string | null }>((from, to) => admin.from("profiles").select("id, nationality").order("id").range(from, to)),
-      selectAll<{ user_id: string; total_active_seconds: number | null }>((from, to) =>
-        admin.from("user_presence").select("user_id, total_active_seconds").order("user_id").range(from, to),
+      selectAll<{ user_id: string; total_active_seconds: number | null; last_seen_at: string | null }>((from, to) =>
+        admin.from("user_presence").select("user_id, total_active_seconds, last_seen_at").order("user_id").range(from, to),
       ),
     ])
     const planByUser = new Map(allPlanRows?.map((r) => [r.account_id, r]) ?? [])
@@ -135,6 +136,13 @@ export async function GET(request: Request) {
     } else {
       filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     }
+
+    // En línea primero (pedido del dueño, docs/212), en cualquier filtro y orden. El Excel
+    // exportado conserva el orden elegido.
+    const now = Date.now()
+    const onlineIds = new Set((allPresenceRows ?? []).filter((r) => isOnline(r.last_seen_at, now)).map((r) => r.user_id))
+    const onlineTotal = filtered.filter((u) => onlineIds.has(u.id)).length
+    if (url.searchParams.get("all") !== "1") filtered = onlineFirst(filtered, onlineIds)
 
     const total = filtered.length
     // ?all=1 (exportar a Excel, docs/195): todas las cuentas filtradas, sin paginar.
@@ -267,7 +275,7 @@ export async function GET(request: Request) {
       totalActiveSeconds: activeSecondsByUser.get(u.id) || 0,
     }))
 
-    return NextResponse.json({ accounts, total, page, pageSize: PAGE_SIZE, confirmedTotal, unconfirmedTotal })
+    return NextResponse.json({ accounts, total, page, pageSize: PAGE_SIZE, confirmedTotal, unconfirmedTotal, onlineTotal })
   } catch (error) {
     console.error("[api/admin/accounts] Error listando cuentas:", error)
     return NextResponse.json({ error: "No se pudieron listar las cuentas." }, { status: 500 })

@@ -47,6 +47,7 @@ import {
   FileDown,
 } from "lucide-react"
 import { formatDate, formatDateTime, fileDate } from "@/lib/date-format"
+import { onlineFirst } from "@/lib/admin/online-first"
 import { accountsToCsv, type CsvAccount } from "@/lib/admin/accounts-csv"
 import { useAdminLiveReload } from "@/components/admin/live"
 import { AdminResendConfirmation } from "@/components/admin/admin-resend-confirmation"
@@ -154,6 +155,8 @@ export function AccountsPanel() {
   const [confirmFilter, setConfirmFilter] = useState<"yes" | "no" | "all">("yes")
   const confirmRef = useRef<"yes" | "no" | "all">("yes")
   const [confirmCounts, setConfirmCounts] = useState<{ yes: number; no: number } | null>(null)
+  // Cuántas cuentas del filtro actual están en línea (van primero, docs/212).
+  const [onlineTotal, setOnlineTotal] = useState(0)
   // Por defecto, las cuentas que más usan la app primero (pedido del dueño, docs/160).
   const [sortBy, setSortBy] = useState<"recent" | "time" | "plan" | "expiring">(() => {
     // Desde «Planes que vencen pronto» del Resumen se llega ya ordenada por vencimiento (docs/197).
@@ -233,6 +236,7 @@ export function AccountsPanel() {
         setAccounts(data.accounts)
         setTotal(data.total || 0)
         setPageSize(data.pageSize || 25)
+        setOnlineTotal(typeof data.onlineTotal === "number" ? data.onlineTotal : 0)
         if (typeof data.confirmedTotal === "number") setConfirmCounts({ yes: data.confirmedTotal, no: data.unconfirmedTotal || 0 })
       }
     } catch (error) {
@@ -1128,6 +1132,13 @@ export function AccountsPanel() {
           </Button>
         </form>
 
+        {onlineTotal > 0 && (
+          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <span className="h-2 w-2 rounded-full bg-green-500" />
+            {t("admin_accounts_online_now").replace("{count}", String(onlineTotal))}
+          </p>
+        )}
+
         <div className="rounded-lg border border-border overflow-x-auto">
           <Table>
             <TableHeader>
@@ -1180,7 +1191,10 @@ export function AccountsPanel() {
                       ))}
                     </TableRow>
                   ))
-                : accounts.map((a) => (
+                : onlineFirst(
+                    accounts.map((a) => ({ ...a, id: a.userId })),
+                    new Set(accounts.filter((a) => presenceByUserId[a.userId]?.online).map((a) => a.userId)),
+                  ).map((a) => (
                     <TableRow key={a.userId}>
                       <TableCell className="text-foreground">
                         <span className="inline-flex items-center gap-1.5">
