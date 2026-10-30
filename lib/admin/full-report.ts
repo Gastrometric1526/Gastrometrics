@@ -54,6 +54,14 @@ const MAX_CELL = 140
 
 /** Nombres legibles de los campos más comunes; el resto se arma a partir de la clave. */
 const LABELS: Record<string, string> = {
+  // Resumen de «quién volvió por los correos» (docs/210).
+  recipients: "Recibieron correos",
+  returned: "Volvieron por un correo",
+  returnedpercent: "% que volvió",
+  wereinactive: "Estaban inactivas (7 días antes)",
+  keptusing: "Siguieron usando la app (7 días después)",
+  last7days: "Volvieron en los últimos 7 días",
+  last30days: "Volvieron en los últimos 30 días",
   email: "Correo",
   name: "Nombre",
   full_name: "Nombre",

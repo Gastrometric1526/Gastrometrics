@@ -14,6 +14,7 @@
  */
 
 import { Resend } from "resend"
+import { withEmailTracking } from "@/lib/email-tracking"
 import { sendWithRetry } from "./send-email"
 import { renderEmailTemplate, escapeHtml, escapeHtmlWithLineBreaks } from "./email-templates"
 import { getEmailLabels, normalizeEmailLang, EMAIL_LABELS } from "@/lib/i18n/email-labels"
@@ -85,7 +86,8 @@ export async function sendFeedbackReplyEmail(input: {
     replyTitle: escapeHtml(replyTitleKey ? labels[replyTitleKey] : "—"),
     reply: escapeHtmlWithLineBreaks(input.reply),
     originalMessage: escapeHtmlWithLineBreaks(input.originalMessage),
-    appUrl: siteUrl,
+    // Medido como «volvió desde un correo» (docs/210).
+    appUrl: withEmailTracking(`${siteUrl}/dashboard`, "support_reply"),
   })
 
   const { error } = await sendWithRetry(resend, {

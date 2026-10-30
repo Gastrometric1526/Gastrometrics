@@ -18,6 +18,7 @@
  */
 
 import { Resend } from "resend"
+import { withEmailTracking } from "@/lib/email-tracking"
 import { sendWithRetry } from "./send-email"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { renderEmailTemplate } from "./email-templates"
@@ -63,7 +64,7 @@ export async function sendLegalUpdateNotice(accountId: string, email: string, la
     liabilityUrl: `${siteUrl}/aviso-de-responsabilidad`,
     liabilityLabel: labels.e11_liability_label,
     cta: labels.e11_cta,
-    ctaUrl: `${siteUrl}/dashboard`,
+    ctaUrl: withEmailTracking(`${siteUrl}/dashboard`, "legal_update_notice"),
     footnote: labels.e11_footnote,
     footerAddress: labels.footer_address,
     footer2: labels.e11_footer2,
