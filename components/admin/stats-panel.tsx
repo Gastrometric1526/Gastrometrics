@@ -7,6 +7,7 @@ import { formatActiveTime } from "@/lib/admin-format"
 import { getPlanBySlug } from "@/lib/plans"
 import { Building2, Clock, CreditCard, UserCog, Receipt, CalendarClock, Layers, Globe2 } from "lucide-react"
 import { formatDate } from "@/lib/date-format"
+import { AccountLink } from "@/components/admin/account-link"
 
 export interface AdminStats {
   totalUsers: number
@@ -113,7 +114,7 @@ export function StatsPanel({
             ]}
             rows={stats.expiringSoon.map((row) => ({
               key: row.email,
-              cells: { email: row.email, plan: getPlanBySlug(row.planSlug).name, date: formatDate(row.expiresAt) },
+              cells: { email: <AccountLink email={row.email} />, plan: getPlanBySlug(row.planSlug).name, date: formatDate(row.expiresAt) },
             }))}
             empty={t("admin_expiring_soon_empty")}
           />

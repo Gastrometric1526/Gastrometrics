@@ -48,6 +48,7 @@ import {
 } from "lucide-react"
 import { formatDate, formatDateTime, fileDate } from "@/lib/date-format"
 import { onlineFirst } from "@/lib/admin/online-first"
+import { OPEN_ACCOUNT_EVENT, accountLookupQuery, takePendingAccount } from "@/lib/admin/open-account"
 import { accountsToCsv, type CsvAccount } from "@/lib/admin/accounts-csv"
 import { useAdminLiveReload } from "@/components/admin/live"
 import { AdminResendConfirmation } from "@/components/admin/admin-resend-confirmation"
@@ -389,6 +390,30 @@ export function AccountsPanel() {
       setLoadingDetail(false)
     }
   }
+
+  // Ficha pedida desde otro panel de /admin (docs/214): al montarse (si se llegó con el clic)
+  // o al recibir el evento (si Cuentas ya estaba abierta).
+  const loadDetailRef = useRef(loadDetail)
+  loadDetailRef.current = loadDetail
+  useEffect(() => {
+    const openPending = async () => {
+      const target = takePendingAccount()
+      if (!target) return
+      try {
+        const res = await fetch(`/api/admin/accounts?${accountLookupQuery(target)}`)
+        const data = await res.json()
+        const row: AccountRow | undefined = Array.isArray(data.accounts) ? data.accounts[0] : undefined
+        if (row) loadDetailRef.current(row)
+        else toast({ title: t("admin_account_link_not_found"), variant: "destructive" })
+      } catch {
+        toast({ title: t("admin_accounts_error_toast"), variant: "destructive" })
+      }
+    }
+    openPending()
+    window.addEventListener(OPEN_ACCOUNT_EVENT, openPending)
+    return () => window.removeEventListener(OPEN_ACCOUNT_EVENT, openPending)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const closeDetail = () => {
     setSelected(null)

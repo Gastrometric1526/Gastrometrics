@@ -4,6 +4,7 @@
  * recibidos, mensajes enviados y estado de facturación. Lo usa /api/admin/account-insights.
  */
 
+import { adminConversationsOf } from "@/lib/services/support"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   computeUsageInsights,
@@ -373,6 +374,29 @@ export async function getAccountInsights(userId: string) {
     // Referidos de la cuenta y cobros confirmados a la persona (docs/183).
     referral: await adminReferralSummary(userId).catch(() => null),
     paymentConfirmations: ((appMeta.payment_history as PaymentRecord[] | undefined) || []).slice(0, 12),
+    // Importaciones y descargas del manual de esta cuenta, y su chat de soporte (docs/214).
+    imports: activity
+      .filter((a) => a.action === "imported")
+      .map((a) => {
+        const m = (a.metadata || {}) as Record<string, unknown>
+        const num = (v: unknown) => (typeof v === "number" ? v : null)
+        return {
+          at: a.created_at,
+          kind: a.module,
+          file: a.entity_label || (typeof m.file === "string" ? m.file : null),
+          format: typeof m.format === "string" ? m.format : null,
+          source: typeof m.source === "string" ? m.source : null,
+          count: num(m.count),
+          updated: num(m.updated),
+          newIngredients: num(m.newIngredients),
+        }
+      })
+      .reverse(),
+    manualDownloads: activity
+      .filter((a) => a.module === "manual")
+      .map((a) => ({ at: a.created_at, language: typeof (a.metadata as Record<string, unknown> | null)?.language === "string" ? String((a.metadata as Record<string, unknown>).language) : null }))
+      .reverse(),
+    support: await adminConversationsOf(userId).catch(() => []),
     // Respuestas a las preguntas cortas (docs/173).
     surveyAnswers: activity
       .filter((a) => a.module === "encuesta")

@@ -27,6 +27,9 @@ import {
   User,
   Users,
   Gift,
+  Upload,
+  BookOpen,
+  LifeBuoy,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,6 +45,8 @@ import { MODULE_LABEL_KEY } from "@/components/admin/top-users-panel";
 import type { AccountInsights } from "@/lib/admin/account-insights-server";
 import { formatDate, formatDateTime, formatDayMonth } from "@/lib/date-format"
 import { useAdminTick } from "@/components/admin/live"
+import { AccountLink } from "@/components/admin/account-link"
+import { KIND_KEY } from "@/components/admin/usage-events-panel"
 
 const DAY_MS = 86_400_000
 
@@ -270,7 +275,7 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
     }
   };
 
-  const { account, plan, usage, content, team, emails, feedback, emailClicks, limits, activation, recentActivity, billing, surveyAnswers, referral, paymentConfirmations } = data;
+  const { account, plan, usage, content, team, emails, feedback, emailClicks, limits, activation, recentActivity, billing, surveyAnswers, referral, paymentConfirmations, imports, manualDownloads, support } = data;
   const accountAge = daysSince(account.createdAt) ?? 0;
   const lastSeen =
     usage.lastSeenAt || usage.lastActivityAt || account.lastSignInAt;
@@ -800,7 +805,12 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
             label={t("admin_insights_invited")}
             value={
               team.invited.length
-                ? team.invited.map((m) => `${m.email} (${m.status})`).join(", ")
+                ? team.invited.map((m, i) => (
+                    <span key={m.email}>
+                      {i > 0 && ", "}
+                      <AccountLink email={m.email} className="inline" /> ({m.status})
+                    </span>
+                  ))
                 : t("admin_insights_none")
             }
           />
@@ -967,7 +977,7 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
                 <ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
                   {referral.invites.map((inv, i) => (
                     <li key={i} className="flex justify-between gap-2">
-                      <span className="truncate text-foreground">{inv.email || "—"}</span>
+                      <AccountLink email={inv.email} className="text-foreground" />
                       <span className="shrink-0 text-xs text-muted-foreground">
                         {date(inv.registeredAt)} · {t(`invita_status_${inv.status}` as TranslationKey) || inv.status}
                       </span>
@@ -979,6 +989,76 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
           )}
         </Section>
       </div>
+
+      {/* Importaciones, manual y chat de soporte de esta cuenta (docs/214). */}
+      <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
+        <Section icon={Upload} title={`${t("admin_insights_section_imports")} (${imports.length})`}>
+          {imports.length ? (
+            <ul className="max-h-60 space-y-1.5 overflow-y-auto text-sm">
+              {imports.map((im, i) => (
+                <li key={i} className="flex flex-wrap justify-between gap-2">
+                  <span className="min-w-0 text-foreground">
+                    <strong>{KIND_KEY[im.kind] ? t(KIND_KEY[im.kind]) : im.kind}</strong>
+                    {" · "}
+                    {im.source === "pegado" ? t("admin_usage_source_pegado") : im.source === "ticket" ? t("admin_usage_source_ticket") : im.file || "—"}
+                    {im.format ? ` · ${t(`admin_usage_format_${im.format}` as TranslationKey)}` : ""}
+                    {im.count !== null ? ` · ${t("admin_insights_import_rows").replace("{n}", String(im.count))}` : ""}
+                    {im.updated ? ` · ${t("admin_usage_updated_prices").replace("{n}", String(im.updated))}` : ""}
+                    {im.newIngredients ? ` · ${t("admin_usage_new_ingredients").replace("{n}", String(im.newIngredients))}` : ""}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{dateTime(im.at)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
+          )}
+        </Section>
+
+        <Section icon={BookOpen} title={`${t("admin_insights_section_manual")} (${manualDownloads.length})`}>
+          {manualDownloads.length ? (
+            <ul className="max-h-60 space-y-1 overflow-y-auto text-sm">
+              {manualDownloads.map((d, i) => (
+                <li key={i} className="flex justify-between gap-2">
+                  <span className="text-foreground">{(d.language || "—").toUpperCase()}</span>
+                  <span className="text-xs text-muted-foreground">{dateTime(d.at)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
+          )}
+        </Section>
+      </div>
+
+      <Section icon={LifeBuoy} title={`${t("admin_insights_section_support")} (${support.length})`}>
+        {support.length ? (
+          <div className="space-y-3">
+            {support.map((c) => (
+              <details key={c.id} className="rounded-md border border-border p-3" open={support.length === 1}>
+                <summary className="cursor-pointer text-sm text-foreground">
+                  {t(`support_cat_${c.category}` as TranslationKey)} · {t(`admin_insights_support_status_${c.status}` as TranslationKey)} · {t("admin_insights_support_messages").replace("{n}", String(c.messages.length))} · {dateTime(c.lastMessageAt)}
+                </summary>
+                <ul className="mt-2 max-h-72 space-y-1.5 overflow-y-auto text-sm">
+                  {c.messages.map((m, i) => (
+                    <li key={i}>
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {t(`admin_insights_support_sender_${m.sender}` as TranslationKey)} · {dateTime(m.at)}
+                      </span>
+                      <p className="whitespace-pre-wrap text-foreground">
+                        {m.body}
+                        {m.attachments ? ` 📎 ${m.attachments}` : ""}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
+        )}
+      </Section>
 
       {surveyAnswers.length > 0 && (
         <Section icon={MessageSquare} title={t("admin_insights_section_survey")}>

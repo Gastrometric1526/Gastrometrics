@@ -59,6 +59,9 @@ export async function GET(request: Request) {
   // muestra para dar soporte; «all», todas.
   const confirmedFilter = (url.searchParams.get("confirmed") || "yes").trim()
   const page = Math.max(1, Number(url.searchParams.get("page")) || 1)
+  // Una cuenta exacta, para abrir su ficha desde otro panel (docs/214).
+  const exactUserId = (url.searchParams.get("userId") || "").trim()
+  const exactEmail = (url.searchParams.get("email") || "").trim().toLowerCase()
 
   try {
     const admin = getSupabaseAdminClient()
@@ -98,6 +101,8 @@ export async function GET(request: Request) {
     const confirmedTotal = allUsers.filter((u) => u.email_confirmed_at).length
     const unconfirmedTotal = allUsers.length - confirmedTotal
     let filtered = search ? allUsers.filter((u) => u.email.toLowerCase().includes(search)) : allUsers
+    if (exactUserId) filtered = filtered.filter((u) => u.id === exactUserId)
+    else if (exactEmail) filtered = filtered.filter((u) => u.email.toLowerCase() === exactEmail)
     if (confirmedFilter === "yes") filtered = filtered.filter((u) => u.email_confirmed_at)
     else if (confirmedFilter === "no") filtered = filtered.filter((u) => !u.email_confirmed_at)
     if (planFilter) {

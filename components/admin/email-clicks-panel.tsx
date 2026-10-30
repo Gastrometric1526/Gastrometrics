@@ -11,6 +11,7 @@ import { KpiCard, KpiGrid } from "@/components/admin/ui"
 import type { EmailReturnsSummary } from "@/lib/email-returns"
 import { formatDateTime } from "@/lib/date-format"
 import { useAdminTick } from "@/components/admin/live"
+import { AccountLink } from "@/components/admin/account-link"
 
 interface ClickData {
   days: number
@@ -121,7 +122,7 @@ export function EmailClicksPanel() {
                 <ul className="space-y-1 text-sm text-muted-foreground">
                   {data.recent.map((r, i) => (
                     <li key={i}>
-                      {r.email} · {label(r.campaign)} · {formatDateTime(r.at)}
+                      <AccountLink email={r.email} /> · {label(r.campaign)} · {formatDateTime(r.at)}
                     </li>
                   ))}
                 </ul>

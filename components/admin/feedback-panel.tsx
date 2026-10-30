@@ -23,6 +23,7 @@ import type { Feedback, FeedbackStatus, FeedbackType } from "@/types/feedback"
 import { Archive, ArchiveRestore, Bug, Inbox, Lightbulb, MessageCircleWarning, Smile, Trash2 } from "lucide-react"
 import { formatDateTime } from "@/lib/date-format"
 import { useAdminLiveReload } from "@/components/admin/live"
+import { AccountLink } from "@/components/admin/account-link"
 
 const typeConfigDefs: Record<FeedbackType, { labelKey: "admin_type_suggestion" | "admin_type_complaint" | "admin_type_bug" | "admin_type_experience"; icon: typeof Lightbulb; color: string }> = {
   sugerencia: { labelKey: "admin_type_suggestion", icon: Lightbulb, color: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
@@ -285,8 +286,11 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
                   )}
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                     <span>
-                      {item.userName || t("admin_anonymous")}
-                      {item.userEmail ? ` · ${item.userEmail}` : ""}
+                      {item.userEmail ? (
+                        <AccountLink email={item.userEmail}>{item.userName ? `${item.userName} · ${item.userEmail}` : item.userEmail}</AccountLink>
+                      ) : (
+                        item.userName || t("admin_anonymous")
+                      )}
                       {item.page ? ` · ${item.page}` : ""}
                     </span>
                     <Select value={item.status} onValueChange={(v) => handleStatusChange(item.id, v as FeedbackStatus)}>

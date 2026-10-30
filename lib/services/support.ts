@@ -154,6 +154,23 @@ export async function adminListConversations() {
   return conversations.map((c) => ({ ...c, email: emails.get(c.account_id) ?? null, position: c.status === "waiting" ? queuePosition(waiting, c.id) : null }))
 }
 
+/** Todas las conversaciones de una cuenta con sus mensajes, para su ficha en /admin (docs/214). Solo lectura. */
+export async function adminConversationsOf(accountId: string) {
+  const { data, error } = await db().from("support_conversations").select("*").eq("account_id", accountId).order("last_message_at", { ascending: false }).limit(20)
+  if (error) throw error
+  const conversations = (data as SupportConversation[]) ?? []
+  return Promise.all(
+    conversations.map(async (c) => ({
+      id: c.id,
+      status: c.status,
+      category: c.category,
+      createdAt: c.created_at,
+      lastMessageAt: c.last_message_at,
+      messages: (await messagesOf(c.id)).map((m) => ({ sender: m.sender, body: m.body, attachments: m.attachments?.length ?? 0, at: m.created_at })),
+    })),
+  )
+}
+
 export async function adminThread(conversationId: string) {
   const [{ data: conv }, messages] = await Promise.all([db().from("support_conversations").select("*").eq("id", conversationId).maybeSingle(), messagesOf(conversationId)])
   if (conv) await db().from("support_conversations").update({ admin_unread: 0 }).eq("id", conversationId)

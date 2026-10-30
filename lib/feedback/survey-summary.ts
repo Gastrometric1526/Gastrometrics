@@ -19,7 +19,7 @@ export interface QuestionSummary {
   /** Promedio 1–5 (preguntas de escala). */
   average: number | null
   /** Respuestas de texto (incluye «Otro»), las más recientes primero. */
-  texts: { userName: string; text: string; at: string }[]
+  texts: { userId: string; userName: string; text: string; at: string }[]
 }
 
 export function summarizeSurveyAnswers(rows: SurveyAnswerRow[]): QuestionSummary[] {
@@ -39,7 +39,7 @@ export function summarizeSurveyAnswers(rows: SurveyAnswerRow[]): QuestionSummary
       .filter((r) => r.detail && r.detail.trim())
       .sort((a, b) => b.at.localeCompare(a.at))
       .slice(0, 20)
-      .map((r) => ({ userName: r.userName, text: r.detail!.trim(), at: r.at }))
+      .map((r) => ({ userId: r.userId, userName: r.userName, text: r.detail!.trim(), at: r.at }))
     return { question: q.key, total: mine.length, counts, average: n ? Math.round((sum / n) * 10) / 10 : null, texts }
   })
 }

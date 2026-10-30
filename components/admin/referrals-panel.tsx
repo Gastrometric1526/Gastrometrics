@@ -8,6 +8,7 @@ import { formatDate } from "@/lib/date-format"
 import { Gift } from "lucide-react"
 import type { TranslationKey } from "@/lib/i18n/translations"
 import { useAdminTick } from "@/components/admin/live"
+import { AccountLink } from "@/components/admin/account-link"
 
 interface Row {
   referrer: string | null
@@ -80,8 +81,8 @@ export function ReferralsPanel() {
                   <tbody className="divide-y">
                     {rows.map((row, i) => (
                       <tr key={`${row.invitee}-${i}`}>
-                        <td className="py-2 pr-4">{row.referrer || "—"}</td>
-                        <td className="py-2 pr-4">{row.invitee || "—"}</td>
+                        <td className="py-2 pr-4"><AccountLink email={row.referrer} /></td>
+                        <td className="py-2 pr-4"><AccountLink email={row.invitee} /></td>
                         <td className="py-2 pr-4 tabular-nums">{formatDate(row.registeredAt)}</td>
                         <td className="py-2 pr-4 tabular-nums">{row.day}</td>
                         <td className="py-2">

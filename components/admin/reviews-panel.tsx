@@ -8,12 +8,11 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
 import { TRUSTPILOT_URL } from "@/lib/site-links"
-import { Star, ExternalLink, MessageSquareQuote, MessageCircleQuestion } from "lucide-react"
+import { Star, ExternalLink, MessageSquareQuote } from "lucide-react"
 import { formatDate } from "@/lib/date-format"
 import { MIN_PUBLISHED_REVIEWS, parseReviewMessage } from "@/lib/reviews"
-import type { QuestionSummary } from "@/lib/feedback/survey-summary"
-import type { TranslationKey } from "@/lib/i18n/translations"
 import { useAdminTick } from "@/components/admin/live"
+import { AccountLink } from "@/components/admin/account-link"
 
 interface ReviewRow {
   id: string
@@ -31,7 +30,7 @@ interface ReviewRow {
  *   (feedback type «experiencia»), con nota y la marca de permiso para mostrarlas.
  * - «Mostrar en el sitio» / «Quitar del sitio»: solo con permiso; el sitio las muestra
  *   desde MIN_PUBLISHED_REVIEWS publicadas (/api/admin/reviews, /api/reviews).
- * - Respuestas a las preguntas cortas (/api/admin/survey-answers).
+ * - Las respuestas a las preguntas cortas pasaron a Buzón → Encuestas (docs/213).
  * - Enlace a Trustpilot (las reseñas públicas viven allá).
  */
 export function ReviewsPanel() {
@@ -39,7 +38,6 @@ export function ReviewsPanel() {
   const { toast } = useToast()
   const [reviews, setReviews] = useState<ReviewRow[] | null>(null)
   const [published, setPublished] = useState<Set<string>>(new Set())
-  const [survey, setSurvey] = useState<QuestionSummary[] | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
 
   // En vivo (docs/192).
@@ -56,10 +54,6 @@ export function ReviewsPanel() {
       .then((res) => res.json())
       .then((json) => setPublished(new Set(Array.isArray(json.publishedIds) ? json.publishedIds : [])))
       .catch(() => {})
-    fetch("/api/admin/survey-answers")
-      .then((res) => res.json())
-      .then((json) => setSurvey(Array.isArray(json.summary) ? json.summary : []))
-      .catch(() => setSurvey([]))
   }, [tick])
 
   const togglePublish = async (id: string, publish: boolean) => {
@@ -83,8 +77,6 @@ export function ReviewsPanel() {
       setBusy(null)
     }
   }
-
-  const optionLabel = (question: string, option: string) => t(`q_${question}_opt_${option}` as TranslationKey)
 
   return (
     <div className="space-y-6">
@@ -135,7 +127,7 @@ export function ReviewsPanel() {
                     <p className="text-sm text-foreground whitespace-pre-wrap">{parsed.comment || "—"}</p>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-xs text-muted-foreground">
-                        {[r.user_name, r.user_email].filter(Boolean).join(" · ") || t("admin_reviews_anonymous")} · {formatDate(r.created_at)}
+                        {r.user_email ? <AccountLink email={r.user_email}>{[r.user_name, r.user_email].filter(Boolean).join(" · ")}</AccountLink> : r.user_name || t("admin_reviews_anonymous")} · {formatDate(r.created_at)}
                       </p>
                       {parsed.publishable && parsed.comment && (
                         <Button size="sm" variant={isPublished ? "outline" : "default"} disabled={busy === r.id} onClick={() => togglePublish(r.id, !isPublished)}>
@@ -152,58 +144,6 @@ export function ReviewsPanel() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageCircleQuestion className="h-5 w-5 text-primary" />
-            {t("admin_survey_title")}
-          </CardTitle>
-          <CardDescription>{t("admin_survey_desc")}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {survey === null ? (
-            <Skeleton className="h-24 w-full" />
-          ) : survey.every((q) => q.total === 0) ? (
-            <p className="text-sm text-muted-foreground">{t("admin_survey_empty")}</p>
-          ) : (
-            survey
-              .filter((q) => q.total > 0)
-              .map((q) => (
-                <div key={q.question} className="rounded-lg border p-4 space-y-2">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="text-sm font-medium text-foreground">{t(`q_${q.question}_title` as TranslationKey)}</p>
-                    <span className="text-xs text-muted-foreground">{t("admin_survey_answers").replace("{n}", String(q.total))}</span>
-                  </div>
-                  {Object.keys(q.counts).length > 0 && (
-                    <ul className="space-y-1">
-                      {Object.entries(q.counts)
-                        .sort((a, b) => b[1] - a[1])
-                        .map(([opt, n]) => (
-                          <li key={opt} className="grid grid-cols-[minmax(0,12rem)_1fr_auto] items-center gap-2 text-sm">
-                            <span className="truncate">{optionLabel(q.question, opt)}</span>
-                            <span className="h-2 rounded-full bg-muted">
-                              <span className="block h-full rounded-full bg-primary/70" style={{ width: `${(n / q.total) * 100}%` }} />
-                            </span>
-                            <span className="text-xs tabular-nums text-muted-foreground">{n}</span>
-                          </li>
-                        ))}
-                    </ul>
-                  )}
-                  {q.average !== null && <p className="text-sm text-foreground">{t("admin_survey_average").replace("{avg}", String(q.average))}</p>}
-                  {q.texts.length > 0 && (
-                    <ul className="space-y-1 border-l border-border pl-3">
-                      {q.texts.map((x, i) => (
-                        <li key={i} className="text-sm text-foreground">
-                          “{x.text}” <span className="text-xs text-muted-foreground">— {x.userName} · {formatDate(x.at)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))
-          )}
-        </CardContent>
-      </Card>
     </div>
   )
 }

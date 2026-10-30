@@ -9,7 +9,8 @@ import translations from "@/lib/i18n/translations"
 vi.mock("@/contexts/language-context", () => ({
   useLanguage: () => ({ language: "es", t: (key: string) => (translations.es as Record<string, string>)[key] ?? key }),
 }))
-vi.mock("@/components/admin/live", () => ({ useAdminLiveReload: () => {} }))
+vi.mock("@/components/admin/live", () => ({ useAdminLiveReload: () => {}, useAdminTick: () => 0 }))
+vi.mock("@/components/admin/account-insights", () => ({ AccountInsightsPanel: ({ userId }: { userId: string }) => <div data-insights={userId} /> }))
 vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: () => {} }) }))
 
 import { AccountsPanel } from "./accounts-panel"
@@ -66,5 +67,48 @@ describe("/admin → Cuentas: en línea primero (docs/212)", () => {
     expect(container.textContent).toContain("1 en línea ahora · van primero")
     const emails = [...container.querySelectorAll("tbody tr")].map((tr) => tr.querySelector("td")?.textContent)
     expect(emails).toEqual(["b@x.test", "a@x.test"])
+  })
+})
+
+describe("/admin: clic en una cuenta desde otro panel abre su ficha (docs/214)", () => {
+  it("AccountLink pide la cuenta exacta y Cuentas abre su detalle", async () => {
+    const { AccountLink } = await import("./account-link")
+    const target = row("u9", "cliente@x.test")
+    const calls: string[] = []
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        calls.push(String(url))
+        const u = String(url)
+        const body = u.includes("/presence")
+          ? { presence: {} }
+          : u.includes("userId=u9")
+            ? { accounts: [target], total: 1 }
+            : u.includes("/account-plan")
+              ? { found: true, userId: "u9", email: "cliente@x.test", planSlug: "foodie", planExpiresAt: null, extraBusinesses: 0, extraTeamSeats: 0 }
+              : u.includes("/account-businesses")
+                ? { businesses: [] }
+                : u.includes("/account-team")
+                  ? { members: [] }
+                  : { accounts: [], total: 0 }
+        return { ok: true, json: async () => body }
+      }),
+    )
+    await act(async () => {
+      root.render(
+        <>
+          <AccountLink userId="u9" email="cliente@x.test" />
+          <AccountsPanel />
+        </>,
+      )
+    })
+    const link = [...container.querySelectorAll("button")].find((b) => b.textContent === "cliente@x.test")!
+    await act(async () => {
+      link.click()
+    })
+    await act(async () => {})
+    expect(calls.some((c) => c.includes("/api/admin/accounts?confirmed=all&userId=u9"))).toBe(true)
+    expect(calls.some((c) => c.includes("/api/admin/account-plan?email=cliente%40x.test"))).toBe(true)
+    expect(container.querySelector("[data-insights='u9']")).not.toBeNull()
   })
 })

@@ -20,6 +20,7 @@ import { formatDateTime } from "@/lib/date-format"
 import { cn } from "@/lib/utils"
 import { ATTACHMENT_ACCEPT, MAX_ATTACHMENTS, MAX_TOTAL_ATTACHMENT_BYTES, isAcceptedAttachment, type SupportAttachment } from "@/lib/support/core"
 import type { TranslationKey } from "@/lib/i18n/translations"
+import { AccountLink } from "@/components/admin/account-link"
 
 interface Row {
   id: string
@@ -247,7 +248,7 @@ export function SupportInbox({ onWaitingChange }: { onWaitingChange?: (n: number
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold">{current.email}</p>
+                  <p className="truncate text-sm font-semibold"><AccountLink email={current.email} userId={current.account_id}>{current.email ?? current.account_id.slice(0, 8)}</AccountLink></p>
                   <p className="truncate text-xs text-muted-foreground">
                     {t(`support_cat_${current.category}` as TranslationKey)} · {current.language.toUpperCase()}
                     {current.page ? ` · ${current.page}` : ""} · {statusLabel(current)}

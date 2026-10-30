@@ -16,6 +16,7 @@ import { formatDateTime } from "@/lib/date-format"
 import { cn } from "@/lib/utils"
 import type { TranslationKey } from "@/lib/i18n/translations"
 import type { KindSummary } from "@/lib/admin/import-summary"
+import { AccountLink } from "@/components/admin/account-link"
 
 interface UsageEvent {
   createdAt: string
@@ -37,7 +38,7 @@ interface UsageData {
   events: UsageEvent[]
 }
 
-const KIND_KEY: Record<string, TranslationKey> = {
+export const KIND_KEY: Record<string, TranslationKey> = {
   ingredientes: "nav_ingredientes",
   recetas: "nav_mis_recetas",
   inventario: "nav_inventario",
@@ -169,7 +170,7 @@ export function UsageEventsPanel() {
                 {rows.map((e, i) => (
                   <tr key={i}>
                     <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{formatDateTime(e.createdAt)}</td>
-                    <td className="max-w-[220px] truncate px-3 py-2">{e.email}</td>
+                    <td className="max-w-[220px] truncate px-3 py-2"><AccountLink email={e.email} /></td>
                     <td className="px-3 py-2">
                       <span className="inline-flex items-center gap-1.5">
                         {e.kind === "manual" ? <BookOpen className="h-3.5 w-3.5 text-muted-foreground" /> : <FileSpreadsheet className="h-3.5 w-3.5 text-muted-foreground" />}

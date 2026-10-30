@@ -12,6 +12,7 @@ import { getPlanBySlug } from "@/lib/plans"
 import { Trophy } from "lucide-react"
 import { formatDate } from "@/lib/date-format"
 import { useAdminTick } from "@/components/admin/live"
+import { AccountLink } from "@/components/admin/account-link"
 
 interface UserUsage {
   userId: string
@@ -169,7 +170,7 @@ export function TopUsersPanel() {
                   <TableRow key={u.userId}>
                     <TableCell className="text-muted-foreground">{i + 1}</TableCell>
                     <TableCell>
-                      <div className="font-medium text-foreground">{u.name}</div>
+                      <AccountLink userId={u.userId} email={u.email} className="block font-medium text-foreground">{u.name}</AccountLink>
                       <div className="text-xs text-muted-foreground">{u.email}</div>
                     </TableCell>
                     <TableCell>

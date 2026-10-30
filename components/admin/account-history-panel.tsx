@@ -12,6 +12,7 @@ import { countryName } from "@/lib/admin-format"
 import type { TranslationKey } from "@/lib/i18n/translations"
 import type { HistoryEvent, HistoryEventType, HistorySummary } from "@/lib/admin/account-history"
 import { AdminCard, EmptyState, ErrorState, KpiCard, KpiGrid, LoadingBlock, StatusPill, type Status, useAdminData } from "@/components/admin/ui"
+import { AccountLink } from "@/components/admin/account-link"
 
 const TYPES: { type: HistoryEventType; icon: React.ComponentType<{ className?: string }>; status: Status }[] = [
   { type: "created", icon: UserPlus, status: "ok" },
@@ -156,7 +157,7 @@ export function AccountHistoryPanel() {
                           </span>
                           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                             <StatusPill status={m.status} label={t(`admin_hist_type_${e.type}` as TranslationKey)} />
-                            <span className="text-sm text-foreground">{e.email || <span className="italic text-muted-foreground">{t("admin_hist_deleted_account")}</span>}</span>
+                            <span className="text-sm text-foreground">{e.email ? <AccountLink email={e.email} /> : <span className="italic text-muted-foreground">{t("admin_hist_deleted_account")}</span>}</span>
                             <span className="ml-auto text-xs tabular-nums text-muted-foreground">{formatDate(e.at)}</span>
                           </div>
                           <p className="mt-0.5 text-xs text-muted-foreground">{describe(e)}</p>

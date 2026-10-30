@@ -2,6 +2,9 @@
  * Respuestas a las preguntas cortas (docs/173), para /admin → Reseñas. Solo con sesión de admin.
  * Vienen de activity_log (módulo «encuesta»): por pregunta, cuántas veces se eligió cada
  * opción, el promedio de las escalas y las respuestas de texto más recientes.
+ *
+ * Desde docs/213 también cada respuesta suelta (`answers`, las 500 más recientes) con el correo
+ * de quien respondió, para /admin → Buzón → Encuestas.
  */
 
 import { NextResponse } from "next/server"
@@ -31,5 +34,16 @@ export async function GET() {
       at: r.created_at,
     }
   })
-  return NextResponse.json({ summary: summarizeSurveyAnswers(rows) })
+  const admin = getSupabaseAdminClient()
+  const emailById = new Map<string, string>()
+  if (rows.length) {
+    for (let page = 1; ; page++) {
+      const { data: users, error: usersError } = await admin.auth.admin.listUsers({ page, perPage: 200 })
+      if (usersError) break
+      for (const u of users.users) if (u.email) emailById.set(u.id, u.email)
+      if (users.users.length < 200) break
+    }
+  }
+  const answers = rows.slice(0, 500).map((r) => ({ ...r, email: emailById.get(r.userId) ?? null }))
+  return NextResponse.json({ summary: summarizeSurveyAnswers(rows), answers, total: rows.length })
 }

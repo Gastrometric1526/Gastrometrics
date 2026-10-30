@@ -8,6 +8,7 @@ import { getPlanBySlug } from "@/lib/plans"
 import { formatDate, formatDateTime } from "@/lib/date-format"
 import type { RevenueSummary } from "@/lib/admin/revenue"
 import { AdminCard, BarList, DailyBars, ErrorState, KpiCard, KpiGrid, LoadingBlock, SimpleTable, StatusPill, formatMoney, formatPercent, percentChange, useAdminData } from "@/components/admin/ui"
+import { AccountLink } from "@/components/admin/account-link"
 
 type RevenueResponse = RevenueSummary & { mode: "live" | "test"; checkedAt: string; configured?: boolean }
 
@@ -120,7 +121,7 @@ export function RevenuePanel({ estimatedMrrUsdCents }: { estimatedMrrUsdCents?: 
             rows={(data?.failed ?? []).map((f, i) => ({
               key: `${f.email}-${i}`,
               cells: {
-                email: f.email || "—",
+                email: <AccountLink email={f.email} />,
                 plan: planName(f.planSlug),
                 status: <StatusPill status="bad" label={t(`admin_rev_status_${f.status}` as never) || f.status} />,
                 attempts: f.attempts || "—",
@@ -148,7 +149,7 @@ export function RevenuePanel({ estimatedMrrUsdCents }: { estimatedMrrUsdCents?: 
               ...(data?.scheduledCancellations ?? []).map((c, i) => ({
                 key: `s-${i}`,
                 cells: {
-                  email: c.email || "—",
+                  email: <AccountLink email={c.email} />,
                   plan: planName(c.planSlug),
                   state: <StatusPill status="warn" label={t("admin_rev_cancel_scheduled")} />,
                   date: c.at ? formatDate(new Date(c.at).toISOString()) : "—",
@@ -157,7 +158,7 @@ export function RevenuePanel({ estimatedMrrUsdCents }: { estimatedMrrUsdCents?: 
               ...(data?.cancellations30d ?? []).map((c, i) => ({
                 key: `c-${i}`,
                 cells: {
-                  email: c.email || "—",
+                  email: <AccountLink email={c.email} />,
                   plan: planName(c.planSlug),
                   state: <StatusPill status="bad" label={t("admin_rev_cancel_done")} />,
                   date: formatDate(new Date(c.at).toISOString()),

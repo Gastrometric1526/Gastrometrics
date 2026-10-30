@@ -15,6 +15,7 @@ import { AdminLiveProvider, useAdminLive } from "@/components/admin/live"
 import { useToast } from "@/hooks/use-toast"
 import { AccountsPanel } from "@/components/admin/accounts-panel"
 import { FeedbackPanel } from "@/components/admin/feedback-panel"
+import { SurveyPanel } from "@/components/admin/survey-panel"
 import { SupportInbox } from "@/components/admin/support-inbox"
 import { FullReportButton } from "@/components/admin/full-report-button"
 import { AnalyticsPanel } from "@/components/admin/analytics-panel"
@@ -34,6 +35,7 @@ import { RevenuePanel } from "@/components/admin/revenue-panel"
 import { HealthPanel } from "@/components/admin/health-panel"
 import { RetentionPanel } from "@/components/admin/retention-panel"
 import { AccountHistoryPanel } from "@/components/admin/account-history-panel"
+import { OPEN_ACCOUNT_EVENT } from "@/lib/admin/open-account"
 
 // Candado de acceso — pedido explícito: agregar algún control de acceso a /admin,
 // que hoy cualquiera con el link puede ver. SIN backend no existe un sistema de roles
@@ -108,6 +110,19 @@ function AdminPageInner() {
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`)
   }
   const setSub = (group: AdminTab, sub: string) => goTo(group, sub)
+
+  // Clic en una cuenta desde cualquier panel (docs/214): se va a Cuentas → Lista, donde
+  // AccountsPanel abre su ficha.
+  const goToRef = useRef(goTo)
+  goToRef.current = goTo
+  useEffect(() => {
+    const open = () => {
+      goToRef.current("cuentas", "lista")
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+    window.addEventListener(OPEN_ACCOUNT_EVENT, open)
+    return () => window.removeEventListener(OPEN_ACCOUNT_EVENT, open)
+  }, [])
 
   // Contadores y pendientes desde el inicio (docs/191): antes «sin revisar», «reportes
   // de error» y el número de la pestaña Buzón quedaban en 0 hasta abrir el Buzón.
@@ -380,6 +395,7 @@ function AdminPageInner() {
               items={[
                 { value: "chat", label: `${t("admin_tab_support_chat")}${supportWaiting ? ` (${supportWaiting})` : ""}`, content: <SupportInbox onWaitingChange={setSupportWaiting} /> },
                 { value: "mensajes", label: `${t("admin_tab_feedback")} (${feedbackCounts.total})`, content: <FeedbackPanel onCountsChange={setFeedbackCounts} /> },
+                { value: "encuestas", label: t("admin_tab_surveys"), content: <SurveyPanel /> },
                 { value: "resenas", label: t("admin_tab_reviews"), content: <ReviewsPanel /> },
               ]}
             />

@@ -9,6 +9,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { BellOff } from "lucide-react"
 import { formatDate } from "@/lib/date-format"
 import { useAdminTick } from "@/components/admin/live"
+import { AccountLink } from "@/components/admin/account-link"
 
 interface DormantBusiness {
   id: string
@@ -88,7 +89,7 @@ export function BusinessHealthPanel() {
                 {data.businesses.map((b) => (
                   <TableRow key={b.id}>
                     <TableCell className="text-foreground font-medium">{b.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{b.ownerEmail}</TableCell>
+                    <TableCell className="text-muted-foreground"><AccountLink email={b.ownerEmail} /></TableCell>
                     <TableCell className="text-muted-foreground">
                       {formatDate(b.createdAt)}
                     </TableCell>

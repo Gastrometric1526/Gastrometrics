@@ -9,6 +9,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { formatDate } from "@/lib/date-format"
 import { Rocket, Clock3, Timer } from "lucide-react"
 import { useAdminTick } from "@/components/admin/live"
+import { AccountLink } from "@/components/admin/account-link"
 
 interface ActivationAccount {
   email: string
@@ -182,7 +183,7 @@ export function ActivationPanel() {
                 <TableBody>
                   {data!.recentAccounts.map((account) => (
                     <TableRow key={account.email + account.createdAt}>
-                      <TableCell className="text-foreground">{account.email}</TableCell>
+                      <TableCell className="text-foreground"><AccountLink email={account.email} /></TableCell>
                       <TableCell className="text-muted-foreground">
                         {formatDate(account.createdAt)}
                       </TableCell>
