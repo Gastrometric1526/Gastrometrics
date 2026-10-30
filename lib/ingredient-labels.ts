@@ -410,6 +410,37 @@ export function getYieldUnitLabel(unit: string, language: LanguageCode): string 
   return YIELD_UNIT_LABELS[language]?.[unit as YieldUnit] ?? unit
 }
 
+// Concordancia con la cantidad (docs/209): «1 kilogramo», «1 porción», «3 unidades» — antes
+// los PDFs decían «1 kilogramos», «1 porciones» y «3 unidad». Solo cambia lo que difiere de
+// la etiqueta normal; el chino y el danés no tienen plural en estas palabras.
+const SINGULAR_LABELS: Partial<Record<LanguageCode, Record<string, string>>> = {
+  es: { gramos: "gramo", kilogramos: "kilogramo", mililitros: "mililitro", litros: "litro", onzas: "onza", "onzas líquidas": "onza líquida", libras: "libra", galones: "galón", porciones: "porción" },
+  en: { gramos: "Gram", kilogramos: "Kilogram", mililitros: "Milliliter", litros: "Liter", onzas: "Ounce", "onzas líquidas": "Fluid Ounce", libras: "Pound", galones: "Gallon", porciones: "serving" },
+  da: { porciones: "portion" },
+  fr: { gramos: "Gramme", kilogramos: "Kilogramme", mililitros: "Millilitre", litros: "Litre", onzas: "Once", "onzas líquidas": "Once liquide", libras: "Livre", galones: "Gallon", porciones: "portion" },
+  pt: { gramos: "Grama", kilogramos: "Quilograma", mililitros: "Mililitro", litros: "Litro", onzas: "Onça", "onzas líquidas": "Onça líquida", libras: "Libra", galones: "Galão", porciones: "porção" },
+}
+const PLURAL_LABELS: Partial<Record<LanguageCode, Record<string, string>>> = {
+  es: { unidad: "unidades" },
+  en: { unidad: "Units" },
+  da: { unidad: "Enheder" },
+  fr: { unidad: "Unités" },
+  pt: { unidad: "Unidades" },
+}
+const isOne = (quantity: number) => Math.abs(Math.abs(quantity) - 1) < 1e-9
+
+/** Etiqueta de unidad de ingrediente que concuerda con la cantidad. */
+export function getUnitLabelFor(unit: string, language: LanguageCode, quantity: number): string {
+  const forms = isOne(quantity) ? SINGULAR_LABELS : PLURAL_LABELS
+  return forms[language]?.[unit] ?? getUnitLabel(unit, language)
+}
+
+/** Etiqueta de unidad de rendimiento que concuerda con la cantidad. */
+export function getYieldUnitLabelFor(unit: string, language: LanguageCode, quantity: number): string {
+  if (isOne(quantity) && SINGULAR_LABELS[language]?.[unit]) return SINGULAR_LABELS[language]![unit]
+  return getYieldUnitLabel(unit, language)
+}
+
 export function getPresentationLabel(presentation: string, language: LanguageCode): string {
   if (language === "es") return presentation
   return PRESENTATION_LABELS[language]?.[presentation as Presentation] ?? presentation

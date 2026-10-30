@@ -9,7 +9,7 @@ import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 import { drawBusinessLogo } from "./pdf-logo"
 import { drawImageFit } from "./pdf-image"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
-import { getYieldUnitLabel, getUnitLabel, getCategoryLabel } from "@/lib/ingredient-labels"
+import { getYieldUnitLabelFor, getUnitLabelFor, getCategoryLabel } from "@/lib/ingredient-labels"
 import { getClassificationLabel } from "@/lib/classification-labels"
 import type { Classification } from "@/types/recipe"
 import { trackEvent } from "@/lib/analytics/track-event"
@@ -33,12 +33,14 @@ const sanitizeText = (input: string | undefined | null): string =>
 // Rendimiento traducido al idioma del PDF (ver types/recipe.ts#yieldUnits) — antes se
 // imprimía recipe.yieldUnit crudo; fallback a "g" para recetas guardadas antes de que
 // este selector existiera (el default histórico, ver docs/115).
-const yieldUnitLabel = (recipe: Recipe): string =>
-  sanitizeText(getYieldUnitLabel(recipe.yieldUnit || "g", getCurrentPdfLanguage()))
+// En singular cuando el rendimiento es 1 («1 porción», docs/209).
+const yieldUnitLabel = (recipe: Recipe, amount: number = recipe.yieldAmount): string =>
+  sanitizeText(getYieldUnitLabelFor(recipe.yieldUnit || "g", getCurrentPdfLanguage(), amount))
 
 // Unidad, categoría y clasificación en el idioma del PDF (docs/141): se guardan como claves
 // en español ("gramos", "CARNES", "Plato fuerte") y se imprimían crudas en los 6 idiomas.
-const unitLabel = (unit: string | undefined): string => sanitizeText(getUnitLabel(unit || "", getCurrentPdfLanguage()))
+const unitLabel = (unit: string | undefined, quantity: number): string =>
+  sanitizeText(getUnitLabelFor(unit || "", getCurrentPdfLanguage(), quantity))
 const categoryLabel = (category: string | undefined): string =>
   sanitizeText(getCategoryLabel(category || "", getCurrentPdfLanguage()))
 const classificationLabel = (recipe: Recipe): string =>
@@ -586,12 +588,12 @@ function generateAdministrativePDF(
   const summaryData = isSubRecipe
     ? [
         { label: labels.costoProduccion, value: formatCurrency2(totalCost) },
-        { label: labels.rendimiento.replace(":", ""), value: `${yieldAmount} ${yieldUnitLabel(recipe)}` },
+        { label: labels.rendimiento.replace(":", ""), value: `${yieldAmount} ${yieldUnitLabel(recipe, yieldAmount)}` },
         { label: labels.costoDeUso, value: formatCurrency2(costPerUnit) },
       ]
     : [
         { label: labels.costoProduccion, value: formatCurrency2(totalCost) },
-        { label: labels.rendimiento.replace(":", ""), value: `${yieldAmount} ${yieldUnitLabel(recipe)}` },
+        { label: labels.rendimiento.replace(":", ""), value: `${yieldAmount} ${yieldUnitLabel(recipe, yieldAmount)}` },
         { label: labels.costoUnitario, value: formatCurrency2(costPerUnit) },
         { label: labels.gananciaUnitaria, value: formatCurrency2(unitProfit) },
         { label: labels.precioUnitario, value: formatCurrency2(unitPrice) },
@@ -714,7 +716,7 @@ function generateAdministrativePDF(
     categoryLabel(ing.category) || labels.general,
     sanitizeText(ing.name),
     ing.quantity.toFixed(2),
-    unitLabel(ing.unit),
+    unitLabel(ing.unit, ing.quantity),
     formatCurrency2(ing.unitCost || 0),
     formatCurrency2(ing.extension || ing.quantity * (ing.unitCost || 0)),
   ])
@@ -1230,7 +1232,7 @@ function generateEmployeePDF(
   const ingredientRows = recipe.ingredients.map((ing) => [
     sanitizeText(ing.name),
     ing.quantity.toFixed(2),
-    unitLabel(ing.unit),
+    unitLabel(ing.unit, ing.quantity),
   ])
 
   autoTable(doc, {
@@ -1409,7 +1411,7 @@ function generateNormalPDF(
   const ingredientRows = recipe.ingredients.map((ing) => [
     sanitizeText(ing.name),
     ing.quantity.toFixed(2),
-    unitLabel(ing.unit),
+    unitLabel(ing.unit, ing.quantity),
     sanitizeText(ing.notes) || "",
   ])
 

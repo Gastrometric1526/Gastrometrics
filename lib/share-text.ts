@@ -7,24 +7,21 @@
 import type { LanguageCode } from "@/lib/i18n/translations"
 import type { PurchaseOrder } from "@/types/purchase-order"
 import { unitAbbreviations } from "@/types/ingredient"
-import { getPresentationLabel, getUnitLabel, getYieldUnitLabel } from "@/lib/ingredient-labels"
+import { getPresentationLabel, getUnitLabel, getUnitLabelFor, getYieldUnitLabel, getYieldUnitLabelFor } from "@/lib/ingredient-labels"
 import type { MepEntry } from "@/lib/mep"
 import { flattenDish, formatMepAmount, groupDishesByStep } from "@/lib/mep"
 
-const SINGULAR_PORTION: Record<string, string> = { porciones: "porción", portions: "portion", portioner: "portion", porções: "porção" }
-
-/** Cantidad con su unidad corta, en singular cuando es 1 («1 porción», no «1 porciones»). */
+/** Cantidad con su unidad corta, concordando con la cantidad («1 porción», «3 unidades»). */
 export function amountWithUnit(value: number, unit: string, language: LanguageCode, format: (n: number) => string): string {
-  const label = shortUnit(unit, language)
-  const singular = Math.abs(value - 1) < 1e-9 ? SINGULAR_PORTION[label] : undefined
-  return `${format(value)} ${singular ?? label}`.trim()
+  return `${format(value)} ${shortUnit(unit, language, value)}`.trim()
 }
 
-/** Unidad corta y traducida: «gramos» → «g», «porciones» → «portions»… */
-export function shortUnit(unit: string, language: LanguageCode): string {
+/** Unidad corta y traducida: «gramos» → «g», «porciones» → «portions»… Con `quantity`, concuerda. */
+export function shortUnit(unit: string, language: LanguageCode, quantity?: number): string {
   if (!unit) return ""
-  if (unitAbbreviations[unit]) return unitAbbreviations[unit] === "un" ? getUnitLabel(unit, language) : unitAbbreviations[unit]
-  const yieldLabel = getYieldUnitLabel(unit, language)
+  if (unitAbbreviations[unit])
+    return unitAbbreviations[unit] === "un" ? (quantity === undefined ? getUnitLabel(unit, language) : getUnitLabelFor(unit, language, quantity)) : unitAbbreviations[unit]
+  const yieldLabel = quantity === undefined ? getYieldUnitLabel(unit, language) : getYieldUnitLabelFor(unit, language, quantity)
   return yieldLabel !== unit ? yieldLabel : getUnitLabel(unit, language)
 }
 

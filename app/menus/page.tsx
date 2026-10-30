@@ -189,8 +189,10 @@ export default function MenusPage() {
         businessLogo: business?.logo,
         allergensByRecipeId,
       })
-      const suffix = type === "interno" ? "interno" : "cliente"
-      doc.save(`menu-${safeFilePart(menu.name.toLowerCase(), "menu")}-${suffix}.pdf`)
+      // Nombre del archivo en el idioma de la app (docs/209): antes «-cliente»/«-interno» siempre.
+      const prefix = safeFilePart(t("menus_pdf_file_menu"), "menu")
+      const suffix = safeFilePart(t(type === "interno" ? "menus_pdf_file_internal" : "menus_pdf_file_client"), type)
+      doc.save(`${prefix}-${safeFilePart(menu.name.toLowerCase(), "menu")}-${suffix}.pdf`)
       toast({
         title: t("menus_toast_pdf_generated_title"),
         description: type === "interno" ? t("menus_toast_pdf_generated_internal_desc") : t("menus_toast_pdf_generated_client_desc"),

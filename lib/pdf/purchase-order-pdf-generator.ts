@@ -4,7 +4,7 @@ import autoTable from "jspdf-autotable"
 import type { PurchaseOrder } from "@/types/purchase-order"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { getPdfLabels, getCurrentPdfLanguage } from "@/lib/i18n/pdf-labels"
-import { getUnitLabel, getPresentationLabel } from "@/lib/ingredient-labels"
+import { getUnitLabelFor, getPresentationLabel } from "@/lib/ingredient-labels"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
 import { drawBusinessLogo } from "./pdf-logo"
 import { formatDate, formatDateTime, fileDate } from "@/lib/date-format"
@@ -259,7 +259,7 @@ export function generatePurchaseOrderPDF(order: PurchaseOrder, options: Purchase
     const qtyLabel =
       item.presentation && item.presentationQuantity
         ? `${item.presentationQuantity} ${presentationLabel}${pluralS && item.presentationQuantity !== 1 && !presentationLabel.endsWith("s") ? "s" : ""}`
-        : `${item.totalQuantity} ${getUnitLabel(item.unit, pdfLanguage)}`
+        : `${item.totalQuantity} ${getUnitLabelFor(item.unit, pdfLanguage, item.totalQuantity)}`
 
     return [
       sanitizeText(item.name),

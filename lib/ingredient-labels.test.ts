@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest"
 import { matchCategoryLabel, matchUnitLabel, getCategoryLabel, getUnitLabel, getMermaLevelLabel } from "./ingredient-labels"
+import { getUnitLabelFor, getYieldUnitLabelFor } from "./ingredient-labels"
 
 // Cubre el reconocimiento multi-idioma agregado en docs/89 para la importación de
 // Ingredientes (antes solo reconocía el valor canónico en Español) — sin esto, un
@@ -65,5 +66,21 @@ describe("getCategoryLabel / getUnitLabel / getMermaLevelLabel", () => {
     expect(getCategoryLabel("RES", "en")).toBe("Beef")
     expect(getUnitLabel("kilogramos", "fr")).toBe("Kilogrammes")
     expect(getMermaLevelLabel("Alta", "en")).toBe("High")
+  })
+})
+
+describe("unidades que concuerdan con la cantidad (docs/209)", () => {
+  it("singular con 1 y plural de «unidad» con otras cantidades, en cada idioma", () => {
+    expect(getUnitLabelFor("kilogramos", "es", 1)).toBe("kilogramo")
+    expect(getUnitLabelFor("kilogramos", "es", 2.5)).toBe("kilogramos")
+    expect(getUnitLabelFor("unidad", "es", 3)).toBe("unidades")
+    expect(getUnitLabelFor("unidad", "es", 1)).toBe("unidad")
+    expect(getUnitLabelFor("litros", "en", 1)).toBe("Liter")
+    expect(getUnitLabelFor("galones", "pt", 1)).toBe("Galão")
+    expect(getUnitLabelFor("gramos", "zh", 1)).toBe("克")
+    expect(getYieldUnitLabelFor("porciones", "es", 1)).toBe("porción")
+    expect(getYieldUnitLabelFor("porciones", "fr", 4)).toBe("portions")
+    expect(getYieldUnitLabelFor("porciones", "en", 1)).toBe("serving")
+    expect(getYieldUnitLabelFor("kg", "es", 1)).toBe("kg")
   })
 })

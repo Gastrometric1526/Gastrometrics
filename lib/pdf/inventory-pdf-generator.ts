@@ -4,7 +4,7 @@ import autoTable from "jspdf-autotable"
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { getPdfLabels, getCurrentPdfLanguage } from "@/lib/i18n/pdf-labels"
-import { getUnitLabel, getCategoryLabel } from "@/lib/ingredient-labels"
+import { getUnitLabelFor, getCategoryLabel } from "@/lib/ingredient-labels"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
 import { drawBusinessLogo } from "./pdf-logo"
 import { buildPackageContentLookup, inventoryItemValue, snapshotItemValue, type PackageContentLookup } from "@/lib/inventory-value"
@@ -455,7 +455,7 @@ function renderInventoryPDF(doc: jsPDF, data: InventoryPDFData, options: Invento
     .map((r) => [
       sanitizeText(r.name),
       sanitizeText(r.category ? getCategoryLabel(r.category, getCurrentPdfLanguage()) : ""),
-      `${r.quantity} ${getUnitLabel(r.unit, getCurrentPdfLanguage())}`,
+      `${r.quantity} ${getUnitLabelFor(r.unit, getCurrentPdfLanguage(), r.quantity)}`,
       r.supplier?.trim() ? sanitizeText(r.supplier) : labels.sinProveedor,
       formatCurrency(r.price),
       formatCurrency(r.totalValue),

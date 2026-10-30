@@ -5,6 +5,7 @@ import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { getPdfLabels } from "@/lib/i18n/pdf-labels"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
 import { drawBusinessLogo } from "./pdf-logo"
+import { safeFilePart } from "./pdf-filename"
 import { formatDate, fileDate } from "@/lib/date-format"
 
 // Mismo patrón que lib/pdf/purchase-order-pdf-generator.ts — sanitizeText/COLORS
@@ -257,7 +258,8 @@ export function generateInvoicePDF(invoice: Invoice, options: InvoicePDFOptions 
 export function generateInvoicePDFFilename(invoice: Invoice): string {
   const number = sanitizeText(invoice.number).replace(/[^a-zA-Z0-9]/g, "_") || "sin_numero"
   const date = fileDate(invoice.issueDate || new Date())
-  return `Factura_${number}_${date}.pdf`
+  // «Faktura_…», «Invoice_…» según el idioma del PDF (docs/209); antes «Factura_» en los 6.
+  return `${safeFilePart(getPdfLabels().factura, "Factura")}_${number}_${date}.pdf`
 }
 
 export function downloadInvoicePDF(invoice: Invoice, options: InvoicePDFOptions = {}): void {
