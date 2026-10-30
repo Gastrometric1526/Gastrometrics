@@ -427,7 +427,7 @@ export function RecipeImportDialog({
           module: "recetas",
           action: "imported",
           entityLabel: name.trim(),
-          metadata: { count: 1, format: lastImport.current.format, file: lastImport.current.name },
+          metadata: { count: 1, newIngredients: created.length, format: lastImport.current.format, file: lastImport.current.name },
         })
       }
       lastImport.current = { format: "texto", name: "" }

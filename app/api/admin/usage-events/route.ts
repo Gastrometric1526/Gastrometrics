@@ -3,10 +3,15 @@
  * (ingredientes, recetas, conteo de inventario, ventas) con qué formato y cuántas filas, y quién
  * descargó el manual. Lee `activity_log` (acciones «imported» y el módulo «manual», últimos 90
  * días) y junta el correo de cada cuenta.
+ *
+ * docs/211: resumen aparte de ingredientes (cuántas por Excel, ingredientes nuevos, precios
+ * actualizados) y de recetas (cuántas desde Excel, ingredientes creados al importar), con el
+ * origen de cada una (archivo, lista pegada o ticket). Cálculo en lib/admin/import-summary.ts.
  */
 import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { summarizeImports } from "@/lib/admin/import-summary"
 
 interface Row {
   user_id: string
@@ -58,6 +63,9 @@ export async function GET() {
         count: typeof m.count === "number" ? m.count : null,
         file: r.entity_label || (typeof m.file === "string" ? m.file : null),
         language: typeof m.language === "string" ? m.language : null,
+        source: typeof m.source === "string" ? m.source : null,
+        updated: typeof m.updated === "number" ? m.updated : null,
+        newIngredients: typeof m.newIngredients === "number" ? m.newIngredients : null,
       }
     })
     const imports = events.filter((e) => e.kind !== "manual")
@@ -80,6 +88,7 @@ export async function GET() {
       },
       byKind30: countBy(imports, "kind"),
       byFormat30: countBy(imports, "format"),
+      kinds30: summarizeImports(imports.filter((e) => within(e.createdAt, 30))),
       events: events.slice(0, 500),
     })
   } catch (e) {

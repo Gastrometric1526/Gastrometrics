@@ -289,6 +289,9 @@ export default function IngredientesPage() {
   const [pasteText, setPasteText] = useState("")
   // Ticket o factura (docs/151): leído con OCR; permite actualizar precios existentes
   const [fromReceipt, setFromReceipt] = useState(false)
+  // De dónde salió la importación, para /admin (docs/211): archivo, lista pegada o ticket.
+  // El ticket y la lista se convierten en un .txt, así que su formato real se guarda aparte.
+  const importOrigin = useRef<{ source: "archivo" | "pegado" | "ticket"; format: string | null }>({ source: "archivo", format: null })
   // Libro de Excel con varias hojas (docs/152): cuál se importa
   const [importSheets, setImportSheets] = useState<{ name: string; rows: unknown[][] }[]>([])
   const [importSheet, setImportSheet] = useState(0)
@@ -480,6 +483,7 @@ export default function IngredientesPage() {
 
   // Process import file
   const processImportFile = async (file: File) => {
+    importOrigin.current = { source: "archivo", format: null }
     try {
       const sheets = await parseWorkbookSheets(file)
       const index = pickIngredientSheet(sheets)
@@ -510,6 +514,7 @@ export default function IngredientesPage() {
       return
     }
     setImportRows(rows)
+    importOrigin.current = { source: "pegado", format: "texto" }
     setImportFile(new File([pasteText], `${t("ingredientes_paste_source")}.txt`, { type: "text/plain" }))
   }
 
@@ -542,6 +547,7 @@ export default function IngredientesPage() {
       setImportRows(rows)
       setFromReceipt(true)
       setUpdateExisting(canImportPrices)
+      importOrigin.current = { source: "ticket", format: importFormat(file) }
       setImportFile(new File([text], `${t("ingredientes_receipt_source")}.txt`, { type: "text/plain" }))
     } catch (error) {
       console.error("[ingredientes] Ticket:", error)
@@ -699,6 +705,26 @@ export default function IngredientesPage() {
       // Sub-recetas con precio de venta propio cuyo costo subió (docs/164): se pregunta.
       requestSubRecipePricePrompt(businessId || "main", recalcResults)
 
+      // Importación masiva en el registro real (docs/208, docs/211): la ve /admin con su origen,
+      // formato, ingredientes nuevos y precios actualizados (un ticket puede solo actualizar precios).
+      if (user && (importedCount > 0 || updatedPrices > 0)) {
+        const origin = importOrigin.current
+        logActivity({
+          user,
+          businessId: businessId && businessId !== "main" ? businessId : null,
+          module: "ingredientes",
+          action: "imported",
+          entityLabel: origin.source === "archivo" ? importFile?.name : undefined,
+          metadata: {
+            count: importedCount,
+            updated: updatedPrices,
+            errors: errorCount,
+            source: origin.source,
+            format: origin.format ?? importFormat(importFile),
+          },
+        })
+      }
+
       // Trigger update event for other components
       window.dispatchEvent(
         new CustomEvent("ingredientsUpdated", {
@@ -709,18 +735,6 @@ export default function IngredientesPage() {
           },
         }),
       )
-
-      // Importación masiva en el registro real (docs/208): la ve /admin con formato y filas.
-      if (user && importedCount > 0) {
-        logActivity({
-          user,
-          businessId: businessId && businessId !== "main" ? businessId : null,
-          module: "ingredientes",
-          action: "imported",
-          entityLabel: importFile?.name,
-          metadata: { count: importedCount, errors: errorCount, format: importFormat(importFile) },
-        })
-      }
 
       // Track activity for dashboard
       if (typeof window !== "undefined") {
