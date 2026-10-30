@@ -88,7 +88,13 @@ export function MobileBottomNav() {
               active ? "text-primary" : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <Icon className="h-5 w-5" />
+            <span className="relative">
+              <Icon className="h-5 w-5" />
+              {/* Módulo recién desbloqueado (docs/208): punto que late hasta que se visita. */}
+              {reveal.fresh.has(item.href) && !active && (
+                <span className="absolute -right-1.5 -top-1 h-2 w-2 rounded-full bg-primary animate-pulse" aria-hidden="true" />
+              )}
+            </span>
             <span className="truncate max-w-full px-0.5">{item.label}</span>
           </Link>
         )

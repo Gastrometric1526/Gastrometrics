@@ -38,6 +38,8 @@ export type ActivityModule =
   // Respuestas a las preguntas cortas (docs/173): solo para /admin; no se muestran en
   // «Actividad reciente» ni en «Notificaciones».
   | "encuesta"
+  // Descargas del manual de usuario (docs/208): las escribe /api/manual; solo para /admin.
+  | "manual"
 
 export type ActivityAction =
   | "entered"
@@ -56,6 +58,8 @@ export type ActivityAction =
   // Regla de precio al cambiar el costo de un ingrediente (docs/162).
   | "price_raised"
   | "margin_up"
+  // Descarga del manual (docs/208).
+  | "downloaded"
 
 export interface ActivityLogEntry {
   id: number
@@ -105,7 +109,13 @@ const HIDDEN_FROM_ACTIVITY: readonly ActivityAction[] = ["entered", "read", ...N
 /** A dónde lleva tocar una notificación guardada. */
 export function notificationHref(entry: ActivityLogEntry): string | null {
   if (entry.action === "plan_changed") return "/mi-plan"
-  if (entry.action === "price_raised" || entry.action === "margin_up") return entry.businessId ? `/mis-recetas?business=${entry.businessId}` : "/mis-recetas"
+  if (entry.action === "price_raised" || entry.action === "margin_up") {
+    // Desde docs/208 la fila guarda el id de la receta: abre su Ficha; las viejas van a Mis Recetas.
+    const recipeId = typeof entry.metadata?.recipeId === "string" ? entry.metadata.recipeId : null
+    const business = entry.businessId || "main"
+    if (recipeId) return `/ficha-tecnica/${recipeId}?business=${encodeURIComponent(business)}&mode=view`
+    return entry.businessId ? `/mis-recetas?business=${entry.businessId}` : "/mis-recetas"
+  }
   return null
 }
 
@@ -162,6 +172,7 @@ export async function getActivityLog(params: {
     .select("*")
     .neq("module", "ocr") // conteo de lecturas OCR, no actividad para mostrar
     .neq("module", "encuesta") // respuestas a preguntas cortas (docs/173), solo para /admin
+    .neq("module", "manual") // descargas del manual (docs/208), solo para /admin
     .order("created_at", { ascending: false })
     .limit(limit)
 
@@ -195,6 +206,19 @@ export async function getActivityLog(params: {
   return (data ?? []).map(rowToEntry)
 }
 
+/**
+ * Formato de una importación para /admin (docs/208): «excel», «csv», «pdf», «foto» o «texto»
+ * (texto pegado o archivo .txt).
+ */
+export function importFormat(file?: { name?: string; type?: string } | null): "excel" | "csv" | "pdf" | "foto" | "texto" {
+  const name = (file?.name || "").toLowerCase()
+  if (/\.(xlsx|xlsm|xls)$/.test(name)) return "excel"
+  if (name.endsWith(".csv")) return "csv"
+  if (name.endsWith(".pdf") || file?.type === "application/pdf") return "pdf"
+  if ((file?.type || "").startsWith("image/") || /\.(png|jpe?g|webp|heic|heif|gif)$/.test(name)) return "foto"
+  return "texto"
+}
+
 // Reutiliza las claves nav_* que ya existen (components/sidebar.tsx) para el nombre
 // de cada módulo, en vez de duplicar traducciones — ver docs/87.
 const MODULE_NAV_KEY: Record<ActivityModule, string> = {
@@ -213,6 +237,7 @@ const MODULE_NAV_KEY: Record<ActivityModule, string> = {
   ocr: "nav_ingredientes",
   plan: "nav_dashboard",
   encuesta: "nav_dashboard",
+  manual: "nav_dashboard",
 }
 
 /**
@@ -297,8 +322,8 @@ export function logPriceRuleChanges(
       entityLabel: c.recipeName,
       metadata:
         c.kind === "raised"
-          ? { from: Math.round(c.oldPrice * 100) / 100, to: Math.round(c.newPrice * 100) / 100 }
-          : { price: Math.round(c.price * 100) / 100, from: Math.round(c.oldMargin * 10) / 10, to: Math.round(c.newMargin * 10) / 10 },
+          ? { recipeId: c.recipeId, from: Math.round(c.oldPrice * 100) / 100, to: Math.round(c.newPrice * 100) / 100 }
+          : { recipeId: c.recipeId, price: Math.round(c.price * 100) / 100, from: Math.round(c.oldMargin * 10) / 10, to: Math.round(c.newMargin * 10) / 10 },
     })
   }
   return { raised, kept }

@@ -1,4 +1,6 @@
 import { jsPDF } from "jspdf"
+import { estimateYieldWeightGrams, formatYieldWeight } from "@/lib/yield-weight"
+import { safeFilePart } from "@/lib/pdf/pdf-filename"
 import autoTable from "jspdf-autotable"
 import type { Recipe, PDFExportType, PDFExportOptions } from "@/types/recipe"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
@@ -12,6 +14,7 @@ import { getClassificationLabel } from "@/lib/classification-labels"
 import type { Classification } from "@/types/recipe"
 import { trackEvent } from "@/lib/analytics/track-event"
 import { formatDate, fileDate } from "@/lib/date-format"
+import { priceBreakdown, unitMarginAmount } from "@/lib/recipe-pricing"
 
 // ============== HELPERS ==============
 
@@ -542,15 +545,8 @@ function generateAdministrativePDF(
   doc.text(`${recipe.yieldAmount} ${yieldUnitLabel(recipe)}`, col3X + 24, metaY)
 
   // Calculate yield by weight if applicable
-  const yieldByWeight =
-    recipe.yieldByWeight ||
-    recipe.ingredients?.reduce((sum, ing) => {
-      const unit = ing.unit?.toLowerCase() || ""
-      if (unit.includes("g") || unit.includes("ml") || unit.includes("kg") || unit.includes("l")) {
-        return sum + (ing.quantity || 0)
-      }
-      return sum
-    }, 0)
+  // Mismo cálculo que la Ficha (docs/208): a gramos, sin mezclar unidades ni sumar piezas.
+  const yieldByWeight = estimateYieldWeightGrams(recipe.ingredients)
 
   if (yieldByWeight && yieldByWeight > 0) {
     doc.setFont("helvetica", "bold")
@@ -558,7 +554,7 @@ function generateAdministrativePDF(
     doc.text(labels.rendPesoEstimado, col3X, metaY + 6)
     doc.setFont("helvetica", "normal")
     doc.setTextColor(...COLORS.text)
-    const weightDisplay = yieldByWeight >= 1000 ? `${(yieldByWeight / 1000).toFixed(2)} kg` : `${yieldByWeight.toFixed(0)} g`
+    const weightDisplay = formatYieldWeight(yieldByWeight)
     doc.text(weightDisplay, col3X + 35, metaY + 6)
   }
 
@@ -572,10 +568,13 @@ function generateAdministrativePDF(
   const yieldAmount = recipe.yieldAmount || 1
   const totalCost = recipe.totalCost || 0
   const costPerUnit = totalCost / yieldAmount
-  const unitProfit = recipe.customUnitProfit || (recipe.unitPrice ? recipe.unitPrice - costPerUnit : 0)
   const unitPrice = recipe.unitPrice || 0
+  // Ganancia como en la Ficha (docs/188, docs/208): venta sin ISV incluido (Food Cost) − comisión − costo.
+  // Antes era precio − costo, y en Food Cost con ISV el PDF daba más ganancia que la pantalla.
+  const unitProfit = unitPrice > 0 ? unitMarginAmount(recipe, unitPrice, costPerUnit) : recipe.customUnitProfit || 0
   const totalSales = unitPrice * yieldAmount
-  const netProfitTotal = recipe.netProfit || totalSales - totalCost
+  const netProfitTotal = unitPrice > 0 ? unitProfit * yieldAmount : recipe.netProfit || totalSales - totalCost
+  const isFoodCostRecipe = recipe.pricingMethod === "food_cost"
 
   // Una sub-receta nunca se vende directo a un cliente — es un componente interno que
   // se usa DENTRO de otras fichas. Mostrarle "Precio Unit.", "Venta Total" y una caja
@@ -785,7 +784,7 @@ function generateAdministrativePDF(
     doc.setFontSize(10)
     doc.setFont("helvetica", "bold")
     doc.setTextColor(...COLORS.darkGray)
-    doc.text(labels.desgloseDeCostos, breakdownX, breakdownHeadingY)
+    doc.text(isFoodCostRecipe ? labels.desgloseDelPrecio : labels.desgloseDeCostos, breakdownX, breakdownHeadingY)
 
     const pricingConfig = recipe.pricingConfig || {
       publicServices: 10,
@@ -817,11 +816,23 @@ function generateAdministrativePDF(
       { label: labels.gananciaNeta, percent: pricingConfig.netProfit, amount: totalCost * (pricingConfig.netProfit / 100) },
     ]
 
+    // Food Cost (docs/208): los 6 rubros no deciden el precio, así que mostrarlos daba otra
+    // «ganancia» que la de arriba. Se muestra cómo se reparte el precio de venta por plato.
+    if (isFoodCostRecipe && unitPrice > 0) {
+      const pb = priceBreakdown(recipe, unitPrice, costPerUnit)
+      const pct = (n: number) => (n / unitPrice) * 100
+      costBreakdown = [
+        { label: labels.costoUnitario, percent: pct(pb.cost), amount: pb.cost },
+        ...(pb.isv > 0 ? [{ label: "ISV", percent: pct(pb.isv), amount: pb.isv }] : []),
+        ...(pb.commission > 0 ? [{ label: labels.comisionVenta, percent: pct(pb.commission), amount: pb.commission }] : []),
+        { label: labels.gananciaUnitaria, percent: pct(pb.margin), amount: pb.margin },
+      ]
+    }
     const totalPercent = costBreakdown.reduce((sum, item) => sum + item.percent, 0)
     const totalAmount = costBreakdown.reduce((sum, item) => sum + item.amount, 0)
 
     const breakdownRows = costBreakdown.map((item) => [item.label, formatPercent(item.percent), formatCurrency2(item.amount)])
-    breakdownRows.push([labels.total, formatPercent(totalPercent), formatCurrency2(totalAmount)])
+    breakdownRows.push([isFoodCostRecipe && unitPrice > 0 ? labels.precioUnitario : labels.total, formatPercent(totalPercent), formatCurrency2(totalAmount)])
 
     autoTable(doc, {
       startY: breakdownHeadingY + 3,
@@ -899,7 +910,7 @@ function generateAdministrativePDF(
       doc.setFontSize(8)
       doc.setFont("helvetica", "bold")
       doc.setTextColor(...COLORS.secondary)
-      doc.text(labels.rubrosDeCosteo, margin, chartsTop)
+      doc.text(isFoodCostRecipe ? labels.desgloseDelPrecio : labels.rubrosDeCosteo, margin, chartsTop)
       const barData: ChartDatum[] = costBreakdown
         .filter((item) => item.amount > 0)
         .map((item, i) => ({ label: item.label, value: item.amount, color: CHART_COLORS[i % CHART_COLORS.length] }))
@@ -1504,7 +1515,7 @@ function generateNormalPDF(
 
 export function generatePDFFilename(recipe: Recipe, type: PDFExportType): string {
   const typePrefix = type === "administrative" ? "ADM" : type === "employee" ? "EMP" : "GEN"
-  const recipeName = sanitizeText(recipe.name).replace(/[^a-zA-Z0-9]/g, "_")
+  const recipeName = safeFilePart(sanitizeText(recipe.name), "receta")
   const version = recipe.metadata?.version || 1
   const date = new Date()
   const dateStr = fileDate(date)

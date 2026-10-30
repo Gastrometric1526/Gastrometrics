@@ -19,7 +19,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { UploadCloud, FileSpreadsheet, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, Trash2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
-import { logActivity } from "@/lib/services/activity-log"
+import { logActivity, importFormat } from "@/lib/services/activity-log"
 import { parseExcelFile } from "@/lib/excel-utils"
 import { formatCurrency } from "@/lib/currency"
 import { findBestNameMatch, normalizeName } from "@/lib/utils/name-match"
@@ -474,7 +474,8 @@ export function POSSalesImportDialog({
         businessId: businessId && businessId !== "main" ? businessId : null,
         module: "estadisticas",
         action: "imported",
-        metadata: { count: lines.length },
+        entityLabel: fileName || undefined,
+        metadata: { count: lines.length, format: importFormat({ name: fileName }) },
       })
     }
 

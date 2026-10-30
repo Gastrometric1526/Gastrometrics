@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf"
+import { safeFilePart } from "@/lib/pdf/pdf-filename"
 import autoTable from "jspdf-autotable"
 import { getPdfLabels, getCurrentPdfLanguage } from "@/lib/i18n/pdf-labels"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
@@ -341,6 +342,6 @@ ${step(e.stepName)}` : ""}`,
 }
 
 export function mepPdfFilename(menuName: string): string {
-  const name = sanitizeText(menuName).replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_|_$/g, "") || "menu"
+  const name = safeFilePart(sanitizeText(menuName), "menu")
   return `MEP_${name}_${fileDate(new Date())}.pdf`
 }

@@ -131,3 +131,13 @@ describe("imágenes en los PDF (docs/137)", () => {
     )
   })
 })
+
+describe("nombres de archivo de los PDF (docs/208)", () => {
+  it("conserva letras de cualquier idioma", async () => {
+    const { safeFilePart } = await import("./pdf-filename")
+    expect(safeFilePart("午餐菜单")).toBe("午餐菜单")
+    expect(safeFilePart("Déjeuner du jour")).toBe("Déjeuner_du_jour")
+    expect(safeFilePart("  /:*  ", "menu")).toBe("menu")
+    expect(safeFilePart("Pollo à la plancha (2)")).toBe("Pollo_à_la_plancha_2")
+  })
+})

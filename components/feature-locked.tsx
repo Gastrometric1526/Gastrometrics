@@ -19,7 +19,7 @@ export function FeatureLockedPage({ feature, title, description }: { feature: Fe
   const availableFromAfter = availableFromAfterRaw?.replace("{price}", minPlan?.price ?? "")
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background" data-feature-locked={feature}>
       <Sidebar />
       <div className="flex-1 flex items-center justify-center p-6">
         <Card className="max-w-md w-full border-border bg-card">

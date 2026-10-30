@@ -22,6 +22,7 @@ import { TopUsersPanel } from "@/components/admin/top-users-panel"
 import { ReviewsPanel } from "@/components/admin/reviews-panel"
 import { EmailClicksPanel } from "@/components/admin/email-clicks-panel"
 import { OcrUsagePanel } from "@/components/admin/ocr-usage-panel"
+import { UsageEventsPanel } from "@/components/admin/usage-events-panel"
 import { BusinessHealthPanel } from "@/components/admin/business-health-panel"
 import { ActivationPanel } from "@/components/admin/activation-panel"
 import { ReferralsPanel } from "@/components/admin/referrals-panel"
@@ -407,7 +408,17 @@ function AdminPageInner() {
               items={[
                 { value: "embudo", label: t("admin_sub_funnel"), content: <AnalyticsPanel /> },
                 { value: "correos", label: t("admin_sub_email_clicks"), content: <EmailClicksPanel /> },
-                { value: "importaciones", label: t("admin_sub_imports"), content: <OcrUsagePanel /> },
+                {
+                  value: "importaciones",
+                  label: t("admin_sub_imports"),
+                  // Importaciones masivas y descargas del manual por cuenta (docs/208), y el uso del OCR.
+                  content: (
+                    <>
+                      <UsageEventsPanel />
+                      <OcrUsagePanel />
+                    </>
+                  ),
+                },
               ]}
             />
           </TabsContent>

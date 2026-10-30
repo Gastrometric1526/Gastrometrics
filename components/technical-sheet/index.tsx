@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { estimateYieldWeightGrams, formatYieldWeight } from "@/lib/yield-weight"
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
@@ -550,6 +551,8 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
 
     const effectiveYield =
       recipe.yieldAmount && recipe.yieldAmount > 0 ? recipe.yieldAmount * paxMultiplier : yieldByWeight
+    // Rendimiento en peso para mostrar (docs/208): a gramos, sin mezclar unidades.
+    const estimatedWeightGrams = estimateYieldWeightGrams(recipe.ingredients, paxMultiplier)
 
     // Aviso de rendimiento absurdo (hallazgo de auditoría externa, ver docs/98, sección
     // 2.6: ej. "rendimiento 1 g con 200 huevos"). Deliberadamente NO se basa en
@@ -670,6 +673,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     return {
       productionCost,
       yieldByWeight,
+      estimatedWeightGrams,
       yieldAmount: effectiveYield,
       unitCost,
       calculatedUnitProfit,
@@ -1339,8 +1343,10 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
           <CardTitle className="text-2xl">{t("nav_ficha_tecnica")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-6">
-            <div className="flex-1 space-y-4">
+          {/* La imagen va al lado solo desde lg (docs/208): en tablet el formulario quedaba en
+              columnas de ~170 px y el número del Rendimiento no se veía. */}
+          <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex-1 min-w-0 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" data-tour="ficha-name-classification">
                 <div>
                   <Label htmlFor="name">{t("ficha_tecnica_field_name")}</Label>
@@ -1422,13 +1428,13 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                         placeholder=""
                         decimalPlaces={2}
                         min={0}
-                        className="flex-1 min-w-0"
+                        className="flex-1 min-w-[4.5rem]"
                       />
                       <Select
                         value={recipe.yieldUnit || "g"}
                         onValueChange={(value) => handleFieldUpdate("yieldUnit", value)}
                       >
-                        <SelectTrigger className="w-[8.5rem] shrink-0">
+                        <SelectTrigger className="w-[7.5rem] xl:w-[8.5rem] shrink-0">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1484,7 +1490,8 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                   <Input
                     id="yieldByWeight"
                     type="text"
-                    value={calculations.yieldByWeight > 0 ? Math.floor(calculations.yieldByWeight) : ""}
+                    // Estimado en gramos/kg sin mezclar unidades (docs/208).
+                    value={formatYieldWeight(calculations.estimatedWeightGrams)}
                     disabled
                     placeholder=""
                   />

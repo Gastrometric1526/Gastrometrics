@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-29",
+    tutorialHref: tourHref("ficha-tecnica"),
+    content: {
+      es: { title: "Tutoriales que muestran cómo se conecta todo", items: ["Cada paso de los tutoriales dice de dónde vienen los datos y dónde se usan (por ejemplo, la Ficha Técnica toma los precios de Ingredientes), con un ejemplo con números de funciones como el multiplicador.", "Toca una notificación para ver el detalle: el antes y el después, por qué pasó y un botón para ir a resolverlo. Las novedades también aparecen ahí y vuelven a abrir su tutorial.", "Cuando se desbloquea un módulo te avisamos y lo resaltamos en el menú hasta que entres."] },
+      en: { title: "Tutorials that show how everything connects", items: ["Each tutorial step tells you where the data comes from and where it’s used (for example, the Recipe Sheet takes prices from Ingredients), with a worked example of features like the multiplier.", "Tap a notification to see the details: before and after, why it happened, and a button to go handle it. What’s new also shows up there and reopens its tutorial.", "When a module unlocks, we let you know and highlight it in the menu until you open it."] },
+      da: { title: "Vejledninger, der viser, hvordan det hele hænger sammen", items: ["Hvert trin i vejledningerne fortæller, hvor data kommer fra, og hvor de bruges (fx henter opskriftsarket priserne fra Ingredienser), med et regneeksempel på funktioner som multiplikatoren.", "Tryk på en notifikation for at se detaljerne: før og efter, hvorfor det skete, og en knap til at tage dig af det. Nyheder vises også dér og åbner deres vejledning igen.", "Når et modul låses op, giver vi besked og fremhæver det i menuen, indtil du åbner det."] },
+      fr: { title: "Des tutoriels qui montrent comment tout se relie", items: ["Chaque étape des tutoriels indique d’où viennent les données et où elles servent (par exemple, la fiche technique prend les prix dans Ingrédients), avec un exemple chiffré de fonctions comme le multiplicateur.", "Touchez une notification pour voir le détail : avant et après, pourquoi c’est arrivé et un bouton pour vous en occuper. Les nouveautés y apparaissent aussi et rouvrent leur tutoriel.", "Quand un module se débloque, nous vous prévenons et le mettons en évidence dans le menu jusqu’à ce que vous l’ouvriez."] },
+      pt: { title: "Tutoriais que mostram como tudo se conecta", items: ["Cada passo dos tutoriais diz de onde vêm os dados e onde são usados (por exemplo, a ficha técnica pega os preços de Ingredientes), com um exemplo com números de funções como o multiplicador.", "Toque em uma notificação para ver o detalhe: antes e depois, por que aconteceu e um botão para resolver. As novidades também aparecem ali e reabrem o tutorial.", "Quando um módulo é desbloqueado, avisamos e o destacamos no menu até você entrar."] },
+      zh: { title: "教程讲清各部分如何关联", items: ["教程的每一步都会说明数据从哪里来、用在哪里（例如技术配方表的价格来自食材库），并用数字举例说明倍数等功能。", "点击通知即可查看详情：变化前后、原因，以及前往处理的按钮。新功能也会出现在那里，并可重新打开对应教程。", "模块解锁时会提醒你，并在菜单中高亮显示，直到你打开它。"] },
+    },
+  },
+  {
     version: "2026-10-27",
     tutorialHref: tourHref("mep"),
     content: {
@@ -1847,6 +1859,22 @@ export const LATEST_CHANGELOG_VERSION = CHANGELOG[0].version
 export function getChangelogContent(language: LanguageCode) {
   const entry = CHANGELOG[0]
   return entry.content[language] || entry.content.es
+}
+
+/** Una novedad por versión (la última si no existe). */
+export function getChangelogEntry(version?: string | null): ChangelogEntry {
+  return CHANGELOG.find((e) => e.version === version) ?? CHANGELOG[0]
+}
+
+/** Fecha (YYYY-MM-DD) de una versión como «2026-10-26c». */
+export function changelogDate(version: string): string {
+  return version.slice(0, 10)
+}
+
+/** Novedades de los últimos `days` días (como mucho `max`), para «Notificaciones» (docs/208). */
+export function getRecentChangelog(now = new Date(), days = 30, max = 3): ChangelogEntry[] {
+  const limit = new Date(now.getTime() - days * 86_400_000).toISOString().slice(0, 10)
+  return CHANGELOG.filter((e) => changelogDate(e.version) >= limit).slice(0, max)
 }
 
 /** Enlace al tutorial de la última novedad (docs/167). */

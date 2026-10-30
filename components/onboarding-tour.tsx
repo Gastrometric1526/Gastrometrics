@@ -5,12 +5,14 @@ import { PageTour, type TourStep } from "@/components/page-tour"
 import { GastrometricsLogo } from "@/components/gastrometrics-logo"
 import { useLanguage } from "@/contexts/language-context"
 import { Sparkles } from "lucide-react"
+import type { TranslationKey } from "@/lib/i18n/translations"
 
 const ONBOARDING_KEY = "onboarding_completed"
 
 export function OnboardingTour() {
   const router = useRouter()
   const { t } = useLanguage()
+  const modules = (keys: TranslationKey[]) => keys.map((k) => t(k)).join(", ")
 
   const steps: TourStep[] = [
     {
@@ -25,6 +27,21 @@ export function OnboardingTour() {
       title: t("tour_dash_sidebar_title"),
       description: t("tour_dash_sidebar_desc"),
       selector: '[data-tour="sidebar"]',
+    },
+    {
+      // Revelación progresiva (docs/145, explicada desde docs/208): el mapa completo de la app
+      // y en qué momento se desbloquea cada parte, para que nada aparezca «de la nada».
+      id: "unlock",
+      title: t("tour_dash_unlock_title"),
+      description: t("tour_dash_unlock_desc"),
+      selector: '[data-tour="sidebar"]',
+      // Los nombres salen de las mismas claves del menú: siempre iguales a lo que se ve.
+      list: [
+        t("tour_unlock_now").replace("{modules}", modules(["nav_ingredientes", "nav_ficha_tecnica", "nav_mis_recetas", "nav_negocios"])),
+        t("tour_unlock_first").replace("{modules}", modules(["nav_estadisticas", "nav_ventas"])),
+        t("tour_unlock_three").replace("{modules}", modules(["nav_inventario", "nav_menus", "nav_mep", "nav_ordenes_compra", "nav_equipo"])),
+        t("tour_unlock_plan"),
+      ],
     },
     { id: "dash-new-recipe", title: t("tour_dash_new_recipe_title"), description: t("tour_dash_new_recipe_desc"), selector: '[data-tour="dash-new-recipe"]' },
     { id: "dash-stats", title: t("tour_dash_stats_title"), description: t("tour_dash_stats_desc"), selector: '[data-tour="dash-stats"]' },

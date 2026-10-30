@@ -84,7 +84,7 @@ import { persistUnitChangeSideEffects, type UnitChange } from "@/lib/storage/uni
 import { updateIngredientPriceAndRecalculate, requestSubRecipePricePrompt, type RecalculationResult } from "@/lib/recalculate"
 import { ActivityTracker } from "@/lib/activity-tracker"
 import { trackEvent } from "@/lib/analytics/track-event"
-import { logActivity, logPriceRuleChanges } from "@/lib/services/activity-log"
+import { logActivity, logPriceRuleChanges, importFormat } from "@/lib/services/activity-log"
 import { ALLERGENS, allergenLabelKey } from "@/lib/allergens"
 import { formatUnitPrice } from "@/lib/currency"
 import { fileDate } from "@/lib/date-format"
@@ -709,6 +709,18 @@ export default function IngredientesPage() {
           },
         }),
       )
+
+      // Importación masiva en el registro real (docs/208): la ve /admin con formato y filas.
+      if (user && importedCount > 0) {
+        logActivity({
+          user,
+          businessId: businessId && businessId !== "main" ? businessId : null,
+          module: "ingredientes",
+          action: "imported",
+          entityLabel: importFile?.name,
+          metadata: { count: importedCount, errors: errorCount, format: importFormat(importFile) },
+        })
+      }
 
       // Track activity for dashboard
       if (typeof window !== "undefined") {

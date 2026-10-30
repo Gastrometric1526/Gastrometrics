@@ -1,5 +1,7 @@
 "use client"
 
+import { logActivity, importFormat } from "@/lib/services/activity-log"
+import { useAuth } from "@/contexts/auth-context"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -78,6 +80,8 @@ export function RecipeImportDialog({
   onOpenChange: (open: boolean) => void
   businessId?: string | null
 }) {
+  const { user } = useAuth()
+  const lastImport = useRef<{ format: string; name: string }>({ format: "texto", name: "" })
   const { t, language } = useLanguage()
   // Solo se registra el uso del OCR para medirlo (docs/153); no hay límite.
   const logOcrRead = useOcrUsage()
@@ -306,6 +310,7 @@ export function RecipeImportDialog({
     ) : null
 
   const onFile = async (file: File) => {
+    lastImport.current = { format: importFormat(file), name: file.name }
     const name = file.name.toLowerCase()
     if (OCR_AVAILABLE && file.type.startsWith("image/")) {
       await readPhoto(file, ocrLang, true)
@@ -414,6 +419,18 @@ export function RecipeImportDialog({
         observations: parsed.notes,
         ingredients: items,
       })
+      // Receta importada en el registro real (docs/208): la ve /admin con su formato.
+      if (user) {
+        logActivity({
+          user,
+          businessId: businessId && businessId !== "main" ? businessId : null,
+          module: "recetas",
+          action: "imported",
+          entityLabel: name.trim(),
+          metadata: { count: 1, format: lastImport.current.format, file: lastImport.current.name },
+        })
+      }
+      lastImport.current = { format: "texto", name: "" }
       onOpenChange(false)
       reset()
       router.push(businessId && businessId !== "main" ? `/ficha-tecnica?business=${encodeURIComponent(businessId)}` : "/ficha-tecnica")

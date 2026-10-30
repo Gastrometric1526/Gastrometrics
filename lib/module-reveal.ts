@@ -10,7 +10,8 @@
  *   0 recetas → Dashboard, Ficha Técnica, Mis Recetas, Ingredientes, Negocios
  *   1+        → + Reportes y Ventas
  *   3+        → + Inventario, Menús, MEP (docs/202), Órdenes de compra y Equipo
- * Lo recién revelado se marca "Nuevo" hasta que se visita. Siempre se puede ver todo
+ * Lo recién revelado se marca "Nuevo" hasta que se visita, con un resaltado animado en el menú
+ * y en las Acciones Rápidas y una ventana que lo anuncia una sola vez (docs/208). Siempre se puede ver todo
  * ("Ver todos los módulos", se recuerda por cuenta). No aplica a la Vista previa de
  * Equipo ni a miembros invitados: ellos ven lo que tienen permitido. Mientras las recetas
  * no terminan de cargar no se oculta nada (evita que un menú completo parpadee).
@@ -42,9 +43,10 @@ interface RevealState {
   showAll: boolean
   hiddenBefore: string[] // ocultos la última vez: si dejan de estarlo, son "Nuevo"
   fresh: string[] // revelados y todavía no visitados
+  announced?: string[] // ya anunciados con la ventana de desbloqueo (docs/208)
 }
 
-const EMPTY: RevealState = { showAll: false, hiddenBefore: [], fresh: [] }
+const EMPTY: RevealState = { showAll: false, hiddenBefore: [], fresh: [], announced: [] }
 
 function read(key: string): RevealState {
   try {
@@ -125,5 +127,15 @@ export function useModuleReveal(options: { disabled?: boolean } = {}) {
     setState(next)
   }
 
-  return { ready, recipeCount, hidden, fresh: new Set(state.fresh), showAll, showingAll: state.showAll }
+  // Recién desbloqueados que todavía no se anunciaron con la ventana (docs/208).
+  const toAnnounce = state.fresh.filter((href) => !(state.announced ?? []).includes(href))
+  const markAnnounced = () => {
+    if (!key) return
+    const prev = read(key)
+    const next = { ...prev, announced: Array.from(new Set([...(prev.announced ?? []), ...prev.fresh])) }
+    write(key, next)
+    setState(next)
+  }
+
+  return { ready, recipeCount, hidden, fresh: new Set(state.fresh), toAnnounce, markAnnounced, showAll, showingAll: state.showAll }
 }

@@ -100,3 +100,19 @@ describe("unitMarginAmount / unitCostPercent (docs/188: Dashboard y Estadística
     expect(unitCostPercent(base(), 0, 10)).toBe(0)
   })
 })
+
+describe("reparto del precio para el PDF (docs/208)", () => {
+  it("costo + ISV incluido + comisión + ganancia = precio, igual que la Ficha", async () => {
+    const { priceBreakdown, unitMarginAmount } = await import("./recipe-pricing")
+    const r = { pricingMethod: "food_cost", isv: 15, salesCommissionPercent: 10 } as never
+    const pb = priceBreakdown(r, 115, 30)
+    expect(pb.isv).toBeCloseTo(15)
+    expect(pb.commission).toBeCloseTo(11.5)
+    expect(pb.margin).toBeCloseTo(58.5)
+    expect(pb.cost + pb.isv + pb.commission + pb.margin).toBeCloseTo(115)
+    expect(pb.margin).toBeCloseTo(unitMarginAmount(r, 115, 30))
+    const six = priceBreakdown({ pricingMethod: "six_rubros", isv: 15 } as never, 100, 40)
+    expect(six.isv).toBe(0)
+    expect(six.margin).toBe(60)
+  })
+})

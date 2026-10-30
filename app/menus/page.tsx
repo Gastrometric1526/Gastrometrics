@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { safeFilePart } from "@/lib/pdf/pdf-filename"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -189,7 +190,7 @@ export default function MenusPage() {
         allergensByRecipeId,
       })
       const suffix = type === "interno" ? "interno" : "cliente"
-      doc.save(`menu-${menu.name.toLowerCase().replace(/\s+/g, "-")}-${suffix}.pdf`)
+      doc.save(`menu-${safeFilePart(menu.name.toLowerCase(), "menu")}-${suffix}.pdf`)
       toast({
         title: t("menus_toast_pdf_generated_title"),
         description: type === "interno" ? t("menus_toast_pdf_generated_internal_desc") : t("menus_toast_pdf_generated_client_desc"),

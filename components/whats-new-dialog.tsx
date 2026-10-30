@@ -1,32 +1,40 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Sparkles } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { PLAN_TOUR_PENDING_KEY } from "@/lib/plan-tour"
-import { LATEST_CHANGELOG_VERSION, getChangelogContent, getLatestTutorialHref } from "@/lib/changelog"
+import { LATEST_CHANGELOG_VERSION, changelogDate, getChangelogEntry } from "@/lib/changelog"
 import { parseTourHref, TOUR_KEY_PREFIX } from "@/lib/tour-links"
+import { formatDate } from "@/lib/date-format"
 import { usePathname, useRouter } from "next/navigation"
 import { GraduationCap } from "lucide-react"
 
 const SEEN_KEY_PREFIX = "changelog_seen_"
+
+/** Abre la ventana con una novedad concreta: `{ detail: { version } }` (docs/208, desde Notificaciones). */
+export const WHATS_NEW_OPEN_EVENT = "gm:whats-new:open"
 
 /**
  * Pop-up de "novedades" al entrar — se muestra una sola vez por versión de
  * changelog y por cuenta (bandera en localStorage, mismo patrón que los tours
  * guiados de components/page-tour.tsx). Vive montado en el Dashboard, igual que
  * OnboardingTour — nunca se dispara en /login ni en la landing.
+ * Desde docs/208 también se reabre al tocar una novedad en «Notificaciones», con su
+ * botón «Ver el tutorial».
  */
 export function WhatsNewDialog() {
   const { user } = useAuth()
   const { language, t } = useLanguage()
   const [open, setOpen] = useState(false)
+  const [version, setVersion] = useState<string>(LATEST_CHANGELOG_VERSION)
   const router = useRouter()
   const pathname = usePathname()
-  const tutorialHref = getLatestTutorialHref()
+  const entry = getChangelogEntry(version)
+  const tutorialHref = entry.tutorialHref ?? null
 
   useEffect(() => {
     if (!user) return
@@ -43,12 +51,23 @@ export function WhatsNewDialog() {
     const key = `${SEEN_KEY_PREFIX}${user.id}`
     const seenVersion = typeof window !== "undefined" ? localStorage.getItem(key) : LATEST_CHANGELOG_VERSION
     if (seenVersion !== LATEST_CHANGELOG_VERSION) {
+      setVersion(LATEST_CHANGELOG_VERSION)
       setOpen(true)
     }
   }, [user])
 
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const wanted = (e as CustomEvent<{ version?: string }>).detail?.version
+      setVersion(wanted || LATEST_CHANGELOG_VERSION)
+      setOpen(true)
+    }
+    window.addEventListener(WHATS_NEW_OPEN_EVENT, onOpen)
+    return () => window.removeEventListener(WHATS_NEW_OPEN_EVENT, onOpen)
+  }, [])
+
   const handleClose = () => {
-    if (user) {
+    if (user && version === LATEST_CHANGELOG_VERSION) {
       localStorage.setItem(`${SEEN_KEY_PREFIX}${user.id}`, LATEST_CHANGELOG_VERSION)
     }
     setOpen(false)
@@ -66,7 +85,7 @@ export function WhatsNewDialog() {
     router.push(tutorialHref)
   }
 
-  const content = getChangelogContent(language)
+  const content = entry.content[language] || entry.content.es
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && handleClose()}>
@@ -76,6 +95,7 @@ export function WhatsNewDialog() {
             <Sparkles className="h-5 w-5 text-primary" />
             {content.title}
           </DialogTitle>
+          <DialogDescription>{formatDate(changelogDate(entry.version))}</DialogDescription>
         </DialogHeader>
         <ul className="space-y-3 py-2">
           {content.items.map((item, index) => (

@@ -145,6 +145,8 @@ export interface PdfLabels {
   mepPreparaciones: string
   mepPreparacionesNota: string
   mepTambienEn: string
+  desgloseDelPrecio: string
+  comisionVenta: string
   mepPlatos: string
   mepAProducir: string
   mepSeUsaEn: string
@@ -210,7 +212,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     sinProveedor: "Sin proveedor",
     presentacion: "Presentación",
     numero: "No.",
-    itemsOrden: "Items",
+    itemsOrden: "Artículos",
     totalOrden: "Total de la Orden",
     inventario: "Inventario",
     reporteInventario: "Reporte de Inventario",
@@ -228,6 +230,8 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     ubicacion: "Ubicación",
     rendPesoEstimado: "Rend. en peso (est.):",
     desgloseDeCostos: "DESGLOSE DE COSTOS",
+    desgloseDelPrecio: "DESGLOSE DEL PRECIO",
+    comisionVenta: "Comisión de venta",
     distribucionVisual: "DISTRIBUCIÓN VISUAL",
     rubrosDeCosteo: "Rubros de costeo",
     composicionCostoPorIngrediente: "Composición del costo por ingrediente",
@@ -375,6 +379,8 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     ubicacion: "Location",
     rendPesoEstimado: "Weight yield (est.):",
     desgloseDeCostos: "COST BREAKDOWN",
+    desgloseDelPrecio: "PRICE BREAKDOWN",
+    comisionVenta: "Sales commission",
     distribucionVisual: "VISUAL BREAKDOWN",
     rubrosDeCosteo: "Cost categories",
     composicionCostoPorIngrediente: "Cost composition by ingredient",
@@ -522,6 +528,8 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     ubicacion: "Placering",
     rendPesoEstimado: "Vægtudbytte (est.):",
     desgloseDeCostos: "OMKOSTNINGSFORDELING",
+    desgloseDelPrecio: "PRISFORDELING",
+    comisionVenta: "Salgsprovision",
     distribucionVisual: "VISUEL FORDELING",
     rubrosDeCosteo: "Omkostningskategorier",
     composicionCostoPorIngrediente: "Omkostningssammensætning pr. ingrediens",
@@ -669,6 +677,8 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     ubicacion: "Emplacement",
     rendPesoEstimado: "Rendement en poids (est.) :",
     desgloseDeCostos: "REPARTITION DES COUTS",
+    desgloseDelPrecio: "REPARTITION DU PRIX",
+    comisionVenta: "Commission de vente",
     distribucionVisual: "REPARTITION VISUELLE",
     rubrosDeCosteo: "Postes de couts",
     composicionCostoPorIngrediente: "Composition du cout par ingredient",
@@ -816,6 +826,8 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     ubicacion: "Localizacao",
     rendPesoEstimado: "Rendimento em peso (est.):",
     desgloseDeCostos: "DETALHAMENTO DE CUSTOS",
+    desgloseDelPrecio: "DETALHAMENTO DO PREÇO",
+    comisionVenta: "Comissão de venda",
     distribucionVisual: "DISTRIBUICAO VISUAL",
     rubrosDeCosteo: "Itens de custeio",
     composicionCostoPorIngrediente: "Composicao do custo por ingrediente",
@@ -963,6 +975,8 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     ubicacion: "位置",
     rendPesoEstimado: "重量产出（估）：",
     desgloseDeCostos: "成本明细",
+    desgloseDelPrecio: "售价构成",
+    comisionVenta: "销售佣金",
     distribucionVisual: "可视化分布",
     rubrosDeCosteo: "成本项目",
     composicionCostoPorIngrediente: "各食材成本构成",

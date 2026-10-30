@@ -30,6 +30,7 @@ export const REPORT_SECTIONS: ReportSection[] = [
   { id: "analytics", titleKey: "admin_report_sec_analytics", url: "/api/admin/analytics" },
   { id: "business-health", titleKey: "admin_report_sec_business_health", url: "/api/admin/business-health" },
   { id: "ocr", titleKey: "admin_report_sec_ocr", url: "/api/admin/ocr-usage" },
+  { id: "usage-events", titleKey: "admin_report_sec_usage_events", url: "/api/admin/usage-events" },
   { id: "email-clicks", titleKey: "admin_report_sec_email_clicks", url: "/api/admin/email-clicks" },
   { id: "referrals", titleKey: "admin_report_sec_referrals", url: "/api/admin/referrals" },
   { id: "support", titleKey: "admin_report_sec_support", url: "/api/admin/support" },

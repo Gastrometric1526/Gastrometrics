@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf"
+import { safeFilePart } from "@/lib/pdf/pdf-filename"
 import autoTable from "jspdf-autotable"
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
@@ -525,7 +526,7 @@ export function generateInventoryPDF(data: InventoryPDFData, options: InventoryP
 }
 
 export function generateInventoryPDFFilename(data: InventoryPDFData): string {
-  const titlePart = sanitizeText(data.title).replace(/[^a-zA-Z0-9]/g, "_")
+  const titlePart = safeFilePart(sanitizeText(data.title), "inventario")
   const date = new Date()
   const dateStr = fileDate(date)
   return `${titlePart}_${dateStr}.pdf`

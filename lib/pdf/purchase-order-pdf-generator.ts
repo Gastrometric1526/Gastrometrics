@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf"
+import { safeFilePart } from "@/lib/pdf/pdf-filename"
 import autoTable from "jspdf-autotable"
 import type { PurchaseOrder } from "@/types/purchase-order"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
@@ -209,7 +210,9 @@ export function generatePurchaseOrderPDF(order: PurchaseOrder, options: Purchase
   doc.setFontSize(9)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(...COLORS.darkGray)
-  doc.text(`${labels.numero} ${sanitizeText(order.name)}`, pageWidth - margin, 18, { align: "right" })
+  // «No. 12 · Almuerzo» (docs/208): antes decía «No.» seguido del nombre, sin el número.
+  const orderTitle = order.number ? `${labels.numero} ${order.number} · ${sanitizeText(order.name)}` : sanitizeText(order.name)
+  doc.text(orderTitle, pageWidth - margin, 18, { align: "right" })
 
   yPosition = 32
 
@@ -382,7 +385,7 @@ export function generatePurchaseOrderPDF(order: PurchaseOrder, options: Purchase
 }
 
 export function generatePurchaseOrderPDFFilename(order: PurchaseOrder): string {
-  const orderName = sanitizeText(order.name).replace(/[^a-zA-Z0-9]/g, "_")
+  const orderName = safeFilePart(sanitizeText(order.name), "orden")
   const date = new Date()
   const dateStr = fileDate(date)
   return `OC_${orderName}_${dateStr}.pdf`

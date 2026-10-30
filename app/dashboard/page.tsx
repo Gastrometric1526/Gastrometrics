@@ -38,7 +38,7 @@ import { SettingsDialog } from "@/components/settings-dialog"
 import { Sidebar } from "@/components/sidebar"
 import { useTheme } from "next-themes"
 import { ActivityTracker } from "@/lib/activity-tracker"
-import { logActivity, getActivityLog, formatActivityEntry, notificationHref, type ActivityLogEntry } from "@/lib/services/activity-log"
+import { logActivity, getActivityLog, formatActivityEntry, type ActivityLogEntry } from "@/lib/services/activity-log"
 import { usePlanStatus, planExpiryOf } from "@/lib/plan-status"
 import { getPlanBySlug } from "@/lib/plans"
 import { SUPPORT_OPEN_EVENT } from "@/components/support-chat"
@@ -46,14 +46,17 @@ import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { AddBusinessDialog } from "@/components/add-business-dialog"
 import { OnboardingTour } from "@/components/onboarding-tour"
-import { WhatsNewDialog } from "@/components/whats-new-dialog"
+import { WhatsNewDialog, WHATS_NEW_OPEN_EVENT } from "@/components/whats-new-dialog"
+import { useModuleReveal } from "@/lib/module-reveal"
+import { NotificationDetailDialog } from "@/components/notification-detail-dialog"
+import { getRecentChangelog, changelogDate } from "@/lib/changelog"
 import { PlanChangeNoticeDialog } from "@/components/plan-change-notice-dialog"
 import { PlanTour } from "@/components/plan-tour"
 import { GettingStartedPath } from "@/components/getting-started-path"
 import { refreshPlanStatus } from "@/lib/plan-status"
 import { useFeatureAccess, useActiveMembership, setCurrentPlanSlug, getMinimumPlanForFeature } from "@/lib/plan-access"
 import type { FeatureKey } from "@/lib/plans"
-import { Lock } from "lucide-react"
+import { Lock, Sparkles } from "lucide-react"
 import { useNavigationItems } from "@/components/sidebar"
 import { moduleCardStyle } from "@/lib/module-card-style"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
@@ -87,6 +90,8 @@ export default function DashboardPage() {
   const [currentTime, setCurrentTime] = useState(new Date())
   const [recentActivity, setRecentActivity] = useState<ActivityLogEntry[]>([])
   const [systemAlerts, setSystemAlerts] = useState<ActivityLogEntry[]>([])
+  // Detalle de una notificación al tocarla (docs/208).
+  const [notificationDetail, setNotificationDetail] = useState<ActivityLogEntry | null>(null)
   const [unreadNotifications, setUnreadNotifications] = useState(0)
   const [isSeedingExample, setIsSeedingExample] = useState(false)
   // "Qué hacer hoy" — se llena dentro de calculateCurrentStats (más abajo), no en un
@@ -97,6 +102,7 @@ export default function DashboardPage() {
   >([])
 
   const router = useRouter()
+  const moduleReveal = useModuleReveal()
   // Avisos en vivo de «Notificaciones» (docs/206): plan por vencer y respuesta del soporte.
   const planStatusLive = usePlanStatus()
   const planExpiryLive = planExpiryOf(planStatusLive)
@@ -414,6 +420,13 @@ export default function DashboardPage() {
         ]
       : []),
   ]
+  // Novedades de los últimos 30 días (docs/208): al tocarlas se reabre su ventana con «Ver el tutorial».
+  const newsAlerts = getRecentChangelog().map((entry) => ({
+    key: `news-${entry.version}`,
+    text: t("notif_news").replace("{title}", (entry.content[language] || entry.content.es).title),
+    date: changelogDate(entry.version),
+    onClick: () => window.dispatchEvent(new CustomEvent(WHATS_NEW_OPEN_EVENT, { detail: { version: entry.version } })),
+  }))
 
   const loadUserActivity = async () => {
     if (!user) return
@@ -666,6 +679,7 @@ export default function DashboardPage() {
     <div className="flex min-h-screen bg-background">
       <OnboardingTour />
       <WhatsNewDialog />
+      <NotificationDetailDialog entry={notificationDetail} onClose={() => setNotificationDetail(null)} />
       <PlanChangeNoticeDialog />
       <PlanTour />
       <Sidebar />
@@ -947,12 +961,20 @@ export default function DashboardPage() {
                     )
                   }
 
+                  const isFresh = moduleReveal.fresh.has(action.href.split("?")[0])
                   return (
                   <Link
                     key={index}
                     href={action.href}
-                    className="group flex flex-col items-start gap-3 rounded-2xl border border-hairline bg-card p-5 hover:border-primary/40 hover:shadow-sm transition-all"
+                    data-module-fresh={isFresh ? "" : undefined}
+                    className={`group relative flex flex-col items-start gap-3 rounded-2xl border bg-card p-5 hover:border-primary/40 hover:shadow-sm transition-all ${isFresh ? "border-primary/50" : "border-hairline"}`}
                   >
+                    {isFresh && (
+                      <>
+                        <span className="pointer-events-none absolute inset-0 rounded-2xl ring-2 ring-primary/50 animate-pulse" aria-hidden="true" />
+                        <span className="absolute right-3 top-3 rounded-full bg-primary px-1.5 py-px text-[10px] font-semibold text-primary-foreground">{t("sidebar_module_new")}</span>
+                      </>
+                    )}
                     <div className={`w-12 h-12 rounded-xl ${action.bgColor} flex items-center justify-center shrink-0`}>
                       <action.icon className={`h-6 w-6 ${action.textColor}`} />
                     </div>
@@ -1021,7 +1043,7 @@ export default function DashboardPage() {
                   <p className="text-xs text-text-4">{t("dashboard_notifications_card_desc")}</p>
                 </CardHeader>
                 <CardContent className="p-4 h-full overflow-y-auto">
-                  {systemAlerts.length + liveAlerts.length > 0 ? (
+                  {systemAlerts.length + liveAlerts.length + newsAlerts.length > 0 ? (
                     <div className="divide-y divide-hairline">
                       {liveAlerts.map((a) => (
                         <button key={a.key} type="button" onClick={a.onClick} className="flex w-full items-start gap-3 py-3 text-left hover:bg-muted/40 rounded-md">
@@ -1032,24 +1054,29 @@ export default function DashboardPage() {
                           </div>
                         </button>
                       ))}
-                      {systemAlerts.map((alert) => {
-                        const href = notificationHref(alert)
-                        return (
-                          <button
-                            key={alert.id}
-                            type="button"
-                            disabled={!href}
-                            onClick={() => href && router.push(href)}
-                            className="flex w-full items-start gap-3 py-3 text-left enabled:hover:bg-muted/40 rounded-md disabled:cursor-default"
-                          >
-                            <span className="h-1.5 w-1.5 rounded-full shrink-0 mt-1.5 bg-text-4/60" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground">{formatActivityEntry(alert, t)}</p>
-                              <p className="text-xs text-text-4 mt-0.5">{ActivityTracker.formatTimeAgo(alert.createdAt, t, language)}</p>
-                            </div>
-                          </button>
-                        )
-                      })}
+                      {systemAlerts.map((alert) => (
+                        <button
+                          key={alert.id}
+                          type="button"
+                          onClick={() => setNotificationDetail(alert)}
+                          className="flex w-full items-start gap-3 py-3 text-left hover:bg-muted/40 rounded-md"
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full shrink-0 mt-1.5 bg-text-4/60" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground">{formatActivityEntry(alert, t)}</p>
+                            <p className="text-xs text-text-4 mt-0.5">{ActivityTracker.formatTimeAgo(alert.createdAt, t, language)}</p>
+                          </div>
+                        </button>
+                      ))}
+                      {newsAlerts.map((a) => (
+                        <button key={a.key} type="button" onClick={a.onClick} className="flex w-full items-start gap-3 py-3 text-left hover:bg-muted/40 rounded-md">
+                          <Sparkles className="h-3.5 w-3.5 shrink-0 mt-0.5 text-primary" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground">{a.text}</p>
+                            <p className="text-xs text-text-4 mt-0.5">{formatDate(a.date)}</p>
+                          </div>
+                        </button>
+                      ))}
                     </div>
                   ) : (
                     <div className="text-center py-8">

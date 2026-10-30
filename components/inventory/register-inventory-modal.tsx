@@ -28,7 +28,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
-import { logActivity, logPriceRuleChanges } from "@/lib/services/activity-log"
+import { logActivity, logPriceRuleChanges, importFormat } from "@/lib/services/activity-log"
 import { ActivityTracker } from "@/lib/activity-tracker"
 import { v4 as uuidv4 } from "uuid"
 import { Badge } from "@/components/ui/badge"
@@ -664,6 +664,17 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
       )
       setPresentationDrafts({})
       setCountResult(result)
+      // Conteo importado (docs/208): /admin ve formato y productos reconocidos.
+      if (user && result.matched.length) {
+        logActivity({
+          user,
+          businessId: businessId && businessId !== "main" ? businessId : null,
+          module: "inventario",
+          action: "imported",
+          entityLabel: file.name,
+          metadata: { count: result.matched.length, unmatched: result.unmatched?.length ?? 0, format: importFormat(file) },
+        })
+      }
       if (!result.matched.length) {
         toast({ title: t("inventario_count_none_title"), description: t("inventario_count_none_desc"), variant: "destructive" })
       }

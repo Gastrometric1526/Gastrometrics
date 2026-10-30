@@ -60,6 +60,7 @@ import type { FeatureKey } from "@/lib/plans"
 import { Lock } from "lucide-react"
 import { useModuleReveal } from "@/lib/module-reveal"
 import { PlanCountdownChip, PlanCountdownDot } from "@/components/plan-countdown-chip"
+import { ModuleUnlockDialog } from "@/components/module-unlock-dialog"
 
 /**
  * Lista de módulos de la app (con candado por plan y filtro de Vista previa de Equipo). Es la
@@ -380,8 +381,18 @@ function SidebarInner() {
     setIsCollapsed(!isCollapsed)
   }
 
+  // Ventana única al desbloquear módulos (docs/208): qué se abrió y un botón para ir. Espera a
+  // que no haya un tutorial abierto.
+  const unlockItems = allNavigationItems.filter((item) => reveal.toAnnounce.includes(item.href))
+  const showUnlock = unlockItems.length > 0 && !revealPreviewActive
+
   return (
     <>
+      <ModuleUnlockDialog
+        open={showUnlock}
+        items={unlockItems.map((i) => ({ href: i.href, title: i.title, description: i.description, icon: i.icon }))}
+        onClose={reveal.markAnnounced}
+      />
       {/* Mobile Menu Button — en top-4 right-4, no left-4: el botón "Volver" de cada
           pantalla vive en top-4 left-4 dentro del contenido, y colisionaba con este
           botón fijo (ver docs/36). Ahora accede al drawer completo (Ingredientes, Órdenes
@@ -397,6 +408,9 @@ function SidebarInner() {
         onClick={() => setIsMobileOpen(!isMobileOpen)}
       >
         {isMobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+        {!isMobileOpen && reveal.fresh.size > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-background animate-pulse" aria-hidden="true" />
+        )}
         {/* Aviso de vencimiento del plan (docs/165): el menú del celular está cerrado casi siempre. */}
         {!isMobileOpen && <PlanCountdownDot onlyAlerts className="-top-0.5 -right-0.5" />}
       </Button>
@@ -540,8 +554,10 @@ function SidebarInner() {
               <Link key={item.href} href={contextualHref}>
                 <div
                   data-tour={`nav-${item.href}`}
+                  data-module-fresh={reveal.fresh.has(item.href) ? "" : undefined}
                   className={cn(
                     "flex items-center gap-3 py-2 rounded-r-lg transition-colors duration-150 group relative border-l-[3px]",
+                    reveal.fresh.has(item.href) && !isActive && "bg-primary/5",
                     isActive
                       ? "bg-secondary border-primary pl-[9px] pr-3"
                       : "border-transparent text-text-3 hover:text-foreground hover:bg-secondary pl-[9px] pr-3",
@@ -571,6 +587,10 @@ function SidebarInner() {
                   )}
                   {effectiveCollapsed && reveal.fresh.has(item.href) && (
                     <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
+                  )}
+                  {/* Resaltado de módulo recién desbloqueado (docs/208): late hasta que se visita. */}
+                  {reveal.fresh.has(item.href) && !isActive && (
+                    <span className="pointer-events-none absolute inset-0 rounded-r-lg ring-2 ring-primary/60 animate-pulse" aria-hidden="true" />
                   )}
 
                   {/* Tooltip para modo colapsado */}

@@ -38,6 +38,21 @@ export async function GET() {
   const requestedLanguage = profileRow?.preferred_language || "es"
   const language = (SUPPORTED_MANUAL_LANGUAGES as readonly string[]).includes(requestedLanguage) ? requestedLanguage : "es"
 
+  // Descarga del manual en el registro real (docs/208): la ve /admin. Nunca bloquea la descarga.
+  await admin
+    .from("activity_log")
+    .insert({
+      business_id: null,
+      user_id: user.id,
+      user_name: (user.user_metadata?.full_name as string | undefined) || user.email || "",
+      module: "manual",
+      action: "downloaded",
+      entity_label: null,
+      metadata: { language },
+      is_notification: false,
+    })
+    .then(({ error }) => error && console.error("[api/manual] No se pudo registrar la descarga:", error))
+
   try {
     const pdfBuffer = await readFile(manualPathFor(language)).catch(() =>
       // Fallback si el PDF de ese idioma específico faltara (no debería pasar en

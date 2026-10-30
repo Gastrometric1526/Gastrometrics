@@ -85,6 +85,18 @@ export function unitMarginAmount(recipe: Recipe, price: number, unitCost: number
   return price - isvPerUnit - price * commissionFraction(recipe) - unitCost
 }
 
+/**
+ * Cómo se reparte el precio de venta de una receta (docs/208, para el PDF administrativo):
+ * costo + ISV incluido (solo Food Cost) + comisión + ganancia = precio. Mismo cálculo que
+ * unitMarginAmount, así la ficha y el PDF dicen lo mismo.
+ */
+export function priceBreakdown(recipe: Recipe, price: number, unitCost: number): { cost: number; isv: number; commission: number; margin: number } {
+  if (!(price > 0)) return { cost: unitCost, isv: 0, commission: 0, margin: 0 }
+  const isv = pricingMethodOf(recipe) === "food_cost" ? taxIncludedIn(price, recipe.isv || 0) : 0
+  const commission = price * commissionFraction(recipe)
+  return { cost: unitCost, isv, commission, margin: price - isv - commission - unitCost }
+}
+
 /** «Costo %» de la Ficha: costo ÷ venta sin ISV (Food Cost) × 100 (docs/188). */
 export function unitCostPercent(recipe: Recipe, price: number, unitCost: number): number {
   if (!(price > 0)) return 0

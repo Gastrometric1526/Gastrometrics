@@ -3,9 +3,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, ArrowLeft, X } from "lucide-react"
+import { ArrowRight, ArrowLeft, Lightbulb, X } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { requestedTourMatches } from "@/lib/tour-links"
+import { withTourFlows } from "@/lib/tour-flows"
 
 export type TourStep = {
   id: string
@@ -21,6 +22,14 @@ export type TourStep = {
   // puede tardar un render en aparecer después de esto, por eso la búsqueda de abajo
   // reintenta unos cuadros en vez de un solo document.querySelector.
   beforeShow?: () => void
+  // Conexiones entre módulos (pedido del dueño, docs/208): de dónde salen los datos de este
+  // paso y a dónde van, con los nombres de los módulos ya traducidos.
+  from?: string[]
+  to?: string[]
+  // Ejemplo corto de la mini función (el multiplicador, la merma, el precio…).
+  tip?: string
+  // Lista corta (p. ej. qué módulos se desbloquean y cuándo).
+  list?: string[]
 }
 
 type Rect = { top: number; left: number; width: number; height: number }
@@ -124,8 +133,10 @@ type PageTourProps = {
   onStepChange?: (step: TourStep) => void
 }
 
-export function PageTour({ steps, storageKey, startDelay = 350, finishLabel, onFinish, onStart, onClose, onStepChange }: PageTourProps) {
+export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finishLabel, onFinish, onStart, onClose, onStepChange }: PageTourProps) {
   const { t } = useLanguage()
+  // Conexiones entre módulos y ejemplos de cada paso (docs/208, lib/tour-flows.ts).
+  const steps = withTourFlows(storageKey, rawSteps, t)
   const [isOpen, setIsOpen] = useState(false)
   const [stepIndex, setStepIndex] = useState(0)
   const [rect, setRect] = useState<Rect | null>(null)
@@ -441,6 +452,45 @@ export function PageTour({ steps, storageKey, startDelay = 350, finishLabel, onF
           </div>
           <h3 className="text-base font-bold text-foreground mb-1.5 text-balance pr-4">{step.title}</h3>
           <p className="text-sm text-muted-foreground leading-relaxed text-pretty">{step.description}</p>
+          {step.list && step.list.length > 0 && (
+            <ul className="mt-3 space-y-1.5">
+              {step.list.map((item, i) => (
+                <li key={i} className="flex gap-2 text-sm text-foreground">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                  <span className="leading-snug">{item}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {((step.from && step.from.length > 0) || (step.to && step.to.length > 0)) && (
+            <div className="mt-3 space-y-1.5 rounded-lg border border-border bg-muted/40 p-2.5 text-xs" data-tour-flow="">
+              {step.from && step.from.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="font-semibold text-muted-foreground">{t("tour_flow_from")}</span>
+                  {step.from.map((m) => (
+                    <span key={m} className="rounded-full border border-border bg-card px-2 py-0.5 text-foreground">{m}</span>
+                  ))}
+                </div>
+              )}
+              {step.to && step.to.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="font-semibold text-muted-foreground">{t("tour_flow_to")}</span>
+                  {step.to.map((m) => (
+                    <span key={m} className="rounded-full border border-border bg-card px-2 py-0.5 text-foreground">{m}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {step.tip && (
+            <div className="mt-3 flex gap-2 rounded-lg bg-primary/5 p-2.5 text-xs leading-relaxed text-foreground" data-tour-tip="">
+              <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+              <span>
+                <span className="font-semibold">{t("tour_flow_example")} </span>
+                {step.tip}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="h-1 bg-muted mx-5 rounded-full overflow-hidden mb-4">

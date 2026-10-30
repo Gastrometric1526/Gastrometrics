@@ -71,7 +71,8 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { ActivityTracker } from "@/lib/activity-tracker"
-import { logActivity, getActivityLog, formatActivityEntry, notificationHref, type ActivityLogEntry } from "@/lib/services/activity-log"
+import { logActivity, getActivityLog, formatActivityEntry, type ActivityLogEntry } from "@/lib/services/activity-log"
+import { NotificationDetailDialog } from "@/components/notification-detail-dialog"
 import { getMenus } from "@/lib/menus"
 import { addScenarioResult } from "@/lib/storage/menus.store"
 import { calculateScenario, generateRecommendation } from "@/lib/analytics/menuScenario"
@@ -103,6 +104,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
   const [loading, setLoading] = useState(true)
   const [recentActivity, setRecentActivity] = useState<ActivityLogEntry[]>([])
   const [systemAlerts, setSystemAlerts] = useState<ActivityLogEntry[]>([])
+  const [notificationDetail, setNotificationDetail] = useState<ActivityLogEntry | null>(null)
   const [unreadNotifications, setUnreadNotifications] = useState(0)
   const [menus, setMenus] = useState<Menu[]>([])
   const [selectedMenuId, setSelectedMenuId] = useState<string>("")
@@ -585,6 +587,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
       <div className="flex-1 overflow-hidden">
         <div className="h-full overflow-y-auto">
           <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
+            <NotificationDetailDialog entry={notificationDetail} onClose={() => setNotificationDetail(null)} />
             <BusinessDetailTour hasScenarioSection={!!(business?.hasFinancialData && menus.length > 0)} />
             {/* Header Section */}
             <div
@@ -1339,13 +1342,11 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                       {systemAlerts.map((alert) => (
                         <div
                           key={alert.id}
-                          role={notificationHref(alert) ? "button" : undefined}
-                          tabIndex={notificationHref(alert) ? 0 : undefined}
-                          onClick={() => {
-                            const href = notificationHref(alert)
-                            if (href) router.push(href)
-                          }}
-                          className={`flex items-start gap-3 p-3 rounded-lg border-2 bg-info-soft ${notificationHref(alert) ? "cursor-pointer hover:opacity-90" : ""}`}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setNotificationDetail(alert)}
+                          onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setNotificationDetail(alert)}
+                          className="flex items-start gap-3 p-3 rounded-lg border-2 bg-info-soft cursor-pointer hover:opacity-90"
                         >
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-blue-900 dark:text-blue-300">
