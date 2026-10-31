@@ -687,7 +687,7 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
               {draftTotals.taxPercent > 0 && (
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>
-                    {t("facturas_tax_label")} ({draftTotals.taxPercent}%)
+                    {t("facturas_tax_total_label").replace("{percent}", String(draftTotals.taxPercent))}
                   </span>
                   <span className="tabular-nums">{formatCurrency(draftTotals.taxAmount)}</span>
                 </div>

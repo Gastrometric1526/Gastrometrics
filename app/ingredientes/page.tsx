@@ -64,7 +64,7 @@ import { MermaManagementDialog } from "@/components/merma-management-dialog"
 import { matchCategoryLabel } from "@/lib/ingredient-labels"
 import type { Ingredient } from "@/types/ingredient"
 import { categories, units, presentations } from "@/types/ingredient"
-import { getCategoryLabel, getUnitLabel, getPresentationLabel } from "@/lib/ingredient-labels"
+import { getCategoryLabel, getUnitLabel, getUnitLabelFor, getPresentationLabel } from "@/lib/ingredient-labels"
 import { getIngredients, saveIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import type { Recipe } from "@/types/recipe"
@@ -2356,7 +2356,7 @@ export default function IngredientesPage() {
                                       />
                                     </td>
                                     <td className="p-2 whitespace-nowrap">
-                                      {row.content} {getUnitLabel(row.unit as any, language)}
+                                      {row.content} {getUnitLabelFor(row.unit as any, language, Number(row.content))}
                                     </td>
                                     <td className="p-1 text-right">
                                       <Input

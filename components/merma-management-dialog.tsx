@@ -16,7 +16,7 @@ import { setDashboardData } from "@/utils/dashboard-data"
 import { MermaInfoDialog } from "./merma-info-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
-import { getCategoryLabel, getMermaLevelLabel, getUnitLabel } from "@/lib/ingredient-labels"
+import { getCategoryLabel, getMermaLevelLabel, getUnitLabel, getUnitLabelFor } from "@/lib/ingredient-labels"
 import { formatUnitPrice } from "@/lib/currency"
 import { useAuth } from "@/contexts/auth-context"
 import { logActivity } from "@/lib/services/activity-log"
@@ -509,12 +509,12 @@ export function MermaManagementDialog({
                           </TableCell>
                           <TableCell className="text-center">
                             <div className="font-medium">
-                              {Number(originalContent.toFixed(2))} {getUnitLabel(ingredient.unit, language)}
+                              {Number(originalContent.toFixed(2))} {getUnitLabelFor(ingredient.unit, language, originalContent)}
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
                             <div className={`font-medium ${isAdjusted ? "text-green-600 dark:text-green-300" : ""}`}>
-                              {Number(currentContent.toFixed(2))} {getUnitLabel(ingredient.unit, language)}
+                              {Number(currentContent.toFixed(2))} {getUnitLabelFor(ingredient.unit, language, currentContent)}
                             </div>
                             {isAdjusted && (
                               <div className="text-xs text-green-600 dark:text-green-300">

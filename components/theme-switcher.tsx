@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { Check, Palette, Sun, Moon, Monitor } from "lucide-react"
 import { useTheme } from "next-themes"
-import { CURATED_THEMES, DEFAULT_THEME_SLUG, resolveThemeSlug, applyThemeAttribute } from "@/lib/theme-colors"
+import { CURATED_THEMES, DEFAULT_THEME_SLUG, resolveThemeSlug, applyThemeAttribute, themeStorageKey } from "@/lib/theme-colors"
 import { useLanguage } from "@/contexts/language-context"
 
 interface ThemeSwitcherProps {
@@ -26,7 +26,7 @@ export function ThemeSwitcher({ businessId, showLightDark = true, className }: T
     setMounted(true)
 
     // Load theme for specific business or main dashboard
-    const themeKey = businessId ? `business_${businessId}_color_theme` : "main_color_theme"
+    const themeKey = themeStorageKey(businessId)
     const savedTheme = localStorage.getItem(themeKey)
     // Un valor guardado antes de la migración a los 7 temas curados (ver docs/36) sigue
     // pintando su color correcto vía globals.css, pero aquí en el selector se muestra
@@ -41,7 +41,7 @@ export function ThemeSwitcher({ businessId, showLightDark = true, className }: T
     setCurrentColorTheme(themeSlug)
 
     // Save theme for specific business or main dashboard
-    const themeKey = businessId ? `business_${businessId}_color_theme` : "main_color_theme"
+    const themeKey = themeStorageKey(businessId)
     localStorage.setItem(themeKey, themeSlug)
 
     // Apply theme to document (ya dispara "gm:theme-changed" — ver lib/theme-colors.ts)

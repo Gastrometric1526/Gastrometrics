@@ -251,7 +251,7 @@ export function SalesHistoryBreakdown({
                 <p className="text-lg font-bold text-foreground tabular-nums">{totals.quantitySold.toLocaleString("en-US")}</p>
               </div>
               <div className="rounded-lg border border-border bg-muted/20 p-3">
-                <p className="text-xs text-muted-foreground">{t("sales_history_kpi_avg_ticket")}</p>
+                <p className="text-xs text-muted-foreground">{t("sales_history_avg_unit_price")}</p>
                 <p className="text-lg font-bold text-foreground tabular-nums">{formatCurrency(totals.avgTicket)}</p>
               </div>
               <div className="rounded-lg border border-border bg-muted/20 p-3">

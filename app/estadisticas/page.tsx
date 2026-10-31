@@ -71,7 +71,7 @@ import type { Ingredient } from "@/types/ingredient"
 import { unitAbbreviations } from "@/types/ingredient"
 import type { InventoryItem } from "@/types/inventory"
 import { getClassificationLabel } from "@/lib/classification-labels"
-import { getCategoryLabel, getUnitLabel } from "@/lib/ingredient-labels"
+import { getCategoryLabel, getUnitLabel, getUnitLabelFor } from "@/lib/ingredient-labels"
 import { buildPackageContentLookup, inventoryItemValue } from "@/lib/inventory-value"
 import { formatUnitPrice } from "@/lib/currency"
 import { formatDate } from "@/lib/date-format"
@@ -753,7 +753,7 @@ function EstadisticasContent() {
                                     {sub.usedInRecipes} {t(sub.usedInRecipes !== 1 ? "estadisticas_recipe_plural" : "estadisticas_recipe_singular")}
                                     <span className="text-muted-foreground font-normal">
                                       {" "}
-                                      · {sub.totalQuantity} {getUnitLabel(sub.unit, language)}
+                                      · {sub.totalQuantity} {getUnitLabelFor(sub.unit, language, sub.totalQuantity)}
                                     </span>
                                   </>
                                 ) : (

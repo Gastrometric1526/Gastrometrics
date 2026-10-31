@@ -32,6 +32,17 @@ export const MODULE_STAGES: Record<string, number> = {
   "/equipo": 3,
 }
 
+/**
+ * ¿Esta ruta es una visita al módulo? Órdenes de compra se abre en /menu-y-compras, que
+ * redirige a /business/{id}/ordenes-compra: antes la marca «Nuevo» nunca se quitaba
+ * (docs/218). Puro (cubierto por pruebas).
+ */
+export function isModuleVisit(pathname: string, href: string): boolean {
+  if (pathname.startsWith(href)) return true
+  if (href === "/menu-y-compras") return /^\/business\/[^/]+\/ordenes-compra/.test(pathname) || pathname.startsWith("/procesar-ordenes")
+  return false
+}
+
 /** Módulos ocultos para una cantidad de recetas — puro (cubierto por pruebas). */
 export function hiddenModulesFor(recipeCount: number): string[] {
   return Object.entries(MODULE_STAGES)
@@ -107,7 +118,7 @@ export function useModuleReveal(options: { disabled?: boolean } = {}) {
     const prev = read(key)
     const revealed = prev.hiddenBefore.filter((href) => !hiddenNow.includes(href))
     let fresh = Array.from(new Set([...prev.fresh, ...revealed]))
-    if (pathname) fresh = fresh.filter((href) => !pathname.startsWith(href))
+    if (pathname) fresh = fresh.filter((href) => !isModuleVisit(pathname, href))
     const next = { ...prev, hiddenBefore: hiddenNow, fresh }
     if (JSON.stringify(next) !== JSON.stringify(prev)) {
       write(key, next)

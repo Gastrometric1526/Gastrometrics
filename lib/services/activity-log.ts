@@ -241,17 +241,45 @@ const MODULE_NAV_KEY: Record<ActivityModule, string> = {
 }
 
 /**
+ * Texto de una importación según qué se importó (docs/218). Antes todas decían «importó
+ * ventas (N filas)», también una receta o una lista de ingredientes, y una factura salía
+ * «importó ventas ( filas)».
+ */
+function formatImport(entry: ActivityLogEntry, t: (key: any) => string, module: string, count: string): string {
+  const pick = (key: string) => t(count === "1" ? `${key}_one` : key)
+  const fill = (tpl: string) => tpl.replace("{user}", entry.userName).replace("{count}", count).replace("{module}", module).replace("{entity}", entry.entityLabel ?? "")
+  if (entry.module === "recetas") return fill(t(entry.entityLabel ? "activity_tpl_imported_recipe" : "activity_tpl_imported_recipe_unnamed"))
+  if (entry.module === "ingredientes" && count) return fill(pick("activity_tpl_imported_ingredients"))
+  if (entry.module === "estadisticas") {
+    if (entry.metadata?.source === "invoice") return fill(t("activity_tpl_invoice_saved"))
+    if (count) return fill(pick("activity_tpl_imported_sales"))
+  }
+  if (count) return fill(pick("activity_tpl_imported_rows"))
+  return fill(t("activity_tpl_imported_generic"))
+}
+
+/**
  * Arma el texto legible de una fila, en el idioma de quien la está viendo — nunca en
  * el idioma de quien la escribió (las filas se guardan sin texto resuelto, ver arriba).
  */
 export function formatActivityEntry(entry: ActivityLogEntry, t: (key: any) => string): string {
-  const module = t(MODULE_NAV_KEY[entry.module] || "nav_dashboard")
+  // Lo que se guarda con módulo «estadisticas» y no es «entró» viene de Ventas (registro
+  // manual, POS, facturas, cuadre): desde que Ventas es su propio módulo (docs/124) se
+  // mostraba «en Reportes» (docs/218).
+  const isSales = entry.module === "estadisticas" && entry.action !== "entered"
+  const module = t(isSales ? "nav_ventas" : MODULE_NAV_KEY[entry.module] || "nav_dashboard")
   const count = entry.metadata?.count != null ? String(entry.metadata.count) : ""
   // Sin nombre (p. ej. un conteo de inventario completo) salía "Daniel creó  en
   // Inventario" con un hueco (docs/156): se describe por cantidad o de forma genérica.
   const entity =
     entry.entityLabel ||
-    (count === "1" ? t("activity_entity_count_one") : count ? t("activity_entity_count").replace("{count}", count) : t("activity_entity_unnamed"))
+    (isSales
+      ? t("activity_entity_sales_day")
+      : count === "1"
+        ? t("activity_entity_count_one")
+        : count
+          ? t("activity_entity_count").replace("{count}", count)
+          : t("activity_entity_unnamed"))
 
   switch (entry.action) {
     case "entered":
@@ -263,7 +291,7 @@ export function formatActivityEntry(entry: ActivityLogEntry, t: (key: any) => st
     case "deleted":
       return t("activity_tpl_deleted").replace("{user}", entry.userName).replace("{entity}", entity).replace("{module}", module)
     case "imported":
-      return t("activity_tpl_imported").replace("{user}", entry.userName).replace("{count}", count).replace("{module}", module)
+      return formatImport(entry, t, module, count)
     case "activated":
       return t("activity_tpl_merma_activated").replace("{user}", entry.userName)
     case "deactivated":

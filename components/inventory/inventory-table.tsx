@@ -11,7 +11,7 @@ import { useDebouncedCallback } from "@/lib/hooks/useDebounce"
 import { getIngredients } from "@/lib/storage/ingredients"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
-import { getCategoryLabel, getPresentationLabel, getUnitLabel } from "@/lib/ingredient-labels"
+import { getCategoryLabel, getPresentationLabel, getUnitLabel, getUnitLabelFor } from "@/lib/ingredient-labels"
 import { getPackageContent, isBeverageCategory } from "@/lib/beverage"
 import type { TheoreticalStockEntry } from "@/lib/theoretical-stock"
 
@@ -262,7 +262,7 @@ export function InventoryTable({
                   {editedItemId === item.id ? (
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-xs text-text-4">
-                        {item.currentStock !== null ? `${item.currentStock} ${getUnitLabel(item.unit, language)}` : "-"}
+                        {item.currentStock !== null ? `${item.currentStock} ${getUnitLabelFor(item.unit, language, item.currentStock)}` : "-"}
                       </span>
                       <NumericInput
                         value={item.minStock}
@@ -282,7 +282,7 @@ export function InventoryTable({
                       return (
                         <div className="flex flex-col items-center gap-1 w-[110px] mx-auto">
                           <span className={`text-sm font-medium tabular-nums ${textColor}`}>
-                            {item.currentStock} / {item.minStock} {getUnitLabel(item.unit, language)}
+                            {item.currentStock} / {item.minStock} {getUnitLabelFor(item.unit, language, item.minStock)}
                           </span>
                           <div className="relative h-1 w-full rounded-full bg-secondary overflow-hidden">
                             <div className={`absolute inset-y-0 left-0 rounded-full ${barColor}`} style={{ width: `${barPct}%` }} />

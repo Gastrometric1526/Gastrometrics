@@ -296,14 +296,25 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
   const topMargin = [...dishPerformance].sort((a, b) => b.contributionMargin - a.contributionMargin).slice(0, 8)
   const bottomMargin = [...dishPerformance].sort((a, b) => a.contributionMargin - b.contributionMargin).slice(0, 8)
 
+  // Sin conteo inicial y final del período el COGS no es real (docs/218): antes se mostraba
+  // «Food cost real 0 %», «Varianza −28 % · Problema serio» y «Utilidad 100 %».
+  const realReady = cogsResult.hasFullData
+  const NOT_READY = "—"
   const varianceLabel =
-    Math.abs(variance) < 3
+    !realReady
+      ? t("finanzas_needs_counts")
+      : Math.abs(variance) < 3
       ? t("finanzas_variance_excellent")
       : Math.abs(variance) < 5
         ? t("finanzas_variance_acceptable")
         : t("finanzas_variance_serious")
-  const varianceColor =
-    Math.abs(variance) < 3 ? "text-chart-2" : Math.abs(variance) < 5 ? "text-chart-4" : "text-destructive"
+  const varianceColor = !realReady
+    ? "text-muted-foreground"
+    : Math.abs(variance) < 3
+      ? "text-chart-2"
+      : Math.abs(variance) < 5
+        ? "text-chart-4"
+        : "text-destructive"
 
   return (
     <div className="space-y-6">
@@ -372,9 +383,9 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   {t("finanzas_card_real_food_cost")}
                 </p>
-                <p className="text-2xl font-bold tabular-nums">{realCostPercent.toFixed(1)}%</p>
+                <p className="text-2xl font-bold tabular-nums">{realReady ? `${realCostPercent.toFixed(1)}%` : NOT_READY}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {formatCurrency(cogsResult.cogs)} {t("finanzas_card_cogs_suffix")}
+                  {realReady ? `${formatCurrency(cogsResult.cogs)} ${t("finanzas_card_cogs_suffix")}` : t("finanzas_needs_counts")}
                 </p>
               </CardContent>
             </Card>
@@ -393,8 +404,7 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
                   {t("finanzas_card_variance")}
                 </p>
                 <p className={`text-2xl font-bold tabular-nums ${varianceColor}`}>
-                  {variance >= 0 ? "+" : ""}
-                  {variance.toFixed(1)}%
+                  {realReady ? `${variance >= 0 ? "+" : ""}${variance.toFixed(1)}%` : NOT_READY}
                 </p>
                 <p className={`text-xs mt-0.5 ${varianceColor}`}>{varianceLabel}</p>
               </CardContent>
@@ -404,8 +414,8 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   {t("finanzas_card_prime_cost")}
                 </p>
-                <p className="text-2xl font-bold tabular-nums">{primeCostResult.primeCostPercent.toFixed(1)}%</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{t("finanzas_prime_cost_sub")}</p>
+                <p className="text-2xl font-bold tabular-nums">{realReady ? `${primeCostResult.primeCostPercent.toFixed(1)}%` : NOT_READY}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{realReady ? t("finanzas_prime_cost_sub") : t("finanzas_needs_counts")}</p>
               </CardContent>
             </Card>
             <Card className="border-border bg-card">
@@ -421,8 +431,8 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   {t("finanzas_card_inventory_turnover")}
                 </p>
-                <p className="text-2xl font-bold tabular-nums">{inventoryTurnover.toFixed(2)}x</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{t("finanzas_turnover_sub")}</p>
+                <p className="text-2xl font-bold tabular-nums">{realReady ? `${inventoryTurnover.toFixed(2)}x` : NOT_READY}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{realReady ? t("finanzas_turnover_sub") : t("finanzas_needs_counts")}</p>
               </CardContent>
             </Card>
             <Card className="border-border bg-card">
@@ -430,11 +440,11 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   {t("finanzas_card_net_profit")}
                 </p>
-                <p className={`text-2xl font-bold tabular-nums ${pnl.netProfit >= 0 ? "" : "text-destructive"}`}>
-                  {formatCurrency(pnl.netProfit)}
+                <p className={`text-2xl font-bold tabular-nums ${!realReady || pnl.netProfit >= 0 ? "" : "text-destructive"}`}>
+                  {realReady ? formatCurrency(pnl.netProfit) : NOT_READY}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {pnl.netProfitPercent.toFixed(1)}% {t("finanzas_net_profit_percent_suffix")}
+                  {realReady ? `${pnl.netProfitPercent.toFixed(1)}% ${t("finanzas_net_profit_percent_suffix")}` : t("finanzas_needs_counts")}
                 </p>
               </CardContent>
             </Card>
@@ -444,8 +454,7 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
             <div className="flex items-start gap-2 text-sm bg-warning-soft text-warning border border-warning/40 rounded-lg px-4 py-3">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
               <p>
-                {t("finanzas_no_full_data_before")}
-                {""}
+                {t("finanzas_no_full_data_before")}{" "}
                 <span className="font-medium">{t("nav_inventario")}</span> {t("finanzas_no_full_data_after")}
               </p>
             </div>

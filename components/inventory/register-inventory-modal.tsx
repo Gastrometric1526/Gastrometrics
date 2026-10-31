@@ -38,7 +38,7 @@ import { setDashboardData } from "@/utils/dashboard"
 import { saveInventory, getInventory, addInventorySnapshot, getInventoryHistory } from "@/lib/storage/inventory"
 import { getIngredients, saveIngredients } from "@/lib/storage/ingredients"
 import { presentations } from "@/types/ingredient"
-import { getCategoryLabel, getPresentationLabel, getUnitLabel } from "@/lib/ingredient-labels"
+import { getCategoryLabel, getPresentationLabel, getUnitLabel, getUnitLabelFor } from "@/lib/ingredient-labels"
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
 import { updateIngredientPriceAndRecalculate, requestSubRecipePricePrompt } from "@/lib/recalculate"
 import { computeWeightedAverageCost } from "@/lib/utils/weighted-average-cost"
@@ -1508,7 +1508,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                                 {getCategoryLabel(ingredient.category, language)}
                               </TableCell>
                               <TableCell className="py-1.5 text-right">
-                                <span className="font-medium">{ingredient.quantity}</span> {getUnitLabel(ingredient.unit, language)}
+                                <span className="font-medium">{ingredient.quantity}</span> {getUnitLabelFor(ingredient.unit, language, Number(ingredient.quantity))}
                                 {inventoryMode === "presentation" &&
                                   ingredient.presentation &&
                                   getPackageContent(ingredient) > 0 && (

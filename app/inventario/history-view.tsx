@@ -35,7 +35,7 @@ import { ChevronDown, Download, Eye, Filter, Search } from "lucide-react"
 import type { InventorySnapshot } from "@/types/inventory"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
-import { getCategoryLabel, getUnitLabel } from "@/lib/ingredient-labels"
+import { getCategoryLabel, getUnitLabel, getUnitLabelFor } from "@/lib/ingredient-labels"
 import { snapshotItemValue } from "@/lib/inventory-value"
 import { getPresentationLabel } from "@/lib/ingredient-labels"
 import { formatDate as formatDMY, formatDateTime } from "@/lib/date-format"
@@ -442,7 +442,7 @@ export function HistoryView({ inventoryHistory, exportInventory, isLoading }: Hi
                             <TableCell className="font-medium">{item.name}</TableCell>
                             <TableCell>{getCategoryLabel(item.category, language)}</TableCell>
                             <TableCell>
-                              {item.quantity} {getUnitLabel(item.unit, language)}
+                              {item.quantity} {getUnitLabelFor(item.unit, language, item.quantity)}
                               {selectedSnapshot.inventoryMode === "presentation" &&
                                 item.presentation &&
                                 item.netContent &&

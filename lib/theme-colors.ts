@@ -97,10 +97,19 @@ function hslStringToRgb(hslTriplet: string): [number, number, number] {
   return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)]
 }
 
+/**
+ * Clave de localStorage del color de un negocio. «main» es el espacio principal (no un
+ * negocio real): antes se buscaba `business_main_color_theme`, que nunca existe, y las
+ * pantallas bajo /business/main/… y todos los PDF del espacio principal salían en el
+ * naranja por defecto aunque la persona hubiera elegido otro color (docs/218).
+ */
+export function themeStorageKey(businessId?: string | null): string {
+  return businessId && businessId !== "main" ? `business_${businessId}_color_theme` : "main_color_theme"
+}
+
 function getBusinessThemeSlug(businessId?: string | null): string {
   if (typeof window === "undefined") return DEFAULT_THEME_SLUG
-  const themeKey = businessId ? `business_${businessId}_color_theme` : "main_color_theme"
-  return resolveThemeSlug(localStorage.getItem(themeKey))
+  return resolveThemeSlug(localStorage.getItem(themeStorageKey(businessId)))
 }
 
 /**

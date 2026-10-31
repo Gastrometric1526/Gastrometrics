@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useTheme } from "next-themes"
-import { applyThemeAttribute, DEFAULT_THEME_SLUG } from "@/lib/theme-colors"
+import { applyThemeAttribute, DEFAULT_THEME_SLUG, themeStorageKey } from "@/lib/theme-colors"
 
 // Páginas públicas de marketing — deben verse siempre igual (claro, Naranja Brasa) sin
 // importar el modo oscuro ni el color de tema que el usuario haya guardado en la app,
@@ -57,7 +57,7 @@ export function ThemeInitializer() {
     } else {
       const businessRouteMatch = pathname?.match(/^\/business\/([^/?]+)/)
       const businessId = businessRouteMatch?.[1] || searchParams.get("business")
-      const themeKey = businessId ? `business_${businessId}_color_theme` : "main_color_theme"
+      const themeKey = themeStorageKey(businessId)
       const savedTheme = typeof window !== "undefined" ? localStorage.getItem(themeKey) : null
       applyThemeAttribute(savedTheme || DEFAULT_THEME_SLUG)
     }

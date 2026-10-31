@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge"
 import { Trash2, Plus, Package } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
-import { getCategoryLabel, getPresentationLabel, getUnitLabel, matchUnitLabel } from "@/lib/ingredient-labels"
+import { getCategoryLabel, getPresentationLabel, getUnitLabel, getUnitLabelFor, matchUnitLabel } from "@/lib/ingredient-labels"
 
 export interface PurchaseOrderFormItem {
   id: string
@@ -513,7 +513,7 @@ export function PurchaseOrderForm({
                           </p>
                         ) : (
                           <p className="text-sm text-muted-foreground">
-                            {item.quantity} {getUnitLabel(item.unit, language)} × {formatCurrency(item.unitPrice)}
+                            {item.quantity} {getUnitLabelFor(item.unit, language, item.quantity)} × {formatCurrency(item.unitPrice)}
                           </p>
                         )}
                         {hideSupplierField && item.category ? (
