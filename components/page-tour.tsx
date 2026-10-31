@@ -513,7 +513,8 @@ export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finish
             <div className="mt-3 flex gap-2 rounded-lg bg-primary/5 p-2.5 text-xs leading-relaxed text-foreground" data-tour-tip="">
               <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
               <span>
-                <span className="font-semibold">{t("tour_flow_example")} </span>
+                {/* En una pista el recuadro es un consejo, no un ejemplo con números (docs/219). */}
+                <span className="font-semibold">{t(isHint ? "hint_tip_label" : "tour_flow_example")} </span>
                 {step.tip}
               </span>
             </div>

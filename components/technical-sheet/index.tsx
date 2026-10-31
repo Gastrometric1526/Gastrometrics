@@ -1307,13 +1307,15 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
   // Pistas por acción en la ficha (docs/219): se muestran al llegar a cada momento, no todas
   // al entrar. Una a la vez (cada pista espera a que se cierre la anterior).
   const costedLines = recipe.ingredients.filter((ing) => ing.ingredientId && (ing.extension || 0) > 0).length
-  const hintPriceReady = costedLines > 0 && recipe.yieldAmount > 0
+  // Las pistas acompañan a quien está armando una receta NUEVA, a medida que avanza: al
+  // abrir una ya hecha todas las condiciones se cumplen de golpe y saldrían tres seguidas.
+  const hintPriceReady = mode === "new" && costedLines > 0 && recipe.yieldAmount > 0
 
   return (
     <div className="container mx-auto py-6 space-y-6 max-w-6xl">
       <ActionHint
         id="ficha-first-ingredient"
-        when={costedLines > 0}
+        when={mode === "new" && costedLines > 0}
         selector='[data-tour="ficha-ingredients-table"]'
         title={t("hint_ficha_ingredient_title")}
         description={t("hint_ficha_ingredient_desc")}
