@@ -90,6 +90,7 @@ import { formatUnitPrice } from "@/lib/currency"
 import { fileDate } from "@/lib/date-format"
 import { useFormDraft } from "@/hooks/use-form-draft"
 import { DraftRestoredNotice } from "@/components/draft-restored-notice"
+import { useConfirmDialog } from "@/components/confirm-dialog"
 
 // Helper function for generating unique IDs
 const generateUniqueId = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 9)
@@ -162,6 +163,8 @@ export default function IngredientesPage() {
   const canAccessIngredients = useFeatureAccess("ingredients")
   const { showSuccess, showError, showInfo } = useNotification()
   const { t, language } = useLanguage()
+  // Pregunta de recálculo con la ventana de la app, no window.confirm (docs/218).
+  const [askConfirm, confirmDialog] = useConfirmDialog()
 
   const sortOptions = useMemo(() => getSortOptions(t), [t])
   const FORM_STEPS = useMemo(() => getFormSteps(t), [t])
@@ -890,10 +893,11 @@ export default function IngredientesPage() {
         saveIngredients(updatedIngredients, businessId)
 
         if (priceChanged) {
-          const confirmRecalculate = window.confirm(
+          const confirmRecalculate = await askConfirm(
             t("ingredientes_confirm_price_changed")
               .replace("{old}", contentOnlyChanged ? formatCurrency(oldUnitPrice) : formatCurrency(oldPurchasePrice))
               .replace("{new}", contentOnlyChanged ? formatCurrency(newUnitPrice) : formatCurrency(newPurchasePrice)),
+            { title: t("ingredientes_confirm_price_title"), confirmLabel: t("ingredientes_confirm_price_ok") },
           )
 
           if (confirmRecalculate) {
@@ -1979,7 +1983,10 @@ export default function IngredientesPage() {
                   <p className="text-muted-foreground">
                     {t("ingredientes_example_calc_text")
                       .replace("{netContent}", String(formData.pricing?.netContent || 1))
-                      .replace(/\{unit\}/g, formData.unit ? getUnitLabel(formData.unit, language) : "unidades")
+                      // «un paquete de 1 kilogramo… cada kilogramo» (docs/218): la primera según la
+                      // cantidad, la segunda siempre en singular.
+                      .replace("{unit}", formData.unit ? getUnitLabelFor(formData.unit, language, formData.pricing?.netContent || 1) : "unidades")
+                      .replace("{unit}", formData.unit ? getUnitLabelFor(formData.unit, language, 1) : "unidad")
                       .replace("{price}", formatCurrency(formData.pricing?.purchasePrice || 0))
                       .replace(
                         "{perUnit}",
@@ -2530,6 +2537,8 @@ export default function IngredientesPage() {
       </Dialog>
 
       {/* Merma Management Dialog */}
+      {confirmDialog}
+
       <MermaManagementDialog
         open={showMermaDialog}
         onOpenChange={setShowMermaDialog}

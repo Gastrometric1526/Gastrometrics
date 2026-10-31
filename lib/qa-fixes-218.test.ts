@@ -44,3 +44,17 @@ describe("correcciones de la revisión en la cuenta real (docs/218)", () => {
     expect(getUnitLabelFor("kilogramos", "es", 2)).toBe("kilogramos")
   })
 })
+
+describe("sub-recetas en pantalla (docs/218)", () => {
+  it("la categoría de una sub-receta se traduce", async () => {
+    const { getCategoryLabel } = await import("@/lib/ingredient-labels")
+    expect(getCategoryLabel("Sub Receta / produccion (Mise en place)", "es")).toBe("Sub-receta")
+    expect(getCategoryLabel("Sub Receta / produccion (Mise en place)", "en")).toBe("Sub-recipe")
+    expect(getCategoryLabel("VEGETAL", "es")).toBe("VEGETAL")
+  })
+  it("el rendimiento usa su unidad, en singular cuando es 1", async () => {
+    const { getYieldUnitLabelFor } = await import("@/lib/ingredient-labels")
+    expect(getYieldUnitLabelFor("porciones", "es", 1)).toBe("porción")
+    expect(getYieldUnitLabelFor("porciones", "es", 4)).toBe("porciones")
+  })
+})

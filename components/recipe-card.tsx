@@ -29,6 +29,7 @@ import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import type { Recipe, Classification } from "@/types/recipe"
 import { useLanguage } from "@/contexts/language-context"
 import { getClassificationLabel } from "@/lib/classification-labels"
+import { getYieldUnitLabelFor } from "@/lib/ingredient-labels"
 import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 import { formatDate, formatDayMonth } from "@/lib/date-format"
 
@@ -347,7 +348,7 @@ export function RecipeCard({
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-blue-600 dark:text-blue-300" />
               <div>
-                <p className="font-medium text-blue-600 dark:text-blue-300">{stats.yield} {t("recipecard_servings_suffix")}</p>
+                <p className="font-medium text-blue-600 dark:text-blue-300">{stats.yield} {recipe.yieldUnit && recipe.yieldUnit !== "porciones" ? getYieldUnitLabelFor(recipe.yieldUnit, language, stats.yield) : getYieldUnitLabelFor("porciones", language, stats.yield)}</p>
                 <p className="text-muted-foreground text-xs">{t("recipecard_yield_label")}</p>
               </div>
             </div>

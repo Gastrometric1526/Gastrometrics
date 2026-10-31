@@ -395,7 +395,13 @@ const MERMA_LEVEL_LABELS: Partial<Record<LanguageCode, Record<string, string>>> 
   zh: { Ninguna: "无", Baja: "低", Media: "中", Alta: "高", "Muy Alta": "非常高" },
 }
 
+// El ingrediente que refleja una sub-receta lleva como categoría la clasificación de la
+// receta; se mostraba tal cual («Sub Receta / produccion (Mise en place)», sin traducir).
+const SUB_RECIPE_CATEGORY = "Sub Receta / produccion (Mise en place)"
+const SUB_RECIPE_CATEGORY_LABEL: Record<LanguageCode, string> = { es: "Sub-receta", en: "Sub-recipe", da: "Underopskrift", fr: "Sous-recette", pt: "Sub-receita", zh: "子配方" }
+
 export function getCategoryLabel(category: string, language: LanguageCode): string {
+  if (category === SUB_RECIPE_CATEGORY) return SUB_RECIPE_CATEGORY_LABEL[language] ?? SUB_RECIPE_CATEGORY_LABEL.es
   if (language === "es") return category
   return CATEGORY_LABELS[language]?.[category as Category] ?? category
 }
