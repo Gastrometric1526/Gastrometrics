@@ -39,6 +39,7 @@ import {
   onChapterRoute,
   readJourney,
   skipJourney,
+  endReplay,
   startJourney,
   writeJourney,
   EMPTY_JOURNEY,
@@ -190,7 +191,7 @@ export function GuidedJourney() {
       // La receta se guardó de verdad: la ficha queda hecha aunque se navegue enseguida a Mis Recetas.
       if (detail?.name === "recipe-saved") {
         const current = readJourney()
-        if (current && current.started && !current.skipped && !current.done.includes("ficha-advanced")) {
+        if (current) {
           const next = markDone(current, ["ficha-basic", "ficha-advanced"])
           writeJourney(next)
           setState(next)
@@ -248,6 +249,15 @@ export function GuidedJourney() {
       setState(next)
     }
   }, [state, autoDoneKey])
+
+  // El repaso de un módulo termina cuando ya no le queda ninguna etapa que se pueda mostrar.
+  const replayOver = !!state?.replay?.length && position.status !== "waiting" && !(position.status === "active" && position.fromReplay)
+  useEffect(() => {
+    if (!state || !replayOver) return
+    const next = endReplay(state)
+    writeJourney(next)
+    setState(next)
+  }, [state, replayOver])
 
   const chapter = position.status === "active" ? position.chapter : null
   const chapterId = chapter?.id ?? null
@@ -398,14 +408,22 @@ export function GuidedJourney() {
     writePaused(false)
     setPaused(false)
   }
+  const replaying = !!state?.replay?.length
   const skip = async () => {
+    // Durante el repaso de un módulo, «Saltar» solo termina ese repaso.
+    if (replaying && state) {
+      const next = endReplay(state)
+      writeJourney(next)
+      setState(next)
+      return
+    }
     const ok = await confirm(t("journey_skip_confirm_desc"), { title: t("journey_skip_confirm_title"), confirmLabel: t("journey_skip_confirm_ok") })
     if (!ok) return
     const next = skipJourney(state ?? { ...EMPTY_JOURNEY, existing: true })
     writeJourney(next)
     setState(next)
   }
-  const canSkip = state ? state.existing : isExisting
+  const canSkip = replaying || (state ? state.existing : isExisting)
 
   if (!enabled || typeof document === "undefined") return confirmDialog
 

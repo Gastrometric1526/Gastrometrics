@@ -27,6 +27,12 @@ export type JourneyState = {
   existing: boolean
   skipped: boolean
   done: string[]
+  /**
+   * «Reiniciar tutorial» desde un módulo (pedido del dueño): repasa solo las etapas de ese
+   * módulo, en este orden, y después el recorrido sigue donde iba. Desde el Dashboard se
+   * reinicia todo (`restartJourney`).
+   */
+  replay?: string[]
 }
 
 export const EMPTY_JOURNEY: JourneyState = { started: false, existing: false, skipped: false, done: [] }
@@ -109,7 +115,7 @@ export type JourneyPosition =
   | { status: "off" } // saltado o no empezado
   | { status: "finished" }
   | { status: "waiting" } // falta saber el plan
-  | { status: "active"; chapter: ChapterMeta; unlocked: boolean; index: number; total: number }
+  | { status: "active"; chapter: ChapterMeta; unlocked: boolean; index: number; total: number; fromReplay?: boolean }
 
 /**
  * Próxima etapa: la primera no hecha que el plan permite. Las metas ya cumplidas se dan por
@@ -119,8 +125,20 @@ export type JourneyPosition =
  */
 export function journeyPosition(state: JourneyState, facts: JourneyFacts): JourneyPosition & { autoDone: string[] } {
   const autoDone: string[] = []
-  if (!state.started || state.skipped) return { status: "off", autoDone }
   const total = CHAPTERS.length
+  // Repaso de un módulo: va primero, aunque el recorrido estuviera terminado o saltado. Se
+  // saltan las etapas que el plan no incluye o que todavía no tienen los datos que necesitan.
+  for (const id of state.replay ?? []) {
+    const index = CHAPTERS.findIndex((c) => c.id === id)
+    if (index < 0) continue
+    const chapter = CHAPTERS[index]
+    const applies = chapterApplies(chapter, facts)
+    if (applies === null) return { status: "waiting", autoDone }
+    if (!applies || chapter.kind === "goal") continue
+    if (chapter.unlocked && !chapter.unlocked(facts)) continue
+    return { status: "active", chapter, unlocked: true, index, total, autoDone, fromReplay: true }
+  }
+  if (!state.started || state.skipped) return { status: "off", autoDone }
   for (let index = 0; index < CHAPTERS.length; index++) {
     const chapter = CHAPTERS[index]
     if (state.done.includes(chapter.id)) continue
@@ -147,7 +165,23 @@ export function onChapterRoute(chapter: ChapterMeta, pathname: string): boolean 
 
 export function markDone(state: JourneyState, ids: string[]): JourneyState {
   const done = Array.from(new Set([...state.done, ...ids]))
-  return done.length === state.done.length ? state : { ...state, done }
+  const replay = state.replay?.filter((id) => !ids.includes(id))
+  if (done.length === state.done.length && (replay?.length ?? 0) === (state.replay?.length ?? 0)) return state
+  return { ...state, done, ...(state.replay ? { replay } : {}) }
+}
+
+/** Etapas que se repasan al reiniciar el tutorial desde una pantalla (sin las metas). */
+export function chaptersForRoute(pathname: string): string[] {
+  return CHAPTERS.filter((c) => c.route !== null && c.kind !== "goal" && onChapterRoute(c, pathname)).map((c) => c.id)
+}
+
+/** «Reiniciar tutorial» desde un módulo: solo sus etapas; el resto del recorrido no cambia. */
+export function replayModule(state: JourneyState, ids: string[]): JourneyState {
+  return { ...state, replay: ids }
+}
+
+export function endReplay(state: JourneyState): JourneyState {
+  return { ...state, replay: [] }
 }
 
 export function startJourney(existing: boolean): JourneyState {
@@ -160,12 +194,13 @@ export function restartJourney(state: JourneyState): JourneyState {
 }
 
 export function skipJourney(state: JourneyState): JourneyState {
-  return { ...state, started: true, skipped: true }
+  return { ...state, started: true, skipped: true, replay: [] }
 }
 
 /** Mientras el recorrido está activo, los tutoriales de página y las pistas no se abren solos. */
 export function journeyControlsTours(state: JourneyState | null): boolean {
   if (!state) return true // todavía no se inició: el recorrido decide primero
+  if (state.replay && state.replay.length > 0) return true
   return state.started && !state.skipped && !state.done.includes("finish")
 }
 
@@ -179,6 +214,7 @@ export function parseJourney(raw: string | null): JourneyState | null {
       existing: v.existing === true,
       skipped: v.skipped === true,
       done: Array.isArray(v.done) ? v.done.filter((d: unknown) => typeof d === "string") : [],
+      ...(Array.isArray(v.replay) ? { replay: v.replay.filter((d: unknown) => typeof d === "string") } : {}),
     }
   } catch {
     return null

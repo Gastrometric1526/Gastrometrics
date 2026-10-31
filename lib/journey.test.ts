@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 import {
   CHAPTERS,
+  chaptersForRoute,
+  endReplay,
+  replayModule,
   EMPTY_JOURNEY,
   journeyControlsTours,
   journeyPosition,
@@ -117,6 +120,26 @@ describe("tutorial guiado progresivo (docs/221)", () => {
     const withMenu = journeyPosition(atMenusOne, facts({ ingredients: 5, recipes: 3, menus: 1 }))
     expect(withMenu.status === "active" && withMenu.chapter.id).toBe("mep")
     expect(withMenu.status === "active" && withMenu.unlocked).toBe(true)
+  })
+
+  it("reiniciar desde un módulo repasa solo ese módulo y luego sigue donde iba", () => {
+    expect(chaptersForRoute("/ingredientes")).toEqual(["ingredients-add", "merma"])
+    expect(chaptersForRoute("/ficha-tecnica")).toEqual(["ficha-basic", "ficha-advanced"])
+    expect(chaptersForRoute("/dashboard")).toEqual([])
+    const f = facts({ ingredients: 5, recipes: 5, menus: 1 })
+    const finished = { ...startJourney(true), done: CHAPTERS.map((c) => c.id) }
+    const replay = replayModule(finished, chaptersForRoute("/ingredientes"))
+    const p1 = journeyPosition(replay, f)
+    expect(p1.status === "active" && p1.chapter.id).toBe("ingredients-add")
+    expect(p1.status === "active" && p1.fromReplay).toBe(true)
+    const p2 = journeyPosition(markDone(replay, ["ingredients-add"]), f)
+    expect(p2.status === "active" && p2.chapter.id).toBe("merma")
+    expect(journeyPosition(markDone(markDone(replay, ["ingredients-add"]), ["merma"]), f).status).toBe("finished")
+    // También cuando se había saltado el recorrido.
+    const skipped = replayModule(skipJourney(startJourney(true)), ["menus"])
+    const p3 = journeyPosition(skipped, f)
+    expect(p3.status === "active" && p3.chapter.id).toBe("menus")
+    expect(journeyPosition(endReplay(skipped), f).status).toBe("off")
   })
 
   it("los ids no se repiten", () => {

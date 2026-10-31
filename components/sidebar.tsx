@@ -1,7 +1,7 @@
 "use client"
 
 import { resetHints } from "@/lib/hints"
-import { EMPTY_JOURNEY, JOURNEY_PAUSED_KEY, readJourney, restartJourney, writeJourney } from "@/lib/journey"
+import { EMPTY_JOURNEY, JOURNEY_PAUSED_KEY, chaptersForRoute, readJourney, replayModule, restartJourney, writeJourney } from "@/lib/journey"
 import { effectiveMemberFeatures } from "@/lib/team-access"
 import { Suspense, useState, useEffect, useRef } from "react"
 import Link from "next/link"
@@ -377,14 +377,25 @@ function SidebarInner() {
     setIsMobileOpen(false)
     // También vuelve a encender las pistas por acción (docs/219).
     resetHints()
-    // Desde docs/221 vuelve a empezar el tutorial guiado desde la primera etapa.
     try {
       sessionStorage.removeItem(JOURNEY_PAUSED_KEY)
     } catch {
       /* sin sessionStorage */
     }
-    writeJourney(restartJourney(readJourney() ?? EMPTY_JOURNEY))
-    toast({ title: t("sidebar_restart_tour_toast") })
+    // Pedido del dueño (docs/221): desde el Dashboard se reinicia todo el tutorial guiado;
+    // desde un módulo, solo las etapas de ese módulo, y luego sigue donde iba. Una pantalla
+    // sin etapas propias (p. ej. el detalle de un negocio) reabre su tutorial de página.
+    const moduleChapters = chaptersForRoute(pathname ?? "")
+    if (pathname === "/dashboard" || pathname === "/") {
+      writeJourney(restartJourney(readJourney() ?? EMPTY_JOURNEY))
+      toast({ title: t("sidebar_restart_tour_toast") })
+    } else if (moduleChapters.length > 0) {
+      writeJourney(replayModule(readJourney() ?? EMPTY_JOURNEY, moduleChapters))
+      toast({ title: t("sidebar_restart_module_toast") })
+    } else {
+      window.dispatchEvent(new CustomEvent("gm:tour:restart"))
+      toast({ title: t("sidebar_restart_module_toast") })
+    }
   }
 
   const toggleSidebar = () => {
