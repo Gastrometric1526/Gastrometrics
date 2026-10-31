@@ -24,6 +24,8 @@ export const TEAM_ACCESS_V2 = "access_v2"
 const LEGACY_IMPLIED: { feature: FeatureKey; impliedBy: FeatureKey[] }[] = [
   { feature: "mep", impliedBy: ["menus"] },
   { feature: "sales_history", impliedBy: ["manual_sales", "stats_finance"] },
+  // Cuadre de caja (docs/217): quien ya registraba ventas a mano lo conserva.
+  { feature: "cash_up", impliedBy: ["manual_sales"] },
 ]
 
 /** Permisos reales de una persona del equipo (sin la marca y con las equivalencias antiguas). */
@@ -37,6 +39,23 @@ export function effectiveMemberFeatures(stored: readonly string[]): FeatureKey[]
   return out
 }
 
+/**
+ * Permisos que necesitan otro para funcionar: el cuadre de caja se guarda en el registro de
+ * ventas del día, que la base solo deja escribir con «Registro manual de ventas» (docs/217).
+ */
+export const FEATURE_REQUIRES: Partial<Record<FeatureKey, FeatureKey>> = { cash_up: "manual_sales" }
+
+/** Marca o desmarca un permiso respetando sus dependencias. */
+export function toggleTeamFeature(selected: readonly FeatureKey[], key: FeatureKey, checked: boolean): FeatureKey[] {
+  let next = checked ? [...new Set([...selected, key])] : selected.filter((f) => f !== key)
+  if (checked && FEATURE_REQUIRES[key] && !next.includes(FEATURE_REQUIRES[key]!)) next = [...next, FEATURE_REQUIRES[key]!]
+  if (!checked) {
+    const dependents = (Object.keys(FEATURE_REQUIRES) as FeatureKey[]).filter((d) => FEATURE_REQUIRES[d] === key)
+    next = next.filter((f) => !dependents.includes(f))
+  }
+  return next
+}
+
 /** Lo que se guarda desde Equipo: los permisos marcados más la marca. */
 export function featuresToStore(selected: readonly FeatureKey[]): string[] {
   return [...new Set(selected.filter((f) => (f as string) !== TEAM_ACCESS_V2)), TEAM_ACCESS_V2]
@@ -46,5 +65,6 @@ export function featuresToStore(selected: readonly FeatureKey[]): string[] {
 export function planFeaturesFor(feature: FeatureKey): FeatureKey[] {
   if (feature === "mep") return ["menus"]
   if (feature === "sales_history") return ["manual_sales", "stats_finance"]
+  if (feature === "cash_up") return ["manual_sales"]
   return [feature]
 }

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Trash2, Receipt, Plus, Pencil, ChevronDown, ChevronUp, DollarSign, Package, ListOrdered } from "lucide-react"
+import { Trash2, Receipt, Plus, Pencil, ChevronDown, ChevronUp, DollarSign, Package, ListOrdered, Wallet } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
 import { formatCurrency } from "@/lib/currency"
@@ -16,6 +16,9 @@ import type { SalesImport } from "@/types/sales-import"
 import { salesImportDisplayName } from "@/lib/sales-import-labels"
 import { TableSalesInsights } from "@/components/table-sales-insights"
 import { ticketLabel, ticketsCount } from "@/lib/manual-sales"
+import { CashUpDialog } from "@/components/cash-up-dialog"
+import { CashUpSummaryCard } from "@/components/cash-up-summary"
+import { CASH_UP_TOLERANCE, computeCashUp } from "@/lib/cash-up"
 
 interface ManualSalesTabProps {
   businessId: string
@@ -26,6 +29,8 @@ interface ManualSalesTabProps {
   onSalesChanged?: (imports: SalesImport[]) => void
   /** Totales y «Detalle por mesas»: solo con el permiso de historial de ventas (docs/216). */
   showInsights?: boolean
+  /** Cuadre de caja: permiso propio de Equipo (docs/217). */
+  canCashUp?: boolean
 }
 
 /**
@@ -36,7 +41,7 @@ interface ManualSalesTabProps {
  * Prime Cost, Menu Engineering, P&L) — acá solo se registra y se lista lo cargado,
  * sin ese análisis, que sigue exclusivo de Finanzas.
  */
-export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true }: ManualSalesTabProps) {
+export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true, canCashUp = true }: ManualSalesTabProps) {
   const { toast } = useToast()
   const { t, language } = useLanguage()
 
@@ -59,6 +64,8 @@ export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true
   // de ventas de un día completo sin aviso ni forma de deshacerlo.
   const [entryToDelete, setEntryToDelete] = useState<SalesImport | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  // Registro del día cuyo cuadre de caja está abierto (docs/217).
+  const [cashUpId, setCashUpId] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -203,8 +210,9 @@ export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true
             </div>
           ) : (
             <div className="space-y-2">
-              {manualEntries.map((imp) => {
+              {manualEntries.map((imp, index) => {
                 const isExpanded = expandedId === imp.id
+                const cashUpResult = imp.cashUp ? computeCashUp(imp, imp.cashUp) : null
                 return (
                   <div key={imp.id} className="rounded-lg border border-hairline bg-muted/20 overflow-hidden">
                     <div className="flex items-center justify-between text-sm px-3 py-2 gap-2">
@@ -228,6 +236,35 @@ export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true
                         </div>
                       </button>
                       <div className="flex items-center gap-1 shrink-0">
+                        {canCashUp && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1.5"
+                            onClick={() => setCashUpId(imp.id)}
+                            data-tour={index === 0 ? "ventas-cashup" : undefined}
+                            title={t("cashup_title")}
+                          >
+                            <Wallet className="h-4 w-4" />
+                            <span
+                              className={
+                                !cashUpResult
+                                  ? "hidden text-xs text-muted-foreground sm:inline"
+                                  : cashUpResult.status === "balanced"
+                                    ? "text-xs text-green-700 dark:text-green-300"
+                                    : cashUpResult.status === "short"
+                                      ? "text-xs text-red-700 dark:text-red-300"
+                                      : "text-xs text-amber-700 dark:text-amber-300"
+                              }
+                            >
+                              {!cashUpResult
+                                ? t("cashup_button")
+                                : cashUpResult.status === "short" || cashUpResult.status === "over"
+                                  ? `${cashUpResult.totalDifference < -CASH_UP_TOLERANCE ? "−" : "+"}${formatCurrency(Math.abs(cashUpResult.totalDifference))}`
+                                  : t(`cashup_badge_${cashUpResult.status}` as never)}
+                            </span>
+                          </Button>
+                        )}
                         <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(imp)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -293,7 +330,17 @@ export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true
         </CardContent>
       </Card>
 
+      {canCashUp && <CashUpSummaryCard imports={manualEntries} onOpenDay={setCashUpId} />}
+
       {showInsights && <TableSalesInsights imports={manualEntries} />}
+
+      <CashUpDialog
+        open={!!cashUpId}
+        onOpenChange={(next) => !next && setCashUpId(null)}
+        businessId={businessId}
+        salesImport={manualEntries.find((imp) => imp.id === cashUpId) ?? null}
+        onSaved={() => setSalesImports(getSalesImports(businessId))}
+      />
 
       <ManualSalesEntryDialog
         open={isDialogOpen}

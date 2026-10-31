@@ -259,6 +259,9 @@ export function ManualSalesEntryDialog({
       lines,
       tickets: ticketsToSave(toSave),
       source: "manual",
+      // El cuadre de caja del día se conserva al editar las cuentas (docs/217): lo esperado
+      // se recalcula solo con las cuentas nuevas.
+      ...(baseImport?.cashUp ? { cashUp: baseImport.cashUp } : {}),
     }
     try {
       if (baseImport) await updateSalesImport(salesImport, businessId)

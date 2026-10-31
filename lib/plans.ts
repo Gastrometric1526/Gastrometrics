@@ -58,6 +58,8 @@ export type FeatureKey =
   // existen para poder darlos o quitarlos por persona en /equipo.
   | "mep"
   | "sales_history"
+  // Cuadre de caja (docs/217): se desbloquea con "manual_sales".
+  | "cash_up"
 
 export interface Plan {
   slug: string

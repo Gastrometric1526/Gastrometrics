@@ -52,6 +52,8 @@ function VentasPageInner() {
   const canAccessInvoices = useFeatureAccess("invoices")
   // Historial y «Detalle por mesas»: permiso propio de Equipo (docs/216).
   const canSeeSalesHistory = useFeatureAccess("sales_history")
+  // Cuadre de caja: permiso propio de Equipo (docs/217).
+  const canCashUp = useFeatureAccess("cash_up")
 
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [menus, setMenus] = useState<Menu[]>([])
@@ -151,7 +153,7 @@ function VentasPageInner() {
                         </Card>
                       )}
 
-                      {canAccessManualSales && <ManualSalesTab businessId={businessId} onSalesChanged={setSalesImports} showInsights={canSeeSalesHistory} />}
+                      {canAccessManualSales && <ManualSalesTab businessId={businessId} onSalesChanged={setSalesImports} showInsights={canSeeSalesHistory} canCashUp={canCashUp === true} />}
 
                       {canSeeSalesHistory && <SalesHistoryBreakdown salesImports={salesImports} recipes={recipes} menus={menus} businessId={businessId} />}
                     </>

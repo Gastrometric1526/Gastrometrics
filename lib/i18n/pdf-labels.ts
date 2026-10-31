@@ -155,6 +155,27 @@ export interface PdfLabels {
   mepRecetas: string
   mepPreparacionBase: string
   mepReceta: string
+  cuadreCaja: string
+  formaPago: string
+  ventasCuentas: string
+  propinas: string
+  esperado: string
+  real: string
+  diferencia: string
+  efectivo: string
+  tarjeta: string
+  transferencia: string
+  fondoInicial: string
+  salidasCaja: string
+  sinFormaPago: string
+  otraFormaPago: string
+  estadoCuadrado: string
+  estadoFaltante: string
+  estadoSobrante: string
+  estadoMixto: string
+  estadoIncompleto: string
+  cerradoPor: string
+  noAnotado: string
   granAnio: string
 }
 
@@ -306,6 +327,27 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     mepRecetas: "RECETAS",
     mepPreparacionBase: "Preparación base",
     mepReceta: "Receta",
+    cuadreCaja: "Cuadre de caja",
+    formaPago: "Forma de pago",
+    ventasCuentas: "Ventas",
+    propinas: "Propinas",
+    esperado: "Según las cuentas",
+    real: "Real",
+    diferencia: "Diferencia",
+    efectivo: "Efectivo",
+    tarjeta: "Tarjeta (datáfono)",
+    transferencia: "Transferencias",
+    fondoInicial: "Fondo inicial",
+    salidasCaja: "Salidas de caja",
+    sinFormaPago: "Cuentas sin forma de pago",
+    otraFormaPago: "Cuentas con otra forma de pago",
+    estadoCuadrado: "Cuadrado",
+    estadoFaltante: "Faltante",
+    estadoSobrante: "Sobrante",
+    estadoMixto: "Total completo, forma de pago cruzada",
+    estadoIncompleto: "Incompleto",
+    cerradoPor: "Cerrado por",
+    noAnotado: "Sin anotar",
     granAnio: "Año",
   },
   en: {
@@ -455,6 +497,27 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     mepRecetas: "RECIPES",
     mepPreparacionBase: "Base prep",
     mepReceta: "Recipe",
+    cuadreCaja: "Cash-up",
+    formaPago: "Payment",
+    ventasCuentas: "Sales",
+    propinas: "Tips",
+    esperado: "Per checks",
+    real: "Actual",
+    diferencia: "Difference",
+    efectivo: "Cash",
+    tarjeta: "Card (terminal)",
+    transferencia: "Transfers",
+    fondoInicial: "Opening float",
+    salidasCaja: "Cash payouts",
+    sinFormaPago: "Checks without payment method",
+    otraFormaPago: "Checks with other payment",
+    estadoCuadrado: "Balanced",
+    estadoFaltante: "Short",
+    estadoSobrante: "Over",
+    estadoMixto: "Total matches, payment methods swapped",
+    estadoIncompleto: "Incomplete",
+    cerradoPor: "Closed by",
+    noAnotado: "Not noted",
     granAnio: "Year",
   },
   da: {
@@ -604,6 +667,27 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     mepRecetas: "OPSKRIFTER",
     mepPreparacionBase: "Grundtilberedning",
     mepReceta: "Opskrift",
+    cuadreCaja: "Kasseopgørelse",
+    formaPago: "Betaling",
+    ventasCuentas: "Salg",
+    propinas: "Drikkepenge",
+    esperado: "Ifølge regninger",
+    real: "Faktisk",
+    diferencia: "Difference",
+    efectivo: "Kontant",
+    tarjeta: "Kort (terminal)",
+    transferencia: "Overførsler",
+    fondoInicial: "Byttepenge",
+    salidasCaja: "Kontantudbetalinger",
+    sinFormaPago: "Regninger uden betalingsform",
+    otraFormaPago: "Regninger med anden betaling",
+    estadoCuadrado: "Stemmer",
+    estadoFaltante: "Mangler",
+    estadoSobrante: "Overskud",
+    estadoMixto: "Totalen stemmer, betalingsformer byttet",
+    estadoIncompleto: "Ufuldstændig",
+    cerradoPor: "Lukket af",
+    noAnotado: "Ikke angivet",
     granAnio: "År",
   },
   fr: {
@@ -753,6 +837,27 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     mepRecetas: "RECETTES",
     mepPreparacionBase: "Préparation de base",
     mepReceta: "Recette",
+    cuadreCaja: "Clôture de caisse",
+    formaPago: "Paiement",
+    ventasCuentas: "Ventes",
+    propinas: "Pourboires",
+    esperado: "Selon les additions",
+    real: "Réel",
+    diferencia: "Écart",
+    efectivo: "Espèces",
+    tarjeta: "Carte (TPE)",
+    transferencia: "Virements",
+    fondoInicial: "Fond de caisse",
+    salidasCaja: "Sorties de caisse",
+    sinFormaPago: "Additions sans mode de paiement",
+    otraFormaPago: "Additions avec un autre paiement",
+    estadoCuadrado: "Équilibrée",
+    estadoFaltante: "Manquant",
+    estadoSobrante: "Excédent",
+    estadoMixto: "Total juste, modes de paiement inversés",
+    estadoIncompleto: "Incomplète",
+    cerradoPor: "Clôturée par",
+    noAnotado: "Non indiqué",
     granAnio: "Année",
   },
   pt: {
@@ -902,6 +1007,27 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     mepRecetas: "RECEITAS",
     mepPreparacionBase: "Preparação base",
     mepReceta: "Receita",
+    cuadreCaja: "Fechamento de caixa",
+    formaPago: "Pagamento",
+    ventasCuentas: "Vendas",
+    propinas: "Gorjetas",
+    esperado: "Segundo as contas",
+    real: "Real",
+    diferencia: "Diferença",
+    efectivo: "Dinheiro",
+    tarjeta: "Cartão (maquininha)",
+    transferencia: "Transferências",
+    fondoInicial: "Fundo de troco",
+    salidasCaja: "Saídas de caixa",
+    sinFormaPago: "Contas sem forma de pagamento",
+    otraFormaPago: "Contas com outra forma de pagamento",
+    estadoCuadrado: "Fechado sem diferença",
+    estadoFaltante: "Falta",
+    estadoSobrante: "Sobra",
+    estadoMixto: "Total certo, formas de pagamento trocadas",
+    estadoIncompleto: "Incompleto",
+    cerradoPor: "Fechado por",
+    noAnotado: "Não anotado",
     granAnio: "Ano",
   },
   zh: {
@@ -1051,6 +1177,27 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     mepRecetas: "配方",
     mepPreparacionBase: "基础备料",
     mepReceta: "配方",
+    cuadreCaja: "收银对账",
+    formaPago: "付款方式",
+    ventasCuentas: "销售额",
+    propinas: "小费",
+    esperado: "按账单应有",
+    real: "实际",
+    diferencia: "差额",
+    efectivo: "现金",
+    tarjeta: "刷卡（POS 机）",
+    transferencia: "转账",
+    fondoInicial: "备用金",
+    salidasCaja: "现金支出",
+    sinFormaPago: "未填付款方式的账单",
+    otraFormaPago: "其他付款方式的账单",
+    estadoCuadrado: "已对平",
+    estadoFaltante: "短缺",
+    estadoSobrante: "多出",
+    estadoMixto: "总额一致，付款方式记错",
+    estadoIncompleto: "未完成",
+    cerradoPor: "结账人",
+    noAnotado: "未填写",
     granAnio: "年",
   },
 }

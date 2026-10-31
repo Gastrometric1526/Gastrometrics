@@ -332,6 +332,8 @@ export function VentasTour() {
     { id: "header", title: t("tour_ventas_header_title"), description: t("tour_ventas_header_desc"), selector: '[data-tour="ventas-header"]' },
     { id: "register", title: t("tour_ventas_register_title"), description: t("tour_ventas_register_desc"), selector: '[data-tour="ventas-register-button"]' },
     { id: "tickets", title: t("tour_ventas_tickets_title"), description: t("tour_ventas_tickets_desc"), selector: '[data-tour="ventas-register-card"]' },
+    // Cuadre de caja (docs/217).
+    { id: "cashup", title: t("tour_ventas_cashup_title"), description: t("tour_ventas_cashup_desc"), selector: '[data-tour="ventas-cashup"]' },
     { id: "tables", title: t("tour_ventas_tables_title"), description: t("tour_ventas_tables_desc"), selector: '[data-tour="ventas-tables-card"]' },
     { id: "history", title: t("tour_ventas_history_title"), description: t("tour_ventas_history_desc"), selector: '[data-tour="ventas-history"]' },
   ]

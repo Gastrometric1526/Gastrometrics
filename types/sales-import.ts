@@ -60,6 +60,37 @@ export interface SalesTicket {
   note?: string | null
 }
 
+/** Una salida de efectivo de la caja durante el día (compra de hielo, vuelto a un proveedor…). */
+export interface CashPayout {
+  id: string
+  concept: string
+  amount: number
+}
+
+/**
+ * Cuadre de caja de un día (docs/217): lo contado contra lo anotado en las cuentas. Solo se
+ * guardan los datos que escribe la persona; lo esperado se calcula siempre de las cuentas
+ * (lib/cash-up.ts), así que editar una cuenta después corrige el cuadre solo.
+ */
+export interface CashUp {
+  /** Fondo inicial de la caja (el cambio con que se abrió). */
+  openingFloat: number
+  /** Efectivo contado al cerrar (incluye el fondo). null = no contado. */
+  countedCash: number | null
+  payouts: CashPayout[]
+  /** Total del cierre de lote del datáfono. null = no anotado. */
+  terminalTotal: number | null
+  /** Transferencias recibidas según el banco o la app. null = no anotado. */
+  transferTotal: number | null
+  /** Las propinas en efectivo se quedan en la caja (si no, se reparten aparte). */
+  cashTipsInDrawer: boolean
+  /** Las propinas con tarjeta se cobraron en el datáfono (van dentro de su total). */
+  cardTipsInTerminal: boolean
+  note: string | null
+  closedAt: string
+  closedBy: string | null
+}
+
 export interface SalesImport {
   id: string
   businessId: string
@@ -86,6 +117,8 @@ export interface SalesImport {
   invoiceId?: string
   /** Cuentas por mesa de un registro manual (docs/215). Ausente en registros anteriores. */
   tickets?: SalesTicket[]
+  /** Cuadre de caja del día (docs/217). Solo en registros manuales. */
+  cashUp?: CashUp
 }
 
 // Formato de fecha del archivo del POS — necesario porque "03/04/2026" es ambiguo

@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-30c",
+    tutorialHref: tourHref("ventas"),
+    content: {
+      es: { title: "Cuadre de caja", items: ["Al cerrar el día, toca «Cuadre» en el registro de ventas: compara lo anotado en las cuentas con el efectivo contado, el total del datáfono y las transferencias, y te dice si falta o sobra dinero.", "Toma una foto del voucher del cierre de lote y leemos el total por ti. Anota el fondo inicial y las salidas de caja.", "Mira los días con diferencia y los que faltan por cuadrar, y descarga o comparte el cuadre en PDF o por WhatsApp."] },
+      en: { title: "Cash-up", items: ["At closing, tap “Cash-up” on the day's sales entry: it compares what you logged on the checks with the counted cash, the card terminal total and transfers, and tells you if money is short or over.", "Take a photo of the batch close slip and we read the total for you. Note the opening float and cash payouts.", "See days with a difference and days still to close, and download or share the cash-up as a PDF or on WhatsApp."] },
+      da: { title: "Kasseopgørelse", items: ["Ved lukning trykker du på «Opgørelse» på dagens salg: den sammenligner regningerne med optalte kontanter, terminalens total og overførsler og fortæller, om der mangler eller er penge i overskud.", "Tag et foto af dagsafslutningens kvittering, så læser vi totalen for dig. Angiv byttepenge og kontantudbetalinger.", "Se dage med difference og dage, der mangler, og download eller del opgørelsen som PDF eller på WhatsApp."] },
+      fr: { title: "Clôture de caisse", items: ["À la fermeture, touchez « Clôture » sur l’enregistrement du jour : elle compare les additions avec les espèces comptées, le total du TPE et les virements, et vous indique s’il manque ou s’il y a trop d’argent.", "Photographiez le ticket de clôture du TPE et nous lisons le total pour vous. Notez le fond de caisse et les sorties.", "Voyez les jours avec un écart et ceux à clôturer, et téléchargez ou partagez la clôture en PDF ou sur WhatsApp."] },
+      pt: { title: "Fechamento de caixa", items: ["Ao fechar o dia, toque em «Fechamento» no registro de vendas: compara as contas com o dinheiro contado, o total da maquininha e as transferências, e diz se falta ou sobra dinheiro.", "Tire foto do comprovante do fechamento de lote e lemos o total para você. Anote o fundo de troco e as saídas de caixa.", "Veja os dias com diferença e os que faltam fechar, e baixe ou compartilhe o fechamento em PDF ou pelo WhatsApp."] },
+      zh: { title: "收银对账", items: ["打烊时，在当天的销售记录上点“对账”：把账单与清点的现金、POS 机合计和转账对比，告诉你是短款还是长款。", "拍下 POS 机结算小票，我们帮你识别合计。填写备用金和现金支出。", "查看有差额和未对账的日子，并可下载 PDF 或通过 WhatsApp 分享对账结果。"] },
+    },
+  },
+  {
     version: "2026-10-30b",
     tutorialHref: tourHref("equipo"),
     content: {
