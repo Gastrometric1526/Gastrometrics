@@ -103,8 +103,10 @@ export type JourneyPosition =
   | { status: "active"; chapter: ChapterMeta; unlocked: boolean; index: number; total: number }
 
 /**
- * Próxima etapa: la primera no hecha que el plan permite. Las metas ya cumplidas y las
- * etapas que el plan no incluye se dan por hechas (las devuelve en `autoDone`).
+ * Próxima etapa: la primera no hecha que el plan permite. Las metas ya cumplidas se dan por
+ * hechas (las devuelve en `autoDone`). Las etapas que el plan no incluye solo se saltan, sin
+ * marcarse: si la persona sube de plan, el recorrido vuelve a activarse con lo que faltaba,
+ * aunque ya lo hubiera terminado (pedido del dueño, docs/221).
  */
 export function journeyPosition(state: JourneyState, facts: JourneyFacts): JourneyPosition & { autoDone: string[] } {
   const autoDone: string[] = []
@@ -115,7 +117,8 @@ export function journeyPosition(state: JourneyState, facts: JourneyFacts): Journ
     if (state.done.includes(chapter.id)) continue
     const applies = chapterApplies(chapter, facts)
     if (applies === null) return { status: "waiting", autoDone }
-    if (applies === false || (chapter.kind === "goal" && goalReached(chapter, facts))) {
+    if (applies === false) continue
+    if (chapter.kind === "goal" && goalReached(chapter, facts)) {
       autoDone.push(chapter.id)
       continue
     }

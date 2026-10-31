@@ -97,7 +97,9 @@ function visibleRect(selector: string | null): Rect | null {
   if (!el) return null
   const r = getRect(el)
   if (r.width <= 0 || r.height <= 0) return null
-  if (r.left + r.width <= 0 || r.top + r.height <= 0 || r.left >= window.innerWidth || r.top >= window.innerHeight + 2000) return null
+  // Fuera de la pantalla hacia los lados = oculto (p. ej. el menú lateral cerrado en el celular).
+  // Arriba o abajo no cuenta: se desplaza hasta él.
+  if (r.left + r.width <= 0 || r.left >= window.innerWidth) return null
   return r
 }
 
@@ -121,8 +123,9 @@ export function GuidedJourney() {
   const [otherTourOpen, setOtherTourOpen] = useState(false)
   const [goalSeen, setGoalSeen] = useState<Record<string, boolean>>({})
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [popperOpen, setPopperOpen] = useState(false)
   const missesRef = useRef(0)
-  const scrolledRef = useRef<string | null>(null)
+  const scrolledRef = useRef<{ key: string; at: number; tries: number } | null>(null)
   const tourAckRef = useRef<string | null>(null)
 
   const ingredients = useMemo(() => allIngredients.filter((i) => i.category !== SUBRECIPE_CLASSIFICATION).length, [allIngredients])
@@ -183,7 +186,9 @@ export function GuidedJourney() {
   // abierta (Novedades, una encuesta, un diálogo de la página).
   useEffect(() => {
     if (!enabled) return
-    const check = () => setDialogOpen(!!document.querySelector('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]'))
+    // También espera a otro tutorial abierto, p. ej. el de plan nuevo al subir de plan.
+    const check = () =>
+      setDialogOpen(!!document.querySelector('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"], [data-tour-overlay]'))
     check()
     const interval = setInterval(check, 500)
     return () => clearInterval(interval)
@@ -270,15 +275,23 @@ export function GuidedJourney() {
     const live: JourneyLive = { ficha, ingredients, recipes }
     const tick = () => {
       setOtherTourOpen(!!document.querySelector("[data-tour-overlay]"))
+      // Con una lista desplegable abierta (Select, Popover) la tarjeta se aparta para no taparla.
+      setPopperOpen(!!document.querySelector("[data-radix-popper-content-wrapper]"))
       const r = visibleRect(step.selector)
       setRect((prev) =>
         prev && r && Math.abs(prev.top - r.top) < 1 && Math.abs(prev.left - r.left) < 1 && Math.abs(prev.width - r.width) < 1 && Math.abs(prev.height - r.height) < 1
           ? prev
           : r,
       )
-      if (step.selector && r && scrolledRef.current !== `${chapterId}:${step.id}`) {
-        scrolledRef.current = `${chapterId}:${step.id}`
-        document.querySelector(step.selector)?.scrollIntoView({ behavior: "smooth", block: "center" })
+      // Lleva lo resaltado a la vista; si un desplazamiento suave se interrumpe, reintenta.
+      if (step.selector && r) {
+        const key = `${chapterId}:${step.id}`
+        const outOfView = r.top < 0 || r.top + r.height > window.innerHeight
+        const last = scrolledRef.current?.key === key ? scrolledRef.current : null
+        if (!last || (outOfView && last.tries < 3 && Date.now() - last.at > 1200)) {
+          scrolledRef.current = { key, at: Date.now(), tries: (last?.tries ?? 0) + 1 }
+          document.querySelector(step.selector)?.scrollIntoView({ behavior: last ? "auto" : "smooth", block: "center" })
+        }
       }
       if (step.selector && !r) {
         missesRef.current += 1
@@ -586,10 +599,12 @@ export function GuidedJourney() {
           )}
           <div
             data-gm-page-tour=""
-        {...keepDialogsOpen}
+            {...keepDialogsOpen}
             role="dialog"
             aria-label={t("journey_label")}
-            className="pointer-events-auto fixed z-[1001] w-[min(340px,calc(100vw-2rem))] rounded-2xl border border-border bg-card shadow-2xl"
+            className={`fixed z-[1001] w-[min(340px,calc(100vw-2rem))] rounded-2xl border border-border bg-card shadow-2xl transition-opacity ${
+              popperOpen ? "pointer-events-none opacity-0" : "pointer-events-auto opacity-100"
+            }`}
             style={cardStyle}
           >
             {closeButton}

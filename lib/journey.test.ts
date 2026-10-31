@@ -51,7 +51,18 @@ describe("tutorial guiado progresivo (docs/221)", () => {
     const s = { ...startJourney(false), done: doneUpTo("merma") }
     const p = journeyPosition(s, facts({ ingredients: 3, features: { ...allFeatures, merma: false } }))
     expect(p.status === "active" && p.chapter.id).toBe("ficha-basic")
-    expect(p.autoDone).toContain("merma")
+    expect(p.autoDone).not.toContain("merma")
+  })
+
+  it("al subir de plan vuelve solo lo que faltaba, aunque ya lo hubiera terminado", () => {
+    const lowPlan = { ...allFeatures, merma: false, inventory: false, menus: false }
+    const done = CHAPTERS.map((c) => c.id).filter((id) => !["merma", "inventario", "menus", "mep"].includes(id))
+    const s = { ...startJourney(false), done }
+    expect(journeyPosition(s, facts({ ingredients: 5, recipes: 5, features: lowPlan })).status).toBe("finished")
+    const upgraded = journeyPosition(s, facts({ ingredients: 5, recipes: 5, features: { ...lowPlan, merma: true } }))
+    expect(upgraded.status === "active" && upgraded.chapter.id).toBe("merma")
+    const afterMerma = journeyPosition(markDone(s, ["merma"]), facts({ ingredients: 5, recipes: 5, features: allFeatures }))
+    expect(afterMerma.status === "active" && afterMerma.chapter.id).toBe("inventario")
   })
 
   it("Mis Recetas se activa al guardar la primera receta", () => {
