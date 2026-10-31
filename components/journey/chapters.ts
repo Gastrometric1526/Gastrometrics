@@ -68,6 +68,8 @@ export const CHAPTER_STEPS: Record<string, CoachStep[]> = {
     },
     { id: "next-2", selector: '[data-journey="ing-next"]', title: "journey_ing_next_title", description: "journey_ing_next_desc", advance: "click" },
     { id: "supplier", selector: '[data-journey="ing-supplier"]', title: "journey_ing_supplier_title", description: "journey_ing_supplier_desc", advance: "next" },
+    { id: "next-3", selector: '[data-journey="ing-next"]', title: "journey_ing_next_title", description: "journey_ing_next_desc", advance: "click" },
+    { id: "extra", selector: '[data-journey="ing-extra"]', title: "journey_ing_extra_title", description: "journey_ing_extra_desc", advance: "next" },
     { id: "submit", selector: '[data-journey="ing-submit"]', title: "journey_ing_submit_title", description: "journey_ing_submit_desc", advance: "click" },
     { id: "done", selector: null, title: "journey_ing_done_title", description: "journey_ing_done_desc", tip: "journey_ing_done_tip", advance: "next" },
   ],

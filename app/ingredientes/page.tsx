@@ -2029,7 +2029,7 @@ export default function IngredientesPage() {
 
             {/* Step 4: Additional Information */}
             {currentStep === 3 && (
-              <div className="space-y-4">
+              <div className="space-y-4" data-journey="ing-extra">
                 <div className="flex items-center gap-2 mb-4">
                   <Info className="h-5 w-5 text-primary" />
                   <h3 className="text-lg font-semibold">{t("ingredientes_step_additional_title")}</h3>

@@ -45,6 +45,16 @@ import {
   type JourneyState,
 } from "@/lib/journey"
 
+// Tocar una tarjeta del recorrido no debe mover el foco ni avisar «toque afuera» al diálogo
+// de abajo (Radix lo cerraría): el evento se corta en la tarjeta y el foco se queda donde estaba.
+const keepDialogsOpen = {
+  onPointerDown: (e: React.PointerEvent) => e.stopPropagation(),
+  onMouseDown: (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+  },
+}
+
 const CARD_WIDTH = 340
 const CARD_EST_HEIGHT = 230
 const EMPTY_FICHA: JourneyLive["ficha"] = { linesWithIngredient: 0, costedLines: 0, yieldAmount: 0, hasName: false }
@@ -110,6 +120,7 @@ export function GuidedJourney() {
   const [ready, setReady] = useState(true)
   const [otherTourOpen, setOtherTourOpen] = useState(false)
   const [goalSeen, setGoalSeen] = useState<Record<string, boolean>>({})
+  const [dialogOpen, setDialogOpen] = useState(false)
   const missesRef = useRef(0)
   const scrolledRef = useRef<string | null>(null)
   const tourAckRef = useRef<string | null>(null)
@@ -167,6 +178,16 @@ export function GuidedJourney() {
       window.removeEventListener("gm:tour:ack", onAck)
     }
   }, [])
+
+  // Las tarjetas «Ir a …», de meta y de presentación esperan a que se cierre cualquier ventana
+  // abierta (Novedades, una encuesta, un diálogo de la página).
+  useEffect(() => {
+    if (!enabled) return
+    const check = () => setDialogOpen(!!document.querySelector('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]'))
+    check()
+    const interval = setInterval(check, 500)
+    return () => clearInterval(interval)
+  }, [enabled])
 
   // Al salir de la Ficha Técnica se olvida lo que reportó.
   useEffect(() => {
@@ -371,9 +392,12 @@ export function GuidedJourney() {
   ) : null
 
   const floating = (content: React.ReactNode) =>
-    createPortal(
+    dialogOpen
+      ? null
+      : createPortal(
       <div
         data-gm-page-tour=""
+        {...keepDialogsOpen}
         role="dialog"
         aria-label={t("journey_label")}
         className="pointer-events-auto fixed bottom-[calc(4.25rem+env(safe-area-inset-bottom))] left-1/2 z-[1001] w-[min(380px,calc(100vw-1.5rem))] -translate-x-1/2 rounded-2xl border border-border bg-card p-4 shadow-2xl md:bottom-6 print:hidden"
@@ -388,6 +412,7 @@ export function GuidedJourney() {
       <button
         type="button"
         data-gm-page-tour=""
+        {...keepDialogsOpen}
         data-journey-pill=""
         onClick={onClick}
         className="pointer-events-auto fixed bottom-[calc(4.25rem+env(safe-area-inset-bottom))] left-1/2 z-[60] flex max-w-[calc(100vw-6rem)] -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg transition hover:shadow-xl md:bottom-5 print:hidden"
@@ -561,6 +586,7 @@ export function GuidedJourney() {
           )}
           <div
             data-gm-page-tour=""
+        {...keepDialogsOpen}
             role="dialog"
             aria-label={t("journey_label")}
             className="pointer-events-auto fixed z-[1001] w-[min(340px,calc(100vw-2rem))] rounded-2xl border border-border bg-card shadow-2xl"
