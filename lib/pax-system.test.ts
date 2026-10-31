@@ -382,11 +382,11 @@ describe("8. Inventario + consumo", () => {
     // 1.75 × 200 de salsa = 350 → ×0.35 → tomate 280 aprovechables = 350 brutos; hueso 0.35 × 35 → caldo ×0.07 → 28 g.
     const stock = computeTheoreticalStock({
       ...base,
-      items: [item("tomate", { currentStock: 1000, stockCountedAt: "2026-10-20T10:00:00Z", stockReceipts: [{ at: "2026-10-21T09:00:00Z", quantity: 500 }] as InventoryItem["stockReceipts"] }), item("hueso", { currentStock: 100, stockCountedAt: "2026-10-20T10:00:00Z" })],
+      items: [item("tomate", { currentStock: 1500, stockCountedAt: "2026-10-20T10:00:00Z", stockReceipts: [{ at: "2026-10-21T09:00:00Z", quantity: 500 }] as InventoryItem["stockReceipts"] }), item("hueso", { currentStock: 100, stockCountedAt: "2026-10-20T10:00:00Z" })],
       salesImports: [sale("2026-10-21", "2026-10-21T20:00:00Z", "plato", 7)],
     })
     expect(stock.get("tomate")!.consumed).toBeCloseTo(350, 9)
-    expect(stock.get("tomate")!.theoretical).toBeCloseTo(1150, 9) // 8.4: 1000 + 500 − 350
+    expect(stock.get("tomate")!.theoretical).toBeCloseTo(1150, 9) // 8.4: 1000 contados + 500 recibidos − 350 (el stock actual, 1500, ya incluye lo recibido; docs/218)
     expect(stock.get("hueso")!.consumed).toBeCloseTo(28, 9)
   })
   it("8.5 varias ventas del mismo plato se acumulan", () => {
