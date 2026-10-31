@@ -12,7 +12,7 @@
  * del menú lateral lo vuelve a empezar (components/sidebar.tsx).
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { usePathname, useRouter } from "next/navigation"
 import { ArrowLeft, ArrowRight, Compass, Lightbulb, MousePointerClick, X } from "lucide-react"
@@ -124,6 +124,13 @@ export function GuidedJourney() {
   const [goalSeen, setGoalSeen] = useState<Record<string, boolean>>({})
   const [dialogOpen, setDialogOpen] = useState(false)
   const [popperOpen, setPopperOpen] = useState(false)
+  const [cardHeight, setCardHeight] = useState(CARD_EST_HEIGHT)
+  const cardRef = useRef<HTMLDivElement>(null)
+  // Alto real de la tarjeta (cambia con el texto de cada paso y el idioma).
+  useLayoutEffect(() => {
+    const h = cardRef.current?.offsetHeight
+    if (h && Math.abs(h - cardHeight) > 2) setCardHeight(h)
+  })
   const missesRef = useRef(0)
   const scrolledRef = useRef<{ key: string; at: number; tries: number } | null>(null)
   const tourAckRef = useRef<string | null>(null)
@@ -560,11 +567,14 @@ export function GuidedJourney() {
   if (otherTourOpen) return confirmDialog
 
   // Paso a paso dentro de la pantalla.
-  const placement: Placement = rect ? computePlacement(rect, window.innerWidth, window.innerHeight) : "center"
+  // En el celular la barra de navegación inferior (56px + margen) tapa el borde de abajo: la
+  // tarjeta se acomoda con su alto real medido, no estimado, para que «Siguiente» siempre se vea.
+  const usableHeight = window.innerHeight - (window.innerWidth < 768 ? 64 : 0)
+  const placement: Placement = rect ? computePlacement(rect, window.innerWidth, usableHeight) : "center"
   const cardStyle: React.CSSProperties =
     rect && placement !== "center"
-      ? { ...computeTooltipPosition(rect, placement, window.innerWidth, window.innerHeight, CARD_WIDTH, CARD_EST_HEIGHT), transform: "none" }
-      : { top: "50%", left: "50%", transform: "translate(-50%, -50%)" }
+      ? { ...computeTooltipPosition(rect, placement, window.innerWidth, usableHeight, CARD_WIDTH, cardHeight), transform: "none" }
+      : { top: usableHeight / 2, left: "50%", transform: "translate(-50%, -50%)" }
   const isLastStep = stepIndex >= steps.length - 1
   const isLastChapter = chapter.id === "finish"
   const waitingForAction = step.advance !== "next"
@@ -605,6 +615,7 @@ export function GuidedJourney() {
             className={`fixed z-[1001] w-[min(340px,calc(100vw-2rem))] rounded-2xl border border-border bg-card shadow-2xl transition-opacity ${
               popperOpen ? "pointer-events-none opacity-0" : "pointer-events-auto opacity-100"
             }`}
+            ref={cardRef}
             style={cardStyle}
           >
             {closeButton}
