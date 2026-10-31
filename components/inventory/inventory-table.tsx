@@ -14,6 +14,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { getCategoryLabel, getPresentationLabel, getUnitLabel, getUnitLabelFor } from "@/lib/ingredient-labels"
 import { getPackageContent, isBeverageCategory } from "@/lib/beverage"
 import type { TheoreticalStockEntry } from "@/lib/theoretical-stock"
+import { openOnActivate } from "@/components/detail-panel"
 
 // Modificar la interfaz InventoryTableProps para incluir una nueva prop para manejar cambios en el stock mínimo
 interface InventoryTableProps {
@@ -27,6 +28,8 @@ interface InventoryTableProps {
   availablePresentations: string[]
   // Stock teórico por producto (lib/theoretical-stock.ts, docs/134). Opcional.
   theoreticalStock?: Map<string, TheoreticalStockEntry>
+  /** Clic o toque en la fila: abre el panel de acciones del producto (docs/219). */
+  onOpenDetails?: (item: InventoryItem) => void
 }
 
 // Actualizar la desestructuración de props para incluir onMinStockChange
@@ -38,6 +41,7 @@ export function InventoryTable({
   onSave,
   onPresentationChange,
   onMinStockChange,
+  onOpenDetails,
   availablePresentations = [],
   theoreticalStock,
 }: InventoryTableProps) {
@@ -210,7 +214,12 @@ export function InventoryTable({
             const packageInfo = getPackageInfo(item)
 
             return (
-              <TableRow key={item.id}>
+              <TableRow
+                key={item.id}
+                data-inventory-row={item.id}
+                {...(onOpenDetails && editedItemId !== item.id ? openOnActivate(() => onOpenDetails(item)) : {})}
+                className={onOpenDetails && editedItemId !== item.id ? "cursor-pointer" : undefined}
+              >
                 <TableCell className="text-center">
                   {editedItemId === item.id ? (
                     <Input

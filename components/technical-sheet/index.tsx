@@ -70,6 +70,7 @@ import {
   isRecipeDraftMeaningful,
   type RecipeDraft,
 } from "@/lib/storage/recipe-draft"
+import { ActionHint } from "@/components/action-hint"
 import { formatDateTime } from "@/lib/date-format"
 import { paxMultiplierFor, refreshSnapshotLines, scaleLineQuantity, scaleRecipeLine } from "@/lib/pax-scaling"
 
@@ -1149,6 +1150,9 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       const params = new URLSearchParams()
       if (businessId && businessId !== "main") params.set("business", businessId)
       if (isNewRecipe && importAppliedForRef.current === businessId) params.set("imported", "1")
+      // Mis Recetas resalta la receta guardada y explica qué se puede hacer con ella (docs/219).
+      params.set("saved", savedRecipe.id)
+      toast({ title: t("ficha_saved_to_recipes_title").replace("{name}", savedRecipe.name), description: t("ficha_saved_to_recipes_desc") })
       router.push(params.size ? `/mis-recetas?${params}` : "/mis-recetas")
     } catch (error) {
       console.error("Error al guardar la receta:", error)
@@ -1300,8 +1304,39 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     }
   }, [customPriceInput])
 
+  // Pistas por acción en la ficha (docs/219): se muestran al llegar a cada momento, no todas
+  // al entrar. Una a la vez (cada pista espera a que se cierre la anterior).
+  const costedLines = recipe.ingredients.filter((ing) => ing.ingredientId && (ing.extension || 0) > 0).length
+  const hintPriceReady = costedLines > 0 && recipe.yieldAmount > 0
+
   return (
     <div className="container mx-auto py-6 space-y-6 max-w-6xl">
+      <ActionHint
+        id="ficha-first-ingredient"
+        when={costedLines > 0}
+        selector='[data-tour="ficha-ingredients-table"]'
+        title={t("hint_ficha_ingredient_title")}
+        description={t("hint_ficha_ingredient_desc")}
+        tip={t("hint_ficha_ingredient_tip")}
+      />
+      <ActionHint
+        id="ficha-price"
+        when={hintPriceReady}
+        selector='[data-tour="ficha-pricing"]'
+        title={t("hint_ficha_price_title")}
+        description={t("hint_ficha_price_desc")}
+        tip={t("hint_ficha_price_tip")}
+        delay={1200}
+      />
+      <ActionHint
+        id="ficha-pax"
+        when={hintPriceReady && costedLines >= 2}
+        selector='[data-tour="ficha-pax"]'
+        title={t("hint_ficha_pax_title")}
+        description={t("hint_ficha_pax_desc")}
+        tip={t("hint_ficha_pax_tip")}
+        delay={1800}
+      />
       {isNewRecipe && restoredDraftAt && (
         <div
           role="status"

@@ -56,6 +56,8 @@ import type { Recipe } from "@/types/recipe"
 import type { Menu } from "@/lib/types/menus"
 import type { SalesImport, SalesImportLine } from "@/types/sales-import"
 import { formatDate, toIsoDate } from "@/lib/date-format"
+import { DetailPanel, openOnActivate } from "@/components/detail-panel"
+import { ActionHint } from "@/components/action-hint"
 
 const NONE_VALUE = "__none__"
 
@@ -99,6 +101,8 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null)
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null)
+  // Panel de acciones de una factura (docs/219): tocar la fila lo abre.
+  const [detailInvoice, setDetailInvoice] = useState<Invoice | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
   // Draft del diálogo
@@ -500,12 +504,16 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
                   <TableHead>{t("facturas_col_client")}</TableHead>
                   <TableHead>{t("facturas_col_date")}</TableHead>
                   <TableHead className="text-right">{t("facturas_col_total")}</TableHead>
-                  <TableHead className="text-right">{t("facturas_col_actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredInvoices.map((invoice) => (
-                  <TableRow key={invoice.id}>
+                  <TableRow
+                    key={invoice.id}
+                    data-invoice-row={invoice.id}
+                    {...openOnActivate(() => setDetailInvoice(invoice))}
+                    className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
                     <TableCell className="font-medium">{invoice.number}</TableCell>
                     <TableCell>{invoice.clientName}</TableCell>
                     <TableCell className="text-muted-foreground">
@@ -518,27 +526,6 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
                     </TableCell>
                     <TableCell className="text-right font-medium tabular-nums">
                       {formatCurrency(invoice.total)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-1">
-                        {canDownloadPdf !== false && (
-                          <Button variant="ghost" size="icon" onClick={() => handleDownload(invoice)} title={t("facturas_download_pdf")}>
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(invoice)} title={t("facturas_edit_button")}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setInvoiceToDelete(invoice)}
-                          title={t("facturas_delete_button")}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -713,6 +700,37 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
       </Dialog>
 
       {/* Confirmar borrado */}
+      {/* Panel de acciones de la factura (docs/219), mismo diseño que el de una receta */}
+      {detailInvoice && (
+        <DetailPanel
+          open={!!detailInvoice}
+          onOpenChange={(open) => !open && setDetailInvoice(null)}
+          title={`${detailInvoice.number} — ${detailInvoice.clientName}`}
+          badges={detailInvoice.clientTaxId ? [{ label: detailInvoice.clientTaxId }] : []}
+          stats={[
+            { label: t("facturas_col_date"), value: formatDate(`${detailInvoice.issueDate}T00:00:00`) },
+            { label: t("facturas_total_label"), value: formatCurrency(detailInvoice.total) },
+            { label: t("facturas_subtotal_label"), value: formatCurrency(detailInvoice.subtotal) },
+            { label: t("facturas_tax_total_label"), value: formatCurrency(detailInvoice.taxAmount) },
+            { label: t("facturas_items_title"), value: detailInvoice.items.length },
+          ]}
+          actions={[
+            ...(canDownloadPdf !== false
+              ? [{ key: "pdf", label: t("facturas_download_pdf"), icon: Download, primary: true, onClick: () => handleDownload(detailInvoice) }]
+              : []),
+            { key: "edit", label: t("facturas_edit_button"), icon: Pencil, primary: canDownloadPdf === false, onClick: () => openEditDialog(detailInvoice) },
+          ]}
+          danger={{ key: "delete", label: t("facturas_delete_button"), icon: Trash2, onClick: () => setInvoiceToDelete(detailInvoice) }}
+        />
+      )}
+      <ActionHint
+        id="invoices-panel"
+        when={!!detailInvoice}
+        title={t("hint_invoices_panel_title")}
+        description={t("hint_invoices_panel_desc")}
+        selector='[data-tour="detail-panel-actions"]'
+      />
+
       <AlertDialog open={!!invoiceToDelete} onOpenChange={(open) => !open && setInvoiceToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -7,7 +7,6 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
-  MoreVertical,
   Search,
   ArrowLeft,
   Plus,
@@ -23,7 +22,8 @@ import {
   ShoppingCart,
   Info,
 } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DetailPanel, openOnActivate } from "@/components/detail-panel"
+import { ActionHint } from "@/components/action-hint"
 import { Input } from "@/components/ui/input"
 import { DateField } from "@/components/ui/date-field"
 import { Label } from "@/components/ui/label"
@@ -86,6 +86,8 @@ export default function MenusPage() {
   const [showPreview, setShowPreview] = useState(false)
   const [previewMenu, setPreviewMenu] = useState<Menu | null>(null)
   const [datePickerMenuId, setDatePickerMenuId] = useState<string | null>(null)
+  // Panel de acciones del menú (docs/219): reemplaza el menú de tres puntos.
+  const [detailMenu, setDetailMenu] = useState<Menu | null>(null)
 
   useEffect(() => {
     loadMenus()
@@ -436,7 +438,9 @@ export default function MenusPage() {
                     return (
                       <Card
                         key={menu.id}
-                        className="border-border transition-all duration-300 bg-card group"
+                        data-menu-card={menu.id}
+                        {...openOnActivate(() => setDetailMenu(menu))}
+                        className="border-border transition-all duration-300 bg-card group cursor-pointer hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       >
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between">
@@ -459,72 +463,6 @@ export default function MenusPage() {
                                 )}
                               </div>
                             </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  data-tour="menus-card-menu-trigger"
-                                  variant="ghost"
-                                  size="sm"
-                                  // BUG CORREGIDO: opacity-0 + group-hover dejaba este menú
-                                  // (Editar/Duplicar/Exportar/Generar Orden de Compra/Eliminar)
-                                  // inalcanzable en móvil, donde no existe :hover. Ahora es
-                                  // siempre visible por debajo de md, y sigue apareciendo solo
-                                  // al pasar el mouse (o al enfocar con teclado) en pantallas
-                                  // más grandes.
-                                  className="h-8 w-8 p-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity"
-                                >
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handlePreviewMenu(menu)}>
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  {t("menus_action_preview")}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleEditMenu(menu)}>
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  {t("menus_action_edit")}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDuplicateMenu(menu.id)}>
-                                  <Copy className="mr-2 h-4 w-4" />
-                                  {t("menus_action_duplicate")}
-                                </DropdownMenuItem>
-                                {canExportMenuPDF !== false && (
-                                  <>
-                                    <DropdownMenuItem onClick={() => handleExportMenuPDF(menu, "cliente")}>
-                                      <FileDown className="mr-2 h-4 w-4" />
-                                      {t("menus_action_export_client")}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleExportMenuPDF(menu, "interno")}>
-                                      <FileDown className="mr-2 h-4 w-4" />
-                                      {t("menus_action_export_internal")}
-                                      {canExportAdminMenuPDF === false && <Lock className="ml-2 h-3 w-3 opacity-60" />}
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                                <DropdownMenuItem onClick={() => router.push(`/mep?menu=${menu.id}${businessId ? `&business=${businessId}` : ""}`)}>
-                                  <ListChecks className="mr-2 h-4 w-4" />
-                                  {t("menus_open_mep")}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  data-tour="menus-generate-order"
-                                  onClick={() => router.push(`/business/${businessId || "main"}/ordenes-compra?fromMenu=${menu.id}`)}
-                                >
-                                  <ShoppingCart className="mr-2 h-4 w-4" />
-                                  {t("menus_action_generate_order")}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setMenuToDelete(menu.id)
-                                    setShowDeleteConfirmation(true)
-                                  }}
-                                  className="text-destructive focus:text-destructive"
-                                >
-                                  <Trash className="mr-2 h-4 w-4" />
-                                  {t("menus_action_delete")}
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
                           </div>
                         </CardHeader>
                         <CardContent className="pt-0 space-y-4">
@@ -648,6 +586,63 @@ export default function MenusPage() {
                   })}
                 </div>
               )}
+
+              {/* Panel de acciones del menú (docs/219), mismo diseño que el de una receta */}
+              {detailMenu && (
+                <DetailPanel
+                  open={!!detailMenu}
+                  onOpenChange={(open) => !open && setDetailMenu(null)}
+                  title={detailMenu.name}
+                  badges={[
+                    ...(detailMenu.menuType ? [{ label: getMenuTypeLabel(detailMenu.menuType, language) }] : []),
+                    ...(formatServiceDate(detailMenu.serviceDate) ? [{ label: formatServiceDate(detailMenu.serviceDate) as string }] : []),
+                  ]}
+                  stats={[
+                    { label: t("panel_menu_dishes"), value: getTotalDishes(detailMenu) },
+                    { label: t("panel_menu_avg_price"), value: formatCurrency(getAveragePrice(detailMenu)) },
+                    { label: t("panel_menu_overrides"), value: getOverridesCount(detailMenu) },
+                    { label: t("panel_updated"), value: formatTimeAgo(detailMenu.updatedAt) },
+                  ]}
+                  actions={[
+                    { key: "preview", label: t("menus_action_preview"), icon: Eye, primary: true, onClick: () => handlePreviewMenu(detailMenu) },
+                    { key: "edit", label: t("menus_action_edit"), icon: Edit, onClick: () => handleEditMenu(detailMenu) },
+                    { key: "duplicate", label: t("menus_action_duplicate"), icon: Copy, onClick: () => handleDuplicateMenu(detailMenu.id) },
+                    ...(canExportMenuPDF !== false
+                      ? [
+                          { key: "pdf-client", label: t("menus_action_export_client"), icon: FileDown, onClick: () => handleExportMenuPDF(detailMenu, "cliente") },
+                          { key: "pdf-internal", label: t("menus_action_export_internal"), icon: canExportAdminMenuPDF === false ? Lock : FileDown, onClick: () => handleExportMenuPDF(detailMenu, "interno") },
+                        ]
+                      : []),
+                    { key: "mep", label: t("menus_open_mep"), icon: ListChecks, onClick: () => router.push(`/mep?menu=${detailMenu.id}${businessId ? `&business=${businessId}` : ""}`) },
+                    { key: "order", label: t("menus_action_generate_order"), icon: ShoppingCart, onClick: () => router.push(`/business/${businessId || "main"}/ordenes-compra?fromMenu=${detailMenu.id}`) },
+                  ]}
+                  danger={{
+                    key: "delete",
+                    label: t("menus_action_delete"),
+                    icon: Trash,
+                    onClick: () => {
+                      setMenuToDelete(detailMenu.id)
+                      setShowDeleteConfirmation(true)
+                    },
+                  }}
+                />
+              )}
+              <ActionHint
+                id="menus-first"
+                when={!isLoading && menus.length > 0 && !detailMenu}
+                title={t("hint_menus_first_title")}
+                description={t("hint_menus_first_desc")}
+                tip={t("hint_menus_first_tip")}
+                selector="[data-menu-card]"
+                delay={1200}
+              />
+              <ActionHint
+                id="menus-panel"
+                when={!!detailMenu}
+                title={t("hint_menus_panel_title")}
+                description={t("hint_menus_panel_desc")}
+                selector='[data-tour="detail-panel-actions"]'
+              />
 
               {/* Delete Confirmation Dialog */}
               <Dialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>

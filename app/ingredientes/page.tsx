@@ -91,6 +91,9 @@ import { fileDate } from "@/lib/date-format"
 import { useFormDraft } from "@/hooks/use-form-draft"
 import { DraftRestoredNotice } from "@/components/draft-restored-notice"
 import { useConfirmDialog } from "@/components/confirm-dialog"
+import { DetailPanel } from "@/components/detail-panel"
+import { ActionHint } from "@/components/action-hint"
+import { SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
 
 // Helper function for generating unique IDs
 const generateUniqueId = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 9)
@@ -198,6 +201,8 @@ export default function IngredientesPage() {
   const [showMermaDialog, setShowMermaDialog] = useState(false)
   const [ingredientToEdit, setIngredientToEdit] = useState<Ingredient | null>(null)
   const [ingredientToDelete, setIngredientToDelete] = useState<Ingredient | null>(null)
+  // Panel de acciones del ingrediente (docs/219).
+  const [detailIngredient, setDetailIngredient] = useState<Ingredient | null>(null)
   // Recetas que usan el ingrediente que se va a borrar — para avisar ANTES de
   // confirmar (pedido explícito: nunca se sabía qué recetas se afectaban).
   const [recipesUsingIngredientToDelete, setRecipesUsingIngredientToDelete] = useState<Recipe[]>([])
@@ -1408,6 +1413,7 @@ export default function IngredientesPage() {
                   }
                   className="gap-2 hover:bg-accent hover:text-accent-foreground border-border"
                   disabled={ingredients.length === 0}
+                  data-tour="ingredientes-merma-button"
                 >
                   <Settings className="h-4 w-4" />
                   {t("ingredientes_manage_merma_button")}
@@ -1677,6 +1683,7 @@ export default function IngredientesPage() {
                   }}
                   onUnitChange={() => setActiveSystem(null)}
                   mermaSystemEnabled={ingredients.some((ing) => ing.merma?.enabled)}
+                  onOpenDetails={setDetailIngredient}
                 />
 
                 {/* Tabla Resumen al Final (preservada) */}
@@ -2538,6 +2545,90 @@ export default function IngredientesPage() {
 
       {/* Merma Management Dialog */}
       {confirmDialog}
+
+      {/* Panel de acciones del ingrediente: clic o toque en su fila (docs/219). */}
+      <DetailPanel
+        open={detailIngredient !== null}
+        onOpenChange={(open) => !open && setDetailIngredient(null)}
+        title={detailIngredient?.name ?? ""}
+        badges={
+          detailIngredient
+            ? [
+                { label: getCategoryLabel(detailIngredient.category, language) },
+                ...(detailIngredient.merma?.enabled ? [{ label: t("panel_merma_active"), tone: "accent" as const }] : []),
+              ]
+            : []
+        }
+        stats={
+          detailIngredient
+            ? [
+                { label: t("panel_purchase_price"), value: formatCurrency(detailIngredient.pricing?.purchasePrice || 0) },
+                {
+                  label: t("panel_net_content"),
+                  value: `${detailIngredient.pricing?.netContent || 0} ${getUnitLabelFor(detailIngredient.unit, language, detailIngredient.pricing?.netContent || 0)}`,
+                },
+                { label: t("panel_price_per_unit"), value: formatUnitPrice(detailIngredient.pricing?.pricePerUnit || 0) },
+                {
+                  label: t("panel_used_in"),
+                  value: getRecipes(businessId || "main").filter((r) => r.ingredients?.some((i) => i.ingredientId === detailIngredient.id)).length,
+                },
+                { label: t("ingredientes_col_supplier"), value: detailIngredient.supplier || "—" },
+                {
+                  label: t("panel_merma"),
+                  value: !detailIngredient.merma?.enabled
+                    ? t("panel_merma_none")
+                    : detailIngredient.merma.useGlobal
+                      ? `${Number(detailIngredient.merma.globalPercentage || 0).toFixed(0)}%`
+                      : detailIngredient.merma.customType === "percentage"
+                        ? `${Number(detailIngredient.merma.customPercentage || 0).toFixed(0)}%`
+                        : t("panel_merma_active"),
+                },
+              ]
+            : []
+        }
+        actions={
+          detailIngredient
+            ? [
+                { key: "edit", label: t("ingredientes_tooltip_edit_ingredient"), icon: Edit, primary: true, onClick: () => handleEdit(detailIngredient) },
+                {
+                  key: "merma",
+                  label: t("ingredientes_manage_merma_button"),
+                  icon: Settings,
+                  onClick: () =>
+                    hasFeatureAccess("merma")
+                      ? setShowMermaDialog(true)
+                      : showInfo(t("ingredientes_merma_locked_title"), t("ingredientes_merma_locked_desc")),
+                },
+              ]
+            : []
+        }
+        danger={
+          detailIngredient
+            ? { key: "delete", label: t("ingredientes_tooltip_delete_ingredient"), icon: Trash2, onClick: () => handleDelete(detailIngredient) }
+            : undefined
+        }
+      />
+
+      {/* Pistas por acción (docs/219): con 3 ingredientes, invitar a la merma; y el primer panel. */}
+      <ActionHint
+        id="ingredients-merma"
+        when={!isLoading && ingredients.filter((ing) => ing.category !== SUBRECIPE_CLASSIFICATION).length >= 3 && canAccessMerma === true}
+        selector='[data-tour="ingredientes-merma-button"]'
+        title={t("hint_ingredients_merma_title")}
+        description={t("hint_ingredients_merma_desc")}
+        tip={t("hint_ingredients_merma_tip")}
+        actionLabel={t("hint_ingredients_merma_cta")}
+        onAction={() => setShowMermaDialog(true)}
+        delay={1500}
+      />
+      <ActionHint
+        id="ingredients-panel"
+        when={detailIngredient !== null}
+        selector='[data-tour="detail-panel-actions"]'
+        title={t("hint_ingredients_panel_title")}
+        description={t("hint_ingredients_panel_desc")}
+        delay={900}
+      />
 
       <MermaManagementDialog
         open={showMermaDialog}

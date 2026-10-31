@@ -18,6 +18,7 @@ import { getCategoryMermaPercentage } from "@/lib/merma-categories"
 import { getPriceChangeHistory } from "@/lib/recalculate"
 import { useLanguage } from "@/contexts/language-context"
 import { getCategoryLabel, getUnitLabel, getUnitLabelFor, getPresentationLabel } from "@/lib/ingredient-labels"
+import { openOnActivate } from "@/components/detail-panel"
 import { isBeverageCategory } from "@/lib/beverage"
 import { SellByServingDialog } from "@/components/beverage/sell-by-serving-dialog"
 import { formatUnitPrice } from "@/lib/currency"
@@ -55,6 +56,8 @@ type Props = {
   // comparten el mismo sistema de unidades).
   onUnitChange?: () => void
   mermaSystemEnabled?: boolean
+  /** Clic o toque en la fila: abre el panel de acciones del ingrediente (docs/219). */
+  onOpenDetails?: (ingredient: Ingredient) => void
 }
 
 export function IngredientsTable({
@@ -66,6 +69,7 @@ export function IngredientsTable({
   onChange,
   onUnitChange,
   mermaSystemEnabled,
+  onOpenDetails,
 }: Props) {
   const { t, language } = useLanguage()
   const { toast } = useToast()
@@ -263,7 +267,9 @@ export function IngredientsTable({
               return (
                 <tr
                   key={ingredient.id}
-                  className={`hover:bg-muted/20 transition-colors ${index % 2 === 0 ? "bg-background" : "bg-muted/10"}`}
+                  data-ingredient-row={ingredient.id}
+                  {...(onOpenDetails ? openOnActivate(() => onOpenDetails(ingredient)) : {})}
+                  className={`hover:bg-muted/20 transition-colors ${onOpenDetails ? "cursor-pointer" : ""} ${index % 2 === 0 ? "bg-background" : "bg-muted/10"}`}
                 >
                   {/* Categoría */}
                   <td className="px-4 py-4">

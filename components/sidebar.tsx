@@ -1,5 +1,6 @@
 "use client"
 
+import { resetHints } from "@/lib/hints"
 import { effectiveMemberFeatures } from "@/lib/team-access"
 import { Suspense, useState, useEffect, useRef } from "react"
 import Link from "next/link"
@@ -374,6 +375,8 @@ function SidebarInner() {
   // dispara); este cierre explícito aplica sin importar qué tour se esté reiniciando.
   const handleRestartTour = () => {
     setIsMobileOpen(false)
+    // También vuelve a encender las pistas por acción (docs/219).
+    resetHints()
     window.dispatchEvent(new CustomEvent("gm:tour:restart"))
     toast({ title: t("sidebar_restart_tour_toast") })
   }

@@ -5,18 +5,10 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   Eye,
   Edit,
   Trash2,
   Copy,
-  MoreVertical,
   Clock,
   Users,
   DollarSign,
@@ -29,6 +21,7 @@ import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import type { Recipe, Classification } from "@/types/recipe"
 import { useLanguage } from "@/contexts/language-context"
 import { getClassificationLabel } from "@/lib/classification-labels"
+import { openOnActivate } from "@/components/detail-panel"
 import { getYieldUnitLabelFor } from "@/lib/ingredient-labels"
 import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 import { formatDate, formatDayMonth } from "@/lib/date-format"
@@ -101,7 +94,8 @@ export function RecipeCard({
     return (
       <Card
         className="border-border hover:bg-canvas-alt transition-colors duration-150 bg-card cursor-pointer"
-        onDoubleClick={() => onOpenDetails?.(recipe)}
+        {...openOnActivate(() => onOpenDetails?.(recipe))}
+        data-recipe-card={recipe.id}
         title={t("recipecard_double_click_hint")}
       >
         <CardContent className="p-4">
@@ -156,42 +150,6 @@ export function RecipeCard({
                   </div>
                 </div>
 
-                {/* Menú de acciones */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label={t("recipecard_actions_label")}>
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem onClick={() => onView(recipe)}>
-                      <Eye className="h-4 w-4 mr-2" />
-                      {t("recipecard_view")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onEdit(recipe)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      {t("recipecard_edit")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onDuplicate(recipe)}>
-                      <Copy className="h-4 w-4 mr-2" />
-                      {t("recipecard_duplicate")}
-                    </DropdownMenuItem>
-                    {onMigrate && (
-                      <DropdownMenuItem onClick={() => onMigrate(recipe)}>
-                        <ArrowRightLeft className="h-4 w-4 mr-2" />
-                        {t("recipecard_migrate")}
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => onDelete(recipe)}
-                      className="text-destructive dark:text-red-300 focus:text-destructive dark:text-red-300"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      {t("recipecard_delete")}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
 
               {/* Estadísticas en grid compacto para móvil */}
@@ -243,7 +201,8 @@ export function RecipeCard({
   return (
     <Card
       className="border-border transition-all duration-300 bg-card group cursor-pointer"
-      onDoubleClick={() => onOpenDetails?.(recipe)}
+      {...openOnActivate(() => onOpenDetails?.(recipe))}
+        data-recipe-card={recipe.id}
       title={t("recipecard_double_click_hint")}
     >
       <CardHeader className="p-4 pb-2">
@@ -274,46 +233,6 @@ export function RecipeCard({
             </div>
           </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                aria-label={t("recipecard_actions_label")}
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => onView(recipe)}>
-                <Eye className="h-4 w-4 mr-2" />
-                {t("recipecard_view")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(recipe)}>
-                <Edit className="h-4 w-4 mr-2" />
-                {t("recipecard_edit")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onDuplicate(recipe)}>
-                <Copy className="h-4 w-4 mr-2" />
-                {t("recipecard_duplicate")}
-              </DropdownMenuItem>
-              {onMigrate && (
-                <DropdownMenuItem onClick={() => onMigrate(recipe)}>
-                  <ArrowRightLeft className="h-4 w-4 mr-2" />
-                  {t("recipecard_migrate")}
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => onDelete(recipe)}
-                className="text-destructive dark:text-red-300 focus:text-destructive dark:text-red-300"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                {t("recipecard_delete")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </CardHeader>
 

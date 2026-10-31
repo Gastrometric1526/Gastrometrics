@@ -7,6 +7,7 @@ import { ArrowRight, ArrowLeft, Lightbulb, X } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { requestedTourMatches } from "@/lib/tour-links"
 import { withTourFlows } from "@/lib/tour-flows"
+import { hintsOff, turnOffHints } from "@/lib/hints"
 
 export type TourStep = {
   id: string
@@ -131,12 +132,28 @@ type PageTourProps = {
    *  para abrir el drawer del sidebar en móvil SOLO durante el paso "sidebar" y cerrarlo en
    *  los demás pasos (si no, el drawer a pantalla completa tapa lo que se está resaltando). */
   onStepChange?: (step: TourStep) => void
+  /**
+   * "hint" (docs/219): pista por acción — un solo paso, sin contador ni «Atrás», con «No
+   * mostrar más pistas»; no se abre si las pistas están apagadas ni encima de otro tutorial.
+   */
+  variant?: "tour" | "hint"
+  /**
+   * Entrada corta (docs/219): al abrirse solo al entrar a la página se muestran estos
+   * primeros pasos; el recorrido completo, con «Ver el tutorial» (?tour=) o «Reiniciar
+   * tutorial». Por defecto 3. Infinity = siempre completo.
+   */
+  introSteps?: number
 }
 
-export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finishLabel, onFinish, onStart, onClose, onStepChange }: PageTourProps) {
+export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finishLabel, onFinish, onStart, onClose, onStepChange, variant = "tour", introSteps = 3 }: PageTourProps) {
   const { t } = useLanguage()
+  const isHint = variant === "hint"
+  // true cuando lo pidieron (?tour= o «Reiniciar tutorial»): recorrido completo.
+  const [fullMode, setFullMode] = useState(false)
   // Conexiones entre módulos y ejemplos de cada paso (docs/208, lib/tour-flows.ts).
-  const steps = withTourFlows(storageKey, rawSteps, t)
+  const allSteps = withTourFlows(storageKey, rawSteps, t)
+  const truncated = !isHint && !fullMode && introSteps < allSteps.length
+  const steps = truncated ? allSteps.slice(0, introSteps) : allSteps
   const [isOpen, setIsOpen] = useState(false)
   const [stepIndex, setStepIndex] = useState(0)
   const [rect, setRect] = useState<Rect | null>(null)
@@ -157,17 +174,25 @@ export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finish
     // visto (botón «Ver el tutorial» de Novedades y del correo de novedades).
     if (requestedTourMatches(window.location.search, storageKey)) {
       localStorage.removeItem(storageKey)
+      setFullMode(true)
       const url = new URL(window.location.href)
       url.searchParams.delete("tour")
       window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`)
     }
     const seen = localStorage.getItem(storageKey)
     if (seen) return
-    startTimerRef.current = setTimeout(() => {
+    if (isHint && hintsOff()) return
+    // Una pista nunca se abre encima de otro tutorial: espera a que se cierre (docs/219).
+    const open = (attempts: number) => {
+      if (isHint && document.querySelector("[data-gm-page-tour]") && attempts > 0) {
+        startTimerRef.current = setTimeout(() => open(attempts - 1), 1000)
+        return
+      }
       onStart?.()
       setIsOpen(true)
       setStepIndex(0)
-    }, startDelay)
+    }
+    startTimerRef.current = setTimeout(() => open(120), startDelay)
     return () => {
       if (startTimerRef.current) clearTimeout(startTimerRef.current)
     }
@@ -185,9 +210,11 @@ export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finish
   // comporta como siempre, restarta el primero que esté montado.
   useEffect(() => {
     const onRestart = (event: Event) => {
+      if (isHint) return
       const targetKey = (event as CustomEvent<{ storageKey?: string }>).detail?.storageKey
       if (targetKey && targetKey !== storageKey) return
       localStorage.removeItem(storageKey)
+      setFullMode(true)
       onStart?.()
       setStepIndex(0)
       setIsOpen(true)
@@ -445,9 +472,9 @@ export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finish
 
         <div className="p-5 pb-4">
           <div className="flex items-center gap-2 mb-3">
-            {Icon && <Icon className="h-7 w-7 text-primary" />}
+            {isHint ? <Lightbulb className="h-5 w-5 text-primary" /> : Icon && <Icon className="h-7 w-7 text-primary" />}
             <span className="text-xs font-semibold uppercase tracking-wide text-primary">
-              {t("tour_step")} {stepIndex + 1} {t("tour_of")} {steps.length}
+              {isHint ? t("hint_label") : `${t("tour_step")} ${stepIndex + 1} ${t("tour_of")} ${steps.length}`}
             </span>
           </div>
           <h3 className="text-base font-bold text-foreground mb-1.5 text-balance pr-4">{step.title}</h3>
@@ -493,20 +520,42 @@ export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finish
           )}
         </div>
 
-        <div className="h-1 bg-muted mx-5 rounded-full overflow-hidden mb-4">
-          <div
-            className="h-full bg-primary rounded-full transition-all duration-300"
-            style={{ width: `${((stepIndex + 1) / steps.length) * 100}%` }}
-          />
-        </div>
+        {truncated && isLast && (
+          <p className="mx-5 mb-3 rounded-lg bg-muted/60 p-2.5 text-xs leading-relaxed text-muted-foreground" data-tour-intro-note="">
+            {t("tour_intro_more")}
+          </p>
+        )}
+
+        {!isHint && (
+          <div className="h-1 bg-muted mx-5 rounded-full overflow-hidden mb-4">
+            <div
+              className="h-full bg-primary rounded-full transition-all duration-300"
+              style={{ width: `${((stepIndex + 1) / steps.length) * 100}%` }}
+            />
+          </div>
+        )}
 
         <div className="flex items-center justify-between gap-2 border-t border-border p-3">
-          <Button variant="ghost" size="sm" onClick={goBack} disabled={stepIndex === 0} className="gap-1.5">
-            <ArrowLeft className="h-4 w-4" />
-            {t("tour_back")}
-          </Button>
+          {isHint ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                turnOffHints()
+                close()
+              }}
+              className="text-muted-foreground"
+            >
+              {t("hint_turn_off")}
+            </Button>
+          ) : (
+            <Button variant="ghost" size="sm" onClick={goBack} disabled={stepIndex === 0} className="gap-1.5">
+              <ArrowLeft className="h-4 w-4" />
+              {t("tour_back")}
+            </Button>
+          )}
           <Button size="sm" onClick={goNext} className="gap-1.5">
-            {isLast ? finishLabel ?? t("tour_done_default") : t("tour_next")}
+            {isLast ? finishLabel ?? (truncated ? t("tour_intro_start") : isHint ? t("hint_ok") : t("tour_done_default")) : t("tour_next")}
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>

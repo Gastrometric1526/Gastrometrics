@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Trash2, Receipt, Plus, Pencil, ChevronDown, ChevronUp, DollarSign, Package, ListOrdered, Wallet } from "lucide-react"
+import { Trash2, Receipt, Plus, Pencil, DollarSign, Package, ListOrdered, Wallet } from "lucide-react"
+import { DetailPanel, openOnActivate } from "@/components/detail-panel"
+import { ActionHint } from "@/components/action-hint"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
 import { formatCurrency } from "@/lib/currency"
@@ -54,10 +56,10 @@ export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingImport, setEditingImport] = useState<SalesImport | null>(null)
   // Pedido explícito: "que el usuario pueda verlo todo" — antes solo se veía el nombre
-  // del registro, el conteo de líneas y el ingreso total; para ver QUÉ se vendió había
-  // que abrir el diálogo de edición. Ahora cada registro se puede expandir en la misma
-  // lista, sin entrar a editar.
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  // del registro, el conteo de líneas y el ingreso total. Desde docs/219, tocar un
+  // registro abre su panel (mismo diseño que el de una receta) con el desglose por cuenta
+  // y mesa, el cuadre, editar y eliminar.
+  const [detailId, setDetailId] = useState<string | null>(null)
   // BUG CORREGIDO: eliminar borraba de inmediato al primer clic, sin confirmación — a
   // diferencia de todo el resto de la app (recetas, ingredientes, negocios), donde
   // borrar algo siempre pide confirmar primero. Un clic accidental perdía el registro
@@ -105,6 +107,9 @@ export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true
     return { totalRevenue, totalUnits, count: manualEntries.length }
   }, [manualEntries])
 
+  const detailEntry = manualEntries.find((imp) => imp.id === detailId) ?? null
+  const detailCashUp = detailEntry?.cashUp ? computeCashUp(detailEntry, detailEntry.cashUp) : null
+
   const handleSaved = () => {
     setSalesImports(getSalesImports(businessId))
     setEditingImport(null)
@@ -118,10 +123,6 @@ export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true
   const handleOpenEdit = (imp: SalesImport) => {
     setEditingImport(imp)
     setIsDialogOpen(true)
-  }
-
-  const toggleExpanded = (id: string) => {
-    setExpandedId((current) => (current === id ? null : id))
   }
 
   const confirmDelete = async () => {
@@ -140,6 +141,57 @@ export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true
       setIsDeleting(false)
     }
   }
+
+  // Desglose por cuenta y mesa de un registro: ahora vive en su panel (docs/219).
+  const renderBreakdown = (imp: SalesImport) => (
+    <div className="rounded-lg border border-border divide-y divide-hairline bg-card mb-4">
+        {/* Por cuenta y mesa desde docs/215; los registros anteriores, como antes. */}
+        {(imp.tickets?.length ? imp.tickets : [null]).map((tk) => {
+          const lines = tk ? imp.lines.filter((l) => l.ticketId === tk.id) : imp.lines
+          if (lines.length === 0) return null
+          const details = tk
+            ? [
+                tk.guests ? `${tk.guests} ${t("ventas_guests_short")}` : null,
+                tk.time,
+                tk.waiter,
+                tk.payment ? t(`ventas_payment_${tk.payment}` as never) : null,
+              ].filter(Boolean)
+            : []
+          return (
+            <div key={tk?.id ?? "all"} className="px-3 py-2 space-y-1">
+              {tk && (
+                <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs">
+                  <span className="font-semibold text-foreground">
+                    {ticketLabel(tk, t as (k: string) => string)}
+                    {details.length > 0 && <span className="font-normal text-muted-foreground"> · {details.join(" · ")}</span>}
+                  </span>
+                  <span className="tabular-nums font-medium text-foreground">{formatCurrency(lines.reduce((sum, l) => sum + l.revenue, 0))}</span>
+                </div>
+              )}
+              {lines.map((line) => (
+                <div key={line.id} className="flex items-center justify-between text-xs gap-2">
+                  <span className="truncate text-foreground">{line.rawDishName}</span>
+                  <span className="text-muted-foreground shrink-0">
+                    {line.quantity} × {formatCurrency(line.unitPrice ?? 0)} = {formatCurrency(line.quantity * (line.unitPrice ?? 0))}
+                  </span>
+                </div>
+              ))}
+              {tk && (tk.discount > 0 || tk.tip > 0 || tk.note) && (
+                <p className="text-xs text-muted-foreground">
+                  {[
+                    tk.discount > 0 ? `${t("ventas_discount_label")}: − ${formatCurrency(tk.discount)}` : null,
+                    tk.tip > 0 ? `${t("ventas_tip_label")}: ${formatCurrency(tk.tip)}` : null,
+                    tk.note ? `“${tk.note}”` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              )}
+            </div>
+          )
+        })}
+    </div>
+  )
 
   return (
     <div className="space-y-6">
@@ -211,22 +263,17 @@ export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true
           ) : (
             <div className="space-y-2">
               {manualEntries.map((imp, index) => {
-                const isExpanded = expandedId === imp.id
                 const cashUpResult = imp.cashUp ? computeCashUp(imp, imp.cashUp) : null
                 return (
-                  <div key={imp.id} className="rounded-lg border border-hairline bg-muted/20 overflow-hidden">
+                  <div
+                    key={imp.id}
+                    data-sales-row={imp.id}
+                    {...openOnActivate(() => setDetailId(imp.id))}
+                    className="rounded-lg border border-hairline bg-muted/20 overflow-hidden cursor-pointer hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
                     <div className="flex items-center justify-between text-sm px-3 py-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => toggleExpanded(imp.id)}
-                        className="min-w-0 flex-1 flex items-center gap-2 text-left"
-                        aria-expanded={isExpanded}
-                      >
-                        {isExpanded ? (
-                          <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        )}
+                      <div className="min-w-0 flex-1 flex items-center gap-2 text-left">
+                        <Receipt className="h-4 w-4 shrink-0 text-muted-foreground" />
                         <div className="min-w-0">
                           <p className="font-medium truncate">{salesImportDisplayName(imp, t, language)}</p>
                           <p className="text-xs text-muted-foreground">
@@ -234,7 +281,7 @@ export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true
                             {imp.lineCount} {t("manual_sales_lines_suffix")} · {formatCurrency(imp.totalRevenue)}
                           </p>
                         </div>
-                      </button>
+                      </div>
                       <div className="flex items-center gap-1 shrink-0">
                         {canCashUp && (
                           <Button
@@ -265,63 +312,8 @@ export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true
                             </span>
                           </Button>
                         )}
-                        <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(imp)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setEntryToDelete(imp)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
                       </div>
                     </div>
-                    {isExpanded && (
-                      <div className="border-t border-hairline divide-y divide-hairline bg-card">
-                        {/* Por cuenta y mesa desde docs/215; los registros anteriores, como antes. */}
-                        {(imp.tickets?.length ? imp.tickets : [null]).map((tk) => {
-                          const lines = tk ? imp.lines.filter((l) => l.ticketId === tk.id) : imp.lines
-                          if (lines.length === 0) return null
-                          const details = tk
-                            ? [
-                                tk.guests ? `${tk.guests} ${t("ventas_guests_short")}` : null,
-                                tk.time,
-                                tk.waiter,
-                                tk.payment ? t(`ventas_payment_${tk.payment}` as never) : null,
-                              ].filter(Boolean)
-                            : []
-                          return (
-                            <div key={tk?.id ?? "all"} className="px-3 py-2 space-y-1">
-                              {tk && (
-                                <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs">
-                                  <span className="font-semibold text-foreground">
-                                    {ticketLabel(tk, t as (k: string) => string)}
-                                    {details.length > 0 && <span className="font-normal text-muted-foreground"> · {details.join(" · ")}</span>}
-                                  </span>
-                                  <span className="tabular-nums font-medium text-foreground">{formatCurrency(lines.reduce((sum, l) => sum + l.revenue, 0))}</span>
-                                </div>
-                              )}
-                              {lines.map((line) => (
-                                <div key={line.id} className="flex items-center justify-between text-xs gap-2">
-                                  <span className="truncate text-foreground">{line.rawDishName}</span>
-                                  <span className="text-muted-foreground shrink-0">
-                                    {line.quantity} × {formatCurrency(line.unitPrice ?? 0)} = {formatCurrency(line.quantity * (line.unitPrice ?? 0))}
-                                  </span>
-                                </div>
-                              ))}
-                              {tk && (tk.discount > 0 || tk.tip > 0 || tk.note) && (
-                                <p className="text-xs text-muted-foreground">
-                                  {[
-                                    tk.discount > 0 ? `${t("ventas_discount_label")}: − ${formatCurrency(tk.discount)}` : null,
-                                    tk.tip > 0 ? `${t("ventas_tip_label")}: ${formatCurrency(tk.tip)}` : null,
-                                    tk.note ? `“${tk.note}”` : null,
-                                  ]
-                                    .filter(Boolean)
-                                    .join(" · ")}
-                                </p>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
                   </div>
                 )
               })}
@@ -333,6 +325,51 @@ export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true
       {canCashUp && <CashUpSummaryCard imports={manualEntries} onOpenDay={setCashUpId} />}
 
       {showInsights && <TableSalesInsights imports={manualEntries} />}
+
+      {/* Panel de un registro de ventas (docs/219), mismo diseño que el de una receta */}
+      {detailEntry && (
+        <DetailPanel
+          open={!!detailEntry}
+          onOpenChange={(open) => !open && setDetailId(null)}
+          title={salesImportDisplayName(detailEntry, t, language)}
+          badges={
+            detailCashUp
+              ? [{ label: t(`cashup_badge_${detailCashUp.status}` as never), tone: "accent" as const }]
+              : []
+          }
+          stats={[
+            { label: t("manual_sales_overview_revenue"), value: formatCurrency(detailEntry.totalRevenue) },
+            { label: t("manual_sales_overview_units"), value: detailEntry.lines.reduce((sum, l) => sum + l.quantity, 0) },
+            ...(detailEntry.tickets?.length ? [{ label: t("panel_sales_tickets"), value: detailEntry.tickets.length }] : []),
+            ...(detailCashUp ? [{ label: t("panel_sales_difference"), value: formatCurrency(detailCashUp.totalDifference) }] : []),
+          ]}
+          actions={[
+            ...(canCashUp
+              ? [{ key: "cashup", label: t("cashup_title"), icon: Wallet, primary: true, onClick: () => setCashUpId(detailEntry.id) }]
+              : []),
+            { key: "edit", label: t("common_edit"), icon: Pencil, primary: !canCashUp, onClick: () => handleOpenEdit(detailEntry) },
+          ]}
+          danger={{ key: "delete", label: t("common_delete"), icon: Trash2, onClick: () => setEntryToDelete(detailEntry) }}
+        >
+          {renderBreakdown(detailEntry)}
+        </DetailPanel>
+      )}
+      <ActionHint
+        id="sales-cashup"
+        when={canCashUp && manualEntries.length > 0 && !manualEntries.some((imp) => imp.cashUp) && !detailEntry}
+        title={t("hint_sales_cashup_title")}
+        description={t("hint_sales_cashup_desc")}
+        tip={t("hint_sales_cashup_tip")}
+        selector='[data-tour="ventas-cashup"]'
+        delay={1500}
+      />
+      <ActionHint
+        id="sales-panel"
+        when={!!detailEntry}
+        title={t("hint_sales_panel_title")}
+        description={t("hint_sales_panel_desc")}
+        selector='[data-tour="detail-panel-actions"]'
+      />
 
       <CashUpDialog
         open={!!cashUpId}

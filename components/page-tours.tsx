@@ -119,6 +119,8 @@ export function IngredientesTour({ onOpenImport }: { onOpenImport?: () => void }
     { id: "search", title: t("tour_ing_search_title"), description: t("tour_ing_search_desc"), selector: '[data-tour="ing-search"]' },
     { id: "unit-switch", title: t("tour_ing_unit_switch_title"), description: t("tour_ing_unit_switch_desc"), selector: '[data-tour="ing-unit-switch"]' },
     { id: "table", title: t("tour_ing_table_title"), description: t("tour_ing_table_desc"), selector: '[data-tour="ing-table"]' },
+    // docs/219: tocar un ingrediente abre su panel (editar, merma, eliminar).
+    { id: "row", title: t("tour_ing_row_title"), description: t("tour_ing_row_desc"), selector: "[data-ingredient-row]" },
     // Último paso (docs/145): carga masiva primero, sin esconder la opción manual.
     { id: "bulk", title: t("tour_ing_bulk_title"), description: t("tour_ing_bulk_desc"), selector: '[data-tour="ing-import"]' },
   ]
@@ -159,6 +161,8 @@ export function InventarioTour() {
     },
     { id: "add", title: t("tour_inv_add_title"), description: t("tour_inv_add_desc"), selector: '[data-tour="inv-add"]' },
     { id: "register", title: t("tour_inv_register_title"), description: t("tour_inv_register_desc"), selector: '[data-tour="inv-register"]' },
+    // docs/219: tocar un producto abre su panel (editar, registrar conteo, historial).
+    { id: "row", title: t("tour_inv_row_title"), description: t("tour_inv_row_desc"), selector: "[data-inventory-row]" },
     { id: "export-pdf", title: t("tour_inv_export_pdf_title"), description: t("tour_inv_export_pdf_desc"), selector: '[data-tour="inv-export-pdf"]' },
   ]
 
@@ -180,6 +184,8 @@ export function MisRecetasTour({ onOpenImport }: { onOpenImport?: () => void } =
     { id: "new", title: t("tour_recetas_new_title"), description: t("tour_recetas_new_desc"), selector: '[data-tour="recetas-new"]' },
     { id: "trash", title: t("tour_recetas_trash_title"), description: t("tour_recetas_trash_desc"), selector: '[data-tour="recetas-trash"]' },
     { id: "stats", title: t("tour_recetas_stats_title"), description: t("tour_recetas_stats_desc"), selector: '[data-tour="recetas-stats"]' },
+    // docs/219: tocar una receta abre su panel (ver, editar, PDF, duplicar, eliminar).
+    { id: "card", title: t("tour_recetas_card_title"), description: t("tour_recetas_card_desc"), selector: "[data-recipe-card]" },
   ]
 
   return (
@@ -214,18 +220,12 @@ export function MenusTour() {
       selector: '[data-tour="menus-mep"]',
     },
     {
-      id: "generate-order",
-      title: t("tour_menus_generate_order_title"),
-      description: t("tour_menus_generate_order_desc"),
-      selector: '[data-tour="menus-generate-order"]',
-      // El ítem vive dentro de un DropdownMenu que no está en el DOM hasta que se abre —
-      // y DropdownMenuTrigger de Radix reacciona a onPointerDown, no a onClick (ver el
-      // mismo hallazgo documentado en docs/35 para Tabs, con onMouseDown en ese caso).
-      beforeShow: () => {
-        document
-          .querySelector('[data-tour="menus-card-menu-trigger"]')
-          ?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, button: 0 }))
-      },
+      // docs/219: ya no hay menú de tres puntos — tocar un menú abre su panel con todas
+      // las acciones (ver, editar, duplicar, PDF, MEP, generar orden de compra, eliminar).
+      id: "card",
+      title: t("tour_menus_card_title"),
+      description: t("tour_menus_card_desc"),
+      selector: "[data-menu-card]",
     },
   ]
 
@@ -332,6 +332,8 @@ export function VentasTour() {
     { id: "header", title: t("tour_ventas_header_title"), description: t("tour_ventas_header_desc"), selector: '[data-tour="ventas-header"]' },
     { id: "register", title: t("tour_ventas_register_title"), description: t("tour_ventas_register_desc"), selector: '[data-tour="ventas-register-button"]' },
     { id: "tickets", title: t("tour_ventas_tickets_title"), description: t("tour_ventas_tickets_desc"), selector: '[data-tour="ventas-register-card"]' },
+    // docs/219: tocar un registro abre su panel (desglose, cuadre, editar, eliminar).
+    { id: "entry", title: t("tour_ventas_entry_title"), description: t("tour_ventas_entry_desc"), selector: "[data-sales-row]" },
     // Cuadre de caja (docs/217).
     { id: "cashup", title: t("tour_ventas_cashup_title"), description: t("tour_ventas_cashup_desc"), selector: '[data-tour="ventas-cashup"]' },
     { id: "tables", title: t("tour_ventas_tables_title"), description: t("tour_ventas_tables_desc"), selector: '[data-tour="ventas-tables-card"]' },
@@ -352,8 +354,8 @@ export function OrdenesCompraTour() {
     { id: "new", title: t("tour_ordenes_new_title"), description: t("tour_ordenes_new_desc"), selector: '[data-tour="ordenes-new"]' },
     { id: "auto-suggest", title: t("tour_ordenes_auto_suggest_title"), description: t("tour_ordenes_auto_suggest_desc"), selector: '[data-tour="ordenes-auto-suggest"]' },
     { id: "search", title: t("tour_ordenes_search_title"), description: t("tour_ordenes_search_desc"), selector: '[data-tour="ordenes-search"]' },
-    { id: "row-pdf", title: t("tour_ordenes_row_pdf_title"), description: t("tour_ordenes_row_pdf_desc"), selector: '[data-tour="ordenes-row-pdf"]' },
-    { id: "row-send", title: t("tour_ordenes_row_send_title"), description: t("tour_ordenes_row_send_desc"), selector: '[data-tour="ordenes-row-send"]' },
+    // docs/219: editar, PDF, enviar, duplicar y eliminar viven en el panel de cada orden.
+    { id: "row", title: t("tour_ordenes_row_title"), description: t("tour_ordenes_row_desc"), selector: "[data-order-row]" },
   ]
 
   return <PageTour steps={steps} storageKey="tour_completed_ordenes-compra" />
@@ -435,7 +437,7 @@ export function SettingsTour({ showDeveloperTools = true }: { showDeveloperTools
     },
   ]
 
-  return <PageTour steps={steps} storageKey="tour_completed_settings-dialog" />
+  return <PageTour steps={steps} storageKey="tour_completed_settings-dialog" introSteps={Infinity} />
 }
 
 export function EquipoTour({ hasMembers }: { hasMembers: boolean }) {
@@ -606,6 +608,8 @@ export function NegociosTour() {
     },
     { id: "new", title: t("tour_negocios_new_title"), description: t("tour_negocios_new_desc"), selector: '[data-tour="negocios-new"]' },
     { id: "stats", title: t("tour_negocios_stats_title"), description: t("tour_negocios_stats_desc"), selector: '[data-tour="negocios-stats"]' },
+    // docs/219: tocar un negocio abre su panel (acceder, desactivar, eliminar).
+    { id: "card", title: t("tour_negocios_card_title"), description: t("tour_negocios_card_desc"), selector: "[data-business-card]" },
   ]
 
   return <PageTour steps={steps} storageKey="tour_completed_negocios" />

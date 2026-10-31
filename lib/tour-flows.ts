@@ -45,7 +45,7 @@ export const TOUR_FLOWS: Record<string, Record<string, TourFlow>> = {
   menus: {
     new: { from: ["nav_mis_recetas"], tip: "tour_tip_menu_people" },
     mep: { to: ["nav_mep"] },
-    "generate-order": { from: ["nav_inventario"], to: ["nav_ordenes_compra"], tip: "tour_tip_menu_order" },
+    card: { from: ["nav_inventario"], to: ["nav_ordenes_compra"], tip: "tour_tip_menu_order" },
   },
   mep: {
     menu: { from: ["nav_menus"] },

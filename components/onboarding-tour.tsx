@@ -62,6 +62,8 @@ export function OnboardingTour() {
     <PageTour
       steps={steps}
       storageKey={ONBOARDING_KEY}
+      // Tutorial base: siempre completo (docs/219).
+      introSteps={Infinity}
       finishLabel={t("tour_finish_go_ingredients")}
       onStart={() => window.dispatchEvent(new CustomEvent("gm:tour", { detail: { active: true } }))}
       // BUG CORREGIDO (pedido explícito: "forzar al usuario de llevarlo de la mano al

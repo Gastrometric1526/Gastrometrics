@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DetailPanel, openOnActivate } from "@/components/detail-panel"
+import { ActionHint } from "@/components/action-hint"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -33,7 +34,6 @@ import {
   AlertTriangle,
   Clock,
   ArrowRight,
-  MoreVertical,
   PauseCircle,
   PlayCircle,
   Trash2,
@@ -55,6 +55,9 @@ export default function NegociosPage() {
   const [businesses, setBusinesses] = useState<Business[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddDialog, setShowAddDialog] = useState(false)
+  // Panel de acciones de un negocio (docs/219): tocar la tarjeta lo abre (antes entraba
+  // directo; para eso sigue el botón «Acceder»).
+  const [detailBusiness, setDetailBusiness] = useState<Business | null>(null)
   const [businessToDelete, setBusinessToDelete] = useState<Business | null>(null)
   const [deleteSummary, setDeleteSummary] = useState({ recipes: 0, ingredients: 0 })
   const [deleteConfirmName, setDeleteConfirmName] = useState("")
@@ -359,8 +362,9 @@ export default function NegociosPage() {
                   return (
                     <Card
                       key={business.id}
-                      className="group transition-colors duration-150 cursor-pointer border-hairline hover:bg-canvas-alt w-full"
-                      onClick={() => handleBusinessClick(business.id)}
+                      data-business-card={business.id}
+                      {...openOnActivate(() => setDetailBusiness(business))}
+                      className="group transition-colors duration-150 cursor-pointer border-hairline hover:bg-canvas-alt w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       <CardContent className="p-6">
                         {/* Header */}
@@ -424,40 +428,6 @@ export default function NegociosPage() {
                               {t("negocios_access_button")}
                               <ArrowRight className="h-4 w-4 ml-2" />
                             </Button>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className="shrink-0 bg-transparent"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                                <DropdownMenuItem onClick={() => handleToggleActive(business)}>
-                                  {business.isActive !== false ? (
-                                    <>
-                                      <PauseCircle className="h-4 w-4 mr-2" />
-                                      {t("negocios_deactivate")}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <PlayCircle className="h-4 w-4 mr-2" />
-                                      {t("negocios_reactivate")}
-                                    </>
-                                  )}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => openDeleteDialog(business)}
-                                  className="text-destructive focus:text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  {t("negocios_delete")}
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
                           </div>
                         </div>
 
@@ -601,6 +571,52 @@ export default function NegociosPage() {
           </div>
         </div>
       </div>
+
+      {/* Panel de acciones del negocio (docs/219), mismo diseño que el de una receta */}
+      {detailBusiness && (
+        <DetailPanel
+          open={!!detailBusiness}
+          onOpenChange={(open) => !open && setDetailBusiness(null)}
+          title={detailBusiness.name}
+          badges={[
+            {
+              label: detailBusiness.isActive !== false ? t("negocios_badge_active") : t("negocios_badge_inactive"),
+              tone: detailBusiness.isActive !== false ? "accent" : "muted",
+            },
+          ]}
+          stats={[
+            { label: t("panel_created"), value: formatDate(detailBusiness.createdAt) },
+            {
+              label: t("panel_days_active"),
+              value: getDaysActive(detailBusiness.createdAt),
+            },
+            {
+              label: t("negocios_financial_data_label"),
+              value: detailBusiness.hasFinancialData ? t("negocios_status_configured") : t("negocios_status_pending"),
+            },
+            ...(detailBusiness.hasFinancialData && detailBusiness.expenses
+              ? [{ label: t("panel_monthly_expenses"), value: formatCurrency(calculateTotalMonthlyExpenses(detailBusiness.expenses)) }]
+              : []),
+          ]}
+          actions={[
+            { key: "open", label: t("negocios_access_button"), icon: ArrowRight, primary: true, onClick: () => handleBusinessClick(detailBusiness.id) },
+            {
+              key: "toggle",
+              label: detailBusiness.isActive !== false ? t("negocios_deactivate") : t("negocios_reactivate"),
+              icon: detailBusiness.isActive !== false ? PauseCircle : PlayCircle,
+              onClick: () => handleToggleActive(detailBusiness),
+            },
+          ]}
+          danger={{ key: "delete", label: t("negocios_delete"), icon: Trash2, onClick: () => openDeleteDialog(detailBusiness) }}
+        />
+      )}
+      <ActionHint
+        id="businesses-panel"
+        when={!!detailBusiness}
+        title={t("hint_businesses_panel_title")}
+        description={t("hint_businesses_panel_desc")}
+        selector='[data-tour="detail-panel-actions"]'
+      />
 
       <AddBusinessDialog open={showAddDialog} onOpenChange={setShowAddDialog} onBusinessAdded={handleBusinessCreated} />
 

@@ -115,6 +115,8 @@ export function PlanTour() {
       key={pending.id}
       steps={steps}
       storageKey={`gm_plan_tour_done:${pending.id}`}
+      // Lo que trae el plan nuevo: siempre completo (docs/219).
+      introSteps={Infinity}
       startDelay={500}
       finishLabel={t("plan_tour_finish")}
       onStart={() => window.dispatchEvent(new CustomEvent("gm:tour", { detail: { active: true } }))}

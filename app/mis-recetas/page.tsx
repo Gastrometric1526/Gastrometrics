@@ -18,8 +18,9 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet"
-import { Separator } from "@/components/ui/separator"
+import { DetailPanel } from "@/components/detail-panel"
+import { ActionHint } from "@/components/action-hint"
+import { RecipePDFExportDialog } from "@/components/recipe-pdf-export-dialog"
 import {
   ArrowLeft,
   Search,
@@ -46,6 +47,7 @@ import {
   Copy,
   Upload,
   X,
+  FileDown,
 } from "lucide-react"
 import { RecipeImportDialog } from "@/components/recipe-import-dialog"
 import { Sidebar } from "@/components/sidebar"
@@ -141,6 +143,15 @@ export default function MisRecetasPage() {
     router.replace(params.size ? `/mis-recetas?${params}` : "/mis-recetas")
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
+  useEffect(() => {
+    const saved = searchParams.get("saved")
+    if (!saved) return
+    setSavedRecipeId(saved)
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete("saved")
+    router.replace(params.size ? `/mis-recetas?${params}` : "/mis-recetas")
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
   // ?import=1 (desde "Tu camino" del Dashboard, docs/148): abre directo la importación.
   useEffect(() => {
     if (searchParams.get("import") !== "1") return
@@ -176,6 +187,7 @@ export default function MisRecetasPage() {
   // "Migrar" desaparecía del menú de cada receta sin ningún error visible. useAllBusinesses
   // es el hook reactivo (ver lib/storage/businesses.ts) que sí se actualiza solo.
   const allBusinesses = useAllBusinesses()
+  const currentBusiness = allBusinesses.find((b) => b.id === businessId)
   const availableBusinesses = useMemo(
     () => allBusinesses.filter((b) => b.id !== businessId),
     [allBusinesses, businessId],
@@ -194,6 +206,21 @@ export default function MisRecetasPage() {
 
   // Panel lateral de opciones — se abre con doble clic en una receta
   const [detailsRecipe, setDetailsRecipe] = useState<Recipe | null>(null)
+  // PDF desde el panel (docs/219).
+  const [pdfRecipe, setPdfRecipe] = useState<Recipe | null>(null)
+  // ?saved=<id>: se acaba de guardar esa receta en la Ficha Técnica (docs/219): se resalta
+  // su tarjeta, sale un aviso y, la primera vez, una pista que invita a tocarla.
+  const [savedRecipeId, setSavedRecipeId] = useState<string | null>(null)
+  // Resalta y centra la tarjeta de la receta recién guardada unos segundos (docs/219).
+  useEffect(() => {
+    if (!savedRecipeId || isLoading) return
+    const el = document.querySelector(`[data-recipe-card="${savedRecipeId}"]`)
+    if (!el) return
+    el.scrollIntoView({ block: "center", behavior: "smooth" })
+    el.classList.add("ring-2", "ring-primary", "ring-offset-2")
+    const timer = setTimeout(() => el.classList.remove("ring-2", "ring-primary", "ring-offset-2"), 5000)
+    return () => clearTimeout(timer)
+  }, [savedRecipeId, isLoading])
 
   // Detectar si es móvil
   useEffect(() => {
@@ -1152,124 +1179,81 @@ export default function MisRecetasPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Panel lateral de opciones, se abre con doble clic en una receta */}
-      <Sheet open={detailsRecipe !== null} onOpenChange={(open) => !open && setDetailsRecipe(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-md flex flex-col">
-          {detailsRecipe && (
-            <>
-              <SheetHeader className="text-left">
-                <SheetTitle className="pr-6">{detailsRecipe.name}</SheetTitle>
-                <SheetDescription asChild>
-                  <div className="flex flex-wrap items-center gap-2 pt-1">
-                    <Badge
-                      variant="outline"
-                      className={`text-xs ${
-                        detailsRecipe.classification === SUBRECIPE_CLASSIFICATION
-                          ? "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {detailsRecipe.classification
-                        ? getClassificationLabel(detailsRecipe.classification as (typeof recipeClassifications)[number], language)
-                        : t("misrecetas_detail_unclassified")}
-                    </Badge>
-                    {detailsRecipe.plate && <Badge variant="secondary">{getRecipeStepLabel(detailsRecipe.plate, language)}</Badge>}
-                  </div>
-                </SheetDescription>
-              </SheetHeader>
+      {/* Panel de acciones de la receta: se abre con un clic o un toque (docs/219, antes
+          doble clic). Mismo diseño en todas las secciones (components/detail-panel.tsx). */}
+      <DetailPanel
+        open={detailsRecipe !== null}
+        onOpenChange={(open) => !open && setDetailsRecipe(null)}
+        title={detailsRecipe?.name ?? ""}
+        badges={
+          detailsRecipe
+            ? [
+                {
+                  label: detailsRecipe.classification
+                    ? getClassificationLabel(detailsRecipe.classification as (typeof recipeClassifications)[number], language)
+                    : t("misrecetas_detail_unclassified"),
+                },
+                ...(detailsRecipe.plate ? [{ label: getRecipeStepLabel(detailsRecipe.plate, language), tone: "accent" as const }] : []),
+              ]
+            : []
+        }
+        stats={
+          detailsRecipe
+            ? [
+                { label: t("misrecetas_detail_total_cost"), value: formatCurrency(detailsRecipe.totalCost || 0) },
+                { label: t("misrecetas_detail_sale_price"), value: formatCurrency(detailsRecipe.unitPrice || 0) },
+                { label: t("ficha_tecnica_field_yield"), value: detailsRecipe.yieldAmount || detailsRecipe.servings || "" },
+                { label: t("stat_ingredients"), value: detailsRecipe.ingredients?.length || 0 },
+              ]
+            : []
+        }
+        actions={
+          detailsRecipe
+            ? [
+                { key: "view", label: t("misrecetas_menu_view_full"), icon: Eye, primary: true, onClick: () => handleView(detailsRecipe) },
+                { key: "edit", label: t("misrecetas_menu_edit"), icon: Edit, onClick: () => handleEdit(detailsRecipe) },
+                { key: "pdf", label: t("panel_export_pdf"), icon: FileDown, onClick: () => setPdfRecipe(detailsRecipe) },
+                { key: "duplicate", label: t("misrecetas_menu_duplicate"), icon: Copy, onClick: () => handleDuplicate(detailsRecipe) },
+                ...(canMigrateAnywhere
+                  ? [{ key: "migrate", label: t("misrecetas_menu_migrate"), icon: ArrowRightLeft, onClick: () => handleMigrateFromCard(detailsRecipe) }]
+                  : []),
+              ]
+            : []
+        }
+        danger={detailsRecipe ? { key: "delete", label: t("misrecetas_menu_delete"), icon: Trash2, onClick: () => handleDelete(detailsRecipe) } : undefined}
+      />
 
-              <div className="grid grid-cols-2 gap-3 py-4">
-                <div className="rounded-lg border border-border p-3">
-                  <p className="text-xs text-muted-foreground">{t("misrecetas_detail_total_cost")}</p>
-                  <p className="text-lg font-semibold text-foreground">
-                    {formatCurrency(detailsRecipe.totalCost || 0)}
-                  </p>
-                </div>
-                <div className="rounded-lg border border-border p-3">
-                  <p className="text-xs text-muted-foreground">{t("misrecetas_detail_sale_price")}</p>
-                  <p className="text-lg font-semibold text-foreground">
-                    {formatCurrency(detailsRecipe.unitPrice || 0)}
-                  </p>
-                </div>
-                <div className="rounded-lg border border-border p-3">
-                  <p className="text-xs text-muted-foreground">{t("ficha_tecnica_field_yield")}</p>
-                  <p className="text-lg font-semibold text-foreground">
-                    {detailsRecipe.yieldAmount || detailsRecipe.servings || ""}
-                  </p>
-                </div>
-                <div className="rounded-lg border border-border p-3">
-                  <p className="text-xs text-muted-foreground">{t("stat_ingredients")}</p>
-                  <p className="text-lg font-semibold text-foreground">{detailsRecipe.ingredients?.length || 0}</p>
-                </div>
-              </div>
+      {pdfRecipe && (
+        <RecipePDFExportDialog
+          recipe={pdfRecipe}
+          open={!!pdfRecipe}
+          onOpenChange={(open) => !open && setPdfRecipe(null)}
+          businessName={currentBusiness?.name}
+          businessLogo={currentBusiness?.logo}
+        />
+      )}
 
-              <Separator />
-
-              <div className="flex flex-col gap-2 py-4">
-                <Button
-                  className="w-full justify-start gap-2"
-                  onClick={() => {
-                    handleView(detailsRecipe)
-                    setDetailsRecipe(null)
-                  }}
-                >
-                  <Eye className="h-4 w-4" />
-                  {t("misrecetas_menu_view_full")}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-2"
-                  onClick={() => {
-                    handleEdit(detailsRecipe)
-                    setDetailsRecipe(null)
-                  }}
-                >
-                  <Edit className="h-4 w-4" />
-                  {t("misrecetas_menu_edit")}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-2"
-                  onClick={() => {
-                    handleDuplicate(detailsRecipe)
-                    setDetailsRecipe(null)
-                  }}
-                >
-                  <Copy className="h-4 w-4" />
-                  {t("misrecetas_menu_duplicate")}
-                </Button>
-                {canMigrateAnywhere && (
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-2"
-                    onClick={() => {
-                      handleMigrateFromCard(detailsRecipe)
-                      setDetailsRecipe(null)
-                    }}
-                  >
-                    <ArrowRightLeft className="h-4 w-4" />
-                    {t("misrecetas_menu_migrate")}
-                  </Button>
-                )}
-              </div>
-
-              <SheetFooter className="mt-auto">
-                <Button
-                  variant="destructive"
-                  className="w-full justify-start gap-2"
-                  onClick={() => {
-                    handleDelete(detailsRecipe)
-                    setDetailsRecipe(null)
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  {t("misrecetas_menu_delete")}
-                </Button>
-              </SheetFooter>
-            </>
-          )}
-        </SheetContent>
-      </Sheet>
+      {/* Pistas por acción (docs/219): la receta recién guardada y el primer panel. */}
+      <ActionHint
+        id="recipes-saved"
+        when={!!savedRecipeId && !isLoading && recipes.some((r) => r.id === savedRecipeId)}
+        selector={savedRecipeId ? `[data-recipe-card="${savedRecipeId}"]` : null}
+        title={t("hint_recipes_saved_title")}
+        description={t("hint_recipes_saved_desc")}
+        actionLabel={t("hint_recipes_saved_cta")}
+        onAction={() => {
+          const r = recipes.find((x) => x.id === savedRecipeId)
+          if (r) setDetailsRecipe(r)
+        }}
+      />
+      <ActionHint
+        id="recipes-panel"
+        when={detailsRecipe !== null}
+        selector='[data-tour="detail-panel-actions"]'
+        title={t("hint_recipes_panel_title")}
+        description={t("hint_recipes_panel_desc")}
+        delay={900}
+      />
     </div>
   )
 }

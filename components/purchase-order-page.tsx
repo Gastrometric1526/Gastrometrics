@@ -44,6 +44,9 @@ import { ActivityTracker } from "@/lib/activity-tracker"
 import { getBusinessById } from "@/lib/storage/businesses"
 import { downloadPurchaseOrderPDF, generatePurchaseOrderPDF, generatePurchaseOrderPDFFilename } from "@/lib/pdf/purchase-order-pdf-generator"
 import { ShareDocumentMenu } from "@/components/share-document-menu"
+import { DetailPanel, openOnActivate } from "@/components/detail-panel"
+import { ActionHint } from "@/components/action-hint"
+import { Edit, Copy, Trash2 } from "lucide-react"
 import { purchaseOrderShareText } from "@/lib/share-text"
 import { Download } from "lucide-react"
 import { hasFeatureAccess, useFeatureAccess } from "@/lib/plan-access"
@@ -480,6 +483,8 @@ export function PurchaseOrderPage() {
   // modo oscuro, y bloquea el hilo principal — en vez del AlertDialog que ya usa el
   // resto de la app para confirmaciones destructivas (ej. cerrar sesión en el sidebar).
   const [orderPendingDelete, setOrderPendingDelete] = useState<string | null>(null)
+  // Panel de acciones de una orden (docs/219): tocar la fila lo abre.
+  const [detailOrder, setDetailOrder] = useState<PurchaseOrder | null>(null)
 
   const handleDeleteOrder = (orderId: string) => {
     setOrderPendingDelete(orderId)
@@ -845,19 +850,24 @@ export function PurchaseOrderPage() {
                       <TableHead>{t("ordenes_status_label")}</TableHead>
                       <TableHead>{t("ordenes_table_items")}</TableHead>
                       <TableHead>{t("ordenes_table_total")}</TableHead>
-                      <TableHead>{t("ordenes_table_actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {sortedOrders.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8">
+                        <TableCell colSpan={5} className="text-center py-8">
                           {t("ordenes_table_empty")}
                         </TableCell>
                       </TableRow>
                     ) : (
                       sortedOrders.map((order) => (
-                        <TableRow key={order.id}>
+                        <TableRow
+                          key={order.id}
+                          data-order-row={order.id}
+                          data-order-status={order.status || "pending"}
+                          {...openOnActivate(() => setDetailOrder(order))}
+                          className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        >
                           <TableCell className="font-medium">{order.name}</TableCell>
                           <TableCell>{formatDate(order.date)}</TableCell>
                           <TableCell>
@@ -865,53 +875,6 @@ export function PurchaseOrderPage() {
                           </TableCell>
                           <TableCell>{order.items.length}</TableCell>
                           <TableCell>{formatCurrency(order.total)}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-2">
-                              <Button variant="outline" size="sm" onClick={() => handleEditOrder(order)}>
-                                {t("ordenes_edit_button")}
-                              </Button>
-                              {canExportOrderPdf !== false && (
-                                <Button data-tour="ordenes-row-pdf" variant="outline" size="sm" className="gap-1" onClick={() => handleDownloadOrderPDF(order)}>
-                                  <Download className="h-3.5 w-3.5" />
-                                  {t("ordenes_pdf_button")}
-                                </Button>
-                              )}
-                              {/* Enviar por WhatsApp o correo, o compartir el PDF (docs/202). */}
-                              <ShareDocumentMenu
-                                tourId="ordenes-row-send"
-                                variant="outline"
-                                pdfAllowed={canExportOrderPdf !== false}
-                                filename={generatePurchaseOrderPDFFilename(order)}
-                                subject={`${t("po_share_title")} #${order.number} — ${order.name}`}
-                                buildPdf={() => {
-                                  const business = getBusinessById(businessId || "main")
-                                  return generatePurchaseOrderPDF(order, { businessName: business?.name, businessLogo: business?.logo, businessId: businessId || "main" })
-                                }}
-                                shareText={() =>
-                                  purchaseOrderShareText({
-                                    order,
-                                    language,
-                                    money: formatCurrency,
-                                    dateLabel: (iso) => formatDate(iso),
-                                    labels: {
-                                      title: t("po_share_title"),
-                                      delivery: t("po_share_delivery"),
-                                      supplier: t("po_share_supplier"),
-                                      total: t("po_share_total"),
-                                      notes: t("po_share_notes"),
-                                      sentWith: t("share_sent_with"),
-                                    },
-                                  })
-                                }
-                              />
-                              <Button variant="outline" size="sm" onClick={() => handleDuplicateOrder(order.id)}>
-                                {t("ordenes_duplicate_button")}
-                              </Button>
-                              <Button variant="destructive" size="sm" onClick={() => handleDeleteOrder(order.id)}>
-                                {t("ordenes_delete_button")}
-                              </Button>
-                            </div>
-                          </TableCell>
                         </TableRow>
                       ))
                     )}
@@ -921,6 +884,79 @@ export function PurchaseOrderPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Panel de acciones de la orden (docs/219), mismo diseño que el de una receta */}
+        {detailOrder && (
+          <DetailPanel
+            open={!!detailOrder}
+            onOpenChange={(open) => !open && setDetailOrder(null)}
+            title={`#${detailOrder.number} — ${detailOrder.name}`}
+            badges={[{ label: orderStatusLabels[detailOrder.status || "pending"], tone: "accent" }]}
+            stats={[
+              { label: t("ordenes_table_date"), value: formatDate(detailOrder.date) },
+              { label: t("ordenes_table_total"), value: formatCurrency(detailOrder.total) },
+              { label: t("ordenes_table_items"), value: detailOrder.items.length },
+              ...(detailOrder.expectedDeliveryDate ? [{ label: t("panel_order_delivery"), value: formatDate(detailOrder.expectedDeliveryDate) }] : []),
+              ...(detailOrder.supplier ? [{ label: t("panel_supplier"), value: detailOrder.supplier }] : []),
+            ]}
+            actions={[
+              { key: "edit", label: t("ordenes_edit_button"), icon: Edit, primary: true, onClick: () => handleEditOrder(detailOrder) },
+              ...(canExportOrderPdf !== false
+                ? [{ key: "pdf", label: t("ordenes_pdf_button"), icon: Download, onClick: () => handleDownloadOrderPDF(detailOrder) }]
+                : []),
+              { key: "duplicate", label: t("ordenes_duplicate_button"), icon: Copy, onClick: () => handleDuplicateOrder(detailOrder.id) },
+            ]}
+            actionsExtra={
+              /* Enviar por WhatsApp o correo, o compartir el PDF (docs/202). */
+              <ShareDocumentMenu
+                tourId="ordenes-row-send"
+                variant="outline"
+                size="default"
+                className="w-full justify-start"
+                pdfAllowed={canExportOrderPdf !== false}
+                filename={generatePurchaseOrderPDFFilename(detailOrder)}
+                subject={`${t("po_share_title")} #${detailOrder.number} — ${detailOrder.name}`}
+                buildPdf={() => {
+                  const business = getBusinessById(businessId || "main")
+                  return generatePurchaseOrderPDF(detailOrder, { businessName: business?.name, businessLogo: business?.logo, businessId: businessId || "main" })
+                }}
+                shareText={() =>
+                  purchaseOrderShareText({
+                    order: detailOrder,
+                    language,
+                    money: formatCurrency,
+                    dateLabel: (iso) => formatDate(iso),
+                    labels: {
+                      title: t("po_share_title"),
+                      delivery: t("po_share_delivery"),
+                      supplier: t("po_share_supplier"),
+                      total: t("po_share_total"),
+                      notes: t("po_share_notes"),
+                      sentWith: t("share_sent_with"),
+                    },
+                  })
+                }
+              />
+            }
+            danger={{ key: "delete", label: t("ordenes_delete_button"), icon: Trash2, onClick: () => handleDeleteOrder(detailOrder.id) }}
+          />
+        )}
+        <ActionHint
+          id="orders-receive"
+          when={!detailOrder && orders.some((o) => (o.status || "pending") !== "received" && o.status !== "cancelled")}
+          title={t("hint_orders_receive_title")}
+          description={t("hint_orders_receive_desc")}
+          tip={t("hint_orders_receive_tip")}
+          selector='[data-order-row]:not([data-order-status="received"]):not([data-order-status="cancelled"])'
+          delay={1500}
+        />
+        <ActionHint
+          id="orders-panel"
+          when={!!detailOrder}
+          title={t("hint_orders_panel_title")}
+          description={t("hint_orders_panel_desc")}
+          selector='[data-tour="detail-panel-actions"]'
+        />
 
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">

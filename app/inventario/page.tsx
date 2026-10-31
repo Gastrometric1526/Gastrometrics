@@ -57,7 +57,7 @@ import { RegisterInventoryModal } from "@/components/inventory/register-inventor
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { getBusinessById } from "@/lib/storage/businesses"
 import { downloadInventorySnapshotPDF, downloadCurrentInventoryPDF } from "@/lib/pdf/inventory-pdf-generator"
-import { Download, Info } from "lucide-react"
+import { Download, Info, Edit, Trash2, History } from "lucide-react"
 import { InventarioInfoDialog } from "@/components/inventory/inventario-info-dialog"
 import { useFeatureAccess, hasFeatureAccess } from "@/lib/plan-access"
 import { FeatureLockedPage } from "@/components/feature-locked"
@@ -72,6 +72,8 @@ import { ensureSalesImportsLoaded, getSalesImports } from "@/lib/storage/sales-i
 import { computeTheoreticalStock } from "@/lib/theoretical-stock"
 import type { SalesImport } from "@/types/sales-import"
 import { buildPackageContentLookup, inventoryTotalValue } from "@/lib/inventory-value"
+import { DetailPanel } from "@/components/detail-panel"
+import { ActionHint } from "@/components/action-hint"
 import { stockStatus } from "@/lib/inventory-status"
 
 // Algunos ingredientes guardados antes de que el precio/contenido neto vivieran bajo
@@ -101,6 +103,8 @@ export default function InventoryPage() {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false)
   const [inventoryHistory, setInventoryHistory] = useState<InventorySnapshot[]>([])
   const [activeTab, setActiveTab] = useState("inventory")
+  // Panel de acciones del producto (docs/219).
+  const [detailItem, setDetailItem] = useState<InventoryItem | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isNoIngredientsDialogOpen, setIsNoIngredientsDialogOpen] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState("")
@@ -804,6 +808,7 @@ export default function InventoryPage() {
                         )}
                       </div>
                     ) : (
+                      <div data-tour="inv-table">
                       <InventoryTable
                         items={filteredItems}
                         businessId={businessId}
@@ -814,7 +819,9 @@ export default function InventoryPage() {
                         onMinStockChange={handleMinStockChange}
                         availablePresentations={[...presentations]}
                         theoreticalStock={theoreticalStock}
+                        onOpenDetails={setDetailItem}
                       />
+                      </div>
                     )}
                   </CardContent>
                   <CardFooter className="border-t border-border px-6 py-3 bg-muted/20">
@@ -967,6 +974,63 @@ export default function InventoryPage() {
       </Dialog>
 
       <InventarioInfoDialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen} />
+
+      {/* Panel de acciones del producto: clic o toque en su fila (docs/219). */}
+      <DetailPanel
+        open={detailItem !== null}
+        onOpenChange={(open) => !open && setDetailItem(null)}
+        title={detailItem?.name ?? ""}
+        badges={detailItem ? [{ label: t(`inventario_status_${stockStatus(detailItem.currentStock ?? 0, detailItem.minStock)}` as never) }] : []}
+        stats={
+          detailItem
+            ? [
+                {
+                  label: t("panel_stock_counted"),
+                  value: `${detailItem.currentStock ?? 0} ${getUnitLabelFor(detailItem.unit, language, detailItem.currentStock ?? 0)}`,
+                },
+                { label: t("panel_stock_min"), value: `${detailItem.minStock} ${getUnitLabelFor(detailItem.unit, language, detailItem.minStock)}` },
+                {
+                  label: t("panel_stock_theoretical"),
+                  value: theoreticalStock.get(detailItem.id)
+                    ? `${Number(theoreticalStock.get(detailItem.id)!.theoretical.toFixed(2))} ${getUnitLabel(detailItem.unit, language)}`
+                    : "—",
+                },
+                { label: t("panel_stock_value"), value: formatCurrency(inventoryTotalValue([detailItem], packageLookup)) },
+                { label: t("panel_purchase_price"), value: formatCurrency(detailItem.price || 0) },
+                { label: t("ingredientes_col_supplier"), value: detailItem.supplier || "—" },
+              ]
+            : []
+        }
+        actions={
+          detailItem
+            ? [
+                { key: "edit", label: t("common_edit"), icon: Edit, primary: true, onClick: () => handleEdit(detailItem) },
+                { key: "count", label: t("inventario_register_button"), icon: ClipboardList, onClick: () => handleRegisterInventoryClick() },
+                { key: "history", label: t("panel_view_history"), icon: History, onClick: () => setActiveTab("history") },
+              ]
+            : []
+        }
+        danger={detailItem ? { key: "delete", label: t("common_delete"), icon: Trash2, onClick: () => handleDelete(detailItem.id) } : undefined}
+      />
+
+      {/* Pistas por acción (docs/219): después del primer conteo, el stock teórico; y el primer panel. */}
+      <ActionHint
+        id="inventory-theoretical"
+        when={theoreticalStock.size > 0}
+        selector='[data-tour="inv-table"]'
+        title={t("hint_inventory_theoretical_title")}
+        description={t("hint_inventory_theoretical_desc")}
+        tip={t("hint_inventory_theoretical_tip")}
+        delay={1500}
+      />
+      <ActionHint
+        id="inventory-panel"
+        when={detailItem !== null}
+        selector='[data-tour="detail-panel-actions"]'
+        title={t("hint_inventory_panel_title")}
+        description={t("hint_inventory_panel_desc")}
+        delay={900}
+      />
     </div>
   )
 }
