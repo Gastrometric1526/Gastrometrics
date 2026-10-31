@@ -151,7 +151,12 @@ export function computeTheoreticalStock(input: {
     const counts = history.get(item.id) ?? []
     let baseline: CountPoint | null = counts[0] ?? null
     if (item.stockCountedAt && typeof item.currentStock === "number" && (!baseline || item.stockCountedAt > baseline.at)) {
-      baseline = { quantity: item.currentStock, at: item.stockCountedAt, receivedSincePrevious: 0 }
+      // El stock actual ya incluye lo recibido DESPUÉS del conteo (recibir una orden suma
+      // al stock); el punto de partida es lo que había al contar. Antes se tomaba el stock
+      // actual y abajo se volvía a sumar lo recibido: lo recibido contaba dos veces (docs/218).
+      const countedAt = item.stockCountedAt
+      const receivedAfterCount = (item.stockReceipts ?? []).filter((r) => r.at > countedAt).reduce((sum, r) => sum + r.quantity, 0)
+      baseline = { quantity: item.currentStock - receivedAfterCount, at: countedAt, receivedSincePrevious: 0 }
     }
     if (!baseline) continue
 

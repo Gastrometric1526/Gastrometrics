@@ -187,3 +187,18 @@ describe("computeTheoreticalStock", () => {
     expect(r.has("pollo")).toBe(false)
   })
 })
+
+describe("lo recibido no cuenta dos veces (docs/218)", () => {
+  it("si el punto de partida es la fecha de conteo del producto, se resta lo recibido después", () => {
+    // Contado 5 L; luego llegó una orden de 5 L (el stock actual ya dice 10).
+    const aceite = item("aceite", {
+      currentStock: 10,
+      stockCountedAt: "2026-10-31T07:00:00.000Z",
+      stockReceipts: [{ quantity: 5, at: "2026-10-31T07:40:00.000Z" }],
+    })
+    const r = computeTheoreticalStock({ items: [aceite], snapshots: [], salesImports: [], recipes, ingredients, menus: [] })
+    expect(r.get("aceite")?.baseline).toBeCloseTo(5)
+    expect(r.get("aceite")?.received).toBeCloseTo(5)
+    expect(r.get("aceite")?.theoretical).toBeCloseTo(10)
+  })
+})

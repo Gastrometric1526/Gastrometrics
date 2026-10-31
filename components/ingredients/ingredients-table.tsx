@@ -17,7 +17,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { getCategoryMermaPercentage } from "@/lib/merma-categories"
 import { getPriceChangeHistory } from "@/lib/recalculate"
 import { useLanguage } from "@/contexts/language-context"
-import { getCategoryLabel, getUnitLabel, getPresentationLabel } from "@/lib/ingredient-labels"
+import { getCategoryLabel, getUnitLabel, getUnitLabelFor, getPresentationLabel } from "@/lib/ingredient-labels"
 import { isBeverageCategory } from "@/lib/beverage"
 import { SellByServingDialog } from "@/components/beverage/sell-by-serving-dialog"
 import { formatUnitPrice } from "@/lib/currency"
@@ -392,7 +392,7 @@ export function IngredientsTable({
                             ? netContent.toFixed(4).replace(/0+$/, "").replace(/\.$/, "")
                             : Number(netContent.toFixed(2))}
                       </span>
-                      <span className="text-xs text-muted-foreground">{getUnitLabel(ingredient.unit, language)}</span>
+                      <span className="text-xs text-muted-foreground">{getUnitLabelFor(ingredient.unit, language, netContent)}</span>
                     </div>
                   </td>
 

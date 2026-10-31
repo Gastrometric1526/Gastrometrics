@@ -57,7 +57,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts"
-import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
+import { isSubRecipe, getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 import { getInventory, getInventoryStats, ensureInventoryLoaded } from "@/lib/storage/inventory"
 import { getPurchaseOrders, ensurePurchaseOrdersLoaded } from "@/lib/storage/purchase-orders"
@@ -259,8 +259,11 @@ function EstadisticasContent() {
     load()
   }, [businessId])
 
+  // Solo platos que se venden: una sub-receta (la salsa) tiene precio sugerido pero no se
+  // vende sola; contarla subía el costo % promedio y movía «Mejor/peor margen» (docs/218).
+  // Igual que el margen promedio del Dashboard.
   const recipesWithPricing = useMemo(
-    () => recipes.filter((r) => (r.unitPrice || 0) > 0 && (r.costPerServing || 0) >= 0),
+    () => recipes.filter((r) => !isSubRecipe(r) && (r.unitPrice || 0) > 0 && (r.costPerServing || 0) >= 0),
     [recipes],
   )
 
