@@ -26,6 +26,7 @@ import { hasActiveMembership, hasFeatureAccess } from "@/lib/plan-access"
 import type { FeatureKey } from "@/lib/plans"
 import { ensureIngredientsLoaded, useIngredients } from "@/lib/storage/ingredients"
 import { ensureRecipesLoaded, isSubRecipe, useRecipes } from "@/lib/storage/recipes"
+import { ensureMenusLoaded, useMenus } from "@/lib/menus"
 import { SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
 import {
   CHAPTERS,
@@ -137,7 +138,13 @@ export function GuidedJourney() {
 
   const ingredients = useMemo(() => allIngredients.filter((i) => i.category !== SUBRECIPE_CLASSIFICATION).length, [allIngredients])
   const recipes = useMemo(() => allRecipes.filter((r) => !isSubRecipe(r)).length, [allRecipes])
-  const facts: JourneyFacts = useMemo(() => ({ ingredients, recipes, features }), [ingredients, recipes, features])
+  const menus = useMenus("main").length
+  const mermaActive = useMemo(() => allIngredients.some((i) => i.merma?.enabled), [allIngredients])
+  const [saved, setSaved] = useState<string[]>([])
+  const facts: JourneyFacts = useMemo(
+    () => ({ ingredients, recipes, menus, mermaActive, features }),
+    [ingredients, recipes, menus, mermaActive, features],
+  )
   const enabled = !!user && loaded && isJourneyRoute(pathname) && !member
 
   // Carga inicial: datos de la cuenta y estado guardado.
@@ -146,7 +153,11 @@ export function GuidedJourney() {
     let cancelled = false
     setState(readJourney())
     setPaused(readPaused())
-    Promise.all([ensureIngredientsLoaded().catch(() => null), ensureRecipesLoaded().catch(() => null)]).finally(() => {
+    Promise.all([
+      ensureIngredientsLoaded().catch(() => null),
+      ensureRecipesLoaded().catch(() => null),
+      ensureMenusLoaded("main").catch(() => null),
+    ]).finally(() => {
       if (!cancelled) setLoaded(true)
     })
     return () => {
@@ -175,6 +186,16 @@ export function GuidedJourney() {
     const onSignal = (event: Event) => {
       const detail = (event as CustomEvent<{ name: string; data?: Partial<JourneyLive["ficha"]> }>).detail
       if (detail?.name === "ficha") setFicha({ ...EMPTY_FICHA, ...detail.data })
+      if (detail?.name === "merma-saved" || detail?.name === "recipe-saved") setSaved((list) => [...list, detail.name])
+      // La receta se guardó de verdad: la ficha queda hecha aunque se navegue enseguida a Mis Recetas.
+      if (detail?.name === "recipe-saved") {
+        const current = readJourney()
+        if (current && current.started && !current.skipped && !current.done.includes("ficha-advanced")) {
+          const next = markDone(current, ["ficha-basic", "ficha-advanced"])
+          writeJourney(next)
+          setState(next)
+        }
+      }
     }
     const onAck = (event: Event) => {
       tourAckRef.current = (event as CustomEvent<{ storageKey?: string }>).detail?.storageKey ?? null
@@ -235,9 +256,15 @@ export function GuidedJourney() {
   const runningSteps = enabled && !paused && !!chapter && chapter.kind === "steps" && position.status === "active" && position.unlocked && onRoute
   const step = runningSteps ? steps[Math.min(stepIndex, steps.length - 1)] : null
 
+  // Al empezar cada etapa: cuántos ingredientes y recetas había, para confirmar después que el
+  // guardado de verdad sumó uno, y se olvidan las señales de la etapa anterior.
+  const startRef = useRef({ ingredients: 0, recipes: 0 })
   useEffect(() => {
     setStepIndex(0)
     missesRef.current = 0
+    startRef.current = { ingredients, recipes }
+    setSaved([])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chapterId])
 
   const completeChapter = useCallback(
@@ -279,7 +306,7 @@ export function GuidedJourney() {
       setRect(null)
       return
     }
-    const live: JourneyLive = { ficha, ingredients, recipes }
+    const live: JourneyLive = { ficha, ingredients, recipes, mermaActive, start: startRef.current, saved }
     const tick = () => {
       setOtherTourOpen(!!document.querySelector("[data-tour-overlay]"))
       // Con una lista desplegable abierta (Select, Popover) la tarjeta se aparta para no taparla.
@@ -328,7 +355,7 @@ export function GuidedJourney() {
     tick()
     const interval = setInterval(tick, 250)
     return () => clearInterval(interval)
-  }, [step, stepIndex, steps, chapterId, ficha, ingredients, recipes, advanceFrom])
+  }, [step, stepIndex, steps, chapterId, ficha, ingredients, recipes, mermaActive, saved, advanceFrom])
 
   // Pasos que avanzan cuando la persona toca lo resaltado.
   useEffect(() => {

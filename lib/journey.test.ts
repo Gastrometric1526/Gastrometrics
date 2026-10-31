@@ -25,7 +25,7 @@ const allFeatures = {
   purchase_orders_auto: true,
   team: true,
 }
-const facts = (over: Partial<JourneyFacts> = {}): JourneyFacts => ({ ingredients: 0, recipes: 0, features: allFeatures, ...over })
+const facts = (over: Partial<JourneyFacts> = {}): JourneyFacts => ({ ingredients: 0, recipes: 0, menus: 0, mermaActive: false, features: allFeatures, ...over })
 const doneUpTo = (id: string) => CHAPTERS.slice(0, CHAPTERS.findIndex((c) => c.id === id)).map((c) => c.id)
 
 describe("tutorial guiado progresivo (docs/221)", () => {
@@ -104,6 +104,19 @@ describe("tutorial guiado progresivo (docs/221)", () => {
     expect(parseJourney(null)).toBeNull()
     expect(parseJourney("x")).toBeNull()
     expect(parseJourney('{"started":true,"done":["welcome",3]}')).toEqual({ started: true, existing: false, skipped: false, done: ["welcome"] })
+  })
+
+  it("solo avanza con los datos de verdad: merma ya activa, menú antes del MEP", () => {
+    const atMerma = { ...startJourney(false), done: doneUpTo("merma") }
+    const active = journeyPosition(atMerma, facts({ ingredients: 3, mermaActive: true }))
+    expect(active.status === "active" && active.chapter.id).toBe("ficha-basic")
+    expect(active.autoDone).toContain("merma")
+    const atMenusOne = { ...startJourney(false), done: doneUpTo("menus-one") }
+    const noMenu = journeyPosition(atMenusOne, facts({ ingredients: 5, recipes: 3 }))
+    expect(noMenu.status === "active" && noMenu.chapter.id).toBe("menus-one")
+    const withMenu = journeyPosition(atMenusOne, facts({ ingredients: 5, recipes: 3, menus: 1 }))
+    expect(withMenu.status === "active" && withMenu.chapter.id).toBe("mep")
+    expect(withMenu.status === "active" && withMenu.unlocked).toBe(true)
   })
 
   it("los ids no se repiten", () => {

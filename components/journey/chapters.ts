@@ -14,6 +14,11 @@ export type JourneyLive = {
   ficha: { linesWithIngredient: number; costedLines: number; yieldAmount: number; hasName: boolean }
   ingredients: number
   recipes: number
+  mermaActive: boolean
+  /** Cuántos había al empezar la etapa: el paso de guardar confirma que de verdad hay uno más. */
+  start: { ingredients: number; recipes: number }
+  /** Señales de guardado confirmado (p. ej. "merma-saved", "recipe-saved"). */
+  saved: string[]
 }
 
 export type CoachStep = {
@@ -70,7 +75,15 @@ export const CHAPTER_STEPS: Record<string, CoachStep[]> = {
     { id: "supplier", selector: '[data-journey="ing-supplier"]', title: "journey_ing_supplier_title", description: "journey_ing_supplier_desc", advance: "next" },
     { id: "next-3", selector: '[data-journey="ing-next"]', title: "journey_ing_next_title", description: "journey_ing_next_desc", advance: "click" },
     { id: "extra", selector: '[data-journey="ing-extra"]', title: "journey_ing_extra_title", description: "journey_ing_extra_desc", advance: "next" },
-    { id: "submit", selector: '[data-journey="ing-submit"]', title: "journey_ing_submit_title", description: "journey_ing_submit_desc", advance: "click" },
+    // Avanza cuando el ingrediente quedó guardado (hay uno más), no con solo tocar el botón.
+    {
+      id: "submit",
+      selector: '[data-journey="ing-submit"]',
+      title: "journey_ing_submit_title",
+      description: "journey_ing_submit_desc",
+      advance: "auto",
+      ready: (live) => live.ingredients > live.start.ingredients,
+    },
     { id: "done", selector: null, title: "journey_ing_done_title", description: "journey_ing_done_desc", tip: "journey_ing_done_tip", advance: "next" },
   ],
   merma: [
@@ -92,7 +105,15 @@ export const CHAPTER_STEPS: Record<string, CoachStep[]> = {
     },
     { id: "table", selector: '[data-journey="merma-table"]', title: "journey_merma_table_title", description: "journey_merma_table_desc", advance: "next" },
     { id: "custom", selector: '[data-journey="merma-custom"]', title: "journey_merma_custom_title", description: "journey_merma_custom_desc", advance: "next", optional: true },
-    { id: "save", selector: '[data-journey="merma-save"]', title: "journey_merma_save_title", description: "journey_merma_save_desc", advance: "click" },
+    // Avanza cuando la merma quedó guardada y activa.
+    {
+      id: "save",
+      selector: '[data-journey="merma-save"]',
+      title: "journey_merma_save_title",
+      description: "journey_merma_save_desc",
+      advance: "auto",
+      ready: (live) => live.saved.includes("merma-saved") && live.mermaActive,
+    },
     { id: "done", selector: null, title: "journey_merma_done_title", description: "journey_merma_done_desc", advance: "next" },
   ],
   "ficha-basic": [
@@ -146,7 +167,15 @@ export const CHAPTER_STEPS: Record<string, CoachStep[]> = {
     { id: "pax", selector: '[data-tour="ficha-pax"]', title: "journey_ficha_pax_title", description: "journey_ficha_pax_desc", tip: "journey_ficha_pax_tip", advance: "next" },
     { id: "method", selector: '[data-journey="ficha-pricing-method"]', title: "journey_ficha_method_title", description: "journey_ficha_method_desc", advance: "next", optional: true },
     { id: "percentages", selector: '[data-journey="ficha-percentages"]', title: "journey_ficha_percent_title", description: "journey_ficha_percent_desc", advance: "next", optional: true },
-    { id: "save", selector: '[data-journey="ficha-save-btn"]', title: "journey_ficha_save_title", description: "journey_ficha_save_desc", advance: "click" },
+    // Avanza cuando la receta quedó guardada (señal "recipe-saved" de la ficha), no con el toque.
+    {
+      id: "save",
+      selector: '[data-journey="ficha-save-btn"]',
+      title: "journey_ficha_save_title",
+      description: "journey_ficha_save_desc",
+      advance: "auto",
+      ready: (live) => live.saved.includes("recipe-saved"),
+    },
   ],
   recipes: [
     { id: "card", selector: "[data-recipe-card]", title: "journey_recipes_card_title", description: "journey_recipes_card_desc", advance: "click" },
@@ -169,6 +198,7 @@ export const CHAPTER_GO: Record<string, { title: TranslationKey; description: Tr
   "recipes-three": { title: "journey_goal_recipes_title", description: "journey_goal_recipes_desc", module: "nav_ficha_tecnica" },
   inventario: { title: "journey_go_inventory_title", description: "journey_go_inventory_desc", module: "nav_inventario" },
   menus: { title: "journey_go_menus_title", description: "journey_go_menus_desc", module: "nav_menus" },
+  "menus-one": { title: "journey_goal_menus_title", description: "journey_goal_menus_desc", module: "nav_menus" },
   mep: { title: "journey_go_mep_title", description: "journey_go_mep_desc", module: "nav_mep" },
   ordenes: { title: "journey_go_orders_title", description: "journey_go_orders_desc", module: "nav_ordenes_compra" },
   equipo: { title: "journey_go_team_title", description: "journey_go_team_desc", module: "nav_equipo" },

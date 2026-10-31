@@ -1,5 +1,6 @@
 "use client"
 
+import { signalJourney } from "@/lib/journey"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -271,6 +272,8 @@ export function MermaManagementDialog({
     try {
       setDashboardData("ingredients", ingredients, businessId ?? undefined)
       onSave?.(ingredients)
+      // El tutorial guiado (docs/221) sigue solo con la merma guardada.
+      signalJourney("merma-saved")
 
       if (typeof window !== "undefined") {
         window.dispatchEvent(

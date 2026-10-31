@@ -1153,6 +1153,8 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       if (isNewRecipe && importAppliedForRef.current === businessId) params.set("imported", "1")
       // Mis Recetas resalta la receta guardada y explica qué se puede hacer con ella (docs/219).
       params.set("saved", savedRecipe.id)
+      // El tutorial guiado (docs/221) pasa a Mis Recetas solo con la receta guardada de verdad.
+      signalJourney("recipe-saved", { id: savedRecipe.id })
       toast({ title: t("ficha_saved_to_recipes_title").replace("{name}", savedRecipe.name), description: t("ficha_saved_to_recipes_desc") })
       router.push(params.size ? `/mis-recetas?${params}` : "/mis-recetas")
     } catch (error) {
