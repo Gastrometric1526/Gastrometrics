@@ -62,6 +62,7 @@ import { moduleCardStyle } from "@/lib/module-card-style"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { getAllBusinesses, refreshBusinesses } from "@/lib/storage/businesses"
 import { getRecipes, ensureRecipesLoaded, isSubRecipe } from "@/lib/storage/recipes"
+import { SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
 import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 import { ensureInventoryLoaded, getInventory } from "@/lib/storage/inventory"
 import { getOrSeedExampleRecipe } from "@/lib/services/seed-example-recipe"
@@ -219,7 +220,9 @@ export default function DashboardPage() {
       },
       {
         title: t("stat_ingredients"),
-        value: allIngredients.length.toString(),
+        // Sin las filas que reflejan sub-recetas: ya cuentan como receta; igual que Reportes e
+        // Ingredientes (docs/218). Antes el Dashboard decía 9 y Reportes 8.
+        value: allIngredients.filter((ing) => ing.category !== SUBRECIPE_CLASSIFICATION).length.toString(),
         icon: Package,
         bgColor: "bg-chart-2/10",
         textColor: "text-chart-2",
