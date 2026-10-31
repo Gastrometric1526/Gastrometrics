@@ -347,7 +347,7 @@ export function MermaManagementDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
+        <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0" data-journey="merma-dialog">
           <div className="flex-shrink-0 p-4 border-b">
             <DialogHeader>
               <DialogTitle className="text-xl flex items-center justify-between">
@@ -364,7 +364,7 @@ export function MermaManagementDialog({
               </DialogTitle>
             </DialogHeader>
 
-            <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
+            <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20" data-journey="merma-master">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Switch
@@ -394,7 +394,7 @@ export function MermaManagementDialog({
           <div className="flex-1 overflow-hidden">
             <ScrollArea className="h-full">
               <div className="p-4">
-                <Table>
+                <Table data-journey="merma-table">
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t("ingredientes_merma_col_ingredient")}</TableHead>
@@ -408,7 +408,7 @@ export function MermaManagementDialog({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {ingredients.map((ingredient) => {
+                    {ingredients.map((ingredient, rowIndex) => {
                       const originalContent =
                         ingredient.originalNetContent ||
                         originalValues[ingredient.id]?.netContent ||
@@ -454,6 +454,7 @@ export function MermaManagementDialog({
                           </TableCell>
                           <TableCell className="text-center">
                             <Button
+                              data-journey={rowIndex === 0 ? "merma-custom" : undefined}
                               variant={ingredient.merma?.useGlobal === false ? "default" : "outline"}
                               size="sm"
                               onClick={() => toggleCustomization(ingredient.id)}
@@ -471,7 +472,7 @@ export function MermaManagementDialog({
                           </TableCell>
                           <TableCell className="text-center">
                             {ingredient.merma?.useGlobal === false ? (
-                              <div className="flex items-center justify-center gap-2">
+                              <div className="flex items-center justify-center gap-2" data-journey={rowIndex === 0 ? "merma-value" : undefined}>
                                 <Select
                                   value={ingredient.merma?.customType || "percentage"}
                                   onValueChange={(value) =>
@@ -547,7 +548,7 @@ export function MermaManagementDialog({
                 <Button variant="outline" onClick={handleClose} disabled={isApplying}>
                   {t("common_cancel")}
                 </Button>
-                <Button onClick={saveChanges} disabled={isApplying}>
+                <Button onClick={saveChanges} disabled={isApplying} data-journey="merma-save">
                   {isApplying ? t("ingredientes_merma_saving_label") : t("ingredientes_merma_save_button")}
                 </Button>
               </div>

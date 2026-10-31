@@ -8,7 +8,8 @@ import { useLanguage } from "@/contexts/language-context"
 import { requestedTourMatches } from "@/lib/tour-links"
 import { withTourFlows } from "@/lib/tour-flows"
 import { hintsOff, turnOffHints } from "@/lib/hints"
-import { parseTourPart, splitTourParts, tourPartKey } from "@/lib/tour-parts"
+import { journeyControlsTours, readJourney } from "@/lib/journey"
+import { hasActiveMembership } from "@/lib/plan-access"
 
 export type TourStep = {
   id: string
@@ -34,8 +35,8 @@ export type TourStep = {
   list?: string[]
 }
 
-type Rect = { top: number; left: number; width: number; height: number }
-type Placement = "top" | "bottom" | "left" | "right" | "center"
+export type Rect = { top: number; left: number; width: number; height: number }
+export type Placement = "top" | "bottom" | "left" | "right" | "center"
 
 const PADDING = 8
 const TOOLTIP_WIDTH = 336
@@ -43,12 +44,12 @@ const TOOLTIP_EST_HEIGHT = 240
 const GAP = 18
 const SIDEBAR_COLUMN_WIDTH = 260
 
-function getRect(el: Element): Rect {
+export function getRect(el: Element): Rect {
   const r = el.getBoundingClientRect()
   return { top: r.top, left: r.left, width: r.width, height: r.height }
 }
 
-function computePlacement(rect: Rect, vw: number, vh: number): Placement {
+export function computePlacement(rect: Rect, vw: number, vh: number): Placement {
   const spaceBelow = vh - (rect.top + rect.height)
   const spaceAbove = rect.top
   const spaceRight = vw - (rect.left + rect.width)
@@ -87,7 +88,7 @@ type TooltipBox = { top: number; left: number; right?: never } | { top: number; 
 // una nueva corrección, porque `overflowCorrection` no es una dependencia del efecto.
 // Con una sola fórmula, la corrección siempre devuelve un resultado definitivo a partir
 // del tamaño real medido, nunca `null`, así que no hay nada que oscilar.
-function computeTooltipPosition(
+export function computeTooltipPosition(
   rect: Rect,
   placement: Placement,
   vw: number,
@@ -138,28 +139,15 @@ type PageTourProps = {
    * mostrar más pistas»; no se abre si las pistas están apagadas ni encima de otro tutorial.
    */
   variant?: "tour" | "hint"
-  /**
-   * Por partes (docs/220): al entrar se muestran solo los primeros `partSteps` pasos; al
-   * completarlos, la siguiente parte sale la próxima vez que se entra (o enseguida con
-   * «Seguir ahora»). «Ver el tutorial» (?tour=) y «Reiniciar tutorial» lo abren completo.
-   * Por defecto 3. Infinity = siempre completo.
-   */
-  partSteps?: number
+  /** Se abre aunque el tutorial guiado esté activo (plan nuevo, Configuración: los abre la persona). */
+  ignoreJourney?: boolean
 }
 
-export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finishLabel, onFinish, onStart, onClose, onStepChange, variant = "tour", partSteps = 3 }: PageTourProps) {
+export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finishLabel, onFinish, onStart, onClose, onStepChange, variant = "tour", ignoreJourney = false }: PageTourProps) {
   const { t } = useLanguage()
   const isHint = variant === "hint"
-  // true cuando lo pidieron (?tour= o «Reiniciar tutorial»): recorrido completo.
-  const [fullMode, setFullMode] = useState(false)
   // Conexiones entre módulos y ejemplos de cada paso (docs/208, lib/tour-flows.ts).
-  const allSteps = withTourFlows(storageKey, rawSteps, t)
-  const parts = splitTourParts(allSteps.length, partSteps)
-  const inParts = !isHint && !fullMode && parts.length > 1
-  const [partIndex, setPartIndex] = useState(0)
-  const part = Math.min(partIndex, Math.max(0, parts.length - 1))
-  const steps = inParts ? allSteps.slice(parts[part][0], parts[part][1]) : allSteps
-  const isLastPart = !inParts || part === parts.length - 1
+  const steps = withTourFlows(storageKey, rawSteps, t)
   const [isOpen, setIsOpen] = useState(false)
   const [stepIndex, setStepIndex] = useState(0)
   const [rect, setRect] = useState<Rect | null>(null)
@@ -180,16 +168,16 @@ export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finish
     // visto (botón «Ver el tutorial» de Novedades y del correo de novedades).
     if (requestedTourMatches(window.location.search, storageKey)) {
       localStorage.removeItem(storageKey)
-      localStorage.removeItem(tourPartKey(storageKey))
-      setFullMode(true)
       const url = new URL(window.location.href)
       url.searchParams.delete("tour")
       window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`)
     }
     const seen = localStorage.getItem(storageKey)
     if (seen) return
+    // Tutorial guiado (docs/221): mientras está activo, ni los tutoriales de página ni las
+    // pistas se abren solos; el recorrido abre cada tutorial en su momento.
+    if (!ignoreJourney && journeyControlsTours(readJourney()) && !hasActiveMembership()) return
     if (isHint && hintsOff()) return
-    if (!isHint) setPartIndex(parseTourPart(localStorage.getItem(tourPartKey(storageKey))))
     // Una pista nunca se abre encima de otro tutorial: espera a que se cierre (docs/219).
     const open = (attempts: number) => {
       if (isHint && document.querySelector("[data-gm-page-tour]") && attempts > 0) {
@@ -222,8 +210,8 @@ export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finish
       const targetKey = (event as CustomEvent<{ storageKey?: string }>).detail?.storageKey
       if (targetKey && targetKey !== storageKey) return
       localStorage.removeItem(storageKey)
-      localStorage.removeItem(tourPartKey(storageKey))
-      setFullMode(true)
+      // El tutorial guiado espera esta respuesta para saber que el tutorial existe aquí.
+      window.dispatchEvent(new CustomEvent("gm:tour:ack", { detail: { storageKey } }))
       onStart?.()
       setStepIndex(0)
       setIsOpen(true)
@@ -235,23 +223,10 @@ export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finish
 
   const close = () => {
     localStorage.setItem(storageKey, "true")
-    localStorage.removeItem(tourPartKey(storageKey))
     setIsOpen(false)
     onClose?.()
-  }
-
-  // Parte completada (docs/220): la siguiente se activa la próxima vez que entre.
-  const finishPart = () => {
-    localStorage.setItem(tourPartKey(storageKey), String(part + 1))
-    setIsOpen(false)
-    onClose?.()
-  }
-
-  // «Seguir ahora»: la siguiente parte enseguida.
-  const continueNow = () => {
-    localStorage.setItem(tourPartKey(storageKey), String(part + 1))
-    setPartIndex(part + 1)
-    setStepIndex(0)
+    // El tutorial guiado (docs/221) pasa a la siguiente etapa al cerrarse el de la página.
+    if (!isHint) window.dispatchEvent(new CustomEvent("gm:tour:closed", { detail: { storageKey } }))
   }
 
   // Nota: `close()` ya dispara `onClose` en ambos caminos (saltar y terminar),
@@ -336,10 +311,6 @@ export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finish
 
   const goNext = () => {
     if (isLast) {
-      if (!isLastPart) {
-        finishPart()
-        return
-      }
       close()
       onFinish?.()
       return
@@ -502,9 +473,7 @@ export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finish
           <div className="flex items-center gap-2 mb-3">
             {isHint ? <Lightbulb className="h-5 w-5 text-primary" /> : Icon && <Icon className="h-7 w-7 text-primary" />}
             <span className="text-xs font-semibold uppercase tracking-wide text-primary">
-              {isHint
-                ? t("hint_label")
-                : `${inParts ? `${t("tour_part")} ${part + 1} ${t("tour_of")} ${parts.length} · ` : ""}${t("tour_step")} ${stepIndex + 1} ${t("tour_of")} ${steps.length}`}
+              {isHint ? t("hint_label") : `${t("tour_step")} ${stepIndex + 1} ${t("tour_of")} ${steps.length}`}
             </span>
           </div>
           <h3 className="text-base font-bold text-foreground mb-1.5 text-balance pr-4">{step.title}</h3>
@@ -551,16 +520,6 @@ export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finish
           )}
         </div>
 
-        {!isLastPart && isLast && (
-          <div className="mx-5 mb-3 rounded-lg bg-muted/60 p-2.5 text-xs leading-relaxed text-muted-foreground" data-tour-part-note="">
-            <p>
-              {t("tour_part_next").replace("{next}", String(part + 2)).replace("{total}", String(parts.length))}
-            </p>
-            <button type="button" onClick={continueNow} className="mt-1.5 font-semibold text-primary hover:underline">
-              {t("tour_part_continue")}
-            </button>
-          </div>
-        )}
 
         {!isHint && (
           <div className="h-1 bg-muted mx-5 rounded-full overflow-hidden mb-4">
@@ -591,7 +550,7 @@ export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finish
             </Button>
           )}
           <Button size="sm" onClick={goNext} className="gap-1.5">
-            {isLast ? (!isLastPart ? t("tour_part_done") : finishLabel ?? (isHint ? t("hint_ok") : t("tour_done_default"))) : t("tour_next")}
+            {isLast ? finishLabel ?? (isHint ? t("hint_ok") : t("tour_done_default")) : t("tour_next")}
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>

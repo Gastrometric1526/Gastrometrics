@@ -65,6 +65,12 @@ const DialogContent = React.forwardRef<
         className,
       )}
       {...props}
+      // Tocar la tarjeta de un tutorial (portal aparte, [data-gm-page-tour]) no cierra el
+      // diálogo: el tutorial guiado (docs/221) explica campo por campo con el diálogo abierto.
+      onInteractOutside={(event) => {
+        if ((event.target as HTMLElement | null)?.closest?.("[data-gm-page-tour]")) event.preventDefault()
+        props.onInteractOutside?.(event)
+      }}
     >
       {children}
       <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground z-10">

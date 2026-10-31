@@ -1744,7 +1744,7 @@ export default function IngredientesPage() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-2xl bg-card border-border max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl bg-card border-border max-h-[90vh] overflow-y-auto" data-journey="ing-dialog">
           <DialogHeader>
             <DialogTitle className="text-foreground flex items-center gap-2">
               {ingredientToEdit ? <Edit className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
@@ -1806,7 +1806,7 @@ export default function IngredientesPage() {
                   <h3 className="text-lg font-semibold">{t("ingredientes_step_basic_title")}</h3>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2" data-journey="ing-name">
                   <Label htmlFor="name" className="text-foreground font-medium">
                     {t("ingredientes_field_name_label")}
                   </Label>
@@ -1822,7 +1822,7 @@ export default function IngredientesPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-journey="ing-classify">
                   <div className="space-y-2">
                     <Label htmlFor="category" className="text-foreground font-medium">
                       {t("ingredientes_field_category_label")}
@@ -1918,7 +1918,7 @@ export default function IngredientesPage() {
                   <h3 className="text-lg font-semibold">{t("ingredientes_step_pricing_title")}</h3>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-journey="ing-pricing">
                   <div className="space-y-2">
                     <Label htmlFor="purchasePrice" className="text-foreground font-medium">
                       {t("ingredientes_field_purchase_price_label")}
@@ -2012,7 +2012,7 @@ export default function IngredientesPage() {
                   <h3 className="text-lg font-semibold">{t("ingredientes_step_supplier_full_title")}</h3>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2" data-journey="ing-supplier">
                   <Label htmlFor="supplier" className="text-foreground font-medium">
                     {t("ingredientes_field_supplier_label")}
                   </Label>
@@ -2142,6 +2142,7 @@ export default function IngredientesPage() {
                 <Button
                   onClick={nextStep}
                   disabled={!isStepValid()}
+                  data-journey="ing-next"
                   className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   {t("ingredientes_next_button")}
@@ -2151,6 +2152,7 @@ export default function IngredientesPage() {
                 <Button
                   onClick={handleSubmit}
                   disabled={!isStepValid()}
+                  data-journey="ing-submit"
                   className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   {ingredientToEdit ? <Edit className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}

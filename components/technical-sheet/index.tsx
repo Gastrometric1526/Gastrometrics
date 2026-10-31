@@ -71,6 +71,7 @@ import {
   type RecipeDraft,
 } from "@/lib/storage/recipe-draft"
 import { ActionHint } from "@/components/action-hint"
+import { signalJourney } from "@/lib/journey"
 import { formatDateTime } from "@/lib/date-format"
 import { paxMultiplierFor, refreshSnapshotLines, scaleLineQuantity, scaleRecipeLine } from "@/lib/pax-scaling"
 
@@ -1311,6 +1312,12 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
   // abrir una ya hecha todas las condiciones se cumplen de golpe y saldrían tres seguidas.
   const hintPriceReady = mode === "new" && costedLines > 0 && recipe.yieldAmount > 0
 
+  // Tutorial guiado (docs/221): avanza cuando la primera línea tiene ingrediente y costo.
+  const linesWithIngredient = recipe.ingredients.filter((ing) => ing.ingredientId).length
+  useEffect(() => {
+    signalJourney("ficha", { linesWithIngredient, costedLines, yieldAmount: recipe.yieldAmount || 0, hasName: !!recipe.name?.trim() })
+  }, [linesWithIngredient, costedLines, recipe.yieldAmount, recipe.name])
+
   return (
     <div className="container mx-auto py-6 space-y-6 max-w-6xl">
       <ActionHint
@@ -1668,7 +1675,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
             </div>
           )}
           {isEditMode && (
-            <Button variant="outline" onClick={addNewIngredient} className="mb-4 bg-transparent">
+            <Button variant="outline" onClick={addNewIngredient} className="mb-4 bg-transparent" data-journey="ficha-add-line">
               {t("ficha_tecnica_add_ingredient_button")}
             </Button>
           )}
@@ -1713,7 +1720,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                           onOpenChange={(open) => handlePopoverOpenChange(index, open)}
                         >
                           <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-full justify-between bg-transparent">
+                            <Button variant="outline" className="w-full justify-between bg-transparent" data-journey={index === 0 ? "ficha-line-select" : undefined}>
                               <span className="truncate">{ingredient.name || t("ficha_tecnica_select_ingredient_placeholder")}</span>
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
@@ -1764,7 +1771,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                     </TableCell>
                     <TableCell className="text-center">
                       {isEditMode ? (
-                        <span className="flex flex-col items-center gap-0.5">
+                        <span className="flex flex-col items-center gap-0.5" data-journey={index === 0 ? "ficha-line-qty" : undefined}>
                           <NumericInput
                             ref={(el) => {
                               if (el) {
@@ -1910,6 +1917,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                 <Button
                   variant="ghost"
                   size="icon"
+                  data-journey="ficha-percentages"
                   aria-label={t("ficha_tecnica_percentage_settings_title")}
                   title={t("ficha_tecnica_percentage_settings_title")}
                 >
@@ -2000,7 +2008,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
           </div>
         </CardHeader>
         <CardContent>
-          <div className="mb-5 space-y-3 rounded-lg border bg-muted/30 p-4">
+          <div className="mb-5 space-y-3 rounded-lg border bg-muted/30 p-4" data-journey="ficha-pricing-method">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div>
                 <Label htmlFor="pricingMethod" className="font-semibold">
@@ -2394,7 +2402,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
               </Button>
             </>
           )}
-          <Button onClick={handleSaveRecipe} className="px-8">
+          <Button onClick={handleSaveRecipe} className="px-8" data-journey="ficha-save-btn">
             {t("ficha_tecnica_save_recipe_button")}
           </Button>
         </div>

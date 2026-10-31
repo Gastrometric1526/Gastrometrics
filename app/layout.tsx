@@ -1,3 +1,4 @@
+import { GuidedJourney } from "@/components/journey/guided-journey"
 import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Suspense } from "react"
@@ -132,6 +133,8 @@ export default function RootLayout({
                   <FeedbackOrchestrator />
                   {/* Chat de soporte (docs/204) */}
                   <SupportChat />
+                  {/* Tutorial guiado progresivo (docs/221) */}
+                  <GuidedJourney />
                   <SubRecipePricePrompt />
                   <Suspense fallback={null}>
                     <ModuleActivityTracker />

@@ -94,6 +94,11 @@ function isFeatureAllowedForMember(member: TeamMember, feature: FeatureKey): boo
 // esa persona tiene permitido — ignora el plan real de la cuenta. Sin ninguna
 // membresía activa (el caso de todos los días, el dueño de la cuenta usando su propia
 // sesión), el comportamiento es exactamente el de antes.
+/** ¿Es la sesión de un invitado o la Vista previa de Equipo? (el tutorial guiado no corre ahí, docs/221) */
+export function hasActiveMembership(): boolean {
+  return getActiveMembership() !== null
+}
+
 export function hasFeatureAccess(feature: FeatureKey): boolean {
   const member = getActiveMembership()
   if (member) return isFeatureAllowedForMember(member, feature)

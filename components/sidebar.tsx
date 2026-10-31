@@ -1,6 +1,7 @@
 "use client"
 
 import { resetHints } from "@/lib/hints"
+import { EMPTY_JOURNEY, JOURNEY_PAUSED_KEY, readJourney, restartJourney, writeJourney } from "@/lib/journey"
 import { effectiveMemberFeatures } from "@/lib/team-access"
 import { Suspense, useState, useEffect, useRef } from "react"
 import Link from "next/link"
@@ -362,9 +363,8 @@ function SidebarInner() {
     window.location.href = "/"
   }
 
-  // Reactiva el tutorial de la página actual — el tour normal solo se muestra una vez
-  // (bandera en localStorage, ver components/page-tour.tsx), este botón la borra y
-  // fuerza a reabrirse desde el paso 1, sin importar si ya se vio antes.
+  // Vuelve a empezar el tutorial guiado (docs/221) desde la primera etapa, aunque ya se
+  // hubiera terminado o saltado; los tutoriales de cada página se abren desde ahí.
   //
   // BUG CORREGIDO (pedido explícito: que al reactivar el tutorial desde acá "se cierre
   // el sidebar para que se vea lo que está haciendo"): en móvil el sidebar es un drawer
@@ -377,7 +377,13 @@ function SidebarInner() {
     setIsMobileOpen(false)
     // También vuelve a encender las pistas por acción (docs/219).
     resetHints()
-    window.dispatchEvent(new CustomEvent("gm:tour:restart"))
+    // Desde docs/221 vuelve a empezar el tutorial guiado desde la primera etapa.
+    try {
+      sessionStorage.removeItem(JOURNEY_PAUSED_KEY)
+    } catch {
+      /* sin sessionStorage */
+    }
+    writeJourney(restartJourney(readJourney() ?? EMPTY_JOURNEY))
     toast({ title: t("sidebar_restart_tour_toast") })
   }
 
