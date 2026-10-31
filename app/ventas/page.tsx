@@ -17,6 +17,7 @@ import { ManualSalesTab } from "@/components/manual-sales-tab"
 import { POSSalesImportDialog } from "@/components/pos-sales-import-dialog"
 import { SalesHistoryBreakdown } from "@/components/sales-history-breakdown"
 import { FacturasPanel } from "@/components/facturas-panel"
+import { VentasTour } from "@/components/page-tours"
 import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { getMenus, ensureMenusLoaded } from "@/lib/menus"
 import { getSalesImports, ensureSalesImportsLoaded } from "@/lib/storage/sales-imports"
@@ -49,6 +50,8 @@ function VentasPageInner() {
   const canAccessManualSales = useFeatureAccess("manual_sales")
   const canAccessFinance = useFeatureAccess("stats_finance")
   const canAccessInvoices = useFeatureAccess("invoices")
+  // Historial y «Detalle por mesas»: permiso propio de Equipo (docs/216).
+  const canSeeSalesHistory = useFeatureAccess("sales_history")
 
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [menus, setMenus] = useState<Menu[]>([])
@@ -66,11 +69,11 @@ function VentasPageInner() {
     setSalesImports((prev) => [imp, ...prev])
   }
 
-  if (canAccessManualSales === null || canAccessFinance === null || canAccessInvoices === null) {
+  if (canAccessManualSales === null || canAccessFinance === null || canAccessInvoices === null || canSeeSalesHistory === null) {
     return null
   }
 
-  if (!canAccessManualSales && !canAccessFinance && !canAccessInvoices) {
+  if (!canAccessManualSales && !canAccessFinance && !canAccessInvoices && !canSeeSalesHistory) {
     return getAccessBlockReason("invoices") === "admin" ? (
       <AdminRestrictedPage sectionName={t("nav_ventas")} />
     ) : (
@@ -89,7 +92,7 @@ function VentasPageInner() {
   const defaultTab =
     ["registrar", "facturas"].includes(searchParams.get("tab") || "")
       ? searchParams.get("tab")!
-      : canAccessManualSales || canAccessFinance
+      : canAccessManualSales || canAccessFinance || canSeeSalesHistory
         ? "registrar"
         : "facturas"
 
@@ -100,7 +103,7 @@ function VentasPageInner() {
         <div className="flex-1 overflow-hidden">
           <div className="h-full overflow-y-auto">
             <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
-              <div className="flex items-center gap-2 md:gap-4">
+              <div className="flex items-center gap-2 md:gap-4" data-tour="ventas-header">
                 <Link href={businessId !== "main" ? `/business/${businessId}` : "/dashboard"}>
                   <Button variant="outline" size="sm" className="gap-2 hover:bg-accent bg-transparent">
                     <ArrowLeft className="h-4 w-4" />
@@ -131,7 +134,7 @@ function VentasPageInner() {
                 </TabsList>
 
                 <TabsContent value="registrar" className="space-y-6 mt-4">
-                  {canAccessManualSales || canAccessFinance ? (
+                  {canAccessManualSales || canAccessFinance || canSeeSalesHistory ? (
                     <>
                       {canAccessFinance && (
                         <Card>
@@ -148,9 +151,9 @@ function VentasPageInner() {
                         </Card>
                       )}
 
-                      {canAccessManualSales && <ManualSalesTab businessId={businessId} onSalesChanged={setSalesImports} />}
+                      {canAccessManualSales && <ManualSalesTab businessId={businessId} onSalesChanged={setSalesImports} showInsights={canSeeSalesHistory} />}
 
-                      <SalesHistoryBreakdown salesImports={salesImports} recipes={recipes} menus={menus} businessId={businessId} />
+                      {canSeeSalesHistory && <SalesHistoryBreakdown salesImports={salesImports} recipes={recipes} menus={menus} businessId={businessId} />}
                     </>
                   ) : (
                     getAccessBlockReason("manual_sales") !== "admin" && (
@@ -168,6 +171,7 @@ function VentasPageInner() {
                   <FacturasPanel businessId={businessId} />
                 </TabsContent>
               </Tabs>
+              {(canAccessManualSales || canAccessFinance || canSeeSalesHistory) && <VentasTour />}
             </div>
           </div>
         </div>

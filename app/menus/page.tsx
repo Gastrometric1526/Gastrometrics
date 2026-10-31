@@ -71,6 +71,8 @@ export default function MenusPage() {
   const { t, language } = useLanguage()
   const canAccessMenus = useFeatureAccess("menus")
   const canExportAdminMenuPDF = useFeatureAccess("pdf_admin")
+  // Cualquier PDF requiere el nivel «Para compartir» o más en Equipo (docs/216).
+  const canExportMenuPDF = useFeatureAccess("pdf_export")
   const { toast } = useToast()
 
   const [menus, setMenus] = useState<Menu[]>([])
@@ -164,6 +166,10 @@ export default function MenusPage() {
     // misma categoría de información sensible que "PDF Administrativo" de Ficha
     // Técnica (ya gateado a pdf_admin), pero este export se había quedado sin
     // bloquear. El PDF de cliente (sin costos) sigue libre en todos los planes.
+    if (!hasFeatureAccess("pdf_export")) {
+      toast({ title: t("pdf_not_allowed_title"), description: t("pdf_not_allowed_desc"), variant: "destructive" })
+      return
+    }
     if (type === "interno" && !hasFeatureAccess("pdf_admin")) {
       toast({
         title: t("menus_toast_plan_locked_title"),
@@ -483,15 +489,19 @@ export default function MenusPage() {
                                   <Copy className="mr-2 h-4 w-4" />
                                   {t("menus_action_duplicate")}
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleExportMenuPDF(menu, "cliente")}>
-                                  <FileDown className="mr-2 h-4 w-4" />
-                                  {t("menus_action_export_client")}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleExportMenuPDF(menu, "interno")}>
-                                  <FileDown className="mr-2 h-4 w-4" />
-                                  {t("menus_action_export_internal")}
-                                  {canExportAdminMenuPDF === false && <Lock className="ml-2 h-3 w-3 opacity-60" />}
-                                </DropdownMenuItem>
+                                {canExportMenuPDF !== false && (
+                                  <>
+                                    <DropdownMenuItem onClick={() => handleExportMenuPDF(menu, "cliente")}>
+                                      <FileDown className="mr-2 h-4 w-4" />
+                                      {t("menus_action_export_client")}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleExportMenuPDF(menu, "interno")}>
+                                      <FileDown className="mr-2 h-4 w-4" />
+                                      {t("menus_action_export_internal")}
+                                      {canExportAdminMenuPDF === false && <Lock className="ml-2 h-3 w-3 opacity-60" />}
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
                                 <DropdownMenuItem onClick={() => router.push(`/mep?menu=${menu.id}${businessId ? `&business=${businessId}` : ""}`)}>
                                   <ListChecks className="mr-2 h-4 w-4" />
                                   {t("menus_open_mep")}

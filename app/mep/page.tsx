@@ -277,7 +277,8 @@ function MepContent() {
   const businessId = searchParams.get("business") || "main"
   const { isLoggedIn } = useAuth()
   const { t, language } = useLanguage()
-  const canAccessMenus = useFeatureAccess("menus")
+  // Permiso propio desde docs/216 (antes lo daba Menús); el plan lo desbloquea con Menús.
+  const canAccessMenus = useFeatureAccess("mep")
 
   const menus = useMenus(businessId)
   const recipes = useRecipes(businessId)
@@ -372,10 +373,10 @@ function MepContent() {
 
   if (!isLoggedIn || canAccessMenus === null) return null
   if (!canAccessMenus) {
-    return getAccessBlockReason("menus") === "admin" ? (
+    return getAccessBlockReason("mep") === "admin" ? (
       <AdminRestrictedPage sectionName={t("mep_page_title")} />
     ) : (
-      <FeatureLockedPage feature="menus" title={t("mep_locked_title")} description={t("mep_locked_desc")} />
+      <FeatureLockedPage feature="mep" title={t("mep_locked_title")} description={t("mep_locked_desc")} />
     )
   }
 

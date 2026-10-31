@@ -325,6 +325,19 @@ export function EstadisticasTour({
   return <PageTour steps={steps} storageKey="tour_completed_estadisticas" />
 }
 
+// Ventas (docs/215): registro por cuentas y mesas, detalle por mesas e historial.
+export function VentasTour() {
+  const { t } = useLanguage()
+  const steps: TourStep[] = [
+    { id: "header", title: t("tour_ventas_header_title"), description: t("tour_ventas_header_desc"), selector: '[data-tour="ventas-header"]' },
+    { id: "register", title: t("tour_ventas_register_title"), description: t("tour_ventas_register_desc"), selector: '[data-tour="ventas-register-button"]' },
+    { id: "tickets", title: t("tour_ventas_tickets_title"), description: t("tour_ventas_tickets_desc"), selector: '[data-tour="ventas-register-card"]' },
+    { id: "tables", title: t("tour_ventas_tables_title"), description: t("tour_ventas_tables_desc"), selector: '[data-tour="ventas-tables-card"]' },
+    { id: "history", title: t("tour_ventas_history_title"), description: t("tour_ventas_history_desc"), selector: '[data-tour="ventas-history"]' },
+  ]
+  return <PageTour steps={steps} storageKey="tour_completed_ventas" />
+}
+
 export function OrdenesCompraTour() {
   const { t } = useLanguage()
   const steps: TourStep[] = [
@@ -436,6 +449,13 @@ export function EquipoTour({ hasMembers }: { hasMembers: boolean }) {
       id: "invite",
       title: t("tour_equipo_invite_title"),
       description: t("tour_equipo_invite_desc"),
+      selector: '[data-tour="equipo-invite"]',
+    },
+    // Permisos por módulo y nivel de PDF (docs/216).
+    {
+      id: "permissions",
+      title: t("tour_equipo_permissions_title"),
+      description: t("tour_equipo_permissions_desc"),
       selector: '[data-tour="equipo-invite"]',
     },
     ...(hasMembers

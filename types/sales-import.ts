@@ -31,6 +31,33 @@ export interface SalesImportLine {
    * incluye el ISV. lib/sales-analytics.ts lo pone al leer una importación de factura.
    */
   netOfTax?: boolean
+  /** Cuenta (mesa) a la que pertenece la línea, en un registro manual por mesas (docs/215). */
+  ticketId?: string | null
+}
+
+/** Dónde se atendió la cuenta (docs/215). */
+export type SalesChannel = "dine_in" | "takeaway" | "delivery" | "bar"
+export type PaymentMethod = "cash" | "card" | "transfer" | "other"
+
+/**
+ * Una cuenta de un registro manual (docs/215): mesa, comensales, hora, mesero, forma de
+ * pago, descuento y propina. Sus platos son las líneas con su `ticketId`. El descuento ya
+ * está restado del `revenue` de esas líneas (repartido en proporción), así Finanzas no
+ * cambia; la propina no es venta y solo vive aquí.
+ */
+export interface SalesTicket {
+  id: string
+  channel: SalesChannel
+  /** «5», «Terraza 2»… null si no aplica (para llevar, domicilio o sin anotar). */
+  table: string | null
+  guests: number | null
+  /** Hora local «HH:MM». */
+  time: string | null
+  waiter: string | null
+  payment: PaymentMethod | null
+  discount: number
+  tip: number
+  note?: string | null
 }
 
 export interface SalesImport {
@@ -57,6 +84,8 @@ export interface SalesImport {
   // poder llevar de vuelta a su PDF desde Estadísticas → Ventas sin tener que
   // adivinar el vínculo por nombre.
   invoiceId?: string
+  /** Cuentas por mesa de un registro manual (docs/215). Ausente en registros anteriores. */
+  tickets?: SalesTicket[]
 }
 
 // Formato de fecha del archivo del POS — necesario porque "03/04/2026" es ambiguo

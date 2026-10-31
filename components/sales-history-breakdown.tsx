@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CalendarDays, Info, Download } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
+import { useFeatureAccess } from "@/lib/plan-access"
 import { aggregateSalesByPeriod, type SalesGranularity } from "@/lib/sales-analytics"
 import { getBusinessById } from "@/lib/storage/businesses"
 import { downloadSalesHistoryPDF } from "@/lib/pdf/sales-history-pdf-generator"
@@ -52,6 +53,8 @@ export function SalesHistoryBreakdown({
   combinedBusinessCount,
 }: SalesHistoryBreakdownProps) {
   const { t, language } = useLanguage()
+  // El historial lleva ventas y márgenes: PDF con nivel «Administrativo» en Equipo (docs/216).
+  const canExportPdf = useFeatureAccess("pdf_admin")
   const [range, setRange] = useState<RangeOption>("30")
   const [granularity, setGranularity] = useState<SalesGranularity>("day")
   const [customFrom, setCustomFrom] = useState("")
@@ -156,7 +159,7 @@ export function SalesHistoryBreakdown({
   }
 
   return (
-    <Card className="border-border bg-card">
+    <Card className="border-border bg-card" data-tour="ventas-history">
       <CardHeader className="flex flex-col gap-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -166,10 +169,12 @@ export function SalesHistoryBreakdown({
             </CardTitle>
             <CardDescription>{t("sales_history_desc")}</CardDescription>
           </div>
-          <Button variant="outline" size="sm" onClick={handleExportPDF} className="gap-2 shrink-0" disabled={periods.length === 0}>
-            <Download className="h-4 w-4" />
-            {t("sales_history_export_pdf")}
-          </Button>
+          {canExportPdf !== false && (
+            <Button variant="outline" size="sm" onClick={handleExportPDF} className="gap-2 shrink-0" disabled={periods.length === 0}>
+              <Download className="h-4 w-4" />
+              {t("sales_history_export_pdf")}
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-end gap-2 flex-wrap">

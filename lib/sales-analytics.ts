@@ -15,6 +15,7 @@ import type { Menu } from "@/lib/types/menus"
 import { snapshotValue } from "@/lib/inventory-value"
 import { taxIncludedIn } from "@/lib/food-cost-pricing"
 import { LEGACY_PRICING_METHOD } from "@/types/business"
+import { localDayOf } from "@/lib/date-format"
 
 // ============== DESEMPEÑO POR PLATO ==============
 
@@ -135,7 +136,7 @@ export interface DailySalesSummary {
 // agrupados por la fecha del lote entero en vez de por línea individual.
 function resolveLineDate(imp: SalesImport, line: SalesImportLine): string {
   const raw = line.date || imp.periodStart || imp.importedAt
-  return raw.slice(0, 10)
+  return localDayOf(raw)
 }
 
 // ============== DESGLOSE POR PERÍODO (día / semana / mes / año) ==============

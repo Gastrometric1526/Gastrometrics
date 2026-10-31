@@ -14,6 +14,7 @@
  *   ya permiten que el dueño administre sus propias filas directo desde el cliente.
  */
 
+import { featuresToStore } from "@/lib/team-access"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { createBusinessScopedCache } from "./supabase-cache"
 import { getAllBusinesses } from "./businesses"
@@ -195,7 +196,7 @@ export async function inviteTeamMember(input: {
     status: "invitado",
     invitedAt: new Date().toISOString(),
     scope: input.scope || "dashboard",
-    allowedFeatures: input.allowedFeatures || [],
+    allowedFeatures: featuresToStore(input.allowedFeatures || []) as FeatureKey[],
     pdfAccess: input.pdfAccess || "ninguno",
     activity: [],
     invitedUserId: input.invitedUserId || null,
@@ -230,6 +231,7 @@ export async function updateTeamMember(
   updates: Partial<Omit<TeamMember, "id" | "invitedAt" | "activity" | "invitedUserId">>,
 ): Promise<void> {
   const previous = getTeamMembers().find((m) => m.id === id)
+  if (updates.allowedFeatures !== undefined) updates = { ...updates, allowedFeatures: featuresToStore(updates.allowedFeatures) as FeatureKey[] }
   cache.mutateSnapshot(ACCOUNT_KEY, (list) => list.map((m) => (m.id === id ? { ...m, ...updates } : m)))
 
   const supabase = getSupabaseBrowserClient()
@@ -237,7 +239,7 @@ export async function updateTeamMember(
   if (updates.name !== undefined) dbUpdates.name = updates.name || null
   if (updates.status !== undefined) dbUpdates.status = updates.status
   if (updates.scope !== undefined) dbUpdates.scope = updates.scope
-  if (updates.allowedFeatures !== undefined) dbUpdates.allowed_features = updates.allowedFeatures
+  if (updates.allowedFeatures !== undefined) dbUpdates.allowed_features = featuresToStore(updates.allowedFeatures)
   if (updates.pdfAccess !== undefined) dbUpdates.pdf_access = updates.pdfAccess
 
   const { error } = await supabase

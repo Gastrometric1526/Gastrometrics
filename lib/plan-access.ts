@@ -21,6 +21,7 @@ import { getActivePreviewMember, TEAM_PREVIEW_EVENT } from "./storage/team-previ
 import { getMyMemberships } from "./storage/team"
 import { getCurrentPlanOverrides } from "./plan-overrides"
 import type { TeamMember } from "@/types/team"
+import { effectiveMemberFeatures, planFeaturesFor } from "./team-access"
 
 const PLAN_STORAGE_KEY = "current_plan_slug"
 const PLAN_CHANGE_EVENT = "planChanged"
@@ -79,8 +80,9 @@ function isFeatureAllowedForMember(member: TeamMember, feature: FeatureKey): boo
   if (feature === "pdf_export") return member.pdfAccess !== "ninguno"
   // OCR (docs/153): un invitado trabaja dentro del plan del dueño (Sous Chef o más, que
   // ya los incluye). Fotos sin límite; actualizar precios, si puede editar ingredientes.
-  if (feature === "price_import") return member.allowedFeatures.includes("ingredients")
-  return member.allowedFeatures.includes(feature)
+  const features = effectiveMemberFeatures(member.allowedFeatures)
+  if (feature === "price_import") return features.includes("ingredients")
+  return features.includes(feature)
 }
 
 // BUG CORREGIDO / feature nueva: el panel de Equipo (/equipo) guardaba a qué
@@ -96,7 +98,12 @@ export function hasFeatureAccess(feature: FeatureKey): boolean {
   const member = getActiveMembership()
   if (member) return isFeatureAllowedForMember(member, feature)
   if (DEFAULT_ALWAYS_ON_FEATURES.includes(feature)) return true
-  return getCurrentPlan().unlockedFeatures.includes(feature)
+  return planUnlocks(getCurrentPlan(), feature)
+}
+
+// MEP e historial de ventas se desbloquean con lo mismo que antes (docs/216).
+function planUnlocks(plan: Plan, feature: FeatureKey): boolean {
+  return planFeaturesFor(feature).some((f) => plan.unlockedFeatures.includes(f))
 }
 
 // Para que cada pantalla bloqueada muestre el mensaje correcto: "tu plan no lo
@@ -108,7 +115,7 @@ export function getAccessBlockReason(feature: FeatureKey): "plan" | "admin" | nu
   const member = getActiveMembership()
   if (member) return isFeatureAllowedForMember(member, feature) ? null : "admin"
   if (DEFAULT_ALWAYS_ON_FEATURES.includes(feature)) return null
-  return getCurrentPlan().unlockedFeatures.includes(feature) ? null : "plan"
+  return planUnlocks(getCurrentPlan(), feature) ? null : "plan"
 }
 
 // Suma lo que /admin le haya cedido de más a esta cuenta puntual (ver
@@ -125,7 +132,7 @@ export function getMaxUsers(): number {
 // Primer plan (en el orden de lib/plans.ts) que desbloquea una funcion dada —
 // usado para armar el CTA "Actualiza a {plan}" en las pantallas bloqueadas.
 export function getMinimumPlanForFeature(feature: FeatureKey): Plan | null {
-  return plans.find((p) => p.unlockedFeatures.includes(feature) && !p.comingSoon) || null
+  return plans.find((p) => planUnlocks(p, feature) && !p.comingSoon) || null
 }
 
 // BUG CORREGIDO (ver docs/33): las paginas gateadas llamaban hasFeatureAccess()

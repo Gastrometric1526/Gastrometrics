@@ -29,6 +29,7 @@ import type { Ingredient } from "@/types/ingredient"
 import type { Menu } from "@/lib/types/menus"
 import type { SalesImport } from "@/types/sales-import"
 import { accumulateRecipeConsumption, indexById, recipeBaseYield, type ConsumptionMap } from "./recipe-consumption"
+import { localDayOf } from "@/lib/date-format"
 
 export interface TheoreticalStockEntry {
   /** Stock del último conteo real. */
@@ -52,7 +53,7 @@ interface CountPoint {
 }
 
 function dayOf(iso: string): string {
-  return iso.slice(0, 10)
+  return localDayOf(iso)
 }
 
 function saleCountsAfter(saleDay: string, registeredAt: string, countAt: string): boolean {

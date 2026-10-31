@@ -81,6 +81,8 @@ export function PurchaseOrderPage() {
   }
   const canAccessManualOrders = useFeatureAccess("purchase_orders_manual")
   const canAccessAutoOrders = useFeatureAccess("purchase_orders_auto")
+  // PDF de la orden (para el proveedor): nivel «Para compartir» o más en Equipo (docs/216).
+  const canExportOrderPdf = useFeatureAccess("pdf_export")
 
   const [orders, setOrders] = useState<PurchaseOrder[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -868,14 +870,17 @@ export function PurchaseOrderPage() {
                               <Button variant="outline" size="sm" onClick={() => handleEditOrder(order)}>
                                 {t("ordenes_edit_button")}
                               </Button>
-                              <Button data-tour="ordenes-row-pdf" variant="outline" size="sm" className="gap-1" onClick={() => handleDownloadOrderPDF(order)}>
-                                <Download className="h-3.5 w-3.5" />
-                                {t("ordenes_pdf_button")}
-                              </Button>
+                              {canExportOrderPdf !== false && (
+                                <Button data-tour="ordenes-row-pdf" variant="outline" size="sm" className="gap-1" onClick={() => handleDownloadOrderPDF(order)}>
+                                  <Download className="h-3.5 w-3.5" />
+                                  {t("ordenes_pdf_button")}
+                                </Button>
+                              )}
                               {/* Enviar por WhatsApp o correo, o compartir el PDF (docs/202). */}
                               <ShareDocumentMenu
                                 tourId="ordenes-row-send"
                                 variant="outline"
+                                pdfAllowed={canExportOrderPdf !== false}
                                 filename={generatePurchaseOrderPDFFilename(order)}
                                 subject={`${t("po_share_title")} #${order.number} — ${order.name}`}
                                 buildPdf={() => {

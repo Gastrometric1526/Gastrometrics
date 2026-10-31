@@ -132,3 +132,14 @@ export function parseDayMonthYear(text: string): string | null {
 export function fileDate(value: DateInput = new Date()): string {
   return formatDate(value).replace(/\//g, "-")
 }
+
+/**
+ * Día local (YYYY-MM-DD) de una fecha guardada. Las ventas guardan la medianoche local como
+ * ISO en UTC: cortar el texto (`slice(0, 10)`) daba el día anterior al este de UTC (Dinamarca,
+ * Francia, China), docs/215. Una fecha sin hora («2026-10-30») se deja tal cual.
+ */
+export function localDayOf(raw: string): string {
+  if (!raw.includes("T")) return raw.slice(0, 10)
+  const d = new Date(raw)
+  return Number.isNaN(d.getTime()) ? raw.slice(0, 10) : toIsoDate(d)
+}

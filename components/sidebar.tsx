@@ -1,5 +1,6 @@
 "use client"
 
+import { effectiveMemberFeatures } from "@/lib/team-access"
 import { Suspense, useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
@@ -165,17 +166,17 @@ export function useNavigationItems() {
   // a un negocio específico.
   if (previewActive && previewMember) {
     const hasScopeDashboard = previewMember.scope === "dashboard"
-    const allowed = new Set(previewMember.allowedFeatures)
+    const allowed = new Set(effectiveMemberFeatures(previewMember.allowedFeatures))
     const hrefFeatureMap: Record<string, FeatureKey[]> = {
       "/ficha-tecnica": ["recipes"],
       "/mis-recetas": ["recipes"],
       "/ingredientes": ["ingredients"],
       "/inventario": ["inventory"],
       "/menus": ["menus"],
-      "/mep": ["menus"],
+      "/mep": ["mep"],
       "/menu-y-compras": ["purchase_orders_manual", "purchase_orders_auto"],
       "/estadisticas": ["stats_panorama", "stats_finance"],
-      "/ventas": ["manual_sales", "stats_finance", "invoices"],
+      "/ventas": ["manual_sales", "stats_finance", "invoices", "sales_history"],
       // Delegable desde docs/75 — un miembro con la función 'team' habilitada
       // también puede gestionar el equipo (ver supabase/migrations/
       // 0015_team_delegate_management.sql para el porqué hacía falta una migración,

@@ -53,6 +53,11 @@ export type FeatureKey =
   // los planes; actualizar el precio de ingredientes que ya existen desde un ticket o una
   // lista (mantener los costos al día) es desde Home Cook.
   | "price_import"
+  // Permisos de Equipo de docs/216: no están en la matriz de planes (se desbloquean con
+  // "menus" y con "manual_sales"/"stats_finance", ver lib/team-access.ts planFeaturesFor);
+  // existen para poder darlos o quitarlos por persona en /equipo.
+  | "mep"
+  | "sales_history"
 
 export interface Plan {
   slug: string

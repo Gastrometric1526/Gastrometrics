@@ -59,7 +59,7 @@ import { getBusinessById } from "@/lib/storage/businesses"
 import { downloadInventorySnapshotPDF, downloadCurrentInventoryPDF } from "@/lib/pdf/inventory-pdf-generator"
 import { Download, Info } from "lucide-react"
 import { InventarioInfoDialog } from "@/components/inventory/inventario-info-dialog"
-import { useFeatureAccess } from "@/lib/plan-access"
+import { useFeatureAccess, hasFeatureAccess } from "@/lib/plan-access"
 import { FeatureLockedPage } from "@/components/feature-locked"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { getAccessBlockReason } from "@/lib/plan-access"
@@ -83,6 +83,8 @@ type LegacyIngredient = Ingredient & { purchasePrice?: number; netContent?: numb
 export default function InventoryPage() {
   const { isLoggedIn, user } = useAuth()
   const canAccessInventory = useFeatureAccess("inventory")
+  // El PDF de inventario lleva el valor del stock: nivel «Administrativo» en Equipo (docs/216).
+  const canExportInventoryPdf = useFeatureAccess("pdf_admin")
   const { t, language } = useLanguage()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -443,6 +445,10 @@ export default function InventoryPage() {
   // nunca generaba ni descargaba ningun archivo real (ver docs/32). Ahora genera un
   // PDF real a partir del snapshot historico via lib/pdf/inventory-pdf-generator.ts.
   const exportInventory = (inventory: InventorySnapshot) => {
+    if (!hasFeatureAccess("pdf_admin")) {
+      toast({ title: t("pdf_not_allowed_title"), description: t("pdf_not_allowed_desc"), variant: "destructive" })
+      return
+    }
     try {
       const business = getBusinessById(businessId || "main")
       downloadInventorySnapshotPDF(inventory, { businessName: business?.name, businessLogo: business?.logo, businessId: businessId || "main" })
@@ -641,15 +647,17 @@ export default function InventoryPage() {
                   <ClipboardList className="mr-2 h-4 w-4" />
                   {t("inventario_register_button")}
                 </Button>
-                <Button
-                  data-tour="inv-export-pdf"
-                  variant="outline"
-                  onClick={handleExportCurrentInventory}
-                  className="gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  Exportar PDF
-                </Button>
+                {canExportInventoryPdf !== false && (
+                  <Button
+                    data-tour="inv-export-pdf"
+                    variant="outline"
+                    onClick={handleExportCurrentInventory}
+                    className="gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    {t("inventario_export_pdf_button")}
+                  </Button>
+                )}
               </div>
             </div>
 

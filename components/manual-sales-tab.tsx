@@ -14,6 +14,8 @@ import { getSalesImports, deleteSalesImport, ensureSalesImportsLoaded } from "@/
 import { ManualSalesEntryDialog } from "@/components/manual-sales-entry-dialog"
 import type { SalesImport } from "@/types/sales-import"
 import { salesImportDisplayName } from "@/lib/sales-import-labels"
+import { TableSalesInsights } from "@/components/table-sales-insights"
+import { ticketLabel, ticketsCount } from "@/lib/manual-sales"
 
 interface ManualSalesTabProps {
   businessId: string
@@ -22,6 +24,8 @@ interface ManualSalesTabProps {
   // app/ventas/page.tsx (que carga su propia copia de sales_imports una sola vez al
   // montar) no se enteraría de una venta manual nueva hasta recargar la página.
   onSalesChanged?: (imports: SalesImport[]) => void
+  /** Totales y «Detalle por mesas»: solo con el permiso de historial de ventas (docs/216). */
+  showInsights?: boolean
 }
 
 /**
@@ -32,7 +36,7 @@ interface ManualSalesTabProps {
  * Prime Cost, Menu Engineering, P&L) — acá solo se registra y se lista lo cargado,
  * sin ese análisis, que sigue exclusivo de Finanzas.
  */
-export function ManualSalesTab({ businessId, onSalesChanged }: ManualSalesTabProps) {
+export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true }: ManualSalesTabProps) {
   const { toast } = useToast()
   const { t, language } = useLanguage()
 
@@ -132,7 +136,7 @@ export function ManualSalesTab({ businessId, onSalesChanged }: ManualSalesTabPro
 
   return (
     <div className="space-y-6">
-      {manualEntries.length > 0 && (
+      {showInsights && manualEntries.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Card className="border-border bg-card">
             <CardContent className="p-4 flex items-center gap-3">
@@ -218,6 +222,7 @@ export function ManualSalesTab({ businessId, onSalesChanged }: ManualSalesTabPro
                         <div className="min-w-0">
                           <p className="font-medium truncate">{salesImportDisplayName(imp, t, language)}</p>
                           <p className="text-xs text-muted-foreground">
+                            {imp.tickets?.length ? `${ticketsCount(imp.tickets.length, t as (k: string) => string)} · ` : ""}
                             {imp.lineCount} {t("manual_sales_lines_suffix")} · {formatCurrency(imp.totalRevenue)}
                           </p>
                         </div>
@@ -233,14 +238,51 @@ export function ManualSalesTab({ businessId, onSalesChanged }: ManualSalesTabPro
                     </div>
                     {isExpanded && (
                       <div className="border-t border-hairline divide-y divide-hairline bg-card">
-                        {imp.lines.map((line) => (
-                          <div key={line.id} className="flex items-center justify-between px-3 py-2 text-xs gap-2">
-                            <span className="truncate text-foreground">{line.rawDishName}</span>
-                            <span className="text-muted-foreground shrink-0">
-                              {line.quantity} × {formatCurrency(line.unitPrice ?? 0)} = {formatCurrency(line.revenue)}
-                            </span>
-                          </div>
-                        ))}
+                        {/* Por cuenta y mesa desde docs/215; los registros anteriores, como antes. */}
+                        {(imp.tickets?.length ? imp.tickets : [null]).map((tk) => {
+                          const lines = tk ? imp.lines.filter((l) => l.ticketId === tk.id) : imp.lines
+                          if (lines.length === 0) return null
+                          const details = tk
+                            ? [
+                                tk.guests ? `${tk.guests} ${t("ventas_guests_short")}` : null,
+                                tk.time,
+                                tk.waiter,
+                                tk.payment ? t(`ventas_payment_${tk.payment}` as never) : null,
+                              ].filter(Boolean)
+                            : []
+                          return (
+                            <div key={tk?.id ?? "all"} className="px-3 py-2 space-y-1">
+                              {tk && (
+                                <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs">
+                                  <span className="font-semibold text-foreground">
+                                    {ticketLabel(tk, t as (k: string) => string)}
+                                    {details.length > 0 && <span className="font-normal text-muted-foreground"> · {details.join(" · ")}</span>}
+                                  </span>
+                                  <span className="tabular-nums font-medium text-foreground">{formatCurrency(lines.reduce((sum, l) => sum + l.revenue, 0))}</span>
+                                </div>
+                              )}
+                              {lines.map((line) => (
+                                <div key={line.id} className="flex items-center justify-between text-xs gap-2">
+                                  <span className="truncate text-foreground">{line.rawDishName}</span>
+                                  <span className="text-muted-foreground shrink-0">
+                                    {line.quantity} × {formatCurrency(line.unitPrice ?? 0)} = {formatCurrency(line.quantity * (line.unitPrice ?? 0))}
+                                  </span>
+                                </div>
+                              ))}
+                              {tk && (tk.discount > 0 || tk.tip > 0 || tk.note) && (
+                                <p className="text-xs text-muted-foreground">
+                                  {[
+                                    tk.discount > 0 ? `${t("ventas_discount_label")}: − ${formatCurrency(tk.discount)}` : null,
+                                    tk.tip > 0 ? `${t("ventas_tip_label")}: ${formatCurrency(tk.tip)}` : null,
+                                    tk.note ? `“${tk.note}”` : null,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" · ")}
+                                </p>
+                              )}
+                            </div>
+                          )
+                        })}
                       </div>
                     )}
                   </div>
@@ -250,6 +292,8 @@ export function ManualSalesTab({ businessId, onSalesChanged }: ManualSalesTabPro
           )}
         </CardContent>
       </Card>
+
+      {showInsights && <TableSalesInsights imports={manualEntries} />}
 
       <ManualSalesEntryDialog
         open={isDialogOpen}
@@ -262,6 +306,7 @@ export function ManualSalesTab({ businessId, onSalesChanged }: ManualSalesTabPro
         menus={menus}
         onSaved={handleSaved}
         editingImport={editingImport}
+        existingImports={manualEntries}
       />
 
       <Dialog open={!!entryToDelete} onOpenChange={(next) => !next && setEntryToDelete(null)}>

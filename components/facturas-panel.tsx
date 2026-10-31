@@ -89,6 +89,8 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
   const { toast } = useToast()
   const { user } = useAuth()
   const canAccessInvoices = useFeatureAccess("invoices")
+  // PDF de la factura: nivel «Para compartir» o más en Equipo (docs/216).
+  const canDownloadPdf = useFeatureAccess("pdf_export")
 
   const invoices = useInvoices(businessId)
   const [recipes, setRecipes] = useState<Recipe[]>([])
@@ -519,9 +521,11 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handleDownload(invoice)} title={t("facturas_download_pdf")}>
-                          <Download className="h-4 w-4" />
-                        </Button>
+                        {canDownloadPdf !== false && (
+                          <Button variant="ghost" size="icon" onClick={() => handleDownload(invoice)} title={t("facturas_download_pdf")}>
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button variant="ghost" size="icon" onClick={() => openEditDialog(invoice)} title={t("facturas_edit_button")}>
                           <Pencil className="h-4 w-4" />
                         </Button>

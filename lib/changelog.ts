@@ -32,6 +32,30 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-10-30b",
+    tutorialHref: tourHref("equipo"),
+    content: {
+      es: { title: "Equipo: permisos para todo", items: ["En Equipo ahora eliges por separado la MEP y el historial de ventas con el detalle por mesas: alguien puede registrar ventas sin ver los totales.", "El nivel de PDF aplica a todos los PDF: «Para compartir» (recetas sin costos, menú para clientes, MEP, facturas y órdenes de compra) o «Administrativo» (además costos, inventario valorizado e historial de ventas).", "Quien ya estaba en tu equipo conserva lo que tenía hasta que lo edites."] },
+      en: { title: "Team: permissions for everything", items: ["In Team you now choose MEP and sales history with the by-table view separately: someone can log sales without seeing the totals.", "The PDF level applies to every PDF: “For sharing” (recipes without costs, client menu, MEP, invoices and purchase orders) or “Administrative” (plus costs, inventory value and sales history).", "People already on your team keep what they had until you edit them."] },
+      da: { title: "Team: rettigheder til alt", items: ["Under Team vælger du nu MEP og salgshistorik med visning pr. bord hver for sig: en person kan registrere salg uden at se totalerne.", "PDF-niveauet gælder alle PDF’er: «Til deling» (opskrifter uden omkostninger, kundemenu, MEP, fakturaer og indkøbsordrer) eller «Administrativ» (plus omkostninger, lagerværdi og salgshistorik).", "Personer, der allerede er på dit team, beholder det, de havde, indtil du redigerer dem."] },
+      fr: { title: "Équipe : des droits pour tout", items: ["Dans Équipe, vous choisissez maintenant séparément la MEP et l’historique des ventes avec le détail par table : quelqu’un peut enregistrer des ventes sans voir les totaux.", "Le niveau de PDF s’applique à tous les PDF : « À partager » (recettes sans coûts, menu client, MEP, factures et bons de commande) ou « Administratif » (en plus les coûts, la valeur du stock et l’historique des ventes).", "Les personnes déjà dans votre équipe gardent leurs accès jusqu’à ce que vous les modifiiez."] },
+      pt: { title: "Equipe: permissões para tudo", items: ["Em Equipe agora você escolhe separadamente a MEP e o histórico de vendas com o detalhe por mesas: alguém pode registrar vendas sem ver os totais.", "O nível de PDF vale para todos os PDFs: «Para compartilhar» (receitas sem custos, cardápio para clientes, MEP, faturas e pedidos de compra) ou «Administrativo» (além disso custos, estoque valorizado e histórico de vendas).", "Quem já estava na sua equipe mantém o que tinha até você editar."] },
+      zh: { title: "团队：所有功能都可设权限", items: ["在“团队”中现在可以单独开通备料（MEP）以及销售历史和按桌明细：可以让人登记销售但看不到总额。", "PDF 级别适用于所有 PDF：“可分享”（不含成本的配方、客户版菜单、备料、发票和采购单）或“管理版”（另含成本、库存价值和销售历史）。", "已在团队中的成员在你编辑之前保留原有权限。"] },
+    },
+  },
+  {
+    version: "2026-10-30",
+    tutorialHref: tourHref("ventas"),
+    content: {
+      es: { title: "Ventas por mesa", items: ["Registra cada cuenta con su mesa (o para llevar, domicilio o barra), comensales, hora, mesero, forma de pago, descuento y propina.", "Busca el plato o toca uno de los que más vendes, y ajusta cantidades con − y +. Si ese día ya tenía ventas, te ofrecemos sumarlas.", "Nuevo «Detalle por mesas»: qué mesas venden más, ticket promedio, gasto por persona y ventas por canal, mesero, pago y hora."] },
+      en: { title: "Sales by table", items: ["Log each check with its table (or takeaway, delivery or bar), guests, time, server, payment, discount and tip.", "Search for the dish or tap one of your best sellers, and adjust quantities with − and +. If that day already had sales, we offer to add to them.", "New “By table” view: which tables sell most, average check, spend per guest and sales by channel, server, payment and time."] },
+      da: { title: "Salg pr. bord", items: ["Registrer hver regning med bord (eller takeaway, levering eller bar), gæster, tidspunkt, tjener, betaling, rabat og drikkepenge.", "Søg retten, eller tryk på en af dem, du sælger mest, og juster antal med − og +. Havde dagen allerede salg, tilbyder vi at lægge til.", "Ny «Pr. bord»: hvilke borde sælger mest, gennemsnitlig regning, forbrug pr. gæst og salg pr. kanal, tjener, betaling og tidspunkt."] },
+      fr: { title: "Ventes par table", items: ["Enregistrez chaque addition avec sa table (ou à emporter, livraison ou bar), couverts, heure, serveur, paiement, remise et pourboire.", "Cherchez le plat ou touchez une de vos meilleures ventes, et ajustez les quantités avec − et +. Si ce jour avait déjà des ventes, nous proposons de les compléter.", "Nouveau « Détail par table » : les tables qui vendent le plus, ticket moyen, dépense par couvert et ventes par canal, serveur, paiement et heure."] },
+      pt: { title: "Vendas por mesa", items: ["Registre cada conta com sua mesa (ou para viagem, delivery ou balcão), pessoas, hora, garçom, pagamento, desconto e gorjeta.", "Busque o prato ou toque em um dos mais vendidos, e ajuste as quantidades com − e +. Se o dia já tinha vendas, oferecemos somar.", "Novo «Detalhe por mesas»: quais mesas vendem mais, tíquete médio, gasto por pessoa e vendas por canal, garçom, pagamento e hora."] },
+      zh: { title: "按桌登记销售", items: ["每张账单可填桌号（或外带、外送、吧台）、人数、时间、服务员、付款方式、折扣和小费。", "搜索菜品或点击最畅销的菜，用 − 和 + 调整数量。如果那天已有销售，会提示你合并。", "新增“按桌明细”：哪些桌卖得最多、平均客单价、人均消费，以及按渠道、服务员、付款方式和时间的销售。"] },
+    },
+  },
+  {
     version: "2026-10-29",
     tutorialHref: tourHref("ficha-tecnica"),
     content: {
