@@ -437,7 +437,7 @@ export function SettingsTour({ showDeveloperTools = true }: { showDeveloperTools
     },
   ]
 
-  return <PageTour steps={steps} storageKey="tour_completed_settings-dialog" introSteps={Infinity} />
+  return <PageTour steps={steps} storageKey="tour_completed_settings-dialog" partSteps={Infinity} />
 }
 
 export function EquipoTour({ hasMembers }: { hasMembers: boolean }) {
