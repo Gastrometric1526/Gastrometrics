@@ -527,7 +527,7 @@ function MepContent() {
                       ) : null}
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-foreground">
                         <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-                        {t("mep_counts").replace("{preps}", String(mep?.preps.length ?? 0)).replace("{dishes}", String(mep?.dishes.length ?? 0))}
+                        {`${t(mep?.preps.length === 1 ? "mep_count_preps_one" : "mep_count_preps").replace("{n}", String(mep?.preps.length ?? 0))} · ${t(mep?.dishes.length === 1 ? "mep_count_dishes_one" : "mep_count_dishes").replace("{n}", String(mep?.dishes.length ?? 0))}`}
                       </span>
                       <Link
                         href={businessId !== "main" ? `/menus?business=${businessId}` : "/menus"}
