@@ -73,6 +73,8 @@ import { mapIngredientRows, splitPastedList, parseLocaleNumber, pickIngredientSh
 import { guessCategory } from "@/lib/recipe-import/guess-category"
 import { getCurrentCurrencyCode } from "@/lib/currency"
 import { parseReceiptText } from "@/lib/receipt-import"
+import { detectReceiptSupplier, matchImportRow, supplierKey, withReceiptAlias, type MatchResult } from "@/lib/ingredient-match"
+import { SUPPORTED_LANGUAGES, translate } from "@/lib/i18n/translations"
 import { useOcrUsage } from "@/lib/ocr-usage"
 import { OCR_LANG } from "@/lib/recipe-import/ocr"
 import { IngredientsTable } from "@/components/ingredients/ingredients-table"
@@ -317,6 +319,15 @@ export default function IngredientesPage() {
   const receiptFileRef = useRef<HTMLInputElement>(null)
   const [importProgress, setImportProgress] = useState(0)
   const [isImporting, setIsImporting] = useState(false)
+  // docs/222: proveedor del ticket (uno para todo el ticket) y, por línea, a qué ingrediente
+  // corresponde: id de uno existente, "new" (crearlo) o "skip". Sin elección, se usa lo que
+  // propone lib/ingredient-match.ts; si hay duda, la línea espera a que la persona elija.
+  const [receiptSupplier, setReceiptSupplier] = useState("")
+  const [rowChoice, setRowChoice] = useState<Record<number, string>>({})
+  useEffect(() => {
+    setRowChoice({})
+    if (!importFile) setReceiptSupplier("")
+  }, [importFile, importSheet])
 
   // Drag and drop state
   const [isDragOver, setIsDragOver] = useState(false)
@@ -552,6 +563,7 @@ export default function IngredientesPage() {
         showError(t("ingredientes_receipt_empty_title"), t("ingredientes_receipt_empty_desc"))
         return
       }
+      setReceiptSupplier(detectReceiptSupplier(text, knownSuppliers))
       setImportRows(rows)
       setFromReceipt(true)
       setUpdateExisting(canImportPrices)
@@ -568,22 +580,66 @@ export default function IngredientesPage() {
   const updateImportRow = (index: number, patch: Partial<ImportedIngredientRow>) =>
     setImportRows((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)))
 
-  /** Ingrediente existente con el mismo nombre y unidad: su precio se puede actualizar. */
-  const existingForUpdate = (row: ImportedIngredientRow) => {
-    const key = (row.name || "").toLowerCase()
-    return ingredients.find((ing) => ing.name.toLowerCase() === key && ing.unit === row.unit) ?? null
+  // Proveedores que la persona ya tiene (para leer el del ticket y elegirlo con un toque); los
+  // nombres por defecto de los 6 idiomas cuentan como «sin proveedor».
+  const supplierDefaults = useMemo(() => SUPPORTED_LANGUAGES.map((l) => translate(l.code, "ingredientes_default_supplier")), [])
+  const knownSuppliers = useMemo(() => {
+    const byKey = new Map<string, string>()
+    for (const ing of ingredients) {
+      const key = supplierKey(ing.supplier, supplierDefaults)
+      if (key && !byKey.has(key)) byKey.set(key, ing.supplier.trim())
+    }
+    return Array.from(byKey.values()).sort((a, b) => a.localeCompare(b))
+  }, [ingredients, supplierDefaults])
+  const rowSupplier = (row: ImportedIngredientRow) => (row.supplier || (fromReceipt ? receiptSupplier : "")).trim()
+
+  // A qué ingrediente corresponde cada línea (docs/222).
+  const matchable = useMemo(() => ingredients.filter((i) => i.category !== SUBRECIPE_CLASSIFICATION), [ingredients])
+  const rowMatches = useMemo<MatchResult[]>(
+    () =>
+      importRows.map((row) =>
+        matchImportRow(row.name || "", matchable, { supplier: supplierKey(rowSupplier(row), supplierDefaults), defaults: supplierDefaults }),
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [importRows, matchable, receiptSupplier, fromReceipt, supplierDefaults],
+  )
+  /** id del ingrediente existente, "new", "skip" o "pending" (hay que elegir). */
+  const rowDecision = (index: number): string => {
+    const chosen = rowChoice[index]
+    if (chosen && (chosen === "new" || chosen === "skip" || ingredients.some((i) => i.id === chosen))) return chosen
+    const m = rowMatches[index]
+    if (!m) return "new"
+    if (m.match) return m.match.id
+    return m.status === "none" ? "new" : "pending"
+  }
+  /** Ingrediente existente elegido para la línea y si su precio se puede actualizar. */
+  const existingFor = (index: number) => {
+    const id = rowDecision(index)
+    const existing = ingredients.find((i) => i.id === id) ?? null
+    if (!existing) return null
+    const row = importRows[index]
+    const factor = row ? unitFactor(row.unit, existing.unit) : null
+    return { existing, factor, canUpdate: updateExisting && canImportPrices && !!row && row.price > 0 && row.content > 0 && factor !== null }
   }
 
-  // Por qué se omitiría una fila (sin precio o ya existe), para la vista previa.
+  // Por qué se omitiría una fila (sin precio, omitida, por elegir o ya existe), para la vista previa.
   const importSkipReason = (row: ImportedIngredientRow, index: number): string | null => {
+    const decision = rowDecision(index)
+    if (decision === "skip") return t("import_match_skipped")
+    if (decision === "pending") return t("import_match_pending")
+    if (decision !== "new") {
+      const found = existingFor(index)
+      if (found?.canUpdate) return null
+      if (found && row.price > 0 && found.factor === null && updateExisting && canImportPrices) return t("import_match_unit_mismatch")
+      return t("import_match_kept")
+    }
     if (!(row.price > 0) && !(includeNoPrice && row.name)) return t("ingredientes_preview_skip_price")
     const key = (row.name || "").toLowerCase()
-    if (ingredients.some((ing) => ing.name.toLowerCase() === key)) {
-      return updateExisting && row.price > 0 && existingForUpdate(row) ? null : t("ingredientes_preview_skip_exists")
-    }
-    if (importRows.slice(0, index).some((r) => (r.name || "").toLowerCase() === key)) return t("ingredientes_preview_skip_exists")
+    if (importRows.slice(0, index).some((r, j) => (r.name || "").toLowerCase() === key && rowDecision(j) === "new")) return t("ingredientes_preview_skip_exists")
     return null
   }
+  const ingredientOptionLabel = (ing: Ingredient) =>
+    [ing.name, supplierKey(ing.supplier, supplierDefaults) ? ing.supplier.trim() : "", (ing.notes || "").trim().slice(0, 40)].filter(Boolean).join(" · ")
 
   const handleDownloadTemplate = async () => {
     try {
@@ -627,28 +683,38 @@ export default function IngredientesPage() {
         throw new Error(t("ingredientes_error_no_valid_data"))
       }
 
-      const seen = new Set(ingredients.map((ing) => ing.name.toLowerCase()))
+      const seen = new Set<string>()
       const priceUpdates: { id: string; price: number }[] = []
+      // Nombres del ticket confirmados para un ingrediente: se recuerdan para ese proveedor.
+      const aliased = new Map<string, Ingredient>()
       for (let i = 0; i < data.length; i++) {
         const row = data[i]
         // La categoría se compara contra las reales (sin tildes/mayúsculas, 6 idiomas);
         // si no coincide, entra como OTROS y se corrige desde la tabla.
         const ingredientName = row.name || `${t("ingredientes_default_name_prefix")} ${i + 1}`
+        const decision = rowDecision(i)
+        if (decision === "skip" || decision === "pending") continue
+        if (decision !== "new") {
+          // docs/222: la línea es UN ingrediente existente (el elegido o el único posible).
+          // Nuevo precio llevado a su unidad y contenido neto; nunca a otros con el mismo nombre.
+          const found = existingFor(i)
+          if (!found) continue
+          const { existing, factor, canUpdate } = found
+          const base = aliased.get(existing.id) ?? existing
+          const next = row.name ? withReceiptAlias(base, row.name, supplierKey(rowSupplier(row), supplierDefaults)) : base
+          if (next !== base) aliased.set(existing.id, next)
+          if (canUpdate && factor && !priceUpdates.some((u) => u.id === existing.id)) {
+            const net = existing.pricing?.netContent || 1
+            priceUpdates.push({ id: existing.id, price: Math.round(((row.price / row.content) / factor) * net * 100) / 100 })
+          }
+          continue
+        }
         const price = row.price > 0 ? row.price : includeNoPrice ? 0 : NaN
         if (!(price >= 0) || !(row.content > 0) || (!row.name && !(row.price > 0))) {
           errorCount++
           continue
         }
-        if (seen.has(ingredientName.toLowerCase())) {
-          // Ticket: el mismo producto ya existe con la misma unidad → nuevo precio, llevado
-          // a su contenido neto (precio por g/ml/unidad del ticket × contenido existente).
-          const existing = updateExisting && row.price > 0 ? existingForUpdate(row) : null
-          if (existing && !priceUpdates.some((u) => u.id === existing.id)) {
-            const net = existing.pricing?.netContent || 1
-            priceUpdates.push({ id: existing.id, price: Math.round((row.price / row.content) * net * 100) / 100 })
-          }
-          continue
-        }
+        if (seen.has(ingredientName.toLowerCase())) continue
         seen.add(ingredientName.toLowerCase())
         const now = new Date().toISOString()
         newIngredients.push({
@@ -665,7 +731,7 @@ export default function IngredientesPage() {
             pricePerUnit: price / row.content,
             lastUpdated: now,
           },
-          supplier: row.supplier || t("ingredientes_default_supplier"),
+          supplier: rowSupplier(row) || t("ingredientes_default_supplier"),
           notes: "",
           metadata: { createdAt: now, updatedAt: now, version: 1 },
         })
@@ -679,7 +745,7 @@ export default function IngredientesPage() {
       setImportProgress(100)
 
       // Update state immediately
-      const updatedIngredients = [...ingredients, ...newIngredients]
+      const updatedIngredients = [...ingredients.map((ing) => aliased.get(ing.id) ?? ing), ...newIngredients]
       setIngredients(updatedIngredients)
 
       await saveIngredients(updatedIngredients, businessId)
@@ -1820,6 +1886,19 @@ export default function IngredientesPage() {
                     className="border-border focus:ring-2 focus:ring-primary"
                     required
                   />
+                  {(() => {
+                    // docs/222: ya hay uno con ese nombre. No se bloquea (puede ser de otro
+                    // proveedor o tipo): se avisa para distinguirlos con el proveedor o una nota.
+                    const key = (formData.name || "").trim().toLowerCase()
+                    const same = key ? ingredients.filter((i) => i.id !== formData.id && i.name.trim().toLowerCase() === key) : []
+                    if (!same.length) return null
+                    const suppliers = same.map((i) => [i.supplier, i.notes].map((v) => (v || "").trim()).filter(Boolean).join(" · ") || "—").join(", ")
+                    return (
+                      <p className="text-xs text-warning">
+                        {t("ingredient_name_exists").replace("{name}", same[0].name).replace("{suppliers}", suppliers)}
+                      </p>
+                    )
+                  })()}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-journey="ing-classify">
@@ -2320,7 +2399,7 @@ export default function IngredientesPage() {
                             )}
                           </label>
                         )}
-                        {(fromReceipt || importRows.some((r) => r.price > 0 && existingForUpdate(r))) && (
+                        {(fromReceipt || importRows.some((r, i) => r.price > 0 && !!existingFor(i))) && (
                           <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
                             {fromReceipt && <p className="text-xs text-muted-foreground">{t("ingredientes_receipt_review_hint")}</p>}
                             <label className={`flex items-center gap-2 text-sm ${canImportPrices ? "" : "opacity-60"}`}>
@@ -2342,6 +2421,35 @@ export default function IngredientesPage() {
                             )}
                           </div>
                         )}
+                        {fromReceipt && (
+                          <div className="space-y-1">
+                            <Label htmlFor="receipt-supplier" className="text-sm font-medium">
+                              {t("import_supplier_label")}
+                            </Label>
+                            <Input
+                              id="receipt-supplier"
+                              list="receipt-supplier-options"
+                              value={receiptSupplier}
+                              placeholder={t("import_supplier_placeholder")}
+                              onChange={(e) => setReceiptSupplier(e.target.value)}
+                              className="h-9 w-full sm:w-[320px]"
+                            />
+                            <datalist id="receipt-supplier-options">
+                              {knownSuppliers.map((name) => (
+                                <option key={name} value={name} />
+                              ))}
+                            </datalist>
+                            <p className="text-xs text-muted-foreground">{t("import_supplier_hint")}</p>
+                          </div>
+                        )}
+                        {(() => {
+                          const pending = importRows.filter((_, i) => rowDecision(i) === "pending").length
+                          return pending > 0 ? (
+                            <p className="rounded-md bg-warning/10 px-3 py-2 text-sm text-foreground">
+                              {t("import_match_pending_count").replace("{count}", String(pending))}
+                            </p>
+                          ) : null
+                        })()}
                         <p className="text-sm text-muted-foreground">
                           {t("ingredientes_preview_summary")
                             .replace("{ready}", String(ready))
@@ -2355,6 +2463,7 @@ export default function IngredientesPage() {
                                   <th className="p-2 text-left font-medium">{t("ingredientes_preview_col_name")}</th>
                                   <th className="p-2 text-left font-medium">{t("ingredientes_preview_col_content")}</th>
                                   <th className="p-2 text-right font-medium">{t("ingredientes_preview_col_price")}</th>
+                                  <th className="p-2 text-left font-medium">{t("import_match_col")}</th>
                                   <th className="p-2 text-left font-medium">{t("ingredientes_preview_col_status")}</th>
                                 </tr>
                               </thead>
@@ -2384,12 +2493,59 @@ export default function IngredientesPage() {
                                         aria-label={t("ingredientes_preview_col_price")}
                                       />
                                     </td>
+                                    <td className="p-1 align-top">
+                                      {(() => {
+                                        // docs/222: a qué ingrediente corresponde la línea.
+                                        const m = rowMatches[index]
+                                        const decision = rowDecision(index)
+                                        const firstIds = new Set((m?.candidates ?? []).map((c) => c.id))
+                                        const others = ingredients
+                                          .filter((ing) => !firstIds.has(ing.id) && ing.category !== SUBRECIPE_CLASSIFICATION)
+                                          .sort((a, b) => a.name.localeCompare(b.name))
+                                        const note =
+                                          rowChoice[index] !== undefined
+                                            ? null
+                                            : m?.status === "alias"
+                                              ? t("import_match_alias")
+                                              : m?.status === "choose"
+                                                ? t("import_match_choose")
+                                                : m?.status === "other-supplier"
+                                                  ? t("import_match_other_supplier")
+                                                  : m?.status === "suggest"
+                                                    ? t("import_match_suggest")
+                                                    : null
+                                        return (
+                                          <div className="min-w-[200px] space-y-1">
+                                            <Select value={decision === "pending" ? undefined : decision} onValueChange={(v) => setRowChoice((c) => ({ ...c, [index]: v }))}>
+                                              <SelectTrigger className={`h-8 w-full text-xs ${decision === "pending" ? "border-warning" : ""}`} aria-label={t("ingredientes_preview_col_status")}>
+                                                <SelectValue placeholder={t("import_match_pending")} />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                <SelectItem value="new">{t("import_match_new")}</SelectItem>
+                                                <SelectItem value="skip">{t("import_match_skip")}</SelectItem>
+                                                {(m?.candidates ?? []).map((c) => (
+                                                  <SelectItem key={c.id} value={c.id}>
+                                                    {ingredientOptionLabel(c)}
+                                                  </SelectItem>
+                                                ))}
+                                                {others.map((c) => (
+                                                  <SelectItem key={c.id} value={c.id}>
+                                                    {ingredientOptionLabel(c)}
+                                                  </SelectItem>
+                                                ))}
+                                              </SelectContent>
+                                            </Select>
+                                            {note && <span className="block text-xs text-warning">{note}</span>}
+                                          </div>
+                                        )
+                                      })()}
+                                    </td>
                                     <td className="p-2 whitespace-nowrap">
                                       {reasons[index] ? (
-                                        <span className="text-destructive">{reasons[index]}</span>
+                                        <span className="text-muted-foreground">{reasons[index]}</span>
                                       ) : (
                                         <span className="text-success">
-                                          {updateExisting && row.price > 0 && existingForUpdate(row)
+                                          {existingFor(index)?.canUpdate
                                             ? t("ingredientes_preview_will_update")
                                             : row.price > 0
                                               ? t("ingredientes_preview_ok")

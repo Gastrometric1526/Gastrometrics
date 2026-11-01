@@ -81,6 +81,7 @@ export function MobileBottomNav() {
           <Link
             key={item.href}
             href={item.href}
+            data-journey-nav={item.href}
             // min-h-[56px]: por encima del mínimo de 44px de objetivo táctil (ver docs/36,
             // prioridad alta #5), con margen para el dedo pulgar en la fila inferior.
             className={cn(

@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge"
 import { Trash2, Plus, Package } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
+import { distinguishLabel, repeatedNames } from "@/lib/ingredient-match"
 import { getCategoryLabel, getPresentationLabel, getUnitLabel, getUnitLabelFor, matchUnitLabel } from "@/lib/ingredient-labels"
 
 export interface PurchaseOrderFormItem {
@@ -145,6 +146,7 @@ export function PurchaseOrderForm({
 }: PurchaseOrderFormProps) {
   const { t, language } = useLanguage()
   const orderStatuses = orderStatusDefs.map((s) => ({ ...s, label: t(s.labelKey) }))
+  const repeatedIngredientNames = useMemo(() => repeatedNames(availableIngredients), [availableIngredients])
 
   const [formData, setFormData] = useState<PurchaseOrderFormData>(createEmptyPurchaseOrderFormData)
 
@@ -417,7 +419,7 @@ export function PurchaseOrderForm({
                 <SelectContent>
                   {availableIngredients.map((ingredient) => (
                     <SelectItem key={ingredient.id} value={ingredient.id}>
-                      {ingredient.name} - {getCategoryLabel(ingredient.category, language)}
+                      {[ingredient.name, getCategoryLabel(ingredient.category, language), distinguishLabel(ingredient, repeatedIngredientNames)].filter(Boolean).join(" · ")}
                     </SelectItem>
                   ))}
                 </SelectContent>

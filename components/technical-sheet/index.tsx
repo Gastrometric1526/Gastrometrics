@@ -74,6 +74,7 @@ import { ActionHint } from "@/components/action-hint"
 import { signalJourney } from "@/lib/journey"
 import { formatDateTime } from "@/lib/date-format"
 import { paxMultiplierFor, refreshSnapshotLines, scaleLineQuantity, scaleRecipeLine } from "@/lib/pax-scaling"
+import { distinguishLabel, repeatedNames } from "@/lib/ingredient-match"
 
 interface TechnicalSheetProps {
   mode: "new" | "view" | "edit"
@@ -174,6 +175,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     setIsEditMode(mode === "new" || mode === "edit")
   }, [mode])
   const [availableIngredients, setAvailableIngredients] = useState<Ingredient[]>([])
+  const repeatedIngredientNames = useMemo(() => repeatedNames(availableIngredients), [availableIngredients])
   const [openPopovers, setOpenPopovers] = useState<Record<number, boolean>>({})
   const [showPriceSettings, setShowPriceSettings] = useState(false)
   const [showCalculationInfo, setShowCalculationInfo] = useState(false)
@@ -1745,7 +1747,8 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                                   {availableIngredients.map((ing) => (
                                     <CommandItem
                                       key={ing.id}
-                                      value={ing.name}
+                                      // Con el id: dos «Tomate» de distinto proveedor son opciones distintas (docs/222).
+                                      value={`${ing.name} ${ing.supplier ?? ""} ${ing.id}`}
                                       onSelect={() => updateIngredient(index, "ingredientId", ing.id)}
                                     >
                                       <Check
@@ -1757,7 +1760,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                                       <div>
                                         <div className="font-medium">{ing.name}</div>
                                         <div className="text-xs text-muted-foreground">
-                                          {getCategoryLabel(ing.category, language)}
+                                          {[getCategoryLabel(ing.category, language), distinguishLabel(ing, repeatedIngredientNames)].filter(Boolean).join(" · ")}
                                         </div>
                                       </div>
                                     </CommandItem>

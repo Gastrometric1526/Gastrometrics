@@ -427,6 +427,7 @@ function SidebarInner() {
           previewActive ? "top-14" : "top-4",
         )}
         onClick={() => setIsMobileOpen(!isMobileOpen)}
+        data-journey="menu-button"
       >
         {isMobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
         {!isMobileOpen && reveal.fresh.size > 0 && (

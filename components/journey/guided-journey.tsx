@@ -5,7 +5,8 @@
  * toca según lo que la persona ya hizo (lib/journey.ts) y la acompaña:
  * - en la pantalla de la etapa, resalta cada botón o campo y explica qué hacer; la página
  *   sigue usable (el resaltado no bloquea los clics) y avanza cuando la persona actúa;
- * - en otra pantalla, una tarjeta «Ir a …»;
+ * - en otra pantalla, resalta en el menú dónde tocar para llegar al módulo (sin llevar
+ *   directo; solo si el menú no se encuentra queda el botón «Ir a …»);
  * - una meta (p. ej. 3 ingredientes) queda como una píldora con el progreso;
  * - las etapas de módulos abren el tutorial ya existente de esa página.
  * Las cuentas que ya existían pueden saltárselo; las nuevas, pausarlo. «Reiniciar tutorial»
@@ -103,6 +104,22 @@ function visibleRect(selector: string | null): Rect | null {
   // Arriba o abajo no cuenta: se desplaza hasta él.
   if (r.left + r.width <= 0 || r.left >= window.innerWidth) return null
   return r
+}
+
+/**
+ * Dónde tocar para ir al módulo de una etapa (pedido del dueño: el tutorial señala el clic,
+ * no lleva directo): la barra inferior del celular, el menú lateral o, con el menú del
+ * celular cerrado, el botón que lo abre.
+ */
+function navTarget(route: string): { selector: string; rect: Rect; viaMenu: boolean } | null {
+  const sidebar = route === "/mi-plan" ? '[data-tour="sidebar-plan"]' : `[data-tour="nav-${route}"]`
+  for (const selector of [`[data-journey-nav="${route}"]`, sidebar]) {
+    const rect = visibleRect(selector)
+    if (rect) return { selector, rect, viaMenu: false }
+  }
+  const selector = '[data-journey="menu-button"]'
+  const rect = visibleRect(selector)
+  return rect ? { selector, rect, viaMenu: true } : null
 }
 
 export function GuidedJourney() {
@@ -400,6 +417,37 @@ export function GuidedJourney() {
     }
   }, [pageTourKey, chapterId, completeChapter])
 
+  // En otra pantalla: se resalta dónde tocar en el menú para llegar al módulo de la etapa.
+  const navRoute =
+    enabled && !paused && chapter?.route && position.status === "active" && !onRoute && CHAPTER_GO[chapter.id] && !(chapter.kind === "goal" && goalSeen[chapter.id])
+      ? chapter.route
+      : null
+  const [nav, setNav] = useState<{ rect: Rect; viaMenu: boolean } | null>(null)
+  useEffect(() => {
+    if (!navRoute) {
+      setNav(null)
+      return
+    }
+    let scrolledTo = ""
+    const tick = () => {
+      const found = navTarget(navRoute)
+      setDialogOpen(!!document.querySelector('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"], [data-tour-overlay]'))
+      // Dentro del menú lateral el módulo puede quedar abajo, fuera de la vista.
+      if (found && found.selector !== scrolledTo && (found.rect.top < 0 || found.rect.top + found.rect.height > window.innerHeight)) {
+        scrolledTo = found.selector
+        document.querySelector(found.selector)?.scrollIntoView({ block: "nearest" })
+      }
+      setNav((prev) =>
+        found && prev && prev.viaMenu === found.viaMenu && Math.abs(prev.rect.top - found.rect.top) < 1 && Math.abs(prev.rect.left - found.rect.left) < 1 && Math.abs(prev.rect.width - found.rect.width) < 1
+          ? prev
+          : found && { rect: found.rect, viaMenu: found.viaMenu },
+      )
+    }
+    tick()
+    const interval = setInterval(tick, 250)
+    return () => clearInterval(interval)
+  }, [navRoute])
+
   const pause = () => {
     writePaused(true)
     setPaused(true)
@@ -537,6 +585,51 @@ export function GuidedJourney() {
   const go = CHAPTER_GO[chapter.id]
   const goTo = () => chapter.route && router.push(chapter.route)
 
+  // Con un lugar del menú a la vista, la tarjeta se pone a su lado y lo resalta; si no se
+  // encuentra (p. ej. el menú no cargó), queda la tarjeta flotante con «Ir a …».
+  const navHint = nav && go && (
+    <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-primary">
+      <MousePointerClick className="h-3.5 w-3.5 shrink-0" />
+      {t(nav.viaMenu ? "journey_nav_open_menu" : "journey_nav_tap").replace("{module}", t(go.module))}
+    </p>
+  )
+  const placed = (content: React.ReactNode) => {
+    if (!nav || dialogOpen) return floating(content)
+    const usable = window.innerHeight - (window.innerWidth < 768 ? 64 : 0)
+    const place = computePlacement(nav.rect, window.innerWidth, usable)
+    const style: React.CSSProperties =
+      place !== "center"
+        ? { ...computeTooltipPosition(nav.rect, place, window.innerWidth, usable, CARD_WIDTH, cardHeight), transform: "none" }
+        : { top: usable / 2, left: "50%", transform: "translate(-50%, -50%)" }
+    const r = nav.rect
+    return createPortal(
+      <div className="print:hidden" data-journey-coach="">
+        <div
+          aria-hidden
+          className="pointer-events-none fixed z-[1000] transition-all duration-300 ease-out"
+          style={{ top: r.top - 4, left: r.left - 4, width: r.width + 8, height: r.height + 8, borderRadius: 12, boxShadow: "0 0 0 3px hsl(var(--primary)), 0 0 0 9999px rgba(8, 10, 20, 0.35)" }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none fixed z-[1000] animate-pulse rounded-xl"
+          style={{ top: r.top - 8, left: r.left - 8, width: r.width + 16, height: r.height + 16, boxShadow: "0 0 0 3px hsl(var(--primary) / 0.5)" }}
+        />
+        <div
+          data-gm-page-tour=""
+          {...keepDialogsOpen}
+          role="dialog"
+          aria-label={t("journey_label")}
+          ref={cardRef}
+          style={style}
+          className="pointer-events-auto fixed z-[1001] w-[min(340px,calc(100vw-2rem))] rounded-2xl border border-border bg-card p-4 shadow-2xl"
+        >
+          {content}
+        </div>
+      </div>,
+      document.body,
+    )
+  }
+
   // Meta con progreso (3 ingredientes, 3 recetas).
   if (chapter.kind === "goal" && chapter.goal) {
     const { current, target } = chapter.goal(facts)
@@ -544,7 +637,7 @@ export function GuidedJourney() {
     if (goalSeen[chapter.id] || !go) return <>{pill(label, () => setGoalSeen((g) => ({ ...g, [chapter.id]: false })))}{confirmDialog}</>
     return (
       <>
-        {floating(
+        {placed(
           <>
             {closeButton}
             {header}
@@ -556,10 +649,11 @@ export function GuidedJourney() {
             <p className="mt-1 text-xs text-muted-foreground">
               {Math.min(current, target)}/{target}
             </p>
+            {navHint}
             <div className="mt-3 flex items-center justify-between gap-2">
               {skipLink ?? <span />}
               <div className="flex gap-2">
-                {!onRoute && (
+                {!onRoute && !nav && (
                   <Button size="sm" variant="outline" onClick={goTo}>
                     {t("journey_go").replace("{module}", t(go.module))}
                   </Button>
@@ -581,19 +675,20 @@ export function GuidedJourney() {
     if (!go) return confirmDialog
     return (
       <>
-        {floating(
+        {placed(
           <>
             {closeButton}
             {header}
             <h3 className="mb-1 text-base font-bold text-foreground">{t(go.title)}</h3>
             <p className="text-sm leading-relaxed text-muted-foreground">{t(go.description)}</p>
+            {navHint}
             <div className="mt-4 flex items-center justify-between gap-2">
               {skipLink ?? (
                 <Button variant="ghost" size="sm" onClick={pause}>
                   {t("journey_later")}
                 </Button>
               )}
-              {!onRoute && (
+              {!onRoute && !nav && (
                 <Button size="sm" onClick={goTo} className="gap-1.5">
                   {t("journey_go").replace("{module}", t(go.module))}
                   <ArrowRight className="h-4 w-4" />
