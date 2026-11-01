@@ -90,7 +90,7 @@ export function collectPriceObservations(input: {
   const now = input.now ?? new Date().toISOString()
   for (const ing of input.ingredients) {
     const price = ing.pricing?.pricePerUnit
-    if (!(price > 0) || ing.recipeId) continue // las sub-recetas no se compran
+    if (!(price > 0) || ing.recipeId) continue // las subrecetas no se compran
     out.push({ key: ing.id, ingredientId: ing.id, name: ing.name, unit: ing.unit, supplier: cleanSupplier(ing.supplier), pricePerUnit: price, date: ing.pricing?.lastUpdated || now, source: "current", quantity: 0 })
   }
 

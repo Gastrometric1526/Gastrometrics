@@ -3,8 +3,8 @@
 /**
  * MEP — Mise en place (docs/202). Pedido del dueño: un documento alineado con el menú que
  * diga qué producir. Arriba se elige el menú; abajo, por paso del menú, cada plato con sus
- * sub-recetas debajo como checklist (docs/207: la cantidad es la de ese plato y cada una se abre
- * con su receta completa), y al final el total por sub-receta, plegado, para prepararlas juntas. Cada fila
+ * subrecetas debajo como checklist (docs/207: la cantidad es la de ese plato y cada una se abre
+ * con su receta completa), y al final el total por subreceta, plegado, para prepararlas juntas. Cada fila
  * muestra solo el nombre y para cuánto; al tocarla se abre con sus ingredientes y cantidades
  * ya escalados, el procedimiento y las observaciones. Se marcan «Listo» (se recuerda en este
  * aparato) y se mandan o descargan como PDF (página 1: la MEP; después, una receta por página).
@@ -104,7 +104,7 @@ function MepRow({
   businessId: string
   /** Agrupado por área: «Preparación base» o el paso del menú. */
   tag?: string | null
-  /** 0 = plato o total; 1+ = sub-receta dentro de un plato (más compacta). */
+  /** 0 = plato o total; 1+ = subreceta dentro de un plato (más compacta). */
   level?: number
 }) {
   const { t, language } = useLanguage()
@@ -221,7 +221,7 @@ function MepRow({
   )
 }
 
-/** Un plato y, debajo, sus sub-recetas como checklist (en árbol), cada una con su receta completa al abrirla. */
+/** Un plato y, debajo, sus subrecetas como checklist (en árbol), cada una con su receta completa al abrirla. */
 function MepDishTree({
   dish,
   done,
@@ -329,7 +329,7 @@ function MepContent() {
   const visibleDishes = useMemo(() => (mep ? mep.dishes.filter((e) => area === "all" || e.classification === area) : []), [mep, area])
   const areaEntries = useMemo(() => [...visiblePreps, ...visibleDishes], [visiblePreps, visibleDishes])
   const visibleAreas = useMemo(() => groupByArea(areaEntries), [areaEntries])
-  // Lo que cuenta en el progreso: por área, totales y platos; por paso, cada plato con sus sub-recetas (docs/207).
+  // Lo que cuenta en el progreso: por área, totales y platos; por paso, cada plato con sus subrecetas (docs/207).
   const visible = useMemo(
     () => (groupBy === "area" ? areaEntries : visibleDishes.flatMap((d) => flattenDish(d).map((x) => x.entry))),
     [groupBy, areaEntries, visibleDishes],

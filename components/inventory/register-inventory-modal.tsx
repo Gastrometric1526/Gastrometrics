@@ -544,7 +544,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
     onOpenChange(false)
 
     // Cascada de precios: cualquier ingrediente cuyo precio cambió en esta compra dispara
-    // el recálculo automático del costo de todas las recetas y sub-recetas que lo usan
+    // el recálculo automático del costo de todas las recetas y subrecetas que lo usan
     // (updateIngredientPriceAndRecalculate, ya usado también en la edición de Ingredientes).
     // Es el flujo principal por el que deberían entrar los precios: el usuario solo compra,
     // el sistema propaga el cambio solo. Se corre después de cerrar el diálogo para no
@@ -567,7 +567,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
         .then((results) => {
           // Regla de precio (docs/162): avisos de precios que subieron o que ganan margen.
           logPriceRuleChanges(results.flatMap((r) => r.priceChanges), user, businessId || null)
-          // Sub-recetas con precio de venta propio cuyo costo subió (docs/164): se pregunta.
+          // Subrecetas con precio de venta propio cuyo costo subió (docs/164): se pregunta.
           requestSubRecipePricePrompt(businessId || "main", results)
           const totalRecipes = results.reduce((sum, r) => sum + r.affectedRecipes.length, 0)
           const totalSubRecipes = results.reduce((sum, r) => sum + r.affectedSubRecipes.length, 0)
@@ -729,7 +729,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
   // Precio pagado en ESTA compra — el único lugar del sistema donde se espera que el
   // usuario escriba un precio. Al guardar, handleSave compara este valor contra el precio
   // que el ingrediente ya tenía y, si cambió, dispara la cascada de recálculo automático
-  // sobre todas las recetas y sub-recetas que lo usan (ver updateIngredientPriceAndRecalculate).
+  // sobre todas las recetas y subrecetas que lo usan (ver updateIngredientPriceAndRecalculate).
   const handlePriceFieldChange = (id: string, value: number) => {
     setIngredientsWithQuantity((prev) => prev.map((ing) => (ing.id === id ? { ...ing, price: value } : ing)))
   }

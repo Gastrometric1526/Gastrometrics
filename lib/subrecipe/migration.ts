@@ -36,9 +36,9 @@ function findSimilarIngredient(ingredient: Ingredient, targetIngredients: Ingred
 }
 
 /**
- * Migra recursivamente la receta de una sub-receta (y las sub-recetas que ella misma use) al
- * negocio destino, y devuelve el id que la sub-receta migrada tiene en el destino. `visited`
- * evita loops si dos sub-recetas terminaran referenciándose entre sí por error de datos.
+ * Migra recursivamente la receta de una subreceta (y las subrecetas que ella misma use) al
+ * negocio destino, y devuelve el id que la subreceta migrada tiene en el destino. `visited`
+ * evita loops si dos subrecetas terminaran referenciándose entre sí por error de datos.
  */
 async function migrateSubRecipeChain(
   sourceRecipeId: string,
@@ -53,7 +53,7 @@ async function migrateSubRecipeChain(
   const sourceSubRecipe = getRecipes(sourceBusinessId).find((r) => r.id === sourceRecipeId)
   if (!sourceSubRecipe) return null
 
-  // Si el negocio destino ya tiene una sub-receta con el mismo nombre, se reutiliza en vez de duplicar.
+  // Si el negocio destino ya tiene una subreceta con el mismo nombre, se reutiliza en vez de duplicar.
   const existingInTarget = getRecipes(targetBusinessId).find(
     (r) => r.name.toLowerCase().trim() === sourceSubRecipe.name.toLowerCase().trim() && isSubRecipe(r),
   )
@@ -72,7 +72,7 @@ async function migrateSubRecipeChain(
 }
 
 /**
- * Migración "solo la receta" (docs/137): no copia ingredientes ni sub-recetas. Cada línea
+ * Migración "solo la receta" (docs/137): no copia ingredientes ni subrecetas. Cada línea
  * se vincula al ingrediente del negocio destino que tenga el MISMO nombre (con el precio de
  * ese negocio); las que no tengan equivalente quedan sin vincular (conservan nombre, cantidad
  * y unidad) para que el usuario elija el ingrediente desde la base de ese negocio en la Ficha
@@ -127,7 +127,7 @@ function migrateRecipeOnly(recipe: Recipe, sourceBusinessId: string, targetBusin
 
 /**
  * Migrate ingredients that don't exist in target database. Si un ingrediente viene de una
- * sub-receta (ingredient.recipeId), también se migra esa receta al destino (recursivo), para
+ * subreceta (ingredient.recipeId), también se migra esa receta al destino (recursivo), para
  * que quede editable como Ficha Técnica ahí, no solo como un costo plano.
  */
 async function migrateIngredients(
@@ -157,7 +157,7 @@ async function migrateIngredients(
       let migratedRecipeId: string | undefined
       let recipeData = ingredient.recipeData
 
-      // Ingrediente generado desde una sub-receta: migrar también la receta original.
+      // Ingrediente generado desde una subreceta: migrar también la receta original.
       if (ingredient.recipeId) {
         const newSubRecipeId = await migrateSubRecipeChain(
           ingredient.recipeId,
@@ -197,7 +197,7 @@ async function migrateIngredients(
   }
 
   if (migratedIngredients.length > 0) {
-    // Releer por si migrateSubRecipeChain ya guardó ingredientes propios (p.ej. de una sub-receta anidada).
+    // Releer por si migrateSubRecipeChain ya guardó ingredientes propios (p.ej. de una subreceta anidada).
     const byId = new Map(getIngredients(targetBusinessId).map((ing) => [ing.id, ing] as const))
     for (const ing of migratedIngredients) byId.set(ing.id, ing)
     await saveIngredients([...byId.values()], targetBusinessId)
@@ -219,8 +219,8 @@ async function migrateIngredients(
 }
 
 /**
- * Migrate complete recipe with all dependencies: ingredientes y, si la receta usa sub-recetas
- * (u otra sub-receta usa sub-recetas, en cadena), esas también se migran completas — no solo
+ * Migrate complete recipe with all dependencies: ingredientes y, si la receta usa subrecetas
+ * (u otra subreceta usa subrecetas, en cadena), esas también se migran completas — no solo
  * como costo plano, sino como su propia Ficha Técnica editable en el negocio destino.
  */
 export async function migrateCompleteRecipe(
@@ -303,7 +303,7 @@ export async function migrateCompleteRecipe(
 
     await saveRecipes([...getRecipes(targetBusinessId), migratedRecipe], targetBusinessId)
 
-    // Si la propia receta migrada es una sub-receta, sincronizar su ingrediente espejo en el
+    // Si la propia receta migrada es una subreceta, sincronizar su ingrediente espejo en el
     // destino apuntando al nuevo id — para que quien la migró como parte de otra receta la
     // encuentre correctamente enlazada (ver migrateSubRecipeChain).
     if (isSubRecipe(migratedRecipe)) {

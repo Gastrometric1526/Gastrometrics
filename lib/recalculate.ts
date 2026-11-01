@@ -37,14 +37,14 @@ export interface RecalculationResult {
   /** Precios de venta que subieron, o que se mantuvieron con más margen (docs/162). */
   priceChanges: RecipePriceChange[]
   /**
-   * Sub-recetas con precio de venta escrito a mano cuyo precio sugerido quedó por encima
+   * Subrecetas con precio de venta escrito a mano cuyo precio sugerido quedó por encima
    * del actual y que están en «Preguntarme» (docs/164): la pantalla pregunta si se sube.
    */
   pendingSubRecipePrices: PendingSubRecipePrice[]
   timestamp: string
 }
 
-/** Sub-receta a la que se le puede subir el precio de venta, si la persona lo acepta (docs/164). */
+/** Subreceta a la que se le puede subir el precio de venta, si la persona lo acepta (docs/164). */
 export interface PendingSubRecipePrice {
   recipeId: string
   recipeName: string
@@ -52,7 +52,7 @@ export interface PendingSubRecipePrice {
   suggestedPrice: number
 }
 
-/** Qué hacer con el precio de venta escrito a mano de una sub-receta cuando cambia su costo. */
+/** Qué hacer con el precio de venta escrito a mano de una subreceta cuando cambia su costo. */
 export type SubRecipePriceMode = "ask" | "always" | "never"
 
 export function subRecipePriceModeOf(recipe: Pick<Recipe, "subRecipePriceUpdate">): SubRecipePriceMode {
@@ -98,17 +98,17 @@ const MAX_CASCADE_STEPS = 500
 /**
  * Cascada completa de costos (docs/164). Parte de ingredientes cuyo precio por unidad ya
  * cambió (en `ingredientsById`) y recalcula todas las recetas que los usan; cuando una de
- * ellas es una sub-receta, actualiza su ingrediente vinculado y sigue con las recetas que
- * usan ESA sub-receta, en cualquier nivel. Antes (docs/162) se paraba en el primer nivel:
+ * ellas es una subreceta, actualiza su ingrediente vinculado y sigue con las recetas que
+ * usan ESA subreceta, en cualquier nivel. Antes (docs/162) se paraba en el primer nivel:
  * los platos que llevaban la salsa, y no el tomate suelto, quedaban con el costo viejo.
  *
  * Al final aplica la regla de precio una sola vez por receta, con su costo unitario de
  * ANTES de la cascada y el de después:
- * - Platos (no sub-recetas): «el precio solo sube» (docs/162), sin preguntar.
- * - Sub-recetas con precio de venta escrito a mano (customUnitPrice) cuyo sugerido nuevo
+ * - Platos (no subrecetas): «el precio solo sube» (docs/162), sin preguntar.
+ * - Subrecetas con precio de venta escrito a mano (customUnitPrice) cuyo sugerido nuevo
  *   supera ese precio: según `subRecipePriceUpdate` — "always" lo sube, "never" lo deja,
  *   "ask" (por defecto) lo devuelve en pendingSubRecipePrices para que la pantalla
- *   pregunte. Una baja de costo en una sub-receta no cambia nada (el precio ya es fijo).
+ *   pregunte. Una baja de costo en una subreceta no cambia nada (el precio ya es fijo).
  */
 function runCostCascade(
   businessId: string,
@@ -195,7 +195,7 @@ function runCostCascade(
       })
     }
 
-    // Sub-receta: solo cuenta si tiene un precio de venta escrito a mano.
+    // Subreceta: solo cuenta si tiene un precio de venta escrito a mano.
     if (!((recipe.customUnitPrice ?? 0) > 0)) continue
     const outcome = applyPriceRule(recipe, old.unitCost, recipe.costPerServing, pricingCtx)
     if (outcome.kind !== "raised") continue
@@ -216,8 +216,8 @@ function runCostCascade(
 }
 
 /**
- * Al subirle el precio a una sub-receta se mantiene como precio escrito a mano, para que
- * siga contando como «sub-receta con precio de venta» la próxima vez.
+ * Al subirle el precio a una subreceta se mantiene como precio escrito a mano, para que
+ * siga contando como «subreceta con precio de venta» la próxima vez.
  */
 function subRecipePricePatch(recipe: Recipe, price: number): Partial<Recipe> {
   const yieldAmount = recipe.yieldAmount > 0 ? recipe.yieldAmount : 1
@@ -303,9 +303,9 @@ export async function updateIngredientPriceAndRecalculate(
 }
 
 /**
- * Después de guardar una sub-receta en la Ficha Técnica (docs/164): recalcula los platos
- * y sub-recetas que la usan, en cualquier nivel, con la misma regla de precio. Antes se
- * quedaban con el costo viejo hasta abrirlos y guardarlos a mano. La sub-receta ya debe
+ * Después de guardar una subreceta en la Ficha Técnica (docs/164): recalcula los platos
+ * y subrecetas que la usan, en cualquier nivel, con la misma regla de precio. Antes se
+ * quedaban con el costo viejo hasta abrirlos y guardarlos a mano. La subreceta ya debe
  * estar guardada y sincronizada como ingrediente (syncSubRecipeToIngredient).
  */
 export async function recalculateDependentsOfSubRecipe(
@@ -332,9 +332,9 @@ export async function recalculateDependentsOfSubRecipe(
 }
 
 /**
- * Respuesta de la persona a la pregunta de docs/164: a las sub-recetas aceptadas se les
+ * Respuesta de la persona a la pregunta de docs/164: a las subrecetas aceptadas se les
  * sube el precio de venta al sugerido (como precio escrito a mano). Con `remember`, cada
- * sub-receta guarda su elección ("always" para las aceptadas, "never" para las demás),
+ * subreceta guarda su elección ("always" para las aceptadas, "never" para las demás),
  * que se cambia después en su Ficha Técnica. Devuelve los cambios para Notificaciones.
  */
 export async function applySubRecipePriceDecisions(
@@ -365,7 +365,7 @@ export async function applySubRecipePriceDecisions(
 }
 
 /**
- * Avisa a la ventana global (components/subrecipe-price-prompt.tsx) que hay sub-recetas
+ * Avisa a la ventana global (components/subrecipe-price-prompt.tsx) que hay subrecetas
  * por preguntar. `raisedDishes` = platos que ya subieron solos, para el texto.
  */
 export const SUBRECIPE_PRICE_PROMPT_EVENT = "subRecipePricePrompt"

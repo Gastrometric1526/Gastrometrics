@@ -11,7 +11,7 @@
  *   incluye (inventory_snapshots — los 3 tipos guardan el total resultante), o una
  *   edición manual del stock si es más nueva (InventoryItem.stockCountedAt).
  * - Consumo: cada línea de venta (manual, POS o factura) con receta o menú se expande a
- *   ingredientes base con lib/recipe-consumption.ts (sub-recetas escaladas por su
+ *   ingredientes base con lib/recipe-consumption.ts (subrecetas escaladas por su
  *   rendimiento, merma en cantidad bruta). Vender N unidades = N porciones del
  *   rendimiento de la receta (mismo criterio que el costo teórico de las ventas). Un menú
  *   vendido = 1 porción de cada plato habilitado (mismo criterio que getMenuUnitPriceAndCost).

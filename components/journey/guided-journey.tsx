@@ -19,7 +19,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { ArrowLeft, ArrowRight, Compass, Lightbulb, MousePointerClick, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useConfirmDialog } from "@/components/confirm-dialog"
-import { computePlacement, computeTooltipPosition, getRect, type Placement, type Rect } from "@/components/page-tour"
+import { TOUR_DIM, TOUR_RING, computePlacement, computeTooltipPosition, getRect, isActuallyVisible, type Placement, type Rect } from "@/components/page-tour"
 import { CHAPTER_GO, CHAPTER_STEPS, type JourneyLive } from "@/components/journey/chapters"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
@@ -97,7 +97,8 @@ function looksExisting(ingredients: number, recipes: number): boolean {
 function visibleRect(selector: string | null): Rect | null {
   if (!selector) return null
   const el = document.querySelector(selector)
-  if (!el) return null
+  // Dentro de una lista plegada cerrada no cuenta como visible (docs/225).
+  if (!el || !isActuallyVisible(el)) return null
   const r = getRect(el)
   if (r.width <= 0 || r.height <= 0) return null
   // Fuera de la pantalla hacia los lados = oculto (p. ej. el menú lateral cerrado en el celular).
@@ -607,7 +608,7 @@ export function GuidedJourney() {
         <div
           aria-hidden
           className="pointer-events-none fixed z-[1000] transition-all duration-300 ease-out"
-          style={{ top: r.top - 4, left: r.left - 4, width: r.width + 8, height: r.height + 8, borderRadius: 12, boxShadow: "0 0 0 3px hsl(var(--primary)), 0 0 0 9999px rgba(8, 10, 20, 0.35)" }}
+          style={{ top: r.top - 6, left: r.left - 6, width: r.width + 12, height: r.height + 12, borderRadius: 12, boxShadow: `${TOUR_RING}, 0 0 0 9999px ${TOUR_DIM}` }}
         />
         <div
           aria-hidden
@@ -723,10 +724,12 @@ export function GuidedJourney() {
     <>
       {createPortal(
         <div className="print:hidden" data-journey-coach="">
-          {/* Resaltado: no bloquea los clics, la pantalla sigue usable. */}
+          {/* Resaltado: no bloquea los clics, la pantalla sigue usable. Con una lista
+              desplegable abierta (Select, Popover) no se oscurece nada: la lista queda
+              debajo (z-50) y se veía apagada, como desactivada (docs/225). */}
           <div
             aria-hidden
-            className="pointer-events-none fixed z-[1000] transition-all duration-300 ease-out"
+            className={`pointer-events-none fixed z-[1000] transition-all duration-300 ease-out ${popperOpen ? "opacity-0" : "opacity-100"}`}
             style={
               rect
                 ? {
@@ -735,12 +738,12 @@ export function GuidedJourney() {
                     width: rect.width + 12,
                     height: rect.height + 12,
                     borderRadius: 12,
-                    boxShadow: "0 0 0 3px hsl(var(--primary)), 0 0 0 9999px rgba(8, 10, 20, 0.45)",
+                    boxShadow: `${TOUR_RING}, 0 0 0 9999px ${TOUR_DIM}`,
                   }
-                : { inset: 0, boxShadow: "inset 0 0 0 9999px rgba(8, 10, 20, 0.45)" }
+                : { inset: 0, boxShadow: `inset 0 0 0 9999px ${TOUR_DIM}` }
             }
           />
-          {rect && waitingForAction && (
+          {rect && waitingForAction && !popperOpen && (
             <div
               aria-hidden
               className="pointer-events-none fixed z-[1000] animate-pulse rounded-xl"

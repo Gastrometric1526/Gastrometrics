@@ -6,7 +6,7 @@
  * Las métricas lo respaldaban: Inventario, Menús y Órdenes de compra se visitaban sin
  * usarse (sin recetas no tienen con qué trabajar).
  *
- * Etapas, según las recetas propias (no sub-recetas) de todos los negocios de la cuenta:
+ * Etapas, según las recetas propias (no subrecetas) de todos los negocios de la cuenta:
  *   0 recetas → Dashboard, Ficha Técnica, Mis Recetas, Ingredientes, Negocios
  *   1+        → + Reportes y Ventas
  *   3+        → + Inventario, Menús, MEP (docs/202), Órdenes de compra y Equipo

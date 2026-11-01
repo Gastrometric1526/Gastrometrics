@@ -108,7 +108,7 @@ export function unitCostPercent(recipe: Recipe, price: number, unitCost: number)
 /**
  * Receta guardada sin precio de venta (p. ej. la receta de ejemplo antes de docs/223, que
  * nunca pasó por la Ficha Técnica): se le da el sugerido, igual que mostraría la Ficha, para
- * que PDF, menús, Dashboard y respaldo no digan 0. Las sub-recetas no se tocan.
+ * que PDF, menús, Dashboard y respaldo no digan 0. Las subrecetas no se tocan.
  */
 export function withMissingPrice(recipe: Recipe, currencyCode: string): Recipe {
   if (recipe.isSubRecipe || currentUnitPrice(recipe) > 0) return recipe

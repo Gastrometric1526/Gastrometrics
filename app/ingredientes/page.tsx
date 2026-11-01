@@ -776,7 +776,7 @@ export default function IngredientesPage() {
           t("price_rule_toast_desc").replace("{raised}", String(priceRule.raised)).replace("{kept}", String(priceRule.kept)),
         )
       }
-      // Sub-recetas con precio de venta propio cuyo costo subió (docs/164): se pregunta.
+      // Subrecetas con precio de venta propio cuyo costo subió (docs/164): se pregunta.
       requestSubRecipePricePrompt(businessId || "main", recalcResults)
 
       // Importación masiva en el registro real (docs/208, docs/211): la ve /admin con su origen,

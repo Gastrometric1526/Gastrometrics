@@ -49,6 +49,36 @@ export function getRect(el: Element): Rect {
   return { top: r.top, left: r.left, width: r.width, height: r.height }
 }
 
+/**
+ * Mismo aspecto en los dos tutoriales (docs/225): el de cada página y el guiado oscurecen
+ * igual y usan el mismo anillo, así no parecen dos sistemas distintos.
+ */
+export const TOUR_DIM = "rgba(8, 10, 20, 0.6)"
+export const TOUR_RING = "0 0 0 3px hsl(var(--primary))"
+
+/**
+ * ¿Se ve de verdad? (docs/225) Un elemento dentro de una lista plegada, un acordeón cerrado
+ * o un <details> cerrado sigue en el DOM pero no se ve: su caja mide 0 o queda recortada
+ * por un ancestro con overflow oculto. Antes el tutorial lo resaltaba en un hueco vacío.
+ */
+export function isActuallyVisible(el: Element): boolean {
+  const r = el.getBoundingClientRect()
+  if (r.width <= 0 || r.height <= 0) return false
+  const closedDetails = el.closest("details:not([open])")
+  if (closedDetails && !el.closest("summary")) return false
+  for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+    const cs = getComputedStyle(p)
+    if (cs.display === "none" || cs.visibility === "hidden") return false
+    // Lista plegada (alto o ancho 0 con overflow que recorta). No se mira si el elemento
+    // queda fuera de un contenedor con scroll: ese caso se resuelve desplazándose hasta él.
+    if (/(hidden|clip)/.test(cs.overflow + cs.overflowY + cs.overflowX)) {
+      const pr = p.getBoundingClientRect()
+      if (pr.height < 2 || pr.width < 2) return false
+    }
+  }
+  return true
+}
+
 export function computePlacement(rect: Rect, vw: number, vh: number): Placement {
   const spaceBelow = vh - (rect.top + rect.height)
   const spaceAbove = rect.top
@@ -262,7 +292,9 @@ export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finish
     // document.querySelector, que fallaría siempre en ese caso.
     const findAndTrack = (attemptsLeft: number) => {
       if (cancelled) return
-      const el = document.querySelector(step.selector as string)
+      const found = document.querySelector(step.selector as string)
+      // Dentro de una lista plegada cerrada cuenta como «no está»: el paso va al centro.
+      const el = found && isActuallyVisible(found) ? found : null
       if (!el) {
         if (attemptsLeft <= 0) {
           setRect(null)
@@ -289,11 +321,19 @@ export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finish
       }
       trackingRaf = requestAnimationFrame(loop)
       stopTimer = setTimeout(() => cancelAnimationFrame(trackingRaf), 650)
+      // docs/225: si una lista se pliega o despliega (o carga algo) después, el resaltado
+      // sigue al elemento; antes se quedaba donde estaba a los 650 ms.
+      const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => update()) : null
+      resizeObserver?.observe(el)
+      resizeObserver?.observe(document.body)
+      const settle = setInterval(update, 400)
 
       window.addEventListener("resize", update)
       window.addEventListener("scroll", update, { passive: true })
       cleanupTracking = () => {
         cancelAnimationFrame(trackingRaf)
+        resizeObserver?.disconnect()
+        clearInterval(settle)
         window.removeEventListener("resize", update)
         window.removeEventListener("scroll", update)
       }
@@ -436,10 +476,10 @@ export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finish
                 height: holeStyle.height,
                 position: "fixed",
                 borderRadius: 12,
-                boxShadow: "0 0 0 4px hsl(var(--primary)), 0 0 0 9999px rgba(8, 10, 20, 0.78)",
+                boxShadow: `${TOUR_RING}, 0 0 0 9999px ${TOUR_DIM}`,
                 pointerEvents: "auto",
               }
-            : { boxShadow: "0 0 0 9999px rgba(8, 10, 20, 0.78)", pointerEvents: "auto" }
+            : { boxShadow: `0 0 0 9999px ${TOUR_DIM}`, pointerEvents: "auto" }
         }
       />
 

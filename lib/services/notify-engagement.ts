@@ -114,7 +114,7 @@ export interface EngagementFacts {
   isMonday: boolean
   planSlug: string
   recipeCount: number
-  recipeCreatedTimes: number[] // recetas propias (no sub-recetas), en orden
+  recipeCreatedTimes: number[] // recetas propias (no subrecetas), en orden
   avgFoodCostPct: number | null
   marginIssues: MarginIssue[]
   lowStock: { name: string; current: number; min: number; unit: string }[]

@@ -39,8 +39,8 @@ export const EMPTY_JOURNEY: JourneyState = { started: false, existing: false, sk
 
 /** Lo que el recorrido sabe de la cuenta en este momento. */
 export type JourneyFacts = {
-  ingredients: number // ingredientes propios (sin sub-recetas)
-  recipes: number // recetas propias (sin sub-recetas)
+  ingredients: number // ingredientes propios (sin subrecetas)
+  recipes: number // recetas propias (sin subrecetas)
   menus: number // menús del negocio principal
   mermaActive: boolean // algún ingrediente con merma activada (guardada)
   features: Partial<Record<FeatureKey, boolean>>

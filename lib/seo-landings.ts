@@ -41,14 +41,14 @@ export const seoLandings: SeoLanding[] = [
     navLabel: "Software de costeo de recetas",
     title: "Software de costeo de recetas para restaurantes — Gastrometrics",
     description:
-      "Calcula el costo real de cada plato, el precio de venta sugerido y tu food cost. Fichas técnicas, sub-recetas, merma, inventario y menús. Plan gratis para siempre.",
+      "Calcula el costo real de cada plato, el precio de venta sugerido y tu food cost. Fichas técnicas, subrecetas, merma, inventario y menús. Plan gratis para siempre.",
     h1: "Software de costeo de recetas para restaurantes y cocinas",
     lead: "Carga tus ingredientes con su precio real, arma la ficha técnica y Gastrometrics calcula solo el costo de cada plato, el costo por porción y el precio de venta sugerido. Sin hojas de cálculo.",
     ctaButton: "Crear cuenta gratis",
     sections: [
       {
         h2: "El costo real de cada plato, siempre al día",
-        body: "Cada ingrediente guarda su precio de compra, su contenido y su merma, así que el costo por gramo o mililitro es el real. Cuando sube el precio de un insumo, se recalculan solas todas las recetas que lo usan, también las que lo llevan dentro de una sub-receta, y el precio de venta solo sube si el costo lo deja corto.",
+        body: "Cada ingrediente guarda su precio de compra, su contenido y su merma, así que el costo por gramo o mililitro es el real. Cuando sube el precio de un insumo, se recalculan solas todas las recetas que lo usan, también las que lo llevan dentro de una subreceta, y el precio de venta solo sube si el costo lo deja corto.",
       },
       {
         h2: "Precio de venta con Food Cost % o con tus costos fijos",
@@ -62,7 +62,7 @@ export const seoLandings: SeoLanding[] = [
     featuresTitle: "Qué incluye",
     features: [
       "Fichas técnicas con costo total, costo por porción y precio sugerido",
-      "Sub-recetas (salsas, bases) que se usan como ingredientes",
+      "Subrecetas (salsas, bases) que se usan como ingredientes",
       "Sistema de merma por ingrediente",
       "Importa ingredientes y recetas desde Excel, PDF, texto, fotos y tickets",
       "Inventario, menús y órdenes de compra",
@@ -75,7 +75,7 @@ export const seoLandings: SeoLanding[] = [
     faq: [
       { q: "¿Es gratis?", a: "Sí. El plan Foodie es gratis para siempre e incluye la base de ingredientes, fichas técnicas ilimitadas, importación y el PDF de cocina. Los planes de pago agregan merma, inventario, menús, órdenes de compra y finanzas." },
       { q: "¿Cómo se calcula el precio de venta sugerido?", a: "Con Food Cost %: precio = costo por porción ÷ food cost objetivo, más ISV si lo usas y cubriendo la comisión de venta. Con el método de 6 rubros: costo más los porcentajes de cada rubro y tu costo fijo por plato. En ambos casos se redondea hacia arriba." },
-      { q: "¿Qué pasa cuando sube el precio de un ingrediente?", a: "Todas las recetas que lo usan se recalculan solas, en cualquier nivel de sub-receta. Si el nuevo costo deja corto tu precio, el precio sube al sugerido; si el costo baja, tu precio se mantiene y ganas margen." },
+      { q: "¿Qué pasa cuando sube el precio de un ingrediente?", a: "Todas las recetas que lo usan se recalculan solas, en cualquier nivel de subreceta. Si el nuevo costo deja corto tu precio, el precio sube al sugerido; si el costo baja, tu precio se mantiene y ganas margen." },
       { q: "¿Necesito instalar algo?", a: "No. Funciona en el navegador de tu computadora o celular, y si quieres puedes instalarlo como app." },
     ],
     closingTitle: "Empieza con tu primer plato hoy",

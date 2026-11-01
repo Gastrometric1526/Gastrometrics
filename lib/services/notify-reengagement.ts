@@ -561,7 +561,7 @@ export async function runReengagementReminders(options: { dryRun?: boolean } = {
     ]
     const reportsVisit = acts.find((a) => a.module === "estadisticas" && a.action === "entered")
     const staleIngredients = (ingredientsBy.get(account.id) ?? []).filter((i) => {
-      if (i.recipe_id) return false // sub-receta: su precio se calcula solo
+      if (i.recipe_id) return false // subreceta: su precio se calcula solo
       const t = i.price_updated ? new Date(i.price_updated).getTime() : NaN
       return !Number.isNaN(t) && now - t > R.priceStaleDays * DAY_MS
     }).length

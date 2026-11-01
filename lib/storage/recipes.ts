@@ -80,7 +80,7 @@ export function ensureRecipesLoaded(businessId?: string | null): Promise<void> {
 }
 
 /**
- * Recetas propias (no sub-recetas) de la cuenta en todos sus negocios, para la
+ * Recetas propias (no subrecetas) de la cuenta en todos sus negocios, para la
  * revelación de módulos y la encuesta rápida (docs/147). Solo cuenta (head: true),
  * no descarga filas. null si falla.
  */

@@ -194,7 +194,7 @@ export default function MisRecetasPage() {
   )
   const [selectedTargetBusiness, setSelectedTargetBusiness] = useState<string>("")
   const [isMigrating, setIsMigrating] = useState(false)
-  // docs/137: migrar con ingredientes y sub-recetas (true) o solo la receta, eligiendo después
+  // docs/137: migrar con ingredientes y subrecetas (true) o solo la receta, eligiendo después
   // los ingredientes desde la base del negocio destino (false).
   const [migrateWithIngredients, setMigrateWithIngredients] = useState(true)
   // Hay algún destino válido si hay otros negocios visibles, o si el destino sería
@@ -349,7 +349,7 @@ export default function MisRecetasPage() {
 
       if (recipeToMigrate.classification === SUBRECIPE_CLASSIFICATION || recipeToMigrate.isSubRecipe) {
         await syncSubRecipeToIngredient(migratedRecipe, selectedTargetBusiness)
-        console.log("✅ Sub-receta sincronizada en destino")
+        console.log("✅ Subreceta sincronizada en destino")
       }
 
       window.dispatchEvent(

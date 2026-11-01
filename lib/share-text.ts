@@ -59,7 +59,7 @@ export function mepShareText(input: {
     out.push("", `— ${labels.sentWith}`)
     return out.join("\n")
   }
-  // Por paso (docs/207): cada plato y, debajo, sus sub-recetas con la cantidad de ese plato.
+  // Por paso (docs/207): cada plato y, debajo, sus subrecetas con la cantidad de ese plato.
   if (input.dishes.length) {
     out.push("", `*${labels.dishes}*`)
     for (const group of groupDishesByStep(input.dishes)) {

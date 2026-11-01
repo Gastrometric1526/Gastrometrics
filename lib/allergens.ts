@@ -1,4 +1,4 @@
-// Alérgenos (docs/137). Se marcan en cada ingrediente y la receta los hereda sola, sub-recetas
+// Alérgenos (docs/137). Se marcan en cada ingrediente y la receta los hereda sola, subrecetas
 // incluidas — nunca se escriben a mano en la receta, así no quedan desactualizados. Lista: los
 // 14 alérgenos de declaración obligatoria del Reglamento (UE) 1169/2011, que es la referencia
 // más usada también fuera de Europa.
@@ -36,8 +36,8 @@ export function isAllergenKey(value: string): value is AllergenKey {
 
 /**
  * Alérgenos de una receta: la unión de los de sus ingredientes. Si una línea es una
- * sub-receta (ingrediente con recipeId), se suman también los alérgenos de esa receta,
- * recursivamente. `visited` evita ciclos si una sub-receta se usara a sí misma.
+ * subreceta (ingrediente con recipeId), se suman también los alérgenos de esa receta,
+ * recursivamente. `visited` evita ciclos si una subreceta se usara a sí misma.
  * Devuelve las claves en el orden de ALLERGENS.
  */
 export function getRecipeAllergens(

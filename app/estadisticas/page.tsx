@@ -259,7 +259,7 @@ function EstadisticasContent() {
     load()
   }, [businessId])
 
-  // Solo platos que se venden: una sub-receta (la salsa) tiene precio sugerido pero no se
+  // Solo platos que se venden: una subreceta (la salsa) tiene precio sugerido pero no se
   // vende sola; contarla subía el costo % promedio y movía «Mejor/peor margen» (docs/218).
   // Igual que el margen promedio del Dashboard.
   const recipesWithPricing = useMemo(
@@ -267,7 +267,7 @@ function EstadisticasContent() {
     [recipes],
   )
 
-  // Pedido explícito del dueño del proyecto: una sub-receta (SUBRECIPE_CLASSIFICATION,
+  // Pedido explícito del dueño del proyecto: una subreceta (SUBRECIPE_CLASSIFICATION,
   // ver lib/subrecipe/core.ts) crea/actualiza automáticamente un ingrediente vinculado
   // en la base de datos (categoría "Sub Receta / produccion (Mise en place)") para que
   // otras recetas puedan usarla como si fuera un ingrediente más — pero esa fila NO es
@@ -318,14 +318,14 @@ function EstadisticasContent() {
       .slice(0, 6)
   }, [realIngredients])
 
-  // Pedido explícito del dueño del proyecto: aunque las sub-recetas no cuenten como
+  // Pedido explícito del dueño del proyecto: aunque las subrecetas no cuenten como
   // ingrediente (arriba), siempre debe haber datos propios sobre ellas — en cuántas
-  // recetas se usa cada una y qué cantidad total de esa sub-receta piden en conjunto.
+  // recetas se usa cada una y qué cantidad total de esa subreceta piden en conjunto.
   // No existe en la app ningún registro de "veces que se preparó/produjo" una receta
   // (no hay lotes de producción, solo fichas técnicas e inventario de ingredientes
   // comprados) — lo más real y verificable que se puede mostrar es el uso DENTRO de
   // otras recetas: `RecipeIngredient.ingredientId` enlaza directo al `Ingredient.id`
-  // que syncSubRecipeToIngredient (lib/subrecipe/core.ts) generó para cada sub-receta,
+  // que syncSubRecipeToIngredient (lib/subrecipe/core.ts) generó para cada subreceta,
   // así que esto no es una aproximación por nombre — es el mismo vínculo que ya usa el
   // costeo en cascada (lib/recalculate.ts) para saber qué recetas recalcular.
   const subRecipeUsage = useMemo(() => {
@@ -733,9 +733,9 @@ function EstadisticasContent() {
                       </CardContent>
                     </Card>
 
-                    {/* Sub-recetas: en cuántas recetas se usa cada una y qué cantidad total
+                    {/* Subrecetas: en cuántas recetas se usa cada una y qué cantidad total
                         piden en conjunto — pedido explícito del dueño del proyecto: que
-                        siempre haya datos propios de sub-recetas, no solo excluirlas del
+                        siempre haya datos propios de subrecetas, no solo excluirlas del
                         conteo de ingredientes (ver nota en el useMemo subRecipeUsage). */}
                     {subRecipeUsage.length > 0 && (
                       <Card className="border-border bg-card">

@@ -56,7 +56,7 @@ export function mermaInsights(ingredients: Ingredient[], observations: PriceObse
   const rows: MermaRow[] = []
   const suggestions: MermaSummary["suggestions"] = []
   for (const ing of ingredients) {
-    if (ing.recipeId) continue // sub-recetas: su merma viene de sus ingredientes
+    if (ing.recipeId) continue // subrecetas: su merma viene de sus ingredientes
     const usableNow = ing.pricing?.netContent || 0
     const original = ing.originalNetContent && ing.originalNetContent > 0 ? ing.originalNetContent : usableNow
     if (!ing.merma?.enabled) {

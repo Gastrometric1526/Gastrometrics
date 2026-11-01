@@ -202,7 +202,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
   const [targetFoodCostPercent, setTargetFoodCostPercent] = useState<number>(DEFAULT_TARGET_FOOD_COST_PERCENT)
   // Comisión de delivery/tarjeta en % del precio de venta (docs/137). 0 = sin comisión.
   const [salesCommissionPercent, setSalesCommissionPercent] = useState<number>(0)
-  // Solo sub-recetas (docs/164): qué hacer con su precio de venta escrito a mano cuando la
+  // Solo subrecetas (docs/164): qué hacer con su precio de venta escrito a mano cuando la
   // cascada de costos lo deja corto. Aquí se cambia o se desmarca «Recordar mi elección».
   const [subRecipePriceUpdate, setSubRecipePriceUpdate] = useState<SubRecipePriceMode>("ask")
   // Moneda vigente: define el escalón de redondeo del precio sugerido (lib/price-rounding.ts).
@@ -1111,7 +1111,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
 
       if (savedRecipe.classification === SUBRECIPE_CLASSIFICATION) {
         await syncSubRecipeToIngredient(savedRecipe, businessId)
-        // Cascada completa (docs/164): los platos y sub-recetas que usan esta sub-receta
+        // Cascada completa (docs/164): los platos y subrecetas que usan esta subreceta
         // se recalculan ya, con la misma regla de precio que al cambiar un ingrediente.
         try {
           const cascade = await recalculateDependentsOfSubRecipe(businessId, savedRecipe.id)
@@ -1128,7 +1128,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
             requestSubRecipePricePrompt(businessId, [cascade], savedRecipe.name)
           }
         } catch (error) {
-          console.error("[technical-sheet] Cascada de sub-receta:", error)
+          console.error("[technical-sheet] Cascada de subreceta:", error)
         }
       }
 
@@ -1323,7 +1323,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
   }, [linesWithIngredient, costedLines, recipe.yieldAmount, recipe.name])
 
   return (
-    <div className="container mx-auto py-6 space-y-6 max-w-6xl">
+    <div className="mx-auto w-full max-w-6xl space-y-4 py-2 sm:space-y-6 sm:py-6">
       <ActionHint
         id="ficha-first-ingredient"
         when={mode === "new" && costedLines > 0}
@@ -1387,10 +1387,10 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
         </div>
       )}
       <Card className="w-full mx-auto">
-        <CardHeader>
+        <CardHeader className="px-3 sm:px-6">
           <CardTitle className="text-2xl">{t("nav_ficha_tecnica")}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-3 sm:px-6">
           {/* La imagen va al lado solo desde lg (docs/208): en tablet el formulario quedaba en
               columnas de ~170 px y el número del Rendimiento no se veía. */}
           <div className="flex flex-col lg:flex-row gap-6">
@@ -1663,10 +1663,10 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       </Card>
 
       <Card className="w-full mx-auto" data-tour="ficha-ingredients-table">
-        <CardHeader>
+        <CardHeader className="px-3 sm:px-6">
           <CardTitle>{t("nav_ingredientes")}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-3 sm:px-6">
           {/* Líneas con nombre pero sin ingrediente de ESTE negocio — típicamente una receta
               migrada "solo la receta" (docs/137). Se eligen desde la base de este negocio. */}
           {unlinkedIngredientNames.length > 0 && (
@@ -1835,7 +1835,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       </Card>
 
       <Card className="w-full mx-auto border-2">
-        <CardContent className="pt-6">
+        <CardContent className="px-3 pt-6 sm:px-6">
           <div className="space-y-2">
             <h3 className="text-lg font-semibold">{t("ficha_tecnica_total_production_cost")}</h3>
             <p className="text-3xl font-bold">
@@ -1845,9 +1845,9 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
         </CardContent>
       </Card>
 
-      {/* Alérgenos (docs/137): se heredan de los ingredientes y sub-recetas, nunca a mano. */}
+      {/* Alérgenos (docs/137): se heredan de los ingredientes y subrecetas, nunca a mano. */}
       <Card className="w-full mx-auto">
-        <CardContent className="pt-6 space-y-2">
+        <CardContent className="space-y-2 px-3 pt-6 sm:px-6">
           <h3 className="text-base font-semibold">{t("allergens_label")}</h3>
           {recipeAllergens.length > 0 ? (
             <div className="flex flex-wrap gap-2">
@@ -1865,10 +1865,10 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       </Card>
 
       <Card className="w-full mx-auto">
-        <CardHeader>
+        <CardHeader className="px-3 sm:px-6">
           <CardTitle>{t("ficha_tecnica_procedure_title")}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-3 sm:px-6">
           {isEditMode ? (
             <div className="space-y-2">
               {recipe.procedure.map((step, index) => (
@@ -1904,7 +1904,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       </Card>
 
       <Card className="w-full mx-auto" data-tour="ficha-pricing">
-        <CardHeader>
+        <CardHeader className="px-3 sm:px-6">
           <div className="flex items-center justify-between">
             <CardTitle>{t("tour_ficha_pricing_title")}</CardTitle>
             <div className="flex items-center gap-1">
@@ -2012,7 +2012,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-3 sm:px-6">
           <div className="mb-5 space-y-3 rounded-lg border bg-muted/30 p-4" data-journey="ficha-pricing-method">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div>
@@ -2086,7 +2086,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
             )}
           </div>
 
-          {/* Sub-recetas (docs/164): qué pasa con su precio de venta escrito a mano cuando
+          {/* Subrecetas (docs/164): qué pasa con su precio de venta escrito a mano cuando
               sube su costo. Es también donde se desmarca «Recordar mi elección». */}
           {recipe.classification === SUBRECIPE_CLASSIFICATION && (
             <div className="space-y-1 border-b py-3" data-tour="ficha-subrecipe-price-mode">
@@ -2259,10 +2259,10 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       </Card>
 
       <Card className="w-full mx-auto" data-tour="ficha-summary">
-        <CardHeader>
+        <CardHeader className="px-3 sm:px-6">
           <CardTitle>{t("tour_ficha_summary_title")}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-3 sm:px-6">
           <Table>
             <TableHeader>
               <TableRow>

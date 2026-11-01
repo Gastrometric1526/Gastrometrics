@@ -15,7 +15,7 @@ import { formatDateTime } from "@/lib/date-format"
 // "porciones"...), no como la palabra completa que usa Ingredient.unit ("gramos",
 // "kilogramos"...) — BUG CORREGIDO: esta función comparaba yieldUnit directo contra
 // esa lista de palabras completas, así que nunca coincidía (ni con el default
-// histórico "g" ni con ningún valor real del selector) y todo sub-receta convertida a
+// histórico "g" ni con ningún valor real del selector) y todo subreceta convertida a
 // ingrediente caía siempre a "unidad", sin importar el rendimiento real. Ahora se
 // traduce primero por la abreviatura conocida; "porciones" (sin equivalente de
 // ingrediente) y cualquier valor no reconocido siguen cayendo a "unidad".

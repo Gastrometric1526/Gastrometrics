@@ -431,7 +431,7 @@ export function generateMenuIngredientList(businessId: string, menu: Menu): Purc
  * Genera la lista de ingredientes necesarios para UNA sola receta (usada por
  * "Generar Orden de Compra" desde Ficha Técnica) — mismo mecanismo que
  * generateMenuIngredientList arriba (buildPurchaseOrderData con el inventario actual
- * ya restado, expansión de sub-recetas incluida), solo que con un único recipeId en
+ * ya restado, expansión de subrecetas incluida), solo que con un único recipeId en
  * vez de los de todo un menú. `compax` es el mismo multiplicador que ya usa el
  * Modificador de PAX de Ficha Técnica (rendimiento deseado ÷ rendimiento base) — 1 si
  * el PAX no está activo, para pedir exactamente lo que la receta guardada necesita.

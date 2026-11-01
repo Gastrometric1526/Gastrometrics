@@ -54,7 +54,7 @@ export function sortPurchaseOrderItemsBySupplier<T extends { supplier?: string; 
 // Orden alterna para la orden generada directo desde un menú (ver
 // components/purchase-order-page.tsx, handler de ?fromMenu=): ahí el pedido explícito
 // del dueño del proyecto fue agrupar por categoría, no por proveedor — la pantalla ya
-// llega con todos los ingredientes de los platos y sus sub-recetas, y agrupar por
+// llega con todos los ingredientes de los platos y sus subrecetas, y agrupar por
 // categoría es como se recorre físicamente una bodega. No reemplaza
 // sortPurchaseOrderItemsBySupplier (decisión de negocio ya documentada arriba, usada
 // en el flujo manual y en el auto-sugerido) — es una función aparte, para un flujo aparte.
@@ -108,8 +108,8 @@ export function buildPurchaseOrderData({
   const warnings: string[] = []
 
   // Expansión a ingredientes base con la regla única de lib/recipe-consumption.ts
-  // (docs/134): sub-recetas escaladas por su rendimiento y merma convertida a cantidad
-  // bruta — antes las sub-recetas se multiplicaban por la cantidad usada sin dividir por
+  // (docs/134): subrecetas escaladas por su rendimiento y merma convertida a cantidad
+  // bruta — antes las subrecetas se multiplicaban por la cantidad usada sin dividir por
   // su rendimiento (150 g de una salsa pedía 150 veces la receta completa).
   const recipesById = indexById(recipes)
   const ingredientsById = indexById(ingredients)

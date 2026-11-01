@@ -1,6 +1,6 @@
 "use client"
 
-// Pregunta de docs/164: cuando la cascada de costos sube el costo de sub-recetas que
+// Pregunta de docs/164: cuando la cascada de costos sube el costo de subrecetas que
 // tienen un precio de venta escrito a mano (y están en «Preguntarme»), esta ventana pide
 // permiso antes de subir ese precio. Los platos finales ya subieron solos (docs/162).
 // Montada una sola vez en app/layout.tsx; la abre el evento SUBRECIPE_PRICE_PROMPT_EVENT

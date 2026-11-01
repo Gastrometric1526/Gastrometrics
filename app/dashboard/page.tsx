@@ -220,7 +220,7 @@ export default function DashboardPage() {
       },
       {
         title: t("stat_ingredients"),
-        // Sin las filas que reflejan sub-recetas: ya cuentan como receta; igual que Reportes e
+        // Sin las filas que reflejan subrecetas: ya cuentan como receta; igual que Reportes e
         // Ingredientes (docs/218). Antes el Dashboard decía 9 y Reportes 8.
         value: allIngredients.filter((ing) => ing.category !== SUBRECIPE_CLASSIFICATION).length.toString(),
         icon: Package,

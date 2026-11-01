@@ -48,7 +48,7 @@ describe("correcciones de la revisión en la cuenta real (docs/218)", () => {
 describe("sub-recetas en pantalla (docs/218)", () => {
   it("la categoría de una sub-receta se traduce", async () => {
     const { getCategoryLabel } = await import("@/lib/ingredient-labels")
-    expect(getCategoryLabel("Sub Receta / produccion (Mise en place)", "es")).toBe("Sub-receta")
+    expect(getCategoryLabel("Sub Receta / produccion (Mise en place)", "es")).toBe("Subreceta") // RAE: prefijo unido (docs/225)
     expect(getCategoryLabel("Sub Receta / produccion (Mise en place)", "en")).toBe("Sub-recipe")
     expect(getCategoryLabel("VEGETAL", "es")).toBe("VEGETAL")
   })

@@ -107,7 +107,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "2026-10-27",
     tutorialHref: tourHref("mep"),
     content: {
-      es: { title: "MEP: cada plato con sus sub-recetas", items: ["En la MEP, cada plato lleva debajo sus sub-recetas con la cantidad que necesita ese plato, como una checklist. Toca una para ver su receta completa.", "Al final, «Total por sub-receta» suma lo de todos los platos, por si la preparas de una vez. El PDF y el mensaje de WhatsApp siguen el mismo orden."] },
+      es: { title: "MEP: cada plato con sus subrecetas", items: ["En la MEP, cada plato lleva debajo sus subrecetas con la cantidad que necesita ese plato, como una checklist. Toca una para ver su receta completa.", "Al final, «Total por subreceta» suma lo de todos los platos, por si la preparas de una vez. El PDF y el mensaje de WhatsApp siguen el mismo orden."] },
       en: { title: "MEP: each dish with its sub-recipes", items: ["In the MEP, each dish has its sub-recipes below with the amount that dish needs, like a checklist. Tap one to see its full recipe.", "At the end, “Total per sub-recipe” adds up all dishes, in case you make it at once. The PDF and the WhatsApp message follow the same order."] },
       da: { title: "MEP: hver ret med sine underopskrifter", items: ["I MEP har hver ret sine underopskrifter nedenfor med den mængde, retten skal bruge, som en tjekliste. Tryk på en for at se hele opskriften.", "Til sidst lægger «Total pr. underopskrift» alle retter sammen, hvis du laver den på én gang. PDF’en og WhatsApp-beskeden følger samme rækkefølge."] },
       fr: { title: "MEP : chaque plat avec ses sous-recettes", items: ["Dans la MEP, chaque plat a ses sous-recettes en dessous avec la quantité dont il a besoin, comme une checklist. Touchez-en une pour voir la recette complète.", "À la fin, « Total par sous-recette » additionne tous les plats, si vous la préparez en une fois. Le PDF et le message WhatsApp suivent le même ordre."] },
@@ -828,12 +828,12 @@ export const CHANGELOG: ChangelogEntry[] = [
     tutorialHref: tourHref("ficha-tecnica"),
     content: {
       es: {
-        title: "Sub-recetas: costos al día en toda la cadena",
+        title: "Subrecetas: costos al día en toda la cadena",
         items: [
-          "Si sube un ingrediente, ahora también se recalculan los platos que lo usan a través de una sub-receta (por ejemplo, los que llevan la salsa y no el tomate suelto), en cualquier nivel. Sus precios siguen la regla de siempre: solo suben.",
-          "Si una sub-receta tiene un precio de venta que escribiste a mano y su costo sube, la app te pregunta si también quieres subir ese precio: todas, una por una o ninguna, y puedes recordar tu elección.",
-          "En la Ficha Técnica de cada sub-receta eliges qué hacer con su precio cuando sube el costo: preguntarme, actualizar siempre o no actualizar nunca. Ahí también desmarcas una elección que recordaste.",
-          "Guardar una sub-receta recalcula al instante las recetas que la usan.",
+          "Si sube un ingrediente, ahora también se recalculan los platos que lo usan a través de una subreceta (por ejemplo, los que llevan la salsa y no el tomate suelto), en cualquier nivel. Sus precios siguen la regla de siempre: solo suben.",
+          "Si una subreceta tiene un precio de venta que escribiste a mano y su costo sube, la app te pregunta si también quieres subir ese precio: todas, una por una o ninguna, y puedes recordar tu elección.",
+          "En la Ficha Técnica de cada subreceta eliges qué hacer con su precio cuando sube el costo: preguntarme, actualizar siempre o no actualizar nunca. Ahí también desmarcas una elección que recordaste.",
+          "Guardar una subreceta recalcula al instante las recetas que la usan.",
         ],
       },
       en: {
@@ -1368,7 +1368,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       es: {
         title: "Más novedades en Gastrometrics",
         items: [
-          "Migrar recetas a otro negocio ahora te pregunta: llevar también sus ingredientes y sub-recetas, o solo la receta. Si eliges solo la receta, se abre su ficha en ese negocio para que elijas los ingredientes de su propia base de datos.",
+          "Migrar recetas a otro negocio ahora te pregunta: llevar también sus ingredientes y subrecetas, o solo la receta. Si eliges solo la receta, se abre su ficha en ese negocio para que elijas los ingredientes de su propia base de datos.",
           "Corregido: al migrar una receta con sus ingredientes, los ingredientes no se guardaban en el negocio destino. Ahora sí, y sin duplicar los que ya existían.",
           "PDF: la foto del plato sale más grande y sin deformarse en las tres fichas técnicas (la administrativa ahora también la incluye), y el logo de tu negocio aparece en todos los PDF, incluida la carta para tus clientes.",
           "Las fotos que subes a una receta se optimizan solas: pesan mucho menos y siempre se ven en el PDF.",
@@ -1535,7 +1535,7 @@ export const CHANGELOG: ChangelogEntry[] = [
           "Todos los correos y las fechas de la app ahora respetan siempre el idioma que tienes seleccionado.",
           "El plan Sous Chef ahora incluye Equipo: invita a 1 persona con permisos por función (Chef Ejecutivo, hasta 4).",
           "Nuevo en Inventario: stock teórico. Cada producto muestra cuánto debería quedar según tus ventas registradas y, al contar de nuevo, la diferencia con lo esperado para detectar mermas o faltantes.",
-          "Las órdenes de compra generadas desde un menú o una receta ahora descuentan lo que ya tienes en inventario y calculan bien las cantidades de las sub-recetas.",
+          "Las órdenes de compra generadas desde un menú o una receta ahora descuentan lo que ya tienes en inventario y calculan bien las cantidades de las subrecetas.",
         ],
       },
       en: {
@@ -1854,7 +1854,7 @@ export const CHANGELOG: ChangelogEntry[] = [
         title: "Novedades en GastroMetrics",
         items: [
           "El Dashboard ahora te dice qué hacer hoy: ingredientes bajo mínimo, recetas sin precio de venta y tu margen promedio — un clic te lleva directo a cada uno.",
-          "Las sub-recetas ya no muestran precio de venta ni desglose de ganancia en su ficha — solo el costo real, que es lo único que les aplica.",
+          "Las subrecetas ya no muestran precio de venta ni desglose de ganancia en su ficha — solo el costo real, que es lo único que les aplica.",
           "La Ficha Técnica avisa cuando un dato parece un error (por ejemplo, una cantidad muy alta comparada con el rendimiento) antes de que llegue a un PDF.",
           "Nueva variante \"Ficha Rápida\" para compartir con un proveedor o socio, sin costos ni precios.",
           "Puedes elegir si quieres recibir estas novedades por correo desde Configuración → Notificaciones.",

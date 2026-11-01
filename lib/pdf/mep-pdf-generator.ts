@@ -274,7 +274,7 @@ ${step(e.stepName)}` : ""}`,
     })
   } else {
     y = drawInfo(options.menuName)
-    // Por paso (docs/207): cada plato con sus sub-recetas debajo, sangradas, como checklist.
+    // Por paso (docs/207): cada plato con sus subrecetas debajo, sangradas, como checklist.
     if (options.dishes.length) {
       sectionTitle(labels.mepPlatos)
       const body: unknown[][] = []
@@ -310,7 +310,7 @@ ${step(e.stepName)}` : ""}`,
       y = lastY() + 9
     }
 
-    // Total por sub-receta, para prepararlas una sola vez para todos los platos.
+    // Total por subreceta, para prepararlas una sola vez para todos los platos.
     if (options.preps.length) {
       sectionTitle(labels.mepPreparaciones, labels.mepPreparacionesNota)
       autoTable(doc, {
@@ -324,7 +324,7 @@ ${step(e.stepName)}` : ""}`,
       y = lastY() + 9
     }
 
-    // Recetas: cada plato seguido de sus sub-recetas con la cantidad de ese plato.
+    // Recetas: cada plato seguido de sus subrecetas con la cantidad de ese plato.
     const all = options.dishes.flatMap((d) => flattenDish(d).map((x) => x.entry))
     all.forEach((entry, index) => drawRecipe(entry, index, all.length))
   }

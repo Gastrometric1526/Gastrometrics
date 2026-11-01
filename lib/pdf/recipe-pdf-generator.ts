@@ -578,12 +578,12 @@ function generateAdministrativePDF(
   const netProfitTotal = unitPrice > 0 ? unitProfit * yieldAmount : recipe.netProfit || totalSales - totalCost
   const isFoodCostRecipe = recipe.pricingMethod === "food_cost"
 
-  // Una sub-receta nunca se vende directo a un cliente — es un componente interno que
+  // Una subreceta nunca se vende directo a un cliente — es un componente interno que
   // se usa DENTRO de otras fichas. Mostrarle "Precio Unit.", "Venta Total" y una caja
   // verde de "Ganancia Neta" es engañoso (esos numeros no significan nada para algo que
   // no se vende solo). En su lugar se muestra unicamente el costo de produccion, el
   // rendimiento y el costo unitario — que es exactamente el "costo de uso" que se
-  // arrastra cuando esta sub-receta se agrega como ingrediente en otra ficha
+  // arrastra cuando esta subreceta se agrega como ingrediente en otra ficha
   // (hallazgo de auditoria externa, ver docs/98, seccion 2.6).
   const summaryData = isSubRecipe
     ? [
@@ -687,12 +687,12 @@ function generateAdministrativePDF(
   }
 
   // ===== TWO COLUMN LAYOUT: Ingredients (left) + Cost Breakdown (right) =====
-  // Una sub-receta no tiene rubros de venta (marketing, ganancia neta, etc. — esos
+  // Una subreceta no tiene rubros de venta (marketing, ganancia neta, etc. — esos
   // porcentajes son parte de COMO se fija el precio al cliente final, y una
-  // sub-receta no se vende sola) asi que ese panel no se dibuja para ella; la tabla
+  // subreceta no se vende sola) asi que ese panel no se dibuja para ella; la tabla
   // de ingredientes usa entonces todo el ancho de contenido en vez de ceder una
   // columna a un panel que no aplica (hallazgo de uso real: el desglose de 6 rubros
-  // seguia apareciendo en sub-recetas aun despues de que el resumen superior ya
+  // seguia apareciendo en subrecetas aun despues de que el resumen superior ya
   // mostrara solo "costo de uso").
   const leftColWidth = isSubRecipe ? contentWidth : contentWidth * 0.68
   const rightColWidth = contentWidth * 0.30
@@ -769,7 +769,7 @@ function generateAdministrativePDF(
   const ingredientsEndY = (doc as any).lastAutoTable.finalY
   const ingredientsTablePaginated = doc.getNumberOfPages() > pageBeforeIngredientsTable
 
-  // Una sub-receta no se vende sola, asi que los rubros de venta (marketing, costos
+  // Una subreceta no se vende sola, asi que los rubros de venta (marketing, costos
   // operativos, ganancia neta, etc.) no aplican — ese panel completo se omite para
   // ella en vez de mostrar un desglose que no significa nada para algo que no tiene
   // precio de venta propio (misma logica ya aplicada arriba al resumen superior).
@@ -871,7 +871,7 @@ function generateAdministrativePDF(
   }
 
   // Ambas tablas ya quedaron en la misma pagina final (o siempre estuvieron juntas
-  // si no hubo paginacion), asi que comparar sus Y aqui es seguro. Para sub-recetas
+  // si no hubo paginacion), asi que comparar sus Y aqui es seguro. Para subrecetas
   // no hubo segunda tabla que dibujar, asi que se usa directo el fin de ingredientes.
   yPosition = isSubRecipe
     ? ingredientsEndY + 8
@@ -881,7 +881,7 @@ function generateAdministrativePDF(
   // Pedido explicito: los PDFs administrativos/internos deben llevar la mayor cantidad de
   // informacion, con estadisticas de barra y pastel — la tabla de arriba ya da los numeros
   // exactos, esto da la lectura visual rapida encima.
-  // Para una sub-receta sin barras (no tiene rubros de venta) y con un solo
+  // Para una subreceta sin barras (no tiene rubros de venta) y con un solo
   // ingrediente con costo (el pastel tampoco aplicaria, ver mas abajo), no queda
   // nada que graficar — se omite la seccion entera en vez de imprimir un
   // encabezado "DISTRIBUCION VISUAL" seguido de espacio en blanco.
@@ -905,7 +905,7 @@ function generateAdministrativePDF(
     const halfWidth = contentWidth / 2 - 4
 
     // Barras: los 6 rubros de costeo (mismos datos que la tabla de Desglose de Costos).
-    // No aplican a una sub-receta (no tiene esos rubros de venta, ver arriba), asi
+    // No aplican a una subreceta (no tiene esos rubros de venta, ver arriba), asi
     // que se omiten y el pastel de ingredientes usa el ancho completo en su lugar.
     let barsEndY = chartsTop
     if (!isSubRecipe) {
@@ -974,7 +974,7 @@ function generateAdministrativePDF(
   // no duplicar esa logica — ver components/technical-sheet/index.tsx).
   // Igual que el desglose de costos, estas estadisticas parten del precio de venta
   // (food cost %, margen de contribucion, metodo de precio) — sin precio de venta
-  // propio, una sub-receta las mostraria como 0%/0% de forma constante y enganosa,
+  // propio, una subreceta las mostraria como 0%/0% de forma constante y enganosa,
   // asi que se omiten para ella.
   if (!isSubRecipe) {
     if (yPosition > pageHeight - 45) {
@@ -1488,7 +1488,7 @@ function generateNormalPDF(
   // Sin precio de venta ni costos: este PDF se redefinio como "Ficha Rapida", pensada
   // para compartir hacia afuera (un proveedor, un socio) sin exponer informacion
   // financiera del negocio — antes mostraba el precio de venta (ver docs/98/99, ya
-  // se habia quitado para sub-recetas; ahora se quita para cualquier receta, no solo
+  // se habia quitado para subrecetas; ahora se quita para cualquier receta, no solo
   // esas, porque ese es el nuevo proposito del tipo, no una excepcion puntual).
 
   // ===== NOTES =====

@@ -1,11 +1,11 @@
 /**
- * Expande recetas (y sus sub-recetas, en cualquier nivel) a ingredientes BASE con la
+ * Expande recetas (y sus subrecetas, en cualquier nivel) a ingredientes BASE con la
  * cantidad que realmente se consume. Única fuente de esta regla — la usan las órdenes
  * de compra generadas (lib/purchase-orders.ts) y el stock teórico
  * (lib/theoretical-stock.ts). Ver docs/134.
  *
  * Dos correcciones respecto de la expansión que tenía lib/purchase-orders.ts:
- * 1. Sub-recetas: la cantidad usada se divide por el RENDIMIENTO de la sub-receta. Usar
+ * 1. Subrecetas: la cantidad usada se divide por el RENDIMIENTO de la subreceta. Usar
  *    150 g de una salsa que rinde 1000 g consume el 15 % de sus ingredientes — antes se
  *    multiplicaban por 150 (la receta completa 150 veces). Es el mismo criterio que el
  *    «costo de uso» (costo total ÷ rendimiento, lib/subrecipe).

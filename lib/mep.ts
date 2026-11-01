@@ -1,6 +1,6 @@
 /**
  * MEP — Mise en place de un menú (docs/202). Pedido del dueño: un documento alineado con el
- * menú que diga qué producir: primero las preparaciones base (sub-recetas) que usan los
+ * menú que diga qué producir: primero las preparaciones base (subrecetas) que usan los
  * platos, después cada plato, cada uno con «para cuánto» y, al abrirlo, sus ingredientes,
  * cantidades y procedimiento ya escalados.
  *
@@ -9,12 +9,12 @@
  *   rendimiento de la receta (×1). Igual que generateMenuIngredientList (lib/menus.ts).
  * - Escalado: multiplicador = porciones ÷ rendimiento; cada cantidad se redondea hacia arriba
  *   con la regla del PAX (lib/pax-scaling.ts, docs/189–190), igual que la Ficha Técnica.
- * - Sub-recetas: usar 150 g de una salsa que rinde 1000 g consume el 15 % de la salsa (mismo
+ * - Subrecetas: usar 150 g de una salsa que rinde 1000 g consume el 15 % de la salsa (mismo
  *   criterio que lib/recipe-consumption.ts). Se suman entre todos los platos que la usan y se
  *   expanden en cualquier nivel; las más profundas van primero (se preparan antes).
- * - Por plato (pedido del dueño, docs/207): cada plato lleva debajo sus sub-recetas (`subs`) con la
- *   cantidad que necesita ESE plato, en árbol (una sub-receta con sus propias sub-recetas), para
- *   usar la MEP como checklist plato por plato. `preps` sigue siendo el total por sub-receta.
+ * - Por plato (pedido del dueño, docs/207): cada plato lleva debajo sus subrecetas (`subs`) con la
+ *   cantidad que necesita ESE plato, en árbol (una subreceta con sus propias subrecetas), para
+ *   usar la MEP como checklist plato por plato. `preps` sigue siendo el total por subreceta.
  */
 
 import type { Recipe, RecipeIngredient } from "@/types/recipe"
@@ -28,7 +28,7 @@ export interface MepEntry {
   key: string
   recipeId: string
   name: string
-  /** prep = total de una sub-receta; dish = plato del menú; sub = sub-receta dentro de un plato. */
+  /** prep = total de una subreceta; dish = plato del menú; sub = subreceta dentro de un plato. */
   kind: "prep" | "dish" | "sub"
   /** Clasificación de la Ficha Técnica = área de la cocina (Línea caliente, Línea fría…). */
   classification: string
@@ -40,14 +40,14 @@ export interface MepEntry {
   yieldUnit: string
   baseYield: number
   multiplier: number
-  /** Preparaciones: platos (o preparaciones) que la usan. Sub-recetas de un plato: los OTROS platos que también la usan. */
+  /** Preparaciones: platos (o preparaciones) que la usan. Subrecetas de un plato: los OTROS platos que también la usan. */
   usedBy: string[]
   /** Profundidad de una preparación (1 = la usa un plato directo; 2 = la usa otra preparación…). */
   depth: number
   lines: RecipeIngredient[]
   procedure: string[]
   observations: string[]
-  /** Solo platos y sub-recetas de un plato: sus sub-recetas, con la cantidad para este plato. */
+  /** Solo platos y subrecetas de un plato: sus subrecetas, con la cantidad para este plato. */
   subs?: MepEntry[]
 }
 
@@ -132,7 +132,7 @@ export function buildMep(menu: Menu, recipes: Recipe[], ingredients: Ingredient[
   }
   dishes.sort((a, b) => a.stepOrder - b.stepOrder || a.name.localeCompare(b.name))
 
-  // 2) Preparaciones base: recorre las sub-recetas de cada plato en cualquier nivel.
+  // 2) Preparaciones base: recorre las subrecetas de cada plato en cualquier nivel.
   const preps = new Map<string, { amount: number; usedBy: Set<string>; depth: number; unit: string }>()
   const walk = (recipe: Recipe, multiplier: number, parentName: string, depth: number) => {
     if (depth > MAX_DEPTH || !(multiplier > 0)) return
@@ -141,7 +141,7 @@ export function buildMep(menu: Menu, recipes: Recipe[], ingredients: Ingredient[
       const subId = subRecipeIdOf(ingredientsById.get(line.ingredientId))
       const sub = subId ? recipesById.get(subId) : undefined
       if (!sub || sub.id === recipe.id) continue
-      const used = line.quantity * multiplier // en la unidad de la línea = unidad de rendimiento de la sub-receta
+      const used = line.quantity * multiplier // en la unidad de la línea = unidad de rendimiento de la subreceta
       const prev = preps.get(sub.id)
       if (prev) {
         prev.amount += used
@@ -159,13 +159,13 @@ export function buildMep(menu: Menu, recipes: Recipe[], ingredients: Ingredient[
   for (const [recipeId, info] of preps) {
     const recipe = recipesById.get(recipeId) as Recipe
     const amount = roundPrepAmount(info.amount, info.unit)
-    // La unidad es la de las líneas que la usan (la del ingrediente-sub-receta).
+    // La unidad es la de las líneas que la usan (la del ingrediente-subreceta).
     prepEntries.push(entryFor(recipe, "prep", amount, { usedBy: Array.from(info.usedBy), depth: info.depth, yieldUnit: info.unit || recipe.yieldUnit || "g" }))
   }
   // Las más profundas primero: se necesitan para preparar las de arriba.
   prepEntries.sort((a, b) => b.depth - a.depth || a.name.localeCompare(b.name))
 
-  // 3) Por plato: sus sub-recetas en árbol, con la cantidad que necesita ese plato.
+  // 3) Por plato: sus subrecetas en árbol, con la cantidad que necesita ese plato.
   const dishesUsing = new Map<string, Set<string>>()
   const subsOf = (recipe: Recipe, multiplier: number, path: string, dishName: string, depth: number): MepEntry[] => {
     if (depth > MAX_DEPTH || !(multiplier > 0)) return []
@@ -239,7 +239,7 @@ export function groupByArea(entries: MepEntry[]): { area: string; entries: MepEn
     .sort((a, b) => rank(a.area) - rank(b.area) || a.area.localeCompare(b.area))
 }
 
-/** Un plato y todas sus sub-recetas en orden (plato, sub, sub-sub…), para contar y compartir. */
+/** Un plato y todas sus subrecetas en orden (plato, sub, sub-sub…), para contar y compartir. */
 export function flattenDish(dish: MepEntry): { entry: MepEntry; level: number }[] {
   const out: { entry: MepEntry; level: number }[] = [{ entry: dish, level: 0 }]
   const walk = (list: MepEntry[] | undefined, level: number) => {
