@@ -63,3 +63,21 @@ describe("getMenuUnitPriceAndCost", () => {
     expect(result).toEqual({ price: 0, cost: 0 })
   })
 })
+
+describe("sección del plato según su paso (docs/223)", () => {
+  it("un plato en «Amuse-bouche» cuenta como entrada aunque se guardó como fuerte", async () => {
+    const { normalizeMenu } = await import("./menus")
+    const menu = normalizeMenu({
+      id: "m",
+      name: "almuerzo",
+      steps: [{ id: "s1", name: "Amuse-bouche", order: 0 }, { id: "s2", name: "Mi paso propio", order: 1 }],
+      items: [
+        { id: "a", recipeId: "r1", stepId: "s1", section: "fuerte" },
+        { id: "b", recipeId: "r2", stepId: "s2", section: "postre" },
+      ],
+    })
+    expect(menu.items[0].section).toBe("entrada")
+    // Un paso con nombre propio conserva la sección guardada.
+    expect(menu.items[1].section).toBe("postre")
+  })
+})

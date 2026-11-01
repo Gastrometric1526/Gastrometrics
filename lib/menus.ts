@@ -106,7 +106,7 @@ function generateId(prefix: string): string {
  * sistema (sin `steps`, con `updatedAt` anidado en `metadata`, ítems sin `id`/`stepId`).
  * Nunca debe asumirse que un menú leído de localStorage ya tiene la forma actual.
  */
-function normalizeMenu(raw: any): Menu {
+export function normalizeMenu(raw: any): Menu {
   const createdAt = raw.createdAt || raw.metadata?.createdAt || new Date().toISOString()
   const updatedAt = raw.updatedAt || raw.metadata?.updatedAt || createdAt
 
@@ -145,11 +145,15 @@ function normalizeMenu(raw: any): Menu {
         steps[0]?.id ||
         generateId("step")
     }
+    // docs/223: el paso donde la persona puso el plato manda. Antes un plato en «Amuse-bouche»
+    // podía quedar con la sección «fuerte» guardada y los cálculos de mezcla lo contaban
+    // como plato fuerte mientras el PDF lo mostraba como amuse-bouche.
+    const stepName = steps.find((s) => s.id === stepId)?.name
     return {
       id: item.id || generateId("item"),
       recipeId: item.recipeId,
       stepId,
-      section,
+      section: (stepName && stepToSection[stepName]) || section,
       label: item.label,
       priceOverride: item.priceOverride ?? null,
       enabled: item.enabled !== false,

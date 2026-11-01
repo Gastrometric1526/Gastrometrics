@@ -479,7 +479,7 @@ export function GuidedJourney() {
     position.status === "active" ? t("journey_progress").replace("{n}", String(position.index + 1)).replace("{total}", String(position.total)) : ""
 
   const header = (
-    <div className="mb-2 flex items-center gap-2 pr-6">
+    <div className="mb-2 flex items-center gap-2 pr-8">
       <Compass className="h-4 w-4 text-primary" />
       <span className="text-xs font-semibold text-primary">{t("journey_label")}</span>
       {stageLabel && <span className="text-xs text-muted-foreground">· {stageLabel}</span>}
@@ -492,7 +492,7 @@ export function GuidedJourney() {
       onClick={pause}
       aria-label={t("journey_pause")}
       title={t("journey_pause")}
-      className="absolute right-3 top-3 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
     >
       <X className="h-4 w-4" />
     </button>

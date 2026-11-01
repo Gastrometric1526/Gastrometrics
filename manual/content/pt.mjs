@@ -558,7 +558,7 @@ export default {
         ["p", "Nunca enviamos mais de um lembrete a cada poucos dias. Cada e-mail traz um link para cancelar a inscrição com um clique, ou você pode desmarcar a caixa em Configurações → Notificações."],
         ["h3", "Seus dados"],
         ["list", [
-          "<strong>Baixar backup</strong>: um único arquivo com todo o seu conteúdo (receitas, ingredientes, cardápios e mais).",
+          "<strong>Baixar backup</strong>: um único arquivo .zip com todo o seu conteúdo: datos.json (ingredientes, receitas, cardápios, inventário, ordens, faturas e vendas, com o fechamento de caixa já calculado), os PDFs de receitas e cardápios e um LEEME.txt no seu idioma com a data, a moeda, quantos registros há de cada tipo e o que não inclui (senhas, pagamentos, equipe e plano). É uma cópia para guardar: por enquanto o app não a importa de volta automaticamente.",
           "<strong>Apagar todo o conteúdo</strong>: esvazia sua conta, mas a mantém ativa. Pede que você digite seu e-mail para confirmar.",
           "<strong>Excluir a conta</strong>: cancela sua assinatura e apaga tudo permanentemente. Também pede seu e-mail para confirmar.",
         ]],

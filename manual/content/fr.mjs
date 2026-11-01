@@ -558,7 +558,7 @@ export default {
         ["p", "Nous n'envoyons jamais plus d'un rappel tous les quelques jours. Chaque e-mail contient un lien pour vous désabonner en un clic, ou vous pouvez décocher la case dans Paramètres → Notifications."],
         ["h3", "Vos données"],
         ["list", [
-          "<strong>Télécharger la sauvegarde</strong> : un seul fichier avec tout votre contenu (recettes, ingrédients, menus et plus).",
+          "<strong>Télécharger la sauvegarde</strong> : un seul fichier .zip avec tout votre contenu : datos.json (ingrédients, recettes, menus, inventaire, commandes, factures et ventes, avec la clôture de caisse déjà calculée), les PDF des recettes et des menus, et un LEEME.txt dans votre langue avec la date, la devise, le nombre d'éléments de chaque type et ce qu'il ne contient pas (mots de passe, paiements, équipe et forfait). C'est une copie à conserver : pour l'instant, l'application ne la réimporte pas automatiquement.",
           "<strong>Supprimer tout le contenu</strong> : vide votre compte tout en le gardant actif. Vous saisissez votre e-mail pour confirmer.",
           "<strong>Supprimer le compte</strong> : résilie votre abonnement et efface tout définitivement. Votre e-mail est aussi demandé pour confirmer.",
         ]],

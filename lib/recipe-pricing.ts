@@ -105,6 +105,19 @@ export function unitCostPercent(recipe: Recipe, price: number, unitCost: number)
   return netSales > 0 ? (unitCost / netSales) * 100 : 0
 }
 
+/**
+ * Receta guardada sin precio de venta (p. ej. la receta de ejemplo antes de docs/223, que
+ * nunca pasó por la Ficha Técnica): se le da el sugerido, igual que mostraría la Ficha, para
+ * que PDF, menús, Dashboard y respaldo no digan 0. Las sub-recetas no se tocan.
+ */
+export function withMissingPrice(recipe: Recipe, currencyCode: string): Recipe {
+  if (recipe.isSubRecipe || currentUnitPrice(recipe) > 0) return recipe
+  const yieldAmount = positive(recipe.yieldAmount) ?? 1
+  const unitCost = positive(recipe.costPerServing) ?? (positive(recipe.totalCost) ?? 0) / yieldAmount
+  const price = suggestedUnitPrice(recipe, unitCost, { currencyCode })
+  return price > 0 ? { ...recipe, unitPrice: price, totalPrice: price * yieldAmount } : recipe
+}
+
 /** Precio que la receta tiene hoy: el escrito a mano, o si no, el guardado. */
 export function currentUnitPrice(recipe: Recipe): number {
   return positive(recipe.customUnitPrice) ?? positive(recipe.unitPrice) ?? 0

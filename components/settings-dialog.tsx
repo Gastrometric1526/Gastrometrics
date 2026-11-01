@@ -314,7 +314,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
     setExportBackupStage("")
     try {
       const { exportAccountBackup, downloadBlob } = await import("@/lib/backup/export-account-backup")
-      const blob = await exportAccountBackup((p) => setExportBackupStage(p.stage))
+      const blob = await exportAccountBackup((p) => setExportBackupStage(p.stage), language)
       const today = toIsoDate(new Date())
       downloadBlob(blob, `gastrometrics-respaldo-${today}.zip`)
     } catch (error) {
@@ -357,7 +357,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
         }}
       >
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between gap-2 pr-6">
+          <DialogTitle className="flex items-center justify-between gap-2">
             <span className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
               {t("settings_dialog_title")}

@@ -116,3 +116,14 @@ describe("reparto del precio para el PDF (docs/208)", () => {
     expect(six.margin).toBe(60)
   })
 })
+
+describe("receta guardada sin precio (docs/223)", () => {
+  it("toma el precio sugerido de la Ficha; las que tienen precio no cambian", async () => {
+    const { withMissingPrice } = await import("./recipe-pricing")
+    const base = { id: "r", name: "Pollo", yieldAmount: 1, totalCost: 25.6, costPerServing: 25.6, pricingMethod: "food_cost", targetFoodCostPercent: 30, isv: 0 } as any
+    const priced = withMissingPrice(base, "USD")
+    expect(priced.unitPrice).toBeCloseTo(85.5, 2) // 25.60 ÷ 0.30 = 85.33 → escalón de 0.50
+    expect(withMissingPrice({ ...base, unitPrice: 99 }, "USD").unitPrice).toBe(99)
+    expect(withMissingPrice({ ...base, isSubRecipe: true }, "USD").unitPrice).toBeUndefined()
+  })
+})

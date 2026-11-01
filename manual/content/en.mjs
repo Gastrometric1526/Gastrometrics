@@ -558,7 +558,7 @@ export default {
         ["p", "We never send more than one reminder every few days. Every email has a link to unsubscribe in one click, or you can uncheck the box in Settings → Notifications."],
         ["h3", "Your data"],
         ["list", [
-          "<strong>Download backup</strong>: a single file with all your content (recipes, ingredients, menus and more).",
+          "<strong>Download backup</strong>: a single .zip file with all your content: datos.json (ingredients, recipes, menus, inventory, orders, invoices and sales, with the cash-up already calculated), the recipe and menu PDFs, and a LEEME.txt in your language with the date, currency, how many records of each kind there are and what it doesn't include (passwords, payments, team and plan). It's a copy to keep: for now the app doesn't import it back automatically.",
           "<strong>Delete all content</strong>: empties your account but keeps it active. You type your email to confirm.",
           "<strong>Delete account</strong>: cancels your subscription and erases everything permanently. It also asks for your email to confirm.",
         ]],

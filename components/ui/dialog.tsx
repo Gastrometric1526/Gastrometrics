@@ -73,7 +73,9 @@ const DialogContent = React.forwardRef<
       }}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground z-10">
+      {/* docs/223: X con área de toque de 32px, separada del borde, y el encabezado le deja
+          espacio (DialogHeader) para que un título largo nunca quede debajo. */}
+      <DialogPrimitive.Close className="absolute right-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none">
         <X className="h-4 w-4" />
         <span className="sr-only">{t("common_close")}</span>
       </DialogPrimitive.Close>
@@ -84,7 +86,7 @@ const DialogContent = React.forwardRef<
 DialogContent.displayName = DialogPrimitive.Content.displayName
 
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)} {...props} />
+  <div className={cn("flex flex-col space-y-1.5 px-8 text-center sm:px-0 sm:pr-8 sm:text-left", className)} {...props} />
 )
 DialogHeader.displayName = "DialogHeader"
 

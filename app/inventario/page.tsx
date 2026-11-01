@@ -906,7 +906,13 @@ export default function InventoryPage() {
             <DialogTitle>{selectedItem ? t("inventario_edit_item_title") : t("inventario_add_item_title")}</DialogTitle>
             <DialogDescription>{t("inventario_item_form_desc")}</DialogDescription>
           </DialogHeader>
-          <InventoryForm onSubmit={handleSubmit} onCancel={handleCancel} initialData={selectedItem} />
+          <InventoryForm
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            initialData={selectedItem}
+            ingredients={ingredients}
+            linked={selectedItem ? ingredients.some((ing) => ing.id === selectedItem.id) : undefined}
+          />
         </DialogContent>
       </Dialog>
 

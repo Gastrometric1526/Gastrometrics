@@ -559,7 +559,7 @@ export default {
         ["p", "Nunca te enviamos más de un recordatorio cada pocos días. Cada correo trae un enlace para darte de baja con un clic, o puedes desmarcar la casilla en Configuración → Notificaciones."],
         ["h3", "Tus datos"],
         ["list", [
-          "<strong>Descargar respaldo</strong>: un solo archivo con todo tu contenido (recetas, ingredientes, menús y más).",
+          "<strong>Descargar respaldo</strong>: un solo archivo .zip con todo tu contenido: datos.json (ingredientes, recetas, menús, inventario, órdenes, facturas y ventas, con el cuadre de caja ya calculado), los PDF de recetas y menús, y un LEEME.txt en tu idioma con la fecha, la moneda, cuántos registros hay de cada cosa y qué no incluye (contraseñas, pagos, equipo y plan). Es una copia para guardar: por ahora la app no la vuelve a importar automáticamente.",
           "<strong>Borrar todo el contenido</strong>: vacía tu cuenta pero la mantiene activa. Pide escribir tu correo para confirmar.",
           "<strong>Eliminar la cuenta</strong>: cancela tu suscripción y borra todo de forma permanente. También pide tu correo para confirmar.",
         ]],

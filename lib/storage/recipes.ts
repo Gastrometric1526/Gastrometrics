@@ -10,6 +10,8 @@ import { SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { createBusinessScopedCache } from "./supabase-cache"
 import type { Database } from "@/types/database"
+import { withMissingPrice } from "@/lib/recipe-pricing"
+import { getCurrentCurrencyCode } from "@/lib/currency"
 
 type RecipeRow = Database["public"]["Tables"]["recipes"]["Row"]
 type RecipeTrashRow = Database["public"]["Tables"]["recipes_trash"]["Row"]
@@ -22,7 +24,7 @@ function toDbBusinessId(businessId?: string | null): string | null {
 }
 
 function rowToRecipe(row: RecipeRow): Recipe {
-  return {
+  const recipe = {
     ...(row.data as Partial<Recipe>),
     id: row.id,
     name: row.name,
@@ -30,6 +32,8 @@ function rowToRecipe(row: RecipeRow): Recipe {
     isSubRecipe: row.is_sub_recipe,
     businessId: row.business_id ?? "main",
   } as Recipe
+  // docs/223: una receta guardada sin precio (la de ejemplo) toma el sugerido de la Ficha.
+  return withMissingPrice(recipe, getCurrentCurrencyCode())
 }
 
 async function fetchRecipes(businessId?: string | null): Promise<Recipe[]> {

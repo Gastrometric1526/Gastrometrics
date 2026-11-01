@@ -464,13 +464,13 @@ export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finish
         <button
           onClick={close}
           aria-label={t("tour_skip_aria")}
-          className="absolute right-3 top-3 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
 
         <div className="p-5 pb-4">
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-3 pr-8">
             {isHint ? <Lightbulb className="h-5 w-5 text-primary" /> : Icon && <Icon className="h-7 w-7 text-primary" />}
             <span className="text-xs font-semibold uppercase tracking-wide text-primary">
               {isHint ? t("hint_label") : `${t("tour_step")} ${stepIndex + 1} ${t("tour_of")} ${steps.length}`}

@@ -14,6 +14,14 @@ interface InventoryFormProps {
   onSubmit: (data: any) => void
   onCancel: () => void
   initialData?: InventoryItem | null
+  /**
+   * Ingredientes de la base (docs/223): el nombre se elige de la lista para que el producto
+   * quede vinculado a su ingrediente (mismo id). Sin vínculo, las órdenes desde un menú o
+   * una receta y el stock teórico no lo descuentan.
+   */
+  ingredients?: { id: string; name: string }[]
+  /** El producto ya existe y su id es el de un ingrediente. */
+  linked?: boolean
 }
 
 const conversionFactors: { [key: string]: number } = {
@@ -27,7 +35,7 @@ const conversionFactors: { [key: string]: number } = {
   gal: 3785.41,
 }
 
-export function InventoryForm({ onSubmit, onCancel, initialData }: InventoryFormProps) {
+export function InventoryForm({ onSubmit, onCancel, initialData, ingredients = [], linked }: InventoryFormProps) {
   const { t, language } = useLanguage()
   const [formData, setFormData] = useState({
     name: "",
@@ -124,7 +132,16 @@ export function InventoryForm({ onSubmit, onCancel, initialData }: InventoryForm
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="name">{t("inventario_table_name")}</Label>
-          <Input id="name" name="name" value={formData.name} onChange={handleChange} required />
+          <Input id="name" name="name" list="inventory-ingredient-names" value={formData.name} onChange={handleChange} required />
+          <datalist id="inventory-ingredient-names">
+            {ingredients.map((ing) => (
+              <option key={ing.id} value={ing.name} />
+            ))}
+          </datalist>
+          {formData.name.trim() !== "" &&
+            (initialData ? linked === false : !ingredients.some((ing) => ing.name === formData.name)) && (
+              <p className="text-xs text-warning">{t("inventario_unlinked_hint")}</p>
+            )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="category">{t("inventario_table_category")}</Label>

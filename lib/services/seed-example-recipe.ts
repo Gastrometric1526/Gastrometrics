@@ -22,6 +22,8 @@ import { addIngredient } from "@/lib/storage/ingredients"
 import { DEFAULT_PRICING_METHOD, DEFAULT_TARGET_FOOD_COST_PERCENT } from "@/types/business"
 import { saveRecipe, getRecipeById } from "@/lib/storage/recipes"
 import { defaultPricingConfig } from "@/types/recipe"
+import { withMissingPrice } from "@/lib/recipe-pricing"
+import { getCurrentCurrencyCode } from "@/lib/currency"
 import type { Ingredient } from "@/types/ingredient"
 import type { Recipe, RecipeIngredient } from "@/types/recipe"
 import type { LanguageCode } from "@/lib/i18n/translations"
@@ -195,7 +197,8 @@ export async function getOrSeedExampleRecipe(
     metadata: { createdAt: now, updatedAt: now, version: 1 },
   }
 
-  const savedRecipe = await saveRecipe(recipe, businessId)
+  // Con su precio sugerido (docs/223): antes se guardaba sin precio y el PDF y el menú decían 0.
+  const savedRecipe = await saveRecipe(withMissingPrice(recipe, getCurrentCurrencyCode()), businessId)
   if (typeof window !== "undefined") localStorage.setItem(key, savedRecipe.id)
   return savedRecipe.id
 }

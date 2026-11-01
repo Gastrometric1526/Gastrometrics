@@ -558,7 +558,7 @@ export default {
         ["p", "Vi sender aldrig mere end én påmindelse med få dages mellemrum. Hver e-mail har et link til at afmelde med ét klik, eller du kan fjerne fluebenet under Indstillinger → Notifikationer."],
         ["h3", "Dine data"],
         ["list", [
-          "<strong>Download sikkerhedskopi</strong>: én fil med alt dit indhold (opskrifter, ingredienser, menuer og mere).",
+          "<strong>Download sikkerhedskopi</strong>: én .zip-fil med alt dit indhold: datos.json (ingredienser, opskrifter, menuer, lager, ordrer, fakturaer og salg, med kasseafstemningen allerede beregnet), PDF'er af opskrifter og menuer og en LEEME.txt på dit sprog med dato, valuta, antal poster af hver slags og hvad den ikke indeholder (adgangskoder, betalinger, team og plan). Det er en kopi til at gemme: indtil videre importerer appen den ikke automatisk igen.",
           "<strong>Slet alt indhold</strong>: tømmer din konto, men holder den aktiv. Du skriver din e-mail for at bekræfte.",
           "<strong>Slet konto</strong>: opsiger dit abonnement og sletter alt permanent. Den beder også om din e-mail som bekræftelse.",
         ]],
