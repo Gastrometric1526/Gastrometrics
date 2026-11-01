@@ -59,6 +59,8 @@ export interface Business {
   // Solo aplica cuando pricingMethod === "food_cost". % de costo de producción objetivo
   // sobre el precio de venta final (estándar de industria: 28-35%).
   targetFoodCostPercent?: number
+  // Rubros predeterminados del método GastroMetrics para recetas nuevas (docs/226).
+  pricingPercentages?: Partial<Record<string, number>>
 }
 
 export const calculateTotalMonthlyExpenses = (expenses: BusinessExpenses): number => {

@@ -181,6 +181,8 @@ export default {
         ]],
         ["p", "Si votre établissement a des frais fixes et une estimation du nombre de plats par mois, leur part proportionnelle s'ajoute automatiquement au prix comme un poste de plus :"],
         ["formula", "Frais fixes par plat", ["Frais fixes par plat = Frais fixes du mois ÷ Plats estimés par mois"]],
+        ["h3", "Modifier les pourcentages"],
+        ["p", "Touchez l'icône d'engrenage dans « Calcul du prix de vente » pour ouvrir <strong>Configuration des pourcentages</strong>. Chaque poste indique ce qu'il couvre et combien il ajoute par portion, et en dessous vous voyez aussitôt le prix suggéré et le food cost % obtenus ; si le coût dépasse 40 % du prix ou si le bénéfice est à 0, une alerte s'affiche. Avec <strong>Enregistrer par défaut</strong>, les nouvelles recettes de votre établissement commencent avec ces pourcentages (votre TVA, par exemple) ; celles déjà enregistrées gardent les leurs. <strong>Utiliser les valeurs par défaut</strong> remet la recette à ces valeurs. Dans une recette en Food Cost %, seule la TVA de cette fenêtre compte."],
         ["h3", "Commission de livraison ou de carte"],
         ["p", "Si vous vendez via une application de livraison ou encaissez par carte, indiquez dans la fiche le <strong>% de commission</strong> prélevé sur le prix. Le prix suggéré la couvre, et la fiche affiche la commission par unité et ce qui vous reste après l'avoir payée. Le bénéfice et la marge la déduisent déjà."],
         ["formula", "Prix avec commission", ["Prix = Prix sans commission ÷ (1 − % de commission)"], "Fonctionne avec les deux méthodes et s'arrondit ensuite, comme toujours."],

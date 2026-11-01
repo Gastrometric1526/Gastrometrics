@@ -172,6 +172,9 @@ export async function deleteBusiness(businessId: string): Promise<boolean> {
 export interface PricingDefaults {
   pricingMethod?: PricingMethod
   targetFoodCostPercent?: number
+  // Rubros del método GastroMetrics con que empieza una receta nueva (docs/226,
+  // lib/pricing-percentages.ts). Las recetas guardadas conservan los suyos.
+  pricingPercentages?: Partial<Record<string, number>>
 }
 
 /**
@@ -198,10 +201,19 @@ function savePricingDefaults(businessId: string, defaults: PricingDefaults): voi
  */
 export function getEffectivePricingDefaults(businessId: string): PricingDefaults {
   const business = getBusinessById(businessId)
-  if (business?.pricingMethod) {
-    return { pricingMethod: business.pricingMethod, targetFoodCostPercent: business.targetFoodCostPercent }
+  const local = getPricingDefaults(businessId) || {}
+  if (business) {
+    // Lo que tiene la fila real manda; la clave local cubre lo que la fila no tenga
+    // (p. ej. un miembro del equipo que no puede escribir en el negocio).
+    return {
+      ...local,
+      ...(business.pricingMethod
+        ? { pricingMethod: business.pricingMethod, targetFoodCostPercent: business.targetFoodCostPercent }
+        : {}),
+      ...(business.pricingPercentages ? { pricingPercentages: business.pricingPercentages } : {}),
+    }
   }
-  return getPricingDefaults(businessId) || {}
+  return local
 }
 
 /**

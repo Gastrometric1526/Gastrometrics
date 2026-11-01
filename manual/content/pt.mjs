@@ -181,6 +181,8 @@ export default {
         ]],
         ["p", "Se o seu negócio tem despesas fixas e uma estimativa de pratos por mês, a parte proporcional delas é somada ao preço automaticamente como mais um item:"],
         ["formula", "Custo fixo por prato", ["Custo fixo por prato = Despesas fixas do mês ÷ Pratos estimados por mês"]],
+        ["h3", "Alterar os percentuais"],
+        ["p", "Toque no ícone de engrenagem em “Cálculo do Preço de Venda” para abrir <strong>Configuração de percentuais</strong>. Cada item diz o que cobre e quanto soma por porção, e embaixo você vê na hora o preço sugerido e o custo % resultantes; se o custo passar de 40 % do preço ou o lucro estiver em 0, aparece um aviso. Com <strong>Salvar como padrão</strong>, as novas receitas do seu negócio começam com esses percentuais (seu imposto, por exemplo); as salvas mantêm os seus. <strong>Usar os padrões</strong> volta a receita a esses valores. Numa receita com Food Cost %, desta janela só conta o imposto."],
         ["h3", "Comissão de delivery ou cartão"],
         ["p", "Se você vende por um app de delivery ou recebe no cartão, informe na ficha o <strong>% de comissão</strong> que eles ficam do preço. O preço sugerido a cobre, e a ficha mostra a comissão por unidade e quanto sobra depois de pagá-la. O lucro e a margem já a descontam."],
         ["formula", "Preço com comissão", ["Preço = Preço sem comissão ÷ (1 − % de comissão)"], "Funciona com os dois métodos e é arredondado depois, como sempre."],

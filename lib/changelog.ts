@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-11-01b",
+    tutorialHref: tourHref("ficha-tecnica"),
+    content: {
+      es: { title: "Porcentajes más claros en la Ficha", items: ["La configuración de porcentajes explica qué cubre cada rubro y cuánto suma por porción.", "Ves al momento el precio sugerido y el costo % que resultan, con aviso si el costo queda alto o no hay ganancia.", "Guarda tus porcentajes como predeterminados: las recetas nuevas empiezan con ellos (por ejemplo, tu ISV) y las guardadas no cambian."] },
+      en: { title: "Clearer percentages in the Recipe Sheet", items: ["Percentage settings now explain what each category covers and how much it adds per serving.", "You see the resulting suggested price and food cost % right away, with a warning if the cost is high or there's no profit.", "Save your percentages as defaults: new recipes start with them (your tax, for example) and saved ones don't change."] },
+      da: { title: "Tydeligere procenter i opskriften", items: ["Indstillingerne for procenter forklarer nu, hvad hver post dækker, og hvor meget den lægger til pr. portion.", "Du ser straks den foreslåede pris og råvareandelen, det giver, med en advarsel, hvis omkostningen er høj eller der ikke er fortjeneste.", "Gem dine procenter som standard: nye opskrifter starter med dem (fx din moms), og gemte ændres ikke."] },
+      fr: { title: "Des pourcentages plus clairs dans la fiche technique", items: ["La configuration des pourcentages explique ce que couvre chaque poste et combien il ajoute par portion.", "Vous voyez aussitôt le prix suggéré et le food cost % obtenus, avec une alerte si le coût est élevé ou s'il n'y a pas de bénéfice.", "Enregistrez vos pourcentages par défaut : les nouvelles recettes commencent avec eux (votre TVA, par exemple) et celles déjà enregistrées ne changent pas."] },
+      pt: { title: "Percentuais mais claros na Ficha Técnica", items: ["A configuração de percentuais explica o que cada item cobre e quanto soma por porção.", "Você vê na hora o preço sugerido e o custo % resultantes, com aviso se o custo ficar alto ou não houver lucro.", "Salve seus percentuais como padrão: as novas receitas começam com eles (seu imposto, por exemplo) e as salvas não mudam."] },
+      zh: { title: "技术配方表中的百分比更清晰", items: ["百分比设置现在会说明每一项涵盖什么，以及每份增加多少。", "你会立即看到得出的建议售价和成本率；成本过高或没有利润时会提醒你。", "将百分比保存为默认值：新配方会从这些值开始（例如你的税率），已保存的配方不变。"] },
+    },
+  },
+  {
     version: "2026-11-01",
     tutorialHref: tourHref("ingredientes"),
     content: {

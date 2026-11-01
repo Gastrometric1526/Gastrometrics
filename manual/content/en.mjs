@@ -181,6 +181,8 @@ export default {
         ]],
         ["p", "If your business has fixed costs and an estimate of dishes per month, their proportional share is added to the price automatically as one more item:"],
         ["formula", "Fixed cost per dish", ["Fixed cost per dish = Monthly fixed costs ÷ Estimated dishes per month"]],
+        ["h3", "Changing the percentages"],
+        ["p", "Tap the gear icon in “Sale Price Calculation” to open <strong>Percentage settings</strong>. Each item says what it covers and how much it adds per serving, and below you see the resulting suggested price and food cost % right away; if the cost goes above 40 % of the price or the profit is 0, it warns you. With <strong>Save as default</strong>, your business's new recipes start with those percentages (your tax, for example); saved ones keep their own. <strong>Use the defaults</strong> brings the recipe back to those values. In a Food Cost % recipe, only the tax in this window counts."],
         ["h3", "Delivery or card commission"],
         ["p", "If you sell through a delivery app or take card payments, enter in the recipe the <strong>commission %</strong> they keep from the price. The suggested price covers it, and the sheet shows the commission per unit and what you keep after paying it. Profit and margin already deduct it."],
         ["formula", "Price with commission", ["Price = Price without commission ÷ (1 − Commission %)"], "It works with both methods and is rounded afterwards, as always."],

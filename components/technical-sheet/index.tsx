@@ -16,6 +16,15 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Check, ChevronsUpDown, Upload, Settings, RotateCcw, Calculator, Info, AlertTriangle, Eraser, History, X } from "lucide-react"
 import { CalculationInfoDialog } from "./calculation-info-dialog"
+import { PercentageSettingsDialog } from "./percentage-settings-dialog"
+import {
+  DEFAULT_PRICING_PERCENTAGES,
+  getDefaultPricingPercentages,
+  samePricingPercentages,
+  saveDefaultPricingPercentages,
+  type PricingPercentageKey,
+  type PricingPercentages,
+} from "@/lib/pricing-percentages"
 import { cn } from "@/lib/utils"
 import { getRecipeById, getRecipes, saveRecipe, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { allergenLabelKey, getRecipeAllergens } from "@/lib/allergens"
@@ -39,7 +48,6 @@ import { classifications, recipeSteps, yieldUnits, SUBRECIPE_CLASSIFICATION } fr
 import type { Ingredient } from "@/types/ingredient"
 import { unitAbbreviations } from "@/types/ingredient"
 import { NumericInput } from "@/components/ui/numeric-input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -150,16 +158,6 @@ function createEmptyRecipe(recipeId: string | undefined, businessId: string): Re
   }
 }
 
-// Valores por defecto de los rubros de costeo — mismos que el useState inicial de abajo.
-const DEFAULT_PRICING_PERCENTAGES = {
-  contributionMargin: 30,
-  publicServices: 10,
-  marketing: 10,
-  operationalCosts: 30,
-  laborCosts: 25,
-  isv: 0,
-}
-
 export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPreviewChange }: TechnicalSheetProps) {
   const router = useRouter()
   const { toast } = useToast()
@@ -196,6 +194,32 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
   const [operationalCosts, setOperationalCosts] = useState<number>(DEFAULT_PRICING_PERCENTAGES.operationalCosts)
   const [laborCosts, setLaborCosts] = useState<number>(DEFAULT_PRICING_PERCENTAGES.laborCosts)
   const [isv, setIsv] = useState<number>(DEFAULT_PRICING_PERCENTAGES.isv)
+  // Los seis rubros juntos, para la pantalla de porcentajes (docs/226).
+  const percentages: PricingPercentages = useMemo(
+    () => ({ publicServices, marketing, operationalCosts, laborCosts, isv, contributionMargin }),
+    [publicServices, marketing, operationalCosts, laborCosts, isv, contributionMargin],
+  )
+  const applyPercentages = useCallback((p: PricingPercentages) => {
+    setPublicServices(p.publicServices)
+    setMarketing(p.marketing)
+    setOperationalCosts(p.operationalCosts)
+    setLaborCosts(p.laborCosts)
+    setIsv(p.isv)
+    setContributionMargin(p.contributionMargin)
+  }, [])
+  const setPercentage = useCallback((key: PricingPercentageKey, value: number) => {
+    const setters: Record<PricingPercentageKey, (v: number) => void> = {
+      publicServices: setPublicServices,
+      marketing: setMarketing,
+      operationalCosts: setOperationalCosts,
+      laborCosts: setLaborCosts,
+      isv: setIsv,
+      contributionMargin: setContributionMargin,
+    }
+    setters[key](value)
+  }, [])
+  // Se vuelve a leer al abrir la pantalla (otro miembro pudo cambiar los predeterminados).
+  const [defaultPercentages, setDefaultPercentages] = useState<PricingPercentages>(DEFAULT_PRICING_PERCENTAGES)
   const [customUnitProfitInput, setCustomUnitProfitInput] = useState<string>("")
   const [customPriceInput, setCustomPriceInput] = useState<string>("")
   const [pricingMethod, setPricingMethod] = useState<PricingMethod>(DEFAULT_PRICING_METHOD)
@@ -380,12 +404,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     setShowClearConfirm(false)
     const pricingDefaults = getEffectivePricingDefaults(businessId)
     setRecipe(createEmptyRecipe(undefined, businessId))
-    setContributionMargin(DEFAULT_PRICING_PERCENTAGES.contributionMargin)
-    setPublicServices(DEFAULT_PRICING_PERCENTAGES.publicServices)
-    setMarketing(DEFAULT_PRICING_PERCENTAGES.marketing)
-    setOperationalCosts(DEFAULT_PRICING_PERCENTAGES.operationalCosts)
-    setLaborCosts(DEFAULT_PRICING_PERCENTAGES.laborCosts)
-    setIsv(DEFAULT_PRICING_PERCENTAGES.isv)
+    applyPercentages(getDefaultPricingPercentages(businessId))
     setCustomUnitProfitInput("")
     setCustomPriceInput("")
     setPaxModifier(0)
@@ -431,11 +450,11 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
         // BUG CORREGIDO (docs/187): con `||` un rubro guardado en 0 % volvía al valor por
         // defecto al reabrir la receta (y cambiaba el precio). `??` solo usa el defecto
         // cuando el rubro no existe (recetas viejas).
-        setContributionMargin(existingRecipe.contributionMargin ?? 30)
-        setPublicServices(existingRecipe.publicServices ?? 10)
-        setMarketing(existingRecipe.marketing ?? 10)
-        setOperationalCosts(existingRecipe.operationalCosts ?? 30)
-        setLaborCosts(existingRecipe.laborCosts ?? 25)
+        setContributionMargin(existingRecipe.contributionMargin ?? DEFAULT_PRICING_PERCENTAGES.contributionMargin)
+        setPublicServices(existingRecipe.publicServices ?? DEFAULT_PRICING_PERCENTAGES.publicServices)
+        setMarketing(existingRecipe.marketing ?? DEFAULT_PRICING_PERCENTAGES.marketing)
+        setOperationalCosts(existingRecipe.operationalCosts ?? DEFAULT_PRICING_PERCENTAGES.operationalCosts)
+        setLaborCosts(existingRecipe.laborCosts ?? DEFAULT_PRICING_PERCENTAGES.laborCosts)
         setIsv(existingRecipe.isv || 0)
         setPricingMethod(existingRecipe.pricingMethod || LEGACY_PRICING_METHOD)
         setTargetFoodCostPercent(
@@ -455,6 +474,8 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     } else {
       setPricingMethod(pricingDefaults.pricingMethod || DEFAULT_PRICING_METHOD)
       setTargetFoodCostPercent(pricingDefaults.targetFoodCostPercent || DEFAULT_TARGET_FOOD_COST_PERCENT)
+      // Receta nueva: empieza con los porcentajes predeterminados del negocio (docs/226).
+      applyPercentages(getDefaultPricingPercentages(businessId))
     }
   }
 
@@ -1917,98 +1938,42 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
               >
                 <Calculator className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
               </Button>
-              <Dialog open={showPriceSettings} onOpenChange={setShowPriceSettings}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  data-journey="ficha-percentages"
-                  aria-label={t("ficha_tecnica_percentage_settings_title")}
-                  title={t("ficha_tecnica_percentage_settings_title")}
-                >
-                  <Settings className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>{t("ficha_tecnica_percentage_settings_title")}</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="publicServices-setting">{t("ficha_tecnica_field_public_services")}</Label>
-                    <NumericInput
-                      id="publicServices-setting"
-                      value={publicServices}
-                      onChange={(value) => setPublicServices(value)}
-                      placeholder="10"
-                      decimalPlaces={2}
-                      min={0}
-                      max={100}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="marketing-setting">{t("ficha_tecnica_field_marketing")}</Label>
-                    <NumericInput
-                      id="marketing-setting"
-                      value={marketing}
-                      onChange={(value) => setMarketing(value)}
-                      placeholder="10"
-                      decimalPlaces={2}
-                      min={0}
-                      max={100}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="operationalCosts-setting">{t("ficha_tecnica_field_operational_costs")}</Label>
-                    <NumericInput
-                      id="operationalCosts-setting"
-                      value={operationalCosts}
-                      onChange={(value) => setOperationalCosts(value)}
-                      placeholder="30"
-                      decimalPlaces={2}
-                      min={0}
-                      max={100}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="laborCosts-setting">{t("ficha_tecnica_field_labor_costs")}</Label>
-                    <NumericInput
-                      id="laborCosts-setting"
-                      value={laborCosts}
-                      onChange={(value) => setLaborCosts(value)}
-                      placeholder="35"
-                      decimalPlaces={2}
-                      min={0}
-                      max={100}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="isv-setting">{t("ficha_tecnica_field_isv")}</Label>
-                    <NumericInput
-                      id="isv-setting"
-                      value={isv}
-                      onChange={(value) => setIsv(value)}
-                      placeholder="0"
-                      decimalPlaces={2}
-                      min={0}
-                      max={100}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contributionMargin-setting">{t("ficha_tecnica_field_net_profit")}</Label>
-                    <NumericInput
-                      id="contributionMargin-setting"
-                      value={contributionMargin}
-                      onChange={(value) => setContributionMargin(value)}
-                      placeholder="25"
-                      decimalPlaces={2}
-                      min={0}
-                      max={100}
-                    />
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+              <PercentageSettingsDialog
+                open={showPriceSettings}
+                onOpenChange={(open) => {
+                  if (open) setDefaultPercentages(getDefaultPricingPercentages(businessId))
+                  setShowPriceSettings(open)
+                }}
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    data-journey="ficha-percentages"
+                    aria-label={t("ficha_tecnica_percentage_settings_title")}
+                    title={t("ficha_tecnica_percentage_settings_title")}
+                  >
+                    <Settings className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
+                  </Button>
+                }
+                values={percentages}
+                onChange={setPercentage}
+                editable={isEditMode}
+                pricingMethod={pricingMethod}
+                unitCost={calculations.unitCost}
+                suggestedPrice={calculations.gastrometricsPrice}
+                fixedCostPercent={calculations.fixedCostPercentage}
+                hasCustomPrice={parsePositiveOrUndefined(customPriceInput) !== undefined}
+                isDefault={samePricingPercentages(percentages, defaultPercentages)}
+                onUseDefaults={() => applyPercentages(defaultPercentages)}
+                onSaveDefault={async () => {
+                  await saveDefaultPricingPercentages(businessId, percentages)
+                  setDefaultPercentages(percentages)
+                  toast({
+                    title: t("ficha_tecnica_pct_saved_toast_title"),
+                    description: t("ficha_tecnica_pct_saved_toast_desc"),
+                  })
+                }}
+              />
             </div>
           </div>
         </CardHeader>

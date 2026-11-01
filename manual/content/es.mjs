@@ -182,6 +182,8 @@ export default {
         ]],
         ["p", "Si tu negocio tiene gastos fijos y una estimación de platos al mes, su parte proporcional se suma sola al precio como un rubro más:"],
         ["formula", "Costo fijo por plato", ["Costo fijo por plato = Gastos fijos del mes ÷ Platos estimados al mes"]],
+        ["h3", "Cambiar los porcentajes"],
+        ["p", "Toca el ícono de engranaje en «Cálculo de Precio de Venta» para abrir <strong>Configuración de porcentajes</strong>. Cada rubro dice qué cubre y cuánto suma por porción, y abajo ves al momento el precio sugerido y el costo % que resultan; si el costo pasa del 40 % del precio o la ganancia está en 0, te avisa. Con <strong>Guardar como predeterminado</strong>, las recetas nuevas de tu negocio empiezan con esos porcentajes (por ejemplo, tu ISV); las guardadas conservan los suyos. <strong>Usar los predeterminados</strong> devuelve la receta a esos valores. En una receta con Food Cost %, de esta ventana solo cuenta el ISV."],
         ["h3", "Comisión de delivery o tarjeta"],
         ["p", "Si vendes por una app de delivery o cobras con tarjeta, escribe en la ficha el <strong>% de comisión</strong> que se quedan sobre el precio. El precio sugerido la cubre, y la ficha te muestra cuánto es la comisión por unidad y cuánto te queda después de pagarla. La ganancia y el margen ya la descuentan."],
         ["formula", "Precio con comisión", ["Precio = Precio sin comisión ÷ (1 − % de comisión)"], "Funciona con los dos métodos y se redondea después, como siempre."],

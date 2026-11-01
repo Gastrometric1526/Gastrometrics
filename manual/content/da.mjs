@@ -181,6 +181,8 @@ export default {
         ]],
         ["p", "Har din virksomhed faste udgifter og et skøn over antal retter pr. måned, lægges deres forholdsmæssige andel automatisk til prisen som en ekstra post:"],
         ["formula", "Fast omkostning pr. ret", ["Fast omkostning pr. ret = Faste udgifter pr. måned ÷ Forventede retter pr. måned"]],
+        ["h3", "Ændre procenterne"],
+        ["p", "Tryk på tandhjulsikonet i »Beregning af salgspris« for at åbne <strong>Indstillinger for procenter</strong>. Hver post fortæller, hvad den dækker, og hvor meget den lægger til pr. portion, og nedenunder ser du straks den foreslåede pris og råvareandelen; går omkostningen over 40 % af prisen, eller er fortjenesten 0, får du en advarsel. Med <strong>Gem som standard</strong> starter virksomhedens nye opskrifter med de procenter (fx din moms); gemte beholder deres egne. <strong>Brug standardværdierne</strong> sætter opskriften tilbage til dem. I en opskrift med Food Cost % tæller kun momsen i dette vindue."],
         ["h3", "Provision til levering eller kort"],
         ["p", "Sælger du via en leveringsapp eller tager imod kortbetaling, skriver du i opskriften den <strong>provision i %</strong>, de tager af prisen. Den foreslåede pris dækker den, og arket viser provisionen pr. enhed, og hvad du har tilbage efter at have betalt den. Fortjeneste og margin trækker den allerede fra."],
         ["formula", "Pris med provision", ["Pris = Pris uden provision ÷ (1 − Provision i %)"], "Det virker med begge metoder og afrundes bagefter, som altid."],
