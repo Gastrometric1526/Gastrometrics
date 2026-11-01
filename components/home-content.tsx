@@ -285,6 +285,11 @@ export function HomeContent() {
                     <AccordionTrigger className="text-foreground hover:text-primary">{t("landing_faq_q13")}</AccordionTrigger>
                     <AccordionContent className="text-muted-foreground">{t("landing_faq_a13")}</AccordionContent>
                   </AccordionItem>
+                  {/* docs/224: qué pasa al terminar un período gratis (fundadoras, referidos). */}
+                  <AccordionItem value="item-trial-end" className="border-border">
+                    <AccordionTrigger className="text-foreground hover:text-primary">{t("landing_faq_q14")}</AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground">{t("landing_faq_a14")}</AccordionContent>
+                  </AccordionItem>
                 </Accordion>
               </CardContent>
             </Card>

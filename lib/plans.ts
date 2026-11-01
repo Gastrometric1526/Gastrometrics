@@ -157,7 +157,7 @@ export const plans: Plan[] = [
       "Todo lo anterior, más finanzas completas: P&L real, importación de ventas del POS, Menu Engineering y varianza de precios de proveedores.",
     features: [
       "Todo lo del plan Chef de Partie",
-      "Finanzas completas: P&L, importación de ventas del POS",
+      "Finanzas completas: P&L e importación del reporte de ventas de tu POS (Excel o CSV; no es una caja registradora)",
       "Menu Engineering (Estrellas, Vacas, Puzzles, Perros)",
       "Varianza de precios de proveedores",
       "Dashboard financiero histórico",
