@@ -1493,8 +1493,8 @@ export default function IngredientesPage() {
               <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-50 dark:bg-blue-950/40 rounded-lg">
-                      <Package className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+                    <div className="p-2 bg-info-soft rounded-lg">
+                      <Package className="h-5 w-5 text-info" />
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-foreground">{stats.totalIngredients}</p>
@@ -1508,7 +1508,7 @@ export default function IngredientesPage() {
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-success-soft rounded-lg">
-                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-300" />
+                      <CheckCircle className="h-5 w-5 text-success" />
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-foreground">{stats.subRecipes}</p>
@@ -1521,8 +1521,8 @@ export default function IngredientesPage() {
               <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-warning-soft dark:bg-amber-950/40 rounded-lg">
-                      <DollarSign className="h-5 w-5 text-amber-600 dark:text-amber-300" />
+                    <div className="p-2 bg-warning-soft rounded-lg">
+                      <DollarSign className="h-5 w-5 text-warning" />
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.avgCost)}</p>
@@ -1535,8 +1535,8 @@ export default function IngredientesPage() {
               <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-50 dark:bg-purple-950/40 rounded-lg">
-                      <Tag className="h-5 w-5 text-purple-600 dark:text-purple-300" />
+                    <div className="p-2 bg-primary-soft rounded-lg">
+                      <Tag className="h-5 w-5 text-primary" />
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-foreground">{stats.categories}</p>
@@ -1550,7 +1550,7 @@ export default function IngredientesPage() {
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-danger-soft rounded-lg">
-                      <TrendingUp className="h-5 w-5 text-destructive dark:text-red-300" />
+                      <TrendingUp className="h-5 w-5 text-destructive" />
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.totalValue)}</p>
@@ -1618,7 +1618,7 @@ export default function IngredientesPage() {
                 {selectedCategory !== "Todas" && (
                   <Badge
                     variant="outline"
-                    className="rounded-lg px-3 py-1 border-blue-200 dark:border-blue-900 text-info bg-info-soft"
+                    className="rounded-lg px-3 py-1 border-info/30 text-info bg-info-soft"
                   >
                     {selectedCategory}
                   </Badge>
@@ -1763,7 +1763,7 @@ export default function IngredientesPage() {
                       <span className="font-semibold text-foreground">
                         {t("ingredientes_summary_total_value_label")}
                       </span>
-                      <p className="text-xl font-bold text-green-600 dark:text-green-300">
+                      <p className="text-xl font-bold text-success">
                         {formatCurrency(
                           filteredAndSortedIngredients.reduce((sum, ing) => sum + (ing.pricing?.purchasePrice || 0), 0),
                         )}
@@ -1771,7 +1771,7 @@ export default function IngredientesPage() {
                     </div>
                     <div className="text-center">
                       <span className="font-semibold text-foreground">{t("ingredientes_summary_avg_cost_label")}</span>
-                      <p className="text-xl font-bold text-amber-600 dark:text-amber-300">
+                      <p className="text-xl font-bold text-warning">
                         {formatCurrency(
                           filteredAndSortedIngredients.length > 0
                             ? filteredAndSortedIngredients.reduce(
@@ -1786,7 +1786,7 @@ export default function IngredientesPage() {
                       <span className="font-semibold text-foreground">
                         {t("ingredientes_summary_unique_categories_label")}
                       </span>
-                      <p className="text-xl font-bold text-purple-600 dark:text-purple-300">
+                      <p className="text-xl font-bold text-primary">
                         {[...new Set(filteredAndSortedIngredients.map((ing) => ing.category))].length}
                       </p>
                     </div>
@@ -2605,9 +2605,9 @@ export default function IngredientesPage() {
                 </div>
               </div>
 
-              <div className="p-4 bg-blue-50 border border-blue-200 dark:border-blue-900 rounded-lg">
+              <div className="p-4 bg-info-soft border border-info/30 rounded-lg">
                 <div className="flex items-start gap-3">
-                  <Info className="h-5 w-5 text-blue-600 dark:text-blue-300 mt-0.5" />
+                  <Info className="h-5 w-5 text-info mt-0.5" />
                   <div className="text-sm">
                     <p className="font-medium text-info mb-1">{t("ingredientes_import_tips_title")}</p>
                     <ul className="text-info space-y-1">
@@ -2652,7 +2652,7 @@ export default function IngredientesPage() {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-destructive dark:text-red-300 flex items-center gap-2">
+            <DialogTitle className="text-destructive flex items-center gap-2">
               <AlertTriangle className="h-5 w-5" />
               {t("ingredientes_delete_dialog_title")}
             </DialogTitle>
@@ -2660,13 +2660,13 @@ export default function IngredientesPage() {
               {t("ingredientes_delete_dialog_desc_prefix")} <strong>"{ingredientToDelete?.name}"</strong>
               {t("ingredientes_delete_dialog_desc_suffix")}
               {ingredientToDelete?.category === "Sub Receta / produccion (Mise en place)" && (
-                <div className="mt-2 p-2 bg-warning-soft dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded text-warning text-sm">
+                <div className="mt-2 p-2 bg-warning-soft border border-warning/30 rounded text-warning text-sm">
                   <strong>{t("ingredientes_note_label")}</strong> {t("ingredientes_delete_subrecipe_warning")}
                 </div>
               )}
               {recipesUsingIngredientToDelete.length > 0 && (
-                <div className="mt-2 p-3 bg-destructive/10 dark:bg-red-950/40 border border-destructive/30 dark:border-red-900 rounded text-sm">
-                  <p className="font-medium text-destructive dark:text-red-300">
+                <div className="mt-2 p-3 bg-danger-soft border border-destructive/30 rounded text-sm">
+                  <p className="font-medium text-destructive">
                     {t("ingredientes_delete_affected_recipes_title").replace(
                       "{count}",
                       String(recipesUsingIngredientToDelete.length),
@@ -2693,7 +2693,7 @@ export default function IngredientesPage() {
             <Button variant="outline" onClick={() => setShowDeleteDialog(false)} className="border-border">
               {t("common_cancel")}
             </Button>
-            <Button variant="destructive" onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+            <Button variant="destructive" onClick={confirmDelete}>
               <Trash2 className="h-4 w-4 mr-2" />
               {t("ingredientes_delete_confirm_button")}
             </Button>

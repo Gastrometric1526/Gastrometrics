@@ -79,12 +79,12 @@ export function MermaInfoDialog({ open, onOpenChange }: MermaInfoDialogProps) {
                 </div>
               </div>
 
-              <div className="p-4 bg-orange-50 dark:bg-orange-950/40 rounded-lg border border-orange-200 dark:border-orange-900">
-                <h4 className="font-semibold text-orange-900 dark:text-orange-300 mb-2 flex items-center gap-2">
+              <div className="p-4 bg-warning-soft rounded-lg border border-warning/30">
+                <h4 className="font-semibold text-warning mb-2 flex items-center gap-2">
                   <Scale className="h-4 w-4" />
                   {t("merma_info_custom_title")}
                 </h4>
-                <div className="text-sm text-orange-800 dark:text-orange-300 space-y-2">
+                <div className="text-sm text-warning space-y-2">
                   <p>{t("merma_info_custom_body")}</p>
                   <p>
                     <strong>{t("merma_info_options_label")}</strong>
@@ -104,7 +104,7 @@ export function MermaInfoDialog({ open, onOpenChange }: MermaInfoDialogProps) {
             <Separator />
 
             {/* Top 10 Categorías */}
-            <div className="p-4 bg-warning-soft dark:bg-amber-950/40 rounded-lg border border-amber-200 dark:border-amber-900">
+            <div className="p-4 bg-warning-soft rounded-lg border border-warning/30">
               <h3 className="font-semibold text-warning mb-3 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
                 {t("merma_info_top10_title")}
@@ -118,7 +118,7 @@ export function MermaInfoDialog({ open, onOpenChange }: MermaInfoDialogProps) {
                       className="flex items-center justify-between p-2 bg-card rounded border border-border"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-warning bg-amber-200 dark:bg-amber-900 rounded-full w-6 h-6 flex items-center justify-center">
+                        <span className="text-xs font-bold text-warning bg-warning/20 rounded-full w-6 h-6 flex items-center justify-center">
                           {index + 1}
                         </span>
                         <span className="text-sm font-medium text-warning">{getCategoryLabel(category, language)}</span>
@@ -132,13 +132,13 @@ export function MermaInfoDialog({ open, onOpenChange }: MermaInfoDialogProps) {
                               : percentage <= 25
                                 ? "bg-yellow-100 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-900"
                                 : percentage <= 40
-                                  ? "bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-900"
+                                  ? "bg-warning-soft text-warning border-warning/40"
                                   : "bg-danger-soft text-destructive"
                           }`}
                         >
                           {percentage}%
                         </Badge>
-                        <span className="text-xs text-amber-600 dark:text-amber-300">
+                        <span className="text-xs text-warning">
                           {getMermaLevelLabel(level, language)}
                         </span>
                       </div>
@@ -187,7 +187,7 @@ export function MermaInfoDialog({ open, onOpenChange }: MermaInfoDialogProps) {
                                     : percentage <= 25
                                       ? "bg-yellow-100 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-900"
                                       : percentage <= 40
-                                        ? "bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-900"
+                                        ? "bg-warning-soft text-warning border-warning/40"
                                         : "bg-danger-soft text-destructive"
                               }`}
                             >
@@ -213,7 +213,7 @@ export function MermaInfoDialog({ open, onOpenChange }: MermaInfoDialogProps) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="text-center p-2 bg-success-soft rounded border">
                   <div className="font-semibold text-success">{getMermaLevelLabel("Baja", language)}</div>
-                  <div className="text-xs text-green-600 dark:text-green-300">0% - 10%</div>
+                  <div className="text-xs text-success">0% - 10%</div>
                 </div>
                 <div className="text-center p-2 bg-yellow-100 dark:bg-yellow-950/40 rounded border border-yellow-300 dark:border-yellow-900">
                   <div className="font-semibold text-yellow-700 dark:text-yellow-300">
@@ -221,15 +221,15 @@ export function MermaInfoDialog({ open, onOpenChange }: MermaInfoDialogProps) {
                   </div>
                   <div className="text-xs text-yellow-600 dark:text-yellow-300">11% - 25%</div>
                 </div>
-                <div className="text-center p-2 bg-orange-100 dark:bg-orange-950/40 rounded border border-orange-300 dark:border-orange-900">
-                  <div className="font-semibold text-orange-700 dark:text-orange-300">
+                <div className="text-center p-2 bg-warning-soft rounded border border-warning/40">
+                  <div className="font-semibold text-warning">
                     {getMermaLevelLabel("Alta", language)}
                   </div>
-                  <div className="text-xs text-orange-600 dark:text-orange-300">26% - 40%</div>
+                  <div className="text-xs text-warning">26% - 40%</div>
                 </div>
                 <div className="text-center p-2 bg-danger-soft rounded border">
                   <div className="font-semibold text-destructive">{getMermaLevelLabel("Muy Alta", language)}</div>
-                  <div className="text-xs text-destructive dark:text-red-300">41%+</div>
+                  <div className="text-xs text-destructive">41%+</div>
                 </div>
               </div>
             </div>

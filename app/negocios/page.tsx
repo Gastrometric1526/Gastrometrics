@@ -550,7 +550,7 @@ export default function NegociosPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="text-warning hover:bg-warning-soft bg-transparent"
+                                className="text-warning hover:bg-warning/20 bg-transparent"
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   // Navigate to business setup or edit

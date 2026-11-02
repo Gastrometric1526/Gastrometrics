@@ -150,19 +150,19 @@ export default function FichaTecnicaPage() {
             </Button>
           </div>
           {!isLoading && ingredients.length === 0 && (
-            <Alert data-tour="ficha-warning" className="mb-6 border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40">
-              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-300" />
-              <AlertTitle className="text-amber-900 dark:text-amber-200">
+            <Alert data-tour="ficha-warning" className="mb-6 border-warning/40 bg-warning-soft">
+              <AlertTriangle className="h-4 w-4 text-warning" />
+              <AlertTitle className="text-warning">
                 {t("ficha_tecnica_no_ingredients_alert_title")}
               </AlertTitle>
-              <AlertDescription className="text-amber-800 dark:text-amber-300">
+              <AlertDescription className="text-warning">
                 <p className="mb-3">
                   {t("ficha_tecnica_no_ingredients_alert_desc")}
                 </p>
                 <Button
                   size="sm"
                   onClick={() => router.push(`/ingredientes${businessId !== "main" ? `?business=${businessId}` : ""}`)}
-                  className="gap-2 bg-amber-600 hover:bg-amber-700 text-white"
+                  className="gap-2"
                 >
                   <Database className="h-4 w-4" />
                   {t("ficha_tecnica_go_to_ingredients_db")}

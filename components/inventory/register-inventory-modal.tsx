@@ -33,8 +33,6 @@ import { ActivityTracker } from "@/lib/activity-tracker"
 import { v4 as uuidv4 } from "uuid"
 import { Badge } from "@/components/ui/badge"
 
-// Add the missing import for setDashboardData
-import { setDashboardData } from "@/utils/dashboard"
 import { saveInventory, getInventory, addInventorySnapshot, getInventoryHistory } from "@/lib/storage/inventory"
 import { getIngredients, saveIngredients } from "@/lib/storage/ingredients"
 import { presentations } from "@/types/ingredient"
@@ -502,11 +500,6 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
     })
 
     saveIngredients(updatedIngredients, businessId)
-
-    // Also update using the dashboard data function for consistency with the database
-    setDashboardData("inventory", updatedInventory)
-    setDashboardData("inventoryHistory", getInventoryHistory(businessId))
-    setDashboardData("ingredients", updatedIngredients)
 
     // Show success message
     toast({
@@ -1179,7 +1172,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                       </button>
                     </div>
                     {countResult.unmatched.length > 0 && (
-                      <p className="text-amber-700 dark:text-amber-300">
+                      <p className="text-warning">
                         {t("inventario_count_unmatched").replace("{count}", String(countResult.unmatched.length))}{" "}
                         <span className="text-muted-foreground">{countResult.unmatched.slice(0, 6).join(" · ")}</span>
                       </p>
@@ -1532,8 +1525,8 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                       )}
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-6 border rounded-md bg-warning-soft dark:bg-amber-950/40">
-                      <AlertCircle className="h-8 w-8 text-amber-500 mb-2" />
+                    <div className="flex flex-col items-center justify-center p-6 border rounded-md bg-warning-soft">
+                      <AlertCircle className="h-8 w-8 text-warning mb-2" />
                       <p className="text-warning font-medium">{t("inventario_register_no_values_title")}</p>
                       <p className="text-muted-foreground text-sm text-center mt-1">
                         {t("inventario_register_no_values_desc")}
@@ -1541,7 +1534,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                       <Button
                         variant="outline"
                         onClick={() => setStep(2)}
-                        className="mt-4 border-warning text-warning hover:bg-warning-soft"
+                        className="mt-4 border-warning text-warning hover:bg-warning/20"
                       >
                         <ChevronLeft className="h-4 w-4 mr-1" />
                         {t("inventario_register_back_to_ingredients_button")}
@@ -1655,7 +1648,7 @@ function StepIndicator({ active, completed, label }: StepIndicatorProps) {
       <div
         className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-colors duration-300 ${
           completed
-            ? "bg-green-600 text-white"
+            ? "bg-primary text-primary-foreground"
             : active
               ? "bg-primary text-primary-foreground"
               : "bg-muted text-muted-foreground border border-border"
@@ -1675,7 +1668,7 @@ interface StepConnectorProps {
 function StepConnector({ active }: StepConnectorProps) {
   return (
     <div
-      className={`h-1 w-6 sm:w-8 rounded-full transition-colors duration-300 ${active ? "bg-green-600" : "bg-muted"}`}
+      className={`h-1 w-6 sm:w-8 rounded-full transition-colors duration-300 ${active ? "bg-primary" : "bg-muted"}`}
     ></div>
   )
 }

@@ -27,7 +27,7 @@ export function TeamPreviewBanner() {
 
   return (
     <>
-      <div className="fixed top-0 left-0 right-0 z-[1001] bg-amber-500 text-amber-950 px-4 py-2 flex items-center justify-center gap-3 text-sm font-medium shadow-md flex-wrap">
+      <div className="fixed top-0 left-0 right-0 z-[1001] bg-warning-soft text-warning border-b border-warning/30 px-4 py-2 flex items-center justify-center gap-3 text-sm font-medium shadow-md flex-wrap">
         <Eye className="h-4 w-4 shrink-0" />
         <span className="truncate">
           {viewingAsBefore}
@@ -37,7 +37,7 @@ export function TeamPreviewBanner() {
         <Button
           size="sm"
           variant="outline"
-          className="h-7 gap-1.5 bg-amber-50 hover:bg-white border-amber-700 text-amber-950 shrink-0"
+          className="h-7 gap-1.5 bg-background hover:bg-muted border-warning/40 text-warning shrink-0"
           onClick={handleExit}
         >
           <X className="h-3.5 w-3.5" />

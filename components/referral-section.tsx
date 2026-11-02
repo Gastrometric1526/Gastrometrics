@@ -136,7 +136,7 @@ export function ReferralSection({ data, failed }: { data: ReferralOverview | nul
               {t("invita_rewards_year").replace("{n}", String(data.rewardsThisYear)).replace("{max}", String(data.maxRewardsPerYear))}
             </p>
           </div>
-          {capReached && <p className="text-sm text-amber-700 dark:text-amber-400">{t("invita_cap_reached")}</p>}
+          {capReached && <p className="text-sm text-warning">{t("invita_cap_reached")}</p>}
         </div>
       )}
 

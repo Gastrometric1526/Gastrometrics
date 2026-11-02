@@ -8,7 +8,6 @@ import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/auth-context"
 import { LanguageProvider } from "@/contexts/language-context"
-import { DashboardProvider } from "@/contexts/dashboard-context"
 import { NotificationProvider } from "@/contexts/notification-context"
 import { Toaster } from "@/components/ui/toaster"
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration"
@@ -112,7 +111,7 @@ export default function RootLayout({
           />
           <AuthProvider>
             <LanguageProvider>
-              <DashboardProvider>
+              
                 <NotificationProvider>
                   <Suspense fallback={null}>
                     <ThemeInitializer />
@@ -171,7 +170,7 @@ export default function RootLayout({
                   <Toaster />
                   <Analytics />
                 </NotificationProvider>
-              </DashboardProvider>
+              
             </LanguageProvider>
           </AuthProvider>
         </ThemeProvider>

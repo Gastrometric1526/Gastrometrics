@@ -125,14 +125,14 @@ const orderStatusDefs = [
     labelKey: "pof_status_pending",
     color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300",
   },
-  { value: "approved", labelKey: "pof_status_approved", color: "bg-info-soft text-info dark:text-blue-300" },
+  { value: "approved", labelKey: "pof_status_approved", color: "bg-info-soft text-info" },
   {
     value: "ordered",
     labelKey: "pof_status_ordered",
-    color: "bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300",
+    color: "bg-primary-soft text-primary",
   },
-  { value: "received", labelKey: "pof_status_received", color: "bg-success-soft text-success dark:text-green-300" },
-  { value: "cancelled", labelKey: "pof_status_cancelled", color: "bg-danger-soft text-destructive dark:text-red-300" },
+  { value: "received", labelKey: "pof_status_received", color: "bg-success-soft text-success" },
+  { value: "cancelled", labelKey: "pof_status_cancelled", color: "bg-danger-soft text-destructive" },
 ] as const
 
 export function PurchaseOrderForm({

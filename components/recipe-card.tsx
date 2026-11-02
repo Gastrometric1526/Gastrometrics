@@ -70,17 +70,17 @@ export function RecipeCard({
   const getClassificationColor = (classification: string) => {
     const colors = {
       Entrada: "bg-success-soft text-success",
-      "Plato Principal": "bg-blue-50 dark:bg-blue-950/40 text-info border-blue-200 dark:border-blue-900",
+      "Plato Principal": "bg-info-soft text-info border-info/30",
       Postre: "bg-pink-50 dark:bg-pink-950/40 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-900",
       Bebida: "bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-900",
       "Sub Receta":
-        "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900",
+        "bg-primary-soft text-primary border-primary/30",
       Aperitivo:
-        "bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-900",
+        "bg-warning-soft text-warning border-warning/30",
       Guarnición:
         "bg-yellow-50 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-900",
       Salsa: "bg-danger-soft text-destructive",
-      Panadería: "bg-warning-soft dark:bg-amber-950/40 text-warning border-amber-200 dark:border-amber-900",
+      Panadería: "bg-warning-soft text-warning border-warning/30",
       Repostería: "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900",
     }
     return (
@@ -141,7 +141,7 @@ export function RecipeCard({
                     {recipe.metadata?.migratedFrom && (
                       <Badge
                         variant="outline"
-                        className="text-xs bg-blue-50 text-info border-blue-200 dark:border-blue-900"
+                        className="text-xs bg-info-soft text-info border-info/30"
                       >
                         <ArrowRightLeft className="h-2 w-2 mr-1" />
                         {t("recipecard_migrated_badge")}
@@ -155,33 +155,33 @@ export function RecipeCard({
               {/* Estadísticas en grid compacto para móvil */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs sm:text-sm">
                 <div className="flex items-center gap-1.5">
-                  <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 dark:text-green-300" />
+                  <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-success" />
                   <div>
-                    <p className="font-medium text-green-600 dark:text-green-300">{formatCurrency(stats.totalCost)}</p>
+                    <p className="font-medium text-success">{formatCurrency(stats.totalCost)}</p>
                     <p className="text-muted-foreground text-xs">{t("recipecard_total_cost")}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <Users className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-300" />
+                  <Users className="h-3 w-3 sm:h-4 sm:w-4 text-info" />
                   <div>
-                    <p className="font-medium text-blue-600 dark:text-blue-300">{stats.yield}</p>
+                    <p className="font-medium text-info">{stats.yield}</p>
                     <p className="text-muted-foreground text-xs">{t("recipecard_servings")}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <ChefHat className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600 dark:text-purple-300" />
+                  <ChefHat className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                   <div>
-                    <p className="font-medium text-purple-600 dark:text-purple-300">{stats.ingredientsCount}</p>
+                    <p className="font-medium text-primary">{stats.ingredientsCount}</p>
                     <p className="text-muted-foreground text-xs">{t("recipecard_ingredients")}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-amber-600 dark:text-amber-300" />
+                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-warning" />
                   <div>
-                    <p className="font-medium text-amber-600 dark:text-amber-300">
+                    <p className="font-medium text-warning">
                       {recipe.metadata?.updatedAt
                         ? formatDayMonth(recipe.metadata.updatedAt)
                         : "N/A"}
@@ -225,7 +225,7 @@ export function RecipeCard({
                 </Badge>
               )}
               {recipe.metadata?.migratedFrom && (
-                <Badge variant="outline" className="text-xs bg-blue-50 text-info border-blue-200 dark:border-blue-900">
+                <Badge variant="outline" className="text-xs bg-info-soft text-info border-info/30">
                   <ArrowRightLeft className="h-2 w-2 mr-1" />
                   {t("recipecard_migrated_badge")}
                 </Badge>
@@ -257,17 +257,17 @@ export function RecipeCard({
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-green-600 dark:text-green-300" />
+              <DollarSign className="h-4 w-4 text-success" />
               <div>
-                <p className="font-medium text-green-600 dark:text-green-300">{formatCurrency(stats.totalCost)}</p>
+                <p className="font-medium text-success">{formatCurrency(stats.totalCost)}</p>
                 <p className="text-muted-foreground text-xs">{t("recipecard_total_cost")}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+              <Users className="h-4 w-4 text-info" />
               <div>
-                <p className="font-medium text-blue-600 dark:text-blue-300">{stats.yield} {recipe.yieldUnit && recipe.yieldUnit !== "porciones" ? getYieldUnitLabelFor(recipe.yieldUnit, language, stats.yield) : getYieldUnitLabelFor("porciones", language, stats.yield)}</p>
+                <p className="font-medium text-info">{stats.yield} {recipe.yieldUnit && recipe.yieldUnit !== "porciones" ? getYieldUnitLabelFor(recipe.yieldUnit, language, stats.yield) : getYieldUnitLabelFor("porciones", language, stats.yield)}</p>
                 <p className="text-muted-foreground text-xs">{t("recipecard_yield_label")}</p>
               </div>
             </div>
@@ -275,17 +275,17 @@ export function RecipeCard({
 
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="flex items-center gap-2">
-              <ChefHat className="h-4 w-4 text-purple-600 dark:text-purple-300" />
+              <ChefHat className="h-4 w-4 text-primary" />
               <div>
-                <p className="font-medium text-purple-600 dark:text-purple-300">{stats.ingredientsCount}</p>
+                <p className="font-medium text-primary">{stats.ingredientsCount}</p>
                 <p className="text-muted-foreground text-xs">{t("recipecard_ingredients")}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-amber-600 dark:text-amber-300" />
+              <Clock className="h-4 w-4 text-warning" />
               <div>
-                <p className="font-medium text-amber-600 dark:text-amber-300">{stats.proceduresCount}</p>
+                <p className="font-medium text-warning">{stats.proceduresCount}</p>
                 <p className="text-muted-foreground text-xs">{t("recipecard_steps")}</p>
               </div>
             </div>
@@ -304,7 +304,7 @@ export function RecipeCard({
           {/* Indicador de migración */}
           {recipe.metadata?.migratedFrom && (
             <div className="pt-2 border-t border-border">
-              <p className="text-xs text-blue-600 dark:text-blue-300 flex items-center gap-1">
+              <p className="text-xs text-info flex items-center gap-1">
                 <ArrowRightLeft className="h-3 w-3" />
                 {t("recipecard_migrated_from_prefix")}{" "}
                 {recipe.metadata.migratedFrom === "main"

@@ -212,7 +212,7 @@ export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true
           </Card>
           <Card className="border-border bg-card">
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 shrink-0">
+              <div className="p-2.5 rounded-lg bg-info-soft shrink-0">
                 <Package className="h-5 w-5 text-info" />
               </div>
               <div className="min-w-0">
@@ -225,8 +225,8 @@ export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true
           </Card>
           <Card className="border-border bg-card">
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2.5 rounded-lg bg-purple-50 dark:bg-purple-950/40 shrink-0">
-                <ListOrdered className="h-5 w-5 text-purple-600 dark:text-purple-300" />
+              <div className="p-2.5 rounded-lg bg-primary-soft shrink-0">
+                <ListOrdered className="h-5 w-5 text-primary" />
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide truncate">
@@ -298,10 +298,10 @@ export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true
                                 !cashUpResult
                                   ? "hidden text-xs text-muted-foreground sm:inline"
                                   : cashUpResult.status === "balanced"
-                                    ? "text-xs text-green-700 dark:text-green-300"
+                                    ? "text-xs text-success"
                                     : cashUpResult.status === "short"
-                                      ? "text-xs text-red-700 dark:text-red-300"
-                                      : "text-xs text-amber-700 dark:text-amber-300"
+                                      ? "text-xs text-destructive"
+                                      : "text-xs text-warning"
                               }
                             >
                               {!cashUpResult
@@ -396,7 +396,7 @@ export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true
       <Dialog open={!!entryToDelete} onOpenChange={(next) => !next && setEntryToDelete(null)}>
         <DialogContent className="bg-card border-border max-w-md mx-4">
           <DialogHeader>
-            <DialogTitle className="text-destructive dark:text-red-300 flex items-center gap-2">
+            <DialogTitle className="text-destructive flex items-center gap-2">
               <Trash2 className="h-5 w-5" />
               {t("manual_sales_delete_dialog_title")}
             </DialogTitle>
@@ -417,7 +417,7 @@ export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true
             <Button
               variant="destructive"
               onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
+              className="bg-destructive hover:bg-destructive/90 w-full sm:w-auto"
               disabled={isDeleting}
             >
               <Trash2 className="h-4 w-4 mr-2" />

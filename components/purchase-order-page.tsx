@@ -1009,7 +1009,7 @@ export function PurchaseOrderPage() {
                   const targetStock = example.minStock * 2
                   const suggested = Math.max(targetStock - (example.currentStock || 0), example.minStock)
                   return (
-                    <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-lg border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-300">
+                    <div className="p-3 bg-warning-soft rounded-lg border border-warning/30 text-warning">
                       <p className="font-medium mb-1">{t("ordenes_suggest_info_example_prefix").replace("{name}", example.name)}</p>
                       <p className="font-mono text-xs">
                         máx(2 × {example.minStock} − {example.currentStock || 0}, {example.minStock}) = {Math.round(suggested * 100) / 100}{" "}

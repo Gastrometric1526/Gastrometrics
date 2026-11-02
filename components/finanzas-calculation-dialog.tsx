@@ -113,7 +113,7 @@ export function FinanzasCalculationDialog({
                 {formatCurrency(cogsResult.finalInventoryValue)} = {formatCurrency(cogsResult.cogs)}
               </div>
               {!cogsResult.hasFullData && (
-                <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">{t("fcd_cogs_no_data")}</p>
+                <p className="text-xs text-warning mt-1">{t("fcd_cogs_no_data")}</p>
               )}
             </div>
 
@@ -122,7 +122,7 @@ export function FinanzasCalculationDialog({
             {/* Food Cost Real vs Teorico */}
             <div>
               <h4 className="font-semibold mb-1 flex items-center gap-2">
-                <Percent className="h-4 w-4 text-amber-600 dark:text-amber-300" />
+                <Percent className="h-4 w-4 text-warning" />
                 {t("fcd_realcost_title")}
               </h4>
               <p className="text-muted-foreground mb-2">{t("fcd_realcost_body")}</p>
@@ -175,7 +175,7 @@ export function FinanzasCalculationDialog({
             {/* Margen de contribucion */}
             <div>
               <h4 className="font-semibold mb-1 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-300" />
+                <TrendingUp className="h-4 w-4 text-success" />
                 {t("fcd_margin_title")}
               </h4>
               <p className="text-muted-foreground mb-2">{t("fcd_margin_body")}</p>

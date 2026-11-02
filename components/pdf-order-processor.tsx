@@ -39,7 +39,7 @@ const ValidationStatus = memo(
       return (
         <Badge
           variant="outline"
-          className="bg-warning-soft dark:bg-amber-950/40 text-warning border-amber-200 dark:border-amber-900"
+          className="bg-warning-soft text-warning border-warning/30"
         >
           <AlertCircle className="h-3 w-3 mr-1" /> {validation.message}
         </Badge>

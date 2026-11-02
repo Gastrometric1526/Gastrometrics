@@ -55,7 +55,6 @@ import { Sidebar } from "@/components/sidebar"
 import { BusinessDetailTour } from "@/components/page-tours"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
-import { getDashboardData } from "@/utils/dashboard"
 import { updateBusiness, getBusinessById, refreshBusinesses } from "@/lib/storage/businesses"
 import { compressLogoToDataUrl } from "@/lib/utils/logo-compress"
 import { useActiveMembership } from "@/lib/plan-access"
@@ -239,15 +238,6 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
         // Load business-specific activity and alerts
         loadBusinessActivity()
         loadBusinessAlerts()
-
-        // Cargar datos específicos del negocio
-        const ingredients = getDashboardData("ingredients", params.id)
-        const recipes = getDashboardData("recipes", params.id)
-        const purchaseOrders = getDashboardData("purchaseOrders", params.id)
-
-        console.log("Ingredientes del negocio:", ingredients)
-        console.log("Recetas del negocio:", recipes)
-        console.log("Órdenes de compra del negocio:", purchaseOrders)
       } catch (error) {
         console.error("Error loading business:", error)
         toast({
@@ -1179,11 +1169,11 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                          <Card className="border-2 border-blue-200 dark:border-blue-900 bg-blue-50">
+                          <Card className="border-2 border-info/30 bg-info-soft">
                             <CardContent className="p-4 text-center">
                               <div className="flex items-center justify-center gap-2 mb-2">
-                                <DollarSign className="h-5 w-5 text-blue-600 dark:text-blue-300" />
-                                <span className="text-sm font-semibold text-blue-600 dark:text-blue-300">
+                                <DollarSign className="h-5 w-5 text-info" />
+                                <span className="text-sm font-semibold text-info">
                                   {t("business_scenario_kpi_ticket_label")}
                                 </span>
                               </div>
@@ -1194,8 +1184,8 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                           <Card className="border border-hairline bg-success-soft">
                             <CardContent className="p-4 text-center">
                               <div className="flex items-center justify-center gap-2 mb-2">
-                                <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-300" />
-                                <span className="text-sm font-semibold text-green-600 dark:text-green-300">
+                                <TrendingUp className="h-5 w-5 text-success" />
+                                <span className="text-sm font-semibold text-success">
                                   {t("business_scenario_kpi_cost_label")}
                                 </span>
                               </div>
@@ -1205,32 +1195,32 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                             </CardContent>
                           </Card>
 
-                          <Card className="border-2 border-purple-200 dark:border-purple-900 bg-purple-50 dark:bg-purple-950/40">
+                          <Card className="border-2 border-primary/30 bg-primary-soft">
                             <CardContent className="p-4 text-center">
                               <div className="flex items-center justify-center gap-2 mb-2">
-                                <Target className="h-5 w-5 text-purple-600 dark:text-purple-300" />
-                                <span className="text-sm font-semibold text-purple-600 dark:text-purple-300">
+                                <Target className="h-5 w-5 text-primary" />
+                                <span className="text-sm font-semibold text-primary">
                                   {t("business_scenario_kpi_margin_label")}
                                 </span>
                               </div>
-                              <div className="text-2xl font-bold text-purple-800 dark:text-purple-300">
+                              <div className="text-2xl font-bold text-primary">
                                 {formatCurrency(currentScenario.MC)}
                               </div>
                             </CardContent>
                           </Card>
 
-                          <Card className="border-2 border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-950/40">
+                          <Card className="border-2 border-warning/30 bg-warning-soft">
                             <CardContent className="p-4 text-center">
                               <div className="flex items-center justify-center gap-2 mb-2">
-                                <BarChart3 className="h-5 w-5 text-orange-600 dark:text-orange-300" />
-                                <span className="text-sm font-semibold text-orange-600 dark:text-orange-300">
+                                <BarChart3 className="h-5 w-5 text-warning" />
+                                <span className="text-sm font-semibold text-warning">
                                   {t("business_scenario_kpi_breakeven_label")}
                                 </span>
                               </div>
-                              <div className="text-lg font-bold text-orange-800 dark:text-orange-300">
+                              <div className="text-lg font-bold text-warning">
                                 {currentScenario.PE_plates.toLocaleString("en-US")} {t("business_scenario_plates_suffix")}
                               </div>
-                              <div className="text-sm text-orange-700 dark:text-orange-300">
+                              <div className="text-sm text-warning">
                                 {formatCurrency(currentScenario.PE_revenue)}
                                 {t("business_scenario_per_month_suffix")}
                               </div>
@@ -1239,10 +1229,10 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                         </div>
 
                         {/* Recommendation */}
-                        <Card className="border-2 border-amber-200 dark:border-amber-900 bg-warning-soft dark:bg-amber-950/40">
+                        <Card className="border-2 border-warning/30 bg-warning-soft">
                           <CardContent className="p-4">
                             <div className="flex items-start gap-3">
-                              <Info className="h-5 w-5 text-amber-600 dark:text-amber-300 mt-0.5 flex-shrink-0" />
+                              <Info className="h-5 w-5 text-warning mt-0.5 flex-shrink-0" />
                               <div>
                                 <h4 className="font-semibold text-warning mb-2">
                                   {t("business_scenario_recommendation_heading")}
@@ -1349,7 +1339,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                           className="flex items-start gap-3 p-3 rounded-lg border-2 bg-info-soft cursor-pointer hover:opacity-90"
                         >
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-blue-900 dark:text-blue-300">
+                            <p className="text-sm font-bold text-info">
                               {formatActivityEntry(alert, t)}
                             </p>
                             <p className="text-xs text-foreground/50 mt-1">

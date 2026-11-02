@@ -26,21 +26,32 @@ export function PdfBrandingSettings({ businessId }: { businessId?: string | null
   const business = businessId && businessId !== "main" ? businesses.find((b) => b.id === businessId) : undefined
   const [name, setName] = useState("")
   const [footer, setFooter] = useState("")
-  const [saving, setSaving] = useState(false)
+  // Se guarda solo al salir de un campo (como un formulario normal, sin un segundo botón
+  // «Guardar» dentro de Configuración, que ya tiene el suyo).
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
+  const [savedValue, setSavedValue] = useState({ name: "", footer: "" })
 
   useEffect(() => {
     const current = getPdfBranding(businessId)
     setName(current.name ?? "")
     setFooter(current.footer ?? "")
+    setSavedValue({ name: current.name ?? "", footer: current.footer ?? "" })
+    setStatus("idle")
   }, [businessId, business?.pdfBranding])
 
   const unlocked = planSlug === WHITE_LABEL_PLAN && !isMember
 
   const save = async () => {
-    setSaving(true)
+    if (name.trim() === savedValue.name && footer.trim() === savedValue.footer) return
+    setStatus("saving")
     const ok = await savePdfBranding(businessId, { name, footer })
-    setSaving(false)
-    toast(ok ? { title: t("pdf_branding_saved") } : { title: t("pdf_branding_error"), variant: "destructive" })
+    if (ok) {
+      setSavedValue({ name: name.trim(), footer: footer.trim() })
+      setStatus("saved")
+    } else {
+      setStatus("error")
+      toast({ title: t("pdf_branding_error"), variant: "destructive" })
+    }
   }
 
   return (
@@ -66,6 +77,7 @@ export function PdfBrandingSettings({ businessId }: { businessId?: string | null
                 maxLength={60}
                 placeholder={business?.name || t("pdf_branding_name_placeholder")}
                 onChange={(e) => setName(e.target.value)}
+                onBlur={save}
               />
               <p className="text-xs text-muted-foreground">{t("pdf_branding_name_hint")}</p>
             </div>
@@ -77,12 +89,13 @@ export function PdfBrandingSettings({ businessId }: { businessId?: string | null
                 maxLength={120}
                 placeholder={t("pdf_branding_footer_placeholder")}
                 onChange={(e) => setFooter(e.target.value)}
+                onBlur={save}
               />
               <p className="text-xs text-muted-foreground">{t("pdf_branding_footer_hint")}</p>
             </div>
-            <Button onClick={save} disabled={saving}>
-              {saving ? t("pdf_branding_saving") : t("pdf_branding_save")}
-            </Button>
+            <p className="min-h-4 text-xs text-muted-foreground" aria-live="polite">
+              {status === "saving" ? t("pdf_branding_saving") : status === "saved" ? t("pdf_branding_saved") : ""}
+            </p>
           </>
         ) : (
           <div className="flex flex-col gap-3 rounded-lg border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">

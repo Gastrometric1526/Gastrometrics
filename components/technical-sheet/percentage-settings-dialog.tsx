@@ -165,7 +165,7 @@ export function PercentageSettingsDialog({
                 </div>
                 <div className="flex justify-between gap-3">
                   <span className="text-muted-foreground">{t("ficha_tecnica_pct_summary_cost_percent")}</span>
-                  <span className={`shrink-0 whitespace-nowrap font-mono ${costPercent > HIGH_COST_PERCENT ? "text-amber-700 dark:text-amber-400" : ""}`}>
+                  <span className={`shrink-0 whitespace-nowrap font-mono ${costPercent > HIGH_COST_PERCENT ? "text-warning" : ""}`}>
                     {costPercent.toFixed(1)} %
                   </span>
                 </div>
@@ -174,13 +174,13 @@ export function PercentageSettingsDialog({
               <p className="text-xs text-muted-foreground">{t("ficha_tecnica_pct_empty_preview")}</p>
             )}
             {unitCost > 0 && costPercent > HIGH_COST_PERCENT && (
-              <p className="flex gap-1.5 pt-1 text-xs text-amber-700 dark:text-amber-400">
+              <p className="flex gap-1.5 pt-1 text-xs text-warning">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
                 {t("ficha_tecnica_pct_warn_high_cost").replace("{percent}", String(HIGH_COST_PERCENT))}
               </p>
             )}
             {values.contributionMargin === 0 && (
-              <p className="flex gap-1.5 pt-1 text-xs text-amber-700 dark:text-amber-400">
+              <p className="flex gap-1.5 pt-1 text-xs text-warning">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
                 {t("ficha_tecnica_pct_warn_no_profit")}
               </p>

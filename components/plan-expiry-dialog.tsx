@@ -185,13 +185,13 @@ export function PlanExpiryDialog() {
         <DialogHeader>
           <div
             className={`mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full ${
-              failed || expiry?.urgency === "today" ? "bg-destructive/10" : "bg-amber-500/10"
+              failed || expiry?.urgency === "today" ? "bg-destructive/10" : "bg-warning/10"
             }`}
           >
             {failed ? (
               <AlertTriangle className="h-6 w-6 text-destructive" />
             ) : (
-              <CalendarClock className={`h-6 w-6 ${expiry?.urgency === "today" ? "text-destructive" : "text-amber-600"}`} />
+              <CalendarClock className={`h-6 w-6 ${expiry?.urgency === "today" ? "text-destructive" : "text-warning"}`} />
             )}
           </div>
           <DialogTitle className="text-center">{failed ? t("plan_expiry_failed_title") : title}</DialogTitle>

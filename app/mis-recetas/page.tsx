@@ -699,8 +699,8 @@ export default function MisRecetasPage() {
               <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center gap-2 md:gap-3">
-                    <div className="p-1.5 md:p-2 bg-blue-50 dark:bg-blue-950/40 rounded-lg">
-                      <ChefHat className="h-4 w-4 md:h-5 md:w-5 text-blue-600 dark:text-blue-300" />
+                    <div className="p-1.5 md:p-2 bg-info-soft rounded-lg">
+                      <ChefHat className="h-4 w-4 md:h-5 md:w-5 text-info" />
                     </div>
                     <div>
                       <p className="text-lg md:text-2xl font-bold text-foreground">{stats.totalRecipes}</p>
@@ -714,7 +714,7 @@ export default function MisRecetasPage() {
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center gap-2 md:gap-3">
                     <div className="p-1.5 md:p-2 bg-success-soft rounded-lg">
-                      <Users className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-300" />
+                      <Users className="h-4 w-4 md:h-5 md:w-5 text-success" />
                     </div>
                     <div>
                       <p className="text-lg md:text-2xl font-bold text-foreground">{stats.subRecipes}</p>
@@ -727,8 +727,8 @@ export default function MisRecetasPage() {
               <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center gap-2 md:gap-3">
-                    <div className="p-1.5 md:p-2 bg-warning-soft dark:bg-amber-950/40 rounded-lg">
-                      <DollarSign className="h-4 w-4 md:h-5 md:w-5 text-amber-600 dark:text-amber-300" />
+                    <div className="p-1.5 md:p-2 bg-warning-soft rounded-lg">
+                      <DollarSign className="h-4 w-4 md:h-5 md:w-5 text-warning" />
                     </div>
                     <div>
                       <p className="text-lg md:text-2xl font-bold text-foreground">{formatCurrency(stats.avgCost)}</p>
@@ -741,8 +741,8 @@ export default function MisRecetasPage() {
               <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center gap-2 md:gap-3">
-                    <div className="p-1.5 md:p-2 bg-purple-50 dark:bg-purple-950/40 rounded-lg">
-                      <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-purple-600 dark:text-purple-300" />
+                    <div className="p-1.5 md:p-2 bg-primary-soft rounded-lg">
+                      <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                     </div>
                     <div>
                       <p className="text-lg md:text-2xl font-bold text-foreground">
@@ -851,7 +851,7 @@ export default function MisRecetasPage() {
                 {selectedClassification !== "Todas" && (
                   <Badge
                     variant="outline"
-                    className="rounded-lg px-2 md:px-3 py-1 border-blue-200 dark:border-blue-900 text-info bg-info-soft text-xs"
+                    className="rounded-lg px-2 md:px-3 py-1 border-info/30 text-info bg-info-soft text-xs"
                   >
                     {getClassificationLabel(selectedClassification as (typeof recipeClassifications)[number], language)}
                   </Badge>
@@ -972,7 +972,7 @@ export default function MisRecetasPage() {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent className="bg-card border-border max-w-md mx-4">
           <DialogHeader>
-            <DialogTitle className="text-destructive dark:text-red-300 flex items-center gap-2">
+            <DialogTitle className="text-destructive flex items-center gap-2">
               <Trash2 className="h-5 w-5" />
               {t("ingredientes_delete_dialog_title")}
             </DialogTitle>
@@ -983,8 +983,8 @@ export default function MisRecetasPage() {
               {t("misrecetas_delete_confirm_suffix")}
             </p>
             {recipeToDelete?.classification === SUBRECIPE_CLASSIFICATION && (
-              <Alert className="mt-4 border-amber-200 dark:border-amber-900 bg-warning-soft dark:bg-amber-950/40">
-                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-300" />
+              <Alert className="mt-4 border-warning/30 bg-warning-soft">
+                <AlertTriangle className="h-4 w-4 text-warning" />
                 <AlertDescription className="text-warning">
                   <strong>{t("misrecetas_delete_subrecipe_note_label")}</strong> {t("misrecetas_delete_subrecipe_note_desc")}
                 </AlertDescription>
@@ -1005,7 +1005,7 @@ export default function MisRecetasPage() {
             <Button
               variant="destructive"
               onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
+              className="bg-destructive hover:bg-destructive/90 w-full sm:w-auto"
             >
               <Trash2 className="h-4 w-4 mr-2" />
               {t("common_delete")}
@@ -1028,8 +1028,8 @@ export default function MisRecetasPage() {
                 {t("misrecetas_migration_dialog_suffix")}
               </p>
               {migrateWithIngredients && (
-              <Alert className="mt-4 border-blue-200 dark:border-blue-900 bg-blue-50">
-                <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+              <Alert className="mt-4 border-info/30 bg-info-soft">
+                <CheckCircle className="h-4 w-4 text-info" />
                 <AlertDescription className="text-info">
                   <p className="text-sm font-medium mb-1.5">{t("misrecetas_migration_all_together_title")}</p>
                   <ul className="list-disc list-inside space-y-1 text-sm">

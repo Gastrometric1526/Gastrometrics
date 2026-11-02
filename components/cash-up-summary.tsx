@@ -68,7 +68,7 @@ export function CashUpSummaryCard({ imports, onOpenDay }: { imports: SalesImport
                     {dayLabel(d.day)} · <span className="text-muted-foreground">{t(`cashup_status_${d.result.status}` as never)}</span>
                   </span>
                   <span className="flex items-center gap-2">
-                    <span className={d.result.totalDifference < 0 ? "whitespace-nowrap font-semibold tabular-nums text-red-700 dark:text-red-300" : "whitespace-nowrap font-semibold tabular-nums"}>
+                    <span className={d.result.totalDifference < 0 ? "whitespace-nowrap font-semibold tabular-nums text-destructive" : "whitespace-nowrap font-semibold tabular-nums"}>
                       {d.result.totalDifference > 0 ? "+" : d.result.totalDifference < 0 ? "− " : ""}
                       {formatCurrency(Math.abs(d.result.totalDifference))}
                     </span>
@@ -107,7 +107,7 @@ function Kpi({ label, value, tone }: { label: string; value: string; tone?: "bad
   return (
     <div className="min-w-0 rounded-lg border border-border p-3">
       <p className="text-xs leading-tight text-muted-foreground">{label}</p>
-      <p className={tone === "bad" ? "truncate text-lg font-semibold tabular-nums text-red-700 dark:text-red-300" : "truncate text-lg font-semibold tabular-nums text-foreground"}>{value}</p>
+      <p className={tone === "bad" ? "truncate text-lg font-semibold tabular-nums text-destructive" : "truncate text-lg font-semibold tabular-nums text-foreground"}>{value}</p>
     </div>
   )
 }

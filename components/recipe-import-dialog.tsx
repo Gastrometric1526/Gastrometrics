@@ -581,12 +581,12 @@ export function RecipeImportDialog({
                 ) : (
                   ocrLangUsed &&
                   ocr.confidence < LOW_CONFIDENCE && (
-                    <p className="text-xs text-amber-600">{t("recipe_import_ocr_wrong_lang_hint")}</p>
+                    <p className="text-xs text-warning">{t("recipe_import_ocr_wrong_lang_hint")}</p>
                   )
                 )}
                 {lowLines.length > 0 && (
                   <div className="space-y-1">
-                    <p className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
+                    <p className="flex items-center gap-1.5 text-xs font-medium text-warning">
                       <AlertTriangle className="h-3.5 w-3.5" />
                       {t("recipe_import_ocr_low_lines").replace("{count}", String(lowLines.length))}
                     </p>
@@ -596,7 +596,7 @@ export function RecipeImportDialog({
                           key={i}
                           type="button"
                           onClick={() => focusLine(l.text)}
-                          className="max-w-full truncate rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-left text-xs text-amber-900 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200"
+                          className="max-w-full truncate rounded-md border border-warning/40 bg-warning-soft px-2 py-0.5 text-left text-xs text-warning hover:bg-warning/20"
                           title={`${l.confidence} %`}
                         >
                           {l.text}
@@ -678,7 +678,7 @@ export function RecipeImportDialog({
                 <div
                   key={i}
                   className={`rounded-lg border p-3 space-y-2 ${
-                    statusOf(row) === "review" ? "border-amber-400 bg-amber-50/50 dark:bg-amber-950/20" : statusOf(row) === "skip" ? "opacity-60" : ""
+                    statusOf(row) === "review" ? "border-warning/40 bg-warning-soft/50" : statusOf(row) === "skip" ? "opacity-60" : ""
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -688,7 +688,7 @@ export function RecipeImportDialog({
                     <span
                       className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
                         statusOf(row) === "review"
-                          ? "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200"
+                          ? "bg-warning-soft text-warning"
                           : statusOf(row) === "base"
                             ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"
                             : statusOf(row) === "new"
@@ -779,13 +779,13 @@ export function RecipeImportDialog({
                     </div>
                   )}
                   {row.needsReview && (
-                    <p className="flex items-center gap-1.5 text-xs text-amber-600">
+                    <p className="flex items-center gap-1.5 text-xs text-warning">
                       <AlertTriangle className="h-3.5 w-3.5" />
                       {t("recipe_import_review_quantity")}
                     </p>
                   )}
                   {isDoubtful(row) && (
-                    <p className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300">
+                    <p className="flex items-center gap-1.5 text-xs text-warning">
                       <AlertTriangle className="h-3.5 w-3.5" />
                       {t("recipe_import_doubtful_line")}
                     </p>

@@ -13,7 +13,6 @@ import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { AlertTriangle, RefreshCw, Info } from "lucide-react"
 import { getCategoryMermaPercentage, calculateCategoryMerma, getMermaLevel } from "@/lib/merma-categories"
-import { setDashboardData } from "@/utils/dashboard-data"
 import { MermaInfoDialog } from "./merma-info-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
@@ -304,7 +303,6 @@ export function MermaManagementDialog({
     try {
       // Costos antes de guardar, para saber qué ingredientes cambiaron.
       const previous = getIngredients(bid).map((ing) => ({ ...ing, pricing: { ...ing.pricing } }))
-      setDashboardData("ingredients", ingredients, businessId ?? undefined)
       await onSave?.(ingredients)
       // Las fichas que usan esos ingredientes se recalculan en cascada, con la misma regla
       // de precio que un cambio de precio de compra (docs/162, docs/164).
@@ -341,7 +339,9 @@ export function MermaManagementDialog({
           ? t("ingredientes_merma_toast_activated_title")
           : t("ingredientes_merma_toast_deactivated_title"),
         description:
-          recalculated > 0
+          recalculated === 1
+            ? t("merma_recalc_done_desc_one")
+            : recalculated > 1
             ? t("merma_recalc_done_desc").replace("{count}", String(recalculated))
             : mermaSystemActive
               ? t("ingredientes_merma_toast_activated_desc")
@@ -489,7 +489,7 @@ export function MermaManagementDialog({
                                       : categoryMerma <= 25
                                         ? "bg-yellow-100 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300"
                                         : categoryMerma <= 40
-                                          ? "bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300"
+                                          ? "bg-warning-soft text-warning"
                                           : "bg-danger-soft text-destructive"
                                 }`}
                               >
@@ -507,7 +507,7 @@ export function MermaManagementDialog({
                               disabled={!mermaSystemActive}
                               className={
                                 ingredient.merma?.useGlobal === false
-                                  ? "bg-orange-500 hover:bg-orange-600 text-white"
+                                  ? "bg-primary hover:bg-primary/90 text-primary-foreground"
                                   : "bg-success-soft hover:bg-success-soft text-success"
                               }
                             >
@@ -560,11 +560,11 @@ export function MermaManagementDialog({
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
-                            <div className={`font-medium ${isAdjusted ? "text-green-600 dark:text-green-300" : ""}`}>
+                            <div className={`font-medium ${isAdjusted ? "text-success" : ""}`}>
                               {Number(currentContent.toFixed(2))} {getUnitLabelFor(ingredient.unit, language, currentContent)}
                             </div>
                             {isAdjusted && (
-                              <div className="text-xs text-green-600 dark:text-green-300">
+                              <div className="text-xs text-success">
                                 {t("ingredientes_merma_adjusted_label")}
                               </div>
                             )}
@@ -610,10 +610,12 @@ export function MermaManagementDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>{t("merma_recalc_title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t(mermaSystemActive ? "merma_recalc_desc_on" : "merma_recalc_desc_off").replace(
-                "{count}",
-                String(recalcPreview?.affectedRecipes.length ?? 0),
-              )}
+              {(recalcPreview?.affectedRecipes.length ?? 0) === 1
+                ? t(mermaSystemActive ? "merma_recalc_desc_on_one" : "merma_recalc_desc_off_one")
+                : t(mermaSystemActive ? "merma_recalc_desc_on" : "merma_recalc_desc_off").replace(
+                    "{count}",
+                    String(recalcPreview?.affectedRecipes.length ?? 0),
+                  )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <ul className="max-h-72 space-y-2 overflow-y-auto pr-1 text-sm" data-testid="merma-recalc-list">

@@ -387,9 +387,9 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
 
         {showEmailConfirm ? (
           <div className="flex-1 flex flex-col justify-center space-y-4 px-1">
-            <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 space-y-3">
+            <div className="rounded-lg border border-warning/40 bg-warning/5 p-4 space-y-3">
               <div className="flex items-start gap-3">
-                <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <ShieldAlert className="h-5 w-5 text-warning shrink-0 mt-0.5" />
                 <div className="space-y-1.5 flex-1">
                   <h4 className="font-semibold text-foreground">{t("settings_email_confirm_title")}</h4>
                   <p className="text-sm text-muted-foreground">

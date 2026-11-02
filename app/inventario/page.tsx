@@ -646,7 +646,6 @@ export default function InventoryPage() {
                 <Button
                   data-tour="inv-register"
                   onClick={handleRegisterInventoryClick}
-                  className="bg-green-600 hover:bg-green-700 text-white"
                 >
                   <ClipboardList className="mr-2 h-4 w-4" />
                   {t("inventario_register_button")}
@@ -715,7 +714,7 @@ export default function InventoryPage() {
                   >
                     <CardContent className="flex items-center p-6">
                       <div className="h-12 w-12 rounded-full bg-danger-soft flex items-center justify-center mr-4">
-                        <AlertTriangle className="h-6 w-6 text-destructive dark:text-red-300" />
+                        <AlertTriangle className="h-6 w-6 text-destructive" />
                       </div>
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">
@@ -749,7 +748,7 @@ export default function InventoryPage() {
                   <Card className="bg-card border border-border">
                     <CardContent className="flex items-center p-6">
                       <div className="h-12 w-12 rounded-full bg-success-soft flex items-center justify-center mr-4">
-                        <DollarSign className="h-6 w-6 text-green-600 dark:text-green-300" />
+                        <DollarSign className="h-6 w-6 text-success" />
                       </div>
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">{t("inventario_stat_total_value")}</p>
@@ -860,7 +859,6 @@ export default function InventoryPage() {
                       </p>
                       <Button
                         onClick={handleRegisterInventoryClick}
-                        className="bg-green-600 hover:bg-green-700 text-white"
                       >
                         <ClipboardList className="mr-2 h-4 w-4" />
                         {t("inventario_register_button")}
@@ -878,14 +876,14 @@ export default function InventoryPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              <AlertTriangle className="h-5 w-5 text-warning" />
               {t("inventario_no_ingredients_title")}
             </DialogTitle>
             <DialogDescription>{t("inventario_no_ingredients_desc")}</DialogDescription>
           </DialogHeader>
           <div className="flex items-center justify-center p-4">
-            <div className="rounded-full bg-warning-soft dark:bg-amber-950/40 p-3">
-              <Package className="h-10 w-10 text-amber-500" />
+            <div className="rounded-full bg-warning-soft p-3">
+              <Package className="h-10 w-10 text-warning" />
             </div>
           </div>
           <p className="text-center text-sm text-muted-foreground px-4">{t("inventario_no_ingredients_body")}</p>
@@ -893,7 +891,7 @@ export default function InventoryPage() {
             <Button variant="outline" onClick={() => setIsNoIngredientsDialogOpen(false)}>
               {t("common_cancel")}
             </Button>
-            <Button onClick={navigateToIngredients} className="bg-warning hover:bg-amber-600 text-white">
+            <Button onClick={navigateToIngredients}>
               {t("inventario_go_to_ingredients_button")}
             </Button>
           </DialogFooter>
@@ -932,7 +930,7 @@ export default function InventoryPage() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
+              <AlertTriangle className="h-5 w-5 text-destructive" />
               {t("inventario_stat_critical_products")}
             </DialogTitle>
             <DialogDescription>{t("inventario_critical_dialog_desc")}</DialogDescription>
@@ -961,7 +959,7 @@ export default function InventoryPage() {
                         <TableCell>
                           {item.minStock} {getUnitLabelFor(item.unit, language, item.minStock)}
                         </TableCell>
-                        <TableCell className="text-destructive dark:text-red-300 font-medium">
+                        <TableCell className="text-destructive font-medium">
                           {item.currentStock} {getUnitLabelFor(item.unit, language, item.currentStock ?? 0)}
                         </TableCell>
                         <TableCell>

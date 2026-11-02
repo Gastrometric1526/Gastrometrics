@@ -154,9 +154,9 @@ export function CashUpDialog({ open, onOpenChange, businessId, salesImport, onSa
             role="status"
             className={cn(
               "flex items-start gap-2 rounded-lg border px-3 py-2 text-sm",
-              tone === "ok" && "border-green-600/30 bg-green-50 text-green-800 dark:bg-green-950/40 dark:text-green-200",
-              tone === "bad" && "border-red-600/30 bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-200",
-              tone === "warn" && "border-amber-600/30 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-100",
+              tone === "ok" && "border-success/30 bg-success-soft text-success",
+              tone === "bad" && "border-destructive/30 bg-danger-soft text-destructive",
+              tone === "warn" && "border-warning/30 bg-warning-soft text-warning",
             )}
           >
             {tone === "ok" ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
@@ -196,8 +196,8 @@ export function CashUpDialog({ open, onOpenChange, businessId, salesImport, onSa
                         <span
                           className={cn(
                             "block text-xs font-semibold sm:hidden",
-                            r.difference < -CASH_UP_TOLERANCE && "text-red-700 dark:text-red-300",
-                            r.difference > CASH_UP_TOLERANCE && "text-green-700 dark:text-green-300",
+                            r.difference < -CASH_UP_TOLERANCE && "text-destructive",
+                            r.difference > CASH_UP_TOLERANCE && "text-success",
                           )}
                         >
                           {signed(r.difference)}
@@ -207,8 +207,8 @@ export function CashUpDialog({ open, onOpenChange, businessId, salesImport, onSa
                     <td
                       className={cn(
                         "hidden px-2 py-2 sm:px-3 text-right font-semibold tabular-nums sm:table-cell",
-                        r.difference !== null && r.difference < -CASH_UP_TOLERANCE && "text-red-700 dark:text-red-300",
-                        r.difference !== null && r.difference > CASH_UP_TOLERANCE && "text-green-700 dark:text-green-300",
+                        r.difference !== null && r.difference < -CASH_UP_TOLERANCE && "text-destructive",
+                        r.difference !== null && r.difference > CASH_UP_TOLERANCE && "text-success",
                       )}
                     >
                       {r.difference === null ? "—" : signed(r.difference)}

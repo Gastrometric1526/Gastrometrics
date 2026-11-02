@@ -158,7 +158,7 @@ export function InventoryDashboard({ inventoryItems, inventoryHistory, isLoading
                 <div className="text-sm font-medium text-muted-foreground">{t("inventario_stat_critical_products")}</div>
                 <Metric>{criticalItems}</Metric>
               </div>
-              <AlertTriangle className="h-8 w-8 text-red-500/50" />
+              <AlertTriangle className="h-8 w-8 text-destructive/50" />
             </div>
             <div className="mt-4">
               <ProgressBar
@@ -178,7 +178,7 @@ export function InventoryDashboard({ inventoryItems, inventoryHistory, isLoading
                 <div className="text-sm font-medium text-muted-foreground">{t("inventario_stat_low_products")}</div>
                 <Metric>{lowItems}</Metric>
               </div>
-              <Info className="h-8 w-8 text-amber-500/50" />
+              <Info className="h-8 w-8 text-warning/50" />
             </div>
             <div className="mt-4">
               <ProgressBar
@@ -198,7 +198,7 @@ export function InventoryDashboard({ inventoryItems, inventoryHistory, isLoading
                 <div className="text-sm font-medium text-muted-foreground">{t("inventario_stat_total_value")}</div>
                 <Metric>{formatCurrency(totalValue)}</Metric>
               </div>
-              <DollarSign className="h-8 w-8 text-green-500/50" />
+              <DollarSign className="h-8 w-8 text-success/50" />
             </div>
             <div className="mt-4 flex items-center">
               <BadgeDelta deltaType={valueChange >= 0 ? "increase" : "decrease"}>

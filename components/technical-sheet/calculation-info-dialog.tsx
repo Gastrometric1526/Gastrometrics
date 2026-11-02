@@ -149,7 +149,7 @@ export function CalculationInfoDialog({
             {pricingMethod === "food_cost" ? (
               <div>
                 <h4 className="font-semibold mb-1 flex items-center gap-2">
-                  <Percent className="h-4 w-4 text-amber-600 dark:text-amber-300" />
+                  <Percent className="h-4 w-4 text-warning" />
                   {t("ficha_tecnica_calc_info_foodcost_title")}
                 </h4>
                 <p className="text-muted-foreground mb-2">{t("ficha_tecnica_calc_info_foodcost_desc")}</p>
@@ -166,7 +166,7 @@ export function CalculationInfoDialog({
             ) : (
               <div>
                 <h4 className="font-semibold mb-1 flex items-center gap-2">
-                  <Percent className="h-4 w-4 text-amber-600 dark:text-amber-300" />
+                  <Percent className="h-4 w-4 text-warning" />
                   {t("ficha_tecnica_calc_info_rubros_title")}
                 </h4>
                 <p className="text-muted-foreground mb-2">{t("ficha_tecnica_calc_info_rubros_desc")}</p>
@@ -201,11 +201,11 @@ export function CalculationInfoDialog({
               </div>
             )}
 
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-lg border border-amber-200 dark:border-amber-900">
-              <p className="text-amber-900 dark:text-amber-300">
+            <div className="p-3 bg-warning-soft rounded-lg border border-warning/30">
+              <p className="text-warning">
                 {t("ficha_tecnica_calc_info_rounding_desc")}
               </p>
-              <div className="mt-2 font-mono text-xs sm:text-sm text-amber-900 dark:text-amber-300">
+              <div className="mt-2 font-mono text-xs sm:text-sm text-warning">
                 {formatCurrency(rawPrice)} → <span className="font-bold">{formatCurrency(roundedPrice)}</span>
               </div>
             </div>
@@ -214,7 +214,7 @@ export function CalculationInfoDialog({
 
             <div>
               <h4 className="font-semibold mb-1 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-300" />
+                <TrendingUp className="h-4 w-4 text-success" />
                 {t("ficha_tecnica_calc_info_totals_title")}
               </h4>
               <div className="space-y-2">
