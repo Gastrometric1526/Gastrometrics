@@ -279,15 +279,7 @@ export function convertAllIngredientsToSystem(ingredients: any[], targetSystem: 
 
     console.log(`Cambio de unidad: ${ingredient.unit} → ${newUnit}`)
 
-    // Solo cambiar la unidad, la tabla se encargará de los cálculos
-    return {
-      ...ingredient,
-      unit: newUnit,
-      metadata: {
-        ...ingredient.metadata,
-        updatedAt: new Date().toISOString(),
-        version: (ingredient.metadata?.version || 0) + 1,
-      },
-    }
+    // Solo la unidad de destino: la conversión la hace lib/unit-change.ts (docs/231).
+    return { ...ingredient, unit: newUnit }
   })
 }

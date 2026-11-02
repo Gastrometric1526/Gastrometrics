@@ -50,7 +50,9 @@ export function convertIngredientUnit(ingredient: Ingredient, newUnit: string, f
     originalNetContent: ingredient.originalNetContent ? round(ingredient.originalNetContent * f) : ingredient.originalNetContent,
     merma: merma && merma.customType === "quantity" && merma.customValue ? { ...merma, customValue: round(merma.customValue * f) } : merma,
     pricing: { ...pricing, netContent, pricePerUnit },
-    metadata: { ...ingredient.metadata, updatedAt: new Date().toISOString(), version: (ingredient.metadata?.version || 0) + 1 } as Ingredient["metadata"],
+    // Sin tocar `updatedAt` (docs/231): cambiar la unidad no cambia el precio ni el producto,
+    // y el interruptor métrico/imperial le ponía «Actualizado el» de hoy a todo el catálogo.
+    metadata: { ...ingredient.metadata, version: (ingredient.metadata?.version || 0) + 1 } as Ingredient["metadata"],
   }
 }
 

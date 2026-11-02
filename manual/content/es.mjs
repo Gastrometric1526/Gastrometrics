@@ -111,6 +111,7 @@ export default {
         ["figure", "02-ingredientes.jpg", "La base de ingredientes del negocio, con su categoría, unidad, precio y proveedor."],
         ["h3", "Qué datos lleva un ingrediente"],
         ["p", "Nombre, categoría, unidad de medida, proveedor, presentación de compra (opcional) y su precio: lo que pagas por la presentación completa y cuánto trae. Con eso la app calcula el <strong>precio por unidad</strong>, que es el que realmente se usa en tus recetas."],
+        ["p", "Debajo del proveedor ves la fecha del último cambio del ingrediente: cuando lo editaste o lo actualizó una importación. Cambiar la unidad, o pasar todo a métrico o imperial, no cambia esa fecha."],
         ["formula", "Precio por unidad", ["Precio por unidad = Precio de compra ÷ Contenido neto"], "El contenido neto va en la unidad base del ingrediente (gramos, mililitros, unidades…)."],
         ["example", "Ejemplo · un saco de harina", [
           ["Precio de compra del saco", "450.00"],

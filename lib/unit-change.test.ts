@@ -23,6 +23,13 @@ describe("cambio de unidad sin cambiar costos (docs/187)", () => {
     expect(out.pricing.purchasePrice).toBe(100)
   })
 
+  it("no cambia la fecha «Actualizado el» (docs/231)", () => {
+    const metadata = { createdAt: "2026-10-30T18:29:36.131Z", updatedAt: "2026-10-31T10:00:00.000Z", version: 3 }
+    const out = convertIngredientUnit(ing({ metadata }), "gramos", 1000)
+    expect(out.metadata.updatedAt).toBe("2026-10-31T10:00:00.000Z")
+    expect(out.metadata.version).toBe(4)
+  })
+
   it("con merma: el contenido original y la merma por cantidad también se convierten", () => {
     const out = convertIngredientUnit(
       ing({ originalNetContent: 1, pricing: { purchasePrice: 100, netContent: 0.8, pricePerUnit: 125 } as Ingredient["pricing"], merma: { enabled: true, useGlobal: false, globalPercentage: 0, customType: "quantity", customPercentage: 0, customValue: 0.2 } as Ingredient["merma"] }),

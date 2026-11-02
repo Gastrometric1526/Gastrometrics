@@ -110,6 +110,7 @@ export default {
         ["figure", "02-ingredientes.jpg", "The business's ingredient database, with category, unit, price and supplier."],
         ["h3", "What an ingredient contains"],
         ["p", "Name, category, unit of measure, supplier, purchase pack (optional) and its price: what you pay for the whole pack and how much it contains. From that the app calculates the <strong>price per unit</strong>, which is what your recipes actually use."],
+        ["p", "Under the supplier you see the date the ingredient last changed: when you edited it or an import updated it. Changing the unit, or switching everything to metric or imperial, doesn't change that date."],
         ["formula", "Price per unit", ["Price per unit = Purchase price ÷ Net content"], "Net content is in the ingredient's base unit (grams, milliliters, units…)."],
         ["example", "Example · a sack of flour", [
           ["Purchase price of the sack", "450.00"],

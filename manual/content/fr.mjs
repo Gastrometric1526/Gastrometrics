@@ -110,6 +110,7 @@ export default {
         ["figure", "02-ingredientes.jpg", "La base d'ingrédients de l'établissement, avec catégorie, unité, prix et fournisseur."],
         ["h3", "Ce que contient un ingrédient"],
         ["p", "Nom, catégorie, unité de mesure, fournisseur, conditionnement d'achat (facultatif) et son prix : ce que vous payez pour le conditionnement complet et ce qu'il contient. À partir de là, l'application calcule le <strong>prix par unité</strong>, celui que vos recettes utilisent réellement."],
+        ["p", "Sous le fournisseur, vous voyez la date de la dernière modification de l'ingrédient : quand vous l'avez modifié ou qu'une importation l'a mis à jour. Changer l'unité, ou passer tout en métrique ou en impérial, ne change pas cette date."],
         ["formula", "Prix par unité", ["Prix par unité = Prix d'achat ÷ Contenu net"], "Le contenu net s'exprime dans l'unité de base de l'ingrédient (grammes, millilitres, unités…)."],
         ["example", "Exemple · un sac de farine", [
           ["Prix d'achat du sac", "450.00"],

@@ -110,6 +110,7 @@ export default {
         ["figure", "02-ingredientes.jpg", "Virksomhedens ingrediensdatabase med kategori, enhed, pris og leverandør."],
         ["h3", "Hvad en ingrediens indeholder"],
         ["p", "Navn, kategori, måleenhed, leverandør, indkøbsemballage (valgfri) og prisen: hvad du betaler for hele pakken, og hvor meget den indeholder. Ud fra det beregner appen <strong>prisen pr. enhed</strong>, som er den, dine opskrifter faktisk bruger."],
+        ["p", "Under leverandøren ser du datoen for den seneste ændring af råvaren: da du redigerede den, eller en import opdaterede den. Skifter du enhed eller hele kataloget til metrisk eller imperial, ændres datoen ikke."],
         ["formula", "Pris pr. enhed", ["Pris pr. enhed = Indkøbspris ÷ Nettoindhold"], "Nettoindholdet angives i ingrediensens basisenhed (gram, milliliter, stk…)."],
         ["example", "Eksempel · en sæk mel", [
           ["Indkøbspris for sækken", "450.00"],

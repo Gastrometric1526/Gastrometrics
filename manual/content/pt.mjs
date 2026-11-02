@@ -110,6 +110,7 @@ export default {
         ["figure", "02-ingredientes.jpg", "A base de ingredientes do negócio, com categoria, unidade, preço e fornecedor."],
         ["h3", "Quais dados um ingrediente tem"],
         ["p", "Nome, categoria, unidade de medida, fornecedor, embalagem de compra (opcional) e o preço: quanto você paga pela embalagem inteira e quanto ela contém. Com isso o app calcula o <strong>preço por unidade</strong>, que é o que realmente entra nas suas receitas."],
+        ["p", "Embaixo do fornecedor você vê a data da última alteração do ingrediente: quando você o editou ou uma importação o atualizou. Mudar a unidade, ou passar tudo para métrico ou imperial, não muda essa data."],
         ["formula", "Preço por unidade", ["Preço por unidade = Preço de compra ÷ Conteúdo líquido"], "O conteúdo líquido fica na unidade base do ingrediente (gramas, mililitros, unidades…)."],
         ["example", "Exemplo · um saco de farinha", [
           ["Preço de compra do saco", "450.00"],
