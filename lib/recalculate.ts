@@ -116,6 +116,9 @@ function runCostCascade(
   ingredientsById: Map<string, Ingredient>,
   startIngredientIds: string[],
   result: RecalculationResult,
+  // Cómo se actualiza el ingrediente vinculado de una subreceta. Por defecto se guarda
+  // (syncSubRecipeToIngredient); la vista previa (docs/228) lo calcula sin guardar.
+  syncLinked: (recipe: Recipe) => Ingredient | null = (recipe) => syncSubRecipeToIngredient(recipe, businessId),
 ): void {
   const pricingCtx = pricingContextFor(businessId)
   const before = new Map<string, { cost: number; unitCost: number }>()
@@ -147,7 +150,7 @@ function runCostCascade(
       recipe.costPerServing = recipe.yieldAmount > 0 ? newCost / recipe.yieldAmount : newCost
 
       if (isSubRecipeRecipe(recipe)) {
-        const linked = syncSubRecipeToIngredient(recipe, businessId)
+        const linked = syncLinked(recipe)
         if (linked) {
           const previous = ingredientsById.get(linked.id)
           ingredientsById.set(linked.id, linked)
@@ -327,6 +330,64 @@ export async function recalculateDependentsOfSubRecipe(
   const result = emptyResult(linked.id, subRecipe.name, unit, unit)
   runCostCascade(businessId, recipes, ingredientsById, [linked.id], result)
   saveRecipes(recipes, businessId)
+  dispatchRecalculated(result)
+  return result
+}
+
+/**
+ * Ingredientes cuyo costo por unidad cambia entre la lista guardada y `next` (p. ej. al
+ * encender o apagar la merma, docs/228).
+ */
+function changedCostIds(current: Ingredient[], next: Ingredient[]): string[] {
+  const before = new Map(current.map((i) => [i.id, i.pricing?.pricePerUnit || 0]))
+  return next
+    .filter((i) => Math.abs((before.get(i.id) ?? 0) - (i.pricing?.pricePerUnit || 0)) > 1e-9)
+    .map((i) => i.id)
+}
+
+/**
+ * Vista previa, SIN guardar nada: qué recetas cambiarían de costo (y de precio, con la
+ * regla de docs/162) si los ingredientes pasaran a `nextIngredients`. La usa la ventana
+ * de merma para avisar antes de guardar qué fichas se van a recalcular (docs/228).
+ */
+export function previewIngredientCostChanges(businessId: string, nextIngredients: Ingredient[]): RecalculationResult {
+  const result = emptyResult("", "", 0, 0)
+  const startIds = changedCostIds(getIngredients(businessId), nextIngredients)
+  if (startIds.length === 0) return result
+  const recipes: Recipe[] = JSON.parse(JSON.stringify(getRecipes(businessId)))
+  const ingredientsById = new Map(getIngredients(businessId).map((i) => [i.id, i]))
+  for (const ing of nextIngredients) ingredientsById.set(ing.id, ing)
+  // Subreceta: su ingrediente vinculado toma el nuevo costo unitario, solo en memoria.
+  const previewLinked = (recipe: Recipe): Ingredient | null => {
+    const linked = [...ingredientsById.values()].find((i) => i.recipeId === recipe.id)
+    if (!linked) return null
+    const unitCost = recipe.yieldAmount > 0 ? recipe.totalCost / recipe.yieldAmount : recipe.totalCost
+    return { ...linked, pricing: { ...linked.pricing, purchasePrice: unitCost, pricePerUnit: unitCost } }
+  }
+  runCostCascade(businessId, recipes, ingredientsById, startIds, result, previewLinked)
+  result.affectedRecipes = result.affectedRecipes.filter((r) => Math.abs(r.costDifference) > 0.005)
+  return result
+}
+
+/**
+ * Recalcula en cascada las recetas después de guardar ingredientes cuyo costo por unidad
+ * cambió sin tocar su precio de compra (merma encendida o apagada, docs/228). Antes, la
+ * merma solo cambiaba los ingredientes: las fichas quedaban con el costo viejo.
+ * `previousIngredients` = la lista ANTES de guardar.
+ */
+export async function recalculateAfterIngredientChanges(
+  businessId: string,
+  previousIngredients: Ingredient[],
+  nextIngredients: Ingredient[],
+): Promise<RecalculationResult> {
+  const result = emptyResult("", "", 0, 0)
+  const startIds = changedCostIds(previousIngredients, nextIngredients)
+  if (startIds.length === 0) return result
+  const recipes = getRecipes(businessId)
+  const ingredientsById = new Map(getIngredients(businessId).map((i) => [i.id, i]))
+  for (const ing of nextIngredients) ingredientsById.set(ing.id, ing)
+  runCostCascade(businessId, recipes, ingredientsById, startIds, result)
+  await saveRecipes(recipes, businessId)
   dispatchRecalculated(result)
   return result
 }

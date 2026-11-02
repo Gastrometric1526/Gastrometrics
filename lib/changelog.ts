@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-11-02",
+    tutorialHref: tourHref("ingredientes"),
+    content: {
+      es: { title: "La merma recalcula tus recetas", items: ["Si ya tienes recetas y enciendes, apagas o cambias la merma, antes de guardar ves qué recetas cambian de costo y qué pasa con su precio.", "Al confirmar, sus fichas técnicas se recalculan solas, también las que usan subrecetas.", "La ventana de porcentajes de la Ficha ya no se corta en pantallas grandes y respira mejor en el celular."] },
+      en: { title: "Waste now recalculates your recipes", items: ["If you already have recipes and turn waste on, off or change it, before saving you see which recipes change cost and what happens to their price.", "When you confirm, their recipe sheets are recalculated automatically, including those with sub-recipes.", "The percentage settings window in the Recipe Sheet no longer gets cut off on large screens and has more room on your phone."] },
+      da: { title: "Svind genberegner dine opskrifter", items: ["Har du allerede opskrifter og slår svind til, fra eller ændrer det, ser du før du gemmer, hvilke opskrifter der ændrer omkostning, og hvad der sker med prisen.", "Når du bekræfter, genberegnes de automatisk, også dem med underopskrifter.", "Vinduet med procenter i opskriften bliver ikke længere skåret af på store skærme og har mere plads på mobilen."] },
+      fr: { title: "Les pertes recalculent vos recettes", items: ["Si vous avez déjà des recettes et activez, désactivez ou modifiez les pertes, avant d'enregistrer vous voyez quelles recettes changent de coût et ce qui arrive à leur prix.", "Quand vous confirmez, leurs fiches techniques sont recalculées automatiquement, y compris celles avec des sous-recettes.", "La fenêtre des pourcentages de la fiche technique n'est plus coupée sur grand écran et respire mieux sur mobile."] },
+      pt: { title: "A perda recalcula suas receitas", items: ["Se você já tem receitas e liga, desliga ou muda a perda, antes de salvar vê quais receitas mudam de custo e o que acontece com o preço.", "Ao confirmar, as fichas técnicas são recalculadas sozinhas, inclusive as que usam subreceitas.", "A janela de percentuais da Ficha Técnica não fica mais cortada em telas grandes e tem mais espaço no celular."] },
+      zh: { title: "损耗会重新计算你的配方", items: ["如果你已有配方并开启、关闭或修改损耗，保存前会看到哪些配方的成本会变化，以及售价会怎样。", "确认后，它们的技术配方表会自动重新计算，包括使用子配方的配方。", "技术配方表的百分比设置窗口在大屏幕上不再被截断，在手机上也更宽松。"] },
+    },
+  },
+  {
     version: "2026-11-01b",
     tutorialHref: tourHref("ficha-tecnica"),
     content: {

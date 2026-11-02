@@ -1232,12 +1232,12 @@ export default function IngredientesPage() {
     }
   }
 
-  const handleMermaSave = (updatedIngredients: Ingredient[]) => {
+  const handleMermaSave = async (updatedIngredients: Ingredient[]) => {
     // Actualizar el estado local inmediatamente
     setIngredients(updatedIngredients)
 
-    // Asegurar que los datos se guarden en la base de datos
-    saveIngredients(updatedIngredients, businessId)
+    // Se espera al guardado: después la ventana de merma recalcula las recetas (docs/228).
+    await saveIngredients(updatedIngredients, businessId)
 
     // Mostrar confirmación
     showSuccess(t("ingredientes_toast_merma_updated_title"), t("ingredientes_toast_merma_updated_desc"))

@@ -18,9 +18,26 @@ import { MermaInfoDialog } from "./merma-info-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
 import { getCategoryLabel, getMermaLevelLabel, getUnitLabel, getUnitLabelFor } from "@/lib/ingredient-labels"
-import { formatUnitPrice } from "@/lib/currency"
+import { formatCurrency, formatUnitPrice } from "@/lib/currency"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  previewIngredientCostChanges,
+  recalculateAfterIngredientChanges,
+  requestSubRecipePricePrompt,
+  type RecalculationResult,
+} from "@/lib/recalculate"
+import { getIngredients } from "@/lib/storage/ingredients"
 import { useAuth } from "@/contexts/auth-context"
-import { logActivity } from "@/lib/services/activity-log"
+import { logActivity, logPriceRuleChanges } from "@/lib/services/activity-log"
 import type { Ingredient } from "@/types/ingredient"
 
 interface MermaManagementDialogProps {
@@ -28,7 +45,7 @@ interface MermaManagementDialogProps {
   onOpenChange: (open: boolean) => void
   businessId?: string | null
   ingredients: Ingredient[]
-  onSave?: (updatedIngredients: Ingredient[]) => void
+  onSave?: (updatedIngredients: Ingredient[]) => void | Promise<void>
 }
 
 export function MermaManagementDialog({
@@ -42,6 +59,8 @@ export function MermaManagementDialog({
   const [mermaSystemActive, setMermaSystemActive] = useState(false)
   const [isApplying, setIsApplying] = useState(false)
   const [showInfoDialog, setShowInfoDialog] = useState(false)
+  // Recetas que cambian de costo con la merma nueva: se muestran antes de guardar (docs/228).
+  const [recalcPreview, setRecalcPreview] = useState<RecalculationResult | null>(null)
   const [originalValues, setOriginalValues] = useState<{ [key: string]: { netContent: number; pricePerUnit: number } }>(
     {},
   )
@@ -266,12 +285,32 @@ export function MermaManagementDialog({
     )
   }
 
+  // Guardar: si la merma cambia el costo de alguna receta, primero se muestra cuáles y
+  // cómo (costo y precio) y se guarda solo al confirmar (docs/228).
   const saveChanges = () => {
+    const preview = previewIngredientCostChanges(businessId || "main", ingredients)
+    if (preview.affectedRecipes.length > 0) {
+      setRecalcPreview(preview)
+      return
+    }
+    void applyChanges()
+  }
+
+  const applyChanges = async () => {
     setIsApplying(true)
+    setRecalcPreview(null)
+    const bid = businessId || "main"
 
     try {
+      // Costos antes de guardar, para saber qué ingredientes cambiaron.
+      const previous = getIngredients(bid).map((ing) => ({ ...ing, pricing: { ...ing.pricing } }))
       setDashboardData("ingredients", ingredients, businessId ?? undefined)
-      onSave?.(ingredients)
+      await onSave?.(ingredients)
+      // Las fichas que usan esos ingredientes se recalculan en cascada, con la misma regla
+      // de precio que un cambio de precio de compra (docs/162, docs/164).
+      const recalc = await recalculateAfterIngredientChanges(bid, previous, ingredients)
+      logPriceRuleChanges(recalc.priceChanges, user, businessId && businessId !== "main" ? businessId : null)
+      requestSubRecipePricePrompt(bid, [recalc])
       // El tutorial guiado (docs/221) sigue solo con la merma guardada.
       signalJourney("merma-saved")
 
@@ -296,13 +335,17 @@ export function MermaManagementDialog({
         })
       }
 
+      const recalculated = recalc.affectedRecipes.filter((r) => Math.abs(r.costDifference) > 0.005).length
       toast({
         title: mermaSystemActive
           ? t("ingredientes_merma_toast_activated_title")
           : t("ingredientes_merma_toast_deactivated_title"),
-        description: mermaSystemActive
-          ? t("ingredientes_merma_toast_activated_desc")
-          : t("ingredientes_merma_toast_deactivated_desc"),
+        description:
+          recalculated > 0
+            ? t("merma_recalc_done_desc").replace("{count}", String(recalculated))
+            : mermaSystemActive
+              ? t("ingredientes_merma_toast_activated_desc")
+              : t("ingredientes_merma_toast_deactivated_desc"),
       })
 
       onOpenChange(false)
@@ -561,6 +604,51 @@ export function MermaManagementDialog({
       </Dialog>
 
       <MermaInfoDialog open={showInfoDialog} onOpenChange={setShowInfoDialog} />
+
+      <AlertDialog open={recalcPreview !== null} onOpenChange={(o) => !o && setRecalcPreview(null)}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("merma_recalc_title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(mermaSystemActive ? "merma_recalc_desc_on" : "merma_recalc_desc_off").replace(
+                "{count}",
+                String(recalcPreview?.affectedRecipes.length ?? 0),
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <ul className="max-h-72 space-y-2 overflow-y-auto pr-1 text-sm" data-testid="merma-recalc-list">
+            {recalcPreview?.affectedRecipes.map((r) => {
+              const price = recalcPreview.priceChanges.find((c) => c.recipeId === r.recipeId)
+              const ask = recalcPreview.pendingSubRecipePrices.some((p) => p.recipeId === r.recipeId)
+              return (
+                <li key={r.recipeId} className="rounded-md border px-3 py-2">
+                  <div className="font-medium">{r.recipeName}</div>
+                  <div className="text-xs tabular-nums text-muted-foreground">
+                    {t("merma_recalc_cost").replace("{old}", formatCurrency(r.oldCost)).replace("{new}", formatCurrency(r.newCost))}
+                  </div>
+                  {price?.kind === "raised" && (
+                    <div className="text-xs tabular-nums">
+                      {t("merma_recalc_price_raised")
+                        .replace("{old}", formatCurrency(price.oldPrice))
+                        .replace("{new}", formatCurrency(price.newPrice))}
+                    </div>
+                  )}
+                  {price?.kind === "kept" && (
+                    <div className="text-xs">{t("merma_recalc_price_kept").replace("{price}", formatCurrency(price.price))}</div>
+                  )}
+                  {ask && <div className="text-xs">{t("merma_recalc_price_ask")}</div>}
+                </li>
+              )
+            })}
+          </ul>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common_cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void applyChanges()} data-testid="merma-recalc-confirm">
+              {t("merma_recalc_confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

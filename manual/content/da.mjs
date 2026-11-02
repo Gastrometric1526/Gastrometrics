@@ -137,6 +137,7 @@ export default {
         ["h3", "Svind"],
         ["p", "Svind er det, du betaler for, men ikke kan bruge: skræller, ben, afskær, fordampning. Under <strong>Administrer Svind</strong> slår du systemet til og vælger for hver ingrediens enten den typiske procent for dens kategori eller din egen (eller en fast mængde)."],
         ["formula", "Reel kostpris med svind", ["Brugbart indhold = Nettoindhold × (1 − svind %)", "Pris pr. enhed = Indkøbspris ÷ Brugbart indhold"], "Du betaler for det hele, men bruger kun en del, så den reelle pris pr. enhed stiger. Slår du svind fra, vender alt tilbage til de oprindelige værdier."],
+        ["p", "Har du allerede opskrifter, viser vi først, når du gemmer, hvilke der ændrer omkostning og hvordan: den nye omkostning og hvad der sker med prisen. Når du bekræfter, genberegnes de automatisk, også dem der bruger en underopskrift med den ingrediens. Det sker hver gang, du slår svind til eller fra eller ændrer en procent. Prisen følger den sædvanlige regel: stiger omkostningen, så prisen bliver for lav, hæves den til den foreslåede; falder omkostningen, forbliver den, og din margin stiger."],
         ["p", "Nogle typiske procenter pr. kategori: Skaldyr 63 %, Fisk 52 %, Oksekød 33 %, Fjerkræ 27 %, Frugt 24 %, Grøntsager 21 %. Tørvarer og emballerede varer starter på 0 %. Barkategorierne har deres eget typiske svind: spiritus 2 %, vin 5 %, fadøl 18 % og flaskeøl 0 % (kapitel 6)."],
         ["info", "Plan", "Svindstyring er tilgængelig fra planen <strong>Home Cook</strong>."],
         ["h3", "Allergener"],

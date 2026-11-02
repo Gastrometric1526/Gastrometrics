@@ -137,6 +137,7 @@ export default {
         ["h3", "Waste"],
         ["p", "Waste is what you pay for but can't use: peels, bones, trimmings, evaporation. In <strong>Manage Waste</strong> you switch the system on and, for each ingredient, choose the typical percentage for its category or your own (or a fixed amount)."],
         ["formula", "Real cost with waste", ["Usable content = Net content × (1 − waste %)", "Price per unit = Purchase price ÷ Usable content"], "You pay for all of it but only use part, so the real price per unit goes up. Turn waste off and everything returns to the original values."],
+        ["p", "If you already have recipes, when you save we first show which ones change cost and how: the new cost and what happens to the price. When you confirm, their recipe sheets are recalculated automatically, including those that use a sub-recipe with that ingredient. The same happens every time you turn waste on or off or change a percentage. The price follows the usual rule: if the cost rises and leaves it short, it goes up to the suggested price; if the cost drops, it stays and your margin goes up."],
         ["p", "Some typical percentages by category: Seafood 63 %, Fish 52 %, Beef 33 %, Poultry 27 %, Fruit 24 %, Vegetables 21 %. Dry and packaged goods start at 0 %. Bar categories have their own typical waste: spirits 2 %, wine 5 %, draft beer 18 % and bottled beer 0 % (chapter 6)."],
         ["info", "Plan", "Waste management is available from the <strong>Home Cook</strong> plan."],
         ["h3", "Allergens"],
