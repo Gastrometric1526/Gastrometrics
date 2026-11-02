@@ -84,8 +84,8 @@ export function PercentageSettingsDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-h-[90dvh] w-[calc(100%-1.5rem)] max-w-xl grid-cols-1 gap-5 overflow-y-auto overflow-x-hidden p-5 sm:w-[calc(100%-4rem)] sm:p-7 md:w-full [&>*]:min-w-0">
+        <DialogHeader className="px-0 pr-10 text-left sm:pr-10">
           <DialogTitle>{t("ficha_tecnica_percentage_settings_title")}</DialogTitle>
           <DialogDescription>{t("ficha_tecnica_pct_dialog_desc")}</DialogDescription>
         </DialogHeader>
@@ -99,21 +99,25 @@ export function PercentageSettingsDialog({
 
         <div className="space-y-5">
           {GROUPS.map((group) => (
-            <section key={group.titleKey} className="space-y-3">
+            <section key={group.titleKey} className="space-y-4">
               <h3 className="text-xs font-semibold text-muted-foreground">{t(group.titleKey)}</h3>
               {group.rows.map((row) => {
                 const value = values[row.key]
                 const dimmed = isFoodCost && row.key !== "isv"
                 return (
-                  <div key={row.key} className={`grid grid-cols-[1fr_auto] items-center gap-x-3 ${dimmed ? "opacity-60" : ""}`}>
-                    <div className="min-w-0">
+                  <div key={row.key} className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 ${dimmed ? "opacity-60" : ""}`}>
+                    <div className="min-w-0 space-y-0.5">
                       <Label htmlFor={`${row.key}-setting`} className="text-sm">
                         {t(row.labelKey)}
                       </Label>
                       <p className="text-xs text-muted-foreground">{t(row.hintKey)}</p>
+                      {!isFoodCost && unitCost > 0 && (
+                        <p id={`${row.key}-amount`} className="text-xs font-medium tabular-nums">
+                          {t("ficha_tecnica_pct_per_portion").replace("{amount}", formatCurrency((unitCost * value) / 100))}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex flex-col items-end gap-0.5">
-                      <div className="relative w-24">
+                    <div className="relative w-24">
                         <NumericInput
                           id={`${row.key}-setting`}
                           value={value}
@@ -129,12 +133,6 @@ export function PercentageSettingsDialog({
                         <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                           %
                         </span>
-                      </div>
-                      {!isFoodCost && unitCost > 0 && (
-                        <span id={`${row.key}-amount`} className="font-mono text-xs text-muted-foreground">
-                          {t("ficha_tecnica_pct_per_portion").replace("{amount}", formatCurrency((unitCost * value) / 100))}
-                        </span>
-                      )}
                     </div>
                   </div>
                 )
@@ -144,30 +142,30 @@ export function PercentageSettingsDialog({
         </div>
 
         {!isFoodCost && (
-          <div className="space-y-1.5 rounded-lg border bg-muted/30 p-3 text-sm" aria-live="polite">
+          <div className="space-y-2 rounded-lg border bg-muted/30 p-3 text-sm sm:p-4" aria-live="polite">
             <div className="flex justify-between gap-3">
               <span className="text-muted-foreground">{t("ficha_tecnica_pct_summary_total")}</span>
-              <span className="font-mono">{fmtPct(total)}</span>
+              <span className="shrink-0 whitespace-nowrap font-mono">{fmtPct(total)}</span>
             </div>
             {fixedCostPercent > 0 && (
               <div className="flex justify-between gap-3">
                 <span className="text-muted-foreground">{t("ficha_tecnica_pct_summary_fixed")}</span>
-                <span className="font-mono">+ {fmtPct(Math.round(fixedCostPercent * 100) / 100)}</span>
+                <span className="shrink-0 whitespace-nowrap font-mono">+ {fmtPct(Math.round(fixedCostPercent * 100) / 100)}</span>
               </div>
             )}
             {unitCost > 0 ? (
               <>
                 <div className="flex justify-between gap-3">
                   <span className="text-muted-foreground">{t("ficha_tecnica_pct_summary_unit_cost")}</span>
-                  <span className="font-mono">{formatCurrency(unitCost)}</span>
+                  <span className="shrink-0 whitespace-nowrap font-mono">{formatCurrency(unitCost)}</span>
                 </div>
                 <div className="flex justify-between gap-3 font-semibold">
                   <span>{t("ficha_tecnica_pct_summary_price")}</span>
-                  <span className="font-mono">{formatCurrency(suggestedPrice)}</span>
+                  <span className="shrink-0 whitespace-nowrap font-mono">{formatCurrency(suggestedPrice)}</span>
                 </div>
                 <div className="flex justify-between gap-3">
                   <span className="text-muted-foreground">{t("ficha_tecnica_pct_summary_cost_percent")}</span>
-                  <span className={`font-mono ${costPercent > HIGH_COST_PERCENT ? "text-amber-700 dark:text-amber-400" : ""}`}>
+                  <span className={`shrink-0 whitespace-nowrap font-mono ${costPercent > HIGH_COST_PERCENT ? "text-amber-700 dark:text-amber-400" : ""}`}>
                     {costPercent.toFixed(1)} %
                   </span>
                 </div>
@@ -199,7 +197,7 @@ export function PercentageSettingsDialog({
             : t("ficha_tecnica_pct_view_only")}
         </p>
 
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           {editable ? (
             <Button type="button" variant="ghost" size="sm" onClick={onUseDefaults} disabled={isDefault} className="sm:-ml-2">
               <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden />
@@ -208,7 +206,7 @@ export function PercentageSettingsDialog({
           ) : (
             <span />
           )}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+          <div className="flex flex-col-reverse gap-2 sm:ml-auto sm:flex-row">
             {editable && (
               <Button type="button" variant="outline" onClick={onSaveDefault} disabled={isDefault} data-testid="pct-save-default">
                 {t("ficha_tecnica_pct_save_default")}
