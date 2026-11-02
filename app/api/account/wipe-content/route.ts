@@ -29,6 +29,9 @@
 import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { snapshotBeforeSafely } from "@/lib/services/account-snapshots"
+
+export const maxDuration = 60
 
 // Tablas con business_id nullable ("main" = null) que no cuelgan de ningún negocio real
 // y por eso no las arrastra el cascade de `businesses` — se limpian aparte.
@@ -64,6 +67,8 @@ export async function POST(request: Request) {
 
   const userId = user.id
   const admin = getSupabaseAdminClient()
+  // Respaldo automático antes de borrar: /admin puede restaurarlo (docs/229).
+  await snapshotBeforeSafely(userId, "before_wipe")
 
   try {
     // 1. Negocios reales del dueño — al borrarlos, el cascade se encarga de todo lo que

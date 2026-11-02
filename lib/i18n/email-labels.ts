@@ -51,6 +51,15 @@ export type EmailLabelKeys =
   | "e02_cta"
   | "e02_footnote"
   | "e02_footer2"
+  | "e02c_subject"
+  | "e02c_title"
+  | "e02c_preheader"
+  | "e02c_intro"
+  | "e02c_original_label"
+  | "e02c_cta"
+  | "e02c_footnote"
+  | "e02c_footer2"
+  | "e02c_reply_title"
   | "feedback_type_sugerencia"
   | "feedback_type_experiencia"
   | "feedback_type_queja"
@@ -216,6 +225,15 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e02_cta: "Abrir Gastrometrics",
     e02_footnote: "¿Sigue pasando? Responde este correo y seguimos en el mismo hilo.",
     e02_footer2: "Recibiste esto porque escribiste desde el formulario de contacto.",
+    e02c_subject: "Te respondimos en el chat de soporte",
+    e02c_title: "Tienes una respuesta en el chat",
+    e02c_preheader: "Abre el chat para ver la respuesta y seguir con tu caso.",
+    e02c_intro: "Respondimos a tu consulta en el chat de soporte:",
+    e02c_original_label: "Tu mensaje",
+    e02c_cta: "Abrir el chat",
+    e02c_footnote: "Para seguir con tu caso, responde en el chat de la app: tu conversación queda guardada ahí.",
+    e02c_footer2: "Recibiste esto porque escribiste en el chat de soporte de GastroMetrics.",
+    e02c_reply_title: "Respuesta de soporte",
     feedback_type_sugerencia: "Sugerencia",
     feedback_type_experiencia: "Experiencia",
     feedback_type_queja: "Queja",
@@ -382,6 +400,15 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e02_cta: "Open Gastrometrics",
     e02_footnote: "Still happening? Reply to this email and we'll continue on the same thread.",
     e02_footer2: "You received this because you wrote in through the contact form.",
+    e02c_subject: "We replied to you in the support chat",
+    e02c_title: "You have a reply in the chat",
+    e02c_preheader: "Open the chat to see the reply and continue your case.",
+    e02c_intro: "We replied to your question in the support chat:",
+    e02c_original_label: "Your message",
+    e02c_cta: "Open the chat",
+    e02c_footnote: "To continue your case, reply in the app's chat: your conversation is saved there.",
+    e02c_footer2: "You received this because you wrote in the GastroMetrics support chat.",
+    e02c_reply_title: "Support reply",
     feedback_type_sugerencia: "Suggestion",
     feedback_type_experiencia: "Experience",
     feedback_type_queja: "Complaint",
@@ -548,6 +575,15 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e02_cta: "Åbn Gastrometrics",
     e02_footnote: "Sker det stadig? Svar på denne e-mail, og vi fortsætter i samme tråd.",
     e02_footer2: "Du fik denne, fordi du skrev via kontaktformularen.",
+    e02c_subject: "Vi har svaret dig i supportchatten",
+    e02c_title: "Du har et svar i chatten",
+    e02c_preheader: "Åbn chatten for at se svaret og fortsætte din sag.",
+    e02c_intro: "Vi har svaret på dit spørgsmål i supportchatten:",
+    e02c_original_label: "Din besked",
+    e02c_cta: "Åbn chatten",
+    e02c_footnote: "Svar i appens chat for at fortsætte din sag: din samtale er gemt der.",
+    e02c_footer2: "Du fik denne, fordi du skrev i GastroMetrics' supportchat.",
+    e02c_reply_title: "Svar fra support",
     feedback_type_sugerencia: "Forslag",
     feedback_type_experiencia: "Oplevelse",
     feedback_type_queja: "Klage",
@@ -714,6 +750,15 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e02_cta: "Ouvrir Gastrometrics",
     e02_footnote: "Le problème continue ? Répondez à cet e-mail et nous continuons dans le même fil.",
     e02_footer2: "Vous recevez ceci parce que vous nous avez écrit via le formulaire de contact.",
+    e02c_subject: "Nous vous avons répondu dans le chat d'assistance",
+    e02c_title: "Vous avez une réponse dans le chat",
+    e02c_preheader: "Ouvrez le chat pour voir la réponse et poursuivre votre demande.",
+    e02c_intro: "Nous avons répondu à votre question dans le chat d'assistance :",
+    e02c_original_label: "Votre message",
+    e02c_cta: "Ouvrir le chat",
+    e02c_footnote: "Pour poursuivre votre demande, répondez dans le chat de l'application : votre conversation y est enregistrée.",
+    e02c_footer2: "Vous recevez ceci parce que vous avez écrit dans le chat d'assistance de GastroMetrics.",
+    e02c_reply_title: "Réponse de l'assistance",
     feedback_type_sugerencia: "Suggestion",
     feedback_type_experiencia: "Expérience",
     feedback_type_queja: "Réclamation",
@@ -880,6 +925,15 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e02_cta: "Abrir Gastrometrics",
     e02_footnote: "Continua acontecendo? Responda este e-mail e continuamos na mesma conversa.",
     e02_footer2: "Você recebeu isso porque escreveu pelo formulário de contato.",
+    e02c_subject: "Respondemos você no chat de suporte",
+    e02c_title: "Você tem uma resposta no chat",
+    e02c_preheader: "Abra o chat para ver a resposta e continuar seu caso.",
+    e02c_intro: "Respondemos sua dúvida no chat de suporte:",
+    e02c_original_label: "Sua mensagem",
+    e02c_cta: "Abrir o chat",
+    e02c_footnote: "Para continuar seu caso, responda no chat do app: sua conversa fica salva lá.",
+    e02c_footer2: "Você recebeu isso porque escreveu no chat de suporte do GastroMetrics.",
+    e02c_reply_title: "Resposta do suporte",
     feedback_type_sugerencia: "Sugestão",
     feedback_type_experiencia: "Experiência",
     feedback_type_queja: "Reclamação",
@@ -1045,6 +1099,15 @@ export const EMAIL_LABELS: Record<EmailLang, Record<EmailLabelKeys, string>> = {
     e02_cta: "打开 Gastrometrics",
     e02_footnote: "问题还在继续吗？回复这封邮件，我们会在同一对话中继续处理。",
     e02_footer2: "你收到此邮件是因为你通过联系表单提交了留言。",
+    e02c_subject: "我们已在客服聊天中回复你",
+    e02c_title: "聊天中有新回复",
+    e02c_preheader: "打开聊天查看回复并继续处理你的问题。",
+    e02c_intro: "我们已在客服聊天中回复了你的问题：",
+    e02c_original_label: "你的留言",
+    e02c_cta: "打开聊天",
+    e02c_footnote: "如需继续处理，请在应用的聊天中回复：你的对话会保存在那里。",
+    e02c_footer2: "你收到此邮件是因为你在 GastroMetrics 客服聊天中留言。",
+    e02c_reply_title: "客服回复",
     feedback_type_sugerencia: "建议",
     feedback_type_experiencia: "体验",
     feedback_type_queja: "投诉",

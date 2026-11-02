@@ -67,7 +67,7 @@ async function fetchImports(businessId: string): Promise<SalesImport[]> {
   const { data, error } = await query
   if (error) {
     console.error("[SalesImports] Error cargando importaciones:", error)
-    return []
+    throw error
   }
   return (data ?? []).map(rowToImport)
 }
@@ -129,7 +129,7 @@ async function fetchColumnMappings(businessId: string): Promise<POSColumnMapping
   const { data, error } = await query
   if (error) {
     console.error("[SalesImports] Error cargando las plantillas de mapeo:", error)
-    return []
+    throw error
   }
   return (data ?? []).map(rowToMapping)
 }
@@ -181,7 +181,7 @@ async function fetchDishMappings(businessId: string): Promise<DishNameMapping[]>
   const { data, error } = await query
   if (error) {
     console.error("[SalesImports] Error cargando emparejamientos de plato:", error)
-    return []
+    throw error
   }
   return (data ?? []).map(rowToDishMapping)
 }

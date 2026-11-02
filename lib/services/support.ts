@@ -9,7 +9,8 @@
  *   lugar; si el dueño ya había respondido, vuelve a la fila al final. Al dueño le llega un aviso
  *   por correo cuando entra una conversación nueva o vuelve a la fila.
  * - El dueño responde → «answered», la persona tiene un mensaje sin leer (punto en el botón) y le
- *   llega un correo en su idioma (plantilla 02) con la respuesta.
+ *   llega SIEMPRE un correo en su idioma (plantilla 02, textos del chat) con la respuesta y un
+ *   botón que abre el chat (/dashboard?soporte=chat) para seguir el caso (docs/229).
  * - La persona o el dueño la cierran → «closed». Si la persona vuelve a escribir, empieza una nueva.
  */
 
@@ -203,6 +204,7 @@ export async function adminReply(conversationId: string, body: string, attachmen
         originalMessage: ((firstMsg as { body: string }[] | null)?.[0]?.body || c.subject || "").slice(0, 600),
         reply: body || attachments.map((a) => a.name).join(", "),
         preferredLanguage: c.language,
+        source: "chat",
       })
       emailSent = true
     }

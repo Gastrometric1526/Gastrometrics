@@ -19,11 +19,33 @@
 
 import { useEffect, useSyncExternalStore } from "react"
 
+// BUG REAL CORREGIDO (docs/229, «entró y la app estaba vacía; al recargar ya funcionaba»):
+// 1. Si la primera carga fallaba (token vencido al volver tras horas, corte de red), el
+//    fetcher devolvía [] y la caché lo marcaba como «cargado»: la pantalla quedaba vacía
+//    hasta recargar. Ahora un error NO marca cargado y se reintenta solo (1 s, 3 s, 8 s).
+// 2. La caché nunca se limpiaba al iniciar o cerrar sesión: lo que se cargó sin sesión
+//    (RLS devuelve [] sin error) o con otra cuenta en la misma pestaña se quedaba. Ahora
+//    auth-context llama a resetAllStorageCaches() cuando cambia la cuenta, y cada caché
+//    vuelve a cargar lo que las pantallas montadas estaban mirando.
+const registry = new Set<{ reset: () => void }>()
+
+/** Vacía todas las cachés y recarga lo que estaba en uso (cambio de cuenta o de sesión). */
+export function resetAllStorageCaches(): void {
+  registry.forEach((c) => c.reset())
+}
+
+const RETRY_DELAYS_MS = [1000, 3000, 8000]
+
 export function createBusinessScopedCache<T>() {
   const cache = new Map<string, T[]>()
   const loaded = new Set<string>()
   const inFlight = new Map<string, Promise<void>>()
   const listeners = new Set<() => void>()
+  // Último fetcher pedido por cada key: para recargar después de un reset o un error.
+  const fetchers = new Map<string, () => Promise<T[]>>()
+  const retryTimers = new Map<string, ReturnType<typeof setTimeout>>()
+  // Cuenta de reinicios: una carga que empezó antes de un reset no pisa la nueva.
+  let generation = 0
   // BUG REAL CORREGIDO (ver docs/55): useCached() le pasaba a useSyncExternalStore un
   // getSnapshot que, mientras la caché de ese businessId todavía estuviera fría, devolvía
   // `?? []` — un array literal NUEVO en cada llamada. useSyncExternalStore compara
@@ -75,19 +97,42 @@ export function createBusinessScopedCache<T>() {
     return next
   }
 
-  function ensureLoaded(businessId: string | null | undefined, fetcher: () => Promise<T[]>): Promise<void> {
+  function ensureLoaded(
+    businessId: string | null | undefined,
+    fetcher: () => Promise<T[]>,
+    attempt = 0,
+  ): Promise<void> {
     const key = keyFor(businessId)
+    fetchers.set(key, fetcher)
     if (loaded.has(key)) return Promise.resolve()
     const existing = inFlight.get(key)
     if (existing) return existing
 
-    const promise = fetcher()
-      .then((items) => setSnapshot(businessId, items))
+    const startedAt = generation
+    const promise = Promise.resolve()
+      .then(fetcher)
+      .then((items) => {
+        if (startedAt !== generation) return
+        setSnapshot(businessId, items)
+      })
       .catch((error) => {
         console.error("[storage] Error cargando datos de Supabase:", error)
-        setSnapshot(businessId, [])
+        if (startedAt !== generation || attempt >= RETRY_DELAYS_MS.length) return
+        // No se marca como cargado: se reintenta solo y, si no, la próxima pantalla que
+        // lo pida vuelve a intentarlo.
+        clearTimeout(retryTimers.get(key))
+        retryTimers.set(
+          key,
+          setTimeout(() => {
+            retryTimers.delete(key)
+            const latest = fetchers.get(key)
+            if (latest && !loaded.has(key)) void ensureLoaded(businessId, latest, attempt + 1)
+          }, RETRY_DELAYS_MS[attempt]),
+        )
       })
-      .finally(() => inFlight.delete(key))
+      .finally(() => {
+        if (inFlight.get(key) === promise) inFlight.delete(key)
+      })
 
     inFlight.set(key, promise)
     return promise
@@ -97,6 +142,19 @@ export function createBusinessScopedCache<T>() {
   function invalidate(businessId: string | null | undefined): void {
     loaded.delete(keyFor(businessId))
   }
+
+  function reset(): void {
+    generation++
+    retryTimers.forEach((t) => clearTimeout(t))
+    retryTimers.clear()
+    inFlight.clear()
+    cache.clear()
+    loaded.clear()
+    notify()
+    // Lo que alguna pantalla ya pidió se vuelve a cargar con la sesión nueva.
+    fetchers.forEach((fetcher, key) => void ensureLoaded(key === "main" ? null : key, fetcher))
+  }
+  registry.add({ reset })
 
   function useCached(businessId: string | null | undefined, fetcher: () => Promise<T[]>): T[] {
     const key = keyFor(businessId)

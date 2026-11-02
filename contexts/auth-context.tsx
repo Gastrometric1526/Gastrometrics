@@ -10,6 +10,8 @@ import type { UserProfile } from "@/lib/types/user"
 import { setCurrentPlanSlug } from "@/lib/plan-access"
 import { setCurrentPlanOverrides } from "@/lib/plan-overrides"
 import { refreshBusinesses } from "@/lib/storage/businesses"
+import { resetAllStorageCaches } from "@/lib/storage/supabase-cache"
+import { setMainPdfBranding } from "@/lib/pdf/pdf-branding"
 import { ensureTeamMembersLoaded, ensureMyMembershipsLoaded } from "@/lib/storage/team"
 import { tryCarryLandingDemoIntoAccount } from "@/lib/landing-demo-carryover"
 import { shouldEndSessionOnLaunch, clearRememberChoice } from "@/lib/remember-me"
@@ -100,9 +102,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const supabase = getSupabaseBrowserClient()
     let cancelled = false
+    // Cuenta de la sesión ya aplicada (undefined = todavía ninguna). Si cambia —entrar,
+    // salir u otra cuenta en la misma pestaña— se vacían las cachés de datos y se recargan
+    // con la sesión nueva (docs/229: la app aparecía vacía hasta recargar).
+    let appliedUserId: string | null | undefined
 
     const applySession = async (session: Session | null) => {
       const sessionUser = session?.user
+      const nextUserId = sessionUser?.id ?? null
+      if (appliedUserId !== undefined && appliedUserId !== nextUserId) resetAllStorageCaches()
+      appliedUserId = nextUserId
+      setMainPdfBranding(sessionUser?.user_metadata?.pdf_branding)
       if (!sessionUser) {
         if (!cancelled) {
           setIsLoggedIn(false)

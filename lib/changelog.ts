@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-11-02b",
+    tutorialHref: tourHref("mi-plan"),
+    content: {
+      es: { title: "PDF con tu marca y respuestas del chat por correo", items: ["Chef Ejecutivo: tus PDF ya no dicen GastroMetrics. En Configuración → Apariencia → «Tus PDF» pones el nombre de tu negocio y una línea al pie (dirección, teléfono, RTN).", "Cuando te respondemos en el chat de soporte te llega un correo; su botón abre el chat para seguir tu caso, aunque hayas salido de la app.", "La app ya no aparece vacía al entrar: si la primera carga falla, se reintenta sola y no hace falta recargar."] },
+      en: { title: "PDFs with your brand and chat replies by email", items: ["Chef Ejecutivo: your PDFs no longer say GastroMetrics. In Settings → Appearance → “Your PDFs” you set your business name and a footer line (address, phone, tax ID).", "When we reply in the support chat you get an email; its button opens the chat so you can continue your case, even if you left the app.", "The app no longer shows up empty when you sign in: if the first load fails, it retries on its own and you don't need to reload."] },
+      da: { title: "PDF'er med dit brand og chatsvar på e-mail", items: ["Chef Ejecutivo: dine PDF'er viser ikke længere GastroMetrics. Under Indstillinger → Udseende → »Dine PDF'er« angiver du din virksomheds navn og en linje nederst (adresse, telefon, CVR).", "Når vi svarer i supportchatten, får du en e-mail; knappen åbner chatten, så du kan fortsætte din sag, selv om du har forladt appen.", "Appen er ikke længere tom, når du logger ind: fejler den første indlæsning, prøver den selv igen, og du behøver ikke genindlæse."] },
+      fr: { title: "Des PDF à votre marque et les réponses du chat par e-mail", items: ["Chef Ejecutivo : vos PDF n'affichent plus GastroMetrics. Dans Paramètres → Apparence → « Vos PDF », indiquez le nom de votre établissement et une ligne de pied de page (adresse, téléphone, numéro fiscal).", "Quand nous répondons dans le chat d'assistance, vous recevez un e-mail ; son bouton ouvre le chat pour poursuivre votre demande, même si vous avez quitté l'application.", "L'application n'apparaît plus vide à la connexion : si le premier chargement échoue, elle réessaie seule, sans recharger."] },
+      pt: { title: "PDFs com a sua marca e respostas do chat por e-mail", items: ["Chef Ejecutivo: seus PDFs não mostram mais GastroMetrics. Em Configurações → Aparência → “Seus PDFs” você coloca o nome do seu negócio e uma linha no rodapé (endereço, telefone, CNPJ).", "Quando respondemos no chat de suporte, você recebe um e-mail; o botão abre o chat para continuar seu caso, mesmo que tenha saído do app.", "O app não aparece mais vazio ao entrar: se o primeiro carregamento falhar, ele tenta de novo sozinho, sem precisar recarregar."] },
+      zh: { title: "PDF 使用你的品牌，聊天回复会发邮件", items: ["Chef Ejecutivo：你的 PDF 不再显示 GastroMetrics。在 设置 → 外观 →「你的 PDF」中填写店铺名称和页脚文字（地址、电话、税号）。", "我们在客服聊天中回复你时会发送邮件；点击按钮即可打开聊天继续处理，即使你已退出应用。", "登录后应用不再显示为空：首次加载失败时会自动重试，无需刷新。"] },
+    },
+  },
+  {
     version: "2026-11-02",
     tutorialHref: tourHref("ingredientes"),
     content: {

@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf"
+import { pdfFooterPrefix, pdfHeaderName } from "./pdf-branding"
 import { safeFilePart } from "@/lib/pdf/pdf-filename"
 import autoTable from "jspdf-autotable"
 import { getPdfLabels, getCurrentPdfLanguage } from "@/lib/i18n/pdf-labels"
@@ -79,7 +80,7 @@ export function generateMepPDF(options: MepPDFOptions): jsPDF {
     doc.setFontSize(11)
     doc.setFont("helvetica", "bold")
     doc.setTextColor(...COLORS.text)
-    doc.text(sanitizeText(options.businessName) || "GastroMetrics", x, 11)
+    doc.text(sanitizeText(pdfHeaderName(options.businessId, options.businessName)), x, 11)
     doc.setFontSize(8)
     doc.setFont("helvetica", "normal")
     doc.setTextColor(...COLORS.secondary)
@@ -336,7 +337,7 @@ ${step(e.stepName)}` : ""}`,
     doc.setFontSize(8)
     doc.setFont("helvetica", "normal")
     doc.setTextColor(...COLORS.secondary)
-    doc.text(`GastroMetrics | ${labels.pagina} ${i} ${labels.de} ${total}`, pageWidth / 2, pageHeight - 8, { align: "center" })
+    doc.text(`${pdfFooterPrefix(options.businessId)}${labels.pagina} ${i} ${labels.de} ${total}`, pageWidth / 2, pageHeight - 8, { align: "center" })
   }
   return doc
 }

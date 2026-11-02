@@ -98,6 +98,8 @@ export interface PdfLabels {
   ventaTotal: string
   otros: string
   metodoSeisRubros: string
+  // Mismo método sin la marca, para los PDF de Chef Ejecutivo (docs/229).
+  metodoSeisRubrosSinMarca: string
   editadoManualmente: string
   calculadoAutomaticamente: string
   origenPrecio: string
@@ -272,6 +274,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     ventaTotal: "Venta Total",
     otros: "Otros",
     metodoSeisRubros: "GastroMetrics (6 rubros)",
+    metodoSeisRubrosSinMarca: "Método de 6 rubros",
     editadoManualmente: "Editado manualmente",
     calculadoAutomaticamente: "Calculado automáticamente",
     origenPrecio: "Origen del precio",
@@ -442,6 +445,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     ventaTotal: "Total Sale",
     otros: "Other",
     metodoSeisRubros: "GastroMetrics (6 categories)",
+    metodoSeisRubrosSinMarca: "6-category method",
     editadoManualmente: "Manually edited",
     calculadoAutomaticamente: "Automatically calculated",
     origenPrecio: "Price origin",
@@ -612,6 +616,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     ventaTotal: "Samlet salg",
     otros: "Andet",
     metodoSeisRubros: "GastroMetrics (6 kategorier)",
+    metodoSeisRubrosSinMarca: "Metode med 6 poster",
     editadoManualmente: "Redigeret manuelt",
     calculadoAutomaticamente: "Beregnet automatisk",
     origenPrecio: "Prisens oprindelse",
@@ -782,6 +787,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     ventaTotal: "Vente Totale",
     otros: "Autres",
     metodoSeisRubros: "GastroMetrics (6 catégories)",
+    metodoSeisRubrosSinMarca: "Méthode à 6 postes",
     editadoManualmente: "Modifié manuellement",
     calculadoAutomaticamente: "Calculé automatiquement",
     origenPrecio: "Origine du prix",
@@ -952,6 +958,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     ventaTotal: "Venda Total",
     otros: "Outros",
     metodoSeisRubros: "GastroMetrics (6 categorias)",
+    metodoSeisRubrosSinMarca: "Método de 6 itens",
     editadoManualmente: "Editado manualmente",
     calculadoAutomaticamente: "Calculado automaticamente",
     origenPrecio: "Origem do preço",
@@ -1122,6 +1129,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     ventaTotal: "总销售额",
     otros: "其他",
     metodoSeisRubros: "GastroMetrics（6项）",
+    metodoSeisRubrosSinMarca: "6项方法",
     editadoManualmente: "手动编辑",
     calculadoAutomaticamente: "自动计算",
     origenPrecio: "价格来源",

@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf"
+import { pdfFooterPrefix, pdfHeaderName } from "./pdf-branding"
 import autoTable from "jspdf-autotable"
 import { formatCurrency } from "@/lib/currency"
 import { getPdfLabels, type PdfLabels } from "@/lib/i18n/pdf-labels"
@@ -77,7 +78,7 @@ export function generateCashUpPDF(imp: SalesImport, cashUp: CashUp, options: Cas
   doc.setFontSize(11)
   doc.setFont("helvetica", "bold")
   doc.setTextColor(...COLORS.text)
-  doc.text(clean(options.businessName) || "GastroMetrics", headerX, 11)
+  doc.text(clean(pdfHeaderName(options.businessId, options.businessName)), headerX, 11)
   doc.setFontSize(8)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(...COLORS.secondary)
@@ -175,7 +176,7 @@ export function generateCashUpPDF(imp: SalesImport, cashUp: CashUp, options: Cas
     doc.setPage(i)
     doc.setFontSize(8)
     doc.setTextColor(...COLORS.secondary)
-    doc.text(`GastroMetrics | ${labels.pagina} ${i} ${labels.de} ${pages}`, pageWidth / 2, pageHeight - 8, { align: "center" })
+    doc.text(`${pdfFooterPrefix(options.businessId)}${labels.pagina} ${i} ${labels.de} ${pages}`, pageWidth / 2, pageHeight - 8, { align: "center" })
   }
   return doc
 }

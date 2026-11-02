@@ -26,6 +26,9 @@
 import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { snapshotBeforeSafely } from "@/lib/services/account-snapshots"
+
+export const maxDuration = 60
 import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
 
 export async function POST(request: Request) {
@@ -46,6 +49,8 @@ export async function POST(request: Request) {
 
   const userId = user.id
   const admin = getSupabaseAdminClient()
+  // Respaldo automático antes de borrar: /admin puede restaurarlo (docs/229).
+  await snapshotBeforeSafely(userId, "before_delete")
 
   try {
     const { data: planRow } = await admin

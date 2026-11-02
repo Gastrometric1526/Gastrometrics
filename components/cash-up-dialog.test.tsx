@@ -19,7 +19,7 @@ vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: () => {} }) }))
 vi.mock("@/lib/services/activity-log", () => ({ logActivity: () => {} }))
 vi.mock("@/lib/ocr-usage", () => ({ useOcrUsage: () => () => {} }))
 vi.mock("@/lib/recipe-import/ocr", () => ({ OCR_LANG: { es: "spa" }, recognizeRecipeImage: vi.fn() }))
-vi.mock("@/lib/plan-access", () => ({ useFeatureAccess: () => true }))
+vi.mock("@/lib/plan-access", () => ({ useFeatureAccess: () => true, getCurrentPlanSlug: () => "foodie", hasActiveMembership: () => false }))
 
 import { CashUpDialog } from "./cash-up-dialog"
 

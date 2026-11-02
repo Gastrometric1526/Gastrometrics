@@ -23,6 +23,9 @@ import { NextResponse } from "next/server"
 import { isAuthorizedCronRequest } from "@/lib/cron-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { runDailySnapshots } from "@/lib/services/account-snapshots"
+
+export const maxDuration = 60
 
 export async function GET(request: Request) {
   if (!(await isAuthorizedCronRequest(request))) {
@@ -45,8 +48,16 @@ export async function GET(request: Request) {
       .select("account_id", { head: true, count: "exact" })
       .limit(1)
     if (error) throw error
-    await recordCronRun("keep-alive")
-    return NextResponse.json({ ok: true, pingedAt: new Date().toISOString() })
+    // Respaldos diarios de las cuentas activas (docs/229). Va en este mismo cron para no
+    // sumar otra tarea programada; si falla, el ping igual cuenta como hecho.
+    let backups: Awaited<ReturnType<typeof runDailySnapshots>> | null = null
+    try {
+      backups = await runDailySnapshots()
+    } catch (backupError) {
+      console.error("[api/cron/keep-alive] Error en los respaldos diarios:", backupError)
+    }
+    await recordCronRun("keep-alive", backups && backups.failed === 0 ? [] : ["backups"])
+    return NextResponse.json({ ok: true, pingedAt: new Date().toISOString(), backups })
   } catch (error) {
     console.error("[api/cron/keep-alive] Error haciendo ping a Supabase:", error)
     await recordCronRun("keep-alive", ["ping"])

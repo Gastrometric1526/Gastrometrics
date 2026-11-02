@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf"
+import { pdfClientFooter, pdfFooterPrefix, pdfHeaderName } from "./pdf-branding"
 import autoTable from "jspdf-autotable"
 import type { Menu } from "@/lib/types/menus"
 import type { Recipe } from "@/types/recipe"
@@ -302,7 +303,7 @@ function generateClientMenuPDF(
   doc.setFont("times", "italic")
   doc.setFontSize(9)
   doc.setTextColor(...COLORS.secondary)
-  doc.text(sanitizeText(options.businessName) || "GastroMetrics", pageWidth / 2, yPosition, { align: "center" })
+  doc.text(sanitizeText(pdfHeaderName(menu.businessId, options.businessName)), pageWidth / 2, yPosition, { align: "center" })
   yPosition += 12
 
   doc.setFont("times", "bold")
@@ -411,7 +412,7 @@ function generateClientMenuPDF(
     doc.setFont("times", "italic")
     doc.setFontSize(7.5)
     doc.setTextColor(...COLORS.secondary)
-    doc.text(sanitizeText(options.businessName) || "GastroMetrics", pageWidth / 2, pageHeight - 12, { align: "center" })
+    doc.text(sanitizeText(pdfClientFooter(menu.businessId, options.businessName)), pageWidth / 2, pageHeight - 12, { align: "center" })
   }
 }
 
@@ -449,7 +450,7 @@ function generateInternalMenuPDF(
   doc.setFontSize(9)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(...COLORS.white)
-  doc.text(sanitizeText(options.businessName) || "GastroMetrics", headerTextX, 10)
+  doc.text(sanitizeText(pdfHeaderName(menu.businessId, options.businessName)), headerTextX, 10)
 
   doc.setFillColor(185, 28, 28)
   doc.rect(pageWidth - margin - 48, 4, 48, 6, "F")
@@ -616,6 +617,6 @@ function generateInternalMenuPDF(
     doc.setPage(i)
     doc.setFontSize(8)
     doc.setTextColor(...COLORS.secondary)
-    doc.text(`GastroMetrics | ${i} / ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: "center" })
+    doc.text(`${pdfFooterPrefix(menu.businessId)}${i} / ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: "center" })
   }
 }

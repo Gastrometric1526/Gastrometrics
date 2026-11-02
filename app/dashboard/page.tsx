@@ -266,7 +266,9 @@ export default function DashboardPage() {
       // BUG CORREGIDO (ver components/auth-guard.tsx y docs/51): con Supabase Auth real,
       // login() valida contraseña de verdad y ya no puede usarse como auto-login de
       // cuentas legacy — sin sesión real, la única opción es ir a /login.
-      router.push("/login")
+      // Desde el correo de respuesta del chat (docs/229): después de entrar vuelve al chat.
+      const fromSupportEmail = new URLSearchParams(window.location.search).get("soporte") === "chat"
+      router.push(fromSupportEmail ? `/login?next=${encodeURIComponent("/dashboard?soporte=chat")}` : "/login")
     }
   }, [isLoggedIn, authChecked, router])
 

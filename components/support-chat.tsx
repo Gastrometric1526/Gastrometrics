@@ -164,6 +164,18 @@ export function SupportChat() {
     return () => window.removeEventListener(SUPPORT_OPEN_EVENT, onOpen)
   }, [])
 
+  // Enlace del correo de respuesta (docs/229): /dashboard?soporte=chat abre el chat con la
+  // conversación, y se limpia el parámetro para que no se vuelva a abrir al recargar.
+  useEffect(() => {
+    if (hidden || typeof window === "undefined") return
+    const url = new URL(window.location.href)
+    if (url.searchParams.get("soporte") !== "chat") return
+    setTab("chat")
+    setOpen(true)
+    url.searchParams.delete("soporte")
+    window.history.replaceState(null, "", url.pathname + (url.search || "") + url.hash)
+  }, [hidden])
+
   // Escape cierra el panel.
   useEffect(() => {
     if (!open) return

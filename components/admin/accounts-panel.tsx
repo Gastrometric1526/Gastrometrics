@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AccountInsightsPanel } from "@/components/admin/account-insights"
+import { AccountBackupsPanel } from "@/components/admin/account-backups-panel"
 import { AdminSubTabs } from "@/components/admin/sub-tabs"
 import {
   AlertDialog,
@@ -952,6 +953,11 @@ export function AccountsPanel() {
 
                       </>
                     ),
+                  },
+                  {
+                    value: "respaldos",
+                    label: t("admin_backups_tab"),
+                    content: <AccountBackupsPanel userId={selected.userId} email={selected.email} />,
                   },
                   {
                     value: "eliminar",

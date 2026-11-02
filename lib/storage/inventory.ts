@@ -37,7 +37,7 @@ async function fetchInventory(businessId?: string | null): Promise<InventoryItem
   const { data, error } = await query
   if (error) {
     console.error("[Inventory] Error cargando inventario:", error)
-    return []
+    throw error
   }
   return (data ?? []).map(rowToItem)
 }
@@ -50,7 +50,7 @@ async function fetchHistory(businessId?: string | null): Promise<InventorySnapsh
   const { data, error } = await query
   if (error) {
     console.error("[Inventory] Error cargando historial:", error)
-    return []
+    throw error
   }
   return (data ?? []).map(rowToSnapshot)
 }

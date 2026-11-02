@@ -184,6 +184,7 @@ export const plans: Plan[] = [
       "Soporte prioritario",
       "Onboarding personalizado",
       "Importación de datos asistida",
+      "PDF con la marca de tu negocio, sin GastroMetrics",
     ],
     locked: [],
     maxBusinesses: 5,

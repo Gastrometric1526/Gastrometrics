@@ -1,5 +1,6 @@
 "use client"
 
+import { PdfBrandingSettings } from "@/components/pdf-branding-settings"
 import type React from "react"
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
@@ -598,6 +599,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                   <ThemeSwitcher businessId={businessId} />
                 </CardContent>
               </Card>
+              <PdfBrandingSettings businessId={businessId} />
             </TabsContent>
 
             <TabsContent value="regional" className="space-y-4 mt-0">

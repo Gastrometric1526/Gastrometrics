@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf"
+import { isWhiteLabelPdf, pdfFooterPrefix, pdfHeaderName } from "./pdf-branding"
 import { estimateYieldWeightGrams, formatYieldWeight } from "@/lib/yield-weight"
 import { safeFilePart } from "@/lib/pdf/pdf-filename"
 import autoTable from "jspdf-autotable"
@@ -319,7 +320,7 @@ export function generateRecipePDF(recipe: Recipe, options: PDFExportOptions): js
   const addPageNumber = (pageNum: number, totalPages: number) => {
     doc.setFontSize(8)
     doc.setTextColor(...COLORS.secondary)
-    doc.text(`GastroMetrics | ${labels.pagina} ${pageNum} ${labels.de} ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: "center" })
+    doc.text(`${pdfFooterPrefix(recipe.businessId)}${labels.pagina} ${pageNum} ${labels.de} ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: "center" })
   }
 
   const checkNewPage = (requiredSpace: number): boolean => {
@@ -417,7 +418,7 @@ function generateAdministrativePDF(
   doc.setFontSize(10)
   doc.setFont("helvetica", "bold")
   doc.setTextColor(...COLORS.text)
-  doc.text(sanitizeText(options.businessName) || "GastroMetrics", margin + (options.businessLogo ? 15 : 0), 10)
+  doc.text(sanitizeText(pdfHeaderName(recipe.businessId, options.businessName)), margin + (options.businessLogo ? 15 : 0), 10)
 
   // Franja de identificación: distingue de un vistazo esta copia (con costos y
   // márgenes) de la copia de cocina, que no lleva esta información financiera.
@@ -986,7 +987,9 @@ function generateAdministrativePDF(
     const methodLabel =
       recipe.pricingMethod === "food_cost"
         ? `Food Cost % (${labels.metaObjetivo} ${recipe.targetFoodCostPercent ?? 30}%)`
-        : labels.metodoSeisRubros
+        : isWhiteLabelPdf(recipe.businessId)
+          ? labels.metodoSeisRubrosSinMarca
+          : labels.metodoSeisRubros
     const priceOrigin =
       recipe.customUnitPrice !== undefined && recipe.customUnitPrice !== null
         ? labels.editadoManualmente
@@ -1162,7 +1165,7 @@ function generateEmployeePDF(
   doc.setFontSize(11)
   doc.setTextColor(...COOKBOOK.brown)
   doc.setFont("times", "bold")
-  doc.text(sanitizeText(options.businessName) || "GastroMetrics", margin + (options.businessLogo ? 18 : 0), margin + 5)
+  doc.text(sanitizeText(pdfHeaderName(recipe.businessId, options.businessName)), margin + (options.businessLogo ? 18 : 0), margin + 5)
 
   doc.setFontSize(8)
   doc.setFont("helvetica", "normal")
@@ -1341,7 +1344,7 @@ function generateNormalPDF(
   doc.setFontSize(14)
   doc.setTextColor(...COLORS.white)
   doc.setFont("helvetica", "bold")
-  doc.text(sanitizeText(options.businessName) || "GastroMetrics", margin + (options.businessLogo ? 22 : 0), 14)
+  doc.text(sanitizeText(pdfHeaderName(recipe.businessId, options.businessName)), margin + (options.businessLogo ? 22 : 0), 14)
 
   doc.setFontSize(8)
   doc.setFont("helvetica", "normal")

@@ -49,7 +49,7 @@ async function fetchIngredients(businessId?: string | null): Promise<Ingredient[
   const { data, error } = await query
   if (error) {
     console.error("[Ingredients] Error cargando ingredientes:", error)
-    return []
+    throw error
   }
   return (data ?? []).map(rowToIngredient)
 }

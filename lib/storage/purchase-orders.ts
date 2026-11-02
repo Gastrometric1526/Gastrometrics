@@ -29,7 +29,7 @@ async function fetchOrders(businessId: string): Promise<PurchaseOrder[]> {
   const { data, error } = await query
   if (error) {
     console.error("[PurchaseOrders] Error cargando órdenes de compra:", error)
-    return []
+    throw error
   }
   return (data ?? []).map(rowToOrder)
 }

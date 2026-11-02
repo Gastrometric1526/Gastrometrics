@@ -52,7 +52,7 @@ async function fetchAllBusinesses(): Promise<Business[]> {
   const { data, error } = await supabase.from("businesses").select("*").order("created_at", { ascending: true })
   if (error) {
     console.error("[Businesses] Error cargando negocios:", error)
-    return []
+    throw error
   }
   const businesses = (data ?? []).map(rowToBusiness)
   mirrorToLocalStorage(businesses)

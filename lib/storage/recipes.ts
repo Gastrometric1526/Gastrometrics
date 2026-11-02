@@ -44,7 +44,7 @@ async function fetchRecipes(businessId?: string | null): Promise<Recipe[]> {
   const { data, error } = await query
   if (error) {
     console.error("[Recipes] Error cargando recetas:", error)
-    return []
+    throw error
   }
   return (data ?? []).map(rowToRecipe)
 }
@@ -387,7 +387,7 @@ async function fetchTrash(businessId?: string | null): Promise<TrashedRecipe[]> 
   const { data, error } = await query
   if (error) {
     console.error("[Recipes] Error cargando papelera:", error)
-    return []
+    throw error
   }
   return (data ?? []).map(rowToTrashedRecipe)
 }

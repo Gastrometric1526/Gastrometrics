@@ -198,7 +198,7 @@ async function fetchMenus(businessId: string): Promise<Menu[]> {
   const { data, error } = await query
   if (error) {
     console.error("[Menus] Error cargando menús:", error)
-    return []
+    throw error
   }
   return (data ?? []).map(rowToMenu)
 }

@@ -56,8 +56,12 @@ export async function sendFeedbackReplyEmail(input: {
   originalMessage: string
   reply: string
   preferredLanguage?: string
+  // "chat" = respuesta del chat de soporte (docs/229): textos propios y el botón abre el
+  // chat en la app para seguir el caso (no «responde este correo», que no llega al chat).
+  source?: "form" | "chat"
 }): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
+  const chat = input.source === "chat"
 
   const resend = new Resend(process.env.RESEND_API_KEY)
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
@@ -69,31 +73,31 @@ export async function sendFeedbackReplyEmail(input: {
 
   const html = renderEmailTemplate("02-respuesta-feedback.html", {
     htmlLang: language,
-    title: labels.e02_title,
-    preheader: labels.e02_preheader,
+    title: chat ? labels.e02c_title : labels.e02_title,
+    preheader: chat ? labels.e02c_preheader : labels.e02_preheader,
     receivedPrefix: labels.e02_received_prefix,
-    intro: labels.e02_intro,
-    originalLabel: labels.e02_original_label,
-    cta: labels.e02_cta,
-    footnote: labels.e02_footnote,
+    intro: chat ? labels.e02c_intro : labels.e02_intro,
+    originalLabel: chat ? labels.e02c_original_label : labels.e02_original_label,
+    cta: chat ? labels.e02c_cta : labels.e02_cta,
+    footnote: chat ? labels.e02c_footnote : labels.e02_footnote,
     footerAddress: labels.footer_address,
-    footer2: labels.e02_footer2,
-    typeLabel: escapeHtml(typeLabel),
+    footer2: chat ? labels.e02c_footer2 : labels.e02_footer2,
+    typeLabel: escapeHtml(chat ? labels.e02c_reply_title : typeLabel),
     ticketId: escapeHtml(input.ticketId),
     receivedAt: escapeHtml(
       formatDate(input.createdAt, { timeZone: "America/Tegucigalpa" }),
     ),
-    replyTitle: escapeHtml(replyTitleKey ? labels[replyTitleKey] : "—"),
+    replyTitle: escapeHtml(chat ? labels.e02c_reply_title : replyTitleKey ? labels[replyTitleKey] : "—"),
     reply: escapeHtmlWithLineBreaks(input.reply),
     originalMessage: escapeHtmlWithLineBreaks(input.originalMessage),
     // Medido como «volvió desde un correo» (docs/210).
-    appUrl: withEmailTracking(`${siteUrl}/dashboard`, "support_reply"),
+    appUrl: withEmailTracking(`${siteUrl}/dashboard${chat ? "?soporte=chat" : ""}`, "support_reply"),
   })
 
   const { error } = await sendWithRetry(resend, {
     from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
     to: [input.toEmail],
-    subject: labels.e02_subject,
+    subject: chat ? labels.e02c_subject : labels.e02_subject,
     html,
   })
   // El SDK de Resend no lanza en errores de la API — los devuelve en `error` sin lanzar.

@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf"
+import { pdfFooterPrefix, pdfHeaderName } from "./pdf-branding"
 import { safeFilePart } from "@/lib/pdf/pdf-filename"
 import autoTable from "jspdf-autotable"
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
@@ -319,7 +320,7 @@ function renderInventoryPDF(doc: jsPDF, data: InventoryPDFData, options: Invento
   doc.setFontSize(11)
   doc.setFont("helvetica", "bold")
   doc.setTextColor(...COLORS.text)
-  doc.text(sanitizeText(options.businessName) || "GastroMetrics", headerTextX, 11)
+  doc.text(sanitizeText(pdfHeaderName(options.businessId, options.businessName)), headerTextX, 11)
 
   doc.setFontSize(8)
   doc.setFont("helvetica", "normal")
@@ -507,7 +508,7 @@ function renderInventoryPDF(doc: jsPDF, data: InventoryPDFData, options: Invento
     doc.setPage(i)
     doc.setFontSize(8)
     doc.setTextColor(...COLORS.secondary)
-    doc.text(`GastroMetrics | ${labels.pagina} ${i} ${labels.de} ${totalPages}`, pageWidth / 2, pageHeight - 8, {
+    doc.text(`${pdfFooterPrefix(options.businessId)}${labels.pagina} ${i} ${labels.de} ${totalPages}`, pageWidth / 2, pageHeight - 8, {
       align: "center",
     })
   }

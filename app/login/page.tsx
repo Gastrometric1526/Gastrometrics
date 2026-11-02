@@ -50,7 +50,9 @@ export default function LoginPage() {
       router.push(`/signup/payment?plan=${pendingPlan}`)
       return
     }
-    router.push("/dashboard")
+    // ?next= solo con rutas internas (p. ej. el chat desde el correo, docs/229).
+    const next = new URLSearchParams(window.location.search).get("next")
+    router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

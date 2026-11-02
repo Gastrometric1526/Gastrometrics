@@ -30,7 +30,7 @@ async function fetchInvoices(businessId: string): Promise<Invoice[]> {
   const { data, error } = await query
   if (error) {
     console.error("[Invoices] Error cargando facturas:", error)
-    return []
+    throw error
   }
   return (data ?? []).map(rowToInvoice)
 }

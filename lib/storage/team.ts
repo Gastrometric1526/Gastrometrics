@@ -106,7 +106,7 @@ async function fetchTeamMembers(): Promise<TeamMember[]> {
   const { data, error } = await supabase.from("team_members").select("*").order("invited_at", { ascending: false })
   if (error) {
     console.error("[Team] Error cargando el equipo:", error)
-    return []
+    throw error
   }
   return (data ?? []).map(rowToTeamMember)
 }
@@ -138,7 +138,7 @@ async function fetchMyMemberships(): Promise<TeamMember[]> {
   const { data, error } = await supabase.from("team_members").select("*").eq("invited_user_id", user.id)
   if (error) {
     console.error("[Team] Error cargando membresías propias:", error)
-    return []
+    throw error
   }
   return (data ?? []).map(rowToTeamMember)
 }
