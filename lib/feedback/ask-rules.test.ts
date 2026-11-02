@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest"
-import { emptyAskState, nextQuestion, ratingDue, recordAsk, recordMoment, ratingBand, ASK_COOLDOWN_MS, type AskContext } from "./ask-rules"
+import translations from "../i18n/translations"
+import { QUESTIONS, emptyAskState, nextQuestion, ratingDue, recordAsk, recordMoment, ratingBand, ASK_COOLDOWN_MS, type AskContext } from "./ask-rules"
 import { parseReviewMessage, buildReviewMessage, reviewerDisplayName, scoreToStars } from "../reviews"
 import { summarizeSurveyAnswers } from "./survey-summary"
 
@@ -8,7 +9,7 @@ const now = new Date("2026-10-21T15:00:00Z").getTime()
 const ctx = (over: Partial<AskContext> = {}): AskContext => ({
   now,
   accountCreatedAt: new Date(now - 10 * DAY).toISOString(),
-  activeDays: 2,
+  activeDays: 1,
   recipeCount: 1,
   planExpiringSoon: false,
   onboardingDone: true,
@@ -51,6 +52,32 @@ describe("preguntas cortas", () => {
     expect(nextQuestion(emptyAskState(), ctx({ recipeCount: 6 }))?.key).toBe("team")
     expect(nextQuestion(emptyAskState(), ctx({ activeDays: 14 }))?.key).toBe("testimonial")
     expect(nextQuestion(emptyAskState(), ctx())).toBeNull()
+  })
+
+  it("las de docs/230: una por momento de valor y dos generales al final", () => {
+    const one = (m: Parameters<typeof recordMoment>[1]) => nextQuestion(recordMoment(emptyAskState(), m, now), ctx())?.key
+    expect(one("first_priced_recipe")).toBe("price_reaction")
+    expect(one("first_pdf")).toBe("pdf_use")
+    expect(one("cascade_recalc")).toBe("price_changes")
+    expect(one("first_inventory_count")).toBe("inventory_freq")
+    expect(one("first_purchase_order")).toBe("order_channel")
+    expect(one("first_sales_import")).toBe("pos_system")
+    expect(one("first_menu")).toBe("menu_purpose")
+    expect(nextQuestion(emptyAskState(), ctx({ activeDays: 2 }))?.key).toBe("found_us")
+    expect(nextQuestion(emptyAskState(), ctx({ activeDays: 3 }))?.key).toBe("previous_tool")
+    // el plan original va antes que las nuevas
+    expect(nextQuestion(recordMoment(emptyAskState(), "first_pdf", now), ctx({ activeDays: 14 }))?.key).toBe("pdf_use")
+    expect(nextQuestion(emptyAskState(), ctx({ activeDays: 14 }))?.key).toBe("testimonial")
+  })
+
+  it("cada pregunta tiene título y opciones traducidos en los 6 idiomas", () => {
+    for (const lang of Object.keys(translations) as (keyof typeof translations)[]) {
+      const dict = translations[lang] as Record<string, string>
+      for (const q of QUESTIONS) {
+        expect(dict[`q_${q.key}_title`], `${lang} q_${q.key}_title`).toBeTruthy()
+        for (const o of q.options ?? []) expect(dict[`q_${q.key}_opt_${o}`], `${lang} q_${q.key}_opt_${o}`).toBeTruthy()
+      }
+    }
   })
 
   it("respondida no se repite", () => {

@@ -6,6 +6,7 @@
 import { toIsoDate } from "@/lib/date-format"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { createBusinessScopedCache } from "./supabase-cache"
+import { emitValueMoment } from "@/lib/feedback/ask-store"
 import type { Database } from "@/types/database"
 import type { PurchaseOrder } from "@/types/purchase-order"
 
@@ -78,6 +79,8 @@ export async function savePurchaseOrders(businessId: string, orders: PurchaseOrd
   if (rows.length > 0) {
     const { error } = await supabase.from("purchase_orders").upsert(rows)
     if (error) console.error("[PurchaseOrders] Error guardando órdenes:", error)
+    // pregunta corta «¿cómo le haces los pedidos a tus proveedores?» (docs/230)
+    else if (orders.length > previous.length) emitValueMoment("first_purchase_order")
   }
   if (removedIds.length > 0) {
     const { error } = await supabase.from("purchase_orders").delete().in("id", removedIds)

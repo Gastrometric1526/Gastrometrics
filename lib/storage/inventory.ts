@@ -4,6 +4,7 @@
  */
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { emitValueMoment } from "@/lib/feedback/ask-store"
 import { createBusinessScopedCache } from "./supabase-cache"
 import type { Database } from "@/types/database"
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
@@ -252,6 +253,7 @@ export async function addInventorySnapshot(snapshot: InventorySnapshot, business
     .from("inventory_snapshots")
     .insert({ id, business_id: toDbBusinessId(businessId), owner_id: user.id, date, data: rest })
   if (error) console.error("[Inventory] Error guardando snapshot:", error)
+  else emitValueMoment("first_inventory_count") // pregunta corta «¿cada cuánto cuentas tu inventario?» (docs/230)
 }
 
 /**

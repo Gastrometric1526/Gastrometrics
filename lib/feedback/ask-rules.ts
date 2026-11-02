@@ -16,8 +16,30 @@ export type ValueMoment =
   | "first_ingredient"
   | "first_business"
   | "first_ocr"
+  | "first_inventory_count" // primer inventario registrado
+  | "first_purchase_order"
+  | "first_menu"
+  | "first_sales_import"
 
-export type QuestionKey = "pain" | "menu_size" | "price_source" | "blocker" | "ocr_accuracy" | "team" | "testimonial" | "improve"
+export type QuestionKey =
+  | "pain"
+  | "menu_size"
+  | "price_source"
+  | "blocker"
+  | "ocr_accuracy"
+  | "team"
+  | "testimonial"
+  | "improve"
+  // docs/230
+  | "price_reaction"
+  | "pdf_use"
+  | "price_changes"
+  | "inventory_freq"
+  | "order_channel"
+  | "pos_system"
+  | "menu_purpose"
+  | "previous_tool"
+  | "found_us"
 
 export type QuestionKind = "choice" | "scale" | "text"
 
@@ -38,8 +60,19 @@ export const QUESTIONS: QuestionDef[] = [
   { key: "price_source", kind: "choice", options: ["receipts", "supplier_list", "market", "other"] },
   { key: "menu_size", kind: "choice", options: ["lt10", "10_30", "31_60", "gt60"] },
   { key: "pain", kind: "choice", options: ["costs", "prices", "inventory", "waste", "suppliers", "other"] },
+  // docs/230: una por momento de valor, después de las del plan original.
+  { key: "price_reaction", kind: "choice", options: ["low", "right", "high", "not_selling"] },
+  { key: "pdf_use", kind: "choice", options: ["kitchen", "owner", "accounting", "clients", "other"] },
+  { key: "price_changes", kind: "choice", options: ["weekly", "monthly", "quarterly", "rarely"] },
+  { key: "inventory_freq", kind: "choice", options: ["daily", "weekly", "monthly", "rarely"] },
+  { key: "order_channel", kind: "choice", options: ["whatsapp", "phone", "email", "in_person", "other"] },
+  { key: "pos_system", kind: "choice", options: ["loyverse", "square", "toast", "manual", "other"] },
+  { key: "menu_purpose", kind: "choice", options: ["carta", "daily", "event", "catering", "other"] },
   { key: "team", kind: "choice", options: ["solo", "small", "team"] },
   { key: "testimonial", kind: "text", askConsent: true },
+  // docs/230: generales, las de menor prioridad.
+  { key: "previous_tool", kind: "choice", options: ["excel", "paper", "memory", "software", "none"] },
+  { key: "found_us", kind: "choice", options: ["instagram", "google", "recommendation", "other"] },
 ]
 
 export const ASK_COOLDOWN_MS = 5 * 24 * 60 * 60 * 1000
@@ -114,6 +147,24 @@ function questionApplies(key: QuestionKey, state: AskState, ctx: AskContext): bo
       return ctx.onboardingDone && age !== null && age <= 7
     case "team":
       return (recipes ?? 0) >= 5
+    case "price_reaction":
+      return Boolean(state.moments.first_priced_recipe)
+    case "pdf_use":
+      return Boolean(state.moments.first_pdf)
+    case "price_changes":
+      return Boolean(state.moments.cascade_recalc)
+    case "inventory_freq":
+      return Boolean(state.moments.first_inventory_count)
+    case "order_channel":
+      return Boolean(state.moments.first_purchase_order)
+    case "pos_system":
+      return Boolean(state.moments.first_sales_import)
+    case "menu_purpose":
+      return Boolean(state.moments.first_menu)
+    case "previous_tool":
+      return ctx.activeDays >= 3 && (recipes ?? 0) >= 1
+    case "found_us":
+      return ctx.activeDays >= 2
     case "testimonial":
       return ctx.activeDays >= 14 || (age !== null && age >= 14 && ctx.activeDays >= 5)
   }

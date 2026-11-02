@@ -5,6 +5,7 @@
  */
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { emitValueMoment } from "@/lib/feedback/ask-store"
 import { createBusinessScopedCache } from "./supabase-cache"
 import type { Database } from "@/types/database"
 import type { SalesImport, POSColumnMapping, DishNameMapping } from "@/types/sales-import"
@@ -95,6 +96,7 @@ export async function addSalesImport(salesImport: SalesImport, businessId?: stri
     .from("sales_imports")
     .insert({ id, business_id: toDbBusinessId(businessId), owner_id: ownerId, data: rest })
   if (error) console.error("[SalesImports] Error guardando la importación:", error)
+  else emitValueMoment("first_sales_import") // pregunta corta «¿qué sistema de caja usas?» (docs/230)
 }
 
 export async function updateSalesImport(salesImport: SalesImport, businessId?: string | null): Promise<void> {

@@ -3,6 +3,7 @@ import { getInventory } from "./storage/inventory"
 import { buildPurchaseOrderData, type PurchaseOrderComputationResult } from "./purchase-orders"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { createBusinessScopedCache } from "./storage/supabase-cache"
+import { emitValueMoment } from "@/lib/feedback/ask-store"
 import type { Database } from "@/types/database"
 import type { Menu, MenuItem, MenuSection, MenuStep } from "@/lib/types/menus"
 import type { Recipe } from "@/types/recipe"
@@ -295,6 +296,7 @@ export async function createMenu(
 
   cache.mutateSnapshot(businessId, (list) => [...list, newMenu])
   await persistMenu(newMenu, businessId)
+  emitValueMoment("first_menu") // pregunta corta «¿para qué usas los menús?» (docs/230)
 
   return newMenu
 }
