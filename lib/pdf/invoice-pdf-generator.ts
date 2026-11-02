@@ -8,6 +8,7 @@ import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors
 import { drawBusinessLogo } from "./pdf-logo"
 import { safeFilePart } from "./pdf-filename"
 import { formatDate, fileDate } from "@/lib/date-format"
+import { recordPdfExport } from "@/lib/pdf/track-export"
 
 // Mismo patrón que lib/pdf/purchase-order-pdf-generator.ts — sanitizeText/COLORS
 // duplicados localmente a propósito (ver docs/31, sección 2), sin acoplar los
@@ -267,6 +268,7 @@ export function downloadInvoicePDF(invoice: Invoice, options: InvoicePDFOptions 
   try {
     const doc = generateInvoicePDF(invoice, options)
     doc.save(generateInvoicePDFFilename(invoice))
+    recordPdfExport("invoice", options.businessId)
   } catch (error) {
     console.error("Error generating invoice PDF:", error)
     throw new Error("No se pudo generar el PDF")

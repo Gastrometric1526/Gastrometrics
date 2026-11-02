@@ -11,13 +11,17 @@
 import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { getBusinessBreakdown } from "@/lib/admin/business-breakdown-server"
+
+export const maxDuration = 60
 
 export async function GET(request: Request) {
   if (!(await hasAdminSession())) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 })
   }
 
-  const userId = new URL(request.url).searchParams.get("userId")
+  const params = new URL(request.url).searchParams
+  const userId = params.get("userId")
   if (!userId) {
     return NextResponse.json({ error: "Falta userId." }, { status: 400 })
   }
@@ -38,7 +42,17 @@ export async function GET(request: Request) {
       isActive: (row.data as { isActive?: boolean })?.isActive !== false,
     }))
 
-    return NextResponse.json({ businesses })
+    // Contenido, números del Dashboard y actividad por negocio (docs/232), solo con `breakdown=1`
+    // (lo pide la pestaña Negocios al abrirse). Si falla, la lista de negocios igual se muestra.
+    const breakdown =
+      params.get("breakdown") !== "1"
+        ? undefined
+        : await getBusinessBreakdown(userId, businesses).catch((error) => {
+            console.error("[api/admin/account-businesses] Error armando el detalle por negocio:", error)
+            return null
+          })
+
+    return NextResponse.json({ businesses, breakdown })
   } catch (error) {
     console.error("[api/admin/account-businesses] Error listando negocios:", error)
     return NextResponse.json({ error: "No se pudieron listar los negocios." }, { status: 500 })

@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { AccountInsightsPanel } from "@/components/admin/account-insights"
 import { AccountBackupsPanel } from "@/components/admin/account-backups-panel"
 import { AdminSubTabs } from "@/components/admin/sub-tabs"
+import { AccountBusinessesBreakdown } from "@/components/admin/account-businesses-breakdown"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -900,33 +901,8 @@ export function AccountsPanel() {
                     label: t("admin_acc_sub_businesses"),
                     content: (
                       <>
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-foreground">{t("admin_accounts_businesses_title")}</h3>
-                {businesses.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">{t("admin_accounts_businesses_empty")}</p>
-                ) : (
-                  <div className="space-y-2">
-                    {businesses.map((b) => (
-                      <div key={b.id} className="flex items-center justify-between gap-2 rounded-lg border border-border p-3">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{b.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatDate(b.createdAt)}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={b.isActive ? "secondary" : "outline"}>
-                            {b.isActive ? t("admin_accounts_business_active") : t("admin_accounts_business_inactive")}
-                          </Badge>
-                          <Button size="sm" variant="outline" onClick={() => handleToggleBusiness(b)}>
-                            {b.isActive ? t("admin_accounts_business_deactivate") : t("admin_accounts_business_activate")}
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* Resumen y cada negocio con su contenido, números y actividad (docs/232). */}
+              <AccountBusinessesBreakdown userId={selected.userId} businesses={businesses} onToggle={handleToggleBusiness} />
 
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">{t("admin_accounts_team_title")}</h3>
@@ -1226,8 +1202,20 @@ export function AccountsPanel() {
                     accounts.map((a) => ({ ...a, id: a.userId })),
                     new Set(accounts.filter((a) => presenceByUserId[a.userId]?.online).map((a) => a.userId)),
                   ).map((a) => (
-                    <TableRow key={a.userId}>
-                      <TableCell className="text-foreground">
+                    // Toda la fila abre la ficha de la cuenta (docs/232); antes solo el botón «Ver».
+                    <TableRow
+                      key={a.userId}
+                      className="cursor-pointer"
+                      tabIndex={0}
+                      onClick={() => loadDetail(a)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault()
+                          loadDetail(a)
+                        }
+                      }}
+                    >
+                      <TableCell className="text-foreground font-medium">
                         <span className="inline-flex items-center gap-1.5">
                           <span
                             className={`h-2 w-2 shrink-0 rounded-full ${
@@ -1331,7 +1319,14 @@ export function AccountsPanel() {
                         {formatDate(a.createdAt)}
                       </TableCell>
                       <TableCell>
-                        <Button size="sm" variant="ghost" onClick={() => loadDetail(a)}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            loadDetail(a)
+                          }}
+                        >
                           {t("admin_accounts_view_detail")}
                         </Button>
                       </TableCell>

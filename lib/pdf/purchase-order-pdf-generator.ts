@@ -9,6 +9,7 @@ import { getUnitLabelFor, getPresentationLabel } from "@/lib/ingredient-labels"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
 import { drawBusinessLogo } from "./pdf-logo"
 import { formatDate, formatDateTime, fileDate } from "@/lib/date-format"
+import { recordPdfExport } from "@/lib/pdf/track-export"
 
 // ============== HELPERS ==============
 // Mismo patron que lib/pdf/recipe-pdf-generator.ts y lib/pdf/menu-pdf-generator.ts:
@@ -396,6 +397,7 @@ export function downloadPurchaseOrderPDF(order: PurchaseOrder, options: Purchase
   try {
     const doc = generatePurchaseOrderPDF(order, options)
     doc.save(generatePurchaseOrderPDFFilename(order))
+    recordPdfExport("purchase_order", options.businessId)
   } catch (error) {
     console.error("Error generating purchase order PDF:", error)
     throw new Error("No se pudo generar el PDF")

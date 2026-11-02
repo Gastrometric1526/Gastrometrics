@@ -40,6 +40,8 @@ export type ActivityModule =
   | "encuesta"
   // Descargas del manual de usuario (docs/208): las escribe /api/manual; solo para /admin.
   | "manual"
+  // PDF exportados (docs/232): los escribe lib/pdf/track-export.ts; solo para /admin.
+  | "pdf"
 
 export type ActivityAction =
   | "entered"
@@ -60,6 +62,8 @@ export type ActivityAction =
   | "margin_up"
   // Descarga del manual (docs/208).
   | "downloaded"
+  // PDF exportado (docs/232).
+  | "exported"
 
 export interface ActivityLogEntry {
   id: number
@@ -173,6 +177,7 @@ export async function getActivityLog(params: {
     .neq("module", "ocr") // conteo de lecturas OCR, no actividad para mostrar
     .neq("module", "encuesta") // respuestas a preguntas cortas (docs/173), solo para /admin
     .neq("module", "manual") // descargas del manual (docs/208), solo para /admin
+    .neq("module", "pdf") // PDF exportados (docs/232), solo para /admin
     .order("created_at", { ascending: false })
     .limit(limit)
 
@@ -238,6 +243,7 @@ const MODULE_NAV_KEY: Record<ActivityModule, string> = {
   plan: "nav_dashboard",
   encuesta: "nav_dashboard",
   manual: "nav_dashboard",
+  pdf: "nav_dashboard",
 }
 
 /**

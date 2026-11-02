@@ -462,6 +462,7 @@ function MepContent() {
                       </div>
                       <div className="flex flex-wrap gap-2" data-tour="mep-share">
                         <ShareDocumentMenu
+                          track={{ kind: "mep", businessId }}
                           size="default"
                           className="flex-1 sm:flex-none"
                           pdfAllowed={pdfAllowed}

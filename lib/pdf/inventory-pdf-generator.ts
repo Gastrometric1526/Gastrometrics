@@ -11,6 +11,7 @@ import { drawBusinessLogo } from "./pdf-logo"
 import { buildPackageContentLookup, inventoryItemValue, snapshotItemValue, type PackageContentLookup } from "@/lib/inventory-value"
 import { getIngredients } from "@/lib/storage/ingredients"
 import { formatDate, formatDateTime, fileDate } from "@/lib/date-format"
+import { recordPdfExport } from "@/lib/pdf/track-export"
 
 // ============== HELPERS ==============
 // Mismo patron que los demas generadores en lib/pdf/ (recipe/menu/purchase-order):
@@ -538,6 +539,7 @@ export function downloadInventorySnapshotPDF(snapshot: InventorySnapshot, option
     const data = buildInventoryPDFDataFromSnapshot(snapshot)
     const doc = generateInventoryPDF(data, options)
     doc.save(generateInventoryPDFFilename(data))
+    recordPdfExport("inventory", options.businessId)
   } catch (error) {
     console.error("Error generating inventory snapshot PDF:", error)
     throw new Error("No se pudo generar el PDF")
@@ -549,6 +551,7 @@ export function downloadCurrentInventoryPDF(items: InventoryItem[], options: Inv
     const data = buildInventoryPDFDataFromCurrent(items, buildPackageContentLookup(getIngredients(options.businessId)))
     const doc = generateInventoryPDF(data, options)
     doc.save(generateInventoryPDFFilename(data))
+    recordPdfExport("inventory", options.businessId)
   } catch (error) {
     console.error("Error generating current inventory PDF:", error)
     throw new Error("No se pudo generar el PDF")

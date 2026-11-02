@@ -27,6 +27,7 @@ import {
 import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
 import { mailtoUrl, whatsappUrl } from "@/lib/share-text"
+import { recordPdfExport, type PdfKind } from "@/lib/pdf/track-export"
 
 interface Props {
   /** Arma el PDF al momento (con los datos de ese instante). */
@@ -44,6 +45,8 @@ interface Props {
   disabled?: boolean
   /** data-tour del botón (tutoriales). */
   tourId?: string
+  /** Qué PDF es y de qué negocio, para contar las exportaciones en /admin (docs/232). */
+  track?: { kind: PdfKind; businessId?: string | null }
 }
 
 function canShareFiles(): boolean {
@@ -68,6 +71,7 @@ export function ShareDocumentMenu({
   className = "",
   disabled = false,
   tourId,
+  track,
 }: Props) {
   const { t } = useLanguage()
   const { toast } = useToast()
@@ -79,7 +83,9 @@ export function ShareDocumentMenu({
   const makeBlob = async (): Promise<Blob | null> => {
     try {
       const doc = await buildPdf()
-      return doc.output("blob") as Blob
+      const blob = doc.output("blob") as Blob
+      if (track) recordPdfExport(track.kind, track.businessId)
+      return blob
     } catch (error) {
       console.error("[share-document-menu] No se pudo generar el PDF:", error)
       toast({ title: t("share_error_title"), description: t("share_error_desc"), variant: "destructive" })

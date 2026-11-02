@@ -16,6 +16,7 @@ import type { Classification } from "@/types/recipe"
 import { trackEvent } from "@/lib/analytics/track-event"
 import { formatDate, fileDate } from "@/lib/date-format"
 import { priceBreakdown, unitMarginAmount } from "@/lib/recipe-pricing"
+import { recordPdfExport } from "@/lib/pdf/track-export"
 
 // ============== HELPERS ==============
 
@@ -1534,6 +1535,7 @@ export function downloadRecipePDF(recipe: Recipe, options: PDFExportOptions): vo
     const doc = generateRecipePDF(recipe, options)
     const filename = generatePDFFilename(recipe, options.type)
     doc.save(filename)
+    recordPdfExport("recipe", recipe.businessId)
     trackEvent("first_pdf_exported")
   } catch (error) {
     console.error("Error generating PDF:", error)

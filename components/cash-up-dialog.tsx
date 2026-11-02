@@ -345,6 +345,7 @@ export function CashUpDialog({ open, onOpenChange, businessId, salesImport, onSa
               </Button>
             )}
             <ShareDocumentMenu
+              track={{ kind: "cash_up", businessId }}
               variant="outline"
               size="default"
               pdfAllowed={canPdf !== false}

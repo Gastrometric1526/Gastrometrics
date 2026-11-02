@@ -914,6 +914,7 @@ export function PurchaseOrderPage() {
                 size="default"
                 className="w-full justify-start"
                 pdfAllowed={canExportOrderPdf !== false}
+                track={{ kind: "purchase_order", businessId }}
                 filename={generatePurchaseOrderPDFFilename(detailOrder)}
                 subject={`${t("po_share_title")} #${detailOrder.number} — ${detailOrder.name}`}
                 buildPdf={() => {
