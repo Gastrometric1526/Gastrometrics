@@ -51,6 +51,9 @@ export function FoodCostCalculatorContent() {
     commissionPercent: num(commission),
     currencyCode: currency,
   })
+  // El mismo precio sin comisión, para mostrar cuánto la sube (docs/235): antes la comisión
+  // cambiaba el precio pero «Te queda por plato» seguía igual y parecía no hacer nada.
+  const withoutCommission = num(commission) > 0 ? publicSalePrice({ unitCost: num(cost), targetFoodCostPercent: num(target), isvPercent: num(isv), commissionPercent: 0, currencyCode: currency }) : null
   const realCost = realCostWithWaste(num(purchase), num(waste))
 
   return (
@@ -109,7 +112,27 @@ export function FoodCostCalculatorContent() {
                           <p className="text-muted-foreground">{t("calc_result_foodcost")}</p>
                           <p className="font-semibold tabular-nums">{result.realFoodCostPercent.toFixed(1)} %</p>
                         </div>
+                        {result.commission > 0 && (
+                          <div>
+                            <p className="text-muted-foreground">{t("calc_result_commission").replace("{percent}", String(num(commission)))}</p>
+                            <p className="font-semibold tabular-nums">{money(result.commission)}</p>
+                          </div>
+                        )}
+                        {result.tax > 0 && (
+                          <div>
+                            <p className="text-muted-foreground">{t("calc_result_tax")}</p>
+                            <p className="font-semibold tabular-nums">{money(result.tax)}</p>
+                          </div>
+                        )}
                       </div>
+                      {withoutCommission && result.commission > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          {t("calc_commission_effect")
+                            .replace("{base}", money(withoutCommission.price))
+                            .replace("{price}", money(result.price))
+                            .replace("{commission}", money(result.commission))}
+                        </p>
+                      )}
                     </>
                   ) : (
                     <p className="text-sm text-muted-foreground">{t("calc_empty")}</p>

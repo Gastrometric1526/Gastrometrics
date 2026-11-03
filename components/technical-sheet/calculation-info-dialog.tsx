@@ -1,7 +1,7 @@
 "use client"
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { foodCostBasePrice } from "@/lib/food-cost-pricing"
+import { coverCommission, foodCostBasePrice } from "@/lib/food-cost-pricing"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Calculator, Info, Percent, TrendingUp } from "lucide-react"
@@ -83,7 +83,8 @@ export function CalculationInfoDialog({
   const basePrice =
     pricingMethod === "food_cost" ? foodCostBasePrice(unitCost, targetFoodCostPercent, percentages.isv) : unitCost + unitProfit
   const commissionFraction = Math.min(Math.max(salesCommissionPercent, 0), 90) / 100
-  const rawPrice = commissionFraction > 0 ? basePrice / (1 - commissionFraction) : basePrice
+  const isvInPrice = pricingMethod === "food_cost" ? percentages.isv : 0
+  const rawPrice = coverCommission(basePrice, salesCommissionPercent, isvInPrice)
   const roundedPrice = pricingMethod === "food_cost" ? foodCostPrice : gastrometricsPrice
 
   const rubros = [
@@ -196,7 +197,7 @@ export function CalculationInfoDialog({
                 <h4 className="font-semibold mb-1">{t("ficha_tecnica_calc_info_commission_title")}</h4>
                 <p className="text-muted-foreground mb-2">{t("ficha_tecnica_calc_info_commission_desc")}</p>
                 <div className="p-3 bg-muted/50 rounded border font-mono text-xs sm:text-sm">
-                  {formatCurrency(basePrice)} ÷ (1 − {salesCommissionPercent}%) = {formatCurrency(rawPrice)}
+                  {formatCurrency(basePrice)} ÷ (1 − {salesCommissionPercent}%{isvInPrice > 0 ? ` × (1 + ${isvInPrice}%)` : ""}) = {formatCurrency(rawPrice)}
                 </div>
               </div>
             )}

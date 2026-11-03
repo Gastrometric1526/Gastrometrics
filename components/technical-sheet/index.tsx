@@ -60,7 +60,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { formatCurrency, formatUnitPrice, getCurrentCurrencyCode } from "@/lib/currency"
 import { roundSalePrice, roundUpToStep } from "@/lib/price-rounding"
-import { foodCostBasePrice, taxIncludedIn } from "@/lib/food-cost-pricing"
+import { coverCommission, foodCostBasePrice, taxIncludedIn } from "@/lib/food-cost-pricing"
 import { normalizeUploadedPhoto } from "@/lib/pdf/pdf-image"
 import { BEVERAGE_COST_TARGET_RANGE, DEFAULT_BEVERAGE_COST_TARGET, getBarKind } from "@/lib/beverage"
 import { useToast } from "@/hooks/use-toast"
@@ -647,13 +647,13 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     const unitProfit = customValue !== undefined ? customValue : calculatedUnitProfit
 
     // Comisión sobre la venta (docs/137): la app de delivery o la tarjeta se queda un % del
-    // PRECIO, así que el precio se divide entre (1 − comisión) para que, después de pagarla,
-    // quede lo mismo que sin comisión. Se limita a 90 % para no dividir entre cero.
+    // PRECIO, así que el precio sube para que, después de pagarla, quede lo mismo que sin
+    // comisión. En Food Cost el ISV va dentro del precio y la comisión también se le cobra
+    // (docs/235): coverCommission de lib/food-cost-pricing.ts. Se limita a 90 %.
     const commissionFraction = Math.min(Math.max(salesCommissionPercent || 0, 0), 90) / 100
-    const coverCommission = (price: number) => (commissionFraction > 0 ? price / (1 - commissionFraction) : price)
 
     // Método GastroMetrics (conservador): seis rubros sumados sobre el costo de producción.
-    const gastrometricsPrice = roundSalePrice(coverCommission(unitCost + unitProfit), currencyCode)
+    const gastrometricsPrice = roundSalePrice(coverCommission(unitCost + unitProfit, salesCommissionPercent || 0), currencyCode)
 
     // Método Food Cost % (estándar de industria): Precio = Costo unitario / Food Cost % objetivo.
     // Ej. costo unitario L20, food cost objetivo 30% → precio = 20 / 0.30 = L66.67 → redondeado L70.
@@ -661,7 +661,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     // Desde docs/156 el ISV también entra en este método, como impuesto SOBRE el precio
     // (costo ÷ % objetivo × (1 + ISV)): el precio sugerido ya lo incluye.
     const foodCostBase = foodCostBasePrice(unitCost, targetFoodCostPercent, isv)
-    const foodCostPrice = foodCostBase > 0 ? roundSalePrice(coverCommission(foodCostBase), currencyCode) : 0
+    const foodCostPrice = foodCostBase > 0 ? roundSalePrice(coverCommission(foodCostBase, salesCommissionPercent || 0, isv), currencyCode) : 0
 
     const recommendedPrice = pricingMethod === "food_cost" ? foodCostPrice : gastrometricsPrice
 
@@ -2153,7 +2153,11 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
               {salesCommissionPercent > 0 && (
                 <div className="flex justify-between items-center border-b pb-2 text-sm text-muted-foreground">
                   <span>{t("ficha_tecnica_calc_info_commission_title")}</span>
-                  <span className="font-mono">÷ (1 − {salesCommissionPercent}%)</span>
+                  <span className="font-mono">
+                    {pricingMethod === "food_cost" && isv > 0
+                      ? `÷ (1 − ${salesCommissionPercent}% × (1 + ${isv}%))`
+                      : `÷ (1 − ${salesCommissionPercent}%)`}
+                  </span>
                 </div>
               )}
               <div className="flex justify-between items-center pt-2 font-bold">

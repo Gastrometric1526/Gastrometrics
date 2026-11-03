@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { foodCostBasePrice, taxIncludedIn } from "./food-cost-pricing"
+import { coverCommission, foodCostBasePrice, taxIncludedIn } from "./food-cost-pricing"
 
 describe("foodCostBasePrice: costo ÷ food cost objetivo, más ISV", () => {
   it("sin ISV es costo ÷ % objetivo", () => {
@@ -30,5 +30,25 @@ describe("taxIncludedIn: parte del precio que es impuesto", () => {
     const price = foodCostBasePrice(20, 30, 15)
     const net = price - taxIncludedIn(price, 15)
     expect((20 / net) * 100).toBeCloseTo(30, 6)
+  })
+})
+
+describe("coverCommission: la comisión se cubre también con ISV dentro del precio (docs/235)", () => {
+  it("sin ISV es base ÷ (1 − comisión)", () => {
+    expect(coverCommission(100, 20)).toBeCloseTo(125, 9)
+    expect(coverCommission(100, 0)).toBe(100)
+  })
+
+  it("con ISV, después del impuesto y la comisión queda lo mismo que sin comisión", () => {
+    const cost = 30
+    const base = foodCostBasePrice(cost, 30, 15) // 115: venta neta 100, ganancia 70
+    const price = coverCommission(base, 20, 15)
+    const keep = price - taxIncludedIn(price, 15) - price * 0.2 - cost
+    expect(keep).toBeCloseTo(70, 9) // antes: base ÷ 0.8 = 143.75 dejaba 66.25
+  })
+
+  it("nunca divide entre cero ni da negativos", () => {
+    expect(coverCommission(100, 90, 100)).toBeCloseTo(1000, 9) // divisor mínimo 0.1
+    expect(coverCommission(0, 20, 15)).toBe(0)
   })
 })

@@ -22,8 +22,10 @@ describe("suggestedUnitPrice", () => {
     expect(suggestedUnitPrice(base(), 37, HNL)).toBe(125) // 123.33 → 125
   })
   it("Food Cost % con ISV y comisión", () => {
-    // 30 / 0.30 = 100 × 1.15 = 115 ÷ (1 − 0.30) = 164.29 → 165
-    expect(suggestedUnitPrice(base({ isv: 15, salesCommissionPercent: 30 }), 30, HNL)).toBe(165)
+    // 30 / 0.30 = 100 × 1.15 = 115 ÷ (1 − 0.30 × 1.15) = 175.57 → 180 (docs/235). Antes
+    // 115 ÷ 0.70 = 164.29 → 165, y a 165 quedaban 165 − 21.52 de ISV − 49.50 de comisión
+    // − 30 = 63.98 en vez de 70: la comisión también se cobra sobre el impuesto.
+    expect(suggestedUnitPrice(base({ isv: 15, salesCommissionPercent: 30 }), 30, HNL)).toBe(180)
   })
   it("Seis rubros (recetas antiguas): costo + rubros sobre el costo", () => {
     // 100 + 100 × (10+10+30+25+0+30)% = 205 → 205

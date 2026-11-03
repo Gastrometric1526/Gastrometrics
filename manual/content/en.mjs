@@ -187,7 +187,7 @@ export default {
         ["p", "Tap the gear icon in “Sale Price Calculation” to open <strong>Percentage settings</strong>. Each item says what it covers and how much it adds per serving, and below you see the resulting suggested price and food cost % right away; if the cost goes above 40 % of the price or the profit is 0, it warns you. With <strong>Save as default</strong>, your business's new recipes start with those percentages (your tax, for example); saved ones keep their own. <strong>Use the defaults</strong> brings the recipe back to those values. In a Food Cost % recipe, only the tax in this window counts."],
         ["h3", "Delivery or card commission"],
         ["p", "If you sell through a delivery app or take card payments, enter in the recipe the <strong>commission %</strong> they keep from the price. The suggested price covers it, and the sheet shows the commission per unit and what you keep after paying it. Profit and margin already deduct it."],
-        ["formula", "Price with commission", ["Price = Price without commission ÷ (1 − Commission %)"], "It works with both methods and is rounded afterwards, as always."],
+        ["formula", "Price with commission", ["Price = Price without commission ÷ (1 − Commission %)", "In Food Cost with tax: Price = Price without commission ÷ (1 − Commission % × (1 + Tax %))"], "It works with both methods and is rounded afterwards, as always. With tax, the commission is also charged on the tax, so the price goes up a little more so you keep the same."],
         ["example", "Example · unit cost 20, Food Cost 30 %, commission 30 % (in lempiras)", [
           ["Price without commission: 20 ÷ 0.30", "66.67"],
           ["66.67 ÷ (1 − 0.30) = 95.24 → rounded", "100", true],

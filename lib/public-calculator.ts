@@ -5,7 +5,7 @@
  * así que el precio que da aquí es el mismo que daría la app con el método Food Cost %.
  */
 
-import { foodCostBasePrice, taxIncludedIn } from "@/lib/food-cost-pricing"
+import { coverCommission, foodCostBasePrice, taxIncludedIn } from "@/lib/food-cost-pricing"
 import { getPriceRoundingStep, roundUpToStep } from "@/lib/price-rounding"
 
 const clamp = (n: number, min: number, max: number) => Math.min(Math.max(Number.isFinite(n) ? n : 0, min), max)
@@ -41,7 +41,7 @@ export function publicSalePrice(input: PublicPriceInput): PublicPriceResult | nu
   const fraction = clamp(input.commissionPercent, 0, 90) / 100
 
   const base = foodCostBasePrice(unitCost, target, isv)
-  const beforeRounding = fraction > 0 ? base / (1 - fraction) : base
+  const beforeRounding = coverCommission(base, fraction * 100, isv)
   const step = getPriceRoundingStep(input.currencyCode)
   const price = roundUpToStep(beforeRounding, step)
   const tax = taxIncludedIn(price, isv)

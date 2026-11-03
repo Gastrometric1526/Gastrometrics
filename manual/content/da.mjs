@@ -187,7 +187,7 @@ export default {
         ["p", "Tryk på tandhjulsikonet i »Beregning af salgspris« for at åbne <strong>Indstillinger for procenter</strong>. Hver post fortæller, hvad den dækker, og hvor meget den lægger til pr. portion, og nedenunder ser du straks den foreslåede pris og råvareandelen; går omkostningen over 40 % af prisen, eller er fortjenesten 0, får du en advarsel. Med <strong>Gem som standard</strong> starter virksomhedens nye opskrifter med de procenter (fx din moms); gemte beholder deres egne. <strong>Brug standardværdierne</strong> sætter opskriften tilbage til dem. I en opskrift med Food Cost % tæller kun momsen i dette vindue."],
         ["h3", "Provision til levering eller kort"],
         ["p", "Sælger du via en leveringsapp eller tager imod kortbetaling, skriver du i opskriften den <strong>provision i %</strong>, de tager af prisen. Den foreslåede pris dækker den, og arket viser provisionen pr. enhed, og hvad du har tilbage efter at have betalt den. Fortjeneste og margin trækker den allerede fra."],
-        ["formula", "Pris med provision", ["Pris = Pris uden provision ÷ (1 − Provision i %)"], "Det virker med begge metoder og afrundes bagefter, som altid."],
+        ["formula", "Pris med provision", ["Pris = Pris uden provision ÷ (1 − Provision i %)", "I Food Cost med moms: Pris = Pris uden provision ÷ (1 − Provision i % × (1 + Moms i %))"], "Det virker med begge metoder og afrundes bagefter, som altid. Med moms beregnes provisionen også af momsen, så prisen stiger lidt mere, for at du beholder det samme."],
         ["example", "Eksempel · enhedskostpris 20, Food Cost 30 %, provision 30 % (i lempira)", [
           ["Pris uden provision: 20 ÷ 0.30", "66.67"],
           ["66.67 ÷ (1 − 0.30) = 95.24 → rundet op", "100", true],

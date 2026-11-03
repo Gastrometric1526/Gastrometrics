@@ -16,7 +16,7 @@
 
 import type { Recipe } from "@/types/recipe"
 import { DEFAULT_TARGET_FOOD_COST_PERCENT, LEGACY_PRICING_METHOD, type PricingMethod } from "@/types/business"
-import { foodCostBasePrice, taxIncludedIn } from "@/lib/food-cost-pricing"
+import { coverCommission, foodCostBasePrice, taxIncludedIn } from "@/lib/food-cost-pricing"
 import { roundSalePrice } from "@/lib/price-rounding"
 
 export interface PricingContext {
@@ -40,14 +40,13 @@ function commissionFraction(recipe: Recipe): number {
 /** Precio de venta unitario sugerido para un costo unitario dado (misma fórmula que la Ficha Técnica). */
 export function suggestedUnitPrice(recipe: Recipe, unitCost: number, ctx: PricingContext): number {
   if (!(unitCost > 0)) return 0
-  const fraction = commissionFraction(recipe)
-  const cover = (price: number) => (fraction > 0 ? price / (1 - fraction) : price)
+  const commission = recipe.salesCommissionPercent || 0
   const isv = recipe.isv || 0
 
   if (pricingMethodOf(recipe) === "food_cost") {
     const target = recipe.targetFoodCostPercent || ctx.defaultTargetFoodCostPercent || DEFAULT_TARGET_FOOD_COST_PERCENT
     const base = foodCostBasePrice(unitCost, target, isv)
-    return base > 0 ? roundSalePrice(cover(base), ctx.currencyCode) : 0
+    return base > 0 ? roundSalePrice(coverCommission(base, commission, isv), ctx.currencyCode) : 0
   }
 
   // Seis rubros sobre el costo de producción (mismos valores por defecto que la Ficha Técnica).
@@ -66,7 +65,7 @@ export function suggestedUnitPrice(recipe: Recipe, unitCost: number, ctx: Pricin
       (recipe.contributionMargin ?? 30)
     unitProfit = unitCost * (rubros / 100) + (ctx.fixedCostPerPlate || 0)
   }
-  return roundSalePrice(cover(unitCost + unitProfit), ctx.currencyCode)
+  return roundSalePrice(coverCommission(unitCost + unitProfit, commission), ctx.currencyCode)
 }
 
 /** Margen de contribución (%) de un precio, medido como en la Ficha Técnica (sobre la venta sin ISV en Food Cost). */
