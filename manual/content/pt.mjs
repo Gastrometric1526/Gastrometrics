@@ -503,7 +503,7 @@ export default {
           ["Home Cook", "$15 / mês", "1", "1", "Perdas, pedidos de compra manuais, ficha administrativa, faturas e atualização de preços a partir de cupons ou listas."],
           ["Chef de Partie", "$35 / mês", "1", "1", "Estoque (com contagem a partir de uma foto, PDF ou Excel), cardápios, pedidos sugeridos, Relatórios · Panorama e registro manual de vendas."],
           ["Sous Chef", "$70 / mês", "2", "2", "Relatórios · Finanças, DRE, Menu Engineering, importação do PDV e Equipe (você + 1 pessoa)."],
-          ["Chef Ejecutivo", "$120 / mês", "5", "5", "Equipe de até 4 pessoas além de você. Disponível para empresas, sob consulta."],
+          ["Chef Ejecutivo", "$120 / mês", "5", "5", "Equipe de até 4 pessoas além de você."],
         ]],
         ["p", "Se o seu plano tem data de vencimento (por exemplo, o mês de cozinha fundadora), o menu lateral mostra quantos dias faltam, abaixo do seu plano. Três dias antes e no próprio dia avisamos você no app: você pode escolher o plano com o qual quer continuar e <strong>programar o pagamento</strong>, cobrado no dia em que seu plano vence. Seu plano só muda quando a Stripe confirma o pagamento; caso contrário, sua conta passa para o Foodie e você mantém todos os seus dados."],
         ["info", "Importar é grátis", "Importar suas receitas e ingredientes a partir de texto, Excel, PDF (com texto ou escaneado), fotos ou cupons está incluído em todos os planos, inclusive no Foodie, e não tem limite. O que muda com o plano é o que você faz depois: a partir do Home Cook você pode atualizar o preço dos ingredientes que já tem com um cupom ou uma lista, e a partir do Chef de Partie ler suas contagens de estoque."],

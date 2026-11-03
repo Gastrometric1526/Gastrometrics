@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-11-03c",
+    tutorialHref: tourHref("mi-plan"),
+    content: {
+      es: { title: "Chef Ejecutivo, sin pasar por ventas", items: ["Ya puedes contratar Chef Ejecutivo tú mismo, desde Planes o Mi Plan, igual que los demás planes: $120 al mes con tu tarjeta, sin escribirnos.", "Incluye hasta 5 negocios, un equipo de hasta 4 personas además de ti y PDF con la marca de tu negocio."] },
+      en: { title: "Chef Ejecutivo, no sales call needed", items: ["You can now subscribe to Chef Ejecutivo yourself, from Plans or My Plan, like the other plans: $120 a month with your card, without writing to us.", "It includes up to 5 businesses, a team of up to 4 people besides you and PDFs with your business's brand."] },
+      da: { title: "Chef Ejecutivo uden om salg", items: ["Nu kan du selv tegne Chef Ejecutivo under Planer eller Min plan, som de andre planer: $120 om måneden med dit kort, uden at skrive til os.", "Den omfatter op til 5 virksomheder, et team på op til 4 personer ud over dig og PDF'er med din virksomheds brand."] },
+      fr: { title: "Chef Ejecutivo, sans passer par les ventes", items: ["Vous pouvez désormais souscrire vous-même à Chef Ejecutivo, depuis Forfaits ou Mon forfait, comme les autres forfaits : 120 $ par mois avec votre carte, sans nous écrire.", "Il comprend jusqu’à 5 établissements, une équipe de 4 personnes en plus de vous et des PDF à la marque de votre établissement."] },
+      pt: { title: "Chef Ejecutivo, sem passar por vendas", items: ["Agora você mesmo pode assinar o Chef Ejecutivo, em Planos ou Meu plano, como os outros planos: $120 por mês com seu cartão, sem nos escrever.", "Inclui até 5 negócios, uma equipe de até 4 pessoas além de você e PDFs com a marca do seu negócio."] },
+      zh: { title: "Chef Ejecutivo 可直接开通", items: ["现在你可以像其他套餐一样，在「套餐」或「我的套餐」中自行开通 Chef Ejecutivo：每月 $120，用银行卡支付，无需联系我们。", "包含最多 5 家店铺、除你之外最多 4 人的团队，以及带有你店铺品牌的 PDF。"] },
+    },
+  },
+  {
     version: "2026-11-03b",
     tutorialHref: tourHref("inventario"),
     content: {

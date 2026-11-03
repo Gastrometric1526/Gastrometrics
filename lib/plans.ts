@@ -190,7 +190,8 @@ export const plans: Plan[] = [
     maxBusinesses: 5,
     maxUsers: 5,
     unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance", "team", "price_import"],
-    comingSoon: true,
+    // Contratable directo desde docs/239 (pedido del dueño); antes `comingSoon: true` lo
+    // dejaba solo con «Hablar con ventas».
   },
 ]
 

@@ -503,7 +503,7 @@ export default {
           ["Home Cook", "$15 / month", "1", "1", "Waste, manual purchase orders, administrative sheet, invoices and price updates from receipts or lists."],
           ["Chef de Partie", "$35 / month", "1", "1", "Inventory (with counts from a photo, PDF or Excel), menus, suggested orders, Reports · Overview and manual sales entry."],
           ["Sous Chef", "$70 / month", "2", "2", "Reports · Finance, P&L, Menu Engineering, POS import and Team (you + 1 person)."],
-          ["Chef Ejecutivo", "$120 / month", "5", "5", "Team of up to 4 people besides you. Available for businesses on request."],
+          ["Chef Ejecutivo", "$120 / month", "5", "5", "Team of up to 4 people besides you."],
         ]],
         ["p", "If your plan has an end date (for example, the founding kitchen month), the sidebar shows how many days are left under your plan. Three days before and on the day itself we remind you in the app: you can pick the plan you want to keep and <strong>schedule the payment</strong>, which is charged the day your plan ends. Your plan only changes once Stripe confirms the payment; otherwise your account switches to Foodie and you keep all your data."],
         ["info", "Importing is free", "Importing your recipes and ingredients from text, Excel, PDF (with text or scanned), photos or receipts is included in every plan, Foodie too, with no limit. What changes with the plan is what you do next: from Home Cook you can update the price of the ingredients you already have with a receipt or a list, and from Chef de Partie read your inventory counts."],

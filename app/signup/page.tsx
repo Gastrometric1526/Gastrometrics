@@ -62,12 +62,9 @@ function SignupPageInner() {
   const searchParams = useSearchParams()
   const { login, signUp } = useAuth()
   const { t, language } = useLanguage()
-  // Planes que se muestran en el registro — TODOS, incluido "chef-ejecutivo", pero
-  // ese se ve igual que en /planes (components/plans-grid.tsx): una tarjeta
-  // deshabilitada con "Disponible para empresas" en vez de precio, nunca
-  // seleccionable — tiene comingSoon=true, no es autoservicio, su único CTA en toda la
-  // app es "hablar con ventas". Pedido explícito del dueño del proyecto: que aparezca
-  // en la lista (por consistencia con /planes), no que se vuelva comprable acá.
+  // Planes que se muestran en el registro — todos. Un plan con `comingSoon` (hoy ninguno:
+  // Chef Ejecutivo se contrata directo desde docs/239) se mostraría sin poder elegirse,
+  // con «Hablar con ventas».
   const allSignupPlans = getLocalizedPlans(language)
   const selectablePlans = allSignupPlans.filter((plan) => !plan.comingSoon)
   const planFromUrl = searchParams.get("plan")

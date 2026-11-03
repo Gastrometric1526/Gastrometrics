@@ -503,7 +503,7 @@ export default {
           ["Home Cook", "$15 / md.", "1", "1", "Svind, manuelle indkøbsordrer, administrativt ark, fakturaer og prisopdatering fra kvitteringer eller lister."],
           ["Chef de Partie", "$35 / md.", "1", "1", "Lager (med optælling fra et foto, en PDF eller Excel), menuer, foreslåede ordrer, Rapporter · Overblik og manuel salgsregistrering."],
           ["Sous Chef", "$70 / md.", "2", "2", "Rapporter · Økonomi, P&L, Menu Engineering, POS-import og Team (dig + 1 person)."],
-          ["Chef Ejecutivo", "$120 / md.", "5", "5", "Team på op til 4 personer ud over dig. Tilgængelig for virksomheder efter aftale."],
+          ["Chef Ejecutivo", "$120 / md.", "5", "5", "Team på op til 4 personer ud over dig."],
         ]],
         ["p", "Hvis din plan har en udløbsdato (fx måneden som stiftende køkken), viser menuen, hvor mange dage der er tilbage, under din plan. Tre dage før og på selve dagen minder vi dig om det i appen: du kan vælge den plan, du vil fortsætte med, og <strong>planlægge betalingen</strong>, som trækkes den dag, din plan udløber. Din plan skifter kun, når Stripe bekræfter betalingen; ellers skifter din konto til Foodie, og du beholder alle dine data."],
         ["info", "Import er gratis", "Import af dine opskrifter og ingredienser fra tekst, Excel, PDF (med tekst eller scannet), fotos eller kvitteringer er med i alle planer, også Foodie, og uden grænse. Det, der ændrer sig med planen, er det, du gør bagefter: fra Home Cook kan du opdatere prisen på de ingredienser, du allerede har, med en kvittering eller en liste, og fra Chef de Partie læse dine lageroptællinger."],
