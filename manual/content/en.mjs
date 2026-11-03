@@ -112,7 +112,6 @@ export default {
         ["p", "Name, category, unit of measure, supplier, purchase pack (optional) and its price: what you pay for the whole pack and how much it contains. From that the app calculates the <strong>price per unit</strong>, which is what your recipes actually use."],
         ["p", "Under the supplier you see the date the ingredient last changed: when you edited it or an import updated it. Changing the unit, or switching everything to metric or imperial, doesn't change that date."],
         ["formula", "Price per unit", ["Price per unit = Purchase price ÷ Net content"], "Net content is in the ingredient's base unit (grams, milliliters, units…)."],
-        ["p", "If you change an ingredient from weight to volume, or the other way round (kilograms to liters, for example), we ask for its <strong>density</strong>: how many kilograms a liter weighs. Water weighs 1; milk about 1.03; oil about 0.92; honey about 1.42. With the right density, your recipes' cost doesn't change. Between units of the same type (grams and kilograms, milliliters and liters) it isn't needed."],
         ["example", "Example · a sack of flour", [
           ["Purchase price of the sack", "450.00"],
           ["Net content", "25000 g"],

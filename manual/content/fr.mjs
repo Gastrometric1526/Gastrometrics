@@ -112,7 +112,6 @@ export default {
         ["p", "Nom, catégorie, unité de mesure, fournisseur, conditionnement d'achat (facultatif) et son prix : ce que vous payez pour le conditionnement complet et ce qu'il contient. À partir de là, l'application calcule le <strong>prix par unité</strong>, celui que vos recettes utilisent réellement."],
         ["p", "Sous le fournisseur, vous voyez la date de la dernière modification de l'ingrédient : quand vous l'avez modifié ou qu'une importation l'a mis à jour. Changer l'unité, ou passer tout en métrique ou en impérial, ne change pas cette date."],
         ["formula", "Prix par unité", ["Prix par unité = Prix d'achat ÷ Contenu net"], "Le contenu net s'exprime dans l'unité de base de l'ingrédient (grammes, millilitres, unités…)."],
-        ["p", "Si vous passez un ingrédient du poids au volume, ou l’inverse (de kilogrammes à litres, par exemple), nous demandons sa <strong>densité</strong> : combien de kilogrammes pèse un litre. L’eau pèse 1 ; le lait environ 1,03 ; l’huile environ 0,92 ; le miel environ 1,42. Avec la bonne densité, le coût de vos recettes ne change pas. Entre unités du même type (grammes et kilogrammes, millilitres et litres), ce n’est pas nécessaire."],
         ["example", "Exemple · un sac de farine", [
           ["Prix d'achat du sac", "450.00"],
           ["Contenu net", "25000 g"],

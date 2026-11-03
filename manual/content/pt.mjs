@@ -112,7 +112,6 @@ export default {
         ["p", "Nome, categoria, unidade de medida, fornecedor, embalagem de compra (opcional) e o preço: quanto você paga pela embalagem inteira e quanto ela contém. Com isso o app calcula o <strong>preço por unidade</strong>, que é o que realmente entra nas suas receitas."],
         ["p", "Embaixo do fornecedor você vê a data da última alteração do ingrediente: quando você o editou ou uma importação o atualizou. Mudar a unidade, ou passar tudo para métrico ou imperial, não muda essa data."],
         ["formula", "Preço por unidade", ["Preço por unidade = Preço de compra ÷ Conteúdo líquido"], "O conteúdo líquido fica na unidade base do ingrediente (gramas, mililitros, unidades…)."],
-        ["p", "Se você muda um ingrediente de peso para volume, ou o contrário (de quilos para litros, por exemplo), pedimos a <strong>densidade</strong>: quantos quilos pesa um litro. A água pesa 1; o leite, cerca de 1,03; o óleo, cerca de 0,92; o mel, cerca de 1,42. Com a densidade correta, o custo das suas receitas não muda. Entre unidades do mesmo tipo (gramas e quilos, mililitros e litros) não é necessário."],
         ["example", "Exemplo · um saco de farinha", [
           ["Preço de compra do saco", "450.00"],
           ["Conteúdo líquido", "25000 g"],

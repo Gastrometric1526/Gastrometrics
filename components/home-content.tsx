@@ -290,6 +290,11 @@ export function HomeContent() {
                     <AccordionTrigger className="text-foreground hover:text-primary">{t("landing_faq_q14")}</AccordionTrigger>
                     <AccordionContent className="text-muted-foreground">{t("landing_faq_a14")}</AccordionContent>
                   </AccordionItem>
+                  {/* docs/236–237: cambiar de plan y cancelar, con lo que se cobra y sin perder datos. */}
+                  <AccordionItem value="item-change-cancel" className="border-border">
+                    <AccordionTrigger className="text-foreground hover:text-primary">{t("landing_faq_q15")}</AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground">{t("landing_faq_a15")}</AccordionContent>
+                  </AccordionItem>
                 </Accordion>
               </CardContent>
             </Card>

@@ -112,7 +112,6 @@ export default {
         ["p", "Navn, kategori, måleenhed, leverandør, indkøbsemballage (valgfri) og prisen: hvad du betaler for hele pakken, og hvor meget den indeholder. Ud fra det beregner appen <strong>prisen pr. enhed</strong>, som er den, dine opskrifter faktisk bruger."],
         ["p", "Under leverandøren ser du datoen for den seneste ændring af råvaren: da du redigerede den, eller en import opdaterede den. Skifter du enhed eller hele kataloget til metrisk eller imperial, ændres datoen ikke."],
         ["formula", "Pris pr. enhed", ["Pris pr. enhed = Indkøbspris ÷ Nettoindhold"], "Nettoindholdet angives i ingrediensens basisenhed (gram, milliliter, stk…)."],
-        ["p", "Skifter du en råvare fra vægt til volumen eller omvendt (fx fra kilogram til liter), beder vi om dens <strong>densitet</strong>: hvor mange kilogram en liter vejer. Vand vejer 1; mælk ca. 1,03; olie ca. 0,92; honning ca. 1,42. Med den rigtige densitet ændres dine opskrifters omkostning ikke. Mellem enheder af samme type (gram og kilogram, milliliter og liter) er det ikke nødvendigt."],
         ["example", "Eksempel · en sæk mel", [
           ["Indkøbspris for sækken", "450.00"],
           ["Nettoindhold", "25000 g"],

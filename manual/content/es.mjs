@@ -113,7 +113,6 @@ export default {
         ["p", "Nombre, categoría, unidad de medida, proveedor, presentación de compra (opcional) y su precio: lo que pagas por la presentación completa y cuánto trae. Con eso la app calcula el <strong>precio por unidad</strong>, que es el que realmente se usa en tus recetas."],
         ["p", "Debajo del proveedor ves la fecha del último cambio del ingrediente: cuando lo editaste o lo actualizó una importación. Cambiar la unidad, o pasar todo a métrico o imperial, no cambia esa fecha."],
         ["formula", "Precio por unidad", ["Precio por unidad = Precio de compra ÷ Contenido neto"], "El contenido neto va en la unidad base del ingrediente (gramos, mililitros, unidades…)."],
-        ["p", "Si cambias un ingrediente de peso a volumen, o al revés (de kilogramos a litros, por ejemplo), te pedimos su <strong>densidad</strong>: cuántos kilogramos pesa un litro. El agua pesa 1; la leche, unos 1.03; el aceite, unos 0.92; la miel, unos 1.42. Con la densidad correcta, el costo de tus recetas no cambia. Entre unidades del mismo tipo (gramos y kilogramos, mililitros y litros) no hace falta."],
         ["example", "Ejemplo · un saco de harina", [
           ["Precio de compra del saco", "450.00"],
           ["Contenido neto", "25000 g"],
