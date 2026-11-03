@@ -113,6 +113,7 @@ export default {
         ["p", "Nombre, categoría, unidad de medida, proveedor, presentación de compra (opcional) y su precio: lo que pagas por la presentación completa y cuánto trae. Con eso la app calcula el <strong>precio por unidad</strong>, que es el que realmente se usa en tus recetas."],
         ["p", "Debajo del proveedor ves la fecha del último cambio del ingrediente: cuando lo editaste o lo actualizó una importación. Cambiar la unidad, o pasar todo a métrico o imperial, no cambia esa fecha."],
         ["formula", "Precio por unidad", ["Precio por unidad = Precio de compra ÷ Contenido neto"], "El contenido neto va en la unidad base del ingrediente (gramos, mililitros, unidades…)."],
+        ["p", "Si cambias un ingrediente de peso a volumen, o al revés (de kilogramos a litros, por ejemplo), te pedimos su <strong>densidad</strong>: cuántos kilogramos pesa un litro. El agua pesa 1; la leche, unos 1.03; el aceite, unos 0.92; la miel, unos 1.42. Con la densidad correcta, el costo de tus recetas no cambia. Entre unidades del mismo tipo (gramos y kilogramos, mililitros y litros) no hace falta."],
         ["example", "Ejemplo · un saco de harina", [
           ["Precio de compra del saco", "450.00"],
           ["Contenido neto", "25000 g"],
@@ -177,6 +178,7 @@ export default {
           ["Método 2", "Food Cost % (por defecto)", "Eliges qué porcentaje del precio quieres que represente el costo de los ingredientes (lo usual es 28 % a 35 %) y el precio se calcula a partir de ahí. Es el estándar de la industria."],
         ]],
         ["formula", "Precio de venta sugerido", ["Método 6 rubros: Precio = Costo unitario + (Suma de rubros ÷ Rendimiento)", "Método Food Cost: Precio = Costo unitario ÷ % objetivo × (1 + ISV)"], "En Food Cost, el ISV (si lo usas) se suma sobre el precio y queda incluido; en 6 rubros es uno de los rubros. En ambos casos el precio se redondea <strong>hacia arriba</strong> al escalón de tu moneda: al 5 en lempiras (61 pasa a 65, nunca baja a 60), al 0.50 en dólares o euros (10.60 pasa a 11.00), al 100 en colones. Es el único redondeo del cálculo. El ejemplo de abajo está en lempiras."],
+        ["p", "En 6 rubros, cada rubro, también la <strong>Ganancia sobre costo</strong>, es un porcentaje del costo de producción (un markup), no un margen sobre la venta: 30 % sobre el costo no significa ganar el 30 % de lo que vendes. El margen real sobre la venta lo ves en <strong>Margen de Contribución</strong>. El ISV en 6 rubros también se suma como porcentaje del costo; si quieres el impuesto sobre el precio de venta, usa Food Cost %."],
         ["example", "Ejemplo · mismo costo, dos métodos (costo unitario 20, rendimiento 1)", [
           ["6 rubros: 2 + 2 + 6 + 5 + 0 + 6", "21"],
           ["20 + 21 = 41 → redondeado", "45", true],
@@ -189,6 +191,7 @@ export default {
         ["h3", "Comisión de delivery o tarjeta"],
         ["p", "Si vendes por una app de delivery o cobras con tarjeta, escribe en la ficha el <strong>% de comisión</strong> que se quedan sobre el precio. El precio sugerido la cubre, y la ficha te muestra cuánto es la comisión por unidad y cuánto te queda después de pagarla. La ganancia y el margen ya la descuentan."],
         ["formula", "Precio con comisión", ["Precio = Precio sin comisión ÷ (1 − % de comisión)", "En Food Cost con ISV: Precio = Precio sin comisión ÷ (1 − % de comisión × (1 + % de ISV))"], "Funciona con los dos métodos y se redondea después, como siempre. Con ISV, la comisión también se cobra sobre el impuesto, así que el precio sube un poco más para que te quede lo mismo."],
+        ["p", "La comisión se calcula sobre el precio con impuesto incluido, que es como la cobran casi todas las apps de delivery y los datáfonos. Si tu proveedor la cobra sobre el precio sin impuesto, el precio sugerido te queda un poco más alto de lo necesario."],
         ["example", "Ejemplo · costo unitario 20, Food Cost 30 %, comisión 30 % (en lempiras)", [
           ["Precio sin comisión: 20 ÷ 0.30", "66.67"],
           ["66.67 ÷ (1 − 0.30) = 95.24 → redondeado", "100", true],
@@ -330,6 +333,7 @@ export default {
         ["h3", "Stock teórico: cuánto debería quedar"],
         ["p", "Además del stock contado, cada producto muestra su <strong>stock teórico</strong>: lo que debería quedar según las ventas que registraste después del último conteo (manuales, del POS y facturas). Gastrometrics expande cada venta por su receta —incluidas subrecetas y merma— y la descuenta sola. Editar o borrar una venta corrige el número al instante."],
         ["formula", "Stock teórico", ["Stock teórico = Último conteo + Compras recibidas − Consumo de las ventas"], "Un plato vendido consume una porción de su receta; un menú vendido, una porción de cada plato activo."],
+        ["p", "El semáforo de cada producto usa el <strong>stock teórico</strong> cuando lo hay (un conteo y ventas o compras registradas después). Así un producto se marca bajo o crítico aunque en el último conteo hubiera bastante, si las ventas desde entonces ya lo gastaron. Sin stock teórico, usa lo contado."],
         ["p", "Cuando haces un conteo nuevo, verás la <strong>diferencia en el último conteo</strong>: lo que contaste menos lo que la teoría esperaba. Si es negativa, salió más de lo que explican tus recetas (merma, desperdicio, porciones más grandes o faltantes): es la señal para revisar."],
       ],
     },
@@ -350,6 +354,7 @@ export default {
         ["tip", "Carta de bebidas", "Elige el tipo <strong>Carta de bebidas</strong> y los tiempos cambian a Cócteles, Vinos, Cervezas y Bebidas sin alcohol. En cada uno se sugieren solas las recetas con la clasificación de barra que corresponde (capítulo 6)."],
         ["p", "Cada plato puede tener un precio propio (si no, usa el de su ficha técnica) y se puede desactivar temporalmente sin quitarlo del menú."],
         ["formula", "Precio promedio del menú", ["Precio promedio = Suma de precios de platos activos ÷ Número de platos activos"], "Los platos desactivados no cuentan."],
+        ["p", "El <strong>precio del menú completo</strong> es la suma de los platos activos: es lo que se cobra si registras la venta del menú entero (un menú del día, por ejemplo). Si vendes platos sueltos, cada uno usa su propio precio. El precio promedio sirve para comparar, no para cobrar."],
         ["h3", "Exportar y comprar"],
         ["p", "Desde cada menú puedes exportar el PDF para tus clientes o la versión interna con costos (capítulo 12), o generar directamente la orden de compra con todo lo necesario para producirlo."],
         ["h3", "MEP · Mise en place"],
@@ -414,6 +419,7 @@ export default {
           "Anota las <strong>transferencias recibidas</strong> y toca <strong>Guardar cuadre</strong>.",
         ]],
         ["formula", "Cuadre de caja", ["Efectivo esperado = Fondo inicial + Ventas en efectivo + Propinas en efectivo − Salidas de caja", "Datáfono esperado = Ventas con tarjeta + Propinas con tarjeta", "Diferencia = Real − Esperado"], "Lo esperado sale de las cuentas del día según su forma de pago. Si las propinas en efectivo no se quedan en la caja, o las de tarjeta no se cobran en el datáfono, apágalo y no se suman. Una diferencia negativa es dinero que falta; positiva, que sobra. Si el total cuadra pero una forma de pago no, casi siempre es una cuenta con la forma de pago equivocada."],
+        ["p", "Si una forma de pago tiene de menos y otra de más (por ejemplo, efectivo −100 y datáfono +80), el cuadre lo marca como mixto y muestra cada diferencia por separado, además del total (−20). Suele ser una cuenta anotada con la forma de pago equivocada; si después de corregirla sigue faltando, es un faltante real."],
         ["tip", "Faltantes y días sin cuadrar", "La tarjeta «Cuadres de caja» muestra en 7, 30 o 90 días cuántos días se cuadraron, la suma de faltantes y sobrantes, los días con diferencia y los que faltan por cuadrar. Desde el cuadre puedes descargar el PDF o mandarlo por WhatsApp. Las cuentas sin forma de pago no entran en el cuadre: anótala en el registro del día."],
         ["h3", "Facturas a tus clientes"],
         ["p", "En la pestaña <strong>Facturas</strong> creas la factura que le entregas a tu cliente: eliges recetas o menús (o escribes líneas a mano), con numeración automática, impuesto editable, notas y el logo de tu negocio en el PDF. Cada factura se cuenta automáticamente como una venta en tus reportes (sin el impuesto)."],

@@ -8,7 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Edit, Trash2, Lock, Info, Wine } from "lucide-react"
 import type { Ingredient, Presentation, Unit } from "@/types/ingredient"
 import { units, presentations, unitAbbreviations } from "@/types/ingredient"
-import { convertIngredientUnit, unitFactor } from "@/lib/unit-change"
+import { convertIngredientUnit, crossesMassVolume, unitFactor } from "@/lib/unit-change"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { persistUnitChangeSideEffects } from "@/lib/storage/unit-change"
 import { useToast } from "@/hooks/use-toast"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
@@ -102,14 +104,16 @@ export function IngredientsTable({
     [allItems, persist],
   )
 
-  const handleUnitChange = useCallback(
-    (ingredient: Ingredient, newUnit: Unit) => {
-      if (ingredient.unit === newUnit) return
+  // Pasar de peso a volumen (o al revés) pide la densidad del producto (docs/237).
+  const [densityAsk, setDensityAsk] = useState<{ ingredient: Ingredient; newUnit: Unit; density: string } | null>(null)
+
+  const applyUnitChange = useCallback(
+    (ingredient: Ingredient, newUnit: Unit, density = 1) => {
       // De/hacia «unidad» no hay conversión posible: se conserva el número (como antes).
       // Entre masas y volúmenes se convierte el ingrediente, sus líneas de receta, el
       // inventario y su historial, sin cambiar ningún costo (docs/187). Antes las recetas
       // quedaban con la cantidad vieja leída en la unidad nueva.
-      const factor = unitFactor(ingredient.unit, newUnit) ?? 1
+      const factor = unitFactor(ingredient.unit, newUnit, density) ?? 1
       updateById(ingredient.id, (ing) => convertIngredientUnit(ing, newUnit, factor))
       if (factor !== 1) {
         // Recetas, inventario e historial: si no se guardan, se avisa (docs/204; antes el error quedaba sin manejar).
@@ -121,6 +125,18 @@ export function IngredientsTable({
       onUnitChange?.()
     },
     [updateById, onUnitChange, businessId, toast, t],
+  )
+
+  const handleUnitChange = useCallback(
+    (ingredient: Ingredient, newUnit: Unit) => {
+      if (ingredient.unit === newUnit) return
+      if (crossesMassVolume(ingredient.unit, newUnit)) {
+        setDensityAsk({ ingredient, newUnit, density: "1" })
+        return
+      }
+      applyUnitChange(ingredient, newUnit)
+    },
+    [applyUnitChange],
   )
 
   const handlePresentationChange = useCallback(
@@ -202,8 +218,43 @@ export function IngredientsTable({
     }
   }
 
+  const densityValue = densityAsk ? Number.parseFloat(densityAsk.density.replace(",", ".")) : NaN
+  const densityValid = Number.isFinite(densityValue) && densityValue > 0 && densityValue < 25
+
   return (
     <TooltipProvider>
+      <Dialog open={!!densityAsk} onOpenChange={(open) => !open && setDensityAsk(null)}>
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("unit_density_title").replace("{name}", densityAsk?.ingredient.name ?? "")}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">{t("unit_density_desc")}</p>
+          <div className="space-y-1.5">
+            <Label htmlFor="unit-density">{t("unit_density_label")}</Label>
+            <Input
+              id="unit-density"
+              inputMode="decimal"
+              value={densityAsk?.density ?? ""}
+              onChange={(e) => setDensityAsk((prev) => (prev ? { ...prev, density: e.target.value } : prev))}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setDensityAsk(null)}>
+              {t("common_cancel")}
+            </Button>
+            <Button
+              disabled={!densityValid}
+              onClick={() => {
+                if (!densityAsk || !densityValid) return
+                applyUnitChange(densityAsk.ingredient, densityAsk.newUnit, densityValue)
+                setDensityAsk(null)
+              }}
+            >
+              {t("unit_density_confirm")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <div className="overflow-x-auto">
         {mermaSystemEnabled && (
           <div className="mb-4 p-3 bg-info-soft border border-info/30 rounded-lg">

@@ -163,8 +163,19 @@ export function CashUpDialog({ open, onOpenChange, businessId, salesImport, onSa
             <div>
               <p className="font-semibold">
                 {statusText}
-                {result.status !== "incomplete" && <span className="font-normal">: {signed(result.totalDifference)}</span>}
+                {result.status !== "incomplete" && result.status !== "mixed" && <span className="font-normal">: {signed(result.totalDifference)}</span>}
               </p>
+              {/* Mixto (docs/237): cada forma de pago con su diferencia, y el total aparte. */}
+              {result.status === "mixed" && (
+                <p className="text-xs font-medium">
+                  {result.rows
+                    .filter((r) => r.difference !== null && Math.abs(r.difference) > CASH_UP_TOLERANCE)
+                    .map((r) => `${methodLabel(r.method)} ${signed(r.difference as number)}`)
+                    .join(" · ")}
+                  {" · "}
+                  {t("cashup_total_difference").replace("{amount}", signed(result.totalDifference))}
+                </p>
+              )}
               <p className="text-xs opacity-90">{t(`cashup_status_${result.status}_hint` as never)}</p>
             </div>
           </div>

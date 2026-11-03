@@ -112,6 +112,7 @@ export default {
         ["p", "Nom, catégorie, unité de mesure, fournisseur, conditionnement d'achat (facultatif) et son prix : ce que vous payez pour le conditionnement complet et ce qu'il contient. À partir de là, l'application calcule le <strong>prix par unité</strong>, celui que vos recettes utilisent réellement."],
         ["p", "Sous le fournisseur, vous voyez la date de la dernière modification de l'ingrédient : quand vous l'avez modifié ou qu'une importation l'a mis à jour. Changer l'unité, ou passer tout en métrique ou en impérial, ne change pas cette date."],
         ["formula", "Prix par unité", ["Prix par unité = Prix d'achat ÷ Contenu net"], "Le contenu net s'exprime dans l'unité de base de l'ingrédient (grammes, millilitres, unités…)."],
+        ["p", "Si vous passez un ingrédient du poids au volume, ou l’inverse (de kilogrammes à litres, par exemple), nous demandons sa <strong>densité</strong> : combien de kilogrammes pèse un litre. L’eau pèse 1 ; le lait environ 1,03 ; l’huile environ 0,92 ; le miel environ 1,42. Avec la bonne densité, le coût de vos recettes ne change pas. Entre unités du même type (grammes et kilogrammes, millilitres et litres), ce n’est pas nécessaire."],
         ["example", "Exemple · un sac de farine", [
           ["Prix d'achat du sac", "450.00"],
           ["Contenu net", "25000 g"],
@@ -176,6 +177,7 @@ export default {
           ["Méthode 2", "Food Cost % (par défaut)", "Vous choisissez la part du prix que doit représenter le coût des ingrédients (en général 28 % à 35 %) et le prix est calculé à partir de là. C'est la norme du secteur."],
         ]],
         ["formula", "Prix de vente suggéré", ["6 postes : Prix = Coût unitaire + (Somme des postes ÷ Rendement)", "Food Cost : Prix = Coût unitaire ÷ % cible × (1 + TVA)"], "En Food Cost, la TVA (si vous l'utilisez) s'ajoute au prix et y est incluse ; avec 6 postes, c'est l'un des postes. Dans les deux cas, le prix est arrondi <strong>au-dessus</strong> au palier de votre devise : à 5 en lempiras (61 devient 65, jamais 60), à 0.50 en dollars ou en euros (10.60 devient 11.00), à 100 en colones. C'est le seul arrondi du calcul. L'exemple ci-dessous est en lempiras."],
+        ["p", "En 6 postes, chaque poste, y compris le <strong>Marge sur coût</strong>, est un pourcentage du coût de production (une marge sur coût), pas une marge sur la vente : 30 % sur le coût ne veut pas dire garder 30 % de ce que vous vendez. La marge réelle sur la vente apparaît dans <strong>Marge de contribution</strong>. En 6 postes, la taxe s’ajoute aussi en % du coût ; pour l’appliquer sur le prix de vente, utilisez Food Cost %."],
         ["example", "Exemple · même coût, deux méthodes (coût unitaire 20, rendement 1)", [
           ["6 postes : 2 + 2 + 6 + 5 + 0 + 6", "21"],
           ["20 + 21 = 41 → arrondi", "45", true],
@@ -188,6 +190,7 @@ export default {
         ["h3", "Commission de livraison ou de carte"],
         ["p", "Si vous vendez via une application de livraison ou encaissez par carte, indiquez dans la fiche le <strong>% de commission</strong> prélevé sur le prix. Le prix suggéré la couvre, et la fiche affiche la commission par unité et ce qui vous reste après l'avoir payée. Le bénéfice et la marge la déduisent déjà."],
         ["formula", "Prix avec commission", ["Prix = Prix sans commission ÷ (1 − % de commission)", "En Food Cost avec taxe : Prix = Prix sans commission ÷ (1 − % de commission × (1 + % de taxe))"], "Fonctionne avec les deux méthodes et s'arrondit ensuite, comme toujours. Avec la taxe, la commission s’applique aussi à la taxe : le prix monte donc un peu plus pour qu’il vous reste la même chose."],
+        ["p", "La commission est calculée sur le prix taxe comprise, comme la prélèvent presque toutes les applications de livraison et les terminaux de paiement. Si votre prestataire la calcule sur le prix hors taxe, le prix suggéré est un peu plus élevé que nécessaire."],
         ["example", "Exemple · coût unitaire 20, Food Cost 30 %, commission 30 % (en lempiras)", [
           ["Prix sans commission : 20 ÷ 0.30", "66.67"],
           ["66.67 ÷ (1 − 0.30) = 95.24 → arrondi", "100", true],
@@ -329,6 +332,7 @@ export default {
         ["h3", "Stock théorique : ce qu'il devrait rester"],
         ["p", "En plus du stock compté, chaque produit affiche son <strong>stock théorique</strong> : ce qu'il devrait rester d'après les ventes enregistrées après le dernier comptage (manuelles, caisse et factures). Gastrometrics décompose chaque vente selon sa recette —sous-recettes et pertes comprises— et la déduit automatiquement. Modifier ou supprimer une vente corrige le chiffre instantanément."],
         ["formula", "Stock théorique", ["Stock théorique = Dernier comptage + Achats reçus − Consommation des ventes"], "Un plat vendu consomme une portion de sa recette ; un menu vendu, une portion de chaque plat actif."],
+        ["p", "Le feu de chaque produit utilise le <strong>stock théorique</strong> quand il existe (un inventaire puis des ventes ou des achats enregistrés ensuite). Ainsi, un produit passe en bas ou critique même si le dernier inventaire en montrait assez, si les ventes depuis l’ont épuisé. Sans stock théorique, il utilise le stock compté."],
         ["p", "Lors d'un nouveau comptage, vous verrez l'<strong>écart au dernier comptage</strong> : ce que vous avez compté moins ce que la théorie prévoyait. S'il est négatif, il est sorti plus que ce qu'expliquent vos recettes (pertes, gaspillage, portions plus grandes ou manquants) : c'est le signal pour vérifier."],
       ],
     },
@@ -349,6 +353,7 @@ export default {
         ["tip", "Carte des boissons", "Choisissez le type <strong>Carte des boissons</strong> et les étapes deviennent Cocktails, Vins, Bières et Boissons sans alcool. Chacune suggère les recettes ayant la classification de bar correspondante (chapitre 6)."],
         ["p", "Chaque plat peut avoir son propre prix (sinon il utilise celui de sa fiche technique) et peut être désactivé temporairement sans être retiré du menu."],
         ["formula", "Prix moyen du menu", ["Prix moyen = Somme des prix des plats actifs ÷ Nombre de plats actifs"], "Les plats désactivés ne comptent pas."],
+        ["p", "Le <strong>prix du menu complet</strong> est la somme des plats actifs : c’est ce que vous facturez si vous enregistrez la vente du menu entier (un menu du jour, par exemple). Si vous vendez des plats à l’unité, chacun garde son prix. Le prix moyen sert à comparer, pas à facturer."],
         ["h3", "Exporter et acheter"],
         ["p", "Depuis chaque menu, vous pouvez exporter le PDF pour vos clients ou la version interne avec les coûts (chapitre 12), ou générer directement la commande d'achat avec tout le nécessaire pour le produire."],
         ["h3", "MEP · Mise en place"],
@@ -413,6 +418,7 @@ export default {
           "Saisissez les <strong>virements reçus</strong> et touchez <strong>Enregistrer la clôture</strong>.",
         ]],
         ["formula", "Clôture de caisse", ["Espèces attendues = Fond de caisse + Ventes en espèces + Pourboires en espèces − Sorties de caisse", "TPE attendu = Ventes par carte + Pourboires par carte", "Écart = Réel − Attendu"], "Les montants attendus viennent des additions du jour selon leur mode de paiement. Si les pourboires en espèces ne restent pas dans la caisse, ou si ceux par carte ne passent pas par le TPE, désactivez-le et ils ne sont pas ajoutés. Un écart négatif est de l'argent qui manque ; positif, de l'argent en trop. Si le total est juste mais pas un mode de paiement, c'est presque toujours une addition avec le mauvais mode de paiement."],
+        ["p", "Si un mode de paiement manque et qu’un autre est en trop (par exemple, espèces −100 et terminal +80), la clôture l’indique comme mixte et montre chaque écart séparément, plus le total (−20). C’est souvent une addition enregistrée avec le mauvais mode de paiement ; s’il manque encore quelque chose après correction, c’est un vrai manque."],
         ["tip", "Manquants et jours sans clôture", "La carte « Clôtures de caisse » montre sur 7, 30 ou 90 jours le nombre de jours clôturés, le total des manquants et des excédents, les jours avec un écart et ceux à clôturer. Depuis la clôture, vous pouvez télécharger le PDF ou l'envoyer par WhatsApp. Les additions sans mode de paiement ne sont pas incluses : indiquez-le dans l'enregistrement du jour."],
         ["h3", "Factures pour vos clients"],
         ["p", "Dans l'onglet <strong>Factures</strong>, vous créez la facture remise à votre client : choisissez des recettes ou des menus (ou saisissez des lignes à la main), avec numérotation automatique, taxe modifiable, notes et le logo de votre établissement sur le PDF. Chaque facture compte automatiquement comme une vente dans vos rapports (hors taxe)."],

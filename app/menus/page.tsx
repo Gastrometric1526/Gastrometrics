@@ -547,6 +547,13 @@ export default function MenusPage() {
                                 </span>
                                 <span className="text-lg font-bold text-foreground">{formatCurrency(averagePrice)}</span>
                               </div>
+                              {/* Menú completo (docs/237): lo que se cobra al vender el menú entero
+                                  en Ventas; distinto del promedio y del precio de cada plato. */}
+                              <div className="mt-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                                <span>{t("menus_full_price_label")}</span>
+                                <span className="font-semibold tabular-nums text-foreground">{formatCurrency(averagePrice * getTotalDishes(menu))}</span>
+                              </div>
+                              <p className="mt-1 text-[11px] text-muted-foreground">{t("menus_full_price_note")}</p>
                             </div>
                           )}
 

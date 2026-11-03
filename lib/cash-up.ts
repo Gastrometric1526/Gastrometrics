@@ -113,17 +113,21 @@ export function computeCashUp(imp: SalesImport, cashUp: CashUp): CashUpResult {
   const totalDifference = round2(noted.reduce((s, r) => s + (r.difference as number), 0))
   // Incompleto: falta anotar algo que según las cuentas debería existir.
   const missing = rows.some((r) => r.actual === null && Math.abs(r.expected) > CASH_UP_TOLERANCE)
-  // «mixed»: el total cuadra, pero una forma de pago tiene de más y otra de menos (una
-  // cuenta anotada con la forma de pago equivocada).
+  // «mixed»: una forma de pago tiene de menos y otra de más (docs/237). Antes solo si el
+  // total cuadraba; con efectivo −100 y datáfono +80 el aviso decía «Falta dinero: −20», como
+  // si un sobrante de tarjeta tapara un faltante de efectivo. Ahora se marca mixto y la
+  // pantalla muestra cada diferencia, además del total.
+  const hasShort = noted.some((r) => (r.difference as number) < -CASH_UP_TOLERANCE)
+  const hasOver = noted.some((r) => (r.difference as number) > CASH_UP_TOLERANCE)
   const status: CashUpResult["status"] =
     noted.length === 0 || missing
       ? "incomplete"
-      : totalDifference < -CASH_UP_TOLERANCE
-        ? "short"
-        : totalDifference > CASH_UP_TOLERANCE
-          ? "over"
-          : noted.some((r) => Math.abs(r.difference as number) > CASH_UP_TOLERANCE)
-            ? "mixed"
+      : hasShort && hasOver
+        ? "mixed"
+        : hasShort
+          ? "short"
+          : hasOver
+            ? "over"
             : "balanced"
   return {
     rows,

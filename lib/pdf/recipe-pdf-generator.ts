@@ -15,7 +15,7 @@ import { getClassificationLabel } from "@/lib/classification-labels"
 import type { Classification } from "@/types/recipe"
 import { trackEvent } from "@/lib/analytics/track-event"
 import { formatDate, fileDate } from "@/lib/date-format"
-import { priceBreakdown, unitMarginAmount } from "@/lib/recipe-pricing"
+import { priceBreakdown, unitCostPercent, unitMarginAmount, unitMarginPercent } from "@/lib/recipe-pricing"
 import { recordPdfExport } from "@/lib/pdf/track-export"
 
 // ============== HELPERS ==============
@@ -291,6 +291,24 @@ function drawAllergensLine(
   doc.text(lines, x, y)
   doc.setTextColor(0, 0, 0)
   return y + lines.length * 4.5 + 5
+}
+
+/**
+ * Cifras del PDF de una receta (docs/237), con las mismas funciones que la Ficha Técnica
+ * (lib/recipe-pricing.ts): así el PDF y la pantalla dicen lo mismo. Pura, cubierta por pruebas.
+ */
+export function recipePdfFigures(recipe: Recipe): { totalCost: number; costPerUnit: number; unitPrice: number; foodCostPct: number; marginPct: number } {
+  const yieldAmount = recipe.yieldAmount || 1
+  const totalCost = recipe.totalCost || 0
+  const costPerUnit = totalCost / yieldAmount
+  const unitPrice = recipe.unitPrice || 0
+  return {
+    totalCost,
+    costPerUnit,
+    unitPrice,
+    foodCostPct: unitPrice > 0 ? unitCostPercent(recipe, unitPrice, costPerUnit) : 0,
+    marginPct: unitPrice > 0 ? unitMarginPercent(recipe, unitPrice, costPerUnit) : 0,
+  }
 }
 
 export function generateRecipePDF(recipe: Recipe, options: PDFExportOptions): jsPDF {
@@ -983,8 +1001,10 @@ function generateAdministrativePDF(
       doc.addPage()
       yPosition = margin
     }
-    const statsFoodCostPct = totalSales > 0 ? (totalCost / totalSales) * 100 : 0
-    const statsMarginPct = totalSales > 0 ? 100 - statsFoodCostPct : 0
+    // Mismo «Costo %» y margen que la Ficha y el Dashboard (docs/188, docs/237): sobre la venta
+    // sin ISV incluido y con la comisión descontada. Antes: costo ÷ precio con ISV y margen =
+    // 100 − costo %, así que con ISV o comisión el PDF y la pantalla no coincidían.
+    const { foodCostPct: statsFoodCostPct, marginPct: statsMarginPct } = recipePdfFigures(recipe)
     const methodLabel =
       recipe.pricingMethod === "food_cost"
         ? `Food Cost % (${labels.metaObjetivo} ${recipe.targetFoodCostPercent ?? 30}%)`

@@ -112,6 +112,7 @@ export default {
         ["p", "Name, category, unit of measure, supplier, purchase pack (optional) and its price: what you pay for the whole pack and how much it contains. From that the app calculates the <strong>price per unit</strong>, which is what your recipes actually use."],
         ["p", "Under the supplier you see the date the ingredient last changed: when you edited it or an import updated it. Changing the unit, or switching everything to metric or imperial, doesn't change that date."],
         ["formula", "Price per unit", ["Price per unit = Purchase price ÷ Net content"], "Net content is in the ingredient's base unit (grams, milliliters, units…)."],
+        ["p", "If you change an ingredient from weight to volume, or the other way round (kilograms to liters, for example), we ask for its <strong>density</strong>: how many kilograms a liter weighs. Water weighs 1; milk about 1.03; oil about 0.92; honey about 1.42. With the right density, your recipes' cost doesn't change. Between units of the same type (grams and kilograms, milliliters and liters) it isn't needed."],
         ["example", "Example · a sack of flour", [
           ["Purchase price of the sack", "450.00"],
           ["Net content", "25000 g"],
@@ -176,6 +177,7 @@ export default {
           ["Method 2", "Food Cost % (default)", "You choose what share of the price the ingredient cost should represent (usually 28 % to 35 %) and the price is worked out from there. It's the industry standard."],
         ]],
         ["formula", "Suggested selling price", ["6 cost items: Price = Unit cost + (Sum of items ÷ Yield)", "Food Cost: Price = Unit cost ÷ Target % × (1 + Sales tax)"], "In Food Cost, sales tax (if you use it) is added on top of the price and included in it; with 6 cost items it's one of the items. In both cases the price is rounded <strong>up</strong> to your currency's step: to 5 in lempiras (61 becomes 65, never 60), to 0.50 in dollars or euros (10.60 becomes 11.00), to 100 in colones. It's the only rounding in the calculation. The example below is in lempiras."],
+        ["p", "In 6 items, every item, including <strong>Markup over cost</strong>, is a percentage of the production cost (a markup), not a margin on sales: 30% on cost doesn't mean keeping 30% of what you sell. You see the real margin on sales in <strong>Contribution Margin</strong>. In 6 items, tax is also added as a percentage of cost; if you want tax on the sale price, use Food Cost %."],
         ["example", "Example · same cost, two methods (unit cost 20, yield 1)", [
           ["6 items: 2 + 2 + 6 + 5 + 0 + 6", "21"],
           ["20 + 21 = 41 → rounded", "45", true],
@@ -188,6 +190,7 @@ export default {
         ["h3", "Delivery or card commission"],
         ["p", "If you sell through a delivery app or take card payments, enter in the recipe the <strong>commission %</strong> they keep from the price. The suggested price covers it, and the sheet shows the commission per unit and what you keep after paying it. Profit and margin already deduct it."],
         ["formula", "Price with commission", ["Price = Price without commission ÷ (1 − Commission %)", "In Food Cost with tax: Price = Price without commission ÷ (1 − Commission % × (1 + Tax %))"], "It works with both methods and is rounded afterwards, as always. With tax, the commission is also charged on the tax, so the price goes up a little more so you keep the same."],
+        ["p", "The commission is calculated on the price including tax, which is how almost all delivery apps and card terminals charge it. If your provider charges it on the price before tax, the suggested price ends up slightly higher than needed."],
         ["example", "Example · unit cost 20, Food Cost 30 %, commission 30 % (in lempiras)", [
           ["Price without commission: 20 ÷ 0.30", "66.67"],
           ["66.67 ÷ (1 − 0.30) = 95.24 → rounded", "100", true],
@@ -329,6 +332,7 @@ export default {
         ["h3", "Theoretical stock: how much should be left"],
         ["p", "Besides the counted stock, each item shows its <strong>theoretical stock</strong>: what should be left based on the sales you recorded after the last count (manual, POS and invoices). Gastrometrics expands every sale through its recipe —including sub-recipes and waste— and deducts it automatically. Editing or deleting a sale corrects the number instantly."],
         ["formula", "Theoretical stock", ["Theoretical stock = Last count + Purchases received − Sales consumption"], "A dish sold consumes one portion of its recipe; a menu sold, one portion of each active dish."],
+        ["p", "Each product's traffic light uses the <strong>theoretical stock</strong> when there is one (a count plus sales or purchases recorded afterwards). So a product shows as low or critical even if the last count had plenty, when sales since then have used it up. Without theoretical stock, it uses what was counted."],
         ["p", "When you do a new count, you'll see the <strong>last count difference</strong>: what you counted minus what the theory expected. If it's negative, more went out than your recipes explain (waste, waste, larger portions or missing stock): that's your cue to look into it."],
       ],
     },
@@ -349,6 +353,7 @@ export default {
         ["tip", "Drinks menu", "Pick the <strong>Drinks menu</strong> type and the courses change to Cocktails, Wines, Beers and Non-alcoholic drinks. Each one suggests the recipes with the matching bar classification (chapter 6)."],
         ["p", "Each dish can have its own price (otherwise it uses its recipe sheet price) and can be temporarily turned off without removing it from the menu."],
         ["formula", "Menu average price", ["Average price = Sum of active dish prices ÷ Number of active dishes"], "Dishes that are turned off don't count."],
+        ["p", "The <strong>full menu price</strong> is the sum of the active dishes: it's what you charge if you record the sale of the whole menu (a set menu, for example). If you sell single dishes, each uses its own price. The average price is for comparing, not for charging."],
         ["h3", "Export and purchase"],
         ["p", "From each menu you can export the PDF for your guests or the internal version with costs (chapter 12), or generate the purchase order with everything needed to produce it."],
         ["h3", "MEP · Mise en place"],
@@ -413,6 +418,7 @@ export default {
           "Enter the <strong>transfers received</strong> and tap <strong>Save cash-up</strong>.",
         ]],
         ["formula", "Cash-up", ["Expected cash = Opening float + Cash sales + Cash tips − Cash payouts", "Expected terminal = Card sales + Card tips", "Difference = Actual − Expected"], "Expected amounts come from the day's checks by payment method. If cash tips don't stay in the drawer, or card tips aren't charged on the terminal, turn that off and they aren't added. A negative difference is money short; positive, money over. If the total matches but one payment method doesn't, it's almost always a check with the wrong payment method."],
+        ["p", "If one payment method is short and another is over (for example, cash −100 and card terminal +80), the cash-up marks it as mixed and shows each difference separately, plus the total (−20). It's usually a check recorded with the wrong payment method; if something is still missing after fixing it, it's a real shortage."],
         ["tip", "Shortages and days without a cash-up", "The “Cash-ups” card shows for 7, 30 or 90 days how many days were closed, total shortages and overages, days with a difference and days still to close. From the cash-up you can download the PDF or send it on WhatsApp. Checks without a payment method aren't included: add it in the day's entry."],
         ["h3", "Invoices for your customers"],
         ["p", "In the <strong>Invoices</strong> tab you create the invoice you hand to your customer: pick recipes or menus (or type lines by hand), with automatic numbering, editable tax, notes and your business logo on the PDF. Each invoice automatically counts as a sale in your reports (without tax)."],

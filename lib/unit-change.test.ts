@@ -23,6 +23,17 @@ describe("cambio de unidad sin cambiar costos (docs/187)", () => {
     expect(out.pricing.purchasePrice).toBe(100)
   })
 
+  it("peso ↔ volumen usa la densidad (docs/237): 1 kg de miel no es 1 litro", () => {
+    expect(unitFactor("kilogramos", "litros")).toBeCloseTo(1, 9) // agua
+    expect(unitFactor("kilogramos", "litros", 1.42)).toBeCloseTo(1 / 1.42, 9) // miel
+    expect(unitFactor("litros", "gramos", 0.92)).toBeCloseTo(920, 9) // aceite
+    expect(unitFactor("gramos", "kilogramos", 0.92)).toBeCloseTo(0.001, 12) // misma magnitud: sin densidad
+    // El costo no cambia: 1 kg de miel a L100 pasa a 0.704 L a L142.0 el litro.
+    const out = convertIngredientUnit(ing(), "litros", unitFactor("kilogramos", "litros", 1.42)!)
+    expect(out.pricing.netContent).toBeCloseTo(0.704225, 5)
+    expect(out.pricing.netContent * out.pricing.pricePerUnit).toBeCloseTo(100, 3)
+  })
+
   it("no cambia la fecha «Actualizado el» (docs/231)", () => {
     const metadata = { createdAt: "2026-10-30T18:29:36.131Z", updatedAt: "2026-10-31T10:00:00.000Z", version: 3 }
     const out = convertIngredientUnit(ing({ metadata }), "gramos", 1000)

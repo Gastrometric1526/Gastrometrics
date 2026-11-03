@@ -74,7 +74,7 @@ import type { SalesImport } from "@/types/sales-import"
 import { buildPackageContentLookup, inventoryTotalValue } from "@/lib/inventory-value"
 import { DetailPanel } from "@/components/detail-panel"
 import { ActionHint } from "@/components/action-hint"
-import { stockStatus } from "@/lib/inventory-status"
+import { stockStatus, effectiveStockStatus } from "@/lib/inventory-status"
 
 // Algunos ingredientes guardados antes de que el precio/contenido neto vivieran bajo
 // `pricing` pudieron quedar con esos campos"planos"en la fila real — por eso el código
@@ -536,7 +536,12 @@ export default function InventoryPage() {
     router.push("/ingredientes")
   }
 
-  const filteredItems = items.filter((item) => {
+  // El semáforo usa el stock teórico cuando lo hay (docs/237): último conteo + recibido − ventas.
+  const itemsWithStatus = useMemo(
+    () => items.map((item) => ({ ...item, status: effectiveStockStatus(item.currentStock, item.minStock, theoreticalStock.get(item.id)?.theoretical) })),
+    [items, theoreticalStock],
+  )
+  const filteredItems = itemsWithStatus.filter((item) => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = categoryFilter === "" || item.category === categoryFilter
     const matchesStatus = statusFilter === "" || item.status === statusFilter
@@ -984,7 +989,7 @@ export default function InventoryPage() {
         open={detailItem !== null}
         onOpenChange={(open) => !open && setDetailItem(null)}
         title={detailItem?.name ?? ""}
-        badges={detailItem ? [{ label: t(`inventario_status_${stockStatus(detailItem.currentStock ?? 0, detailItem.minStock)}` as never) }] : []}
+        badges={detailItem ? [{ label: t(`inventario_status_${effectiveStockStatus(detailItem.currentStock ?? 0, detailItem.minStock, theoreticalStock.get(detailItem.id)?.theoretical)}` as never) }] : []}
         stats={
           detailItem
             ? [

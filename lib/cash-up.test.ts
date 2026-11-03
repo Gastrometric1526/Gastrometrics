@@ -52,6 +52,19 @@ describe("cuadre de caja (docs/217)", () => {
     expect(computeCashUp(imp, { ...base, countedCash: 1600, terminalTotal: 1200 }).status).toBe("mixed")
   })
 
+  it("faltante en efectivo y sobrante en datáfono: mixto, cada diferencia por separado (docs/237)", () => {
+    // Caso de la evaluación externa: efectivo esperado 880 y contado 780 → −100; el datáfono
+    // con +80. Antes: «Falta dinero: −20». Ahora: mixto, efectivo −100, datáfono +80, total −20.
+    const base: CashUp = { ...emptyCashUp("x"), openingFloat: 1000, payouts: [{ id: "p", concept: "Hielo", amount: 70 }], transferTotal: 200 }
+    const r = computeCashUp(day("2026-10-30", tickets), { ...base, countedCash: 1600, terminalTotal: 1180 })
+    const cash = r.rows.find((x) => x.method === "cash")!
+    const card = r.rows.find((x) => x.method === "card")!
+    expect([cash.expected, cash.actual, cash.difference]).toEqual([1700, 1600, -100])
+    expect(card.difference).toBe(80)
+    expect(r.status).toBe("mixed")
+    expect(r.totalDifference).toBeCloseTo((cash.difference as number) + (card.difference as number), 9)
+  })
+
   it("propinas fuera de la caja o fuera del datáfono", () => {
     const cu: CashUp = { ...emptyCashUp("x"), cashTipsInDrawer: false, cardTipsInTerminal: false, countedCash: 750, terminalTotal: 1000, transferTotal: 200 }
     const r = computeCashUp(day("2026-10-30", tickets), cu)

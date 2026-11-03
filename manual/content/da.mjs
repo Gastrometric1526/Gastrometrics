@@ -112,6 +112,7 @@ export default {
         ["p", "Navn, kategori, måleenhed, leverandør, indkøbsemballage (valgfri) og prisen: hvad du betaler for hele pakken, og hvor meget den indeholder. Ud fra det beregner appen <strong>prisen pr. enhed</strong>, som er den, dine opskrifter faktisk bruger."],
         ["p", "Under leverandøren ser du datoen for den seneste ændring af råvaren: da du redigerede den, eller en import opdaterede den. Skifter du enhed eller hele kataloget til metrisk eller imperial, ændres datoen ikke."],
         ["formula", "Pris pr. enhed", ["Pris pr. enhed = Indkøbspris ÷ Nettoindhold"], "Nettoindholdet angives i ingrediensens basisenhed (gram, milliliter, stk…)."],
+        ["p", "Skifter du en råvare fra vægt til volumen eller omvendt (fx fra kilogram til liter), beder vi om dens <strong>densitet</strong>: hvor mange kilogram en liter vejer. Vand vejer 1; mælk ca. 1,03; olie ca. 0,92; honning ca. 1,42. Med den rigtige densitet ændres dine opskrifters omkostning ikke. Mellem enheder af samme type (gram og kilogram, milliliter og liter) er det ikke nødvendigt."],
         ["example", "Eksempel · en sæk mel", [
           ["Indkøbspris for sækken", "450.00"],
           ["Nettoindhold", "25000 g"],
@@ -176,6 +177,7 @@ export default {
           ["Metode 2", "Food Cost % (standard)", "Du vælger, hvor stor en del af prisen råvareomkostningen skal udgøre (typisk 28 % til 35 %), og prisen beregnes ud fra det. Det er branchestandarden."],
         ]],
         ["formula", "Foreslået salgspris", ["6 poster: Pris = Enhedskostpris + (Sum af poster ÷ Udbytte)", "Food Cost: Pris = Enhedskostpris ÷ Mål i % × (1 + Moms)"], "I Food Cost lægges momsen (hvis du bruger den) oven i prisen og er inkluderet; med 6 poster er den en af posterne. I begge tilfælde rundes prisen <strong>op</strong> til din valutas trin: til 5 i lempira (61 bliver 65, aldrig 60), til 0.50 i dollar eller euro (10.60 bliver 11.00), til 100 i colón. Det er den eneste afrunding i beregningen. Eksemplet nedenfor er i lempira."],
+        ["p", "I 6 poster er hver post, også <strong>Tillæg på kostpris</strong>, en procent af produktionsomkostningen (et markup), ikke en avance på salget: 30 % på omkostningen betyder ikke, at du tjener 30 % af det, du sælger. Den reelle avance på salget ser du i <strong>Bidragsmargen</strong>. I 6 poster lægges momsen også til som procent af omkostningen; vil du have momsen på salgsprisen, så brug Food Cost %."],
         ["example", "Eksempel · samme kostpris, to metoder (enhedskostpris 20, udbytte 1)", [
           ["6 poster: 2 + 2 + 6 + 5 + 0 + 6", "21"],
           ["20 + 21 = 41 → afrundet", "45", true],
@@ -188,6 +190,7 @@ export default {
         ["h3", "Provision til levering eller kort"],
         ["p", "Sælger du via en leveringsapp eller tager imod kortbetaling, skriver du i opskriften den <strong>provision i %</strong>, de tager af prisen. Den foreslåede pris dækker den, og arket viser provisionen pr. enhed, og hvad du har tilbage efter at have betalt den. Fortjeneste og margin trækker den allerede fra."],
         ["formula", "Pris med provision", ["Pris = Pris uden provision ÷ (1 − Provision i %)", "I Food Cost med moms: Pris = Pris uden provision ÷ (1 − Provision i % × (1 + Moms i %))"], "Det virker med begge metoder og afrundes bagefter, som altid. Med moms beregnes provisionen også af momsen, så prisen stiger lidt mere, for at du beholder det samme."],
+        ["p", "Provisionen beregnes af prisen inkl. moms, sådan som næsten alle leveringsapps og kortterminaler opkræver den. Opkræver din udbyder den af prisen uden moms, bliver den foreslåede pris lidt højere end nødvendigt."],
         ["example", "Eksempel · enhedskostpris 20, Food Cost 30 %, provision 30 % (i lempira)", [
           ["Pris uden provision: 20 ÷ 0.30", "66.67"],
           ["66.67 ÷ (1 − 0.30) = 95.24 → rundet op", "100", true],
@@ -329,6 +332,7 @@ export default {
         ["h3", "Teoretisk lager: hvor meget der burde være tilbage"],
         ["p", "Ud over det optalte lager viser hver vare sit <strong>teoretiske lager</strong>: hvad der burde være tilbage ud fra de salg, du har registreret efter seneste optælling (manuelle, POS og fakturaer). Gastrometrics udfolder hvert salg via opskriften —inklusive underopskrifter og svind— og trækker det fra automatisk. Redigerer eller sletter du et salg, rettes tallet med det samme."],
         ["formula", "Teoretisk lager", ["Teoretisk lager = Seneste optælling + Modtagne indkøb − Forbrug fra salg"], "En solgt ret bruger én portion af sin opskrift; en solgt menu én portion af hver aktiv ret."],
+        ["p", "Hver vares trafiklys bruger det <strong>teoretiske lager</strong>, når det findes (en optælling plus salg eller indkøb registreret bagefter). Så vises en vare som lav eller kritisk, selv om sidste optælling viste rigeligt, hvis salget siden har brugt den op. Uden teoretisk lager bruges det optalte."],
         ["p", "Når du laver en ny optælling, ser du <strong>afvigelsen ved seneste optælling</strong>: det optalte minus det, teorien forventede. Er den negativ, er der gået mere ud, end opskrifterne forklarer (svind, spild, større portioner eller manko): så er det tid til at undersøge det."],
       ],
     },
@@ -349,6 +353,7 @@ export default {
         ["tip", "Drikkekort", "Vælg typen <strong>Drikkekort</strong>, så skifter serveringerne til Cocktails, Vine, Øl og Alkoholfri drikke. Hver af dem foreslår opskrifterne med den tilsvarende barklassifikation (kapitel 6)."],
         ["p", "Hver ret kan have sin egen pris (ellers bruges prisen fra opskriftsarket) og kan midlertidigt slås fra uden at blive fjernet fra menuen."],
         ["formula", "Menuens gennemsnitspris", ["Gennemsnitspris = Summen af aktive retters priser ÷ Antal aktive retter"], "Retter, der er slået fra, tæller ikke med."],
+        ["p", "<strong>Prisen for hele menuen</strong> er summen af de aktive retter: det er, hvad du tager, hvis du registrerer salget af hele menuen (fx en dagens menu). Sælger du enkelte retter, bruger hver sin egen pris. Gennemsnitsprisen er til sammenligning, ikke til opkrævning."],
         ["h3", "Eksport og indkøb"],
         ["p", "Fra hver menu kan du eksportere PDF'en til dine gæster eller den interne version med omkostninger (kapitel 12) eller generere indkøbsordren med alt, hvad der skal til for at lave den."],
         ["h3", "MEP · Mise en place"],
@@ -413,6 +418,7 @@ export default {
           "Angiv <strong>modtagne overførsler</strong>, og tryk på <strong>Gem opgørelse</strong>.",
         ]],
         ["formula", "Kasseopgørelse", ["Forventede kontanter = Byttepenge + Kontantsalg + Kontante drikkepenge − Kontantudbetalinger", "Forventet terminal = Kortsalg + Drikkepenge på kort", "Difference = Faktisk − Forventet"], "Det forventede kommer fra dagens regninger efter betalingsform. Bliver kontante drikkepenge ikke i kassen, eller trækkes drikkepenge på kort ikke på terminalen, slår du det fra, så lægges de ikke til. En negativ difference er penge, der mangler; positiv, penge i overskud. Stemmer totalen, men ikke én betalingsform, er det næsten altid en regning med forkert betalingsform."],
+        ["p", "Mangler der i én betalingsform og er der for meget i en anden (fx kontant −100 og kortterminal +80), markerer kasseopgørelsen det som blandet og viser hver difference for sig, plus totalen (−20). Det er som regel en regning registreret med forkert betalingsform; mangler der stadig noget efter rettelsen, er det en reel difference."],
         ["tip", "Mangler og dage uden opgørelse", "Kortet «Kasseopgørelser» viser for 7, 30 eller 90 dage, hvor mange dage der er opgjort, summen af mangler og overskud, dage med difference og dage, der mangler. Fra opgørelsen kan du downloade PDF’en eller sende den på WhatsApp. Regninger uden betalingsform er ikke med: angiv den i dagens registrering."],
         ["h3", "Fakturaer til dine kunder"],
         ["p", "Under fanen <strong>Fakturaer</strong> opretter du den faktura, du giver din kunde: vælg opskrifter eller menuer (eller skriv linjer manuelt) med automatisk nummerering, redigerbar moms, noter og din virksomheds logo på PDF'en. Hver faktura tæller automatisk som et salg i dine rapporter (uden moms)."],

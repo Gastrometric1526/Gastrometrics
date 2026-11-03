@@ -801,16 +801,28 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     const validIngredients = recipe.ingredients.filter((ing) => ing.ingredientId && ing.quantity > 0)
     const effectiveYield = recipe.yieldAmount > 0 ? recipe.yieldAmount : calculations.yieldByWeight
     const scaledIngredients = validIngredients.map((ing) => scaleRecipeLine(ing, calculations.paxMultiplier))
+    // Costo y precio de la MISMA cuenta que muestra la pantalla (docs/237). Antes se mandaban
+    // el costo total y el precio guardados sin escalar junto con el rendimiento escalado: el
+    // PDF dividía el costo de 4 porciones entre 8 y el Food Cost salía a la mitad (y en 0 en
+    // una receta todavía sin guardar).
+    const scaledYield = effectiveYield * calculations.paxMultiplier
     onScaledPreviewChange({
       ...recipe,
-      yieldAmount: effectiveYield * calculations.paxMultiplier,
+      yieldAmount: scaledYield,
       ingredients: scaledIngredients,
+      totalCost: calculations.productionCost,
+      costPerServing: calculations.unitCost,
+      unitPrice: calculations.finalPrice,
+      totalPrice: calculations.finalPrice * scaledYield,
     })
   }, [
     onScaledPreviewChange,
     paxModifier,
     calculations.paxMultiplier,
     calculations.yieldByWeight,
+    calculations.productionCost,
+    calculations.unitCost,
+    calculations.finalPrice,
     recipe,
   ])
 

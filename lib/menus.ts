@@ -91,7 +91,9 @@ export function getMenuUnitPriceAndCost(menu: Menu, recipes: Recipe[]): { price:
     (acc, item) => {
       const recipe = recipes.find((r) => r.id === item.recipeId)
       const price = item.priceOverride ?? recipe?.unitPrice ?? 0
-      const cost = recipe?.costPerServing ?? 0
+      // Costo por porción guardado, o costo total ÷ rendimiento si la receta no lo tiene
+      // (docs/237): antes contaba 0 y el costo del menú vendido en Ventas salía de menos.
+      const cost = recipe ? recipe.costPerServing ?? (recipe.totalCost || 0) / (recipe.yieldAmount > 0 ? recipe.yieldAmount : 1) : 0
       return { price: acc.price + price, cost: acc.cost + cost }
     },
     { price: 0, cost: 0 },

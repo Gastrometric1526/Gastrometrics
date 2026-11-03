@@ -26,13 +26,26 @@ import { convertBetweenUnits } from "@/lib/utils/calculations"
 
 const KNOWN = ["gramos", "kilogramos", "onzas", "libras", "mililitros", "litros", "onzas líquidas", "onzas fluidas", "galones"]
 
-/** Unidades nuevas que caben en una unidad vieja, o null si no se puede convertir (p. ej. «unidad»). */
-export function unitFactor(from: string, to: string): number | null {
+const MASS = ["gramos", "kilogramos", "onzas", "libras"]
+
+/** ¿Pasa de peso a volumen o al revés? Ahí hace falta la densidad del producto (docs/237). */
+export function crossesMassVolume(from: string, to: string): boolean {
+  if (!KNOWN.includes(from) || !KNOWN.includes(to)) return false
+  return MASS.includes(from) !== MASS.includes(to)
+}
+
+/**
+ * Unidades nuevas que caben en una unidad vieja, o null si no se puede convertir (p. ej. «unidad»).
+ * Entre peso y volumen usa la densidad en kg/L (docs/237): 1 solo es cierto para el agua; el
+ * aceite pesa unos 0.92, la miel unos 1.42. Antes siempre se suponía 1.
+ */
+export function unitFactor(from: string, to: string, densityKgPerL = 1): number | null {
   if (from === to) return 1
   if (!KNOWN.includes(from) || !KNOWN.includes(to)) return null
-  // Todas las parejas de KNOWN están en la tabla de convertBetweenUnits (masa ↔ volumen
-  // con densidad 1, igual que el selector de unidad de cada fila).
-  const f = convertBetweenUnits(1, from, to)
+  // convertBetweenUnits pasa masa ↔ volumen con densidad 1; aquí se corrige con la real.
+  const base = convertBetweenUnits(1, from, to)
+  const density = Number.isFinite(densityKgPerL) && densityKgPerL > 0 ? densityKgPerL : 1
+  const f = !crossesMassVolume(from, to) ? base : MASS.includes(from) ? base / density : base * density
   return Number.isFinite(f) && f > 0 ? f : null
 }
 
