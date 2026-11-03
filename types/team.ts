@@ -42,5 +42,11 @@ export interface TeamMember {
   // momento, ver app/api/team/invite/route.ts). Se usa para otorgar/revocar el
   // acceso real de lectura vía business_members (ver docs/60).
   invitedUserId?: string | null
+  // Solo en las membresías propias (la sesión de la persona invitada, docs/236): plan vigente
+  // de la cuenta que invitó y si ese plan todavía incluye Equipo. Lo llena
+  // /api/team/membership-access; sin respuesta quedan sin definir.
+  ownerPlanSlug?: string
+  ownerTeamActive?: boolean
+  ownerName?: string | null
 }
 

@@ -486,6 +486,7 @@ export default {
         ]],
         ["tip", "Vista previa", "Activa la vista previa para ver la app exactamente como la vería esa persona, con sus mismos permisos."],
         ["p", "Los permisos se aplican de verdad, no solo en pantalla: una persona sin acceso a una herramienta no puede ver ni guardar esos datos. Si algo está bloqueado, la app le explica si es por el plan de la cuenta o porque el dueño se lo restringió."],
+        ["p", "Tu equipo trabaja dentro de tu plan: si tu plan vence, se cancela o baja a uno sin Equipo, tus invitados pierden el acceso a tus negocios (no se borra nada, ni sus cuentas ni tus datos). Cuando vuelvas a un plan con Equipo, recuperan el acceso con los mismos permisos. Tampoco pueden usar herramientas que tu plan no incluya."],
       ],
     },
     {
@@ -510,6 +511,9 @@ export default {
         ["p", "Los pagos se procesan con Stripe. Desde <strong>Mi Plan</strong> puedes cambiar de plan o abrir el portal de pagos para actualizar tu tarjeta o cancelar. Los cambios se reflejan solos en tu cuenta y te llega un correo de confirmación."],
         ["p", "Cada vez que tu plan cambia —porque lo cambiaste tú, porque lo ajustó el equipo de Gastrometrics o porque venció un plan asignado— te avisamos por correo y con una ventana al entrar al Dashboard, con la lista exacta de lo que <strong>ganas</strong>, lo que <strong>pierdes</strong> y lo que incluye tu plan ahora. Si pierdes acceso a una sección, tus datos no se borran: vuelven a estar disponibles si subes de plan otra vez. El cambio también queda en <strong>Notificaciones</strong> del Dashboard y, al cerrar la ventana, empieza un <strong>tutorial corto del plan nuevo</strong>: te señala en el menú cada módulo con algo nuevo. Si un módulo todavía no aparece porque te faltan recetas (capítulo 2), el tutorial te dice cuántas necesitas en vez de llevarte a algo oculto."],
         ["p", "Si cancelas, mantienes el acceso completo hasta el final del período que ya pagaste. Mi Plan te lo muestra con la fecha exacta."],
+        ["p", "Si te arrepientes antes de esa fecha, toca <strong>Mantener mi suscripción</strong> en el aviso de Mi Plan: sigue la misma suscripción, se renueva el mismo día y no se cobra nada extra."],
+        ["p", "Al cambiar de un plan pago a otro, antes de confirmar ves cuánto pagas hoy y cuándo y cuánto es tu próximo cobro. Si subes, pagas hoy solo la diferencia por los días que quedan del mes; si bajas, no se cobra nada y te queda un saldo a favor que se descuenta de los próximos cobros. Tu fecha de renovación no cambia. Si la tarjeta rechaza el cobro, tu plan sigue igual y no queda nada pendiente de cobrar."],
+        ["p", "Si un cobro mensual falla, Mi Plan te muestra «No pudimos procesar tu último pago» con el botón <strong>Actualizar método de pago</strong>. Mientras Stripe vuelve a intentar, sigues usando tu plan; si no se logra, tu cuenta pasa a Foodie sin perder datos."],
         ["info", "Cuando algo está bloqueado", "Verás un candado y un botón hacia Mi Plan. Si usas la app como parte de un equipo, el mensaje te indica que es el dueño de la cuenta quien controla ese acceso."],
       ],
     },

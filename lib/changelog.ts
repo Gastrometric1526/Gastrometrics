@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-11-03",
+    tutorialHref: tourHref("mi-plan"),
+    content: {
+      es: { title: "Tus cobros, más claros", items: ["Al cambiar de plan ves antes de confirmar cuánto pagas hoy y cuándo y cuánto es tu próximo cobro. Si la tarjeta rechaza el cambio, no queda nada pendiente de cobrar.", "Si cancelaste y cambias de idea, en Mi Plan tocas «Mantener mi suscripción»: sigue igual, sin cobros extra.", "Si un cobro mensual falla, Mi Plan te avisa y te lleva a actualizar tu tarjeta.", "Tu equipo trabaja dentro de tu plan: si tu plan deja de incluir Equipo, tus invitados pierden el acceso hasta que vuelvas, sin que se borre nada."] },
+      en: { title: "Clearer charges", items: ["When you change plans you see, before confirming, what you pay today and when and how much your next charge is. If the card declines, nothing is left pending.", "If you cancelled and change your mind, tap “Keep my subscription” in My Plan: it continues as before, with no extra charges.", "If a monthly charge fails, My Plan tells you and takes you to update your card.", "Your team works within your plan: if your plan stops including Team, your invitees lose access until you come back, and nothing is deleted."] },
+      da: { title: "Tydeligere opkrævninger", items: ["Når du skifter plan, ser du før du bekræfter, hvad du betaler i dag, og hvornår og hvor meget din næste opkrævning er. Afviser kortet, står intet til opkrævning.", "Har du opsagt og fortryder, trykker du »Behold mit abonnement« i Min plan: det fortsætter uden ekstra opkrævninger.", "Fejler en månedlig opkrævning, siger Min plan det og fører dig til at opdatere dit kort.", "Dit team arbejder inden for din plan: holder den op med at omfatte Team, mister dine inviterede adgangen, indtil du vender tilbage, og intet slettes."] },
+      fr: { title: "Des prélèvements plus clairs", items: ["En changeant de forfait, vous voyez avant de confirmer ce que vous payez aujourd’hui, et quand et combien sera votre prochain prélèvement. Si la carte est refusée, rien ne reste à prélever.", "Si vous avez résilié et changez d’avis, touchez « Garder mon abonnement » dans Mon forfait : il continue, sans prélèvement supplémentaire.", "Si un prélèvement mensuel échoue, Mon forfait vous prévient et vous mène à la mise à jour de votre carte.", "Votre équipe travaille dans votre forfait : s’il n’inclut plus Équipe, vos invités perdent l’accès jusqu’à votre retour, sans que rien ne soit supprimé."] },
+      pt: { title: "Suas cobranças, mais claras", items: ["Ao mudar de plano, você vê antes de confirmar quanto paga hoje e quando e quanto será a próxima cobrança. Se o cartão recusar, nada fica pendente.", "Se você cancelou e mudou de ideia, toque em «Manter minha assinatura» em Meu plano: continua igual, sem cobranças extras.", "Se uma cobrança mensal falhar, Meu plano avisa e leva você a atualizar seu cartão.", "Sua equipe trabalha dentro do seu plano: se ele deixar de incluir Equipe, seus convidados perdem o acesso até você voltar, sem que nada seja apagado."] },
+      zh: { title: "扣费更清楚", items: ["更换套餐时，确认前就能看到今天要付多少，以及下次扣费的时间和金额。如果银行卡被拒，不会留下待扣款项。", "如果你已取消又改变主意，在「我的套餐」点击「保留我的订阅」：照常继续，不会额外扣费。", "如果月度扣费失败，「我的套餐」会提醒你并引导你更新银行卡。", "你的团队在你的套餐范围内工作：如果套餐不再包含团队功能，受邀成员会失去访问权限，直到你恢复，且不会删除任何内容。"] },
+    },
+  },
+  {
     version: "2026-11-02b",
     tutorialHref: tourHref("mi-plan"),
     content: {

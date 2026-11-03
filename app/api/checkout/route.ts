@@ -124,6 +124,10 @@ export async function POST(request: Request) {
               },
             ],
             metadata: { planSlug: plan.slug, accountId: user.id },
+            // Elegir otro plan es querer seguir (docs/236): antes, si la persona había
+            // cancelado y cambiaba de plan antes de la fecha final, la suscripción
+            // cambiaba pero seguía marcada para terminar.
+            cancel_at_period_end: false,
             // docs/165: el cambio solo se aplica si Stripe cobra la diferencia. Con
             // pending_if_incomplete, si el cobro falla la suscripción queda como estaba
             // (pending_update) y la app no cambia de plan.
@@ -131,6 +135,15 @@ export async function POST(request: Request) {
             payment_behavior: "pending_if_incomplete",
           })
           if (updated.pending_update) {
+            // La factura del cambio queda abierta y Stripe podría cobrarla más tarde, aunque
+            // aquí se le dijo a la persona que su plan sigue igual (docs/236, probado en
+            // Stripe de prueba). Se anula: sin cobros sorpresa. Si quiere, vuelve a intentar.
+            const invoiceId = typeof updated.latest_invoice === "string" ? updated.latest_invoice : updated.latest_invoice?.id
+            if (invoiceId) {
+              await stripe.invoices.voidInvoice(invoiceId).catch((voidError) => {
+                console.error("[api/checkout] No se pudo anular la factura del cambio fallido:", voidError)
+              })
+            }
             return NextResponse.json(
               { error: "Stripe no pudo cobrar el cambio de plan. Tu plan sigue igual. Revisa tu tarjeta en Mi Plan." },
               { status: 402 },

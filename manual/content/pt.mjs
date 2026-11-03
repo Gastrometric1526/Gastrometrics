@@ -485,6 +485,7 @@ export default {
         ]],
         ["tip", "Pré-visualização", "Ative a pré-visualização para ver o app exatamente como aquela pessoa veria, com as mesmas permissões."],
         ["p", "As permissões são aplicadas de verdade, não só na tela: quem não tem acesso a uma ferramenta não consegue ver nem salvar esses dados. Se algo estiver bloqueado, o app explica se é pelo plano da conta ou porque o dono restringiu."],
+        ["p", "Sua equipe trabalha dentro do seu plano: se seu plano vencer, for cancelado ou passar a um sem Equipe, seus convidados perdem o acesso aos seus negócios (nada é apagado, nem as contas deles nem seus dados). Quando você voltar a um plano com Equipe, eles recuperam o acesso com as mesmas permissões. Também não podem usar ferramentas que seu plano não inclua."],
       ],
     },
     {
@@ -509,6 +510,9 @@ export default {
         ["p", "Os pagamentos são processados pelo Stripe. Em <strong>Meu Plano</strong> você pode mudar de plano ou abrir o portal de pagamentos para atualizar o cartão ou cancelar. As mudanças aparecem sozinhas na sua conta e você recebe um e-mail de confirmação."],
         ["p", "Sempre que seu plano muda —porque você mudou, porque a equipe da Gastrometrics ajustou ou porque um plano atribuído venceu— avisamos por e-mail e com uma janela ao abrir o Dashboard, com a lista exata do que você <strong>ganha</strong>, do que <strong>perde</strong> e do que seu plano inclui agora. Se perder acesso a uma seção, seus dados não são apagados: voltam a ficar disponíveis se você subir de plano de novo. A mudança também aparece em <strong>Notificações</strong> no Painel e, ao fechar a janela, começa um <strong>tour curto do novo plano</strong>: ele aponta no menu cada módulo com novidade. Se um módulo ainda não aparece porque faltam receitas (capítulo 2), o tour diz quantas você precisa em vez de levar a algo oculto."],
         ["p", "Se cancelar, você mantém o acesso completo até o fim do período já pago. O Meu Plano mostra a data exata."],
+        ["p", "Se mudar de ideia antes dessa data, toque em <strong>Manter minha assinatura</strong> no aviso de Meu plano: a mesma assinatura continua, se renova no mesmo dia e nada a mais é cobrado."],
+        ["p", "Ao mudar de um plano pago para outro, antes de confirmar você vê quanto paga hoje e quando e quanto será sua próxima cobrança. Subindo, você paga hoje só a diferença pelos dias que faltam do mês; descendo, nada é cobrado e fica um saldo a favor descontado das próximas cobranças. Sua data de renovação não muda. Se o cartão recusar, seu plano continua igual e nada fica pendente de cobrança."],
+        ["p", "Se uma cobrança mensal falhar, Meu plano mostra «Não conseguimos processar seu último pagamento» com o botão <strong>Atualizar forma de pagamento</strong>. Enquanto a Stripe tenta de novo, você continua usando seu plano; se não der certo, a conta passa para Foodie sem perder dados."],
         ["info", "Quando algo está bloqueado", "Você verá um cadeado e um botão para o Meu Plano. Se usa o app como parte de uma equipe, a mensagem indica que é o dono da conta quem controla esse acesso."],
       ],
     },

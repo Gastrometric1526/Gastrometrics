@@ -140,7 +140,32 @@ async function fetchMyMemberships(): Promise<TeamMember[]> {
     console.error("[Team] Error cargando membresías propias:", error)
     throw error
   }
-  return (data ?? []).map(rowToTeamMember)
+  const members = (data ?? []).map(rowToTeamMember)
+  if (members.length === 0) return members
+  // ¿El plan de cada dueño todavía incluye Equipo? (docs/236). Si la consulta falla, la
+  // membresía se aplica como antes (sin `ownerTeamActive`): no se deja a un equipo sin
+  // trabajar por un error pasajero.
+  try {
+    const res = await fetch("/api/team/membership-access", { cache: "no-store" })
+    if (res.ok) {
+      const { owners } = (await res.json()) as { owners: Record<string, { planSlug: string; teamActive: boolean; ownerName: string | null }> }
+      return members.map((m) => {
+        const o = owners[m.ownerId]
+        return o ? { ...m, ownerPlanSlug: o.planSlug, ownerTeamActive: o.teamActive, ownerName: o.ownerName } : m
+      })
+    }
+  } catch {
+    // sin datos del plan del dueño: se aplica la membresía tal cual
+  }
+  return members
+}
+
+/**
+ * Membresías cuyo dueño ya no tiene Equipo en su plan (docs/236): la persona perdió el acceso
+ * a esos negocios hasta que el dueño vuelva a un plan con Equipo. Para el aviso del Dashboard.
+ */
+export function getSuspendedMemberships(): TeamMember[] {
+  return getMyMemberships().filter((m) => m.ownerTeamActive === false)
 }
 
 export function ensureMyMembershipsLoaded(): Promise<void> {

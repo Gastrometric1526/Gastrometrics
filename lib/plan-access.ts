@@ -65,7 +65,10 @@ export function setCurrentPlanSlug(slug: string): void {
 function getActiveMembership(): TeamMember | null {
   const preview = getActivePreviewMember()
   if (preview) return preview
-  const mine = getMyMemberships()
+  // Una membresía cuyo dueño ya no tiene Equipo en su plan no se aplica (docs/236): la
+  // persona vuelve a ser solo su propia cuenta, con su propio plan. Al volver el dueño a un
+  // plan con Equipo, la misma fila vuelve a aplicarse con sus permisos de antes.
+  const mine = getMyMemberships().filter((m) => m.ownerTeamActive !== false)
   return mine.length > 0 ? mine[0] : null
 }
 
@@ -81,6 +84,13 @@ function isFeatureAllowedForMember(member: TeamMember, feature: FeatureKey): boo
   // OCR (docs/153): un invitado trabaja dentro del plan del dueño (Sous Chef o más, que
   // ya los incluye). Fotos sin límite; actualizar precios, si puede editar ingredientes.
   const features = effectiveMemberFeatures(member.allowedFeatures)
+  // Nunca más de lo que incluye el plan del dueño (docs/236): si baja de plan, sus
+  // invitados pierden lo que el plan nuevo ya no trae, aunque se les hubiera asignado.
+  if (member.ownerPlanSlug) {
+    const ownerPlan = getPlanBySlug(member.ownerPlanSlug)
+    const check = feature === "price_import" ? "ingredients" : feature
+    if (!DEFAULT_ALWAYS_ON_FEATURES.includes(check) && !planUnlocks(ownerPlan, check)) return false
+  }
   if (feature === "price_import") return features.includes("ingredients")
   return features.includes(feature)
 }

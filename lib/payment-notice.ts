@@ -11,6 +11,11 @@
  *   `customer.subscription.updated`.
  */
 
+/** ¿El cobro más reciente falló? (la lista va del más nuevo al más viejo; docs/236). */
+export function lastPaymentFailed(history: PaymentRecord[] | null | undefined): boolean {
+  return history?.[0]?.status === "failed"
+}
+
 export interface PaymentRecord {
   status: "paid" | "failed"
   amountCents: number | null

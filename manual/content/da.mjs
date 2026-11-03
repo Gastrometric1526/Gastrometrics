@@ -485,6 +485,7 @@ export default {
         ]],
         ["tip", "Forhåndsvisning", "Slå forhåndsvisning til for at se appen præcis som den person ville se den, med de samme rettigheder."],
         ["p", "Rettighederne håndhæves reelt, ikke kun på skærmen: en person uden adgang til et værktøj kan hverken se eller gemme de data. Er noget låst, forklarer appen, om det skyldes kontoens plan, eller at ejeren har begrænset det."],
+        ["p", "Dit team arbejder inden for din plan: udløber din plan, opsiges den eller skifter til en uden Team, mister dine inviterede adgangen til dine virksomheder (intet slettes, hverken deres konti eller dine data). Når du går tilbage til en plan med Team, får de adgang igen med de samme rettigheder. De kan heller ikke bruge værktøjer, din plan ikke omfatter."],
       ],
     },
     {
@@ -509,6 +510,9 @@ export default {
         ["p", "Betalinger behandles af Stripe. Under <strong>Min plan</strong> kan du skifte plan eller åbne betalingsportalen for at opdatere dit kort eller opsige. Ændringer vises automatisk på din konto, og du får en bekræftelse på e-mail."],
         ["p", "Hver gang din plan ændres —fordi du selv ændrede den, fordi Gastrometrics-teamet justerede den, eller fordi en tildelt plan udløb— får du besked på e-mail og i et vindue, når du åbner Dashboardet, med en præcis liste over, hvad du <strong>får</strong>, hvad du <strong>mister</strong>, og hvad din plan nu omfatter. Mister du adgang til en sektion, slettes dine data ikke: de bliver tilgængelige igen, hvis du opgraderer senere. Ændringen vises også under <strong>Notifikationer</strong> på Dashboard, og når du lukker vinduet, starter en <strong>kort rundvisning i din nye plan</strong>: den peger på hvert menumodul med noget nyt. Hvis et modul ikke vises endnu, fordi du mangler opskrifter (kapitel 2), fortæller rundvisningen, hvor mange du mangler, i stedet for at pege på noget skjult."],
         ["p", "Opsiger du, beholder du fuld adgang til slutningen af den periode, du allerede har betalt for. Min plan viser dig den præcise dato."],
+        ["p", "Fortryder du før den dato, så tryk <strong>Behold mit abonnement</strong> i beskeden i Min plan: det samme abonnement fortsætter, fornyes samme dag, og der opkræves intet ekstra."],
+        ["p", "Når du skifter fra én betalt plan til en anden, ser du før du bekræfter, hvad du betaler i dag, og hvornår og hvor meget din næste opkrævning er. Opgraderer du, betaler du i dag kun forskellen for månedens resterende dage; nedgraderer du, opkræves intet, og du får et tilgodehavende, som trækkes fra de næste opkrævninger. Din fornyelsesdato ændres ikke. Afviser kortet, forbliver din plan den samme, og intet står til opkrævning."],
+        ["p", "Fejler en månedlig opkrævning, viser Min plan »Vi kunne ikke gennemføre din seneste betaling« med knappen <strong>Opdater betalingsmetode</strong>. Mens Stripe prøver igen, bruger du fortsat din plan; lykkes det ikke, går kontoen over til Foodie uden at miste data."],
         ["info", "Når noget er låst", "Du ser en hængelås og en knap til Min plan. Bruger du appen som en del af et team, fortæller beskeden, at det er kontoens ejer, der styrer den adgang."],
       ],
     },

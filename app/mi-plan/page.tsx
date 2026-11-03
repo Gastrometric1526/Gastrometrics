@@ -11,6 +11,7 @@ import { MiPlanTour } from "@/components/page-tours"
 import { PlanTimelineCard } from "@/components/plan-timeline-card"
 import { ReferralSection, type ReferralOverview } from "@/components/referral-section"
 import { CancelSubscriptionCard } from "@/components/cancel-subscription-card"
+import { lastPaymentFailed } from "@/lib/payment-notice"
 import { AccountDangerZone } from "@/components/account-danger-zone"
 import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
@@ -38,6 +39,7 @@ export default function MiPlanPage() {
   // cancelAtPeriodEnd de arriba, que es solo para una suscripción REAL de Stripe.
   const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null)
   const [isCancellingExpiring, setIsCancellingExpiring] = useState(false)
+  const [isKeeping, setIsKeeping] = useState(false)
   // Tu plan + Regala un mes, gana un mes (docs/180/181): una sola llamada para los dos.
   const [referral, setReferral] = useState<ReferralOverview | null>(null)
   const [referralFailed, setReferralFailed] = useState(false)
@@ -118,6 +120,28 @@ export default function MiPlanPage() {
     }
   }
 
+  // «Mantener mi suscripción» (docs/236): deshace la cancelación de la misma suscripción.
+  const handleKeepSubscription = async () => {
+    setIsKeeping(true)
+    try {
+      const res = await fetch("/api/plan/reactivate", { method: "POST" })
+      if (!res.ok) throw new Error()
+      setCancelAtPeriodEnd(false)
+      toast({
+        title: t("mi_plan_keep_done_title"),
+        description: currentPeriodEnd ? t("mi_plan_keep_done_desc").replace("{date}", formatDate(currentPeriodEnd)) : t("mi_plan_keep_done_desc_no_date"),
+      })
+      fetch("/api/referral/me")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((json) => json && setReferral(json))
+        .catch(() => {})
+    } catch {
+      toast({ title: t("mi_plan_keep_error"), variant: "destructive" })
+    } finally {
+      setIsKeeping(false)
+    }
+  }
+
   const handleManageSubscription = async () => {
     setIsOpeningPortal(true)
     try {
@@ -180,19 +204,42 @@ export default function MiPlanPage() {
             </div>
 
             {cancelAtPeriodEnd && (
-              <div className="flex items-start gap-3 rounded-xl border border-warning/40 bg-warning-soft p-4">
-                <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <p className="text-sm font-medium text-foreground">{t("mi_plan_cancelling_title")}</p>
-                  <p className="text-sm text-text-3">
-                    {currentPeriodEnd
-                      ? t("mi_plan_cancelling_desc").replace(
-                          "{date}",
-                          formatDate(currentPeriodEnd),
-                        )
-                      : t("mi_plan_cancelling_desc_no_date")}
-                  </p>
+              <div className="flex flex-col gap-3 rounded-xl border border-warning/40 bg-warning-soft p-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-medium text-foreground">{t("mi_plan_cancelling_title")}</p>
+                    <p className="text-sm text-text-3">
+                      {currentPeriodEnd
+                        ? t("mi_plan_cancelling_desc").replace(
+                            "{date}",
+                            formatDate(currentPeriodEnd),
+                          )
+                        : t("mi_plan_cancelling_desc_no_date")}
+                    </p>
+                  </div>
                 </div>
+                <Button size="sm" className="shrink-0 sm:ml-8" onClick={handleKeepSubscription} disabled={isKeeping}>
+                  {t("mi_plan_keep_subscription")}
+                </Button>
+              </div>
+            )}
+
+            {/* Último cobro rechazado (docs/236): el plan sigue mientras Stripe reintenta. */}
+            {referral?.timeline.kind === "paid" && lastPaymentFailed(referral.payments) && (
+              <div className="flex flex-col gap-3 rounded-xl border border-destructive/40 bg-danger-soft p-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-medium text-foreground">{t("mi_plan_past_due_title")}</p>
+                    <p className="text-sm text-text-3">{t("mi_plan_past_due_desc")}</p>
+                  </div>
+                </div>
+                {hasStripeCustomer && (
+                  <Button size="sm" className="shrink-0 sm:ml-8" onClick={handleManageSubscription} disabled={isOpeningPortal}>
+                    {t("mi_plan_past_due_button")}
+                  </Button>
+                )}
               </div>
             )}
 

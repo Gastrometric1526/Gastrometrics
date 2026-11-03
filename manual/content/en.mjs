@@ -485,6 +485,7 @@ export default {
         ]],
         ["tip", "Preview", "Turn on preview to see the app exactly as that person would, with the same permissions."],
         ["p", "Permissions are truly enforced, not just on screen: someone without access to a tool can't see or save that data. If something is locked, the app explains whether it's because of the account's plan or because the owner restricted it."],
+        ["p", "Your team works within your plan: if your plan expires, is cancelled or drops to one without Team, your invitees lose access to your businesses (nothing is deleted, neither their accounts nor your data). When you go back to a plan with Team, they get access back with the same permissions. They also can't use tools your plan doesn't include."],
       ],
     },
     {
@@ -509,6 +510,9 @@ export default {
         ["p", "Payments are processed by Stripe. From <strong>My Plan</strong> you can change plans or open the billing portal to update your card or cancel. Changes show up in your account automatically and you get a confirmation email."],
         ["p", "Whenever your plan changes —because you changed it, because the Gastrometrics team adjusted it, or because an assigned plan expired— we let you know by email and with a window when you open the Dashboard, listing exactly what you <strong>gain</strong>, what you <strong>lose</strong> and what your plan includes now. If you lose access to a section, your data isn't deleted: it becomes available again if you upgrade later. The change also shows up under <strong>Notifications</strong> on the Dashboard and, when you close the window, a <strong>short tour of your new plan</strong> starts: it points to each menu module with something new. If a module isn't visible yet because you need more recipes (chapter 2), the tour tells you how many you need instead of pointing to something hidden."],
         ["p", "If you cancel, you keep full access until the end of the period you've already paid for. My Plan shows you the exact date."],
+        ["p", "If you change your mind before that date, tap <strong>Keep my subscription</strong> in the My Plan notice: the same subscription continues, renews on the same day and nothing extra is charged."],
+        ["p", "When switching from one paid plan to another, before confirming you see what you pay today and when and how much your next charge is. Upgrading, you pay today only the difference for the days left in the month; downgrading, nothing is charged and you get a credit that comes off your next charges. Your renewal date doesn't change. If the card declines, your plan stays the same and nothing is left pending."],
+        ["p", "If a monthly charge fails, My Plan shows \"We couldn't process your last payment\" with the <strong>Update payment method</strong> button. While Stripe retries, you keep using your plan; if it doesn't go through, your account moves to Foodie without losing data."],
         ["info", "When something is locked", "You'll see a padlock and a button to My Plan. If you use the app as part of a team, the message tells you it's the account owner who controls that access."],
       ],
     },

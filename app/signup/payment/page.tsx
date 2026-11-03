@@ -11,6 +11,19 @@ import { setCurrentPlanSlug } from "@/lib/plan-access"
 import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
 import { AuthShell } from "@/components/auth-shell"
+import { formatMoney } from "@/components/payment-notice-dialog"
+import { formatDate } from "@/lib/date-format"
+
+interface PlanChangePreview {
+  fromPlanSlug: string
+  toPlanSlug: string
+  dueTodayCents: number
+  creditCents: number
+  currency: string
+  nextChargeAt: string | null
+  nextChargeCents: number
+  wasCancelling: boolean
+}
 
 // Paso de pago después de crear la cuenta, solo para planes pagos (el plan Foodie/gratis
 // va directo al dashboard desde signup). Conectado a Stripe Checkout real vía
@@ -53,6 +66,21 @@ function PaymentPageInner() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [stripeUnavailable, setStripeUnavailable] = useState(false)
+  // Cambio entre planes pagos (docs/236): cuánto se cobra hoy y cuándo es el siguiente
+  // cobro, ANTES de confirmar. null = alta nueva (Stripe Checkout muestra el precio).
+  const [change, setChange] = useState<PlanChangePreview | null>(null)
+
+  useEffect(() => {
+    if (!fromAccount) return
+    fetch("/api/checkout/preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ planSlug: plan.slug }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setChange(data?.change ?? null))
+      .catch(() => setChange(null))
+  }, [fromAccount, plan.slug])
 
   useEffect(() => {
     if (wasCancelled) setErrorMessage(t("signup_payment_cancelled"))
@@ -116,10 +144,28 @@ function PaymentPageInner() {
                 {t("signup_payment_method_title")}
               </CardTitle>
               <CardDescription>
-                {t("signup_payment_redirect_desc").replace("{plan}", plan.name)}
+                {change ? t("signup_payment_change_desc") : t("signup_payment_redirect_desc").replace("{plan}", plan.name)}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {change && (
+                <div className="rounded-lg border border-primary/30 bg-primary-soft p-4 space-y-1.5 text-sm" aria-live="polite">
+                  <p className="font-medium text-foreground">{t("plan_change_summary_title")}</p>
+                  <p className="text-text-3">
+                    {(change.dueTodayCents > 0 ? t("plan_change_up") : change.creditCents > 0 ? t("plan_change_down") : t("plan_change_nothing_today"))
+                      .replace("{from}", getLocalizedPlan(plans.find((p) => p.slug === change.fromPlanSlug) ?? plans[0], language).name)
+                      .replace("{to}", plan.name)
+                      .replace("{today}", formatMoney(change.dueTodayCents, change.currency))
+                      .replace("{credit}", formatMoney(change.creditCents, change.currency))}
+                  </p>
+                  {change.nextChargeAt && (
+                    <p className="text-text-3">
+                      {t("plan_change_next").replace("{amount}", formatMoney(change.nextChargeCents, change.currency)).replace("{date}", formatDate(change.nextChargeAt))}
+                    </p>
+                  )}
+                  {change.wasCancelling && <p className="text-text-3">{t("plan_change_reactivates")}</p>}
+                </div>
+              )}
               {errorMessage && (
                 <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg p-3">
                   <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
@@ -142,7 +188,11 @@ function PaymentPageInner() {
                   ) : (
                     <>
                       <Lock className="h-4 w-4 mr-2" />
-                      {t("signup_payment_continue")}
+                      {change
+                        ? change.dueTodayCents > 0
+                          ? t("plan_change_confirm_pay").replace("{amount}", formatMoney(change.dueTodayCents, change.currency))
+                          : t("plan_change_confirm")
+                        : t("signup_payment_continue")}
                     </>
                   )}
                 </Button>
