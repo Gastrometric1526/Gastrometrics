@@ -14,6 +14,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import type { Database } from "@/types/database"
 import { getPlanBySlug } from "@/lib/plans"
 import { formatCurrency } from "@/lib/currency"
+import { isPushActivity } from "@/lib/services/activity-push"
 
 export type ActivityModule =
   | "dashboard"
@@ -152,6 +153,20 @@ export function logActivity(params: {
     .then(({ error }) => {
       if (error) console.error("[activity-log] Error guardando evento:", error)
     })
+  if (isPushActivity(params.module, params.action)) {
+    const count = params.metadata?.count
+    notifyAdminActivity({ module: params.module, action: params.action, businessId: params.businessId, count })
+  }
+}
+
+/** Aviso a /admin en segundo plano (docs/248). Nunca rompe la acción de la persona. */
+export function notifyAdminActivity(body: Record<string, unknown>): void {
+  fetch("/api/notify/activity", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    keepalive: true,
+    body: JSON.stringify(body),
+  }).catch(() => {})
 }
 
 /**
