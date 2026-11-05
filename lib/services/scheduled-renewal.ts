@@ -23,6 +23,7 @@ import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
 import { getPlanBySlug } from "@/lib/plans"
 import { sendPlanChangedEmail, sendOwnerBillingNotification } from "@/lib/services/notify-billing"
 import { recordPlanChangeNotice } from "@/lib/services/plan-change-notice"
+import { renewalInvoicePaid } from "@/lib/stripe/subscription-rules"
 
 export interface ScheduledRenewal {
   planSlug: string
@@ -96,7 +97,7 @@ export async function cancelScheduledRenewal(accountId: string): Promise<void> {
 
 function invoiceIsPaid(invoice: Stripe.Invoice | string | null | undefined): boolean {
   if (!invoice || typeof invoice === "string") return false
-  return invoice.status === "paid" && (invoice.amount_paid ?? 0) > 0
+  return renewalInvoicePaid(invoice)
 }
 
 /**

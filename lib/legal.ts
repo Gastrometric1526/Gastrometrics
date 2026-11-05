@@ -8,4 +8,6 @@
 // 1.4 (docs/179): Términos 1.3 con la sección 4.7 del programa de referidos «Regala un
 // mes, gana un mes», y Política de Privacidad 1.4 con qué ve quien invita. Todas las
 // cuentas ven el aviso de documentos actualizados.
-export const CURRENT_LEGAL_VERSION = "1.4"
+// 1.5 (docs/242): Política de Privacidad 1.5 con los avisos en el aparato. Términos y Aviso
+// no cambiaron. Basta el aviso en la app (sección 12 de la Política).
+export const CURRENT_LEGAL_VERSION = "1.5"

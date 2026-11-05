@@ -23,6 +23,7 @@ interface PlanChangePreview {
   nextChargeAt: string | null
   nextChargeCents: number
   wasCancelling: boolean
+  excess?: { businesses: { count: number; max: number } | null; team: { count: number; max: number } | null }
 }
 
 // Paso de pago después de crear la cuenta, solo para planes pagos (el plan Foodie/gratis
@@ -164,6 +165,16 @@ function PaymentPageInner() {
                     </p>
                   )}
                   {change.wasCancelling && <p className="text-text-3">{t("plan_change_reactivates")}</p>}
+                  {change.excess?.businesses && (
+                    <p className="text-text-3">
+                      {t("plan_change_over_businesses").replace("{count}", String(change.excess.businesses.count)).replace("{max}", String(change.excess.businesses.max))}
+                    </p>
+                  )}
+                  {change.excess?.team && (
+                    <p className="text-text-3">
+                      {t("plan_change_over_team").replace("{count}", String(change.excess.team.count)).replace("{max}", String(change.excess.team.max))}
+                    </p>
+                  )}
                 </div>
               )}
               {errorMessage && (

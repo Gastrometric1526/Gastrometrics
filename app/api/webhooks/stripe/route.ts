@@ -20,6 +20,7 @@
  * Cliente), por el stripe_customer_id ya guardado en account_plans.
  */
 
+import { LIVE_SUBSCRIPTION_STATUSES, subscriptionEventApplies } from "@/lib/stripe/subscription-rules"
 import { NextResponse } from "next/server"
 import { getStripeClient } from "@/lib/stripe/client"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
@@ -74,6 +75,11 @@ async function setPlanForAccount(accountId: string, planSlug: string, extra: Rec
   }
 
   if (error) console.error("[api/webhooks/stripe] Error guardando el plan:", error)
+}
+
+async function getAccountSubscriptionId(accountId: string): Promise<string | null> {
+  const { data } = await getSupabaseAdminClient().from("account_plans").select("stripe_subscription_id").eq("account_id", accountId).maybeSingle()
+  return data?.stripe_subscription_id ?? null
 }
 
 async function findAccountIdByStripeCustomer(customerId: string): Promise<string | null> {
@@ -145,6 +151,11 @@ export async function POST(request: Request) {
       if (session.payment_status !== "paid") {
         console.error("[api/webhooks/stripe] checkout.session.completed sin pago confirmado:", session.payment_status)
         break
+      }
+      // Un aviso que llega tarde no revive una suscripción que ya terminó (docs/242).
+      if (subscriptionId) {
+        const current = await stripe.subscriptions.retrieve(subscriptionId)
+        if (!LIVE_SUBSCRIPTION_STATUSES.includes(current.status)) break
       }
       if (accountId) await cancelScheduledRenewal(accountId)
 
@@ -260,8 +271,22 @@ export async function POST(request: Request) {
       }
 
       if (accountId && planSlug && getPlanBySlug(planSlug).slug === planSlug) {
-        const activeStatuses = ["active", "trialing", "past_due"]
-        const resolvedPlanSlug = activeStatuses.includes(subscription.status) ? planSlug : FREE_PLAN_SLUG
+        // Stripe no garantiza el orden de los avisos (docs/242): se usa el estado de ahora,
+        // no el del evento. Si falla la consulta, el 500 hace que Stripe lo reintente.
+        const live = await stripe.subscriptions.retrieve(subscription.id)
+        subscription.status = live.status
+        subscription.cancel_at_period_end = live.cancel_at_period_end
+        subscription.items = live.items as typeof subscription.items
+        if (
+          !subscriptionEventApplies({
+            subscriptionId: subscription.id,
+            accountSubscriptionId: await getAccountSubscriptionId(accountId),
+            status: live.status,
+          })
+        ) {
+          break
+        }
+        const resolvedPlanSlug = LIVE_SUBSCRIPTION_STATUSES.includes(subscription.status) ? planSlug : FREE_PLAN_SLUG
         const previousPlanSlug = await getCurrentPlanSlug(accountId)
         const nextChargeUnixSeconds = subscription.items?.data?.[0]?.current_period_end ?? null
         const amountCents = subscription.items?.data?.[0]?.price?.unit_amount ?? null
@@ -336,7 +361,9 @@ export async function POST(request: Request) {
       }
       const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id
       const accountId = await findAccountIdByStripeCustomer(customerId)
-      if (accountId) {
+      // Solo termina el plan la suscripción que la cuenta tiene ahora (docs/242): al pagar de
+      // inmediato o quitar un pago programado se cancela otra, y eso no debe dejarla en Foodie.
+      if (accountId && (await getAccountSubscriptionId(accountId)) === subscription.id) {
         const previousPlanSlug = await getCurrentPlanSlug(accountId)
         await setPlanForAccount(accountId, FREE_PLAN_SLUG, {
           stripe_subscription_id: null,

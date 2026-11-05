@@ -51,7 +51,7 @@ export function LegalUpdateBanner() {
       <div className="fixed top-0 left-0 right-0 z-[1000] bg-muted border-b border-border px-4 py-2 flex items-center justify-center gap-3 text-sm shadow-sm flex-wrap">
         <Scale className="h-4 w-4 text-primary shrink-0" />
         <span className="text-foreground truncate">{t("legal_update_banner_title")}</span>
-        <Link href="/terminos-de-uso" target="_blank" className="text-primary hover:underline font-medium shrink-0">
+        <Link href="/politica-privacidad" target="_blank" className="text-primary hover:underline font-medium shrink-0">
           {t("legal_update_banner_view_link")}
         </Link>
         <button

@@ -11,7 +11,8 @@
 
 import { NextResponse } from "next/server"
 import { getStripeClient, isStripeConfigured, getOrCreateSubscriptionProductId } from "@/lib/stripe/client"
-import { getPlanBySlug } from "@/lib/plans"
+import { getPlanBySlug, getTeamInviteLimit } from "@/lib/plans"
+import { planExcess } from "@/lib/stripe/subscription-rules"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
   try {
     const { data: accountPlan } = await getSupabaseAdminClient()
       .from("account_plans")
-      .select("plan_slug, stripe_subscription_id")
+      .select("plan_slug, stripe_subscription_id, extra_businesses, extra_team_seats")
       .eq("account_id", user.id)
       .maybeSingle()
     if (!accountPlan?.stripe_subscription_id) return NextResponse.json({ change: null })
@@ -53,6 +54,12 @@ export async function POST(request: Request) {
       },
     })
 
+    const admin = getSupabaseAdminClient()
+    const [businesses, team] = await Promise.all([
+      admin.from("businesses").select("id", { count: "exact", head: true }).eq("owner_id", user.id),
+      admin.from("team_members").select("id", { count: "exact", head: true }).eq("owner_id", user.id),
+    ])
+
     const periodEnd = (item as { current_period_end?: number }).current_period_end ?? null
     return NextResponse.json({
       change: {
@@ -67,6 +74,13 @@ export async function POST(request: Request) {
         nextChargeCents: plan.priceUsdCents,
         // Un cambio de plan reactiva una suscripción que estaba por terminar (docs/236).
         wasCancelling: Boolean(subscription.cancel_at_period_end),
+        // Lo que supera el plan nuevo (docs/242): se conserva, solo no se puede agregar más.
+        excess: planExcess({
+          businesses: businesses.count ?? 0,
+          maxBusinesses: plan.maxBusinesses + (accountPlan.extra_businesses || 0),
+          teamMembers: team.count ?? 0,
+          maxTeamMembers: getTeamInviteLimit(plan, accountPlan.extra_team_seats || 0),
+        }),
       },
     })
   } catch (error) {
