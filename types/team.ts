@@ -47,6 +47,8 @@ export interface TeamMember {
   // /api/team/membership-access; sin respuesta quedan sin definir.
   ownerPlanSlug?: string
   ownerTeamActive?: boolean
+  // El plan del dueño incluye Equipo, pero esta persona supera sus lugares (docs/243).
+  ownerSeatLost?: boolean
   ownerName?: string | null
 }
 

@@ -352,23 +352,27 @@ export function LandingCompare() {
             </tbody>
           </table>
         </div>
-        {/* Celular: una tarjeta por tema. */}
-        <div className="grid gap-3 md:hidden">
-          {COMPARE_ROWS.map((row) => (
-            <div key={row} className="rounded-2xl border border-hairline bg-card p-4 space-y-2">
-              <p className="font-semibold text-foreground">{k(row, "label")}</p>
-              <p className="text-sm text-text-3">
-                <span className="font-medium">{t("landing_compare_col_sheets")}:</span> {k(row, "sheets")}
-              </p>
-              <p className="text-sm text-text-3">
-                <span className="font-medium">{t("landing_compare_col_tools")}:</span> {t("landing_compare_tools_value")}
-              </p>
-              <p className="flex items-start gap-2 rounded-lg bg-primary-soft p-2 text-sm font-medium text-foreground">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                {k(row, "gm")}
-              </p>
-            </div>
-          ))}
+        {/* Celular: la misma tabla, con el tema como fila propia para que quepa. */}
+        <div className="md:hidden overflow-hidden rounded-2xl border border-hairline bg-card">
+          <table className="w-full table-fixed text-sm">
+            <thead>
+              <tr className="border-b border-hairline text-left">
+                <th className="p-3 font-medium text-text-3" scope="col">{t("landing_compare_col_sheets")}</th>
+                <th className="p-3 font-semibold text-foreground bg-primary-soft" scope="col">GastroMetrics</th>
+              </tr>
+            </thead>
+            {COMPARE_ROWS.map((row) => (
+              <tbody key={row} className="border-b border-hairline last:border-b-0">
+                <tr>
+                  <th className="px-3 pt-3 pb-1 text-left font-semibold text-foreground" colSpan={2} scope="colgroup">{k(row, "label")}</th>
+                </tr>
+                <tr>
+                  <td className="px-3 pb-3 align-top text-text-3">{k(row, "sheets")}</td>
+                  <td className="px-3 pb-3 align-top font-medium text-foreground bg-primary-soft">{k(row, "gm")}</td>
+                </tr>
+              </tbody>
+            ))}
+          </table>
         </div>
       </div>
       <div className="space-y-2 text-center">

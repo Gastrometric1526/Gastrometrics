@@ -5,6 +5,7 @@ import { Lock, ArrowRight } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Sidebar } from "@/components/sidebar"
+import { DownloadBackupButton } from "@/components/download-backup-button"
 import { getMinimumPlanForFeature } from "@/lib/plan-access"
 import type { FeatureKey } from "@/lib/plans"
 import { useLanguage } from "@/contexts/language-context"
@@ -42,6 +43,7 @@ export function FeatureLockedPage({ feature, title, description }: { feature: Fe
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
+            <DownloadBackupButton />
           </CardContent>
         </Card>
       </div>

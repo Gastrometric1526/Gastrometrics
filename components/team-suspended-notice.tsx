@@ -34,7 +34,7 @@ export function TeamSuspendedNotice() {
           <Users className="h-5 w-5 text-warning shrink-0 mt-0.5" />
           <div className="space-y-0.5">
             <p className="text-sm font-medium text-foreground">{t("team_suspended_title").replace("{owner}", m.ownerName || "—")}</p>
-            <p className="text-sm text-text-3">{t("team_suspended_desc")}</p>
+            <p className="text-sm text-text-3">{t(m.ownerSeatLost ? "team_seat_lost_desc" : "team_suspended_desc")}</p>
           </div>
         </div>
       ))}

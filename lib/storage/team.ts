@@ -148,10 +148,10 @@ async function fetchMyMemberships(): Promise<TeamMember[]> {
   try {
     const res = await fetch("/api/team/membership-access", { cache: "no-store" })
     if (res.ok) {
-      const { owners } = (await res.json()) as { owners: Record<string, { planSlug: string; teamActive: boolean; ownerName: string | null }> }
+      const { owners } = (await res.json()) as { owners: Record<string, { planSlug: string; teamActive: boolean; seatLost?: boolean; ownerName: string | null }> }
       return members.map((m) => {
         const o = owners[m.ownerId]
-        return o ? { ...m, ownerPlanSlug: o.planSlug, ownerTeamActive: o.teamActive, ownerName: o.ownerName } : m
+        return o ? { ...m, ownerPlanSlug: o.planSlug, ownerTeamActive: o.teamActive, ownerSeatLost: o.seatLost, ownerName: o.ownerName } : m
       })
     }
   } catch {

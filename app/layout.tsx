@@ -13,6 +13,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration"
 import { TeamPreviewBanner } from "@/components/team-preview-banner"
 import { LegalUpdateBanner } from "@/components/legal-update-banner"
+import { BusinessLockOverlay } from "@/components/business-lock-overlay"
 import { ThemeInitializer } from "@/components/theme-initializer"
 import { AnalyticsTracker } from "@/components/analytics-tracker"
 import { PresenceTracker } from "@/components/presence-tracker"
@@ -167,6 +168,9 @@ export default function RootLayout({
                       {children}
                     </div>
                   </main>
+                  <Suspense fallback={null}>
+                    <BusinessLockOverlay />
+                  </Suspense>
                   <Toaster />
                   <Analytics />
                 </NotificationProvider>

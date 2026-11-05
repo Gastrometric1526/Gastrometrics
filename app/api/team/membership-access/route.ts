@@ -9,6 +9,8 @@ import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { ownerTeamAccess } from "@/lib/team-owner-access"
+import { getPlanBySlug, getTeamInviteLimit } from "@/lib/plans"
+import { membersWithoutSeat } from "@/lib/plan-locks"
 
 export const dynamic = "force-dynamic"
 
@@ -35,7 +37,20 @@ export async function GET() {
     const { data: profiles } = await admin.from("profiles").select("id, full_name").in("id", ownerIds)
     const names = new Map((profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) || null]))
     const byOwner = new Map((plans ?? []).map((p) => [p.account_id as string, p]))
-    const owners = Object.fromEntries(ownerIds.map((id) => [id, { ...ownerTeamAccess(byOwner.get(id)), ownerName: names.get(id) ?? null }]))
+    // Invitados que superan el plan del dueño (docs/243): quedan fuera los más nuevos.
+    const { data: roster, error: rosterError } = await admin.from("team_members").select("id, owner_id, invited_user_id, invited_at").in("owner_id", ownerIds)
+    if (rosterError) throw rosterError
+    const owners = Object.fromEntries(
+      ownerIds.map((id) => {
+        const row = byOwner.get(id)
+        const access = ownerTeamAccess(row)
+        const members = (roster ?? []).filter((m) => m.owner_id === id)
+        const limit = getTeamInviteLimit(getPlanBySlug(access.planSlug), row?.extra_team_seats || 0)
+        const withoutSeat = membersWithoutSeat(members, limit)
+        const seatLost = access.teamActive && members.some((m) => m.invited_user_id === user.id && withoutSeat.includes(m.id))
+        return [id, { ...access, teamActive: access.teamActive && !seatLost, seatLost, ownerName: names.get(id) ?? null }]
+      }),
+    )
     return NextResponse.json({ owners })
   } catch (error) {
     console.error("[api/team/membership-access] Error revisando el plan de los dueños:", error)

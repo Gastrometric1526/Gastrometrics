@@ -54,6 +54,7 @@ import { PlanChangeNoticeDialog } from "@/components/plan-change-notice-dialog"
 import { PlanTour } from "@/components/plan-tour"
 import { GettingStartedPath } from "@/components/getting-started-path"
 import { TeamSuspendedNotice } from "@/components/team-suspended-notice"
+import { BusinessLockedNotice } from "@/components/business-lock-overlay"
 import { refreshPlanStatus } from "@/lib/plan-status"
 import { useFeatureAccess, useActiveMembership, setCurrentPlanSlug, getMinimumPlanForFeature } from "@/lib/plan-access"
 import type { FeatureKey } from "@/lib/plans"
@@ -836,6 +837,7 @@ export default function DashboardPage() {
 
             {/* Tu camino (docs/145): pasos que van revelando los módulos. */}
             <TeamSuspendedNotice />
+            <BusinessLockedNotice />
             <GettingStartedPath />
 
             {/* Stats — sin cajas: etiqueta, cifra grande, separadas por hairline

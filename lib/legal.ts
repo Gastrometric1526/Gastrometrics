@@ -10,4 +10,6 @@
 // cuentas ven el aviso de documentos actualizados.
 // 1.5 (docs/242): Política de Privacidad 1.5 con los avisos en el aparato. Términos y Aviso
 // no cambiaron. Basta el aviso en la app (sección 12 de la Política).
-export const CURRENT_LEGAL_VERSION = "1.5"
+// 1.6 (docs/243): Términos 1.4. La sección 4.4 dice qué pasa con lo que supera el plan y que
+// bajar aplica de inmediato con saldo a favor; la 3 quita el límite de 15 recetas, que no existe.
+export const CURRENT_LEGAL_VERSION = "1.6"
