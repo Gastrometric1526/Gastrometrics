@@ -14,7 +14,7 @@ import { LandingRecipeDemo } from "@/components/landing-recipe-demo"
 import { LandingReferralSection } from "@/components/landing-referral-section"
 import { LandingAppTour, LandingPriceStory, LandingInContext } from "@/components/landing-showcase"
 import { LandingHeroDemo } from "@/components/landing-hero-demo"
-import { LandingTrustStrip, LandingProblem, LandingHowItWorks, LandingBento, LandingCompare, LandingRiskAndFounder, LandingClosing } from "@/components/landing-sections"
+import { LandingTrustStrip, LandingProblem, LandingHowItWorks, LandingImport, LandingBento, LandingCompare, LandingRiskAndFounder, LandingClosing } from "@/components/landing-sections"
 import { ChefHat, ArrowRight, CheckCircle2, UtensilsCrossed, Store, Building2, Wine } from "lucide-react"
 import { PublicReviews } from "@/components/public-reviews"
 
@@ -89,6 +89,8 @@ export function HomeContent() {
         <LandingProblem />
 
         <LandingHowItWorks />
+
+        <LandingImport />
 
         <LandingAppTour />
 

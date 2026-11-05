@@ -12,6 +12,7 @@ import type React from "react"
 import Link from "next/link"
 import {
   ArrowRight,
+  Database,
   Calculator,
   Tag,
   RefreshCw,
@@ -253,6 +254,40 @@ function BentoMep({ on }: { on: boolean }) {
 }
 function BentoStock({ on }: { on: boolean }) {
   return <RealCrop on={on} screen="inventario" focus={[50, 70]} zoom={1.0} height="h-56" alt="" />
+}
+
+/** Traer recetas e ingredientes desde donde ya están (pedido del dueño, docs/246). */
+export function LandingImport() {
+  const { t } = useLanguage()
+  const [ref, seen] = useInViewOnce<HTMLElement>(0.15)
+  const cards = [
+    { title: "landing_import_recipes_title", desc: "landing_import_recipes_desc", Icon: FileText },
+    { title: "landing_import_base_title", desc: "landing_import_base_desc", Icon: Database },
+  ] as const
+  return (
+    <section ref={ref} id="importar" className="max-w-[1200px] mx-auto px-4 sm:px-6 md:px-10 py-16 md:py-24 space-y-10 scroll-mt-20">
+      <SectionHeading kicker={t("landing_import_kicker")} title={t("landing_import_title")} subtitle={t("landing_import_subtitle")} />
+      <div className="grid gap-5 md:grid-cols-2">
+        {cards.map((c, i) => (
+          <div key={c.title} {...reveal(seen, i * 150)}>
+            <div className="h-full rounded-2xl border border-hairline bg-card p-6 space-y-3">
+              <c.Icon className="h-6 w-6 text-primary" />
+              <p className="text-lg font-semibold text-foreground">{t(c.title)}</p>
+              <p className="text-sm text-text-3 leading-relaxed">{t(c.desc)}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <p className="text-sm text-text-3">{t("landing_import_note")}</p>
+        <Link href="/signup" className="shrink-0">
+          <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+            {t("landing_import_cta")} <ArrowRight className="ml-1.5 h-4 w-4" />
+          </Button>
+        </Link>
+      </div>
+    </section>
+  )
 }
 
 export function LandingBento() {
