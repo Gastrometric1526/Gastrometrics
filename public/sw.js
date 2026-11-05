@@ -36,3 +36,33 @@ self.addEventListener("fetch", (event) => {
     caches.match(event.request).then((cached) => cached || fetch(event.request)),
   )
 })
+
+// Notificaciones de /admin (docs/240): el servidor manda { title, body, url }.
+self.addEventListener("push", (event) => {
+  let data = {}
+  try {
+    data = event.data ? event.data.json() : {}
+  } catch {
+    data = { body: event.data ? event.data.text() : "" }
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || "GastroMetrics", {
+      body: data.body || "",
+      icon: "/icon-192x192.png",
+      badge: "/icon-192x192.png",
+      data: { url: data.url || "/admin" },
+    }),
+  )
+})
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close()
+  const url = (event.notification.data && event.notification.data.url) || "/admin"
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      const open = list.find((client) => new URL(client.url).pathname.startsWith("/admin"))
+      if (open && "navigate" in open) return open.navigate(url).then((client) => (client || open).focus())
+      return self.clients.openWindow(url)
+    }),
+  )
+})

@@ -14,7 +14,7 @@ import { LandingRecipeDemo } from "@/components/landing-recipe-demo"
 import { LandingReferralSection } from "@/components/landing-referral-section"
 import { LandingAppTour, LandingPriceStory, LandingInContext } from "@/components/landing-showcase"
 import { LandingHeroDemo } from "@/components/landing-hero-demo"
-import { LandingTrustStrip, LandingProblem, LandingHowItWorks, LandingBento, LandingRiskAndFounder, LandingClosing } from "@/components/landing-sections"
+import { LandingTrustStrip, LandingProblem, LandingHowItWorks, LandingBento, LandingCompare, LandingRiskAndFounder, LandingClosing } from "@/components/landing-sections"
 import { ChefHat, ArrowRight, CheckCircle2, UtensilsCrossed, Store, Building2, Wine } from "lucide-react"
 import { PublicReviews } from "@/components/public-reviews"
 
@@ -93,6 +93,9 @@ export function HomeContent() {
         <LandingAppTour />
 
         <LandingBento />
+
+        {/* ¿Por qué esto y no otra cosa? Comparación por formas de trabajar (docs/240). */}
+        <LandingCompare />
 
         <LandingPriceStory />
 

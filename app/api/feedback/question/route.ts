@@ -14,6 +14,8 @@ import { checkRateLimit } from "@/lib/rate-limit"
 import { QUESTIONS, type QuestionKey } from "@/lib/feedback/ask-rules"
 import { buildReviewMessage } from "@/lib/reviews"
 import { sendFeedbackNotification } from "@/lib/services/notify-feedback"
+import { sendAdminPush } from "@/lib/services/admin-push"
+import { surveyPushText } from "@/lib/feedback/survey-push"
 
 export async function POST(request: Request) {
   const {
@@ -84,6 +86,11 @@ export async function POST(request: Request) {
         console.error("[api/feedback/question] Error avisando al dueño:", notifyError)
       }
     }
+  }
+
+  // Aviso a /admin (docs/240). El testimonio y «qué mejorar» ya avisan como mensaje del buzón.
+  if (!(question === "testimonial" || question === "improve") || !detail) {
+    await sendAdminPush({ ...surveyPushText({ question, answer, detail, userName }), url: "/admin?tab=buzon&sub=encuestas" })
   }
 
   return NextResponse.json({ ok: true })

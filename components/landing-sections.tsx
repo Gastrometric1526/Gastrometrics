@@ -34,6 +34,7 @@ import {
   TrendingUp,
   ArrowDown,
   ListChecks,
+  CheckCircle2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AnimatedNumber } from "@/components/animated-number"
@@ -303,6 +304,80 @@ export function LandingBento() {
 }
 
 // ─── Sin riesgo + nota del fundador ─────────────────────────────────────────
+
+/**
+ * Comparación por formas de trabajar (docs/240): sin marcas ni logos ajenos, sin cruces rojas y
+ * reconociendo lo bueno de las hojas de cálculo. La publicidad comparativa (art. 21 de la
+ * Markedsføringsloven, directiva 2006/114/CE) también alcanza a las referencias indirectas, y
+ * «según la herramienta» evita afirmar qué tiene o no tiene un competidor.
+ */
+const COMPARE_ROWS = ["cost", "price", "merma", "ops", "sales", "import"] as const
+
+export function LandingCompare() {
+  const { t } = useLanguage()
+  const [ref, seen] = useInViewOnce<HTMLElement>(0.15)
+  const k = (row: string, col: string) => t(`landing_compare_${row}_${col}` as TranslationKey)
+  const r = reveal(seen, 0)
+  return (
+    <section ref={ref} className="max-w-[1200px] mx-auto px-4 sm:px-6 md:px-10 py-16 md:py-24 space-y-10">
+      <SectionHeading kicker={t("landing_compare_kicker")} title={t("landing_compare_title")} subtitle={t("landing_compare_subtitle")} />
+      <div className={r.className} style={r.style}>
+        {/* Pantallas anchas: tabla. */}
+        <div className="hidden md:block overflow-hidden rounded-2xl border border-hairline bg-card">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-hairline text-left">
+                <th className="p-4 font-medium text-text-3" scope="col">
+                  <span className="sr-only">{t("landing_compare_kicker")}</span>
+                </th>
+                <th className="p-4 font-medium text-text-3" scope="col">{t("landing_compare_col_sheets")}</th>
+                <th className="p-4 font-medium text-text-3" scope="col">{t("landing_compare_col_tools")}</th>
+                <th className="p-4 font-semibold text-foreground bg-primary-soft" scope="col">GastroMetrics</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-hairline">
+              {COMPARE_ROWS.map((row) => (
+                <tr key={row}>
+                  <th className="p-4 text-left font-medium text-foreground" scope="row">{k(row, "label")}</th>
+                  <td className="p-4 text-text-3">{k(row, "sheets")}</td>
+                  <td className="p-4 text-text-3">{t("landing_compare_tools_value")}</td>
+                  <td className="p-4 font-medium text-foreground bg-primary-soft">
+                    <span className="inline-flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      {k(row, "gm")}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {/* Celular: una tarjeta por tema. */}
+        <div className="grid gap-3 md:hidden">
+          {COMPARE_ROWS.map((row) => (
+            <div key={row} className="rounded-2xl border border-hairline bg-card p-4 space-y-2">
+              <p className="font-semibold text-foreground">{k(row, "label")}</p>
+              <p className="text-sm text-text-3">
+                <span className="font-medium">{t("landing_compare_col_sheets")}:</span> {k(row, "sheets")}
+              </p>
+              <p className="text-sm text-text-3">
+                <span className="font-medium">{t("landing_compare_col_tools")}:</span> {t("landing_compare_tools_value")}
+              </p>
+              <p className="flex items-start gap-2 rounded-lg bg-primary-soft p-2 text-sm font-medium text-foreground">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                {k(row, "gm")}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="space-y-2 text-center">
+        <p className="text-sm font-medium text-foreground">{t("landing_compare_flow")}</p>
+        <p className="mx-auto max-w-2xl text-xs text-text-4">{t("landing_compare_note")}</p>
+      </div>
+    </section>
+  )
+}
 
 export function LandingRiskAndFounder() {
   const { t } = useLanguage()

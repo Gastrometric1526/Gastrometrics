@@ -30,6 +30,7 @@ import { ReferralsPanel } from "@/components/admin/referrals-panel"
 import { ProductUpdatesPanel } from "@/components/admin/product-updates-panel"
 import { LegalUpdatePanel } from "@/components/admin/legal-update-panel"
 import { AdminSubTabs } from "@/components/admin/sub-tabs"
+import { AdminPushToggle } from "@/components/admin/push-toggle"
 import { OverviewPanel } from "@/components/admin/overview-panel"
 import { RevenuePanel } from "@/components/admin/revenue-panel"
 import { HealthPanel } from "@/components/admin/health-panel"
@@ -303,6 +304,7 @@ function AdminPageInner() {
           <div className="flex flex-col items-end gap-2">
             {/* Informe completo con todos los datos de /admin (docs/206) */}
             <FullReportButton />
+            <AdminPushToggle />
             <Button
               variant="outline"
               size="sm"

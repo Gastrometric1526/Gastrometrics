@@ -85,6 +85,7 @@
     "tesseract.js": "^7.0.0",
     "uuid": "^14.0.1",
     "vaul": "^1.1.2",
+    "web-push": "^3.6.7",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zod": "^3.24.1"
   },
@@ -92,6 +93,7 @@
     "@types/node": "^22",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/web-push": "^3.6.4",
     "@vitejs/plugin-react": "^6.0.5",
     "jsdom": "^29.1.1",
     "postcss": "^8.5",

@@ -14,6 +14,7 @@
  */
 
 import { Resend } from "resend"
+import { sendAdminPush } from "./admin-push"
 import { withEmailTracking } from "@/lib/email-tracking"
 import { sendWithRetry } from "./send-email"
 import { renderEmailTemplate, escapeHtml, escapeHtmlWithLineBreaks } from "./email-templates"
@@ -113,6 +114,7 @@ export async function sendFeedbackNotification(input: {
   userEmail?: string
   page?: string
 }): Promise<void> {
+  await sendAdminPush({ title: `Mensaje nuevo: ${input.type}`, body: `${input.userName || input.userEmail || "Anónimo"}: ${input.message}`, url: "/admin?tab=buzon" })
   if (!isFeedbackNotifyConfigured()) return
 
   const resend = new Resend(process.env.RESEND_API_KEY)

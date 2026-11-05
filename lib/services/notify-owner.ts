@@ -7,6 +7,7 @@
  */
 
 import { Resend } from "resend"
+import { sendAdminPush } from "./admin-push"
 import { sendWithRetry } from "./send-email"
 import { escapeHtml } from "./email-templates"
 import { formatDateTime } from "@/lib/date-format"
@@ -38,6 +39,8 @@ export async function sendOwnerNotification(input: {
   footnote: string
   label: string
 }): Promise<boolean> {
+  // También al celular o computadora de quienes activaron los avisos en /admin (docs/240).
+  await sendAdminPush({ title: input.subject, body: input.rows.filter(([, value]) => value).map(([, value]) => value).slice(0, 2).join(" · ") })
   if (!process.env.RESEND_API_KEY || !process.env.FEEDBACK_NOTIFY_TO) {
     console.error(`[notify-owner] Falta RESEND_API_KEY o FEEDBACK_NOTIFY_TO: no se mandó "${input.label}"`)
     return false

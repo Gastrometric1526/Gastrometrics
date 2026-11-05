@@ -23,6 +23,7 @@
  */
 
 import { Resend } from "resend"
+import { sendAdminPush } from "./admin-push"
 import { sendWithRetry } from "./send-email"
 import { escapeHtml } from "./email-templates"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
@@ -52,6 +53,7 @@ export async function sendAccountCreatedNotification(input: {
   nationality?: string
   language?: string
 }): Promise<boolean> {
+  await sendAdminPush({ title: "Cuenta nueva confirmada", body: [input.fullName, input.email].filter(Boolean).join(" · "), url: "/admin?tab=cuentas" })
   if (!process.env.RESEND_API_KEY || !process.env.FEEDBACK_NOTIFY_TO) {
     console.error("[notify-signup] Falta RESEND_API_KEY o FEEDBACK_NOTIFY_TO: no se avisó de la cuenta nueva", input.email)
     return false

@@ -7,6 +7,7 @@
  */
 
 import { Resend } from "resend"
+import { sendAdminPush } from "./admin-push"
 import { sendWithRetry } from "./send-email"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getPlanBySlug, getLocalizedPlan, plans } from "@/lib/plans"
@@ -33,8 +34,6 @@ export async function sendOwnerBillingNotification(input: {
   toPlanSlug?: string
   amountCents?: number | null
 }): Promise<void> {
-  if (!process.env.RESEND_API_KEY || !process.env.FEEDBACK_NOTIFY_TO) return
-
   const account = await getAccountEmailAndLanguage(input.accountId)
   const accountLabel = account?.email || input.accountId
 
@@ -51,6 +50,9 @@ export async function sendOwnerBillingNotification(input: {
   const toPlanName = input.toPlanSlug ? getPlanBySlug(input.toPlanSlug).name : null
   const amountLabel =
     input.amountCents !== null && input.amountCents !== undefined ? formatUsd(input.amountCents) : null
+
+  await sendAdminPush({ title: eventLabel, body: [accountLabel, toPlanName, amountLabel].filter(Boolean).join(" · "), url: "/admin?tab=ingresos" })
+  if (!process.env.RESEND_API_KEY || !process.env.FEEDBACK_NOTIFY_TO) return
 
   const resend = new Resend(process.env.RESEND_API_KEY)
   const { error } = await sendWithRetry(resend, {
