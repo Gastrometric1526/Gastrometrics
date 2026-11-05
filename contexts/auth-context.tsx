@@ -13,6 +13,7 @@ import { refreshBusinesses } from "@/lib/storage/businesses"
 import { resetAllStorageCaches } from "@/lib/storage/supabase-cache"
 import { setMainPdfBranding } from "@/lib/pdf/pdf-branding"
 import { ensureTeamMembersLoaded, ensureMyMembershipsLoaded } from "@/lib/storage/team"
+import { unregisterDevice } from "@/lib/push-client"
 import { tryCarryLandingDemoIntoAccount } from "@/lib/landing-demo-carryover"
 import { shouldEndSessionOnLaunch, clearRememberChoice } from "@/lib/remember-me"
 
@@ -328,6 +329,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     const supabase = getSupabaseBrowserClient()
+    // Este aparato deja de recibir los avisos de la cuenta (docs/241): si otra persona entra
+    // en el mismo teléfono, no debe ver avisos ajenos. Antes de salir: necesita la sesión.
+    await unregisterDevice("/api/push").catch(() => {})
     const { error } = await supabase.auth.signOut()
     if (error) console.error("Logout error:", error)
   }, [])

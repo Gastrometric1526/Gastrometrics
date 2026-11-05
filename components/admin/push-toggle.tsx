@@ -10,16 +10,7 @@ import { Bell, BellOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
-
-function keyToBytes(base64: string): Uint8Array<ArrayBuffer> {
-  const padded = (base64 + "=".repeat((4 - (base64.length % 4)) % 4)).replace(/-/g, "+").replace(/_/g, "/")
-  const raw = atob(padded)
-  const bytes = new Uint8Array(new ArrayBuffer(raw.length))
-  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i)
-  return bytes
-}
-
-const pushSupported = () => typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window
+import { isDeviceRegistered, needsHomeScreen, pushSupported, registerDevice, unregisterDevice } from "@/lib/push-client"
 
 export function AdminPushToggle() {
   const { t } = useLanguage()
@@ -28,44 +19,25 @@ export function AdminPushToggle() {
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    if (!pushSupported()) return
-    navigator.serviceWorker.ready
-      .then((reg) => reg.pushManager.getSubscription())
-      .then((sub) => setEnabled(Boolean(sub)))
-      .catch(() => {})
+    isDeviceRegistered("/api/admin/push").then(setEnabled).catch(() => {})
   }, [])
 
   const enable = async () => {
-    if (!pushSupported()) {
+    if (!pushSupported() || needsHomeScreen()) {
       toast({ title: t("admin_push_unsupported_title"), description: t("admin_push_unsupported_desc"), variant: "destructive" })
       return
     }
-    const permission = await Notification.requestPermission()
-    if (permission !== "granted") {
+    if (!(await registerDevice("/api/admin/push"))) {
       toast({ title: t("admin_push_denied_title"), description: t("admin_push_denied_desc"), variant: "destructive" })
       return
     }
-    const info = await fetch("/api/admin/push").then((r) => (r.ok ? r.json() : Promise.reject()))
-    const reg = await navigator.serviceWorker.ready
-    const subscription = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyToBytes(info.publicKey) })
-    const saved = await fetch("/api/admin/push", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "subscribe", subscription: subscription.toJSON(), label: navigator.userAgent }),
-    })
-    if (!saved.ok) throw new Error()
     await fetch("/api/admin/push", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "test" }) })
     setEnabled(true)
     toast({ title: t("admin_push_on_title"), description: t("admin_push_on_desc") })
   }
 
   const disable = async () => {
-    const reg = await navigator.serviceWorker.ready
-    const subscription = await reg.pushManager.getSubscription()
-    if (subscription) {
-      await fetch("/api/admin/push", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ endpoint: subscription.endpoint }) })
-      await subscription.unsubscribe()
-    }
+    await unregisterDevice("/api/admin/push")
     setEnabled(false)
     toast({ title: t("admin_push_off_title") })
   }

@@ -557,6 +557,7 @@ export default {
         ["p", "The app is available in <strong>Spanish, English, Danish, French, Portuguese and Chinese</strong>. The language you choose is used across the interface, in your PDFs and in <strong>every email</strong> we send you. There are 21 currencies; changing currency changes the symbol and format, it doesn't convert your amounts. Decimals always use a point."],
         ["h3", "Emails you can receive"],
         ["p", "You always get your account emails: confirmation, password, payments and team invitations. If you turn on <strong>Updates and reminders</strong>, we'll also write when there are new features and, if you haven't signed in for a few days, a helpful reminder based on what you did last:"],
+        ["p", "You can also get <strong>alerts on your phone or computer</strong>: turn them on in Settings → Notifications, on each device, or when you write to us in the chat. We only alert you to what matters: a chat reply, a failed charge, your plan about to end, a month earned by inviting, low stock and dishes losing margin. On iPhone, add GastroMetrics to your Home Screen from Safari and turn them on from there. When you sign out, that device stops receiving them."],
         ["cards", [
           ["Reminder", "Unfinished recipe", "Your Recipe Sheet draft is waiting for you before the 24 hours are up."],
           ["Reminder", "Inventory and reports", "When a week has passed since your last count or since you checked your reports."],

@@ -30,6 +30,7 @@ import { sendWithRetry } from "./send-email"
 import { renderEmailTemplate, escapeHtml } from "./email-templates"
 import { getEmailLabels, normalizeEmailLang, fillLabel, type EmailLang } from "@/lib/i18n/email-labels"
 import { REENGAGEMENT_SHARED } from "@/lib/i18n/reengagement-email-labels"
+import { sendUserPush } from "./user-push"
 import { ENGAGEMENT_COPY, ENGAGEMENT_SHARED, type EngagementType } from "@/lib/i18n/engagement-email-copy"
 import { buildUnsubscribeUrl } from "@/lib/email-unsubscribe"
 import { getPlanBySlug } from "@/lib/plans"
@@ -619,6 +620,11 @@ export async function runEngagementEmails(options: { dryRun?: boolean; now?: num
         await admin
           .from("engagement_emails_sent")
           .insert(decision.markRefs.map((ref) => ({ account_id: account.id, email_type: decision.type, ref })) as never)
+      }
+      // Stock bajo y platos perdiendo margen piden una acción (docs/241): mismo filtro y pausas
+      // que el correo. El resto de los correos de valor no suena en el teléfono.
+      if (decision.type === "low_stock" || decision.type === "margin_alert") {
+        await sendUserPush(account.id, { title: subject, body: "", url: decision.actionPath })
       }
       result.sent++
       result.byType[decision.type] = (result.byType[decision.type] ?? 0) + 1

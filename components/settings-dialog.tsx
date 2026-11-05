@@ -1,6 +1,7 @@
 "use client"
 
 import { PdfBrandingSettings } from "@/components/pdf-branding-settings"
+import { PushDeviceSetting } from "@/components/push-device-setting"
 import type React from "react"
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
@@ -708,11 +709,9 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div data-tour="settings-notifications-toggles" className="space-y-3">
-                    {/* Antes había también "Notificaciones por email" y "Notificaciones push":
-                        se guardaban solo en localStorage y ningún código los leía (la app no
-                        tiene notificaciones push, y apagar "email" no frenaba ningún correo).
-                        Se quitaron en docs/133 — este es el único control de correo real,
-                        el mismo campo que la casilla del registro (product_updates_opt_in). */}
+                    <PushDeviceSetting />
+                    {/* Único control de correo real, el mismo campo que la casilla del registro
+                        (product_updates_opt_in). Los avisos del aparato son reales desde docs/241. */}
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <Label htmlFor="notif-product-updates">{t("settings_product_updates")}</Label>

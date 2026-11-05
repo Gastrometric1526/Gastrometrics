@@ -37,7 +37,7 @@ self.addEventListener("fetch", (event) => {
   )
 })
 
-// Notificaciones de /admin (docs/240): el servidor manda { title, body, url }.
+// Notificaciones de /admin y de la cuenta (docs/240, docs/241): { title, body, url }.
 self.addEventListener("push", (event) => {
   let data = {}
   try {
@@ -50,17 +50,17 @@ self.addEventListener("push", (event) => {
       body: data.body || "",
       icon: "/icon-192x192.png",
       badge: "/icon-192x192.png",
-      data: { url: data.url || "/admin" },
+      data: { url: data.url || "/dashboard" },
     }),
   )
 })
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close()
-  const url = (event.notification.data && event.notification.data.url) || "/admin"
+  const url = (event.notification.data && event.notification.data.url) || "/dashboard"
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
-      const open = list.find((client) => new URL(client.url).pathname.startsWith("/admin"))
+      const open = list.find((client) => new URL(client.url).origin === self.location.origin)
       if (open && "navigate" in open) return open.navigate(url).then((client) => (client || open).focus())
       return self.clients.openWindow(url)
     }),

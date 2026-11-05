@@ -1,6 +1,6 @@
 /**
  * Notificaciones push de /admin (docs/240), con la sesión de admin.
- * GET: clave pública y cuántos aparatos reciben avisos.
+ * GET ?endpoint=: clave pública, cuántos aparatos reciben avisos y si este está registrado.
  * POST: { action: "subscribe", subscription, label } o { action: "test" }.
  * DELETE: { endpoint } deja de avisar a ese aparato.
  */
@@ -13,10 +13,10 @@ export const dynamic = "force-dynamic"
 
 const unauthorized = () => NextResponse.json({ error: "No autorizado." }, { status: 401 })
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!(await hasAdminSession())) return unauthorized()
   try {
-    return NextResponse.json(await getAdminPushInfo())
+    return NextResponse.json(await getAdminPushInfo(new URL(request.url).searchParams.get("endpoint")))
   } catch (error) {
     console.error("[api/admin/push] Error leyendo la configuración:", error)
     return NextResponse.json({ error: "No se pudo preparar las notificaciones." }, { status: 500 })

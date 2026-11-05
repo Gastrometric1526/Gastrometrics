@@ -23,6 +23,7 @@
  * ver notify-billing.ts) — se filtra explícitamente por stripe_subscription_id is null.
  */
 
+import { sendUserPush } from "./user-push"
 import { Resend } from "resend"
 import { sendWithRetry } from "./send-email"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
@@ -146,14 +147,16 @@ export async function sendPlanExpiryReminder(accountId: string, planSlug: string
     actionUrl: invite ? inviteUrl : withEmailTracking(`${siteUrl}/mi-plan`, kind === "today" ? "plan_expiry_today" : "plan_expiry"),
   })
 
+  const subject = fillLabel(kind === "today" ? labels.e09t_subject : labels.e09_subject, { plan: planName })
   const resend = new Resend(process.env.RESEND_API_KEY)
   const { error } = await sendWithRetry(resend, {
     from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
     to: [email],
-    subject: fillLabel(kind === "today" ? labels.e09t_subject : labels.e09_subject, { plan: planName }),
+    subject,
     html,
   })
   if (error) console.error("[notify-plan-expiry] Error mandando el recordatorio de vencimiento:", error)
+  await sendUserPush(accountId, { title: subject, body: "", url: "/mi-plan" })
 }
 
 /**

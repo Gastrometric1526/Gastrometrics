@@ -557,6 +557,7 @@ export default {
         ["p", "Appen findes på <strong>spansk, engelsk, dansk, fransk, portugisisk og kinesisk</strong>. Det sprog, du vælger, bruges i hele brugerfladen, i dine PDF'er og i <strong>alle e-mails</strong>, vi sender dig. Der er 21 valutaer; skifter du valuta, ændres symbol og format, men dine beløb omregnes ikke. Decimaler skrives altid med punktum."],
         ["h3", "E-mails du kan modtage"],
         ["p", "Du får altid e-mails om din konto: bekræftelse, adgangskode, betalinger og teaminvitationer. Slår du <strong>Nyheder og påmindelser</strong> til, skriver vi også, når der er nye funktioner, og hvis du ikke har været logget ind i nogle dage, en nyttig påmindelse ud fra det, du sidst lavede:"],
+        ["p", "Du kan også få <strong>beskeder på din telefon eller computer</strong>: slå dem til under Indstillinger → Notifikationer på hver enhed, eller når du skriver til os i chatten. Vi giver kun besked om det vigtige: svar i chatten, en mislykket opkrævning, din plan der udløber, en måned vundet ved at invitere, lavt lager og retter, der mister avance. På iPhone skal du føje GastroMetrics til hjemmeskærmen fra Safari og slå dem til derfra. Når du logger ud, stopper enheden med at modtage dem."],
         ["cards", [
           ["Påmindelse", "Ufærdig opskrift", "Din kladde i Opskriftsark venter på dig, før de 24 timer er gået."],
           ["Påmindelse", "Lager og rapporter", "Når der er gået en uge siden din seneste optælling, eller siden du så dine rapporter."],

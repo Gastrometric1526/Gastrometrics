@@ -17,6 +17,8 @@
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { queuePosition, type SupportAttachment, type SupportCategory } from "@/lib/support/core"
 import { sendOwnerNotification } from "./notify-owner"
+import { sendUserPush } from "./user-push"
+import { getEmailLabels, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { sendFeedbackReplyEmail } from "./notify-feedback"
 
 export interface SupportConversation {
@@ -211,6 +213,12 @@ export async function adminReply(conversationId: string, body: string, attachmen
   } catch (e) {
     console.error("[support] No se pudo mandar el correo de respuesta:", e)
   }
+  // Aviso al aparato (docs/241), con el mismo asunto del correo en su idioma.
+  await sendUserPush(c.account_id, {
+    title: getEmailLabels(normalizeEmailLang(c.language)).e02c_subject,
+    body: body || attachments.map((a) => a.name).join(", "),
+    url: "/dashboard?soporte=chat",
+  })
   return { emailSent }
 }
 

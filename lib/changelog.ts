@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-11-05",
+    tutorialHref: tourHref("mi-plan"),
+    content: {
+      es: { title: "Avisos en tu celular", items: ["Actívalos en Configuración → Notificaciones, en cada aparato: te avisamos cuando te respondamos en el chat, si falla un cobro, si tu plan está por vencer, si ganas un mes, si hay stock bajo o platos perdiendo margen.", "Solo lo importante: nada de publicidad. En iPhone, agrega GastroMetrics a la pantalla de inicio desde Safari."] },
+      en: { title: "Alerts on your phone", items: ["Turn them on in Settings → Notifications, on each device: we alert you when we reply in the chat, if a charge fails, if your plan is about to end, if you earn a month, if stock is low or dishes are losing margin.", "Only what matters: no advertising. On iPhone, add GastroMetrics to your Home Screen from Safari."] },
+      da: { title: "Beskeder på din telefon", items: ["Slå dem til under Indstillinger → Notifikationer på hver enhed: vi giver besked, når vi svarer i chatten, hvis en opkrævning fejler, hvis din plan er ved at udløbe, hvis du vinder en måned, ved lavt lager eller retter, der mister avance.", "Kun det vigtige: ingen reklamer. På iPhone: føj GastroMetrics til hjemmeskærmen fra Safari."] },
+      fr: { title: "Des alertes sur votre téléphone", items: ["Activez-les dans Paramètres → Notifications, sur chaque appareil : nous vous alertons quand nous répondons dans le chat, si un prélèvement échoue, si votre forfait va expirer, si vous gagnez un mois, si le stock est bas ou si des plats perdent de la marge.", "Seulement l’essentiel : pas de publicité. Sur iPhone, ajoutez GastroMetrics à l’écran d’accueil depuis Safari."] },
+      pt: { title: "Avisos no seu celular", items: ["Ative em Configurações → Notificações, em cada aparelho: avisamos quando respondermos no chat, se uma cobrança falhar, se seu plano estiver perto de vencer, se você ganhar um mês, se houver estoque baixo ou pratos perdendo margem.", "Só o importante: nada de publicidade. No iPhone, adicione o GastroMetrics à tela inicial pelo Safari."] },
+      zh: { title: "手机提醒", items: ["在 设置 → 通知 中为每台设备开启：我们回复聊天、扣费失败、套餐即将到期、获得一个月、库存不足或菜品毛利下降时都会提醒你。", "只提醒重要的事，没有广告。在 iPhone 上，请通过 Safari 将 GastroMetrics 添加到主屏幕。"] },
+    },
+  },
+  {
     version: "2026-11-03c",
     tutorialHref: tourHref("mi-plan"),
     content: {

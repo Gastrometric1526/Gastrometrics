@@ -8,6 +8,7 @@
  *   cambio de plan.
  */
 
+import { sendUserPush } from "./user-push"
 import { Resend } from "resend"
 import { sendWithRetry } from "./send-email"
 import { renderEmailTemplate, escapeHtml } from "./email-templates"
@@ -226,4 +227,6 @@ export async function sendReferralEmail(input: {
     html,
   })
   if (error) console.error("[notify-referral] Error mandando el correo:", input.type, error)
+  // Solo el mes ganado (docs/241); el recordatorio de un invitado se queda en el correo.
+  if (input.type.startsWith("reward_")) await sendUserPush(input.accountId, { title: subject, body: "", url: "/mi-plan#invita" })
 }

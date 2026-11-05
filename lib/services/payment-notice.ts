@@ -7,6 +7,7 @@
  * y aviso al dueño. Sin migraciones.
  */
 
+import { sendUserPush } from "./user-push"
 import { Resend } from "resend"
 import { sendWithRetry } from "./send-email"
 import { renderEmailTemplate, escapeHtml } from "./email-templates"
@@ -179,6 +180,8 @@ export async function confirmPayment(accountId: string, record: PaymentRecord): 
         html,
       })
       if (sendError) console.error("[payment-notice] Error mandando el correo:", sendError)
+      // Solo el cobro fallido pide una acción (docs/241): el pagado se confirma por correo.
+      if (record.status === "failed") await sendUserPush(accountId, { title: subject, body: "", url: "/mi-plan" })
     }
     await sendOwnerBillingNotification({
       event: record.status === "paid" ? "payment_succeeded" : "payment_failed",

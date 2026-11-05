@@ -12,12 +12,12 @@
 import webpush, { type PushSubscription } from "web-push"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 
-const BUCKET = "admin-push"
+export const BUCKET = "admin-push"
 const FILE = "config.json"
 // Web Push pide un contacto del remitente; la dirección del sitio es válida.
 const VAPID_SUBJECT = "https://gastrometrics.org"
 
-interface StoredSubscription {
+export interface StoredSubscription {
   subscription: PushSubscription
   label: string
   addedAt: string
@@ -47,7 +47,7 @@ export function withoutEndpoints(list: StoredSubscription[], endpoints: string[]
   return list.filter((s) => !gone.has(s.subscription.endpoint))
 }
 
-async function readConfig(): Promise<PushConfig | null> {
+export async function readConfig(): Promise<PushConfig | null> {
   const { data, error } = await getSupabaseAdminClient().storage.from(BUCKET).download(FILE)
   if (error || !data) return null
   return JSON.parse(await data.text()) as PushConfig
@@ -60,7 +60,7 @@ async function writeConfig(config: PushConfig): Promise<void> {
 }
 
 /** Lee la configuración y, la primera vez, crea el bucket y las claves. */
-async function ensureConfig(): Promise<PushConfig> {
+export async function ensureConfig(): Promise<PushConfig> {
   const existing = await readConfig()
   if (existing) return existing
   const admin = getSupabaseAdminClient()
@@ -75,9 +75,9 @@ async function ensureConfig(): Promise<PushConfig> {
   return config
 }
 
-export async function getAdminPushInfo(): Promise<{ publicKey: string; devices: number }> {
+export async function getAdminPushInfo(endpoint: string | null): Promise<{ publicKey: string; devices: number; registered: boolean }> {
   const config = await ensureConfig()
-  return { publicKey: config.publicKey, devices: config.subscriptions.length }
+  return { publicKey: config.publicKey, devices: config.subscriptions.length, registered: config.subscriptions.some((s) => s.subscription.endpoint === endpoint) }
 }
 
 export async function addAdminPushDevice(subscription: PushSubscription, label: string): Promise<void> {
@@ -91,33 +91,39 @@ export async function removeAdminPushDevice(endpoint: string): Promise<void> {
   await writeConfig({ ...config, subscriptions: withoutEndpoints(config.subscriptions, [endpoint]) })
 }
 
-/** Manda el aviso a todos los aparatos. Devuelve a cuántos llegó; nunca lanza. */
+/** Manda el aviso a una lista de aparatos. Devuelve a cuántos llegó y cuáles ya no existen. */
+export async function deliver(config: PushConfig, devices: StoredSubscription[], message: AdminPushMessage): Promise<{ sent: number; gone: string[] }> {
+  const payload = JSON.stringify({ title: message.title, body: message.body.slice(0, 180), url: message.url || "/admin" })
+  const options = {
+    vapidDetails: { subject: VAPID_SUBJECT, publicKey: config.publicKey, privateKey: config.privateKey },
+    TTL: 24 * 60 * 60,
+    timeout: 5000,
+  }
+  const gone: string[] = []
+  let sent = 0
+  await Promise.all(
+    devices.map(async ({ subscription }) => {
+      try {
+        await webpush.sendNotification(subscription, payload, options)
+        sent++
+      } catch (error) {
+        const status = (error as { statusCode?: number }).statusCode
+        // 404/410: el aparato canceló o cambió la suscripción.
+        if (status === 404 || status === 410) gone.push(subscription.endpoint)
+        else console.error("[push] No se pudo enviar a un aparato:", status ?? error)
+      }
+    }),
+  )
+  return { sent, gone }
+}
+
+/** Manda el aviso a todos los aparatos de /admin. Devuelve a cuántos llegó; nunca lanza. */
 export async function sendAdminPush(message: AdminPushMessage): Promise<number> {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return 0
   try {
     const config = await readConfig()
     if (!config || config.subscriptions.length === 0) return 0
-    const payload = JSON.stringify({ title: message.title, body: message.body.slice(0, 180), url: message.url || "/admin" })
-    const options = {
-      vapidDetails: { subject: VAPID_SUBJECT, publicKey: config.publicKey, privateKey: config.privateKey },
-      TTL: 24 * 60 * 60,
-      timeout: 5000,
-    }
-    const gone: string[] = []
-    let sent = 0
-    await Promise.all(
-      config.subscriptions.map(async ({ subscription }) => {
-        try {
-          await webpush.sendNotification(subscription, payload, options)
-          sent++
-        } catch (error) {
-          const status = (error as { statusCode?: number }).statusCode
-          // 404/410: el aparato canceló o cambió la suscripción.
-          if (status === 404 || status === 410) gone.push(subscription.endpoint)
-          else console.error("[admin-push] No se pudo enviar a un aparato:", status ?? error)
-        }
-      }),
-    )
+    const { sent, gone } = await deliver(config, config.subscriptions, message)
     if (gone.length > 0) await writeConfig({ ...config, subscriptions: withoutEndpoints(config.subscriptions, gone) })
     return sent
   } catch (error) {

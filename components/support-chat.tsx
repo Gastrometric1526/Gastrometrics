@@ -47,6 +47,7 @@ import { isQuiet } from "@/components/feedback/feedback-orchestrator"
 import { compressImageToDataUrl } from "@/lib/utils/image-compress"
 import { formatDate, formatDateTime } from "@/lib/date-format"
 import { cn } from "@/lib/utils"
+import { needsHomeScreen, pushSupported, registerDevice } from "@/lib/push-client"
 import {
   ATTACHMENT_ACCEPT,
   MAX_ATTACHMENTS,
@@ -105,6 +106,22 @@ const readFile = (file: File) =>
     reader.readAsDataURL(file)
   })
 
+const PUSH_ASK_KEY = "gm_push_chat_asked"
+function pushAskDismissed(): boolean {
+  try {
+    return window.localStorage.getItem(PUSH_ASK_KEY) === "1"
+  } catch {
+    return true
+  }
+}
+function dismissPushAsk(): void {
+  try {
+    window.localStorage.setItem(PUSH_ASK_KEY, "1")
+  } catch {
+    // almacenamiento bloqueado: no se vuelve a ofrecer en esta sesión
+  }
+}
+
 export function SupportChat() {
   const { user } = useAuth()
   const pathname = usePathname()
@@ -119,6 +136,8 @@ export function SupportChat() {
   const [draft, setDraft] = useState("")
   const [files, setFiles] = useState<SupportAttachment[]>([])
   const [sending, setSending] = useState(false)
+  // Tras escribir al soporte es cuando un aviso tiene sentido (docs/241): se ofrece una vez.
+  const [askPush, setAskPush] = useState(false)
   const [startNew, setStartNew] = useState(false)
   const [helpIndex, setHelpIndex] = useState<HelpEntry[] | null>(null)
   const [expanded, setExpanded] = useState<number | null>(null)
@@ -285,6 +304,7 @@ export function SupportChat() {
       setDraft("")
       setFiles([])
       setStartNew(false)
+      if (pushSupported() && !needsHomeScreen() && Notification.permission === "default" && !pushAskDismissed()) setAskPush(true)
     } catch (e) {
       toast({ title: e instanceof Error ? e.message : t("support_send_error"), variant: "destructive" })
     } finally {
@@ -573,6 +593,37 @@ export function SupportChat() {
                           </button>
                         </span>
                       ))}
+                    </div>
+                  )}
+                  {askPush && (
+                    <div className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-foreground">
+                      <span>{t("push_chat_ask")}</span>
+                      <span className="flex shrink-0 gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => {
+                            dismissPushAsk()
+                            setAskPush(false)
+                          }}
+                        >
+                          {t("feedback_not_now")}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => {
+                            dismissPushAsk()
+                            setAskPush(false)
+                            registerDevice("/api/push").catch(() => toast({ title: t("push_error"), variant: "destructive" }))
+                          }}
+                        >
+                          {t("push_chat_yes")}
+                        </Button>
+                      </span>
                     </div>
                   )}
                   <div className="flex items-end gap-1.5 rounded-xl border border-border bg-background px-1.5 py-1.5 focus-within:ring-2 focus-within:ring-ring/30">

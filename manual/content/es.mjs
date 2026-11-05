@@ -558,6 +558,7 @@ export default {
         ["p", "La app está en <strong>español, inglés, danés, francés, portugués y chino</strong>. El idioma que elijas se usa en toda la interfaz, en tus PDF y en <strong>todos los correos</strong> que te enviamos. Hay 21 monedas disponibles; cambiar de moneda cambia el símbolo y el formato, no convierte tus montos. Los decimales siempre se escriben con punto."],
         ["h3", "Correos que puedes recibir"],
         ["p", "Siempre recibes los correos de tu cuenta: confirmación, contraseña, pagos e invitaciones de equipo. Si activas <strong>Novedades y recordatorios</strong>, además te escribimos cuando hay funciones nuevas y, si llevas unos días sin entrar, un recordatorio útil según lo último que hiciste:"],
+        ["p", "También puedes recibir <strong>avisos en tu celular o computadora</strong>: actívalos en Configuración → Notificaciones, en cada aparato, o al escribirnos por el chat. Solo avisamos lo importante: que te respondimos en el chat, un cobro que falló, tu plan por vencer, un mes ganado por invitar, stock bajo y platos perdiendo margen. En iPhone hay que agregar GastroMetrics a la pantalla de inicio desde Safari y activarlos desde ahí. Al cerrar sesión, ese aparato deja de recibirlos."],
         ["cards", [
           ["Recordatorio", "Receta sin terminar", "Tu borrador de Ficha Técnica te espera antes de que se cumplan las 24 horas."],
           ["Recordatorio", "Inventario y reportes", "Cuando pasó una semana desde tu último conteo o desde que revisaste tus reportes."],
