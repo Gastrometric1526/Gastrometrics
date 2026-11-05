@@ -535,7 +535,7 @@ export function RecipeImportDialog({
                   </span>
                 ))}
               <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <FileText className="h-3.5 w-3.5" /> .txt .csv .xlsx .pdf
+                <FileText className="h-3.5 w-3.5" /> .txt .csv .xlsx .xlsm .pdf
                 {OCR_AVAILABLE && (
                   <>
                     {" "}· <ImageIcon className="h-3.5 w-3.5" /> {t("recipe_import_photo_hint")}
