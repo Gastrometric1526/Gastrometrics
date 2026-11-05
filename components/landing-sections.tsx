@@ -311,7 +311,7 @@ export function LandingBento() {
  * Markedsføringsloven, directiva 2006/114/CE) también alcanza a las referencias indirectas, y
  * «según la herramienta» evita afirmar qué tiene o no tiene un competidor.
  */
-const COMPARE_ROWS = ["cost", "price", "merma", "ops", "sales", "import"] as const
+const COMPARE_ROWS = ["cost", "price", "merma", "ops", "sales", "import", "mep", "cash"] as const
 
 export function LandingCompare() {
   const { t } = useLanguage()
@@ -331,7 +331,6 @@ export function LandingCompare() {
                   <span className="sr-only">{t("landing_compare_kicker")}</span>
                 </th>
                 <th className="p-4 font-medium text-text-3" scope="col">{t("landing_compare_col_sheets")}</th>
-                <th className="p-4 font-medium text-text-3" scope="col">{t("landing_compare_col_tools")}</th>
                 <th className="p-4 font-semibold text-foreground bg-primary-soft" scope="col">GastroMetrics</th>
               </tr>
             </thead>
@@ -340,7 +339,6 @@ export function LandingCompare() {
                 <tr key={row}>
                   <th className="p-4 text-left font-medium text-foreground" scope="row">{k(row, "label")}</th>
                   <td className="p-4 text-text-3">{k(row, "sheets")}</td>
-                  <td className="p-4 text-text-3">{t("landing_compare_tools_value")}</td>
                   <td className="p-4 font-medium text-foreground bg-primary-soft">
                     <span className="inline-flex items-start gap-2">
                       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
