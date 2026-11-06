@@ -18,6 +18,7 @@ import { FeedbackPanel } from "@/components/admin/feedback-panel"
 import { SurveyPanel } from "@/components/admin/survey-panel"
 import { SupportInbox } from "@/components/admin/support-inbox"
 import { FullReportButton } from "@/components/admin/full-report-button"
+import { FullExportButton } from "@/components/admin/full-export-button"
 import { AnalyticsPanel } from "@/components/admin/analytics-panel"
 import { TopUsersPanel } from "@/components/admin/top-users-panel"
 import { ReviewsPanel } from "@/components/admin/reviews-panel"
@@ -304,6 +305,8 @@ function AdminPageInner() {
           <div className="flex flex-col items-end gap-2">
             {/* Informe completo con todos los datos de /admin (docs/206) */}
             <FullReportButton />
+            {/* Todos los datos sin recortes, un archivo por tabla (docs/250) */}
+            <FullExportButton />
             <AdminPushToggle />
             <Button
               variant="outline"
