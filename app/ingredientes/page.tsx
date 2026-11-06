@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { NumericInput } from "@/components/ui/numeric-input"
 import { Card, CardContent } from "@/components/ui/card"
+import { StatAmount, STAT_AMOUNT_BOX } from "@/components/stat-amount"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -1489,11 +1490,11 @@ export default function IngredientesPage() {
             </div>
 
             {/* Statistics Dashboard */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">
               <Card className="border-border transition-all duration-300 bg-card">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-info-soft rounded-lg">
+                <CardContent className="p-3 md:p-4">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <div className="p-2 bg-info-soft rounded-lg shrink-0">
                       <Package className="h-5 w-5 text-info" />
                     </div>
                     <div>
@@ -1505,9 +1506,9 @@ export default function IngredientesPage() {
               </Card>
 
               <Card className="border-border transition-all duration-300 bg-card">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-success-soft rounded-lg">
+                <CardContent className="p-3 md:p-4">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <div className="p-2 bg-success-soft rounded-lg shrink-0">
                       <CheckCircle className="h-5 w-5 text-success" />
                     </div>
                     <div>
@@ -1519,13 +1520,13 @@ export default function IngredientesPage() {
               </Card>
 
               <Card className="border-border transition-all duration-300 bg-card">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-warning-soft rounded-lg">
+                <CardContent className="p-3 md:p-4">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <div className="p-2 bg-warning-soft rounded-lg shrink-0">
                       <DollarSign className="h-5 w-5 text-warning" />
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.avgCost)}</p>
+                    <div className={STAT_AMOUNT_BOX}>
+                      <StatAmount value={formatCurrency(stats.avgCost)} />
                       <p className="text-sm text-muted-foreground">{t("ingredientes_stat_avg_cost")}</p>
                     </div>
                   </div>
@@ -1533,9 +1534,9 @@ export default function IngredientesPage() {
               </Card>
 
               <Card className="border-border transition-all duration-300 bg-card">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary-soft rounded-lg">
+                <CardContent className="p-3 md:p-4">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <div className="p-2 bg-primary-soft rounded-lg shrink-0">
                       <Tag className="h-5 w-5 text-primary" />
                     </div>
                     <div>
@@ -1546,14 +1547,14 @@ export default function IngredientesPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-border transition-all duration-300 bg-card">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-danger-soft rounded-lg">
+              <Card className="col-span-2 xl:col-span-1 border-border transition-all duration-300 bg-card">
+                <CardContent className="p-3 md:p-4">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <div className="p-2 bg-danger-soft rounded-lg shrink-0">
                       <TrendingUp className="h-5 w-5 text-destructive" />
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.totalValue)}</p>
+                    <div className={STAT_AMOUNT_BOX}>
+                      <StatAmount value={formatCurrency(stats.totalValue)} />
                       <p className="text-sm text-muted-foreground">{t("ingredientes_stat_total_value")}</p>
                     </div>
                   </div>

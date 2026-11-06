@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
+import { StatAmount, STAT_AMOUNT_BOX } from "@/components/stat-amount"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -695,11 +696,11 @@ export default function MisRecetasPage() {
             </div>
 
             {/* Statistics Dashboard - Grid responsivo */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4" data-tour="recetas-stats">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4" data-tour="recetas-stats">
               <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center gap-2 md:gap-3">
-                    <div className="p-1.5 md:p-2 bg-info-soft rounded-lg">
+                    <div className="p-1.5 md:p-2 bg-info-soft rounded-lg shrink-0">
                       <ChefHat className="h-4 w-4 md:h-5 md:w-5 text-info" />
                     </div>
                     <div>
@@ -713,7 +714,7 @@ export default function MisRecetasPage() {
               <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center gap-2 md:gap-3">
-                    <div className="p-1.5 md:p-2 bg-success-soft rounded-lg">
+                    <div className="p-1.5 md:p-2 bg-success-soft rounded-lg shrink-0">
                       <Users className="h-4 w-4 md:h-5 md:w-5 text-success" />
                     </div>
                     <div>
@@ -724,30 +725,28 @@ export default function MisRecetasPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-border transition-all duration-300 bg-card">
+              <Card className="col-span-2 md:col-span-1 border-border transition-all duration-300 bg-card">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center gap-2 md:gap-3">
-                    <div className="p-1.5 md:p-2 bg-warning-soft rounded-lg">
+                    <div className="p-1.5 md:p-2 bg-warning-soft rounded-lg shrink-0">
                       <DollarSign className="h-4 w-4 md:h-5 md:w-5 text-warning" />
                     </div>
-                    <div>
-                      <p className="text-lg md:text-2xl font-bold text-foreground">{formatCurrency(stats.avgCost)}</p>
+                    <div className={STAT_AMOUNT_BOX}>
+                      <StatAmount compact value={formatCurrency(stats.avgCost)} />
                       <p className="text-xs md:text-sm text-muted-foreground">{t("ingredientes_stat_avg_cost")}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-border transition-all duration-300 bg-card">
+              <Card className="col-span-2 md:col-span-1 border-border transition-all duration-300 bg-card">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center gap-2 md:gap-3">
-                    <div className="p-1.5 md:p-2 bg-primary-soft rounded-lg">
+                    <div className="p-1.5 md:p-2 bg-primary-soft rounded-lg shrink-0">
                       <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                     </div>
-                    <div>
-                      <p className="text-lg md:text-2xl font-bold text-foreground">
-                        {formatCurrency(stats.totalValue)}
-                      </p>
+                    <div className={STAT_AMOUNT_BOX}>
+                      <StatAmount compact value={formatCurrency(stats.totalValue)} />
                       <p className="text-xs md:text-sm text-muted-foreground">{t("ingredientes_stat_total_value")}</p>
                     </div>
                   </div>
