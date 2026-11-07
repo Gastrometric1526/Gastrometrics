@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ReferralSignupBanner, readReferralCode } from "@/components/referral-signup-banner"
+import { GoogleSignInButton } from "@/components/google-sign-in-button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Progress } from "@/components/ui/progress"
@@ -335,6 +336,7 @@ function SignupPageInner() {
 
           <CardContent className="space-y-6">
             {/* Step 1: Basic Information */}
+            {currentStep === 1 && <GoogleSignInButton />}
             {currentStep === 1 && (
               <div className="space-y-4 animate-in fade-in-50 duration-300">
                 <div className="space-y-2">

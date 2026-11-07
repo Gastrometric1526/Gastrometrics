@@ -13,6 +13,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration"
 import { TeamPreviewBanner } from "@/components/team-preview-banner"
 import { LegalUpdateBanner } from "@/components/legal-update-banner"
+import { CompleteProfileGate } from "@/components/complete-profile-gate"
 import { BusinessLockOverlay } from "@/components/business-lock-overlay"
 import { ThemeInitializer } from "@/components/theme-initializer"
 import { AnalyticsTracker } from "@/components/analytics-tracker"
@@ -120,6 +121,8 @@ export default function RootLayout({
                   <ServiceWorkerRegistration />
                   <TeamPreviewBanner />
                   <LegalUpdateBanner />
+                  {/* Entrar con Google: completar el perfil antes de usar la app (docs/254) */}
+                  <CompleteProfileGate />
                   <AnalyticsTracker />
                   <EmailClickTracker />
                   <PresenceTracker />

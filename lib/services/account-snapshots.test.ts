@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest"
 
 vi.mock("@/lib/supabase/admin", () => ({ getSupabaseAdminClient: () => ({}) }))
 
-import { parseSnapshotFileName, restoreAllowed, snapshotFileName, snapshotsToPrune, type SnapshotInfo } from "./account-snapshots"
+import { parseSnapshotFileName, restoreAllowed, snapshotFileName, snapshotsOverBudget, snapshotsToPrune, type SnapshotInfo } from "./account-snapshots"
 
 // docs/229: respaldos por cuenta. El nombre del archivo lleva fecha, motivo y conteos para
 // que /admin liste sin abrir el contenido.
@@ -48,6 +48,17 @@ describe("account-snapshots: nombres y retención", () => {
     expect(out).not.toContain("acc/100-daily")
     expect(out).not.toContain("acc/150-daily")
     expect(out).toContain("acc/181-daily")
+  })
+
+  it("con el tope de espacio borra primero los diarios viejos y nunca el más nuevo de cada cuenta", () => {
+    const mb = 1024 * 1024
+    const at = (acc: string, days: number, reason: SnapshotInfo["reason"] = "daily"): SnapshotInfo => ({ ...ago(days, reason), path: `${acc}/${days}-${reason}`, size: mb })
+    const list = [at("a", 1), at("a", 50), at("a", 60, "before_wipe"), at("b", 100), at("c", 2)]
+    expect(snapshotsOverBudget(list, 5 * mb)).toEqual([])
+    expect(snapshotsOverBudget(list, 4 * mb).map((s) => s.path)).toEqual(["a/50-daily"])
+    expect(snapshotsOverBudget(list, 2 * mb).map((s) => s.path)).toEqual(["a/50-daily", "a/60-before_wipe"])
+    // b/100 es el único de su cuenta: se queda aunque no alcance.
+    expect(snapshotsOverBudget(list, 0).map((s) => s.path)).toEqual(["a/50-daily", "a/60-before_wipe"])
   })
 
   it("lo de antes de borrar o restaurar queda los 180 días, aunque haya otros esa semana", () => {

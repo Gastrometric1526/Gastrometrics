@@ -70,6 +70,8 @@ export interface SnapshotInfo {
   reason: SnapshotReason
   hash: string
   counts: { ingredients: number; recipes: number; businesses: number; menus: number; inventory: number }
+  /** Tamaño del archivo en bytes, cuando lo da el listado de Storage. */
+  size?: number
 }
 
 interface SnapshotFile {
@@ -137,6 +139,42 @@ export function snapshotsToPrune(list: SnapshotInfo[], now = Date.now()): Snapsh
   })
 }
 
+/**
+ * Tope de espacio de los respaldos (docs/254): el plan gratis de Supabase da 1 GB de Storage
+ * para todo. Por defecto los respaldos usan como mucho 600 MB (`SNAPSHOT_STORAGE_BUDGET_MB`).
+ */
+export function snapshotStorageBudgetBytes(): number {
+  const mb = Number(process.env.SNAPSHOT_STORAGE_BUDGET_MB)
+  return (Number.isFinite(mb) && mb > 0 ? mb : 600) * 1024 * 1024
+}
+
+/**
+ * Si los respaldos que quedan pasan el tope, qué más borrar: primero los diarios más viejos,
+ * después los de antes de un borrado o una restauración, también del más viejo al más nuevo.
+ * El respaldo más nuevo de cada cuenta nunca se borra. Puro.
+ */
+export function snapshotsOverBudget(all: SnapshotInfo[], budgetBytes: number): SnapshotInfo[] {
+  let total = all.reduce((n, s) => n + (s.size ?? 0), 0)
+  if (total <= budgetBytes) return []
+  const newest = new Map<string, string>()
+  for (const s of all) {
+    const account = s.path.split("/")[0]
+    const current = newest.get(account)
+    if (!current || s.createdAt > current) newest.set(account, s.createdAt)
+  }
+  const routine = (s: SnapshotInfo) => s.reason === "daily" || s.reason === "manual"
+  const candidates = all
+    .filter((s) => newest.get(s.path.split("/")[0]) !== s.createdAt)
+    .sort((a, b) => Number(routine(b)) - Number(routine(a)) || a.createdAt.localeCompare(b.createdAt))
+  const remove: SnapshotInfo[] = []
+  for (const s of candidates) {
+    if (total <= budgetBytes) break
+    remove.push(s)
+    total -= s.size ?? 0
+  }
+  return remove
+}
+
 /** Se puede restaurar si la cuenta borró su contenido, pidió eliminarse o ya no existe. Puro. */
 export function restoreAllowed(input: { exists: boolean; deletionRequested: boolean; snapshots: SnapshotInfo[] }): boolean {
   if (!input.exists || input.deletionRequested) return true
@@ -168,7 +206,11 @@ export async function listAccountSnapshots(accountId: string): Promise<SnapshotI
   const { data, error } = await admin.storage.from(SNAPSHOT_BUCKET).list(accountId, { limit: 500 })
   if (error) throw error
   return (data ?? [])
-    .map((f) => parseSnapshotFileName(accountId, f.name))
+    .map((f) => {
+      const info = parseSnapshotFileName(accountId, f.name)
+      const size = Number((f.metadata as { size?: number } | null)?.size)
+      return info && Number.isFinite(size) ? { ...info, size } : info
+    })
     .filter((s): s is SnapshotInfo => s !== null)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 }
@@ -322,13 +364,15 @@ export async function restoreAccountSnapshot(
 }
 
 /** Poda los respaldos de todas las cuentas, también las eliminadas (cron diario). */
-export async function pruneAllSnapshots(budgetMs = 12_000): Promise<{ folders: number; removed: number }> {
+export async function pruneAllSnapshots(budgetMs = 12_000): Promise<{ folders: number; removed: number; overBudget: number; bytes: number }> {
   const started = Date.now()
   const admin = getSupabaseAdminClient()
   await ensureBucket(admin)
   const storage = admin.storage.from(SNAPSHOT_BUCKET)
   let folders = 0
   let removed = 0
+  let complete = false
+  const kept: SnapshotInfo[] = []
   for (let offset = 0; Date.now() - started < budgetMs; offset += 100) {
     const { data, error } = await storage.list("", { limit: 100, offset, sortBy: { column: "name", order: "asc" } })
     if (error) throw error
@@ -339,14 +383,28 @@ export async function pruneAllSnapshots(budgetMs = 12_000): Promise<{ folders: n
       const prune = snapshotsToPrune(snapshots)
       const paths = prune.map((s) => s.path)
       if (snapshots.length === prune.length) paths.push(`${folder.name}/${IDENTITY_FILE}`)
+      const pruned = new Set(paths)
+      kept.push(...snapshots.filter((s) => !pruned.has(s.path)))
       if (paths.length > 0) {
         await storage.remove(paths)
         removed += prune.length
       }
     }
-    if (!data || data.length < 100) break
+    if (!data || data.length < 100) {
+      complete = Date.now() - started < budgetMs
+      break
+    }
   }
-  return { folders, removed }
+  // El tope de espacio solo se aplica con la lista completa, para no borrar de más.
+  let overBudget = 0
+  if (complete) {
+    const extra = snapshotsOverBudget(kept, snapshotStorageBudgetBytes())
+    for (let i = 0; i < extra.length; i += 100) await storage.remove(extra.slice(i, i + 100).map((s) => s.path))
+    overBudget = extra.length
+    if (overBudget > 0) console.warn(`[snapshots] Tope de espacio: se borraron ${overBudget} respaldos viejos`)
+  }
+  const bytes = kept.reduce((n, s) => n + (s.size ?? 0), 0)
+  return { folders, removed, overBudget, bytes }
 }
 
 // ─── cron diario ─────────────────────────────────────────────────────────────

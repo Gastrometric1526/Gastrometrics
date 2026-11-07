@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { GoogleSignInButton } from "@/components/google-sign-in-button"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { LogIn, Mail, Lock, ArrowLeft } from "lucide-react"
@@ -166,6 +167,9 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent>
+            <div className="mb-4">
+              <GoogleSignInButton />
+            </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-foreground font-medium">

@@ -21,6 +21,9 @@ interface User {
   name: string
   email: string
   id: string
+  /** Proveedores y metadatos de Supabase Auth (entrar con Google, docs/254). */
+  app_metadata?: Record<string, unknown>
+  user_metadata?: Record<string, unknown>
 }
 
 // Datos de perfil que se mandan a signUp() — se guardan en auth.users.raw_user_meta_data
@@ -174,7 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const email = sessionUser.email ?? ""
       setIsLoggedIn(true)
-      setUser({ id: sessionUser.id, email, name: profileRow?.full_name || email })
+      setUser({ id: sessionUser.id, email, name: profileRow?.full_name || email, app_metadata: sessionUser.app_metadata, user_metadata: sessionUser.user_metadata })
       setUserProfile(profileRow ? rowToProfile(profileRow, email) : null)
       // Refresca el caché local del plan (lib/plan-access.ts) desde la fuente de
       // verdad real en Supabase — cubre el caso de "el plan cambió desde otro
