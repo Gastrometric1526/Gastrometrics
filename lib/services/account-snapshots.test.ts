@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest"
 
 vi.mock("@/lib/supabase/admin", () => ({ getSupabaseAdminClient: () => ({}) }))
 
-import { parseSnapshotFileName, snapshotFileName, snapshotsToPrune, type SnapshotInfo } from "./account-snapshots"
+import { parseSnapshotFileName, restoreAllowed, snapshotFileName, snapshotsToPrune, type SnapshotInfo } from "./account-snapshots"
 
 // docs/229: respaldos por cuenta. El nombre del archivo lleva fecha, motivo y conteos para
 // que /admin liste sin abrir el contenido.
@@ -18,19 +18,63 @@ describe("account-snapshots: nombres y retención", () => {
     expect(parseSnapshotFileName("acc", "otro-archivo.json")).toBeNull()
   })
 
-  it("quedan los 5 más nuevos y los de antes de borrar/restaurar de los últimos 30 días", () => {
-    const now = Date.parse("2026-11-30T00:00:00Z")
-    const mk = (day: number, reason: SnapshotInfo["reason"]): SnapshotInfo => ({
-      ...base,
-      reason,
-      createdAt: `2026-11-${String(day).padStart(2, "0")}T00:00:00Z`,
-      path: `acc/${day}-${reason}`,
-    })
-    const list = [mk(29, "daily"), mk(28, "daily"), mk(27, "daily"), mk(26, "daily"), mk(25, "daily"), mk(24, "daily"), mk(20, "before_wipe"), mk(1, "before_restore")]
-    const pruned = snapshotsToPrune(list, now).map((s) => s.path)
-    expect(pruned).toContain("acc/24-daily")
-    expect(pruned).not.toContain("acc/20-before_wipe")
-    expect(pruned).not.toContain("acc/1-before_restore") // 29 días: todavía protegido
-    expect(snapshotsToPrune(list, now + 2 * 86_400_000).map((s) => s.path)).toContain("acc/1-before_restore")
+  const day = 86_400_000
+  const now = Date.parse("2026-11-30T00:00:00Z")
+  const ago = (days: number, reason: SnapshotInfo["reason"] = "daily"): SnapshotInfo => ({
+    ...base,
+    reason,
+    createdAt: new Date(now - days * day).toISOString(),
+    path: `acc/${days}-${reason}`,
+  })
+  const pruned = (list: SnapshotInfo[], at = now) => snapshotsToPrune(list, at).map((s) => s.path)
+
+  it("guarda todos los de 14 días", () => {
+    const list = Array.from({ length: 14 }, (_, i) => ago(i + 0.5))
+    expect(pruned(list)).toEqual([])
+  })
+
+  it("de 14 a 90 días queda uno por semana", () => {
+    const list = [...Array.from({ length: 5 }, (_, i) => ago(i)), ago(20), ago(21), ago(22), ago(30)]
+    const out = pruned(list)
+    // 20 días es la semana 2; 21 y 22, la semana 3: queda uno de cada semana.
+    expect(out).toEqual(["acc/22-daily"])
+    expect(out).not.toContain("acc/30-daily")
+  })
+
+  it("de 90 a 180 días queda uno por mes y nada pasa de 180", () => {
+    const list = [...Array.from({ length: 5 }, (_, i) => ago(i)), ago(100), ago(110), ago(150), ago(181)]
+    const out = pruned(list)
+    expect(out).toContain("acc/110-daily") // mismo mes que 100
+    expect(out).not.toContain("acc/100-daily")
+    expect(out).not.toContain("acc/150-daily")
+    expect(out).toContain("acc/181-daily")
+  })
+
+  it("lo de antes de borrar o restaurar queda los 180 días, aunque haya otros esa semana", () => {
+    const list = [...Array.from({ length: 5 }, (_, i) => ago(i)), ago(40), ago(41, "before_wipe"), ago(170, "before_delete"), ago(190, "before_restore")]
+    const out = pruned(list)
+    expect(out).not.toContain("acc/41-before_wipe")
+    expect(out).not.toContain("acc/170-before_delete")
+    expect(out).toContain("acc/190-before_restore")
+  })
+
+  it("los 5 más nuevos quedan aunque sean de la misma semana vieja", () => {
+    const list = [ago(60), ago(61), ago(62), ago(63), ago(64), ago(65)]
+    expect(pruned(list)).toEqual(["acc/65-daily"])
+  })
+
+  it("una cuenta eliminada se queda sin nada a los 180 días", () => {
+    const list = [ago(10, "before_delete"), ago(12)]
+    expect(pruned(list, now + 200 * day)).toHaveLength(2)
+  })
+})
+
+describe("account-snapshots: cuándo se puede restaurar (docs/252)", () => {
+  const snap = (reason: SnapshotInfo["reason"]): SnapshotInfo => ({ reason, hash: "0123456789ab", counts: { ingredients: 0, recipes: 0, businesses: 0, menus: 0, inventory: 0 }, createdAt: "2026-11-01T00:00:00Z", path: "x" })
+  it("solo si borró su contenido, pidió eliminarse o ya no existe", () => {
+    expect(restoreAllowed({ exists: true, deletionRequested: false, snapshots: [snap("daily"), snap("manual")] })).toBe(false)
+    expect(restoreAllowed({ exists: true, deletionRequested: false, snapshots: [snap("before_wipe")] })).toBe(true)
+    expect(restoreAllowed({ exists: true, deletionRequested: true, snapshots: [] })).toBe(true)
+    expect(restoreAllowed({ exists: false, deletionRequested: false, snapshots: [] })).toBe(true)
   })
 })

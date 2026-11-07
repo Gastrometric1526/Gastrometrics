@@ -40,6 +40,7 @@ interface Message {
   sender: "user" | "admin" | "bot"
   body: string
   attachments: SupportAttachment[]
+  translation?: { text: string; from: string; to: string } | null
   created_at: string
 }
 
@@ -275,6 +276,12 @@ export function SupportInbox({ onWaitingChange }: { onWaitingChange?: (n: number
                   <div key={m.id} className={cn("flex", m.sender === "admin" ? "justify-end" : "justify-start")}>
                     <div className={cn("max-w-[80%] rounded-2xl px-3 py-2", m.sender === "admin" ? "bg-primary/10" : "bg-muted")}>
                       {m.body && <p className="whitespace-pre-wrap break-words">{m.body}</p>}
+                      {m.translation?.text && (
+                        <p className="mt-1 whitespace-pre-wrap break-words border-t border-border/60 pt-1 text-xs text-muted-foreground">
+                          {t(m.sender === "admin" ? "admin_support_sent_as" : "admin_support_translated").replace("{lang}", m.sender === "admin" ? m.translation.to : m.translation.from)}{" "}
+                          {m.translation.text}
+                        </p>
+                      )}
                       <Attachments items={m.attachments} />
                       <p className="mt-1 text-[10px] text-muted-foreground">{formatDateTime(m.created_at)}</p>
                     </div>

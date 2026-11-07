@@ -12,4 +12,6 @@
 // no cambiaron. Basta el aviso en la app (sección 12 de la Política).
 // 1.6 (docs/243): Términos 1.4. La sección 4.4 dice qué pasa con lo que supera el plan y que
 // bajar aplica de inmediato con saldo a favor; la 3 quita el límite de 15 recetas, que no existe.
-export const CURRENT_LEGAL_VERSION = "1.6"
+// 1.7 (docs/252): Política de Privacidad 1.6. Las copias de seguridad se guardan hasta 6 meses,
+// también después de eliminar la cuenta. Términos y Aviso no cambiaron.
+export const CURRENT_LEGAL_VERSION = "1.7"

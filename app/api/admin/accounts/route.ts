@@ -28,6 +28,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { selectAll } from "@/lib/admin/select-all"
 import { fetchAllByIds } from "@/lib/services/notify-reengagement"
 import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
+import { rememberAccountIdentity, snapshotBeforeSafely } from "@/lib/services/account-snapshots"
 import { plans } from "@/lib/plans"
 import { referralCountsFor } from "@/lib/services/referrals"
 import { isOnline, onlineFirst } from "@/lib/admin/online-first"
@@ -382,6 +383,11 @@ export async function DELETE(request: Request) {
         }
       }
     }
+
+    // Respaldo y correo antes de borrar: se puede restaurar en una cuenta nueva (docs/252).
+    const { data: target } = await admin.auth.admin.getUserById(userId)
+    await snapshotBeforeSafely(userId, "before_delete")
+    await rememberAccountIdentity(userId, { email: target?.user?.email ?? null, name: (target?.user?.user_metadata?.full_name as string | undefined) ?? null })
 
     const { error: teamCleanupError } = await admin.from("team_members").delete().eq("invited_user_id", userId)
     if (teamCleanupError) {

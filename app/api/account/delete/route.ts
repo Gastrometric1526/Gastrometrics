@@ -26,7 +26,7 @@
 import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
-import { snapshotBeforeSafely } from "@/lib/services/account-snapshots"
+import { rememberAccountIdentity, snapshotBeforeSafely } from "@/lib/services/account-snapshots"
 
 export const maxDuration = 60
 import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
@@ -51,6 +51,8 @@ export async function POST(request: Request) {
   const admin = getSupabaseAdminClient()
   // Respaldo automático antes de borrar: /admin puede restaurarlo (docs/229).
   await snapshotBeforeSafely(userId, "before_delete")
+  // Con el correo se encuentran sus respaldos si vuelve con otra cuenta (docs/252).
+  await rememberAccountIdentity(userId, { email: user.email ?? null, name: (user.user_metadata?.full_name as string | undefined) ?? null })
 
   try {
     const { data: planRow } = await admin

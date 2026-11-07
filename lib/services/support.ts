@@ -20,6 +20,7 @@ import { sendOwnerNotification } from "./notify-owner"
 import { sendUserPush } from "./user-push"
 import { getEmailLabels, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { sendFeedbackReplyEmail } from "./notify-feedback"
+import { googleLanguage, supportAdminLanguage, translateText, type MessageTranslation } from "./translate"
 
 export interface SupportConversation {
   id: string
@@ -43,10 +44,26 @@ export interface SupportMessage {
   sender: "user" | "admin" | "bot"
   body: string
   attachments: SupportAttachment[]
+  /** Traducción para quien lo lee (docs/252): al idioma del dueño o al de la persona. */
+  translation?: MessageTranslation | null
   created_at: string
 }
 
 const db = () => getSupabaseAdminClient() as unknown as { from: (t: string) => any } // tablas fuera de types/database.ts
+
+/**
+ * Guarda un mensaje con su traducción. Si la columna `translation` (migración 0038) todavía
+ * no existe, lo guarda sin ella.
+ */
+async function insertMessage(row: Record<string, unknown>, translation: MessageTranslation | null) {
+  if (translation) {
+    const { error } = await db().from("support_messages").insert({ ...row, translation })
+    if (!error) return
+    if (!/translation/.test(String(error.message))) throw error
+  }
+  const { error } = await db().from("support_messages").insert(row)
+  if (error) throw error
+}
 
 /** false si la migración 0034 todavía no se corrió. */
 export async function supportAvailable(): Promise<boolean> {
@@ -110,8 +127,9 @@ export async function postUserMessage(input: {
     notifyOwner = backToQueue
   }
 
-  const { error: msgError } = await db().from("support_messages").insert({ conversation_id: conversation.id, sender: "user", body: input.body, attachments: input.attachments })
-  if (msgError) throw msgError
+  // Traducida al idioma del dueño (docs/252).
+  const translation = await translateText(input.body, supportAdminLanguage())
+  await insertMessage({ conversation_id: conversation.id, sender: "user", body: input.body, attachments: input.attachments }, translation)
 
   if (notifyOwner) {
     await sendOwnerNotification({
@@ -185,8 +203,10 @@ export async function adminReply(conversationId: string, body: string, attachmen
   const { data: conv, error } = await db().from("support_conversations").select("*").eq("id", conversationId).maybeSingle()
   if (error || !conv) throw error || new Error("No existe la conversación")
   const c = conv as SupportConversation
-  const { error: msgError } = await db().from("support_messages").insert({ conversation_id: conversationId, sender: "admin", body, attachments })
-  if (msgError) throw msgError
+  // Traducida al idioma de la persona (docs/252); el correo y el aviso van traducidos.
+  const translation = await translateText(body, googleLanguage(c.language))
+  const shown = translation?.text || body
+  await insertMessage({ conversation_id: conversationId, sender: "admin", body, attachments }, translation)
   await db()
     .from("support_conversations")
     .update({ status: "answered", waiting_since: null, user_unread: (c.user_unread || 0) + 1, admin_unread: 0, last_message_at: now, last_message_preview: (body || attachments[0]?.name || "").slice(0, 140), updated_at: now })
@@ -204,7 +224,7 @@ export async function adminReply(conversationId: string, body: string, attachmen
         ticketId: conversationId.slice(0, 8).toUpperCase(),
         createdAt: c.created_at,
         originalMessage: ((firstMsg as { body: string }[] | null)?.[0]?.body || c.subject || "").slice(0, 600),
-        reply: body || attachments.map((a) => a.name).join(", "),
+        reply: shown || attachments.map((a) => a.name).join(", "),
         preferredLanguage: c.language,
         source: "chat",
       })
@@ -216,7 +236,7 @@ export async function adminReply(conversationId: string, body: string, attachmen
   // Aviso al aparato (docs/241), con el mismo asunto del correo en su idioma.
   await sendUserPush(c.account_id, {
     title: getEmailLabels(normalizeEmailLang(c.language)).e02c_subject,
-    body: body || attachments.map((a) => a.name).join(", "),
+    body: shown || attachments.map((a) => a.name).join(", "),
     url: "/dashboard?soporte=chat",
   })
   return { emailSent }

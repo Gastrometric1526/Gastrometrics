@@ -72,6 +72,7 @@ interface Message {
   sender: "user" | "admin" | "bot"
   body: string
   attachments: SupportAttachment[]
+  translation?: { text: string; from: string; to: string } | null
   created_at: string
 }
 interface ChatState {
@@ -496,7 +497,7 @@ export function SupportChat() {
                           ) : (
                             <BotBubble>
                               <p className="mb-0.5 text-[11px] font-medium text-muted-foreground">{t("support_from_team")}</p>
-                              {m.body && <p className="whitespace-pre-wrap break-words">{m.body}</p>}
+                              {m.body && <TranslatedBody body={m.body} translation={m.translation} />}
                               <Attachments items={m.attachments} />
                               <p className="mt-1 text-[10px] text-muted-foreground">{formatDateTime(m.created_at).split(" ").pop()}</p>
                             </BotBubble>
@@ -783,5 +784,20 @@ export function Attachments({ items }: { items: SupportAttachment[] | null | und
         ),
       )}
     </div>
+  )
+}
+
+/** Respuesta del equipo en tu idioma, con el original a un toque (docs/252). */
+function TranslatedBody({ body, translation }: { body: string; translation?: { text: string } | null }) {
+  const { t } = useLanguage()
+  const [original, setOriginal] = useState(false)
+  if (!translation?.text) return <p className="whitespace-pre-wrap break-words">{body}</p>
+  return (
+    <>
+      <p className="whitespace-pre-wrap break-words">{original ? body : translation.text}</p>
+      <button type="button" className="mt-1 text-[11px] text-muted-foreground underline underline-offset-2" onClick={() => setOriginal((v) => !v)}>
+        {original ? t("support_show_translation") : t("support_show_original")}
+      </button>
+    </>
   )
 }

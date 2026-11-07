@@ -23,7 +23,7 @@ import { NextResponse } from "next/server"
 import { isAuthorizedCronRequest } from "@/lib/cron-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
-import { runDailySnapshots } from "@/lib/services/account-snapshots"
+import { pruneAllSnapshots, runDailySnapshots } from "@/lib/services/account-snapshots"
 
 export const maxDuration = 60
 
@@ -56,8 +56,15 @@ export async function GET(request: Request) {
     } catch (backupError) {
       console.error("[api/cron/keep-alive] Error en los respaldos diarios:", backupError)
     }
+    // Retención de 3 a 6 meses, también para las cuentas eliminadas (docs/252).
+    let pruned: Awaited<ReturnType<typeof pruneAllSnapshots>> | null = null
+    try {
+      pruned = await pruneAllSnapshots()
+    } catch (backupError) {
+      console.error("[api/cron/keep-alive] Error en los respaldos diarios:", backupError)
+    }
     await recordCronRun("keep-alive", backups && backups.failed === 0 ? [] : ["backups"])
-    return NextResponse.json({ ok: true, pingedAt: new Date().toISOString(), backups })
+    return NextResponse.json({ ok: true, pingedAt: new Date().toISOString(), backups, pruned })
   } catch (error) {
     console.error("[api/cron/keep-alive] Error haciendo ping a Supabase:", error)
     await recordCronRun("keep-alive", ["ping"])
