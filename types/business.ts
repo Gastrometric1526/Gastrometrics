@@ -61,8 +61,13 @@ export interface Business {
   targetFoodCostPercent?: number
   // Rubros predeterminados del método GastroMetrics para recetas nuevas (docs/226).
   pricingPercentages?: Partial<Record<string, number>>
-  // Marca de los PDF en Chef Ejecutivo: nombre y línea al pie (docs/229, lib/pdf/pdf-branding.ts).
-  pdfBranding?: { name?: string; footer?: string }
+  // Marca de los PDF (docs/229, docs/251): ver PdfBranding en lib/pdf/pdf-branding.ts.
+  pdfBranding?: {
+    name?: string
+    footer?: string
+    fiscal?: { legalName?: string; taxId?: string; address?: string; phone?: string; email?: string }
+    menuFont?: "clasica" | "moderna"
+  }
 }
 
 export const calculateTotalMonthlyExpenses = (expenses: BusinessExpenses): number => {

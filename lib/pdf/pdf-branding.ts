@@ -21,11 +21,24 @@ export interface PdfBranding {
   name?: string
   /** Línea al pie de cada página (dirección, teléfono, RTN…). */
   footer?: string
+  /** Datos del negocio en facturas y órdenes de compra, en todos los planes (docs/251). */
+  fiscal?: PdfFiscal
+  /** Tipografía de la carta del cliente; sin valor, la clásica. */
+  menuFont?: "clasica" | "moderna"
+}
+
+export interface PdfFiscal {
+  legalName?: string
+  taxId?: string
+  address?: string
+  phone?: string
+  email?: string
 }
 
 export const PDF_BRAND = "GastroMetrics"
 export const WHITE_LABEL_PLAN = "chef-ejecutivo"
 const MAX_LEN = { name: 60, footer: 120 }
+const FISCAL_MAX: Record<keyof PdfFiscal, number> = { legalName: 80, taxId: 40, address: 120, phone: 40, email: 80 }
 
 let mainBranding: PdfBranding = {}
 
@@ -39,7 +52,18 @@ export function normalizePdfBranding(value: unknown): PdfBranding {
   const clean = (s: unknown, max: number) => (typeof s === "string" ? s.replace(/\s+/g, " ").trim().slice(0, max) : "")
   const name = clean(v.name, MAX_LEN.name)
   const footer = clean(v.footer, MAX_LEN.footer)
-  return { ...(name ? { name } : {}), ...(footer ? { footer } : {}) }
+  const source = (v.fiscal && typeof v.fiscal === "object" ? v.fiscal : {}) as Record<string, unknown>
+  const fiscal: PdfFiscal = {}
+  for (const key of Object.keys(FISCAL_MAX) as (keyof PdfFiscal)[]) {
+    const text = clean(source[key], FISCAL_MAX[key])
+    if (text) fiscal[key] = text
+  }
+  return {
+    ...(name ? { name } : {}),
+    ...(footer ? { footer } : {}),
+    ...(Object.keys(fiscal).length > 0 ? { fiscal } : {}),
+    ...(v.menuFont === "clasica" || v.menuFont === "moderna" ? { menuFont: v.menuFont } : {}),
+  }
 }
 
 const isMain = (businessId?: string | null) => !businessId || businessId === "main"
@@ -58,6 +82,11 @@ export function isWhiteLabelPdf(businessId?: string | null): boolean {
   if (isMain(businessId)) return false
   const b = getPdfBranding(businessId)
   return Boolean(b.name || b.footer)
+}
+
+/** Fuente de jsPDF para la carta del cliente. */
+export function pdfMenuFont(businessId?: string | null): "times" | "helvetica" {
+  return getPdfBranding(businessId).menuFont === "moderna" ? "helvetica" : "times"
 }
 
 /** Nombre del encabezado. */

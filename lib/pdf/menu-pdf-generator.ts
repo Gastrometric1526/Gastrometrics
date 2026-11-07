@@ -1,12 +1,12 @@
 import { jsPDF } from "jspdf"
-import { pdfClientFooter, pdfFooterPrefix, pdfHeaderName } from "./pdf-branding"
+import { pdfClientFooter, pdfFooterPrefix, pdfHeaderName, pdfMenuFont } from "./pdf-branding"
 import autoTable from "jspdf-autotable"
 import type { Menu } from "@/lib/types/menus"
 import type { Recipe } from "@/types/recipe"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { getCurrentPdfLanguage, getPdfLabels } from "@/lib/i18n/pdf-labels"
 import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
-import { getBusinessThemeRgb, BRAND_ORANGE_RGB } from "@/lib/theme-colors"
+import { getBusinessThemeRgb, BRAND_ORANGE_RGB, getBusinessThemeTintRgb } from "@/lib/theme-colors"
 import { drawBusinessLogo } from "./pdf-logo"
 import { drawImageFit } from "./pdf-image"
 import { formatDate } from "@/lib/date-format"
@@ -242,10 +242,8 @@ export interface MenuPDFOptions {
 }
 
 export function generateMenuPDF(menu: Menu, recipes: Recipe[], options: MenuPDFOptions): jsPDF {
-  // La copia cliente queda siempre en naranja de marca fijo (es lo que ve el comensal,
-  // ver docs/36 sección 1: "fuera de la sesión: naranja fijo"). La copia interna sí
-  // refleja el tema elegido por el negocio, igual que el resto de la app en sesión.
-  COLORS.primary = options.type === "interno" ? getBusinessThemeRgb(menu.businessId) : BRAND_ORANGE_RGB
+  // Las dos copias usan el color del negocio (docs/251; antes la carta era siempre naranja).
+  COLORS.primary = getBusinessThemeRgb(menu.businessId)
   CHART_COLORS[0] = COLORS.primary
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" })
@@ -271,6 +269,9 @@ function generateClientMenuPDF(
   options: MenuPDFOptions,
 ) {
   const labels = getPdfLabels()
+  // Tipografía elegida en Configuración → Apariencia → Tus PDF (docs/251).
+  const font = pdfMenuFont(menu.businessId)
+  const frame = getBusinessThemeTintRgb(menu.businessId, 0.45)
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
   const margin = 24
@@ -288,7 +289,7 @@ function generateClientMenuPDF(
   // Marco fino a todo el borde de la pagina — el detalle que hace que se sienta
   // impresa como una carta, no como un reporte.
   const drawClientPageFrame = () => {
-    doc.setDrawColor(190, 170, 130)
+    doc.setDrawColor(...frame)
     doc.setLineWidth(0.3)
     doc.rect(8, 8, pageWidth - 16, pageHeight - 16, "S")
   }
@@ -300,13 +301,13 @@ function generateClientMenuPDF(
     const drawn = drawImageFit(doc, options.businessLogo, margin, yPosition - 4, contentWidth, 22, "center")
     if (drawn) yPosition += drawn.height + 2
   }
-  doc.setFont("times", "italic")
+  doc.setFont(font, "italic")
   doc.setFontSize(9)
   doc.setTextColor(...COLORS.secondary)
   doc.text(sanitizeText(pdfHeaderName(menu.businessId, options.businessName)), pageWidth / 2, yPosition, { align: "center" })
   yPosition += 12
 
-  doc.setFont("times", "bold")
+  doc.setFont(font, "bold")
   doc.setFontSize(26)
   doc.setTextColor(...COLORS.text)
   doc.text(sanitizeText(menu.name) || labels.menuSinNombre, pageWidth / 2, yPosition, { align: "center" })
@@ -318,14 +319,14 @@ function generateClientMenuPDF(
   ].filter(Boolean)
   if (subtitleParts.length > 0) {
     yPosition += 6
-    doc.setFont("times", "italic")
+    doc.setFont(font, "italic")
     doc.setFontSize(10)
     doc.setTextColor(...COLORS.secondary)
     doc.text(subtitleParts.join("  ·  "), pageWidth / 2, yPosition, { align: "center" })
   }
 
   yPosition += 6
-  doc.setDrawColor(190, 170, 130)
+  doc.setDrawColor(...frame)
   doc.setLineWidth(0.3)
   doc.line(pageWidth / 2 - 22, yPosition, pageWidth / 2 + 22, yPosition)
   yPosition += 16
@@ -339,7 +340,7 @@ function generateClientMenuPDF(
     // Encabezado de tiempo: mayusculas espaciadas entre dos lineas finas, como en una
     // carta real — nada de fondos ni cajas.
     const stepLabel = sanitizeText(getRecipeStepLabel(step.name, getCurrentPdfLanguage())).toUpperCase()
-    doc.setFont("times", "bold")
+    doc.setFont(font, "bold")
     doc.setFontSize(12)
     doc.setTextColor(...COLORS.text)
     // BUG CORREGIDO (hallazgo de auditoria externa, ver docs/98/99): el tracking
@@ -371,13 +372,13 @@ function generateClientMenuPDF(
       const price = item.priceOverride ?? recipe?.unitPrice ?? 0
       const name = sanitizeText(item.label) || sanitizeText(recipe?.name) || "-"
 
-      doc.setFont("times", "normal")
+      doc.setFont(font, "normal")
       doc.setFontSize(12)
       doc.setTextColor(...COLORS.text)
       doc.text(name, margin, yPosition)
 
       const priceText = formatCurrency(price)
-      doc.setFont("times", "bold")
+      doc.setFont(font, "bold")
       doc.text(priceText, pageWidth - margin, yPosition, { align: "right" })
 
       const nameWidth = doc.getTextWidth(name)
@@ -394,7 +395,7 @@ function generateClientMenuPDF(
       const allergens = options.allergensByRecipeId?.[item.recipeId] ?? []
       if (allergens.length > 0) {
         yPosition += 4.5
-        doc.setFont("times", "italic")
+        doc.setFont(font, "italic")
         doc.setFontSize(8.5)
         doc.setTextColor(...COLORS.secondary)
         doc.text(`${labels.alergenos}: ${allergens.join(", ")}`, margin, yPosition, { maxWidth: contentWidth })
@@ -409,7 +410,7 @@ function generateClientMenuPDF(
   const totalPages = doc.getNumberOfPages()
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i)
-    doc.setFont("times", "italic")
+    doc.setFont(font, "italic")
     doc.setFontSize(7.5)
     doc.setTextColor(...COLORS.secondary)
     doc.text(sanitizeText(pdfClientFooter(menu.businessId, options.businessName)), pageWidth / 2, pageHeight - 12, { align: "center" })

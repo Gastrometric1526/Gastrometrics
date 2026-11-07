@@ -473,6 +473,7 @@ export default {
         ["tip", "Automatiske advarsler", "Det administrative ark advarer dig øverst, hvis kostprisen overstiger salgsprisen, eller hvis udbyttet ser forkert indtastet ud, før du udskriver et mærkeligt tal."],
         ["p", "PDF'erne kommer på det sprog, du har valgt i appen, bruger din valuta og har din virksomheds logo og temafarve."],
         ["p", "Med planen <strong>Chef Ejecutivo</strong> viser dine PDF'er ikke GastroMetrics: under Indstillinger → Udseende → <strong>Dine PDF'er</strong> skriver du navnet i toppen (lader du det stå tomt, bruges virksomhedens navn) og en linje nederst på hver side, fx adresse, telefon eller CVR. Det gemmes pr. virksomhed, og dit team ser det også. Med de andre planer har PDF'erne GastroMetrics nederst."],
+        ["p", "På alle planer udfylder du i samme afsnit dine <strong>virksomhedsoplysninger</strong>: juridisk navn, skattenummer, adresse, telefon og e-mail. De vises på dine fakturaer og indkøbsordrer. Her vælger du også <strong>skrifttypen på gæstemenuen</strong>, klassisk eller moderne; menuen bruger din virksomheds farve."],
         ["info", "Plan", "Køkkenarket er med i alle planer. Det administrative ark fra <strong>Home Cook</strong>."],
       ],
     },

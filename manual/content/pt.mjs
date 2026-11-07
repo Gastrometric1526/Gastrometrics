@@ -473,6 +473,7 @@ export default {
         ["tip", "Avisos automáticos", "A ficha administrativa avisa no topo se o custo passar do preço de venda ou se o rendimento parecer digitado errado, antes que você imprima um número estranho."],
         ["p", "Os PDFs saem no idioma selecionado no app, usam a sua moeda e trazem o logo e a cor de tema do seu negócio."],
         ["p", "No plano <strong>Chef Ejecutivo</strong> seus PDFs não mostram GastroMetrics: em Configurações → Aparência → <strong>Seus PDFs</strong> você escreve o nome do cabeçalho (vazio = o nome do negócio) e uma linha no rodapé de cada página, como endereço, telefone ou CNPJ. Fica salvo por negócio e sua equipe também vê. Nos outros planos, os PDFs levam GastroMetrics no rodapé."],
+        ["p", "Em todos os planos, nessa mesma seção você preenche os <strong>dados do negócio</strong>: razão social, ID fiscal, endereço, telefone e e-mail. Eles saem nas suas faturas e pedidos de compra. Ali você também escolhe a <strong>fonte do cardápio</strong> do cliente, clássica ou moderna; o cardápio usa a cor do seu negócio."],
         ["info", "Plano", "A ficha de cozinha está incluída em todos os planos. A ficha administrativa, a partir do <strong>Home Cook</strong>."],
       ],
     },

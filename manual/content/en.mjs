@@ -473,6 +473,7 @@ export default {
         ["tip", "Automatic warnings", "The administrative sheet warns you at the top if cost exceeds the selling price or if the yield looks mistyped, before you print an odd number."],
         ["p", "PDFs come out in the language selected in the app, use your currency and carry your business's logo and theme color."],
         ["p", "On the <strong>Chef Ejecutivo</strong> plan your PDFs don't show GastroMetrics: in Settings → Appearance → <strong>Your PDFs</strong> you write the name in the header (if you leave it empty, the business name is used) and a line at the bottom of each page, such as your address, phone or tax ID. It's saved per business and your team sees it too. On the other plans, PDFs carry GastroMetrics in the footer."],
+        ["p", "On every plan, the same section has your <strong>business details</strong>: legal name, tax ID, address, phone and email. They appear on your invoices and purchase orders. You also choose the <strong>menu typeface</strong> for the customer menu, classic or modern; the menu uses your business color."],
         ["info", "Plan", "The kitchen sheet is included in every plan. The administrative sheet, from <strong>Home Cook</strong>."],
       ],
     },

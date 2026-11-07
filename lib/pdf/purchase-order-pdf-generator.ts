@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf"
-import { pdfFooterPrefix, pdfHeaderName } from "./pdf-branding"
+import { getPdfBranding, pdfFooterPrefix, pdfHeaderName } from "./pdf-branding"
 import { safeFilePart } from "@/lib/pdf/pdf-filename"
 import autoTable from "jspdf-autotable"
 import type { PurchaseOrder } from "@/types/purchase-order"
@@ -7,7 +7,8 @@ import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { getPdfLabels, getCurrentPdfLanguage } from "@/lib/i18n/pdf-labels"
 import { getUnitLabelFor, getPresentationLabel } from "@/lib/ingredient-labels"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
-import { drawBusinessLogo } from "./pdf-logo"
+import { PDF_CONTENT_TOP, drawPdfHeader } from "./pdf-header"
+import { drawFiscalBlock, fiscalLines } from "./pdf-fiscal"
 import { formatDate, formatDateTime, fileDate } from "@/lib/date-format"
 import { recordPdfExport } from "@/lib/pdf/track-export"
 
@@ -185,38 +186,25 @@ export function generatePurchaseOrderPDF(order: PurchaseOrder, options: Purchase
   }
 
   // ===== HEADER =====
-  doc.setFillColor(...COLORS.lightGray)
-  doc.rect(0, 0, pageWidth, 24, "F")
-  drawLine(24)
-
-  if (options.businessLogo) {
-    drawBusinessLogo(doc, options.businessLogo, margin, 4, 15, 15)
-  }
-  const headerTextX = margin + (options.businessLogo ? 18 : 0)
-
-  doc.setFontSize(11)
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(...COLORS.text)
-  doc.text(sanitizeText(pdfHeaderName(options.businessId, options.businessName)), headerTextX, 11)
-
-  doc.setFontSize(8)
-  doc.setFont("helvetica", "normal")
-  doc.setTextColor(...COLORS.secondary)
-  doc.text(labels.exportado + ": " + formatDateTime(new Date()), headerTextX, 18)
-
-  doc.setFontSize(16)
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(...COLORS.primary)
-  doc.text(labels.ordenCompra.toUpperCase(), pageWidth - margin, 11, { align: "right" })
-
-  doc.setFontSize(9)
-  doc.setFont("helvetica", "normal")
-  doc.setTextColor(...COLORS.darkGray)
   // «No. 12 · Almuerzo» (docs/208): antes decía «No.» seguido del nombre, sin el número.
   const orderTitle = order.number ? `${labels.numero} ${order.number} · ${sanitizeText(order.name)}` : sanitizeText(order.name)
-  doc.text(orderTitle, pageWidth - margin, 18, { align: "right" })
+  drawPdfHeader(doc, {
+    logo: options.businessLogo,
+    name: sanitizeText(pdfHeaderName(options.businessId, options.businessName)),
+    meta: labels.exportado + ": " + formatDateTime(new Date()),
+    title: labels.ordenCompra,
+    subtitle: orderTitle,
+    primary: COLORS.primary,
+  })
 
-  yPosition = 32
+  const fiscalEnd = drawFiscalBlock(doc, {
+    lines: fiscalLines(getPdfBranding(options.businessId).fiscal, labels.idFiscal).map(sanitizeText),
+    title: labels.datosNegocio,
+    x: margin,
+    y: PDF_CONTENT_TOP - 2,
+    width: contentWidth,
+  })
+  yPosition = Math.max(fiscalEnd, PDF_CONTENT_TOP)
 
   // ===== DATOS GENERALES =====
   const statusLabels: Record<string, string> = {

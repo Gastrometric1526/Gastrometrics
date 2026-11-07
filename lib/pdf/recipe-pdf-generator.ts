@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { getPdfLabels, getCurrentPdfLanguage } from "@/lib/i18n/pdf-labels"
 import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 import { drawBusinessLogo } from "./pdf-logo"
+import { PDF_LOGO_SIZE } from "./pdf-header"
 import { drawImageFit } from "./pdf-image"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
 import { getYieldUnitLabelFor, getUnitLabelFor, getCategoryLabel } from "@/lib/ingredient-labels"
@@ -431,13 +432,13 @@ function generateAdministrativePDF(
 
   // Left: Business name & logo
   if (options.businessLogo) {
-    drawBusinessLogo(doc, options.businessLogo, margin, 3, 12, 12)
+    drawBusinessLogo(doc, options.businessLogo, margin, 2.5, PDF_LOGO_SIZE, PDF_LOGO_SIZE)
   }
 
   doc.setFontSize(10)
   doc.setFont("helvetica", "bold")
   doc.setTextColor(...COLORS.text)
-  doc.text(sanitizeText(pdfHeaderName(recipe.businessId, options.businessName)), margin + (options.businessLogo ? 15 : 0), 10)
+  doc.text(sanitizeText(pdfHeaderName(recipe.businessId, options.businessName)), margin + (options.businessLogo ? 18 : 0), 10)
 
   // Franja de identificación: distingue de un vistazo esta copia (con costos y
   // márgenes) de la copia de cocina, que no lleva esta información financiera.
@@ -454,7 +455,7 @@ function generateAdministrativePDF(
   doc.setFontSize(7)
   doc.setFont("helvetica", "italic")
   doc.setTextColor(...COLORS.secondary)
-  doc.text(labels.copiaAdministrativaSubtitle, margin + (options.businessLogo ? 15 : 0), 20)
+  doc.text(labels.copiaAdministrativaSubtitle, margin + (options.businessLogo ? 18 : 0), 20)
   doc.setTextColor(...COLORS.text)
 
   // Center: Title
@@ -1180,7 +1181,7 @@ function generateEmployeePDF(
   doc.line(0, 32, pageWidth, 32)
 
   if (options.businessLogo) {
-    drawBusinessLogo(doc, options.businessLogo, margin, margin, 14, 14)
+    drawBusinessLogo(doc, options.businessLogo, margin, margin, PDF_LOGO_SIZE, PDF_LOGO_SIZE)
   }
 
   doc.setFontSize(11)
@@ -1359,22 +1360,22 @@ function generateNormalPDF(
   doc.rect(0, 0, pageWidth, 30, "F")
 
   if (options.businessLogo) {
-    drawBusinessLogo(doc, options.businessLogo, margin, 6, 18, 18)
+    drawBusinessLogo(doc, options.businessLogo, margin, 7.5, PDF_LOGO_SIZE, PDF_LOGO_SIZE)
   }
 
   doc.setFontSize(14)
   doc.setTextColor(...COLORS.white)
   doc.setFont("helvetica", "bold")
-  doc.text(sanitizeText(pdfHeaderName(recipe.businessId, options.businessName)), margin + (options.businessLogo ? 22 : 0), 14)
+  doc.text(sanitizeText(pdfHeaderName(recipe.businessId, options.businessName)), margin + (options.businessLogo ? 18 : 0), 14)
 
   doc.setFontSize(8)
   doc.setFont("helvetica", "normal")
   doc.text(
     `${labels.creado}: ${formatDate(recipe.metadata?.createdAt || Date.now())}`,
-    margin + (options.businessLogo ? 22 : 0),
+    margin + (options.businessLogo ? 18 : 0),
     20
   )
-  doc.text(`${labels.exportado}: ${formatDate(new Date())}`, margin + (options.businessLogo ? 22 : 0), 25)
+  doc.text(`${labels.exportado}: ${formatDate(new Date())}`, margin + (options.businessLogo ? 18 : 0), 25)
 
   // Badge blanco (en vez del color sólido de las otras dos copias, que ya iría sobre un
   // fondo del mismo color primario acá) — mismo criterio de "identificarse de un

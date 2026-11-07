@@ -7,7 +7,7 @@ import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { getPdfLabels, getCurrentPdfLanguage } from "@/lib/i18n/pdf-labels"
 import { getUnitLabelFor, getCategoryLabel } from "@/lib/ingredient-labels"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
-import { drawBusinessLogo } from "./pdf-logo"
+import { PDF_CONTENT_TOP, drawPdfHeader } from "./pdf-header"
 import { buildPackageContentLookup, inventoryItemValue, snapshotItemValue, type PackageContentLookup } from "@/lib/inventory-value"
 import { getIngredients } from "@/lib/storage/ingredients"
 import { formatDate, formatDateTime, fileDate } from "@/lib/date-format"
@@ -309,36 +309,16 @@ function renderInventoryPDF(doc: jsPDF, data: InventoryPDFData, options: Invento
   }
 
   // ===== HEADER =====
-  doc.setFillColor(...COLORS.lightGray)
-  doc.rect(0, 0, pageWidth, 24, "F")
-  drawLine(24)
+  drawPdfHeader(doc, {
+    logo: options.businessLogo,
+    name: sanitizeText(pdfHeaderName(options.businessId, options.businessName)),
+    meta: `${labels.exportado}: ${formatDateTime(new Date())}`,
+    title: sanitizeText(data.title),
+    subtitle: `${labels.fecha}: ${formatDate(data.subtitle)}`,
+    primary: COLORS.primary,
+  })
 
-  if (options.businessLogo) {
-    drawBusinessLogo(doc, options.businessLogo, margin, 3, 15, 15)
-  }
-  const headerTextX = margin + (options.businessLogo ? 18 : 0)
-
-  doc.setFontSize(11)
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(...COLORS.text)
-  doc.text(sanitizeText(pdfHeaderName(options.businessId, options.businessName)), headerTextX, 11)
-
-  doc.setFontSize(8)
-  doc.setFont("helvetica", "normal")
-  doc.setTextColor(...COLORS.secondary)
-  doc.text(`${labels.exportado}: ${formatDateTime(new Date())}`, headerTextX, 18)
-
-  doc.setFontSize(15)
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(...COLORS.primary)
-  doc.text(sanitizeText(data.title), pageWidth - margin, 11, { align: "right" })
-
-  doc.setFontSize(9)
-  doc.setFont("helvetica", "normal")
-  doc.setTextColor(...COLORS.darkGray)
-  doc.text(`${labels.fecha}: ${formatDate(data.subtitle)}`, pageWidth - margin, 18, { align: "right" })
-
-  yPosition = 32
+  yPosition = PDF_CONTENT_TOP
 
   // ===== RESUMEN GENERAL =====
   const totalValue = data.rows.reduce((sum, r) => sum + (r.totalValue || 0), 0)

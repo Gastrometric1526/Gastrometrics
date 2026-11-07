@@ -5,7 +5,7 @@ import { formatCurrency } from "@/lib/currency"
 import { getPdfLabels, type PdfLabels } from "@/lib/i18n/pdf-labels"
 import { getBusinessThemeRgb } from "@/lib/theme-colors"
 import { safeFilePart } from "./pdf-filename"
-import { drawBusinessLogo } from "./pdf-logo"
+import { PDF_CONTENT_TOP, drawPdfHeader } from "./pdf-header"
 import { computeCashUp, type CashUpMethod, type CashUpResult } from "@/lib/cash-up"
 import type { CashUp, SalesImport } from "@/types/sales-import"
 import { fileDate, formatDate, formatDateTime } from "@/lib/date-format"
@@ -68,32 +68,17 @@ export function generateCashUpPDF(imp: SalesImport, cashUp: CashUp, options: Cas
   const contentWidth = pageWidth - 2 * margin
 
   // ===== ENCABEZADO =====
-  doc.setFillColor(245, 245, 245)
-  doc.rect(0, 0, pageWidth, 24, "F")
-  doc.setDrawColor(...COLORS.tableBorder)
-  doc.setLineWidth(0.3)
-  doc.line(margin, 24, pageWidth - margin, 24)
-  if (options.businessLogo) drawBusinessLogo(doc, options.businessLogo, margin, 3, 15, 15)
-  const headerX = margin + (options.businessLogo ? 18 : 0)
-  doc.setFontSize(11)
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(...COLORS.text)
-  doc.text(clean(pdfHeaderName(options.businessId, options.businessName)), headerX, 11)
-  doc.setFontSize(8)
-  doc.setFont("helvetica", "normal")
-  doc.setTextColor(...COLORS.secondary)
-  doc.text(`${labels.exportado}: ${formatDateTime(new Date())}`, headerX, 18)
-  doc.setFontSize(15)
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(...COLORS.primary)
-  doc.text(labels.cuadreCaja, pageWidth - margin, 11, { align: "right" })
-  doc.setFontSize(9)
-  doc.setFont("helvetica", "normal")
-  doc.setTextColor(...COLORS.text)
-  doc.text(formatDate(new Date(`${options.day}T00:00:00`)), pageWidth - margin, 18, { align: "right" })
+  drawPdfHeader(doc, {
+    logo: options.businessLogo,
+    name: clean(pdfHeaderName(options.businessId, options.businessName)),
+    meta: `${labels.exportado}: ${formatDateTime(new Date())}`,
+    title: labels.cuadreCaja,
+    subtitle: formatDate(new Date(`${options.day}T00:00:00`)),
+    primary: COLORS.primary,
+  })
 
   // ===== ESTADO =====
-  let y = 32
+  let y = PDF_CONTENT_TOP
   const statusColor =
     result.status === "balanced" ? COLORS.positive : result.status === "incomplete" || result.status === "mixed" ? COLORS.warning : COLORS.negative
   doc.setFillColor(...COLORS.highlightBg)

@@ -57,6 +57,8 @@ export interface PdfLabels {
   precioSugerido: string
   y: string
   ordenCompra: string
+  datosNegocio: string
+  idFiscal: string
   proveedor: string
   sinProveedor: string
   presentacion: string
@@ -231,6 +233,8 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     precioSugerido: "Precio Sugerido",
     y: "y",
     ordenCompra: "Orden de Compra",
+    datosNegocio: "Datos del negocio",
+    idFiscal: "ID fiscal",
     proveedor: "Proveedor",
     sinProveedor: "Sin proveedor",
     presentacion: "Presentación",
@@ -402,6 +406,8 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     precioSugerido: "Suggested Price",
     y: "and",
     ordenCompra: "Purchase Order",
+    datosNegocio: "Business details",
+    idFiscal: "Tax ID",
     proveedor: "Supplier",
     sinProveedor: "No supplier",
     presentacion: "Packaging",
@@ -573,6 +579,8 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     precioSugerido: "Foreslået pris",
     y: "og",
     ordenCompra: "Indkøbsordre",
+    datosNegocio: "Virksomhedsoplysninger",
+    idFiscal: "Skattenummer",
     proveedor: "Leverandør",
     sinProveedor: "Ingen leverandør",
     presentacion: "Emballage",
@@ -744,6 +752,8 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     precioSugerido: "Prix Suggéré",
     y: "et",
     ordenCompra: "Bon de Commande",
+    datosNegocio: "Informations de l’établissement",
+    idFiscal: "N° fiscal",
     proveedor: "Fournisseur",
     sinProveedor: "Sans fournisseur",
     presentacion: "Conditionnement",
@@ -915,6 +925,8 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     precioSugerido: "Preço Sugerido",
     y: "e",
     ordenCompra: "Pedido de Compra",
+    datosNegocio: "Dados do negócio",
+    idFiscal: "ID fiscal",
     proveedor: "Fornecedor",
     sinProveedor: "Sem fornecedor",
     presentacion: "Embalagem",
@@ -1086,6 +1098,8 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     precioSugerido: "建议价格",
     y: "与",
     ordenCompra: "采购订单",
+    datosNegocio: "商家信息",
+    idFiscal: "税号",
     proveedor: "供应商",
     sinProveedor: "无供应商",
     presentacion: "包装规格",

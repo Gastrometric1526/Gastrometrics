@@ -1,11 +1,12 @@
 import { jsPDF } from "jspdf"
-import { pdfFooterPrefix, pdfHeaderName } from "./pdf-branding"
+import { getPdfBranding, pdfFooterPrefix, pdfHeaderName } from "./pdf-branding"
 import autoTable from "jspdf-autotable"
 import type { Invoice } from "@/types/invoice"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
 import { getPdfLabels } from "@/lib/i18n/pdf-labels"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
-import { drawBusinessLogo } from "./pdf-logo"
+import { PDF_CONTENT_TOP, drawPdfHeader } from "./pdf-header"
+import { drawFiscalBlock, fiscalLines } from "./pdf-fiscal"
 import { safeFilePart } from "./pdf-filename"
 import { formatDate, fileDate } from "@/lib/date-format"
 import { recordPdfExport } from "@/lib/pdf/track-export"
@@ -87,42 +88,25 @@ export function generateInvoicePDF(invoice: Invoice, options: InvoicePDFOptions 
   }
 
   // ===== HEADER =====
-  doc.setFillColor(...COLORS.lightGray)
-  doc.rect(0, 0, pageWidth, 24, "F")
-  drawLine(24)
+  drawPdfHeader(doc, {
+    logo: options.businessLogo,
+    name: sanitizeText(pdfHeaderName(options.businessId, options.businessName)),
+    // «T00:00:00» fuerza medianoche local: una fecha sola se lee como UTC y en Centroamérica
+    // saldría un día antes.
+    meta: labels.fecha + " " + formatDate(`${invoice.issueDate}T00:00:00`),
+    title: labels.factura,
+    subtitle: `${labels.numero} ${sanitizeText(invoice.number)}`,
+    primary: COLORS.primary,
+  })
 
-  if (options.businessLogo) {
-    drawBusinessLogo(doc, options.businessLogo, margin, 4, 15, 15)
-  }
-  const headerTextX = margin + (options.businessLogo ? 18 : 0)
-
-  doc.setFontSize(11)
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(...COLORS.text)
-  doc.text(sanitizeText(pdfHeaderName(options.businessId, options.businessName)), headerTextX, 11)
-
-  doc.setFontSize(8)
-  doc.setFont("helvetica", "normal")
-  doc.setTextColor(...COLORS.secondary)
-  // BUG REAL CORREGIDO: "new Date(invoice.issueDate)" sobre un string plano "YYYY-MM-DD"
-  // lo parsea como medianoche UTC — en cualquier huso horario detrás de UTC (todo
-  // Centroamérica, todo el continente americano), toLocaleDateString() lo muestra un día
-  // antes del real. Agregar "T00:00:00" fuerza a que se interprete como medianoche LOCAL,
-  // mismo patrón ya usado en el resto del proyecto para evitar este error (ver
-  // components/manual-sales-entry-dialog.tsx, lib/sales-analytics.ts).
-  doc.text(labels.fecha + " " + formatDate(`${invoice.issueDate}T00:00:00`), headerTextX, 18)
-
-  doc.setFontSize(16)
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(...COLORS.primary)
-  doc.text(labels.factura.toUpperCase(), pageWidth - margin, 11, { align: "right" })
-
-  doc.setFontSize(9)
-  doc.setFont("helvetica", "normal")
-  doc.setTextColor(...COLORS.darkGray)
-  doc.text(`${labels.numero} ${sanitizeText(invoice.number)}`, pageWidth - margin, 18, { align: "right" })
-
-  yPosition = 32
+  const fiscalEnd = drawFiscalBlock(doc, {
+    lines: fiscalLines(getPdfBranding(options.businessId).fiscal, labels.idFiscal).map(sanitizeText),
+    title: labels.datosNegocio,
+    x: margin,
+    y: PDF_CONTENT_TOP - 2,
+    width: contentWidth,
+  })
+  yPosition = Math.max(fiscalEnd, PDF_CONTENT_TOP)
 
   // ===== DATOS DEL CLIENTE =====
   doc.setFillColor(...COLORS.highlightBg)

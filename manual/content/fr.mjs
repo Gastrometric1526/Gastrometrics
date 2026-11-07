@@ -473,6 +473,7 @@ export default {
         ["tip", "Avertissements automatiques", "La fiche administrative vous avertit en haut si le coût dépasse le prix de vente ou si le rendement semble mal saisi, avant que vous n'imprimiez un chiffre étrange."],
         ["p", "Les PDF sortent dans la langue sélectionnée dans l'application, utilisent votre devise et portent le logo et la couleur de thème de votre établissement."],
         ["p", "Avec le forfait <strong>Chef Ejecutivo</strong>, vos PDF n'affichent pas GastroMetrics : dans Paramètres → Apparence → <strong>Vos PDF</strong>, vous indiquez le nom de l'en-tête (vide = le nom de l'établissement) et une ligne en bas de chaque page, comme votre adresse, téléphone ou numéro fiscal. C'est enregistré par établissement et votre équipe le voit aussi. Avec les autres forfaits, les PDF portent GastroMetrics en pied de page."],
+        ["p", "Avec tous les forfaits, cette même section contient vos <strong>informations d’établissement</strong> : raison sociale, n° fiscal, adresse, téléphone et e-mail. Elles figurent sur vos factures et bons de commande. Vous y choisissez aussi la <strong>police de la carte</strong> client, classique ou moderne ; la carte utilise la couleur de votre établissement."],
         ["info", "Forfait", "La fiche de cuisine est incluse dans tous les forfaits. La fiche administrative, à partir de <strong>Home Cook</strong>."],
       ],
     },

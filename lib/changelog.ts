@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-11-06",
+    tutorialHref: tourHref("ordenes-compra"),
+    content: {
+      es: { title: "PDF más ordenados y con tus datos", items: ["Tus PDF de gestión comparten un mismo encabezado.", "Facturas y órdenes de compra pueden llevar tu razón social, ID fiscal, dirección, teléfono y correo. Se llenan en Configuración → Apariencia → Tus PDF.", "La carta del cliente usa el color de tu negocio, y puedes elegir tipografía clásica o moderna."] },
+      en: { title: "Tidier PDFs with your details", items: ["Your management PDFs now share one header.", "Invoices and purchase orders can show your legal name, tax ID, address, phone and email. Fill them in under Settings → Appearance → Your PDFs.", "The customer menu uses your business color, and you can choose a classic or modern typeface."] },
+      da: { title: "Pænere PDF'er med dine oplysninger", items: ["Dine administrative PDF'er har nu samme sidehoved.", "Fakturaer og indkøbsordrer kan vise juridisk navn, skattenummer, adresse, telefon og e-mail. Du udfylder dem under Indstillinger → Udseende → Dine PDF'er.", "Gæstemenuen bruger din virksomheds farve, og du kan vælge klassisk eller moderne skrifttype."] },
+      fr: { title: "Des PDF plus soignés, avec vos informations", items: ["Vos PDF de gestion partagent désormais le même en-tête.", "Les factures et les bons de commande peuvent afficher votre raison sociale, n° fiscal, adresse, téléphone et e-mail. Renseignez-les dans Paramètres → Apparence → Vos PDF.", "La carte client utilise la couleur de votre établissement, et vous pouvez choisir une police classique ou moderne."] },
+      pt: { title: "PDFs mais organizados e com seus dados", items: ["Seus PDFs de gestão agora têm o mesmo cabeçalho.", "Faturas e pedidos de compra podem mostrar sua razão social, ID fiscal, endereço, telefone e e-mail. Preencha em Configurações → Aparência → Seus PDFs.", "O cardápio do cliente usa a cor do seu negócio, e você pode escolher fonte clássica ou moderna."] },
+      zh: { title: "PDF 更整齐，并显示你的信息", items: ["管理类 PDF 现在使用统一的页眉。", "发票和采购订单可显示法定名称、税号、地址、电话和邮箱。在 设置 → 外观 → 你的 PDF 中填写。", "客户菜单使用你的商家颜色，并可选择经典或现代字体。"] },
+    },
+  },
+  {
     version: "2026-11-05",
     tutorialHref: tourHref("mi-plan"),
     content: {

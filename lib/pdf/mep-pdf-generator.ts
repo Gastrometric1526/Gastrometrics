@@ -5,7 +5,7 @@ import autoTable from "jspdf-autotable"
 import { getPdfLabels, getCurrentPdfLanguage } from "@/lib/i18n/pdf-labels"
 import { getBusinessThemeRgb, getBusinessThemeTintRgb } from "@/lib/theme-colors"
 import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
-import { drawBusinessLogo } from "./pdf-logo"
+import { PDF_CONTENT_TOP, drawPdfHeader } from "./pdf-header"
 import { formatDate, formatDateTime, fileDate } from "@/lib/date-format"
 import { flattenDish, formatMepAmount, groupByArea, groupDishesByStep, type MepEntry } from "@/lib/mep"
 import { amountWithUnit, shortUnit } from "@/lib/share-text"
@@ -70,29 +70,14 @@ export function generateMepPDF(options: MepPDFOptions): jsPDF {
   const step = (name: string | null) => (name ? getRecipeStepLabel(name, lang) : "")
 
   const header = (rightTitle: string, rightSub: string) => {
-    doc.setFillColor(...COLORS.lightGray)
-    doc.rect(0, 0, pageWidth, 24, "F")
-    doc.setDrawColor(...COLORS.tableBorder)
-    doc.setLineWidth(0.3)
-    doc.line(0, 24, pageWidth, 24)
-    if (options.businessLogo) drawBusinessLogo(doc, options.businessLogo, margin, 4, 15, 15)
-    const x = margin + (options.businessLogo ? 18 : 0)
-    doc.setFontSize(11)
-    doc.setFont("helvetica", "bold")
-    doc.setTextColor(...COLORS.text)
-    doc.text(sanitizeText(pdfHeaderName(options.businessId, options.businessName)), x, 11)
-    doc.setFontSize(8)
-    doc.setFont("helvetica", "normal")
-    doc.setTextColor(...COLORS.secondary)
-    doc.text(`${labels.exportado}: ${formatDateTime(new Date())}`, x, 18)
-    doc.setFontSize(15)
-    doc.setFont("helvetica", "bold")
-    doc.setTextColor(...COLORS.primary)
-    doc.text(rightTitle, pageWidth - margin, 11, { align: "right" })
-    doc.setFontSize(9)
-    doc.setFont("helvetica", "normal")
-    doc.setTextColor(...COLORS.darkGray)
-    doc.text(sanitizeText(rightSub).slice(0, 60), pageWidth - margin, 18, { align: "right" })
+    drawPdfHeader(doc, {
+      logo: options.businessLogo,
+      name: sanitizeText(pdfHeaderName(options.businessId, options.businessName)),
+      meta: `${labels.exportado}: ${formatDateTime(new Date())}`,
+      title: rightTitle,
+      subtitle: sanitizeText(rightSub).slice(0, 60),
+      primary: COLORS.primary,
+    })
   }
 
   // Casilla para marcar a mano (o ya marcada si estaba «Listo» en la app).
