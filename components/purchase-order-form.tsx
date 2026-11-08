@@ -1,5 +1,6 @@
 "use client"
 
+import { orderSuppliers } from "@/lib/purchase-order-split"
 import type React from "react"
 import { getPackageContent } from "@/lib/beverage"
 import { useState, useEffect, useMemo } from "react"
@@ -76,6 +77,8 @@ function createEmptyPurchaseOrderFormData(): PurchaseOrderFormData {
 
 interface PurchaseOrderFormProps {
   onSubmit: (data: PurchaseOrderFormData) => void
+  /** Crear una orden por proveedor, en lote (docs/264). Solo al crear, no al editar. */
+  onSubmitSplit?: (data: PurchaseOrderFormData) => void
   onCancel: () => void
   initialData?: PurchaseOrderFormData | null
   availableIngredients?: any[]
@@ -137,6 +140,7 @@ const orderStatusDefs = [
 
 export function PurchaseOrderForm({
   onSubmit,
+  onSubmitSplit,
   onCancel,
   initialData,
   availableIngredients = [],
@@ -309,6 +313,8 @@ export function PurchaseOrderForm({
       items: prev.items.filter((item) => item.id !== itemId),
     }))
   }
+
+  const splitCount = orderSuppliers(formData).length
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -621,10 +627,22 @@ export function PurchaseOrderForm({
       </Card>
 
       {/* Actions */}
-      <div className="flex justify-end space-x-4">
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end sm:gap-4">
         <Button type="button" variant="outline" onClick={onCancel}>
           {t("pof_cancel_button")}
         </Button>
+        {!initialData?.id && onSubmitSplit && splitCount > 1 && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              orderDraft.clear()
+              onSubmitSplit(formData)
+            }}
+          >
+            {t("pof_split_button").replace("{count}", String(splitCount))}
+          </Button>
+        )}
         <Button type="submit" disabled={formData.items.length === 0} className="min-w-[120px]">
           {initialData?.id ? t("pof_update_button") : t("pof_create_button")}
         </Button>

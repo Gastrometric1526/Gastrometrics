@@ -39,6 +39,7 @@ import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { getMenuById, ensureMenusLoaded } from "@/lib/menus"
 import { generateMenuIngredientList, generateRecipeIngredientList } from "@/lib/menus"
 import { sortPurchaseOrderItemsBySupplier, sortPurchaseOrderItemsByCategory } from "@/lib/purchase-orders"
+import { splitOrderBySupplier } from "@/lib/purchase-order-split"
 import { computePresentationQuantity } from "@/lib/utils/presentation-quantity"
 import { ActivityTracker } from "@/lib/activity-tracker"
 import { getBusinessById } from "@/lib/storage/businesses"
@@ -544,6 +545,75 @@ export function PurchaseOrderPage() {
   // del formulario estaba siempre vacío. Se conecta correctamente aquí, mapeando
   // entre la forma que persiste lib/storage/purchase-orders.ts (types/purchase-order.ts)
   // y la forma que usa el formulario internamente (PurchaseOrderFormData).
+  // Una orden por proveedor, en lote (docs/264): se guardan todas juntas y cada una suma su
+  // inventario si se crea como recibida.
+  const handleSplitSubmit = async (data: PurchaseOrderFormData) => {
+    if (!businessId) return
+    const parts = splitOrderBySupplier(data, t("ordenes_no_supplier"))
+    const now = Date.now()
+    const created: PurchaseOrder[] = parts.map((part, index) => ({
+      id: `OC-${now}-${index + 1}`,
+      name: part.orderNumber,
+      number: now + index,
+      date: part.orderDate,
+      recipes: [],
+      items: part.items.map((item) => ({
+        id: item.id,
+        ...(item.ingredientId ? { ingredientId: item.ingredientId } : {}),
+        name: item.ingredientName,
+        totalQuantity: item.quantity,
+        unit: item.unit,
+        costPerUnit: item.unitPrice,
+        purchaseCost: item.totalPrice,
+        quantityToBuy: item.quantity,
+        supplier: item.supplier || part.supplier || "",
+        presentation: item.presentation,
+        presentationQuantity: item.presentationQuantity,
+      })),
+      total: part.total,
+      subtotal: part.subtotal,
+      tax: part.tax,
+      expectedDeliveryDate: part.expectedDeliveryDate || undefined,
+      notes: part.notes || undefined,
+      status: part.status,
+      supplier: part.supplier,
+      createdAt: new Date().toISOString(),
+    }))
+    const updatedOrders = [...orders, ...created]
+    savePurchaseOrders(businessId, updatedOrders)
+    setOrders(updatedOrders)
+    setIsCreateDialogOpen(false)
+    setEditingOrder(null)
+    setSuggestedFormData(null)
+    setIsSuggestedFromMenu(false)
+    for (const order of created) {
+      ActivityTracker.addActivity(t("ordenes_activity_created").replace("{name}", order.name), "purchase-order", businessId, { orderId: order.id, total: order.total })
+      if (user) {
+        logActivity({ user, businessId: businessId !== "main" ? businessId : null, module: "ordenes_compra", action: "created", entityLabel: order.name })
+      }
+    }
+    toast({ title: t("ordenes_toast_split_created").replace("{count}", String(created.length)) })
+    if (data.status === "received") {
+      let matched = 0
+      const unmatched: string[] = []
+      for (const order of created) {
+        const r = await receivePurchaseOrderIntoInventory(
+          order.items.map((item) => ({ ingredientId: item.ingredientId, name: item.name, quantity: item.totalQuantity })),
+          businessId,
+        )
+        matched += r.matchedCount
+        unmatched.push(...r.unmatchedNames)
+      }
+      if (unmatched.length > 0) {
+        toast({ title: t("ordenes_toast_stock_unmatched_title"), description: t("ordenes_toast_stock_unmatched_desc").replace("{names}", unmatched.join(", ")) })
+      }
+      if (matched > 0) {
+        setInventoryItems(getInventory(businessId))
+        toast({ title: t("ordenes_toast_stock_updated_title"), description: t("ordenes_toast_stock_updated_desc").replace("{count}", String(matched)) })
+      }
+    }
+  }
+
   const handleFormSubmit = async (data: PurchaseOrderFormData) => {
     if (!businessId) return
 
@@ -983,6 +1053,7 @@ export function PurchaseOrderPage() {
                 initialData={editingOrderFormData || suggestedFormData}
                 availableIngredients={ingredients}
                 onSubmit={handleFormSubmit}
+                onSubmitSplit={editingOrder ? undefined : handleSplitSubmit}
                 onCancel={handleCloseDialog}
                 onPresentationChange={handlePresentationPersist}
                 hideSupplierField={!editingOrder && isSuggestedFromMenu}

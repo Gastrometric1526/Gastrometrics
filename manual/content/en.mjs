@@ -226,6 +226,7 @@ export default {
         ["list", [
           "<strong>Duplicate</strong> creates a copy in the same business, with “(copy)” in the name.",
           "<strong>Migrate</strong> copies the recipe to another of your businesses. It asks whether to bring its ingredients and sub-recipes too (reusing those that already exist there) or just the recipe: in that case its sheet opens in the business so you pick the ingredients from its own database (those with the same name are linked automatically).",
+          "When you migrate with ingredients, the window lists the ones that business doesn't have: for each one you choose to <strong>copy it</strong> with its price and supplier or to <strong>use one you already have there</strong> (if there's one with the same name, it's already selected). The copy's cost uses the business's prices. With <strong>Keep in sync with the original</strong>, every time you save the original the copy updates by itself; the copy shows a notice and a <strong>Stop syncing</strong> button. The copy has its own ID: changing one never deletes the other.",
           "<strong>Delete</strong> sends it to the <strong>trash</strong>, where you can recover it for 30 days before it's removed automatically.",
         ]],
       ],
@@ -389,6 +390,7 @@ export default {
         ["tip", "“Received” adds to your inventory", "When you mark an order as received, its quantities are added automatically to the stock of those items in inventory (matched by ingredient, even if you renamed it, or by name). If a product isn't in Inventory, the app tells you which. Sales tax, notes and the delivery date are kept when you edit the order. If what arrived differs from the order, correct it by recording the real amounts in <strong>Inventory → New Purchase</strong>."],
         ["h3", "Send to the supplier"],
         ["p", "Each order’s <strong>Send</strong> button shares it by <strong>WhatsApp</strong> (a message with the list; you pick the chat) or by <strong>email</strong> (the PDF downloads and your email opens so you choose who and attach it). On a phone, “Share PDF…” sends it with the PDF attached to the app you choose. The <strong>PDF</strong> button still downloads it as always."],
+        ["p", "If a new order has ingredients from several suppliers, <strong>Create one order per supplier</strong> creates them all at once, one per supplier, each with its own subtotal and the tax split proportionally. It also works with the suggested order."],
         ["info", "Plan", "Manual orders are available from <strong>Home Cook</strong>; automatic suggestions from <strong>Chef de Partie</strong>."],
       ],
     },

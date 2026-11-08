@@ -32,6 +32,8 @@ import { ActivityTracker } from "@/lib/activity-tracker"
 import { trackEvent } from "@/lib/analytics/track-event"
 import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 import { takePendingImport, buildImportedRows } from "@/lib/recipe-import/pending-import"
+import { stopSyncingCopy, syncMigratedCopies } from "@/lib/subrecipe/migration"
+import { hasActiveMembership } from "@/lib/plan-access"
 import { getBusinessById, getEffectivePricingDefaults, setEffectivePricingDefaults } from "@/lib/storage/businesses"
 import {
   calculateTotalMonthlyExpenses,
@@ -1129,6 +1131,11 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       }
 
       const savedRecipe = await saveRecipe(recipeToSave, businessId)
+      // Copias migradas que se mantienen iguales a esta receta (docs/264): se actualizan solas.
+      if (!hasActiveMembership()) {
+        const synced = await syncMigratedCopies(savedRecipe, businessId)
+        if (synced > 0) toast({ title: t("ficha_synced_copies_toast").replace("{count}", String(synced)) })
+      }
 
       ActivityTracker.addActivity(
         (mode === "edit" ? t("recipe_activity_updated") : t("recipe_activity_created")).replace(
@@ -1428,6 +1435,24 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
               columnas de ~170 px y el número del Rendimiento no se veía. */}
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="flex-1 min-w-0 space-y-4">
+              {recipe.metadata?.syncedFrom && (
+                <div className="flex flex-col gap-2 rounded-lg border border-info/30 bg-info-soft p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-info">{t("ficha_synced_copy_notice")}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={async () => {
+                      const next = await stopSyncingCopy(recipe as Recipe, businessId)
+                      setRecipe((prev) => ({ ...prev, metadata: next.metadata }))
+                      toast({ title: t("ficha_synced_stopped_toast") })
+                    }}
+                  >
+                    {t("ficha_synced_stop_button")}
+                  </Button>
+                </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" data-tour="ficha-name-classification">
                 <div>
                   <Label htmlFor="name">{t("ficha_tecnica_field_name")}</Label>

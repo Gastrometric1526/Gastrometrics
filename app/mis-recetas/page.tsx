@@ -77,12 +77,16 @@ import { unitMarginPercent } from "@/lib/recipe-pricing"
 import { getClassificationLabel } from "@/lib/classification-labels"
 import { useLanguage } from "@/contexts/language-context"
 import { syncSubRecipeToIngredient, deleteSubRecipeIngredient } from "@/lib/subrecipe/core"
-import { migrateCompleteRecipe } from "@/lib/subrecipe/migration"
+import { COPY_INGREDIENT, migrateCompleteRecipe, planIngredientMigration, type MigrationIngredientRow } from "@/lib/subrecipe/migration"
+import { ensureIngredientsLoaded, getIngredients } from "@/lib/storage/ingredients"
+import { distinguishLabel, repeatedNames } from "@/lib/ingredient-match"
+import type { Ingredient } from "@/types/ingredient"
 import { useAllBusinesses } from "@/lib/storage/businesses"
 import type { Recipe } from "@/types/recipe"
 import type { Business } from "@/types/business"
 import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Checkbox } from "@/components/ui/checkbox"
 import { formatDate } from "@/lib/date-format"
 
 // Clasificaciones disponibles
@@ -198,6 +202,35 @@ export default function MisRecetasPage() {
   // docs/137: migrar con ingredientes y subrecetas (true) o solo la receta, eligiendo después
   // los ingredientes desde la base del negocio destino (false).
   const [migrateWithIngredients, setMigrateWithIngredients] = useState(true)
+  // Mantener la copia igual a la original (docs/264): al guardar la original, se actualiza sola.
+  const [migrateKeepSynced, setMigrateKeepSynced] = useState(false)
+  // Ingredientes que el negocio destino no tiene igual (docs/264): para cada uno, copiarlo o
+  // unirlo a uno que ya exista ahí. Si hay uno con el mismo nombre, se sugiere ese.
+  const [migrationRows, setMigrationRows] = useState<MigrationIngredientRow[]>([])
+  const [migrationTargetIngredients, setMigrationTargetIngredients] = useState<Ingredient[]>([])
+  const [migrationChoices, setMigrationChoices] = useState<Record<string, string>>({})
+  useEffect(() => {
+    if (!recipeToMigrate || !selectedTargetBusiness || !migrateWithIngredients) {
+      setMigrationRows([])
+      return
+    }
+    let cancelled = false
+    Promise.all([ensureIngredientsLoaded(businessId), ensureIngredientsLoaded(selectedTargetBusiness)])
+      .then(() => {
+        if (cancelled) return
+        const target = getIngredients(selectedTargetBusiness) || []
+        const rows = planIngredientMigration(recipeToMigrate, getIngredients(businessId) || [], target)
+        setMigrationTargetIngredients(target)
+        setMigrationRows(rows)
+        setMigrationChoices(Object.fromEntries(rows.filter((r) => !r.exactId).map((r) => [r.sourceId, r.sameName[0]?.id ?? COPY_INGREDIENT])))
+      })
+      .catch(() => null)
+    return () => {
+      cancelled = true
+    }
+  }, [recipeToMigrate, selectedTargetBusiness, migrateWithIngredients, businessId])
+  const migrationPending = migrationRows.filter((r) => !r.exactId)
+  const migrationRepeated = useMemo(() => repeatedNames(migrationTargetIngredients), [migrationTargetIngredients])
   // Hay algún destino válido si hay otros negocios visibles, o si el destino sería
   // "Dashboard Principal" y quien mira es de verdad el dueño (ver nota sobre isTeamPreview).
   const canMigrateAnywhere = availableBusinesses.length > 0 || (businessId !== "main" && !isTeamPreview)
@@ -340,6 +373,8 @@ export default function MisRecetasPage() {
       // Usar la función mejorada de migración completa
       const migrationResult = await migrateCompleteRecipe(recipeToMigrate, businessId, selectedTargetBusiness, undefined, {
         includeIngredients: migrateWithIngredients,
+        ingredientChoices: migrateWithIngredients ? migrationChoices : undefined,
+        keepSynced: migrateKeepSynced,
       })
 
       if (!migrationResult.success || !migrationResult.migratedRecipe) {
@@ -1090,6 +1125,57 @@ export default function MisRecetasPage() {
                 </SelectContent>
               </Select>
             </div>
+            <label htmlFor="migrate-sync" className="flex items-start gap-3 rounded-lg border p-3 cursor-pointer">
+              <Checkbox id="migrate-sync" checked={migrateKeepSynced} onCheckedChange={(v) => setMigrateKeepSynced(v === true)} className="mt-0.5" />
+              <span>
+                <span className="block text-sm font-medium">{t("misrecetas_migration_sync_label")}</span>
+                <span className="block text-xs text-muted-foreground">{t("misrecetas_migration_sync_desc")}</span>
+              </span>
+            </label>
+            {migrateWithIngredients && selectedTargetBusiness && migrationRows.length > 0 && (
+              <div className="space-y-2 rounded-lg border p-3">
+                {migrationPending.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t("misrecetas_migration_all_exist")}</p>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium text-foreground">{t("misrecetas_migration_missing_title")}</p>
+                    <p className="text-xs text-muted-foreground">{t("misrecetas_migration_missing_desc")}</p>
+                    <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+                      {migrationPending.map((row) => (
+                        <div key={row.sourceId} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                          <span className="min-w-0 truncate text-sm">
+                            {row.name}
+                            {row.supplier ? <span className="text-muted-foreground"> · {row.supplier}</span> : null}
+                          </span>
+                          <Select
+                            value={migrationChoices[row.sourceId] ?? COPY_INGREDIENT}
+                            onValueChange={(v) => setMigrationChoices((prev) => ({ ...prev, [row.sourceId]: v }))}
+                          >
+                            <SelectTrigger className="h-8 w-full text-xs sm:w-60">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={COPY_INGREDIENT}>{t("misrecetas_migration_copy_option")}</SelectItem>
+                              {[...row.sameName, ...migrationTargetIngredients.filter((i) => !row.sameName.some((s) => s.id === i.id))].map((ing) => (
+                                <SelectItem key={ing.id} value={ing.id}>
+                                  {[
+                                    t("misrecetas_migration_use_option").replace("{name}", ing.name),
+                                    distinguishLabel(ing, migrationRepeated),
+                                    row.sameName.some((s) => s.id === ing.id) ? t("misrecetas_migration_same_name") : "",
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" · ")}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
             <Button
@@ -1098,6 +1184,7 @@ export default function MisRecetasPage() {
                 setShowMigrationDialog(false)
                 setRecipeToMigrate(null)
                 setSelectedTargetBusiness("")
+                setMigrationChoices({})
               }}
               disabled={isMigrating}
               className="border-border w-full sm:w-auto"

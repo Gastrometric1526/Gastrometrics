@@ -226,6 +226,7 @@ export default {
         ["list", [
           "<strong>Dupliker</strong> laver en kopi i samme virksomhed med »(kopi)« i navnet.",
           "<strong>Flyt</strong> kopierer opskriften til en anden af dine virksomheder. Den spørger, om ingredienser og underopskrifter skal med (dem, der allerede findes, genbruges) eller kun opskriften: så åbnes arket i virksomheden, så du vælger ingredienserne fra dens egen database (dem med samme navn kobles automatisk).",
+          "Når du flytter med ingredienser, viser vinduet dem, virksomheden ikke har: for hver vælger du at <strong>kopiere den</strong> med pris og leverandør eller <strong>bruge en, du allerede har der</strong> (findes der en med samme navn, er den allerede valgt). Kopiens omkostning bruger virksomhedens priser. Med <strong>Hold synkroniseret med originalen</strong> opdateres kopien af sig selv, hver gang du gemmer originalen; kopien viser en besked og knappen <strong>Stop synkronisering</strong>. Kopien har sit eget id: ændrer du den ene, slettes den anden aldrig.",
           "<strong>Slet</strong> sender den i <strong>papirkurven</strong>, hvor du kan gendanne den i 30 dage, før den slettes automatisk.",
         ]],
       ],
@@ -389,6 +390,7 @@ export default {
         ["tip", "»Modtaget« lægger til dit lager", "Når du markerer en ordre som modtaget, lægges mængderne automatisk til lageret for de varer (genkendt på ingrediensen, også hvis du har omdøbt den, eller på navnet). Findes en vare ikke på Lager, fortæller appen dig hvilken. Moms, noter og leveringsdato bevares, når du redigerer ordren. Er der kommet noget andet end bestilt, så ret det ved at registrere det faktiske under <strong>Lager → Nyt Indkøb</strong>."],
         ["h3", "Send til leverandøren"],
         ["p", "Knappen <strong>Send</strong> på hver ordre deler den på <strong>WhatsApp</strong> (en besked med listen; du vælger chatten) eller via <strong>e-mail</strong> (PDF’en downloades, og din e-mail åbnes, så du vælger modtager og vedhæfter den). På telefonen sender “Del PDF…” den med PDF’en vedhæftet til den app, du vælger. Knappen <strong>PDF</strong> downloader den stadig som altid."],
+        ["p", "Har en ny ordre ingredienser fra flere leverandører, opretter <strong>Opret én ordre pr. leverandør</strong> dem alle på én gang, én pr. leverandør, hver med sin subtotal og afgiften fordelt forholdsmæssigt. Det virker også med den foreslåede ordre."],
         ["info", "Plan", "Manuelle ordrer er tilgængelige fra <strong>Home Cook</strong>; automatiske forslag fra <strong>Chef de Partie</strong>."],
       ],
     },

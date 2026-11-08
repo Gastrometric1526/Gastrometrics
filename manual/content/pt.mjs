@@ -226,6 +226,7 @@ export default {
         ["list", [
           "<strong>Duplicar</strong> cria uma cópia no mesmo negócio, com «(cópia)» no nome.",
           "<strong>Migrar</strong> copia a receita para outro dos seus negócios. Pergunta se leva também os ingredientes e sub-receitas (reaproveitando os que já existem lá) ou só a receita: nesse caso a ficha abre no negócio para você escolher os ingredientes da base dele (os que têm o mesmo nome são vinculados sozinhos).",
+          "Ao migrar com ingredientes, a janela lista os que esse negócio não tem: para cada um você escolhe <strong>copiá-lo</strong> com preço e fornecedor ou <strong>usar um que você já tem lá</strong> (se houver um com o mesmo nome, ele já vem escolhido). O custo da cópia usa os preços do negócio. Com <strong>Manter sincronizada com a original</strong>, cada vez que você salvar a original a cópia se atualiza sozinha; a cópia mostra um aviso e o botão <strong>Parar de sincronizar</strong>. A cópia tem seu próprio número de identificação: mudar uma nunca apaga a outra.",
           "<strong>Excluir</strong> envia a receita para a <strong>lixeira</strong>, onde você pode recuperá-la por 30 dias antes de ela ser apagada sozinha.",
         ]],
       ],
@@ -389,6 +390,7 @@ export default {
         ["tip", "«Recebido» soma ao seu estoque", "Ao marcar um pedido como recebido, as quantidades são somadas sozinhas ao saldo desses produtos no estoque (reconhecidos pelo ingrediente, mesmo que você o tenha renomeado, ou pelo nome). Se algum produto não estiver no Estoque, o app avisa qual. O imposto, as notas e a data de entrega ficam salvos ao editar o pedido. Se chegou algo diferente do pedido, corrija registrando o real em <strong>Estoque → Nova Compra</strong>."],
         ["h3", "Enviar ao fornecedor"],
         ["p", "O botão <strong>Enviar</strong> de cada pedido manda por <strong>WhatsApp</strong> (uma mensagem com a lista; você escolhe a conversa) ou por <strong>e-mail</strong> (o PDF é baixado e seu e-mail abre para você escolher para quem e anexar). No celular, “Compartilhar PDF…” manda com o PDF anexado para o app que você escolher. O botão <strong>PDF</strong> continua baixando como sempre."],
+        ["p", "Se um pedido novo tiver ingredientes de vários fornecedores, <strong>Criar um pedido por fornecedor</strong> cria todos de uma vez, um por fornecedor, cada um com seu subtotal e o imposto dividido proporcionalmente. Também funciona com o pedido sugerido."],
         ["info", "Plano", "Pedidos manuais estão disponíveis a partir do <strong>Home Cook</strong>; a sugestão automática, a partir do <strong>Chef de Partie</strong>."],
       ],
     },

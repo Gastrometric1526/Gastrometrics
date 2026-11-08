@@ -133,6 +133,11 @@ export interface RecipeMetadata {
   copiedFrom?: string
   migratedFrom?: string
   migratedAt?: string
+  /**
+   * Copia migrada que se mantiene igual a su original (docs/264): al guardar la original, esta
+   * se actualiza sola. `ingredientMap` recuerda a qué ingrediente del destino se unió cada uno.
+   */
+  syncedFrom?: { businessId: string; recipeId: string; ingredientMap: Record<string, string>; syncedAt: string }
   exportedAt?: string // Added for PDF export tracking
   lastExportType?: string // Track last export type
 }

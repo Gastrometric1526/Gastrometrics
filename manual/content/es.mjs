@@ -227,6 +227,7 @@ export default {
         ["list", [
           "<strong>Duplicar</strong> crea una copia en el mismo negocio, con «(copia)» en el nombre.",
           "<strong>Migrar</strong> copia la receta a otro de tus negocios. Te pregunta si llevar también sus ingredientes y subrecetas (reutiliza los que ya existan allá) o solo la receta: en ese caso se abre su ficha en el negocio para que elijas los ingredientes de su propia base de datos (los que tengan el mismo nombre se vinculan solos).",
+          "Al migrar con ingredientes, la ventana lista los que ese negocio no tiene igual: para cada uno eliges <strong>copiarlo</strong> con su precio y proveedor o <strong>usar uno que ya tengas ahí</strong> (si hay uno con el mismo nombre, ya viene elegido). El costo de la copia sale con los precios del negocio. Con <strong>Mantener sincronizada con la original</strong>, cada vez que guardes la original la copia se actualiza sola; en la copia aparece el aviso y el botón <strong>Dejar de sincronizar</strong>. La copia tiene su propio número de identificación: cambiar una no borra la otra.",
           "<strong>Eliminar</strong> la envía a la <strong>papelera</strong>, donde puedes recuperarla durante 30 días antes de que se borre sola.",
         ]],
       ],
@@ -390,6 +391,7 @@ export default {
         ["tip", "«Recibida» suma a tu inventario", "Al marcar una orden como recibida, sus cantidades se suman solas al stock de esos productos en el inventario (se reconocen por el ingrediente, aunque lo hayas renombrado, o por el nombre). Si algún producto no está en Inventario, la app te dice cuál. El impuesto, las notas y la fecha de entrega quedan guardados al editar la orden. Si llegó algo distinto a lo pedido, corrígelo registrando lo real en <strong>Inventario → Nueva compra</strong>."],
         ["h3", "Enviar al proveedor"],
         ["p", "El botón <strong>Enviar</strong> de cada orden la manda por <strong>WhatsApp</strong> (un mensaje con la lista; eliges el chat) o por <strong>correo</strong> (se descarga el PDF y se abre tu correo para que elijas a quién y lo adjuntes). En el celular, «Compartir PDF…» la manda con el PDF adjunto a la app que elijas. El botón <strong>PDF</strong> la sigue descargando como siempre."],
+        ["p", "Si una orden nueva tiene ingredientes de varios proveedores, <strong>Crear una orden por proveedor</strong> crea todas de una vez, una por proveedor, cada una con su subtotal y el impuesto repartido en proporción. Sirve también con la orden sugerida."],
         ["info", "Plan", "Las órdenes manuales están disponibles desde <strong>Home Cook</strong>; la sugerencia automática, desde <strong>Chef de Partie</strong>."],
       ],
     },

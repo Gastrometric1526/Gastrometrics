@@ -32,6 +32,30 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-11-08f",
+    tutorialHref: tourHref("ordenes-compra"),
+    content: {
+      es: { title: "Una orden de compra por proveedor, de una vez", items: ["Si una orden nueva tiene ingredientes de varios proveedores, toca «Crear una orden por proveedor» y se crean todas, cada una con su subtotal y el impuesto repartido.", "Funciona también con la orden sugerida desde tu inventario o tus menús."] },
+      en: { title: "One purchase order per supplier, in one go", items: ["If a new order has ingredients from several suppliers, tap “Create one order per supplier” and they're all created, each with its own subtotal and the tax split.", "It also works with the order suggested from your inventory or menus."] },
+      da: { title: "Én indkøbsordre pr. leverandør, på én gang", items: ["Har en ny ordre ingredienser fra flere leverandører, så tryk på »Opret én ordre pr. leverandør«, og de oprettes alle, hver med sin subtotal og afgiften fordelt.", "Det virker også med den ordre, der foreslås ud fra dit lager eller dine menuer."] },
+      fr: { title: "Une commande par fournisseur, en une seule fois", items: ["Si une nouvelle commande contient des ingrédients de plusieurs fournisseurs, touchez « Créer une commande par fournisseur » : elles sont toutes créées, chacune avec son sous-total et la taxe répartie.", "Cela fonctionne aussi avec la commande suggérée à partir de votre inventaire ou de vos menus."] },
+      pt: { title: "Um pedido de compra por fornecedor, de uma vez", items: ["Se um pedido novo tiver ingredientes de vários fornecedores, toque em “Criar um pedido por fornecedor” e todos são criados, cada um com seu subtotal e o imposto dividido.", "Também funciona com o pedido sugerido a partir do seu estoque ou dos seus cardápios."] },
+      zh: { title: "一次为每个供应商各建一份采购订单", items: ["如果新订单包含多个供应商的食材，点按“按供应商分别创建订单”，即可全部创建，每份各自计算小计，税额按比例分摊。", "根据库存或套餐生成的建议订单也可以这样用。"] },
+    },
+  },
+  {
+    version: "2026-11-08e",
+    tutorialHref: tourHref("mis-recetas"),
+    content: {
+      es: { title: "Migrar recetas, a tu manera", items: ["Al migrar, eliges para cada ingrediente que el negocio no tenga si lo copias o si usas uno que ya tengas ahí. El costo sale con los precios de ese negocio.", "Con «Mantener sincronizada con la original», la copia se actualiza sola cada vez que guardas la original. Así trabajas la receta en un solo lugar."] },
+      en: { title: "Migrate recipes your way", items: ["When you migrate, you choose for each ingredient the business doesn't have whether to copy it or use one you already have there. The cost uses that business's prices.", "With “Keep in sync with the original”, the copy updates by itself every time you save the original, so you work on the recipe in one place."] },
+      da: { title: "Flyt opskrifter, som du vil", items: ["Når du flytter, vælger du for hver ingrediens, virksomheden ikke har, om du kopierer den eller bruger en, du allerede har der. Omkostningen bruger den virksomheds priser.", "Med »Hold synkroniseret med originalen« opdateres kopien af sig selv, hver gang du gemmer originalen. Så arbejder du med opskriften ét sted."] },
+      fr: { title: "Migrez vos recettes à votre façon", items: ["Quand vous migrez, vous choisissez pour chaque ingrédient que l'établissement n'a pas de le copier ou d'utiliser celui que vous avez déjà. Le coût utilise les prix de cet établissement.", "Avec « Garder synchronisée avec l'originale », la copie se met à jour toute seule chaque fois que vous enregistrez l'originale. Vous travaillez ainsi la recette à un seul endroit."] },
+      pt: { title: "Migre receitas do seu jeito", items: ["Ao migrar, você escolhe para cada ingrediente que o negócio não tem se quer copiá-lo ou usar um que já tem lá. O custo usa os preços desse negócio.", "Com “Manter sincronizada com a original”, a cópia se atualiza sozinha cada vez que você salva a original. Assim você trabalha a receita em um só lugar."] },
+      zh: { title: "按你的方式迁移配方", items: ["迁移时，可以为该商户没有的每种食材选择复制，或使用该商户已有的食材。成本使用该商户的价格。", "勾选“与原配方保持同步”后，每次保存原配方，副本都会自动更新，只需在一个地方维护配方。"] },
+    },
+  },
+  {
     version: "2026-11-08d",
     tutorialHref: tourHref("negocios"),
     content: {

@@ -7,6 +7,7 @@ import type { Recipe } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 import { getRecipes, saveRecipes, isSubRecipe, ensureRecipesLoaded } from "../storage/recipes"
 import { getIngredients, saveIngredients, ensureIngredientsLoaded } from "../storage/ingredients"
+import { getAllBusinesses } from "../storage/businesses"
 import { syncSubRecipeToIngredient } from "./core"
 
 interface MigrationResult {
@@ -35,6 +36,62 @@ function findSimilarIngredient(ingredient: Ingredient, targetIngredients: Ingred
 }
 
 /**
+ * Costo de cada línea con el ingrediente del destino (docs/264): si la receta se unió a un
+ * ingrediente que ya existía en el negocio, vale su precio, no el del espacio de origen.
+ */
+export function recostWithTarget(recipe: Recipe, targetIngredients: Ingredient[]): Recipe {
+  const byId = new Map(targetIngredients.map((i) => [i.id, i] as const))
+  const ingredients = recipe.ingredients.map((line) => {
+    const ing = line.ingredientId ? byId.get(line.ingredientId) : undefined
+    if (!ing) return line
+    const unitCost = ing.pricing?.pricePerUnit || 0
+    return { ...line, category: ing.category, unit: ing.unit, unitCost, costPerMeasure: unitCost, extension: (line.quantity || 0) * unitCost }
+  })
+  const totalCost = ingredients.reduce((sum, line) => sum + (line.extension || 0), 0)
+  const yieldAmount = recipe.yieldAmount > 0 ? recipe.yieldAmount : 1
+  return { ...recipe, ingredients, totalCost, costPerServing: totalCost / yieldAmount }
+}
+
+/** Valor de `ingredientChoices` para copiar el ingrediente al destino (docs/264). */
+export const COPY_INGREDIENT = "copy"
+
+export interface MigrationIngredientRow {
+  sourceId: string
+  name: string
+  supplier?: string
+  /** Ingrediente igual que ya existe en el destino: se reutiliza sin preguntar. */
+  exactId: string | null
+  /** Ingredientes del destino con el mismo nombre (sugerencias para unir). */
+  sameName: Ingredient[]
+}
+
+/**
+ * Qué pasa con cada ingrediente de la receta al migrarla (docs/264): los que existen igual en
+ * el destino se reutilizan; para los demás, la ventana pregunta si copiarlo o usar uno del
+ * destino. Puro.
+ */
+export function planIngredientMigration(recipe: Recipe, sourceIngredients: Ingredient[], targetIngredients: Ingredient[]): MigrationIngredientRow[] {
+  const seen = new Set<string>()
+  const rows: MigrationIngredientRow[] = []
+  for (const line of recipe.ingredients) {
+    if (!line.ingredientId || seen.has(line.ingredientId)) continue
+    seen.add(line.ingredientId)
+    const source = sourceIngredients.find((i) => i.id === line.ingredientId)
+    if (!source) continue
+    const exact = findSimilarIngredient(source, targetIngredients)
+    const key = source.name.toLowerCase().trim()
+    rows.push({
+      sourceId: source.id,
+      name: source.name,
+      supplier: source.supplier,
+      exactId: exact?.id ?? null,
+      sameName: exact ? [] : targetIngredients.filter((t) => t.name.toLowerCase().trim() === key),
+    })
+  }
+  return rows
+}
+
+/**
  * Migra recursivamente la receta de una subreceta (y las subrecetas que ella misma use) al
  * negocio destino, y devuelve el id que la subreceta migrada tiene en el destino. `visited`
  * evita loops si dos subrecetas terminaran referenciándose entre sí por error de datos.
@@ -45,6 +102,7 @@ async function migrateSubRecipeChain(
   targetBusinessId: string,
   migratedSubRecipes: Recipe[],
   visited: Set<string>,
+  keepSynced = false,
 ): Promise<string | null> {
   if (visited.has(sourceRecipeId)) return null
   visited.add(sourceRecipeId)
@@ -61,6 +119,7 @@ async function migrateSubRecipeChain(
   const result = await migrateCompleteRecipe(sourceSubRecipe, sourceBusinessId, targetBusinessId, {
     migratedSubRecipes,
     visited,
+    keepSynced,
   })
 
   if (result.success && result.migratedRecipe) {
@@ -135,6 +194,8 @@ async function migrateIngredients(
   targetBusinessId: string,
   migratedSubRecipes: Recipe[],
   visited: Set<string>,
+  choices: Record<string, string> = {},
+  keepSynced = false,
 ): Promise<{ migratedIngredients: Ingredient[]; skippedIngredients: string[]; idMap: Map<string, string> }> {
   const sourceIngredients = getIngredients(sourceBusinessId) || []
   // Copia local: getIngredients() devuelve el MISMO arreglo de la caché. Antes se le hacía
@@ -153,6 +214,13 @@ async function migrateIngredients(
   const idMap = new Map<string, string>()
 
   for (const ingredient of ingredientsToCheck) {
+    // La persona eligió unirlo a un ingrediente que ya existe en el destino (docs/264).
+    const choice = choices[ingredient.id]
+    if (choice && choice !== COPY_INGREDIENT && targetIngredients.some((t) => t.id === choice)) {
+      skippedIngredients.push(ingredient.name)
+      idMap.set(ingredient.id, choice)
+      continue
+    }
     const existingSimilar = findSimilarIngredient(ingredient, targetIngredients)
 
     if (!existingSimilar) {
@@ -167,6 +235,7 @@ async function migrateIngredients(
           targetBusinessId,
           migratedSubRecipes,
           visited,
+          keepSynced,
         )
         if (newSubRecipeId) {
           migratedRecipeId = newSubRecipeId
@@ -228,11 +297,19 @@ export async function migrateCompleteRecipe(
   recipe: Recipe,
   sourceBusinessId: string,
   targetBusinessId: string,
-  internal?: { migratedSubRecipes: Recipe[]; visited: Set<string> },
-  options: { includeIngredients?: boolean } = {},
+  internal?: { migratedSubRecipes: Recipe[]; visited: Set<string>; keepSynced?: boolean },
+  options: {
+    includeIngredients?: boolean
+    ingredientChoices?: Record<string, string>
+    /** Mantener la copia igual a la original (docs/264). */
+    keepSynced?: boolean
+    /** Actualizar esta copia (sincronización) en vez de crear otra. */
+    replaceRecipeId?: string
+  } = {},
 ): Promise<MigrationResult> {
   const migratedSubRecipes = internal?.migratedSubRecipes ?? []
   const visited = internal?.visited ?? new Set<string>()
+  const keepSynced = options.keepSynced ?? internal?.keepSynced ?? false
   const includeIngredients = options.includeIngredients !== false
 
   try {
@@ -256,6 +333,8 @@ export async function migrateCompleteRecipe(
       targetBusinessId,
       migratedSubRecipes,
       visited,
+      options.ingredientChoices,
+      keepSynced,
     )
 
     const ingredientIdMap = new Map<string, string>()
@@ -279,9 +358,10 @@ export async function migrateCompleteRecipe(
       }
     }
 
+    const existingCopy = options.replaceRecipeId ? getRecipes(targetBusinessId).find((r) => r.id === options.replaceRecipeId) : undefined
     const migratedRecipe: Recipe = {
       ...recipe,
-      id: `migrated_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      id: existingCopy?.id ?? `migrated_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
       businessId: targetBusinessId,
       ingredients: recipe.ingredients.map((ing) => ({
         ...ing,
@@ -289,14 +369,21 @@ export async function migrateCompleteRecipe(
       })),
       metadata: {
         ...recipe.metadata,
+        createdAt: existingCopy?.metadata?.createdAt ?? recipe.metadata?.createdAt,
         migratedFrom: sourceBusinessId,
-        migratedAt: new Date().toISOString(),
+        migratedAt: existingCopy?.metadata?.migratedAt ?? new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        version: 1,
+        version: existingCopy ? (existingCopy.metadata?.version || 1) + 1 : 1,
+        syncedFrom: keepSynced
+          ? { businessId: sourceBusinessId, recipeId: recipe.id, ingredientMap: Object.fromEntries(ingredientIdMap), syncedAt: new Date().toISOString() }
+          : undefined,
       },
     }
 
-    await saveRecipes([...getRecipes(targetBusinessId), migratedRecipe], targetBusinessId)
+    const costedRecipe = recostWithTarget(migratedRecipe, getIngredients(targetBusinessId) || [])
+    Object.assign(migratedRecipe, costedRecipe)
+    const others = getRecipes(targetBusinessId).filter((r) => r.id !== migratedRecipe.id)
+    await saveRecipes([...others, migratedRecipe], targetBusinessId)
 
     // Si la propia receta migrada es una subreceta, sincronizar su ingrediente espejo en el
     // destino apuntando al nuevo id — para que quien la migró como parte de otra receta la
@@ -334,4 +421,41 @@ export async function migrateCompleteRecipe(
       skippedIngredients: [],
     }
   }
+}
+
+/**
+ * Al guardar una receta: actualiza sus copias sincronizadas en los demás espacios (docs/264).
+ * Cada copia conserva su id y sus uniones de ingredientes; los ingredientes nuevos se copian o
+ * se reutilizan si ya existen iguales, y el costo sale con los precios de ese negocio.
+ * Devuelve cuántas copias se actualizaron. Nunca lanza.
+ */
+export async function syncMigratedCopies(source: Recipe, sourceBusinessId: string): Promise<number> {
+  let updated = 0
+  try {
+    const spaces = ["main", ...getAllBusinesses().map((b) => b.id)].filter((id) => id !== sourceBusinessId)
+    for (const space of spaces) {
+      await ensureRecipesLoaded(space)
+      const copies = getRecipes(space).filter(
+        (r) => r.metadata?.syncedFrom?.recipeId === source.id && r.metadata.syncedFrom.businessId === sourceBusinessId,
+      )
+      for (const copy of copies) {
+        const result = await migrateCompleteRecipe(source, sourceBusinessId, space, undefined, {
+          ingredientChoices: copy.metadata.syncedFrom!.ingredientMap,
+          keepSynced: true,
+          replaceRecipeId: copy.id,
+        })
+        if (result.success) updated++
+      }
+    }
+  } catch (error) {
+    console.error("[Migration] No se pudieron actualizar las copias sincronizadas:", error)
+  }
+  return updated
+}
+
+/** Deja de sincronizar una copia: queda como receta independiente del negocio. */
+export async function stopSyncingCopy(recipe: Recipe, businessId: string): Promise<Recipe> {
+  const next: Recipe = { ...recipe, metadata: { ...recipe.metadata, syncedFrom: undefined, updatedAt: new Date().toISOString() } }
+  await saveRecipes([...getRecipes(businessId).filter((r) => r.id !== recipe.id), next], businessId)
+  return next
 }

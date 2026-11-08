@@ -226,6 +226,7 @@ export default {
         ["list", [
           "<strong>Dupliquer</strong> crée une copie dans le même établissement, avec « (copie) » dans le nom.",
           "<strong>Migrer</strong> copie la recette vers un autre de vos établissements. Elle vous demande s'il faut emporter aussi ses ingrédients et sous-recettes (en réutilisant ceux qui existent déjà) ou seulement la recette : dans ce cas, sa fiche s'ouvre dans l'établissement pour que vous choisissiez les ingrédients dans sa propre base (ceux qui portent le même nom sont liés automatiquement).",
+          "Quand vous migrez avec les ingrédients, la fenêtre liste ceux que cet établissement n'a pas : pour chacun, vous choisissez de le <strong>copier</strong> avec son prix et son fournisseur ou d'<strong>utiliser un ingrédient que vous avez déjà</strong> (s'il y en a un avec le même nom, il est déjà sélectionné). Le coût de la copie utilise les prix de l'établissement. Avec <strong>Garder synchronisée avec l'originale</strong>, chaque fois que vous enregistrez l'originale, la copie se met à jour toute seule ; la copie affiche un message et un bouton <strong>Arrêter la synchronisation</strong>. La copie a son propre identifiant : modifier l'une ne supprime jamais l'autre.",
           "<strong>Supprimer</strong> l'envoie à la <strong>corbeille</strong>, où vous pouvez la récupérer pendant 30 jours avant sa suppression automatique.",
         ]],
       ],
@@ -389,6 +390,7 @@ export default {
         ["tip", "« Reçue » ajoute à votre inventaire", "Quand vous marquez une commande comme reçue, ses quantités s'ajoutent automatiquement au stock de ces produits dans l'inventaire (reconnus par l'ingrédient, même renommé, ou par le nom). Si un produit n'est pas dans l'Inventaire, l'application vous indique lequel. La taxe, les notes et la date de livraison sont conservées quand vous modifiez la commande. Si ce qui est arrivé diffère de la commande, corrigez-le en enregistrant le réel dans <strong>Inventaire → Nouvel Achat</strong>."],
         ["h3", "Envoyer au fournisseur"],
         ["p", "Le bouton <strong>Envoyer</strong> de chaque commande la partage par <strong>WhatsApp</strong> (un message avec la liste ; vous choisissez la conversation) ou par <strong>e-mail</strong> (le PDF se télécharge et votre messagerie s’ouvre pour choisir le destinataire et le joindre). Sur téléphone, « Partager le PDF… » l’envoie avec le PDF joint à l’app de votre choix. Le bouton <strong>PDF</strong> la télécharge toujours comme avant."],
+        ["p", "Si une nouvelle commande contient des ingrédients de plusieurs fournisseurs, <strong>Créer une commande par fournisseur</strong> les crée toutes d'un coup, une par fournisseur, chacune avec son sous-total et la taxe répartie au prorata. Cela fonctionne aussi avec la commande suggérée."],
         ["info", "Forfait", "Les commandes manuelles sont disponibles à partir de <strong>Home Cook</strong> ; la suggestion automatique à partir de <strong>Chef de Partie</strong>."],
       ],
     },
