@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
   try {
     const admin = getSupabaseAdminClient()
-    await admin.from("product_events").insert({ event_name: eventName, business_id: businessId })
+    await admin.from("product_events").insert({ event_name: eventName, business_id: businessId } as never) // product_events no está en types/database.ts
   } catch (error) {
     // No rompe nada visible si la migración 0029 todavía no se corrió en el SQL Editor
     // (tabla inexistente) — mismo criterio de resiliencia que /api/track.

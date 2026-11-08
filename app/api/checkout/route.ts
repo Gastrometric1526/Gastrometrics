@@ -220,7 +220,7 @@ export async function POST(request: Request) {
     // (no un intento de "vi el botón y no pasó nada").
     getSupabaseAdminClient()
       .from("product_events")
-      .insert({ event_name: "checkout_started" })
+      .insert({ event_name: "checkout_started" } as never) // product_events no está en types/database.ts
       .then(({ error: eventError }) => {
         if (eventError) console.error("[api/checkout] Error registrando evento checkout_started:", eventError)
       })

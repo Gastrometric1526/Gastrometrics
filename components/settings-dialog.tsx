@@ -212,6 +212,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
       businessSize,
       industryExperience: experience,
       productUpdatesOptIn,
+      termsVersion: existingProfile.termsVersion ?? null,
       // Un correo nuevo no hereda la verificación del anterior — nadie ha probado
       // todavía que esta dirección nueva sea suya.
       ...(emailChanged ? { emailVerified: false } : {}),

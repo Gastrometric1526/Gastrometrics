@@ -30,7 +30,7 @@ const ES_LABELS: Record<Classification, string> = {
   "Barra - Cervezas (Bar)": "Barra · Cervezas",
   "Barra - Sin alcohol (Bar)": "Barra · Sin alcohol",
   "Barra - Café y té (Caféterie)": "Barra · Café y té",
-  "Sub Receta / produccion (Mise en place)": "Sub Receta",
+  "Sub Receta / produccion (Mise en place)": "Subreceta",
   "I+D (R&D)": "I+D",
 }
 

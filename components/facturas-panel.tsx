@@ -309,7 +309,7 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
       return
     }
     const items: InvoiceLineItem[] = draftItems
-      .map((item) => {
+      .map((item): InvoiceLineItem | null => {
         const quantity = Number.parseFloat(item.quantity)
         const unitPrice = Number.parseFloat(item.unitPrice)
         if (!item.description.trim() || !Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(unitPrice) || unitPrice < 0) {

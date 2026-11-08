@@ -154,7 +154,7 @@ export function RealScreen({ screen, alt, url, focus = [50, 0], zoom = 1.06, cla
           alt={alt}
           loading="lazy"
           decoding="async"
-          className="gm-anim absolute inset-0 h-full w-full object-cover transition-transform duration-[3000ms] ease-out"
+          className="gm-anim absolute inset-0 h-full w-full object-cover transition-transform [transition-duration:3000ms] ease-out"
           style={{ objectPosition: `${focus[0]}% ${focus[1]}%`, transformOrigin: `${focus[0]}% ${focus[1]}%`, transform: `scale(${seen ? zoom : 1})` }}
         />
       </LaptopFrame>

@@ -228,7 +228,7 @@ function RealCrop({ on, screen, focus, zoom = 1.6, height = "h-44", alt }: { on:
           alt={alt}
           loading="lazy"
           decoding="async"
-          className="gm-anim absolute inset-0 h-full w-full object-cover transition-transform duration-[2500ms] ease-out"
+          className="gm-anim absolute inset-0 h-full w-full object-cover transition-transform [transition-duration:2500ms] ease-out"
           style={{ objectPosition: `${focus[0]}% ${focus[1]}%`, transformOrigin: `${focus[0]}% ${focus[1]}%`, transform: `scale(${on ? zoom : zoom * 0.92})` }}
         />
       )}

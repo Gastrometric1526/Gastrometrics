@@ -26,11 +26,11 @@ export function MobileBottomNav() {
   const canAccessInventory = useFeatureAccess("inventory")
 
   const baseItems = [
-    { href: "/dashboard", label: t("mobile_nav_inicio"), icon: Home, locked: false, feature: null as const },
-    { href: "/mis-recetas", label: t("mobile_nav_recetas"), icon: ChefHat, locked: false, feature: null as const },
+    { href: "/dashboard", label: t("mobile_nav_inicio"), icon: Home, locked: false, feature: null },
+    { href: "/mis-recetas", label: t("mobile_nav_recetas"), icon: ChefHat, locked: false, feature: null },
     { href: "/menus", label: t("nav_menus"), icon: UtensilsCrossed, locked: canAccessMenus === false, feature: "menus" as const },
     { href: "/inventario", label: t("nav_inventario"), icon: Package, locked: canAccessInventory === false, feature: "inventory" as const },
-    { href: "/estadisticas", label: t("mobile_nav_numeros"), icon: BarChart3, locked: false, feature: null as const },
+    { href: "/estadisticas", label: t("mobile_nav_numeros"), icon: BarChart3, locked: false, feature: null },
   ]
   // Revelación progresiva (docs/145): mientras Menús/Inventario/Reportes no se revelan,
   // su lugar en la barra lo ocupan Ingredientes y Ficha Técnica (lo que toca hacer primero).
