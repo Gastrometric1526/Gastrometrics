@@ -127,10 +127,9 @@ describe("resumen de respuestas", () => {
 })
 
 describe("opinión a lo largo de los meses (docs/265)", () => {
-  it("la calificación respondida se vuelve a pedir a los 90 días", async () => {
+  it("la calificación respondida no se vuelve a pedir, ni pasados meses", async () => {
     const base = recordMoment(emptyAskState(), "first_priced_recipe", now)
-    expect(ratingDue(recordAsk(base, "rating", "answered", now - 89 * DAY), ctx())).toBe(false)
-    expect(ratingDue(recordAsk(base, "rating", "answered", now - 91 * DAY), ctx())).toBe(true)
+    expect(ratingDue(recordAsk(base, "rating", "answered", now - 200 * DAY), ctx())).toBe(false)
   })
 
   it("invita a la reseña pública cuando ya respondió varias y no queda ninguna, igual para todos", async () => {

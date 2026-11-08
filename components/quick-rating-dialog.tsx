@@ -30,6 +30,15 @@ import { ratingBand } from "@/lib/feedback/ask-rules"
 import { buildReviewMessage } from "@/lib/reviews"
 import type { TranslationKey } from "@/lib/i18n/translations"
 
+/** Caritas de la calificación y su valor en la escala 0–10 de siempre (docs/265). */
+const RATING_FACES: { score: number; emoji: string; label: TranslationKey }[] = [
+  { score: 0, emoji: "😞", label: "quick_rating_face_1" },
+  { score: 3, emoji: "🙁", label: "quick_rating_face_2" },
+  { score: 5, emoji: "😐", label: "quick_rating_face_3" },
+  { score: 8, emoji: "🙂", label: "quick_rating_face_4" },
+  { score: 10, emoji: "😍", label: "quick_rating_face_5" },
+]
+
 const ASK_BY_BAND: Record<"low" | "mid" | "high", TranslationKey> = {
   low: "quick_rating_ask_low",
   mid: "quick_rating_ask_mid",
@@ -90,25 +99,28 @@ export function QuickRatingDialog({
               <DialogDescription>{t("quick_rating_desc")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="grid grid-cols-11 gap-1" role="radiogroup" aria-label={t("quick_rating_title")}>
-                {Array.from({ length: 11 }, (_, n) => (
+              {/* 5 caritas de un toque (pedido del dueño, docs/265): la escala 0–10 era molesta.
+                  Se guardan en la misma escala (0, 3, 5, 8, 10) para reseñas y /admin. */}
+              <div className="grid grid-cols-5 gap-2" role="radiogroup" aria-label={t("quick_rating_title")}>
+                {RATING_FACES.map((face) => (
                   <button
-                    key={n}
+                    key={face.score}
                     type="button"
                     role="radio"
-                    aria-checked={score === n}
-                    onClick={() => setScore(n)}
-                    className={`h-9 rounded-md border text-sm font-semibold transition-colors ${
-                      score === n ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent"
+                    aria-checked={score === face.score}
+                    aria-label={t(face.label)}
+                    title={t(face.label)}
+                    onClick={() => setScore(face.score)}
+                    className={`flex flex-col items-center gap-1 rounded-lg border py-2 transition-colors ${
+                      score === face.score ? "bg-primary/10 border-primary" : "hover:bg-accent"
                     }`}
                   >
-                    {n}
+                    <span className="text-2xl leading-none" aria-hidden>
+                      {face.emoji}
+                    </span>
+                    <span className="text-[11px] leading-tight text-muted-foreground">{t(face.label)}</span>
                   </button>
                 ))}
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{t("quick_rating_low")}</span>
-                <span>{t("quick_rating_high")}</span>
               </div>
               {band && (
                 <div className="space-y-2">

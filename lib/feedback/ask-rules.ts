@@ -9,7 +9,8 @@
  *   vez más, después de 14 días (la calificación, después de 30).
  *
  * docs/265 (pedido del dueño: una opinión completa a lo largo de los meses, de a poco):
- * - la calificación respondida se vuelve a pedir cada 90 días, para ver cómo cambia;
+ * - la calificación se pide una sola vez, con 5 caritas de un toque (la repetición cada 90
+ *   días se quitó a pedido del dueño: era molesta);
  * - cuando ya respondió varias preguntas y no queda ninguna que aplique, una invitación final
  *   a dejar una reseña pública. Va igual para todos, sin mirar la nota (nunca filtrar quién
  *   recibe la invitación, docs/173), y se ofrece como mucho 2 veces, con 60 días entre ellas.
@@ -84,8 +85,6 @@ export const QUESTIONS: QuestionDef[] = [
 export const ASK_COOLDOWN_MS = 5 * 24 * 60 * 60 * 1000
 export const QUESTION_RETRY_MS = 14 * 24 * 60 * 60 * 1000
 export const RATING_RETRY_MS = 30 * 24 * 60 * 60 * 1000
-/** La calificación respondida se vuelve a pedir pasado este tiempo (docs/265). */
-export const RATING_REPEAT_MS = 90 * 24 * 60 * 60 * 1000
 export const REVIEW_INVITE_RETRY_MS = 60 * 24 * 60 * 60 * 1000
 /** Preguntas respondidas antes de invitar a la reseña pública. */
 export const REVIEW_INVITE_MIN_ANSWERS = 5
@@ -133,8 +132,6 @@ export function inCooldown(state: AskState, now: number): boolean {
 /** ¿Toca pedir la calificación (0–10)? Momento de valor, o 7 días de uso, o 3 recetas. */
 export function ratingDue(state: AskState, ctx: AskContext): boolean {
   if (inCooldown(state, ctx.now)) return false
-  // Respondida: se vuelve a pedir cada 90 días (docs/265).
-  if (state.rating?.status === "answered") return ctx.now - state.rating.at >= RATING_REPEAT_MS
   if (!canShowAgain(state.rating, RATING_RETRY_MS, ctx.now)) return false
   const m = state.moments
   return Boolean(m.first_priced_recipe || m.first_pdf || m.cascade_recalc) || ctx.activeDays >= 7 || (ctx.recipeCount ?? 0) >= 3
