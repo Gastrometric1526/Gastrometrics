@@ -36,6 +36,7 @@ import {
   ArrowDown,
   ListChecks,
   CheckCircle2,
+  Upload,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AnimatedNumber } from "@/components/animated-number"
@@ -52,6 +53,7 @@ export function LandingTrustStrip() {
   const items = [
     { icon: Gift, text: t("landing_hero_micro_free") },
     { icon: CreditCard, text: t("landing_hero_micro_nocard") },
+    { icon: Upload, text: t("landing_trust_import") },
     { icon: Languages, text: t("landing_hero_micro_langs") },
     { icon: Coins, text: t("landing_trust_currencies") },
     { icon: Smartphone, text: t("landing_hero_micro_app") },

@@ -15,7 +15,7 @@ import { LandingReferralSection } from "@/components/landing-referral-section"
 import { LandingAppTour, LandingPriceStory, LandingInContext } from "@/components/landing-showcase"
 import { LandingHeroDemo } from "@/components/landing-hero-demo"
 import { LandingTrustStrip, LandingProblem, LandingHowItWorks, LandingImport, LandingBento, LandingCompare, LandingRiskAndFounder, LandingClosing } from "@/components/landing-sections"
-import { ChefHat, ArrowRight, CheckCircle2, UtensilsCrossed, Store, Building2, Wine } from "lucide-react"
+import { ChefHat, ArrowRight, CheckCircle2, UtensilsCrossed, Store, Building2, Wine, Upload } from "lucide-react"
 import { PublicReviews } from "@/components/public-reviews"
 
 // Qué plan encaja con cada tipo de negocio (docs/145) — funciones reales de cada plan.
@@ -63,6 +63,14 @@ export function HomeContent() {
                 <span className="text-primary">{t("landing_hero_title_line2")}</span>
               </h1>
               <p className="text-lg text-text-3 max-w-2xl mx-auto text-pretty">{t("landing_hero_desc")}</p>
+              {/* No se empieza de cero (pedido del dueño, docs/256): importar se ve desde la portada. */}
+              <Link
+                href="#importar"
+                className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-1.5 text-sm font-medium text-foreground hover:border-primary/60"
+              >
+                <Upload className="h-4 w-4 text-primary" />
+                {t("landing_hero_import_badge")}
+              </Link>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link href="/signup">
                   <Button size="lg" className="text-base px-7 py-3 bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.7)]">
@@ -88,9 +96,10 @@ export function HomeContent() {
 
         <LandingProblem />
 
-        <LandingHowItWorks />
-
+        {/* Importar va antes de «Cómo funciona»: lo primero es saber que no se empieza de cero (docs/256). */}
         <LandingImport />
+
+        <LandingHowItWorks />
 
         <LandingAppTour />
 
