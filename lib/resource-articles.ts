@@ -76,6 +76,52 @@ export const resourceArticles: ResourceArticleDef[] = [
     ctaBodyKey: "resource_inventario_cta_body",
     relatedFeatureSlug: "ingredientes-inventario",
   },
+  // Búsquedas del análisis de crecimiento (docs/259): costo de receta, precio de venta e importar.
+  {
+    slug: "como-calcular-costo-de-una-receta",
+    titleKey: "resource_costoreceta_title",
+    taglineKey: "resource_costoreceta_tagline",
+    metaDescriptionKey: "resource_costoreceta_meta_description",
+    introKey: "resource_costoreceta_intro",
+    sections: [
+      { headingKey: "resource_costoreceta_section1_heading", bodyKey: "resource_costoreceta_section1_body" },
+      { headingKey: "resource_costoreceta_section2_heading", bodyKey: "resource_costoreceta_section2_body" },
+      { headingKey: "resource_costoreceta_section3_heading", bodyKey: "resource_costoreceta_section3_body" },
+      { headingKey: "resource_costoreceta_section4_heading", bodyKey: "resource_costoreceta_section4_body" },
+    ],
+    ctaHeadingKey: "resource_costoreceta_cta_heading",
+    ctaBodyKey: "resource_costoreceta_cta_body",
+  },
+  {
+    slug: "como-calcular-precio-de-venta-de-un-plato",
+    titleKey: "resource_precioventa_title",
+    taglineKey: "resource_precioventa_tagline",
+    metaDescriptionKey: "resource_precioventa_meta_description",
+    introKey: "resource_precioventa_intro",
+    sections: [
+      { headingKey: "resource_precioventa_section1_heading", bodyKey: "resource_precioventa_section1_body" },
+      { headingKey: "resource_precioventa_section2_heading", bodyKey: "resource_precioventa_section2_body" },
+      { headingKey: "resource_precioventa_section3_heading", bodyKey: "resource_precioventa_section3_body" },
+      { headingKey: "resource_precioventa_section4_heading", bodyKey: "resource_precioventa_section4_body" },
+    ],
+    ctaHeadingKey: "resource_precioventa_cta_heading",
+    ctaBodyKey: "resource_precioventa_cta_body",
+  },
+  {
+    slug: "como-pasar-recetas-de-excel-a-un-sistema",
+    titleKey: "resource_importar_title",
+    taglineKey: "resource_importar_tagline",
+    metaDescriptionKey: "resource_importar_meta_description",
+    introKey: "resource_importar_intro",
+    sections: [
+      { headingKey: "resource_importar_section1_heading", bodyKey: "resource_importar_section1_body" },
+      { headingKey: "resource_importar_section2_heading", bodyKey: "resource_importar_section2_body" },
+      { headingKey: "resource_importar_section3_heading", bodyKey: "resource_importar_section3_body" },
+      { headingKey: "resource_importar_section4_heading", bodyKey: "resource_importar_section4_body" },
+    ],
+    ctaHeadingKey: "resource_importar_cta_heading",
+    ctaBodyKey: "resource_importar_cta_body",
+  },
 ]
 
 export function getResourceArticle(slug: string): ResourceArticleDef | null {
