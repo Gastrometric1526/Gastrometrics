@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-11-08b",
+    tutorialHref: tourHref("mi-plan"),
+    content: {
+      es: { title: "Entra con tu cuenta de Google", items: ["En el inicio de sesión y en el registro ya puedes tocar «Continuar con Google», sin contraseña.", "Si ya tenías una cuenta con ese mismo correo, entras a la misma cuenta. La primera vez te pedimos tu país, tu moneda y que aceptes los términos."] },
+      en: { title: "Sign in with your Google account", items: ["On the sign-in and sign-up pages you can now tap “Continue with Google”, with no password.", "If you already had an account with that same email, you sign in to the same account. The first time, we ask for your country, your currency and that you accept the terms."] },
+      da: { title: "Log ind med din Google-konto", items: ["På login- og tilmeldingssiden kan du nu trykke på »Fortsæt med Google« uden adgangskode.", "Havde du allerede en konto med samme e-mail, logger du ind på den samme konto. Første gang beder vi om dit land, din valuta og om, at du accepterer vilkårene."] },
+      fr: { title: "Connectez-vous avec votre compte Google", items: ["Sur les pages de connexion et d'inscription, vous pouvez maintenant toucher « Continuer avec Google », sans mot de passe.", "Si vous aviez déjà un compte avec la même adresse e-mail, vous accédez au même compte. La première fois, nous vous demandons votre pays, votre devise et d'accepter les conditions."] },
+      pt: { title: "Entre com sua conta do Google", items: ["No login e no cadastro, você já pode tocar em “Continuar com o Google”, sem senha.", "Se você já tinha uma conta com o mesmo e-mail, entra na mesma conta. Na primeira vez, pedimos seu país, sua moeda e que você aceite os termos."] },
+      zh: { title: "使用 Google 账户登录", items: ["在登录和注册页面，现在可以点按“使用 Google 继续”，无需密码。", "如果你已有使用同一邮箱的账户，将登录到同一个账户。第一次使用时，我们会请你选择国家和货币，并接受条款。"] },
+    },
+  },
+  {
     version: "2026-11-08",
     tutorialHref: tourHref("ingredientes"),
     content: {
