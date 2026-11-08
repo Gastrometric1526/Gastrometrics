@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLanguage } from "@/contexts/language-context"
-import { ArrowLeft, Lock, LayoutDashboard, Users, Inbox, LineChart, TrendingUp, Mail, RefreshCw, DollarSign, HeartPulse } from "lucide-react"
+import { ArrowLeft, Lock, LayoutDashboard, Users, Inbox, LineChart, TrendingUp, Mail, RefreshCw, DollarSign, HeartPulse, LogOut } from "lucide-react"
 import { StatsPanel, type AdminStats } from "@/components/admin/stats-panel"
 import { AdminLiveProvider, useAdminLive } from "@/components/admin/live"
 import { useToast } from "@/hooks/use-toast"
@@ -17,7 +17,7 @@ import { AccountsPanel } from "@/components/admin/accounts-panel"
 import { FeedbackPanel } from "@/components/admin/feedback-panel"
 import { SurveyPanel } from "@/components/admin/survey-panel"
 import { SupportInbox } from "@/components/admin/support-inbox"
-import { FullReportButton } from "@/components/admin/full-report-button"
+import { OnlineNow } from "@/components/admin/online-now"
 import { FullExportButton } from "@/components/admin/full-export-button"
 import { AnalyticsPanel } from "@/components/admin/analytics-panel"
 import { TopUsersPanel } from "@/components/admin/top-users-panel"
@@ -291,34 +291,42 @@ function AdminPageInner() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-7xl space-y-8">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <Link href="/dashboard">
-              <Button variant="ghost" size="sm" className="gap-2 -ml-3 mb-4">
-                <ArrowLeft className="h-4 w-4" />
-                {t("common_back")}
-              </Button>
-            </Link>
-            <h1 className="text-3xl font-bold text-foreground">{t("admin_page_title")}</h1>
-            <p className="text-muted-foreground">{t("admin_page_subtitle")}</p>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            {/* Informe completo con todos los datos de /admin (docs/206) */}
-            <FullReportButton />
-            {/* Todos los datos sin recortes, un archivo por tabla (docs/250) */}
-            <FullExportButton />
-            <AdminPushToggle />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                await fetch("/api/admin/verify", { method: "DELETE" })
-                sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY)
-                setUnlocked(false)
-              }}
-            >
-              {t("admin_logout")}
+        {/* Encabezado (docs/266): título y estado a la izquierda, acciones en una fila a la
+            derecha; en el celular todo baja en orden. */}
+        <div className="space-y-4">
+          <Link href="/dashboard">
+            <Button variant="ghost" size="sm" className="gap-2 -ml-3">
+              <ArrowLeft className="h-4 w-4" />
+              {t("common_back")}
             </Button>
+          </Link>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-1">
+              <h1 className="text-3xl font-bold text-foreground">{t("admin_page_title")}</h1>
+              <p className="text-muted-foreground">{t("admin_page_subtitle")}</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Un solo botón: todas las tablas + el informe PDF, en un ZIP (docs/250, docs/266) */}
+              <FullExportButton />
+              <AdminPushToggle />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5"
+                onClick={async () => {
+                  await fetch("/api/admin/verify", { method: "DELETE" })
+                  sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY)
+                  setUnlocked(false)
+                }}
+              >
+                <LogOut className="h-4 w-4" />
+                {t("admin_logout")}
+              </Button>
+            </div>
+          </div>
+          {/* Estado de un vistazo: quién está en línea ahora y cuándo se actualizó el panel. */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <OnlineNow onOpenAccounts={() => goTo("cuentas")} />
             <LiveIndicator lastUpdatedAt={lastUpdatedAt} onRefresh={refreshNow} />
           </div>
         </div>
