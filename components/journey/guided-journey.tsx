@@ -15,7 +15,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, ArrowRight, Compass, Lightbulb, MousePointerClick, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useConfirmDialog } from "@/components/confirm-dialog"
@@ -141,6 +141,12 @@ export function GuidedJourney() {
   const [confirm, confirmDialog] = useConfirmDialog()
   const allIngredients = useIngredients()
   const allRecipes = useRecipes()
+  // Espacio donde se está trabajando (docs/262): dentro de un negocio (?business=ID) los pasos
+  // cuentan lo que se guarda en ese negocio, no en el espacio principal.
+  const searchParams = useSearchParams()
+  const scope = searchParams?.get("business") || null
+  const scopedIngredients = useIngredients(scope)
+  const scopedRecipes = useRecipes(scope)
   const [loaded, setLoaded] = useState(false)
   const [state, setState] = useState<JourneyState | null>(null)
   const [paused, setPaused] = useState(false)
@@ -165,16 +171,46 @@ export function GuidedJourney() {
   const scrolledRef = useRef<{ key: string; at: number; tries: number } | null>(null)
   const tourAckRef = useRef<string | null>(null)
 
-  const ingredients = useMemo(() => allIngredients.filter((i) => i.category !== SUBRECIPE_CLASSIFICATION).length, [allIngredients])
-  const recipes = useMemo(() => allRecipes.filter((r) => !isSubRecipe(r)).length, [allRecipes])
+  const countIngredients = (list: typeof allIngredients) => list.filter((i) => i.category !== SUBRECIPE_CLASSIFICATION).length
+  const countRecipes = (list: typeof allRecipes) => list.filter((r) => !isSubRecipe(r)).length
+  // Para los pasos: el espacio actual. Para desbloquear etapas: el que tenga más, para que el
+  // avance no se pierda al cambiar entre el espacio principal y un negocio.
+  const ingredients = useMemo(() => countIngredients(scopedIngredients), [scopedIngredients])
+  const recipes = useMemo(() => countRecipes(scopedRecipes), [scopedRecipes])
+  const mainIngredients = useMemo(() => countIngredients(allIngredients), [allIngredients])
+  const mainRecipes = useMemo(() => countRecipes(allRecipes), [allRecipes])
   const menus = useMenus("main").length
-  const mermaActive = useMemo(() => allIngredients.some((i) => i.merma?.enabled), [allIngredients])
+  const mermaActive = useMemo(() => scopedIngredients.some((i) => i.merma?.enabled), [scopedIngredients])
   const [saved, setSaved] = useState<string[]>([])
   const facts: JourneyFacts = useMemo(
-    () => ({ ingredients, recipes, menus, mermaActive, features }),
-    [ingredients, recipes, menus, mermaActive, features],
+    () => ({ ingredients: Math.max(ingredients, mainIngredients), recipes: Math.max(recipes, mainRecipes), menus, mermaActive: mermaActive || allIngredients.some((i) => i.merma?.enabled), features }),
+    [ingredients, recipes, mainIngredients, mainRecipes, menus, mermaActive, allIngredients, features],
   )
-  const enabled = !!user && loaded && isJourneyRoute(pathname) && !member
+  // Últimos conteos del espacio actual, para fijar el punto de partida al cambiar de espacio.
+  const countsRef = useRef({ ingredients: 0, recipes: 0 })
+  countsRef.current = { ingredients, recipes }
+  const [scopeReady, setScopeReady] = useState(true)
+  const enabled = !!user && loaded && scopeReady && isJourneyRoute(pathname) && !member
+
+  // Al entrar a otro espacio: se cargan sus datos y se fija ahí el punto de partida, para que
+  // los ingredientes que ya tenía no cuenten como recién guardados.
+  useEffect(() => {
+    if (!user) return
+    let cancelled = false
+    setScopeReady(false)
+    Promise.all([ensureIngredientsLoaded(scope).catch(() => null), ensureRecipesLoaded(scope).catch(() => null)]).finally(() => {
+      if (cancelled) return
+      setTimeout(() => {
+        if (cancelled) return
+        startRef.current = countsRef.current
+        setScopeReady(true)
+      }, 0)
+    })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scope, user])
 
   // Carga inicial: datos de la cuenta y estado guardado.
   useEffect(() => {

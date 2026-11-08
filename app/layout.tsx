@@ -137,7 +137,9 @@ export default function RootLayout({
                   {/* Chat de soporte (docs/204) */}
                   <SupportChat />
                   {/* Tutorial guiado progresivo (docs/221) */}
-                  <GuidedJourney />
+                  <Suspense fallback={null}>
+                    <GuidedJourney />
+                  </Suspense>
                   <SubRecipePricePrompt />
                   <Suspense fallback={null}>
                     <ModuleActivityTracker />
