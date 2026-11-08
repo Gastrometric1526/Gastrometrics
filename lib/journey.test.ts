@@ -146,3 +146,43 @@ describe("tutorial guiado progresivo (docs/221)", () => {
     expect(new Set(CHAPTERS.map((c) => c.id)).size).toBe(CHAPTERS.length)
   })
 })
+
+describe("invitado del equipo (docs/263)", () => {
+  const memberFacts = (perms: Record<string, boolean>, over: Partial<JourneyFacts> = {}) =>
+    facts({ member: true, features: { ...allFeatures, ingredients: false, recipes: false, merma: false, stats_panorama: false, manual_sales: false, inventory: false, menus: false, purchase_orders_manual: false, ...perms }, ...over })
+  const visited = (f: JourneyFacts) => {
+    let state = startJourney(false)
+    const seen: string[] = []
+    for (let i = 0; i < CHAPTERS.length; i++) {
+      const pos = journeyPosition(state, f)
+      state = markDone(state, pos.autoDone)
+      if (pos.status !== "active") break
+      seen.push(pos.chapter.id)
+      state = markDone(state, [pos.chapter.id])
+    }
+    return seen
+  }
+
+  it("solo recorre lo que tiene permitido", () => {
+    const seen = visited(memberFacts({ ingredients: true, recipes: true }, { ingredients: 5, recipes: 5, menus: 1 }))
+    expect(seen).toContain("ingredients-add")
+    expect(seen).toContain("ficha-basic")
+    expect(seen).not.toContain("inventario")
+    expect(seen).not.toContain("menus")
+    expect(seen).not.toContain("ventas")
+  })
+
+  it("nunca ve Equipo, Negocios ni Mi Plan, aunque tenga todo lo demás", () => {
+    const seen = visited(memberFacts({ ingredients: true, recipes: true, merma: true, stats_panorama: true, manual_sales: true, inventory: true, menus: true, purchase_orders_manual: true }, { ingredients: 5, recipes: 5, menus: 1, mermaActive: true }))
+    expect(seen).toContain("inventario")
+    expect(seen).not.toContain("equipo")
+    expect(seen).not.toContain("negocios")
+    expect(seen).not.toContain("mi-plan")
+  })
+
+  it("al dueño le sigue mostrando todo", () => {
+    const seen = visited(facts({ ingredients: 5, recipes: 5, menus: 1, mermaActive: true }))
+    expect(seen).toContain("equipo")
+    expect(seen).toContain("mi-plan")
+  })
+})

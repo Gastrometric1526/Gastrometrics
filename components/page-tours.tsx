@@ -1,10 +1,11 @@
 "use client"
 
-import { useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { useRouter } from "next/navigation"
 import { PageTour, type TourStep } from "@/components/page-tour"
 import { useLanguage } from "@/contexts/language-context"
+import { useActiveMembership } from "@/lib/plan-access"
 
 // Tours ligeros por página — cada uno corre una sola vez (su propio storageKey en
 // localStorage), la primera vez que el usuario visita esa sección. Todos comparten
@@ -551,6 +552,20 @@ export function ProcesarOrdenesTour() {
 
 export function BusinessDetailTour({ hasScenarioSection }: { hasScenarioSection: boolean }) {
   const { t } = useLanguage()
+  const { active: isMember } = useActiveMembership()
+  // Hasta montar no se sabe si es invitado: no se abre ninguno de los dos recorridos antes.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  if (!mounted) return null
+  // Dueño (docs/263): solo un aviso corto. Funciona igual que el dashboard principal, con sus
+  // cosas aparte, y cómo traer recetas con la migración. El invitado ve el recorrido completo.
+  if (!isMember) {
+    const intro: TourStep[] = [
+      { id: "same", title: t("tour_business_intro_title"), description: t("tour_business_intro_desc"), selector: '[data-tour="business-header"]' },
+      { id: "migrate", title: t("tour_business_migrate_title"), description: t("tour_business_migrate_desc"), selector: '[data-tour="business-modules"]' },
+    ]
+    return <PageTour steps={intro} storageKey="tour_completed_business-intro" />
+  }
   const steps: TourStep[] = [
     {
       id: "header",

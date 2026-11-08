@@ -109,6 +109,11 @@ export function hasActiveMembership(): boolean {
   return getActiveMembership() !== null
 }
 
+/** Negocio del invitado («dashboard» = todos los del dueño), o null si no es invitado. */
+export function getActiveMemberScope(): string | null {
+  return getActiveMembership()?.scope ?? null
+}
+
 export function hasFeatureAccess(feature: FeatureKey): boolean {
   const member = getActiveMembership()
   if (member) return isFeatureAllowedForMember(member, feature)

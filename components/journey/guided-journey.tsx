@@ -23,7 +23,8 @@ import { TOUR_DIM, TOUR_RING, computePlacement, computeTooltipPosition, getRect,
 import { CHAPTER_GO, CHAPTER_STEPS, type JourneyChoice, type JourneyLive } from "@/components/journey/chapters"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
-import { hasActiveMembership, hasFeatureAccess } from "@/lib/plan-access"
+import { getActiveMemberScope, hasActiveMembership, hasFeatureAccess } from "@/lib/plan-access"
+import { getActivePreviewMember } from "@/lib/storage/team-preview"
 import type { FeatureKey } from "@/lib/plans"
 import { ensureIngredientsLoaded, useIngredients } from "@/lib/storage/ingredients"
 import { ensureRecipesLoaded, isSubRecipe, useRecipes } from "@/lib/storage/recipes"
@@ -61,7 +62,9 @@ const keepDialogsOpen = {
 const CARD_WIDTH = 340
 const CARD_EST_HEIGHT = 230
 const EMPTY_FICHA: JourneyLive["ficha"] = { linesWithIngredient: 0, costedLines: 0, yieldAmount: 0, hasName: false }
-const FEATURES = Array.from(new Set(CHAPTERS.flatMap((c) => c.features ?? []))) as FeatureKey[]
+const FEATURES = Array.from(
+  new Set([...CHAPTERS.flatMap((c) => c.features ?? []), ...CHAPTERS.map((c) => c.memberFeature).filter((f): f is FeatureKey => !!f && f !== "owner")]),
+) as FeatureKey[]
 
 /** Fue de la Ficha a importar una receta (docs/255): mientras importa, no se le tapa la ventana. */
 const IMPORTING_KEY = "gm-journey-importing"
@@ -152,6 +155,8 @@ export function GuidedJourney() {
   const [paused, setPaused] = useState(false)
   const [features, setFeatures] = useState<Partial<Record<FeatureKey, boolean>>>({})
   const [member, setMember] = useState(false)
+  const [memberScope, setMemberScope] = useState<string | null>(null)
+  const [previewing, setPreviewing] = useState(false)
   const [ficha, setFicha] = useState(EMPTY_FICHA)
   const [stepIndex, setStepIndex] = useState(0)
   const [rect, setRect] = useState<Rect | null>(null)
@@ -179,18 +184,25 @@ export function GuidedJourney() {
   const recipes = useMemo(() => countRecipes(scopedRecipes), [scopedRecipes])
   const mainIngredients = useMemo(() => countIngredients(allIngredients), [allIngredients])
   const mainRecipes = useMemo(() => countRecipes(allRecipes), [allRecipes])
-  const menus = useMenus("main").length
+  const scopedMenus = useMenus(scope || "main").length
+  const mainMenus = useMenus("main").length
+  const menus = Math.max(scopedMenus, mainMenus)
   const mermaActive = useMemo(() => scopedIngredients.some((i) => i.merma?.enabled), [scopedIngredients])
   const [saved, setSaved] = useState<string[]>([])
   const facts: JourneyFacts = useMemo(
-    () => ({ ingredients: Math.max(ingredients, mainIngredients), recipes: Math.max(recipes, mainRecipes), menus, mermaActive: mermaActive || allIngredients.some((i) => i.merma?.enabled), features }),
-    [ingredients, recipes, mainIngredients, mainRecipes, menus, mermaActive, allIngredients, features],
+    () => ({ ingredients: Math.max(ingredients, mainIngredients), recipes: Math.max(recipes, mainRecipes), menus, mermaActive: mermaActive || allIngredients.some((i) => i.merma?.enabled), features, member }),
+    [ingredients, recipes, mainIngredients, mainRecipes, menus, mermaActive, allIngredients, features, member],
   )
   // Últimos conteos del espacio actual, para fijar el punto de partida al cambiar de espacio.
   const countsRef = useRef({ ingredients: 0, recipes: 0 })
   countsRef.current = { ingredients, recipes }
   const [scopeReady, setScopeReady] = useState(true)
-  const enabled = !!user && loaded && scopeReady && isJourneyRoute(pathname) && !member
+  // Dueño dentro de un negocio (docs/263): ahí solo ve el aviso corto del negocio
+  // (BusinessDetailTour). El invitado del equipo sí hace el recorrido, con sus permisos.
+  // /business/main/... es el espacio principal (p. ej. Órdenes de compra), no un negocio.
+  const ownerInBusiness = !member && (!!scope || /^\/business\/(?!main(\/|$))/.test(pathname))
+  // La Vista previa de Equipo del dueño no corre el recorrido: se guardaría en el suyo.
+  const enabled = !!user && loaded && scopeReady && isJourneyRoute(pathname) && !ownerInBusiness && !previewing
 
   // Al entrar a otro espacio: se cargan sus datos y se fija ahí el punto de partida, para que
   // los ingredientes que ya tenía no cuenten como recién guardados.
@@ -222,6 +234,7 @@ export function GuidedJourney() {
       ensureIngredientsLoaded().catch(() => null),
       ensureRecipesLoaded().catch(() => null),
       ensureMenusLoaded("main").catch(() => null),
+      ...(scope ? [ensureMenusLoaded(scope).catch(() => null)] : []),
     ]).finally(() => {
       if (!cancelled) setLoaded(true)
     })
@@ -234,6 +247,8 @@ export function GuidedJourney() {
   useEffect(() => {
     const refresh = () => {
       setMember(hasActiveMembership())
+      setMemberScope(getActiveMemberScope())
+      setPreviewing(getActivePreviewMember() !== null)
       setFeatures(Object.fromEntries(FEATURES.map((f) => [f, hasFeatureAccess(f)])))
     }
     refresh()
@@ -669,7 +684,12 @@ export function GuidedJourney() {
   if (otherTourOpen && !step) return confirmDialog
 
   const go = CHAPTER_GO[chapter.id]
-  const goTo = () => chapter.route && router.push(chapter.route)
+  // Dentro de un negocio (o el negocio del invitado), la etapa se abre en ese mismo negocio.
+  const goTo = () => {
+    if (!chapter.route) return
+    const business = scope || (memberScope && memberScope !== "dashboard" ? memberScope : null)
+    router.push(business ? `${chapter.route}?business=${encodeURIComponent(business)}` : chapter.route)
+  }
 
   // Con un lugar del menú a la vista, la tarjeta se pone a su lado y lo resalta; si no se
   // encuentra (p. ej. el menú no cargó), queda la tarjeta flotante con «Ir a …».

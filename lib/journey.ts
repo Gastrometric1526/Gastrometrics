@@ -44,6 +44,11 @@ export type JourneyFacts = {
   menus: number // menús del negocio principal
   mermaActive: boolean // algún ingrediente con merma activada (guardada)
   features: Partial<Record<FeatureKey, boolean>>
+  /**
+   * Invitado del equipo (docs/263): solo ve las etapas de lo que tiene permitido
+   * (`memberFeature`) y nunca las del dueño (Equipo, Negocios y Mi Plan).
+   */
+  member?: boolean
 }
 
 export type ChapterKind =
@@ -66,6 +71,8 @@ export type ChapterMeta = {
   goal?: (f: JourneyFacts) => { current: number; target: number }
   /** Los datos ya muestran que esto está hecho (p. ej. la merma ya activada): se da por vista. */
   alreadyDone?: (f: JourneyFacts) => boolean
+  /** Para un invitado: el permiso que necesita esta etapa, o "owner" si es solo del dueño. */
+  memberFeature?: FeatureKey | "owner"
 }
 
 // Cada etapa se activa solo cuando los datos que necesita existen de verdad (pedido del dueño):
@@ -75,29 +82,35 @@ const all = (...conds: ((f: JourneyFacts) => boolean)[]) => (f: JourneyFacts) =>
 
 export const CHAPTERS: ChapterMeta[] = [
   { id: "welcome", kind: "steps", route: null },
-  { id: "ingredients-add", kind: "steps", route: "/ingredientes" },
-  { id: "ingredients-three", kind: "goal", route: "/ingredientes", goal: (f) => ({ current: f.ingredients, target: 3 }) },
-  { id: "merma", kind: "steps", route: "/ingredientes", features: ["merma"], unlocked: atLeast("ingredients", 3), alreadyDone: (f) => f.mermaActive },
-  { id: "ficha-basic", kind: "steps", route: "/ficha-tecnica", unlocked: atLeast("ingredients", 3) },
-  { id: "ficha-advanced", kind: "steps", route: "/ficha-tecnica", unlocked: atLeast("ingredients", 3) },
-  { id: "recipes", kind: "steps", route: "/mis-recetas", unlocked: atLeast("recipes", 1) },
-  { id: "estadisticas", kind: "page-tour", route: "/estadisticas", tourKey: "tour_completed_estadisticas", features: ["stats_panorama"], unlocked: atLeast("recipes", 1) },
-  { id: "ventas", kind: "page-tour", route: "/ventas", tourKey: "tour_completed_ventas", features: ["manual_sales", "stats_finance", "invoices"], unlocked: atLeast("recipes", 1) },
-  { id: "recipes-three", kind: "goal", route: "/ficha-tecnica", goal: (f) => ({ current: f.recipes, target: 3 }) },
-  { id: "inventario", kind: "page-tour", route: "/inventario", tourKey: "tour_completed_inventario", features: ["inventory"], unlocked: all(atLeast("recipes", 3), atLeast("ingredients", 3)) },
-  { id: "menus", kind: "page-tour", route: "/menus", tourKey: "tour_completed_menus", features: ["menus"], unlocked: atLeast("recipes", 3) },
+  { id: "ingredients-add", kind: "steps", memberFeature: "ingredients", route: "/ingredientes" },
+  { id: "ingredients-three", kind: "goal", memberFeature: "ingredients", route: "/ingredientes", goal: (f) => ({ current: f.ingredients, target: 3 }) },
+  { id: "merma", kind: "steps", memberFeature: "merma", route: "/ingredientes", features: ["merma"], unlocked: atLeast("ingredients", 3), alreadyDone: (f) => f.mermaActive },
+  { id: "ficha-basic", kind: "steps", memberFeature: "recipes", route: "/ficha-tecnica", unlocked: atLeast("ingredients", 3) },
+  { id: "ficha-advanced", kind: "steps", memberFeature: "recipes", route: "/ficha-tecnica", unlocked: atLeast("ingredients", 3) },
+  { id: "recipes", kind: "steps", memberFeature: "recipes", route: "/mis-recetas", unlocked: atLeast("recipes", 1) },
+  { id: "estadisticas", kind: "page-tour", memberFeature: "stats_panorama", route: "/estadisticas", tourKey: "tour_completed_estadisticas", features: ["stats_panorama"], unlocked: atLeast("recipes", 1) },
+  { id: "ventas", kind: "page-tour", memberFeature: "manual_sales", route: "/ventas", tourKey: "tour_completed_ventas", features: ["manual_sales", "stats_finance", "invoices"], unlocked: atLeast("recipes", 1) },
+  { id: "recipes-three", kind: "goal", memberFeature: "recipes", route: "/ficha-tecnica", goal: (f) => ({ current: f.recipes, target: 3 }) },
+  { id: "inventario", kind: "page-tour", memberFeature: "inventory", route: "/inventario", tourKey: "tour_completed_inventario", features: ["inventory"], unlocked: all(atLeast("recipes", 3), atLeast("ingredients", 3)) },
+  { id: "menus", kind: "page-tour", memberFeature: "menus", route: "/menus", tourKey: "tour_completed_menus", features: ["menus"], unlocked: atLeast("recipes", 3) },
   // El MEP sale de un menú: primero hay que tener uno.
-  { id: "menus-one", kind: "goal", route: "/menus", features: ["menus"], goal: (f) => ({ current: f.menus, target: 1 }) },
-  { id: "mep", kind: "page-tour", route: "/mep", tourKey: "tour_completed_mep", features: ["menus"], unlocked: all(atLeast("recipes", 3), atLeast("menus", 1)) },
-  { id: "ordenes", kind: "page-tour", route: "/menu-y-compras", tourKey: "tour_completed_ordenes-compra", features: ["purchase_orders_manual", "purchase_orders_auto"], unlocked: all(atLeast("recipes", 3), atLeast("ingredients", 3)) },
-  { id: "equipo", kind: "page-tour", route: "/equipo", tourKey: "tour_completed_equipo", features: ["team"], unlocked: atLeast("recipes", 3) },
-  { id: "negocios", kind: "page-tour", route: "/negocios", tourKey: "tour_completed_negocios" },
-  { id: "mi-plan", kind: "page-tour", route: "/mi-plan", tourKey: "tour_completed_mi-plan" },
+  { id: "menus-one", kind: "goal", memberFeature: "menus", route: "/menus", features: ["menus"], goal: (f) => ({ current: f.menus, target: 1 }) },
+  { id: "mep", kind: "page-tour", memberFeature: "menus", route: "/mep", tourKey: "tour_completed_mep", features: ["menus"], unlocked: all(atLeast("recipes", 3), atLeast("menus", 1)) },
+  { id: "ordenes", kind: "page-tour", memberFeature: "purchase_orders_manual", route: "/menu-y-compras", tourKey: "tour_completed_ordenes-compra", features: ["purchase_orders_manual", "purchase_orders_auto"], unlocked: all(atLeast("recipes", 3), atLeast("ingredients", 3)) },
+  { id: "equipo", kind: "page-tour", memberFeature: "owner", route: "/equipo", tourKey: "tour_completed_equipo", features: ["team"], unlocked: atLeast("recipes", 3) },
+  { id: "negocios", kind: "page-tour", memberFeature: "owner", route: "/negocios", tourKey: "tour_completed_negocios" },
+  { id: "mi-plan", kind: "page-tour", memberFeature: "owner", route: "/mi-plan", tourKey: "tour_completed_mi-plan" },
   { id: "finish", kind: "steps", route: null },
 ]
 
 /** ¿El plan permite esta etapa? Si no se sabe todavía (undefined), se espera. */
 export function chapterApplies(chapter: ChapterMeta, facts: JourneyFacts): boolean | null {
+  if (facts.member && chapter.memberFeature) {
+    if (chapter.memberFeature === "owner") return false
+    const allowed = facts.features[chapter.memberFeature]
+    if (allowed === undefined) return null
+    if (!allowed) return false
+  }
   if (!chapter.features || chapter.features.length === 0) return true
   const values = chapter.features.map((f) => facts.features[f])
   if (values.some((v) => v === true)) return true

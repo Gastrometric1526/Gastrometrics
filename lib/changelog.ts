@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-11-08d",
+    tutorialHref: tourHref("negocios"),
+    content: {
+      es: { title: "Negocios y equipo, cada uno con su tutorial", items: ["En un negocio, un aviso corto te recuerda que funciona igual que tu dashboard principal, con sus cosas aparte, y cómo traer tus recetas con «Migrar a otro negocio».", "Quien invitas a tu equipo hace el tutorial completo la primera vez, solo con las herramientas que le diste.", "Al migrar una receta, cada ingrediente llega con su proveedor, aunque haya dos con el mismo nombre."] },
+      en: { title: "Businesses and team, each with its own tutorial", items: ["In a business, a short note reminds you that it works like your main dashboard, with its things kept separate, and how to bring your recipes with “Migrate to another business”.", "People you invite to your team go through the full tutorial the first time, only with the tools you gave them.", "When you migrate a recipe, each ingredient arrives with its supplier, even if two share the same name."] },
+      da: { title: "Virksomheder og team, hver med sin vejledning", items: ["I en virksomhed minder en kort besked dig om, at den fungerer som dit hoveddashboard, med tingene adskilt, og hvordan du henter dine opskrifter med »Flyt til anden virksomhed«.", "Dem, du inviterer til dit team, gennemgår hele vejledningen første gang, kun med de værktøjer, du har givet dem.", "Når du flytter en opskrift, kommer hver ingrediens med sin leverandør, også hvis to hedder det samme."] },
+      fr: { title: "Établissements et équipe, chacun avec son tutoriel", items: ["Dans un établissement, un court message vous rappelle qu'il fonctionne comme votre tableau de bord principal, avec ses éléments à part, et comment apporter vos recettes avec « Migrer vers un autre établissement ».", "Les personnes que vous invitez dans votre équipe suivent le tutoriel complet la première fois, uniquement avec les outils que vous leur avez donnés.", "Quand vous migrez une recette, chaque ingrédient arrive avec son fournisseur, même si deux portent le même nom."] },
+      pt: { title: "Negócios e equipe, cada um com seu tutorial", items: ["Em um negócio, um aviso curto lembra que ele funciona como o seu dashboard principal, com as coisas separadas, e como trazer suas receitas com “Migrar para outro negócio”.", "Quem você convida para a equipe faz o tutorial completo na primeira vez, só com as ferramentas que você deu.", "Ao migrar uma receita, cada ingrediente chega com seu fornecedor, mesmo que dois tenham o mesmo nome."] },
+      zh: { title: "商户和团队，各有自己的教程", items: ["在商户中，一条简短提示会提醒你：用法与主控制台相同，内容单独存放，并可通过“迁移到其他商户”带入配方。", "你邀请的团队成员第一次会完整地走一遍教程，只包含你分配给他们的工具。", "迁移配方时，每种食材都会带着自己的供应商，即使有两种同名。"] },
+    },
+  },
+  {
     version: "2026-11-08c",
     tutorialHref: tourHref("estadisticas"),
     content: {

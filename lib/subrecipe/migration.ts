@@ -8,7 +8,6 @@ import type { Ingredient } from "@/types/ingredient"
 import { getRecipes, saveRecipes, isSubRecipe, ensureRecipesLoaded } from "../storage/recipes"
 import { getIngredients, saveIngredients, ensureIngredientsLoaded } from "../storage/ingredients"
 import { syncSubRecipeToIngredient } from "./core"
-import { formatDate } from "@/lib/date-format"
 
 interface MigrationResult {
   success: boolean
@@ -136,7 +135,7 @@ async function migrateIngredients(
   targetBusinessId: string,
   migratedSubRecipes: Recipe[],
   visited: Set<string>,
-): Promise<{ migratedIngredients: Ingredient[]; skippedIngredients: string[] }> {
+): Promise<{ migratedIngredients: Ingredient[]; skippedIngredients: string[]; idMap: Map<string, string> }> {
   const sourceIngredients = getIngredients(sourceBusinessId) || []
   // Copia local: getIngredients() devuelve el MISMO arreglo de la caché. Antes se le hacía
   // push directo y después se volvía a sumar al guardar → filas duplicadas en un solo upsert,
@@ -149,6 +148,9 @@ async function migrateIngredients(
 
   const migratedIngredients: Ingredient[] = []
   const skippedIngredients: string[] = []
+  // Origen → destino, por id (docs/263): dos ingredientes pueden llamarse igual con
+  // proveedores distintos, así que nunca se une por nombre.
+  const idMap = new Map<string, string>()
 
   for (const ingredient of ingredientsToCheck) {
     const existingSimilar = findSimilarIngredient(ingredient, targetIngredients)
@@ -184,15 +186,14 @@ async function migrateIngredients(
           migratedAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
-        notes: ingredient.notes
-          ? `${ingredient.notes}\n\n🔄 Migrado desde ${sourceBusinessId} el ${formatDate(new Date())}`
-          : `🔄 Migrado desde ${sourceBusinessId} el ${formatDate(new Date())}`,
       }
 
       migratedIngredients.push(migratedIngredient)
       targetIngredients.push(migratedIngredient)
+      idMap.set(ingredient.id, migratedIngredient.id)
     } else {
       skippedIngredients.push(ingredient.name)
+      idMap.set(ingredient.id, existingSimilar.id)
     }
   }
 
@@ -215,7 +216,7 @@ async function migrateIngredients(
     }
   }
 
-  return { migratedIngredients, skippedIngredients }
+  return { migratedIngredients, skippedIngredients, idMap }
 }
 
 /**
@@ -249,7 +250,7 @@ export async function migrateCompleteRecipe(
 
     if (!includeIngredients) return migrateRecipeOnly(recipe, sourceBusinessId, targetBusinessId)
 
-    const { migratedIngredients, skippedIngredients } = await migrateIngredients(
+    const { migratedIngredients, skippedIngredients, idMap } = await migrateIngredients(
       recipe,
       sourceBusinessId,
       targetBusinessId,
@@ -267,12 +268,9 @@ export async function migrateCompleteRecipe(
       const sourceIng = sourceIngredientsAll.find((si) => si.id === recipeIng.ingredientId)
       if (!sourceIng) continue
 
-      const migratedIng = migratedIngredients.find(
-        (mi) => mi.name.toLowerCase().trim() === sourceIng.name.toLowerCase().trim(),
-      )
-
-      if (migratedIng) {
-        ingredientIdMap.set(recipeIng.ingredientId, migratedIng.id)
+      const mappedId = idMap.get(recipeIng.ingredientId)
+      if (mappedId) {
+        ingredientIdMap.set(recipeIng.ingredientId, mappedId)
       } else {
         const existingSimilar = findSimilarIngredient(sourceIng, targetIngredients)
         if (existingSimilar) {
@@ -287,7 +285,7 @@ export async function migrateCompleteRecipe(
       businessId: targetBusinessId,
       ingredients: recipe.ingredients.map((ing) => ({
         ...ing,
-        ingredientId: ing.ingredientId ? ingredientIdMap.get(ing.ingredientId) || ing.ingredientId : null,
+        ingredientId: ing.ingredientId ? ingredientIdMap.get(ing.ingredientId) ?? null : null,
       })),
       metadata: {
         ...recipe.metadata,
@@ -296,9 +294,6 @@ export async function migrateCompleteRecipe(
         updatedAt: new Date().toISOString(),
         version: 1,
       },
-      notes: recipe.notes
-        ? `${recipe.notes}\n\n🔄 Migrado desde ${sourceBusinessId} el ${formatDate(new Date())}`
-        : `🔄 Migrado desde ${sourceBusinessId} el ${formatDate(new Date())}`,
     }
 
     await saveRecipes([...getRecipes(targetBusinessId), migratedRecipe], targetBusinessId)
