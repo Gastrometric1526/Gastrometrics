@@ -12,12 +12,12 @@ import { useLanguage } from "@/contexts/language-context"
 import { ArrowLeft, Lock, LayoutDashboard, Users, Inbox, LineChart, TrendingUp, Mail, RefreshCw, DollarSign, HeartPulse, LogOut } from "lucide-react"
 import { StatsPanel, type AdminStats } from "@/components/admin/stats-panel"
 import { AdminLiveProvider, useAdminLive } from "@/components/admin/live"
-import { useToast } from "@/hooks/use-toast"
 import { AccountsPanel } from "@/components/admin/accounts-panel"
 import { FeedbackPanel } from "@/components/admin/feedback-panel"
 import { SurveyPanel } from "@/components/admin/survey-panel"
 import { SupportInbox } from "@/components/admin/support-inbox"
 import { OnlineNow } from "@/components/admin/online-now"
+import { AdminNotificationsBell } from "@/components/admin/notifications-bell"
 import { FullExportButton } from "@/components/admin/full-export-button"
 import { AnalyticsPanel } from "@/components/admin/analytics-panel"
 import { TopUsersPanel } from "@/components/admin/top-users-panel"
@@ -72,9 +72,7 @@ export default function AdminPage() {
 
 function AdminPageInner() {
   const { t } = useLanguage()
-  const { toast } = useToast()
   const { tick, lastUpdatedAt, refreshNow } = useAdminLive()
-  const lastUnreadRef = useRef<number | null>(null)
 
   const [unlocked, setUnlocked] = useState(false)
   const [checkedSession, setCheckedSession] = useState(false)
@@ -155,14 +153,8 @@ function AdminPageInner() {
           nuevo,
           bug: inbox.filter((f: { type?: string }) => f.type === "bug").length,
         })
-        // Aviso cuando llega un mensaje nuevo mientras el panel está abierto (docs/192).
-        if (lastUnreadRef.current !== null && nuevo > lastUnreadRef.current) {
-          toast({
-            title: t("admin_live_new_message_title"),
-            description: t("admin_live_new_message_desc").replace("{count}", String(nuevo - lastUnreadRef.current)),
-          })
-        }
-        lastUnreadRef.current = nuevo
+        // El aviso emergente de mensaje nuevo (docs/192) lo da ahora la campana de
+        // notificaciones para todo tipo de aviso (docs/267).
       })
       .catch(() => {})
     fetch("/api/admin/legal-update-email")
@@ -307,6 +299,8 @@ function AdminPageInner() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {/* Un solo botón: todas las tablas + el informe PDF, en un ZIP (docs/250, docs/266) */}
+              {/* Centro de notificaciones: mensajes, encuestas, cuentas nuevas… (docs/267) */}
+              <AdminNotificationsBell onNavigate={(tab, sub) => ADMIN_TABS.includes(tab as AdminTab) && goTo(tab as AdminTab, sub)} />
               <FullExportButton />
               <AdminPushToggle />
               <Button
