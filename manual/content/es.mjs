@@ -402,6 +402,7 @@ export default {
         ["list", [
           "<strong>Registro manual</strong>: ideal si no tienes POS. Cada día tiene sus <strong>cuentas</strong>: buscas el plato o el menú (o tocas uno de los que más vendes) y ajustas la cantidad con − y +. El precio sale de su Ficha Técnica y lo puedes cambiar; la app calcula el ingreso y el costo. Si ese día ya tiene ventas, te ofrece sumarlas a ese registro.",
           "<strong>Importar tu POS</strong>: sube un archivo .xlsx, .xls, .csv o .txt. Indicas una vez qué columna es el plato, la cantidad, la fecha y el precio, y lo guardas como plantilla con nombre. La próxima vez, la app la reconoce sola.",
+          "<strong>Modificadores o extras</strong>: si tu POS trae una columna como «Extra queso, 2x Tocino», elígela al importar. Une cada extra a una receta pequeña (por ejemplo «Extra queso» con 30 g de queso): su costo se suma al plato y sus ingredientes salen del inventario teórico. No suman venta, porque ya van en el precio del plato, y lo que quita algo («Sin cebolla») no se cuenta. La unión se recuerda para la próxima vez.",
         ]],
         ["tip", "Archivos difíciles", "La app detecta si tus fechas vienen como día/mes o mes/día (y te deja corregirlo), y lee bien los acentos y la ñ de archivos antiguos en formatos de Windows."],
         ["h3", "Cuentas y mesas"],

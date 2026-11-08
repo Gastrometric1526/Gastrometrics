@@ -401,6 +401,7 @@ export default {
         ["list", [
           "<strong>Manuel registrering</strong>: ideel, hvis du ikke har et POS. Hver dag har sine <strong>regninger</strong>: søg retten eller menuen (eller tryk på en af dem, du sælger mest), og juster antallet med − og +. Prisen kommer fra opskriftsarket, og du kan ændre den; appen beregner omsætning og kostpris. Har dagen allerede salg, tilbyder den at lægge til den registrering.",
           "<strong>Importér dit POS</strong>: upload en .xlsx-, .xls-, .csv- eller .txt-fil. Du angiver én gang, hvilken kolonne der er ret, mængde, dato og pris, og gemmer det som en navngivet skabelon. Næste gang genkender appen den selv.",
+          "<strong>Tilvalg eller ekstra</strong>: har dit POS en kolonne som »Ekstra ost, 2x Bacon«, så vælg den ved import. Kobl hvert tilvalg til en lille opskrift (for eksempel »Ekstra ost« med 30 g ost): omkostningen lægges til retten, og ingredienserne trækkes fra det teoretiske lager. De lægges ikke til salget, fordi de allerede er med i rettens pris, og det, der fjernes (»Uden løg«), tælles ikke. Koblingen huskes til næste gang.",
         ]],
         ["tip", "Besværlige filer", "Appen genkender, om dine datoer står som dag/måned eller måned/dag (og lader dig rette det), og læser specialtegn korrekt fra ældre filer i Windows-format."],
         ["h3", "Regninger og borde"],

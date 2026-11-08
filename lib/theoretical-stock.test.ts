@@ -202,3 +202,17 @@ describe("lo recibido no cuenta dos veces (docs/218)", () => {
     expect(r.get("aceite")?.theoretical).toBeCloseTo(10)
   })
 })
+
+describe("modificadores del POS en el inventario teórico (docs/261)", () => {
+  it("descuenta los ingredientes de cada extra, por unidad del plato", async () => {
+    const { salesConsumption } = await import("./theoretical-stock")
+    const queso = ingredient("queso")
+    const extraQueso = recipe("extra-queso", 1, [["queso", 30]])
+    const imp = sale("2026-11-08", "2026-11-08T20:00:00Z", [{ recipeId: "plato", quantity: 2 }])
+    imp.lines[0].modifiers = [{ name: "Extra queso", recipeId: "extra-queso", quantity: 2 }]
+    const acc = salesConsumption([imp], [...recipes, extraQueso], [...ingredients, queso], [], () => true)
+    // 2 platos × 2 extras × 30 g = 120 g de queso; el pollo sigue igual (2 × 600 / 4 = 300 g).
+    expect(acc.get("queso")?.quantity).toBeCloseTo(120)
+    expect(acc.get("pollo")?.quantity).toBeCloseTo(300)
+  })
+})

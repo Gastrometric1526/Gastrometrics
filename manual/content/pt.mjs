@@ -401,6 +401,7 @@ export default {
         ["list", [
           "<strong>Registro manual</strong>: ideal se você não tem PDV. Cada dia tem suas <strong>contas</strong>: busque o prato ou o cardápio (ou toque em um dos mais vendidos) e ajuste a quantidade com − e +. O preço vem da ficha técnica e você pode mudá-lo; o app calcula a receita e o custo. Se o dia já tiver vendas, ele oferece somar a esse registro.",
           "<strong>Importar seu PDV</strong>: envie um arquivo .xlsx, .xls, .csv ou .txt. Você indica uma vez qual coluna é o prato, a quantidade, a data e o preço, e salva como um modelo com nome. Na próxima vez, o app o reconhece sozinho.",
+          "<strong>Modificadores ou adicionais</strong>: se o seu PDV tiver uma coluna como “Queijo extra, 2x Bacon”, escolha-a ao importar. Ligue cada adicional a uma receita pequena (por exemplo “Queijo extra” com 30 g de queijo): o custo é somado ao prato e os ingredientes saem do estoque teórico. Não somam às vendas, porque já estão no preço do prato, e o que tira algo (“Sem cebola”) não é contado. A ligação fica salva para a próxima vez.",
         ]],
         ["tip", "Arquivos difíceis", "O app detecta se as datas vêm como dia/mês ou mês/dia (e deixa você corrigir), e lê corretamente os acentos de arquivos antigos em formatos do Windows."],
         ["h3", "Contas e mesas"],

@@ -401,6 +401,7 @@ export default {
         ["list", [
           "<strong>Saisie manuelle</strong> : idéale si vous n'avez pas de caisse. Chaque jour a ses <strong>additions</strong> : cherchez le plat ou le menu (ou touchez une de vos meilleures ventes) et ajustez la quantité avec − et +. Le prix vient de sa fiche technique et vous pouvez le modifier ; l'application calcule le chiffre d'affaires et le coût. Si ce jour a déjà des ventes, elle propose de compléter cet enregistrement.",
           "<strong>Importer votre caisse</strong> : téléversez un fichier .xlsx, .xls, .csv ou .txt. Vous indiquez une fois quelle colonne correspond au plat, à la quantité, à la date et au prix, et l'enregistrez comme modèle nommé. La fois suivante, l'application le reconnaît seule.",
+          "<strong>Modificateurs ou suppléments</strong> : si votre caisse a une colonne comme « Supplément fromage, 2x Bacon », choisissez-la à l'import. Reliez chaque supplément à une petite recette (par exemple « Supplément fromage » avec 30 g de fromage) : son coût s'ajoute au plat et ses ingrédients sortent de l'inventaire théorique. Ils ne s'ajoutent pas aux ventes, car ils sont déjà dans le prix du plat, et ce qui retire quelque chose (« Sans oignon ») n'est pas compté. Le lien est mémorisé pour la prochaine fois.",
         ]],
         ["tip", "Fichiers difficiles", "L'application détecte si vos dates sont au format jour/mois ou mois/jour (et vous laisse corriger), et lit correctement les accents des anciens fichiers au format Windows."],
         ["h3", "Additions et tables"],

@@ -23,6 +23,7 @@ import { logActivity, importFormat } from "@/lib/services/activity-log"
 import { parseExcelFile } from "@/lib/excel-utils"
 import { formatCurrency } from "@/lib/currency"
 import { findBestNameMatch, normalizeName } from "@/lib/utils/name-match"
+import { modifiersUnitCost, splitModifiers, type SaleModifier } from "@/lib/pos-modifiers"
 import {
   getPOSColumnMappings,
   savePOSColumnMapping,
@@ -174,6 +175,8 @@ export function POSSalesImportDialog({
   const [dishColumn, setDishColumn] = useState<string>(NONE_VALUE)
   const [quantityColumn, setQuantityColumn] = useState<string>(NONE_VALUE)
   const [priceColumn, setPriceColumn] = useState<string>(NONE_VALUE)
+  // Modificadores o extras del POS (docs/261), opcional.
+  const [modifiersColumn, setModifiersColumn] = useState<string>(NONE_VALUE)
   const [dateFormat, setDateFormat] = useState<DateFormatHint>("auto")
 
   // Plantillas de mapeo guardadas para este negocio (una por POS, con nombre —
@@ -195,6 +198,7 @@ export function POSSalesImportDialog({
     setDishColumn(NONE_VALUE)
     setQuantityColumn(NONE_VALUE)
     setPriceColumn(NONE_VALUE)
+    setModifiersColumn(NONE_VALUE)
     setDateFormat("auto")
     setTemplateId(null)
     setTemplateName("")
@@ -216,6 +220,9 @@ export function POSSalesImportDialog({
     setQuantityColumn(detectedHeaders.includes(template.quantityColumn) ? template.quantityColumn : NONE_VALUE)
     setPriceColumn(
       template.priceColumn && detectedHeaders.includes(template.priceColumn) ? template.priceColumn : NONE_VALUE,
+    )
+    setModifiersColumn(
+      template.modifiersColumn && detectedHeaders.includes(template.modifiersColumn) ? template.modifiersColumn : NONE_VALUE,
     )
     setDateFormat(template.dateFormat || "auto")
   }
@@ -274,6 +281,7 @@ export function POSSalesImportDialog({
         setDishColumn(guess(["plato", "producto", "item", "articulo", "dish", "product", "artikel", "plat", "prato", "菜"]))
         setQuantityColumn(guess(["cantidad", "cant", "qty", "unidades", "quantity", "mængde", "quantité", "quantidade", "数量"]))
         setPriceColumn(guess(["precio", "price", "monto", "total", "pris", "prix", "preço", "价格"]))
+        setModifiersColumn(guess(["modific", "modifier", "extras", "adicional", "complement", "tilvalg", "opções", "opciones", "options", "加料", "配料"]))
         setDateFormat("auto")
         setTemplateId(null)
         // Nombre por default a partir del archivo — para que rara vez quede vacio,
@@ -367,7 +375,19 @@ export function POSSalesImportDialog({
 
         const effectiveUnitPrice = unitPrice ?? recipe?.unitPrice ?? 0
         const revenue = quantity * effectiveUnitPrice
-        const theoreticalCost = recipe ? quantity * (recipe.costPerServing || 0) : 0
+
+        // Extras del POS (docs/261): no suman venta (ya van en el precio del plato), sí costo.
+        const modifiers: SaleModifier[] =
+          modifiersColumn !== NONE_VALUE
+            ? splitModifiers(String(row[modifiersColumn] ?? "")).map((m) => {
+                const key = normalizeName(m.name)
+                const learned = dishMappings.find((d) => d.normalizedPosName === key)
+                const manual = manualMatches[key]
+                const auto = !learned && !manual ? findBestNameMatch(m.name, recipes) : null
+                return { name: m.name, quantity: m.quantity, recipeId: manual || learned?.recipeId || auto?.id || null }
+              })
+            : []
+        const theoreticalCost = (recipe ? quantity * (recipe.costPerServing || 0) : 0) + quantity * modifiersUnitCost(modifiers, recipes)
 
         return {
           rowIndex: index,
@@ -380,9 +400,23 @@ export function POSSalesImportDialog({
           recipeName: recipe?.name,
           revenue,
           theoreticalCost,
+          modifiers,
         }
       })
-  }, [rawRows, dishColumn, quantityColumn, priceColumn, dateColumn, recipes, dishMappings, manualMatches])
+  }, [rawRows, dishColumn, quantityColumn, priceColumn, dateColumn, modifiersColumn, recipes, dishMappings, manualMatches])
+
+  // Modificadores distintos del archivo, para unirlos a una receta una sola vez.
+  const modifierSummary = useMemo(() => {
+    const map = new Map<string, { name: string; recipeId: string | null; count: number }>()
+    for (const line of parsedLines) {
+      for (const m of line.modifiers) {
+        const key = normalizeName(m.name)
+        const prev = map.get(key)
+        map.set(key, { name: prev?.name ?? m.name, recipeId: m.recipeId, count: (prev?.count ?? 0) + line.quantity * m.quantity })
+      }
+    }
+    return [...map.entries()].map(([key, v]) => ({ key, ...v })).sort((a, b) => b.count - a.count)
+  }, [parsedLines])
 
   const unmatchedCount = parsedLines.filter((l) => !l.recipeId).length
   const matchedCount = parsedLines.length - unmatchedCount
@@ -405,15 +439,18 @@ export function POSSalesImportDialog({
         dishColumn,
         quantityColumn,
         priceColumn: priceColumn !== NONE_VALUE ? priceColumn : null,
+        modifiersColumn: modifiersColumn !== NONE_VALUE ? modifiersColumn : null,
         dateFormat,
         updatedAt: new Date().toISOString(),
       },
       businessId,
     )
 
-    // Aprende las vinculaciones nuevas (manuales o automaticas exactas) para la proxima vez
+    // Aprende las vinculaciones nuevas (manuales o automaticas exactas) para la proxima vez,
+    // también las de los modificadores (docs/261).
+    const learnedModifiers = modifierSummary.filter((m) => m.recipeId).map((m) => ({ normalized: m.key, recipeId: m.recipeId }))
     await Promise.all(
-      parsedLines
+      [...parsedLines, ...learnedModifiers]
         .filter((line) => line.recipeId && line.normalized)
         .map((line) =>
           saveDishNameMapping(
@@ -439,6 +476,7 @@ export function POSSalesImportDialog({
         revenue: l.revenue,
         theoreticalCost: l.theoreticalCost,
         date: lineDate ? lineDate.toISOString() : null,
+        ...(l.modifiers.length ? { modifiers: l.modifiers } : {}),
       }
     })
 
@@ -646,6 +684,23 @@ export function POSSalesImportDialog({
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-1.5 col-span-2">
+                <label className="text-sm font-medium">{t("posi_col_modifiers_label")}</label>
+                <Select value={modifiersColumn} onValueChange={setModifiersColumn}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("posi_no_modifiers")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE_VALUE}>{t("posi_no_modifiers")}</SelectItem>
+                    {headers.map((h) => (
+                      <SelectItem key={h} value={h}>
+                        {h}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">{t("posi_modifiers_hint")}</p>
+              </div>
             </div>
 
             {dateColumn !== NONE_VALUE && (
@@ -763,6 +818,35 @@ export function POSSalesImportDialog({
                 </Table>
               </ScrollArea>
             </div>
+
+            {modifierSummary.length > 0 && (
+              <div className="space-y-2 rounded-md border p-3">
+                <p className="text-sm font-medium text-foreground">{t("posi_modifiers_title")}</p>
+                <p className="text-xs text-muted-foreground">{t("posi_modifiers_review_hint")}</p>
+                <div className="max-h-48 space-y-2 overflow-y-auto pr-1">
+                  {modifierSummary.map((m) => (
+                    <div key={m.key} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                      <span className="min-w-0 truncate text-sm">
+                        {m.name} <span className="text-muted-foreground tabular-nums">× {Math.round(m.count * 100) / 100}</span>
+                      </span>
+                      <Select value={manualMatches[m.key] || m.recipeId || NONE_VALUE} onValueChange={(v) => handleManualMatch(m.key, v)}>
+                        <SelectTrigger className="h-8 w-full text-xs sm:w-56">
+                          <SelectValue placeholder={t("posi_modifier_unlinked")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={NONE_VALUE}>{t("posi_modifier_unlinked")}</SelectItem>
+                          {recipes.map((r) => (
+                            <SelectItem key={r.id} value={r.id}>
+                              {r.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

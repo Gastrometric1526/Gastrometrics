@@ -3,6 +3,8 @@
 // mapeo de columnas y de nombres de plato se guardan aparte, por negocio, para que
 // la siguiente importación del mismo POS sea casi de un solo clic.
 
+import type { SaleModifier } from "@/lib/pos-modifiers"
+
 export interface SalesImportLine {
   id: string
   rawDishName: string // el nombre tal como vino del archivo del POS (o el nombre de la receta/menú, en un registro manual)
@@ -33,6 +35,11 @@ export interface SalesImportLine {
   netOfTax?: boolean
   /** Cuenta (mesa) a la que pertenece la línea, en un registro manual por mesas (docs/215). */
   ticketId?: string | null
+  /**
+   * Extras del POS (docs/261), por cada unidad del plato. Su costo ya está sumado en
+   * theoreticalCost; el inventario teórico descuenta también sus ingredientes.
+   */
+  modifiers?: SaleModifier[]
 }
 
 /** Dónde se atendió la cuenta (docs/215). */
@@ -144,6 +151,8 @@ export interface POSColumnMapping {
   dishColumn: string
   quantityColumn: string
   priceColumn: string | null
+  /** Columna de modificadores o extras (docs/261), opcional. */
+  modifiersColumn?: string | null
   dateFormat?: DateFormatHint
   updatedAt: string
 }

@@ -118,6 +118,14 @@ export function salesConsumption(
           grossUpMerma: true,
         })
       }
+      // Extras del POS (docs/261): sus ingredientes también salen del inventario.
+      for (const mod of line.modifiers ?? []) {
+        const recipe = mod.recipeId ? recipesById.get(mod.recipeId) : undefined
+        if (!recipe || !(mod.quantity > 0)) continue
+        accumulateRecipeConsumption(recipe, (line.quantity * mod.quantity) / recipeBaseYield(recipe), recipesById, ingredientsById, acc, {
+          grossUpMerma: true,
+        })
+      }
     }
   }
   return acc

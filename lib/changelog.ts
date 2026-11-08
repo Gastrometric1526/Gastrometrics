@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-11-08c",
+    tutorialHref: tourHref("estadisticas"),
+    content: {
+      es: { title: "Los extras del POS ya cuentan en el costo", items: ["Al importar tus ventas, elige la columna de modificadores de tu POS («Extra queso, 2x Tocino»).", "Une cada extra a una receta pequeña: su costo se suma al plato y sus ingredientes salen del inventario teórico. No suma venta, porque ya va en el precio del plato."] },
+      en: { title: "POS add-ons now count in the cost", items: ["When you import your sales, pick your POS modifiers column (“Extra cheese, 2x Bacon”).", "Link each add-on to a small recipe: its cost is added to the dish and its ingredients come out of theoretical inventory. It doesn't add to sales, because it's already in the dish price."] },
+      da: { title: "Tilvalg fra dit POS tæller nu med i omkostningen", items: ["Når du importerer dit salg, vælger du kolonnen med tilvalg fra dit POS (»Ekstra ost, 2x Bacon«).", "Kobl hvert tilvalg til en lille opskrift: omkostningen lægges til retten, og ingredienserne trækkes fra det teoretiske lager. Det lægges ikke til salget, fordi det allerede er med i rettens pris."] },
+      fr: { title: "Les suppléments de votre caisse comptent dans le coût", items: ["Quand vous importez vos ventes, choisissez la colonne des modificateurs de votre caisse (« Supplément fromage, 2x Bacon »).", "Reliez chaque supplément à une petite recette : son coût s'ajoute au plat et ses ingrédients sortent de l'inventaire théorique. Il ne s'ajoute pas aux ventes, car il est déjà dans le prix du plat."] },
+      pt: { title: "Os adicionais do PDV já contam no custo", items: ["Ao importar suas vendas, escolha a coluna de modificadores do seu PDV (“Queijo extra, 2x Bacon”).", "Ligue cada adicional a uma receita pequena: o custo é somado ao prato e os ingredientes saem do estoque teórico. Não soma às vendas, porque já está no preço do prato."] },
+      zh: { title: "POS 加料现在计入成本", items: ["导入销售数据时，选择 POS 的加料列（“加芝士, 2x 培根”）。", "把每个加料关联到一个小配方：其成本计入菜品，食材从理论库存中扣除。加料不计入销售额，因为已包含在菜品价格中。"] },
+    },
+  },
+  {
     version: "2026-11-08b",
     tutorialHref: tourHref("mi-plan"),
     content: {

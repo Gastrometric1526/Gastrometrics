@@ -401,6 +401,7 @@ export default {
         ["list", [
           "<strong>Manual entry</strong>: ideal if you don't have a POS. Each day has its <strong>checks</strong>: search for the dish or menu (or tap one of your best sellers) and adjust the quantity with − and +. The price comes from its Recipe Sheet and you can change it; the app calculates revenue and cost. If that day already has sales, it offers to add to that entry.",
           "<strong>Import your POS</strong>: upload an .xlsx, .xls, .csv or .txt file. You tell it once which column is the dish, quantity, date and price, and save that as a named template. Next time, the app recognizes it on its own.",
+          "<strong>Modifiers or add-ons</strong>: if your POS has a column such as “Extra cheese, 2x Bacon”, pick it when you import. Link each add-on to a small recipe (for example “Extra cheese” with 30 g of cheese): its cost is added to the dish and its ingredients come out of theoretical inventory. They don't add to sales, because they're already in the dish price, and removals (“No onion”) aren't counted. The link is remembered for next time.",
         ]],
         ["tip", "Tricky files", "The app detects whether your dates come as day/month or month/day (and lets you correct it), and reads accents and special characters correctly from older Windows-format files."],
         ["h3", "Checks and tables"],
