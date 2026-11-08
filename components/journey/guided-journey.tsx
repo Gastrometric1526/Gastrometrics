@@ -20,7 +20,7 @@ import { ArrowLeft, ArrowRight, Compass, Lightbulb, MousePointerClick, X } from 
 import { Button } from "@/components/ui/button"
 import { useConfirmDialog } from "@/components/confirm-dialog"
 import { TOUR_DIM, TOUR_RING, computePlacement, computeTooltipPosition, getRect, isActuallyVisible, type Placement, type Rect } from "@/components/page-tour"
-import { CHAPTER_GO, CHAPTER_STEPS, type JourneyLive } from "@/components/journey/chapters"
+import { CHAPTER_GO, CHAPTER_STEPS, type JourneyChoice, type JourneyLive } from "@/components/journey/chapters"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { hasActiveMembership, hasFeatureAccess } from "@/lib/plan-access"
@@ -62,6 +62,16 @@ const CARD_WIDTH = 340
 const CARD_EST_HEIGHT = 230
 const EMPTY_FICHA: JourneyLive["ficha"] = { linesWithIngredient: 0, costedLines: 0, yieldAmount: 0, hasName: false }
 const FEATURES = Array.from(new Set(CHAPTERS.flatMap((c) => c.features ?? []))) as FeatureKey[]
+
+/** Fue de la Ficha a importar una receta (docs/255): mientras importa, no se le tapa la ventana. */
+const IMPORTING_KEY = "gm-journey-importing"
+function readImporting(): boolean {
+  try {
+    return sessionStorage.getItem(IMPORTING_KEY) === "1"
+  } catch {
+    return false
+  }
+}
 
 function readPaused(): boolean {
   try {
@@ -281,6 +291,12 @@ export function GuidedJourney() {
   const chapterId = chapter?.id ?? null
   const onRoute = chapter ? onChapterRoute(chapter, pathname) : false
   const steps = chapterId ? CHAPTER_STEPS[chapterId] ?? [] : []
+  useEffect(() => {
+    if (!onRoute) return
+    try {
+      sessionStorage.removeItem(IMPORTING_KEY)
+    } catch {}
+  }, [onRoute])
   const runningSteps = enabled && !paused && !!chapter && chapter.kind === "steps" && position.status === "active" && position.unlocked && onRoute
   const step = runningSteps ? steps[Math.min(stepIndex, steps.length - 1)] : null
 
@@ -308,24 +324,51 @@ export function GuidedJourney() {
   )
 
   // Avanza desde un paso concreto: un clic y una condición cumplida a la vez no saltan dos pasos.
-  const currentRef = useRef<{ chapterId: string; stepId: string; index: number; length: number } | null>(null)
-  currentRef.current = chapterId && step ? { chapterId, stepId: step.id, index: Math.min(stepIndex, steps.length - 1), length: steps.length } : null
+  const currentRef = useRef<{ chapterId: string; stepId: string; index: number; length: number; then?: string } | null>(null)
+  currentRef.current = chapterId && step ? { chapterId, stepId: step.id, index: Math.min(stepIndex, steps.length - 1), length: steps.length, then: step.then } : null
+  const stepIndexOf = useCallback((id: string) => steps.findIndex((s) => s.id === id), [steps])
   const advanceFrom = useCallback(
     (stepId: string) => {
       const cur = currentRef.current
       if (!cur || cur.stepId !== stepId) return
       currentRef.current = { ...cur, stepId: "" }
       missesRef.current = 0
-      if (cur.index >= cur.length - 1) completeChapter(cur.chapterId)
-      else setStepIndex(cur.index + 1)
+      // Caminos (docs/255): `then` lleva a otro paso o termina la etapa.
+      const thenIndex = cur.then && cur.then !== "end" ? stepIndexOf(cur.then) : -1
+      if (cur.then === "end" || (thenIndex < 0 && cur.index >= cur.length - 1)) completeChapter(cur.chapterId)
+      else setStepIndex(thenIndex >= 0 ? thenIndex : cur.index + 1)
     },
-    [completeChapter],
+    [completeChapter, stepIndexOf],
   )
   const goNext = () => step && advanceFrom(step.id)
+  const jumpTo = useCallback(
+    (id: string) => {
+      const index = stepIndexOf(id)
+      if (index < 0) return
+      if (currentRef.current) currentRef.current = { ...currentRef.current, stepId: "" }
+      missesRef.current = 0
+      setStepIndex(index)
+    },
+    [stepIndexOf],
+  )
 
   const goBack = () => {
     missesRef.current = 0
-    setStepIndex((i) => Math.max(0, i - 1))
+    const back = step?.back ? stepIndexOf(step.back) : -1
+    setStepIndex((i) => (back >= 0 ? back : Math.max(0, i - 1)))
+  }
+
+  // Botones de un paso con caminos: tocar algo de la pantalla, ir a otra pantalla o seguir.
+  const choose = (choice: JourneyChoice) => {
+    if (choice.click) (document.querySelector(choice.click) as HTMLElement | null)?.click()
+    if (choice.href) {
+      const business = new URLSearchParams(window.location.search).get("business")
+      try {
+        sessionStorage.setItem(IMPORTING_KEY, "1")
+      } catch {}
+      router.push(business ? `${choice.href}${choice.href.includes("?") ? "&" : "?"}business=${encodeURIComponent(business)}` : choice.href)
+    }
+    if (choice.goTo) jumpTo(choice.goTo)
   }
 
   // Seguimiento del paso: dónde está lo resaltado, si ya se cumplió y si desapareció.
@@ -337,6 +380,12 @@ export function GuidedJourney() {
     const live: JourneyLive = { ficha, ingredients, recipes, mermaActive, start: startRef.current, saved }
     const tick = () => {
       setOtherTourOpen(!!document.querySelector("[data-tour-overlay]"))
+      // La persona ya tomó un camino por su cuenta (abrió «Importar» o «Nuevo»): se sigue desde ahí.
+      const jump = step.jumps?.find((j) => j.when(live))
+      if (jump) {
+        jumpTo(jump.goTo)
+        return
+      }
       // Con una lista desplegable abierta (Select, Popover) la tarjeta se aparta para no taparla.
       setPopperOpen(!!document.querySelector("[data-radix-popper-content-wrapper]"))
       const r = visibleRect(step.selector)
@@ -371,7 +420,7 @@ export function GuidedJourney() {
               return
             }
           }
-          if (stepIndex > 0 && steps[0].selector) setStepIndex(0)
+          if (stepIndex > 0) setStepIndex(0)
         }
         return
       }
@@ -383,7 +432,7 @@ export function GuidedJourney() {
     tick()
     const interval = setInterval(tick, 250)
     return () => clearInterval(interval)
-  }, [step, stepIndex, steps, chapterId, ficha, ingredients, recipes, mermaActive, saved, advanceFrom])
+  }, [step, stepIndex, steps, chapterId, ficha, ingredients, recipes, mermaActive, saved, advanceFrom, jumpTo])
 
   // Pasos que avanzan cuando la persona toca lo resaltado.
   useEffect(() => {
@@ -674,6 +723,8 @@ export function GuidedJourney() {
   // Etapa disponible pero en otra pantalla (o todavía bloqueada): tarjeta «Ir a …».
   if (!onRoute || !position.unlocked) {
     if (!go) return confirmDialog
+    // Fue a importar una receta desde la Ficha (docs/255): no se tapa la ventana de importar.
+    if (!onRoute && dialogOpen && readImporting()) return confirmDialog
     return (
       <>
         {placed(
@@ -775,6 +826,15 @@ export function GuidedJourney() {
                   </span>
                 </div>
               )}
+              {step.choices && (
+                <div className="mt-4 flex flex-col gap-2">
+                  {step.choices.map((choice) => (
+                    <Button key={choice.label} size="sm" variant={choice.primary ? "default" : "outline"} onClick={() => choose(choice)} className="w-full justify-center">
+                      {t(choice.label)}
+                    </Button>
+                  ))}
+                </div>
+              )}
               {waitingForAction && (
                 <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-primary">
                   <MousePointerClick className="h-3.5 w-3.5" />
@@ -797,7 +857,7 @@ export function GuidedJourney() {
                 <span className="text-xs text-muted-foreground">
                   {stepIndex + 1}/{steps.length}
                 </span>
-                {!waitingForAction && (
+                {!waitingForAction && !step.choices && (
                   <Button size="sm" onClick={goNext} disabled={!ready} className="gap-1.5">
                     {isLastStep ? t(isLastChapter ? "journey_finish_button" : "journey_continue") : t("tour_next")}
                     <ArrowRight className="h-4 w-4" />

@@ -6,6 +6,11 @@
  * - "auto": en cuanto se cumple `ready` (p. ej. la primera línea de la ficha ya tiene costo).
  * Si lo resaltado desaparece (se cerró el diálogo), vuelve al último paso que sí se puede
  * mostrar; un paso `optional` cuyo elemento no existe se salta.
+ *
+ * Caminos (docs/255): un paso con `choices` muestra botones en vez de «Siguiente» (p. ej.
+ * «Importar mi lista» o «Uno por uno»); `jumps` lleva a otro paso si la persona ya hizo algo por
+ * su cuenta; `then` dice adónde ir al terminar el paso ("end" = termina la etapa) y `back`,
+ * adónde vuelve «Atrás».
  */
 
 import type { TranslationKey } from "@/lib/i18n/translations"
@@ -30,6 +35,21 @@ export type CoachStep = {
   advance: "next" | "click" | "auto"
   ready?: (live: JourneyLive) => boolean
   optional?: boolean
+  choices?: JourneyChoice[]
+  jumps?: { when: (live: JourneyLive) => boolean; goTo: string }[]
+  then?: string
+  back?: string
+}
+
+export type JourneyChoice = {
+  label: TranslationKey
+  primary?: boolean
+  /** Toca este elemento de la pantalla (p. ej. el botón «Importar»). */
+  click?: string
+  /** Va a otra pantalla (se le suma ?business= del negocio actual). */
+  href?: string
+  /** Paso al que sigue; sin él, se queda en el mismo (sus `jumps` deciden). */
+  goTo?: string
 }
 
 const el = (selector: string) => (typeof document === "undefined" ? null : document.querySelector(selector))
@@ -51,7 +71,36 @@ export const CHAPTER_STEPS: Record<string, CoachStep[]> = {
     { id: "menu", selector: '[data-tour="sidebar"]', title: "journey_welcome_menu_title", description: "journey_welcome_menu_desc", advance: "next", optional: true },
   ],
   "ingredients-add": [
-    { id: "open", selector: '[data-tour="ing-new"]', title: "journey_ing_open_title", description: "journey_ing_open_desc", tip: "journey_ing_open_tip", advance: "click" },
+    // Primero, cómo cargarlos: importar la lista completa (lo recomendado) o uno por uno.
+    {
+      id: "choose",
+      selector: null,
+      title: "journey_ing_choose_title",
+      description: "journey_ing_choose_desc",
+      tip: "journey_ing_choose_tip",
+      advance: "next",
+      choices: [
+        { label: "journey_ing_choose_import", primary: true, click: '[data-tour="ing-import"]', goTo: "import" },
+        { label: "journey_ing_choose_manual", goTo: "open" },
+      ],
+      jumps: [
+        { when: () => !!el('[data-journey="ing-import-dialog"]'), goTo: "import" },
+        { when: () => !!el('[data-journey="ing-dialog"]'), goTo: "name" },
+      ],
+    },
+    {
+      id: "import",
+      selector: '[data-journey="ing-import-dialog"]',
+      title: "journey_ing_import_title",
+      description: "journey_ing_import_desc",
+      tip: "journey_ing_import_tip",
+      advance: "auto",
+      ready: (live) => live.ingredients > live.start.ingredients,
+      then: "import-done",
+      back: "choose",
+    },
+    { id: "import-done", selector: null, title: "journey_ing_import_done_title", description: "journey_ing_import_done_desc", advance: "next", then: "end" },
+    { id: "open", selector: '[data-tour="ing-new"]', title: "journey_ing_open_title", description: "journey_ing_open_desc", tip: "journey_ing_open_tip", advance: "click", back: "choose" },
     {
       id: "name",
       selector: '[data-journey="ing-name"]',
@@ -117,6 +166,20 @@ export const CHAPTER_STEPS: Record<string, CoachStep[]> = {
     { id: "done", selector: null, title: "journey_merma_done_title", description: "journey_merma_done_desc", advance: "next" },
   ],
   "ficha-basic": [
+    // Primero: importar la receta escrita (se llena sola y solo se revisa) o crearla aquí.
+    {
+      id: "choose",
+      selector: null,
+      title: "journey_ficha_choose_title",
+      description: "journey_ficha_choose_desc",
+      advance: "next",
+      choices: [
+        { label: "journey_ficha_choose_import", primary: true, href: "/mis-recetas?import=1" },
+        { label: "journey_ficha_choose_manual", goTo: "name" },
+      ],
+      // Volvió de importar: la ficha ya trae nombre e ingredientes, solo falta revisarla.
+      jumps: [{ when: (live) => live.ficha.hasName && live.ficha.linesWithIngredient > 0, goTo: "table" }],
+    },
     {
       id: "name",
       selector: '[data-tour="ficha-name-classification"]',

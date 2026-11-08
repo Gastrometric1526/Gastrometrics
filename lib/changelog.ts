@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-11-08",
+    tutorialHref: tourHref("ingredientes"),
+    content: {
+      es: { title: "Empieza importando lo que ya tienes", items: ["El tutorial ahora te pregunta primero si quieres importar tu lista completa de ingredientes (Excel, CSV, PDF, foto del ticket o lista pegada) o agregarlos uno por uno.", "En la Ficha Técnica, puedes importar una receta escrita y solo revisarla, o crearla paso a paso."] },
+      en: { title: "Start by importing what you already have", items: ["The tutorial now first asks whether you want to import your whole ingredient list (Excel, CSV, PDF, receipt photo or pasted list) or add them one by one.", "In the Recipe Sheet, you can import a written recipe and just review it, or create it step by step."] },
+      da: { title: "Start med at importere det, du allerede har", items: ["Vejledningen spørger nu først, om du vil importere hele din ingrediensliste (Excel, CSV, PDF, foto af kvitteringen eller indsat liste) eller tilføje dem én ad gangen.", "I opskriftsarket kan du importere en nedskrevet opskrift og bare tjekke den, eller oprette den trin for trin."] },
+      fr: { title: "Commencez par importer ce que vous avez déjà", items: ["Le tutoriel vous demande d'abord si vous voulez importer toute votre liste d'ingrédients (Excel, CSV, PDF, photo du ticket ou liste collée) ou les ajouter un par un.", "Dans la fiche technique, vous pouvez importer une recette écrite et simplement la vérifier, ou la créer étape par étape."] },
+      pt: { title: "Comece importando o que você já tem", items: ["O tutorial agora pergunta primeiro se você quer importar sua lista completa de ingredientes (Excel, CSV, PDF, foto do cupom ou lista colada) ou adicioná-los um por um.", "Na ficha técnica, você pode importar uma receita escrita e só revisá-la, ou criá-la passo a passo."] },
+      zh: { title: "从导入已有资料开始", items: ["教程现在会先问你：是一次导入整份食材清单（Excel、CSV、PDF、小票照片或粘贴的清单），还是逐个添加。", "在技术配方表中，你可以导入写好的配方后只需检查，或一步步创建。"] },
+    },
+  },
+  {
     version: "2026-11-06",
     tutorialHref: tourHref("ordenes-compra"),
     content: {
