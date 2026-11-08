@@ -7,6 +7,12 @@
  * - siempre con «Ahora no»;
  * - lo respondido no se vuelve a preguntar; lo cerrado sin responder se ofrece una sola
  *   vez más, después de 14 días (la calificación, después de 30).
+ *
+ * docs/265 (pedido del dueño: una opinión completa a lo largo de los meses, de a poco):
+ * - la calificación respondida se vuelve a pedir cada 90 días, para ver cómo cambia;
+ * - cuando ya respondió varias preguntas y no queda ninguna que aplique, una invitación final
+ *   a dejar una reseña pública. Va igual para todos, sin mirar la nota (nunca filtrar quién
+ *   recibe la invitación, docs/173), y se ofrece como mucho 2 veces, con 60 días entre ellas.
  */
 
 export type ValueMoment =
@@ -78,6 +84,11 @@ export const QUESTIONS: QuestionDef[] = [
 export const ASK_COOLDOWN_MS = 5 * 24 * 60 * 60 * 1000
 export const QUESTION_RETRY_MS = 14 * 24 * 60 * 60 * 1000
 export const RATING_RETRY_MS = 30 * 24 * 60 * 60 * 1000
+/** La calificación respondida se vuelve a pedir pasado este tiempo (docs/265). */
+export const RATING_REPEAT_MS = 90 * 24 * 60 * 60 * 1000
+export const REVIEW_INVITE_RETRY_MS = 60 * 24 * 60 * 60 * 1000
+/** Preguntas respondidas antes de invitar a la reseña pública. */
+export const REVIEW_INVITE_MIN_ANSWERS = 5
 const DAY_MS = 24 * 60 * 60 * 1000
 
 export interface AskRecord {
@@ -91,6 +102,8 @@ export interface AskState {
   moments: Partial<Record<ValueMoment, number>>
   rating?: AskRecord
   questions: Partial<Record<QuestionKey, AskRecord>>
+  /** Invitación final a la reseña pública (docs/265). */
+  reviewInvite?: AskRecord
 }
 
 export interface AskContext {
@@ -119,7 +132,10 @@ export function inCooldown(state: AskState, now: number): boolean {
 
 /** ¿Toca pedir la calificación (0–10)? Momento de valor, o 7 días de uso, o 3 recetas. */
 export function ratingDue(state: AskState, ctx: AskContext): boolean {
-  if (inCooldown(state, ctx.now) || !canShowAgain(state.rating, RATING_RETRY_MS, ctx.now)) return false
+  if (inCooldown(state, ctx.now)) return false
+  // Respondida: se vuelve a pedir cada 90 días (docs/265).
+  if (state.rating?.status === "answered") return ctx.now - state.rating.at >= RATING_REPEAT_MS
+  if (!canShowAgain(state.rating, RATING_RETRY_MS, ctx.now)) return false
   const m = state.moments
   return Boolean(m.first_priced_recipe || m.first_pdf || m.cascade_recalc) || ctx.activeDays >= 7 || (ctx.recipeCount ?? 0) >= 3
 }
@@ -180,13 +196,26 @@ export function nextQuestion(state: AskState, ctx: AskContext): QuestionDef | nu
   return null
 }
 
+/**
+ * ¿Toca la invitación final a la reseña pública? Ya respondió varias preguntas, no queda
+ * ninguna que aplique ahora y no está en la pausa de 5 días. Igual para todos (docs/265).
+ */
+export function reviewInviteDue(state: AskState, ctx: AskContext): boolean {
+  if (inCooldown(state, ctx.now)) return false
+  const rec = state.reviewInvite
+  if (rec && (rec.status === "answered" || rec.shows >= 2 || ctx.now - rec.at < REVIEW_INVITE_RETRY_MS)) return false
+  const answered = Object.values(state.questions).filter((q) => q?.status === "answered").length
+  if (answered < REVIEW_INVITE_MIN_ANSWERS) return false
+  return nextQuestion(state, ctx) === null
+}
+
 /** Registra que se mostró y cómo terminó. */
-export function recordAsk(state: AskState, target: "rating" | QuestionKey, status: "answered" | "dismissed", now: number): AskState {
-  const prev = target === "rating" ? state.rating : state.questions[target]
+export function recordAsk(state: AskState, target: "rating" | "review" | QuestionKey, status: "answered" | "dismissed", now: number): AskState {
+  const prev = target === "rating" ? state.rating : target === "review" ? state.reviewInvite : state.questions[target]
   const rec: AskRecord = { status, at: now, shows: (prev?.shows ?? 0) + 1 }
-  return target === "rating"
-    ? { ...state, lastAskAt: now, rating: rec }
-    : { ...state, lastAskAt: now, questions: { ...state.questions, [target]: rec } }
+  if (target === "rating") return { ...state, lastAskAt: now, rating: rec }
+  if (target === "review") return { ...state, lastAskAt: now, reviewInvite: rec }
+  return { ...state, lastAskAt: now, questions: { ...state.questions, [target]: rec } }
 }
 
 export function recordMoment(state: AskState, moment: ValueMoment, now: number): AskState {

@@ -125,3 +125,36 @@ describe("resumen de respuestas", () => {
     expect(s.find((x) => x.question === "improve")?.texts[0].text).toBe("Más reportes")
   })
 })
+
+describe("opinión a lo largo de los meses (docs/265)", () => {
+  it("la calificación respondida se vuelve a pedir a los 90 días", async () => {
+    const base = recordMoment(emptyAskState(), "first_priced_recipe", now)
+    expect(ratingDue(recordAsk(base, "rating", "answered", now - 89 * DAY), ctx())).toBe(false)
+    expect(ratingDue(recordAsk(base, "rating", "answered", now - 91 * DAY), ctx())).toBe(true)
+  })
+
+  it("invita a la reseña pública cuando ya respondió varias y no queda ninguna, igual para todos", async () => {
+    const { reviewInviteDue } = await import("./ask-rules")
+    let s = emptyAskState()
+    const old = now - 30 * DAY
+    for (const key of ["pain", "menu_size", "price_source", "team", "previous_tool", "found_us", "testimonial"] as const) s = recordAsk(s, key, "answered", old)
+    // Sin preguntas pendientes que apliquen (contexto sin momentos ni condiciones nuevas).
+    const c = ctx({ activeDays: 30, recipeCount: 6, accountCreatedAt: new Date(now - 60 * DAY).toISOString() })
+    expect(reviewInviteDue(s, c)).toBe(true)
+    // No depende de la nota: con una calificación baja también se invita (docs/173).
+    expect(reviewInviteDue(recordAsk(s, "rating", "answered", old), c)).toBe(true)
+    // Respetando la pausa de 5 días.
+    expect(reviewInviteDue({ ...s, lastAskAt: now - DAY }, c)).toBe(false)
+    // Cerrada: otra vez a los 60 días, como mucho 2 veces.
+    const once = recordAsk(s, "review", "dismissed", now - 61 * DAY)
+    expect(reviewInviteDue(once, c)).toBe(true)
+    const twice = recordAsk(once, "review", "dismissed", now - 61 * DAY)
+    expect(reviewInviteDue(twice, c)).toBe(false)
+  })
+
+  it("no invita antes de 5 respuestas", async () => {
+    const { reviewInviteDue } = await import("./ask-rules")
+    const s = recordAsk(emptyAskState(), "pain", "answered", now - 30 * DAY)
+    expect(reviewInviteDue(s, ctx({ activeDays: 30 }))).toBe(false)
+  })
+})

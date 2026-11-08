@@ -15,7 +15,8 @@ import { usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { QuickRatingDialog } from "@/components/quick-rating-dialog"
 import { QuestionCard } from "@/components/feedback/question-card"
-import { nextQuestion, ratingDue, recordAsk, recordMoment, type QuestionDef, type ValueMoment } from "@/lib/feedback/ask-rules"
+import { ReviewInviteDialog } from "@/components/feedback/review-invite-dialog"
+import { nextQuestion, ratingDue, recordAsk, recordMoment, reviewInviteDue, type QuestionDef, type ValueMoment } from "@/lib/feedback/ask-rules"
 import { VALUE_MOMENT_EVENT, loadAskState, migrateLegacyRating, saveAskState, touchActiveDay } from "@/lib/feedback/ask-store"
 import { countOwnRecipesAllBusinesses } from "@/lib/storage/recipes"
 import { usePlanStatus, planExpiryOf } from "@/lib/plan-status"
@@ -35,6 +36,7 @@ export function FeedbackOrchestrator() {
   const { active: previewActive } = useTeamPreview()
   const [rating, setRating] = useState<{ moment: string | null } | null>(null)
   const [question, setQuestion] = useState<QuestionDef | null>(null)
+  const [reviewInvite, setReviewInvite] = useState(false)
   const expiry = planExpiryOf(planStatus)
   const planExpiringSoon = expiry?.urgency === "urgent" || expiry?.urgency === "today"
   const latest = useRef({ planExpiringSoon, createdAt: userProfile?.createdAt })
@@ -62,7 +64,7 @@ export function FeedbackOrchestrator() {
 
   // ¿Toca preguntar algo? Unos segundos después de entrar a una pantalla.
   useEffect(() => {
-    if (!user || previewActive || isQuiet(pathname) || rating || question) return
+    if (!user || previewActive || isQuiet(pathname) || rating || question || reviewInvite) return
     const activeDays = touchActiveDay(user.id)
     let cancelled = false
     let tries = 0
@@ -97,7 +99,12 @@ export function FeedbackOrchestrator() {
         return
       }
       const q = nextQuestion(state, ctx)
-      if (q) setQuestion(q)
+      if (q) {
+        setQuestion(q)
+        return
+      }
+      // Ya respondió las preguntas: invitación final a la reseña pública (docs/265).
+      if (pathname === "/dashboard" && reviewInviteDue(state, ctx)) setReviewInvite(true)
     }
     let timer: ReturnType<typeof setTimeout> = setTimeout(decide, 6000)
     return () => {
@@ -107,9 +114,10 @@ export function FeedbackOrchestrator() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, pathname, previewActive])
 
-  const finish = (target: "rating" | QuestionDef["key"], status: "answered" | "dismissed") => {
+  const finish = (target: "rating" | "review" | QuestionDef["key"], status: "answered" | "dismissed") => {
     if (user) saveAskState(user.id, recordAsk(loadAskState(user.id), target, status, Date.now()))
     if (target === "rating") setRating(null)
+    else if (target === "review") setReviewInvite(false)
     else setQuestion(null)
   }
 
@@ -118,6 +126,7 @@ export function FeedbackOrchestrator() {
     <>
       {rating && <QuickRatingDialog open moment={rating.moment} onFinish={(s) => finish("rating", s)} />}
       {question && <QuestionCard question={question} onFinish={(s) => finish(question.key, s)} />}
+      {reviewInvite && <ReviewInviteDialog onFinish={(s) => finish("review", s)} />}
     </>
   )
 }
