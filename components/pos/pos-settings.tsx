@@ -6,7 +6,7 @@
  */
 
 import { useState } from "react"
-import { Copy, Plus, Trash2 } from "lucide-react"
+import { BookOpen, Copy, Plus, Trash2 } from "lucide-react"
 import { v4 as uuidv4 } from "uuid"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,13 @@ import { useLanguage } from "@/contexts/language-context"
 import { FloorMap } from "@/components/pos/floor-map"
 import { nextTableLabel, shapeSize, snapTable } from "@/lib/pos"
 import type { FloorPlan, FloorTable, PosConfig, PosExtra, TableShape } from "@/types/pos"
+import type { Recipe } from "@/types/recipe"
+import { SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
+import { currentUnitPrice } from "@/lib/recipe-pricing"
+import { normalizeSearch } from "@/lib/manual-sales"
+import { formatCurrency } from "@/lib/currency"
+import { getClassificationLabel } from "@/lib/classification-labels"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 const NONE = "__none__"
 
@@ -32,13 +39,13 @@ export function PosSettings({
 }: {
   plan: FloorPlan
   config: PosConfig
-  recipes: { id: string; name: string; classification: string; isSubRecipe?: boolean }[]
+  recipes: Recipe[]
   areaId: string
   onArea: (id: string) => void
   onPlan: (plan: FloorPlan) => void
   onConfig: (config: PosConfig) => void
 }) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const [confirm, confirmDialog] = useConfirmDialog()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const now = () => new Date().toISOString()
@@ -80,6 +87,17 @@ export function PosSettings({
 
   const putExtra = (extra: PosExtra) => onConfig({ ...config, extras: config.extras.map((e) => (e.id === extra.id ? extra : e)), updatedAt: now() })
   const addExtra = () => onConfig({ ...config, extras: [...config.extras, { id: uuidv4(), name: "", price: 0, recipeId: null, classifications: [] }], updatedAt: now() })
+  // Extra desde una receta (docs/274): nombre y precio de la receta, y su costo cuenta solo.
+  const [recipePickerOpen, setRecipePickerOpen] = useState(false)
+  const [recipeQuery, setRecipeQuery] = useState("")
+  const addExtraFromRecipe = (r: Recipe) => {
+    onConfig({ ...config, extras: [...config.extras, { id: uuidv4(), name: r.name, price: currentUnitPrice(r), recipeId: r.id, classifications: [] }], updatedAt: now() })
+    setRecipePickerOpen(false)
+    setRecipeQuery("")
+  }
+  const pickable = recipes
+    .filter((r) => !recipeQuery.trim() || normalizeSearch(r.name).includes(normalizeSearch(recipeQuery)))
+    .sort((a, b) => a.name.localeCompare(b.name))
   const removeExtra = async (extra: PosExtra) => {
     if (!(await confirm(t("pos_extra_delete_confirm").replace("{name}", extra.name || t("pos_extras_title"))))) return
     onConfig({ ...config, extras: config.extras.filter((e) => e.id !== extra.id), updatedAt: now() })
@@ -88,6 +106,45 @@ export function PosSettings({
   return (
     <div className="space-y-6">
       {confirmDialog}
+      <Dialog open={recipePickerOpen} onOpenChange={setRecipePickerOpen}>
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{t("pos_extra_pick_title")}</DialogTitle>
+            <DialogDescription>{t("pos_extra_pick_desc")}</DialogDescription>
+          </DialogHeader>
+          <Input value={recipeQuery} onChange={(e) => setRecipeQuery(e.target.value)} placeholder={t("ventas_search_placeholder")} autoFocus />
+          <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto">
+            {pickable.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">{t("ventas_search_empty")}</p>
+            ) : (
+              pickable.map((r) => {
+                const used = config.extras.some((x) => x.recipeId === r.id)
+                const price = currentUnitPrice(r)
+                return (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => addExtraFromRecipe(r)}
+                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2.5 text-left transition hover:border-primary"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium">{r.name}</span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {r.classification === SUBRECIPE_CLASSIFICATION ? t("pos_extra_subrecipe") : getClassificationLabel(r.classification as never, language)}
+                        {used ? ` · ${t("pos_extra_already")}` : ""}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+                      <span className="block">{t("pos_extra_cost_short").replace("{amount}", formatCurrency(r.costPerServing || 0))}</span>
+                      {price > 0 && <span className="block">{t("pos_extra_price_short").replace("{amount}", formatCurrency(price))}</span>}
+                    </span>
+                  </button>
+                )
+              })
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
       <Card>
         <CardHeader>
           <CardTitle className="text-base">{t("pos_settings_floor_title")}</CardTitle>
@@ -183,10 +240,16 @@ export function PosSettings({
             <CardTitle className="text-base">{t("pos_extras_title")}</CardTitle>
             <CardDescription>{t("pos_settings_extras_desc")}</CardDescription>
           </div>
-          <Button size="sm" className="gap-1.5 shrink-0" onClick={addExtra}>
-            <Plus className="h-3.5 w-3.5" />
-            {t("pos_extra_add")}
-          </Button>
+          <div className="flex shrink-0 flex-wrap justify-end gap-2">
+            <Button size="sm" className="gap-1.5" onClick={() => setRecipePickerOpen(true)} disabled={recipes.length === 0}>
+              <BookOpen className="h-3.5 w-3.5" />
+              {t("pos_extra_add_recipe")}
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={addExtra}>
+              <Plus className="h-3.5 w-3.5" />
+              {t("pos_extra_add_custom")}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           {config.extras.length === 0 && <p className="text-sm text-muted-foreground">{t("pos_settings_extras_empty")}</p>}
@@ -203,7 +266,14 @@ export function PosSettings({
                 </label>
                 <label className="space-y-1">
                   <span className="text-xs text-muted-foreground">{t("pos_extra_recipe")}</span>
-                  <Select value={e.recipeId ?? NONE} onValueChange={(v) => putExtra({ ...e, recipeId: v === NONE ? null : v })}>
+                  <Select
+                    value={e.recipeId ?? NONE}
+                    onValueChange={(v) => {
+                      const r = recipes.find((x) => x.id === v)
+                      // Al unir una receta a un extra sin nombre ni precio, se llenan con los de la receta.
+                      putExtra({ ...e, recipeId: v === NONE ? null : v, name: e.name || r?.name || "", price: e.price || (r ? currentUnitPrice(r) : 0) })
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -237,7 +307,7 @@ export function PosSettings({
                         className="h-7"
                         onClick={() => putExtra({ ...e, classifications: on ? e.classifications.filter((x) => x !== c) : [...e.classifications, c] })}
                       >
-                        {c}
+                        {getClassificationLabel(c as never, language)}
                       </Button>
                     )
                   })}

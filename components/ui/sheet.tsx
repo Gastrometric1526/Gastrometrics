@@ -84,7 +84,9 @@ const SheetHeader = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col space-y-2 px-8 text-center sm:px-0 sm:pr-8 sm:text-left",
+      // docs/274: sin padding horizontal propio (lo pone SheetContent o quien lo use); antes
+      // px-8 en celular se sumaba al p-6 del panel y sm:px-0 borraba el px-5 de quien lo pasaba.
+      "flex flex-col space-y-2 pr-8 text-left",
       className
     )}
     {...props}

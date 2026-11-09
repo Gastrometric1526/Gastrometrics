@@ -73,7 +73,7 @@ export function OrderPanel({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-lg" onOpenAutoFocus={(e) => e.preventDefault()}>
-        <SheetHeader className="space-y-1 border-b px-5 py-4 pr-12 text-left sm:px-5 sm:pr-12">
+        <SheetHeader className="space-y-1 border-b px-5 py-4 pr-12 text-left">
           <SheetTitle className="flex items-center gap-2">
             {title}
             {order?.status === "bill" && <Badge className="bg-warning-soft text-warning hover:bg-warning-soft">{t("pos_status_bill")}</Badge>}
