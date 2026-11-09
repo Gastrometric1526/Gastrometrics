@@ -69,6 +69,26 @@ export interface SalesTicket {
   pos?: boolean
   /** POS propio: minutos promedio entre «Mandar a cocina» y «Listo» de sus platos. */
   kitchenMinutes?: number | null
+  /**
+   * POS propio (docs/275): platos anulados después de mandarlos a cocina. No son líneas de
+   * venta (no cuentan en Menu Engineering ni en el cuadre). Los «waste» y «courtesy» gastan
+   * ingredientes (inventario teórico) y su costo sale en Reportes.
+   */
+  voids?: SalesTicketVoid[]
+}
+
+export interface SalesTicketVoid {
+  name: string
+  quantity: number
+  reason: "not_made" | "waste" | "courtesy"
+  /** Costo total (cantidad × costo con extras). 0 si no se preparó. */
+  cost: number
+  /** Lo que se dejó de cobrar (cantidad × precio con extras). */
+  value: number
+  recipeId: string | null
+  menuId?: string | null
+  /** Extras unidos a una receta, para el inventario teórico. */
+  extras?: { recipeId: string | null; quantity: number }[]
 }
 
 /** Una salida de efectivo de la caja durante el día (compra de hielo, vuelto a un proveedor…). */
@@ -103,6 +123,8 @@ export interface CashUp {
 }
 
 export interface SalesImport {
+  /** Versión del registro del día al sumarle cuentas del POS (docs/275): evita que dos aparatos se pisen. */
+  posRev?: number
   id: string
   businessId: string
   fileName: string

@@ -164,6 +164,8 @@ export interface TicketInsights {
   extras: { name: string; units: number; revenue: number }[]
   /** POS propio: minutos promedio de cocina, ponderado por cuenta. */
   kitchenAvgMinutes: number | null
+  /** POS propio (docs/275): platos anulados después de mandarlos a cocina, por motivo. */
+  voids: Record<"not_made" | "waste" | "courtesy", { units: number; cost: number; value: number }>
 }
 
 /** Detalle de las cuentas de los registros manuales con mesas (los anteriores no tienen cuentas). */
@@ -179,6 +181,7 @@ export function summarizeTickets(imports: SalesImport[], opts: { from?: string; 
   const extras = new Map<string, { units: number; revenue: number }>()
   let kitchenSum = 0
   let kitchenCount = 0
+  const voids = { not_made: { units: 0, cost: 0, value: 0 }, waste: { units: 0, cost: 0, value: 0 }, courtesy: { units: 0, cost: 0, value: 0 } }
   const add = (map: Map<string, Acc>, key: string | null, rev: number, g: number) => {
     if (!key) return
     const acc = map.get(key) ?? { tickets: 0, guests: 0, revenue: 0 }
@@ -209,6 +212,13 @@ export function summarizeTickets(imports: SalesImport[], opts: { from?: string; 
       if (typeof tk.kitchenMinutes === "number") {
         kitchenSum += tk.kitchenMinutes
         kitchenCount += 1
+      }
+      for (const v of tk.voids ?? []) {
+        const acc = voids[v.reason]
+        if (!acc) continue
+        acc.units += v.quantity
+        acc.cost = round2(acc.cost + v.cost)
+        acc.value = round2(acc.value + v.value)
       }
       for (const l of lines) {
         for (const m of l.modifiers ?? []) {
@@ -252,6 +262,7 @@ export function summarizeTickets(imports: SalesImport[], opts: { from?: string; 
     byHour: rows(groups.hour, "hour"),
     extras: [...extras.entries()].map(([name, a]) => ({ name, units: a.units, revenue: round2(a.revenue) })).sort((a, b) => b.revenue - a.revenue || b.units - a.units),
     kitchenAvgMinutes: kitchenCount ? Math.round((kitchenSum / kitchenCount) * 10) / 10 : null,
+    voids,
   }
 }
 

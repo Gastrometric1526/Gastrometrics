@@ -36,6 +36,8 @@ export function PosSettings({
   onArea,
   onPlan,
   onConfig,
+  mainFloor = null,
+  mainExtras = [],
 }: {
   plan: FloorPlan
   config: PosConfig
@@ -44,6 +46,9 @@ export function PosSettings({
   onArea: (id: string) => void
   onPlan: (plan: FloorPlan) => void
   onConfig: (config: PosConfig) => void
+  /** Plano y extras del POS del espacio principal (de antes de docs/276), para traerlos aquí. */
+  mainFloor?: FloorPlan | null
+  mainExtras?: PosExtra[]
 }) {
   const { t, language } = useLanguage()
   const [confirm, confirmDialog] = useConfirmDialog()
@@ -85,6 +90,20 @@ export function PosSettings({
     onArea(rest[0].id)
   }
 
+  // docs/276: traer el plano del espacio principal a este negocio. Los extras que no existan se
+  // agregan; su receta se conserva solo si existe en este negocio (los ids son por negocio).
+  const importMain = async () => {
+    if (!mainFloor) return
+    if (!(await confirm(t("pos_import_main_confirm")))) return
+    onPlan({ ...mainFloor, updatedAt: now() })
+    const known = new Set(config.extras.map((e) => e.name.trim().toLowerCase()))
+    const recipeIds = new Set(recipes.map((r) => r.id))
+    const added = mainExtras
+      .filter((e) => e.name.trim() && !known.has(e.name.trim().toLowerCase()))
+      .map((e) => ({ ...e, id: uuidv4(), recipeId: e.recipeId && recipeIds.has(e.recipeId) ? e.recipeId : null }))
+    if (added.length) onConfig({ ...config, extras: [...config.extras, ...added], updatedAt: now() })
+    if (mainFloor.areas[0]) onArea(mainFloor.areas[0].id)
+  }
   const putExtra = (extra: PosExtra) => onConfig({ ...config, extras: config.extras.map((e) => (e.id === extra.id ? extra : e)), updatedAt: now() })
   const addExtra = () => onConfig({ ...config, extras: [...config.extras, { id: uuidv4(), name: "", price: 0, recipeId: null, classifications: [] }], updatedAt: now() })
   // Extra desde una receta (docs/274): nombre y precio de la receta, y su costo cuenta solo.
@@ -149,6 +168,13 @@ export function PosSettings({
         <CardHeader>
           <CardTitle className="text-base">{t("pos_settings_floor_title")}</CardTitle>
           <CardDescription>{t("pos_settings_floor_desc")}</CardDescription>
+          {mainFloor && (
+            <div className="pt-2">
+              <Button size="sm" variant="outline" onClick={importMain}>
+                {t("pos_import_main_button")}
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">

@@ -127,6 +127,25 @@ export function salesConsumption(
         })
       }
     }
+    // POS (docs/275): lo anulado que sí se preparó (perdido o cortesía) gastó ingredientes.
+    const voidDay = dayOf(imp.periodEnd || imp.importedAt)
+    if (!include(voidDay, registeredAt)) continue
+    for (const tk of imp.tickets ?? []) {
+      for (const v of tk.voids ?? []) {
+        if (v.reason === "not_made" || !(v.quantity > 0)) continue
+        const recipe = v.recipeId ? recipesById.get(v.recipeId) : undefined
+        if (recipe) accumulateRecipeConsumption(recipe, v.quantity / recipeBaseYield(recipe), recipesById, ingredientsById, acc, { grossUpMerma: true })
+        const menu = v.menuId ? menusById.get(v.menuId) : undefined
+        for (const item of menu?.items ?? []) {
+          const r = item.enabled ? recipesById.get(item.recipeId) : undefined
+          if (r) accumulateRecipeConsumption(r, v.quantity / recipeBaseYield(r), recipesById, ingredientsById, acc, { grossUpMerma: true })
+        }
+        for (const e of v.extras ?? []) {
+          const r = e.recipeId ? recipesById.get(e.recipeId) : undefined
+          if (r && e.quantity > 0) accumulateRecipeConsumption(r, (v.quantity * e.quantity) / recipeBaseYield(r), recipesById, ingredientsById, acc, { grossUpMerma: true })
+        }
+      }
+    }
   }
   return acc
 }

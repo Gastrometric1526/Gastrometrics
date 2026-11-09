@@ -226,6 +226,8 @@ export const BUSINESS_ROUTES = [
   "/menu-y-compras",
   "/estadisticas",
   "/ventas",
+  // El POS trabaja siempre dentro de un negocio (docs/276).
+  "/salon",
 ]
 
 const getContextualHref = (baseHref: string, businessId: string | null) => {

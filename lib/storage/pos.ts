@@ -84,3 +84,60 @@ export async function deletePosOrder(id: string): Promise<void> {
   const { error } = await supabase.from("pos_data").delete().eq("id", id)
   if (error) throw error
 }
+
+// ─── Guardado con versión y cola sin conexión (docs/275) ─────────────────────────
+
+/** Otro aparato guardó este pedido entre que lo leí y quise guardarlo. */
+export class PosConflictError extends Error {
+  constructor() {
+    super("pos-conflict")
+  }
+}
+
+/** ¿Falló por la conexión (vale la pena reintentar más tarde)? */
+export function isConnectionError(error: unknown): boolean {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return true
+  const message = String((error as { message?: string })?.message ?? error ?? "")
+  return /failed to fetch|networkerror|network request failed|load failed|fetch failed|timeout/i.test(message)
+}
+
+/** Lee un pedido del servidor (null si ya no existe: se cobró o se liberó). */
+export async function fetchPosOrder(id: string): Promise<PosOrder | null> {
+  const supabase = getSupabaseBrowserClient()
+  const { data, error } = await supabase.from("pos_data").select("id, data").eq("id", id).eq("kind", "order").maybeSingle()
+  if (error) throw error
+  return data ? { ...(data.data as unknown as PosOrder), id: data.id } : null
+}
+
+/**
+ * Guarda un pedido solo si nadie lo cambió desde la versión `baseRev` (la que leí). Devuelve
+ * el pedido con su versión nueva. Si otro aparato ya guardó, lanza `PosConflictError` y quien
+ * llama junta los cambios (`mergeOrderEdit`) y vuelve a intentar.
+ */
+export async function savePosOrderVersioned(order: PosOrder, businessId: string | null | undefined, baseRev: number | null): Promise<PosOrder> {
+  const supabase = getSupabaseBrowserClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error("no-session")
+  const next: PosOrder = { ...order, rev: (baseRev ?? 0) + 1 }
+  const { id, ...rest } = next
+  const row = { kind: "order" as const, updated_at: new Date().toISOString(), data: rest as unknown as Record<string, unknown> }
+  let update = supabase.from("pos_data").update(row).eq("id", id)
+  update = baseRev === null ? update.is("data->>rev", null) : update.eq("data->>rev", String(baseRev))
+  const { data: updated, error } = await update.select("id")
+  if (error) throw error
+  if (updated && updated.length > 0) return next
+  // Nada se actualizó: o el pedido es nuevo, o alguien lo cambió antes.
+  const current = await fetchPosOrder(id)
+  if (current) throw new PosConflictError()
+  if (baseRev !== null) throw new PosConflictError() // ya no existe: se cobró o se liberó en otro aparato
+  const { error: insertError } = await supabase
+    .from("pos_data")
+    .insert({ id, ...row, business_id: toDbBusinessId(businessId), owner_id: user.id })
+  if (insertError) {
+    if (insertError.code === "23505") throw new PosConflictError()
+    throw insertError
+  }
+  return next
+}

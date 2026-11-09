@@ -16,6 +16,10 @@ import {
   seatPositions,
   seatsInOrder,
   serviceSummary,
+  mergeOrderEdit,
+  voidItem,
+  posTicketId,
+  dayHasTicket,
   sendToKitchen,
   setItemQuantity,
   setItemStatus,
@@ -195,7 +199,8 @@ describe("cobro", () => {
     expect(created).toMatchObject({ id: "day", source: "manual", totalRevenue: 770, lineCount: 3 })
     expect(created.tickets).toHaveLength(1)
     const existing = { ...created, cashUp: { openingFloat: 500 } } as unknown as SalesImport
-    const again = mergeSaleIntoDay(existing, sale, { id: "x", businessId: "main", isoDate: "2026-11-10T06:00:00.000Z", fileName: "Registro" })
+    const second = buildPosSale(o, { seats: null, payment: "cash", discount: 0, tip: 0 }, recipes, "2026-11-10T06:00:00.000Z", "t4", NOW)
+    const again = mergeSaleIntoDay(existing, second, { id: "x", businessId: "main", isoDate: "2026-11-10T06:00:00.000Z", fileName: "Registro" })
     expect(again.id).toBe("day")
     expect(again.tickets).toHaveLength(2)
     expect(again.totalRevenue).toBe(1540)
@@ -210,5 +215,58 @@ describe("resumen del servicio (docs/273)", () => {
     const take = { ...order([item({ unitPrice: 100 })]), id: "c", tableId: null }
     const s = serviceSummary([{ id: "t1" }, { id: "t2" }, { id: "t3" }], new Map([["t1", busy], ["t2", bill]]), [take])
     expect(s).toMatchObject({ free: 1, busy: 1, bill: 1, ready: 0, openTotal: 200 + 400 + 100 })
+  })
+})
+
+describe("confiabilidad del POS (docs/275)", () => {
+  const base = { ...order([item({ id: "a" }), item({ id: "b", seat: 2, status: "sent", sentAt: NOW.toISOString() })]), rev: 3 }
+
+  it("dos aparatos agregan platos a la misma mesa: no se pierde ninguno", () => {
+    const mine = addOrderItem(base, item({ id: "c", refId: "nachos", name: "Nachos" }), NOW)
+    const theirs = { ...addOrderItem(base, item({ id: "d", refId: "sopa", name: "Sopa" }), NOW), rev: 4 }
+    const merged = mergeOrderEdit(base, mine, theirs)
+    expect(merged.items.map((i) => i.id).sort()).toEqual(["a", "b", "c", "d"])
+    expect(merged.rev).toBe(4)
+  })
+
+  it("mi cambio de cantidad se suma como diferencia sobre lo del otro aparato", () => {
+    const mine = setItemQuantity(base, "a", 3, NOW) // 1 → 3 (+2)
+    const theirs = { ...setItemQuantity(base, "a", 2, NOW), rev: 4 } // 1 → 2
+    expect(mergeOrderEdit(base, mine, theirs).items.find((i) => i.id === "a")?.quantity).toBe(4)
+  })
+
+  it("cocina marca listo mientras el mesero agrega: quedan las dos cosas", () => {
+    const kitchen = setItemStatus(base, "b", "ready", NOW)
+    const theirs = { ...addOrderItem(base, item({ id: "e", refId: "jugo", name: "Jugo" }), NOW), rev: 4 }
+    const merged = mergeOrderEdit(base, kitchen, theirs)
+    expect(merged.items.find((i) => i.id === "b")?.status).toBe("ready")
+    expect(merged.items.some((i) => i.id === "e")).toBe(true)
+  })
+
+  it("quitar un plato que el otro aparato ya mandó a cocina no lo borra", () => {
+    const mine = setItemQuantity(base, "a", 0, NOW)
+    const theirs = { ...sendToKitchen(base, NOW), rev: 4 }
+    expect(mergeOrderEdit(base, mine, theirs).items.some((i) => i.id === "a")).toBe(true)
+  })
+
+  it("anular un plato mandado: sale de la cuenta, queda con su motivo y llega a la venta", () => {
+    const voided = voidItem(base, "b", "courtesy", recipes, () => "v1", NOW)
+    expect(voided.items.map((i) => i.id)).toEqual(["a"])
+    expect(voided.voids?.[0]).toMatchObject({ itemId: "b", reason: "courtesy", quantity: 1, unitCost: 70 })
+    expect(voidItem(base, "a", "waste", recipes, () => "v2", NOW)).toBe(base) // lo nuevo no se anula: se quita
+    const sale = buildPosSale(voided, { seats: null, payment: "cash", discount: 0, tip: 0 }, recipes, "2026-11-10T06:00:00.000Z", posTicketId(voided), NOW)
+    expect(sale.ticket.voids).toEqual([expect.objectContaining({ reason: "courtesy", cost: 70, value: 200 })])
+    expect(sale.lines.map((l) => l.id)).toEqual(["a"])
+    const notMade = voidItem(base, "b", "not_made", recipes, () => "v3", NOW)
+    expect(buildPosSale(notMade, { seats: null, payment: "cash", discount: 0, tip: 0 }, recipes, "x", "t", NOW).ticket.voids?.[0].cost).toBe(0)
+  })
+
+  it("cobrar dos veces la misma versión no duplica la venta", () => {
+    const sale = buildPosSale(base, { seats: null, payment: "card", discount: 0, tip: 0 }, recipes, "2026-11-10T06:00:00.000Z", posTicketId(base), NOW)
+    const day = mergeSaleIntoDay(null, sale, { id: "d", businessId: "main", isoDate: "2026-11-10T06:00:00.000Z", fileName: "R", now: NOW })
+    const again = mergeSaleIntoDay(day, sale, { id: "x", businessId: "main", isoDate: "2026-11-10T06:00:00.000Z", fileName: "R", now: NOW })
+    expect(again).toBe(day)
+    expect(dayHasTicket(day, posTicketId(base))).toBe(true)
+    expect(posTicketId(base)).toBe("pos-o1-3")
   })
 })

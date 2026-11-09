@@ -378,6 +378,7 @@ export function SalonTour({ canEdit = true }: { canEdit?: boolean } = {}) {
     { id: "map", title: t("tour_salon_map_title"), description: t("tour_salon_map_desc"), selector: '[data-tour="salon-map"]', beforeShow: clickTab("salon-tab-salon") },
     { id: "takeaway", title: t("tour_salon_takeaway_title"), description: t("tour_salon_takeaway_desc"), selector: '[data-tour="salon-takeaway"]' },
     { id: "kitchen", title: t("tour_salon_kitchen_title"), description: t("tour_salon_kitchen_desc"), selector: '[data-tour="salon-kitchen-tab"]', beforeShow: clickTab("salon-tab-cocina") },
+    { id: "safe", title: t("tour_salon_safe_title"), description: t("tour_salon_safe_desc"), selector: '[data-tour="salon-header"]', beforeShow: clickTab("salon-tab-salon") },
     ...(canEdit
       ? [
           { id: "floor", title: t("tour_salon_floor_title"), description: t("tour_salon_floor_desc"), selector: '[data-tour="salon-settings"]', beforeShow: clickTab("salon-tab-ajustes") } as TourStep,

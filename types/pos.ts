@@ -107,6 +107,39 @@ export interface PosOrder {
   status: "open" | "bill"
   items: PosOrderItem[]
   updatedAt: string
+  /**
+   * Versión del pedido guardado (docs/275). Cada guardado la sube en 1 y solo se acepta si
+   * nadie más guardó en el medio; si otro aparato ya cambió la mesa, se juntan los cambios
+   * (`mergeOrderEdit`, lib/pos.ts). Ausente en pedidos de antes de docs/275.
+   */
+  rev?: number
+  /** Platos ya mandados a cocina que se anularon, con su motivo (docs/275). */
+  voids?: PosVoid[]
+}
+
+/**
+ * Por qué se anuló un plato ya mandado a cocina (docs/275):
+ * - not_made: no se llegó a preparar (no gasta ingredientes);
+ * - waste: se preparó y se perdió (se quemó, se cayó, salió mal): gasta ingredientes y cuesta;
+ * - courtesy: se sirvió sin cobrar: gasta ingredientes y cuesta.
+ */
+export type PosVoidReason = "not_made" | "waste" | "courtesy"
+
+export interface PosVoid {
+  id: string
+  itemId: string
+  sourceType: "recipe" | "menu"
+  refId: string
+  name: string
+  seat: number | null
+  quantity: number
+  /** Precio que tenía (con extras): lo que se dejó de cobrar. */
+  unitPrice: number
+  /** Costo por unidad con extras. */
+  unitCost: number
+  extras: PosOrderExtra[]
+  reason: PosVoidReason
+  at: string
 }
 
 /** Lo que se cobra: toda la cuenta o las sillas elegidas. */

@@ -68,6 +68,9 @@ export type ActivityAction =
   | "downloaded"
   // PDF exportado (docs/232).
   | "exported"
+  // Invitación a volver a un módulo (docs/269), medida en el embudo de /admin (docs/275).
+  | "nudge_shown"
+  | "nudge_opened"
 
 export interface ActivityLogEntry {
   id: number
@@ -112,7 +115,7 @@ function rowToEntry(row: ActivityLogRow): ActivityLogEntry {
 export const NOTIFICATION_EVENT_ACTIONS: readonly ActivityAction[] = ["plan_changed", "price_raised", "margin_up"]
 const NOTIFICATION_ACTIONS: ReadonlySet<ActivityAction> = new Set(NOTIFICATION_EVENT_ACTIONS)
 /** Acciones que no se muestran en «Actividad reciente». */
-const HIDDEN_FROM_ACTIVITY: readonly ActivityAction[] = ["entered", "read", ...NOTIFICATION_EVENT_ACTIONS]
+const HIDDEN_FROM_ACTIVITY: readonly ActivityAction[] = ["entered", "read", "nudge_shown", "nudge_opened", ...NOTIFICATION_EVENT_ACTIONS]
 
 /** A dónde lleva tocar una notificación guardada. */
 export function notificationHref(entry: ActivityLogEntry): string | null {

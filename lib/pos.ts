@@ -11,8 +11,8 @@
 import { buildImportLines, emptyTicket, ticketsToSave, type DraftTicket } from "@/lib/manual-sales"
 import { modifiersUnitCost } from "@/lib/pos-modifiers"
 import type { SaleModifier } from "@/lib/pos-modifiers"
-import type { FloorPlan, FloorTable, PosConfig, PosExtra, PosOrder, PosOrderExtra, PosOrderItem, PosPayment, TableShape } from "@/types/pos"
-import type { SalesImport, SalesImportLine, SalesTicket } from "@/types/sales-import"
+import type { FloorPlan, FloorTable, PosConfig, PosExtra, PosOrder, PosOrderExtra, PosOrderItem, PosPayment, PosVoid, PosVoidReason, TableShape } from "@/types/pos"
+import type { SalesImport, SalesImportLine, SalesTicket, SalesTicketVoid } from "@/types/sales-import"
 
 /** Tamaño del lienzo del plano, en unidades (se dibuja a escala con un SVG). */
 export const FLOOR_W = 1000
@@ -279,7 +279,9 @@ export function buildPosSale(
     return item && item.extras.length ? { ...l, modifiers: extrasAsModifiers(item.extras) } : l
   })
   const [saved] = ticketsToSave([draft])
-  const ticket: SalesTicket = { ...saved, pos: true, kitchenMinutes: kitchenMinutes(charged) }
+  // Las anulaciones del pedido (docs/275) van con el primer cobro; el resto del pedido sigue sin ellas.
+  const voids = (order.voids ?? []).map(ticketVoid)
+  const ticket: SalesTicket = { ...saved, pos: true, kitchenMinutes: kitchenMinutes(charged), ...(voids.length ? { voids } : {}) }
   return { ticket, lines, remaining }
 }
 
@@ -292,6 +294,8 @@ export function mergeSaleIntoDay(
   sale: { ticket: SalesTicket; lines: SalesImportLine[] },
   ctx: { id: string; businessId: string; isoDate: string; fileName: string; now?: Date },
 ): SalesImport {
+  // Idempotente (docs/275): si la cuenta ya está en el día (cobro repetido tras un error), no se suma otra vez.
+  if (day && dayHasTicket(day, sale.ticket.id)) return day
   const lines = [...(day?.lines ?? []), ...sale.lines]
   const tickets = [...(day?.tickets ?? []), sale.ticket]
   return {
@@ -329,4 +333,122 @@ export function serviceSummary(
   }
   for (const order of takeaways) out.openTotal += orderTotal(order)
   return out
+}
+
+
+// ─── Confiabilidad del POS (docs/275) ───────────────────────────────────────────
+
+/** ¿La cuenta ya está en el registro del día? */
+export function dayHasTicket(day: Pick<SalesImport, "tickets">, ticketId: string): boolean {
+  return (day.tickets ?? []).some((t) => t.id === ticketId)
+}
+
+/**
+ * Id de la cuenta de un cobro: fijo para la misma versión del pedido. Si el cobro se repite
+ * (se cayó la conexión justo después de guardar la venta), el registro del día ya la tiene y
+ * no se suma dos veces (`mergeSaleIntoDay`).
+ */
+export function posTicketId(order: Pick<PosOrder, "id" | "rev">): string {
+  return `pos-${order.id}-${order.rev ?? 0}`
+}
+
+function ticketVoid(v: PosVoid): SalesTicketVoid {
+  const made = v.reason !== "not_made"
+  return {
+    name: v.name,
+    quantity: v.quantity,
+    reason: v.reason,
+    cost: made ? Math.round(v.unitCost * v.quantity * 100) / 100 : 0,
+    value: Math.round(v.unitPrice * v.quantity * 100) / 100,
+    recipeId: v.sourceType === "recipe" ? v.refId : null,
+    menuId: v.sourceType === "menu" ? v.refId : null,
+    extras: v.extras.filter((e) => e.recipeId).map((e) => ({ recipeId: e.recipeId, quantity: e.quantity })),
+  }
+}
+
+/**
+ * Anula un plato ya mandado a cocina (o listo, o servido) con su motivo. Sale de la cuenta y
+ * queda en `voids`, que llega a Reportes al cobrar. Lo nuevo (sin mandar) se quita con «−».
+ */
+export function voidItem(
+  order: PosOrder,
+  itemId: string,
+  reason: PosVoidReason,
+  recipes: { id: string; costPerServing?: number }[],
+  newId: () => string,
+  now = new Date(),
+): PosOrder {
+  const item = order.items.find((i) => i.id === itemId)
+  if (!item || item.status === "new") return order
+  const at = now.toISOString()
+  const entry: PosVoid = {
+    id: newId(),
+    itemId: item.id,
+    sourceType: item.sourceType,
+    refId: item.refId,
+    name: item.name,
+    seat: item.seat,
+    quantity: item.quantity,
+    unitPrice: itemUnitPrice(item),
+    unitCost: itemUnitCost(item, recipes),
+    extras: item.extras,
+    reason,
+    at,
+  }
+  return { ...order, items: order.items.filter((i) => i.id !== itemId), voids: [...(order.voids ?? []), entry], updatedAt: at }
+}
+
+const sameItem = (a: PosOrderItem, b: PosOrderItem) =>
+  a.quantity === b.quantity && a.status === b.status && a.seat === b.seat && (a.note || "") === (b.note || "") && extrasKey(a.extras) === extrasKey(b.extras)
+
+/**
+ * Junta mi cambio con el de otro aparato (docs/275). `base` es el pedido como estaba cuando
+ * empecé a cambiarlo, `mine` mi versión y `theirs` la que ya está guardada. Sobre la de ellos:
+ * - agrego los platos que agregué yo;
+ * - quito los que quité yo (solo si siguen sin mandar a cocina);
+ * - en los platos que cambié aplico mi cambio (la cantidad, como diferencia; el estado, el mío);
+ * - las anulaciones se suman sin repetir;
+ * - comensales, mesero y «pidió la cuenta», si los cambié yo.
+ * Nunca se pierde un plato que el otro aparato agregó.
+ */
+export function mergeOrderEdit(base: PosOrder | null, mine: PosOrder, theirs: PosOrder): PosOrder {
+  const baseItems = new Map((base?.items ?? []).map((i) => [i.id, i]))
+  const mineItems = new Map(mine.items.map((i) => [i.id, i]))
+  let items = theirs.items
+    .filter((i) => {
+      const removedByMe = baseItems.has(i.id) && !mineItems.has(i.id)
+      return !(removedByMe && i.status === "new")
+    })
+    .filter((i) => !(mine.voids ?? []).some((v) => v.itemId === i.id))
+    .map((i) => {
+      const m = mineItems.get(i.id)
+      const b = baseItems.get(i.id)
+      if (!m || !b || sameItem(m, b)) return i
+      const quantity = Math.max(1, i.quantity + (m.quantity - b.quantity))
+      const statusChanged = m.status !== b.status
+      return {
+        ...i,
+        quantity,
+        seat: m.seat !== b.seat ? m.seat : i.seat,
+        note: (m.note || "") !== (b.note || "") ? m.note : i.note,
+        extras: extrasKey(m.extras) !== extrasKey(b.extras) ? m.extras : i.extras,
+        status: statusChanged ? m.status : i.status,
+        sentAt: statusChanged ? m.sentAt : i.sentAt,
+        readyAt: statusChanged ? m.readyAt : i.readyAt,
+      }
+    })
+  const added = mine.items.filter((i) => !baseItems.has(i.id) && !items.some((x) => x.id === i.id))
+  items = [...items, ...added]
+  const voids = [...(theirs.voids ?? [])]
+  for (const v of mine.voids ?? []) if (!voids.some((x) => x.id === v.id)) voids.push(v)
+  const pick = <K extends "guests" | "waiter" | "status">(k: K) => (base && mine[k] !== base[k] ? mine[k] : theirs[k])
+  return {
+    ...theirs,
+    items,
+    voids,
+    guests: pick("guests"),
+    waiter: pick("waiter"),
+    status: pick("status"),
+    updatedAt: mine.updatedAt > theirs.updatedAt ? mine.updatedAt : theirs.updatedAt,
+  }
 }

@@ -218,3 +218,48 @@ export async function saveDishNameMapping(mapping: DishNameMapping, businessId?:
   })
   if (error) console.error("[SalesImports] Error guardando el emparejamiento de plato:", error)
 }
+
+// ============== COBRO DEL POS (docs/275) ==============
+
+/**
+ * Suma una cuenta del POS al registro del día sin perder cuentas de otro aparato:
+ * 1. relee del servidor los registros (no confía en la caché del aparato);
+ * 2. busca el del día con `findDay` y arma el nuevo con `build` (si ya tiene la cuenta, no hace nada);
+ * 3. guarda solo si nadie lo cambió en el medio (`posRev`); si no, vuelve a 1 (hasta 3 veces).
+ * El registro nuevo del día usa un id fijo (`newDayId`), así dos aparatos no crean dos registros.
+ */
+export async function savePosSaleToDay(
+  businessId: string | null | undefined,
+  findDay: (imports: SalesImport[]) => SalesImport | null,
+  build: (day: SalesImport | null) => SalesImport,
+  newDayId: string,
+): Promise<{ already: boolean; day: SalesImport }> {
+  const ownerId = await currentUserId()
+  if (!ownerId) throw new Error("no-session")
+  const supabase = getSupabaseBrowserClient()
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const fresh = await fetchImports(dbId(businessId))
+    importsCache.mutateSnapshot(businessId, () => fresh)
+    const day = findDay(fresh)
+    const built = build(day)
+    if (day && built === day) return { already: true, day }
+    const next: SalesImport = { ...built, id: day?.id ?? newDayId, posRev: (day?.posRev ?? 0) + 1 }
+    const { id, ...rest } = next
+    if (!day) {
+      const { error } = await supabase
+        .from("sales_imports")
+        .insert({ id, business_id: toDbBusinessId(businessId), owner_id: ownerId, data: rest as unknown as Record<string, unknown> })
+      if (error?.code === "23505") continue // otro aparato creó el día justo ahora: se relee y se suma ahí
+      if (error) throw error
+    } else {
+      let update = supabase.from("sales_imports").update({ data: rest as unknown as Record<string, unknown> }).eq("id", id)
+      update = day.posRev == null ? update.is("data->>posRev", null) : update.eq("data->>posRev", String(day.posRev))
+      const { data, error } = await update.select("id")
+      if (error) throw error
+      if (!data || data.length === 0) continue // alguien guardó el día en el medio: se relee
+    }
+    importsCache.mutateSnapshot(businessId, (list) => (list.some((i) => i.id === next.id) ? list.map((i) => (i.id === next.id ? next : i)) : [next, ...list]))
+    return { already: false, day: next }
+  }
+  throw new Error("pos-day-conflict")
+}

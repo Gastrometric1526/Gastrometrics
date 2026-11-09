@@ -15,7 +15,9 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Armchair, ChefHat, LayoutGrid, Settings2, ShoppingBag } from "lucide-react"
+import { ArrowLeft, Armchair, Building2, ChefHat, LayoutGrid, RefreshCw, Settings2, ShoppingBag, WifiOff } from "lucide-react"
+import { PosBusinessPicker, rememberPosBusiness } from "@/components/pos/pos-business-picker"
+import { useAllBusinesses } from "@/lib/storage/businesses"
 import { v4 as uuidv4 } from "uuid"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -38,8 +40,20 @@ import { useLanguage } from "@/contexts/language-context"
 import { useFeatureAccess, getAccessBlockReason } from "@/lib/plan-access"
 import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { getMenus, ensureMenusLoaded } from "@/lib/menus"
-import { getSalesImports, ensureSalesImportsLoaded, addSalesImport, updateSalesImport } from "@/lib/storage/sales-imports"
-import { fetchPosData, saveFloorPlan, savePosConfig, savePosOrder, deletePosOrder, type PosData } from "@/lib/storage/pos"
+import { ensureSalesImportsLoaded } from "@/lib/storage/sales-imports"
+import {
+  fetchPosData,
+  fetchPosOrder,
+  saveFloorPlan,
+  savePosConfig,
+  savePosOrderVersioned,
+  deletePosOrder,
+  isConnectionError,
+  PosConflictError,
+  type PosData,
+} from "@/lib/storage/pos"
+import { dequeueOrder, enqueueOrder, overlayQueued, readQueue } from "@/lib/pos-queue"
+import { savePosSaleToDay } from "@/lib/storage/sales-imports"
 import { toIsoDate, formatDate } from "@/lib/date-format"
 import { formatCurrency } from "@/lib/currency"
 import {
@@ -49,13 +63,16 @@ import {
   emptyConfig,
   mergeSaleIntoDay,
   kitchenQueue,
+  mergeOrderEdit,
   orderTotal,
+  posTicketId,
+  voidItem,
   sendToKitchen,
   serviceSummary,
   setItemQuantity,
   setItemStatus,
 } from "@/lib/pos"
-import type { FloorPlan, PosConfig, PosOrder, PosOrderExtra, PosPayment } from "@/types/pos"
+import type { FloorPlan, PosConfig, PosOrder, PosOrderExtra, PosPayment, PosVoidReason } from "@/types/pos"
 import type { Recipe } from "@/types/recipe"
 import type { Menu } from "@/lib/types/menus"
 
@@ -82,15 +99,53 @@ function TabBadge({ n, label, tone }: { n: number; label: string; tone: "success
 export default function SalonPage() {
   return (
     <Suspense fallback={null}>
-      <SalonPageInner />
+      <SalonRouter />
     </Suspense>
   )
 }
 
-function SalonPageInner() {
+/**
+ * El POS trabaja siempre dentro de un negocio (docs/276). Sin negocio en la dirección, se
+ * elige uno (PosBusinessPicker). El espacio principal solo se abre para cerrar cuentas que
+ * quedaron de antes (`?business=main&legacy=1`).
+ */
+function SalonRouter() {
   const searchParams = useSearchParams()
-  const businessId = searchParams.get("business") || "main"
+  const business = searchParams.get("business")
+  const legacy = searchParams.get("legacy") === "1"
+  const canAccess = useFeatureAccess("pos")
+  const { t } = useLanguage()
+  if (canAccess === null) return null
+  if (!canAccess) {
+    return getAccessBlockReason("pos") === "admin" ? (
+      <AdminRestrictedPage sectionName={t("nav_salon")} />
+    ) : (
+      <FeatureLockedPage feature="pos" title={t("pos_locked_title")} description={t("pos_locked_desc")} />
+    )
+  }
+  if (!business || (business === "main" && !legacy)) {
+    return (
+      <AuthGuard>
+        <PosBusinessPicker />
+      </AuthGuard>
+    )
+  }
+  return <SalonPageInner businessId={business} legacy={business === "main"} />
+}
+
+function SalonPageInner({ businessId, legacy }: { businessId: string; legacy: boolean }) {
   const { t, language } = useLanguage()
+  const businesses = useAllBusinesses()
+  const currentBusiness = businesses.find((b) => b.id === businessId) ?? null
+  useEffect(() => {
+    if (!legacy) rememberPosBusiness(businessId)
+  }, [businessId, legacy])
+  // Plano y extras del espacio principal (POS de antes de docs/276), para traerlos a este negocio.
+  const [mainPos, setMainPos] = useState<PosData | null>(null)
+  useEffect(() => {
+    if (legacy) return
+    fetchPosData("main").then(setMainPos).catch(() => {})
+  }, [legacy])
   const { toast } = useToast()
   const canAccess = useFeatureAccess("pos")
 
@@ -106,6 +161,9 @@ function SalonPageInner() {
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const busy = useRef(0)
+  // Cambios que no se pudieron guardar por la conexión (docs/275).
+  const [queued, setQueued] = useState(0)
+  const flushing = useRef(false)
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
   useEffect(() => {
@@ -120,7 +178,9 @@ function SalonPageInner() {
       const fresh = await fetchPosData(businessId)
       if (busy.current > 0) return
       setLoadError(false)
-      setData(fresh)
+      const queue = readQueue(businessId)
+      setQueued(Object.keys(queue).length)
+      setData({ ...fresh, orders: overlayQueued(fresh.orders, queue) })
     } catch (error) {
       console.error("[salon] No se pudo leer:", error)
       setLoadError(true)
@@ -188,20 +248,113 @@ function SalonPageInner() {
     return { id: uuidv4(), tableId, tableLabel: label, areaName, channel, guests: null, waiter, openedAt: now, status: "open", items: [], updatedAt: now }
   }
 
-  /** Guarda un pedido (optimista) y relee después. */
-  const persistOrder = async (order: PosOrder) => {
-    busy.current++
-    setData((d) => (d ? { ...d, orders: d.orders.some((o) => o.id === order.id) ? d.orders.map((o) => (o.id === order.id ? order : o)) : [...d.orders, order] } : d))
+  /**
+   * Guarda con versión (docs/275): si otro aparato cambió la mesa en el medio, se juntan los dos
+   * cambios (`mergeOrderEdit`) y se vuelve a intentar. Devuelve null si el pedido ya no existe
+   * (se cobró o se liberó en otro aparato).
+   */
+  const saveWithMerge = async (base: PosOrder | null, mine: PosOrder): Promise<{ saved: PosOrder | null; merged: boolean }> => {
+    let candidate = mine
+    let fromRev: number | null = base ? base.rev ?? null : null
+    let merged = false
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        return { saved: await savePosOrderVersioned(candidate, businessId, fromRev), merged }
+      } catch (error) {
+        if (!(error instanceof PosConflictError)) throw error
+        const theirs = await fetchPosOrder(mine.id)
+        if (!theirs) return { saved: null, merged }
+        candidate = mergeOrderEdit(base, mine, theirs)
+        fromRev = theirs.rev ?? null
+        merged = true
+      }
+    }
+    throw new PosConflictError()
+  }
+
+  const putOrderInState = (order: PosOrder, onlyIf?: PosOrder) =>
+    setData((d) => {
+      if (!d) return d
+      const exists = d.orders.some((o) => o.id === order.id)
+      if (onlyIf && exists && d.orders.find((o) => o.id === order.id) !== onlyIf) return d // ya hay un cambio más nuevo en pantalla
+      return { ...d, orders: exists ? d.orders.map((o) => (o.id === order.id ? order : o)) : [...d.orders, order] }
+    })
+
+  /** Guarda un pedido (optimista): con versión, juntando cambios y con cola sin conexión. */
+  const persistOrder = async (next: PosOrder) => {
+    const base = data?.orders.find((o) => o.id === next.id) ?? null
+    putOrderInState(next)
     setDraft(null)
+    if (readQueue(businessId)[next.id]) {
+      // Ya hay cambios sin guardar de esta mesa: este se suma a la cola y se guarda todo junto.
+      enqueueOrder(businessId, base, next)
+      void flushQueue()
+      return
+    }
+    busy.current++
     try {
-      await savePosOrder(order, businessId)
+      const { saved, merged } = await saveWithMerge(base, next)
+      if (!saved) {
+        setData((d) => (d ? { ...d, orders: d.orders.filter((o) => o.id !== next.id) } : d))
+        toast({ title: t("pos_order_gone_title"), description: t("pos_order_gone_desc") })
+        return
+      }
+      putOrderInState(saved, next)
+      if (merged) {
+        putOrderInState(saved)
+        toast({ title: t("pos_merged_title"), description: t("pos_merged_desc") })
+      }
     } catch (error) {
-      console.error("[salon] No se pudo guardar el pedido:", error)
-      toast({ title: t("pos_save_error"), variant: "destructive" })
+      if (isConnectionError(error)) {
+        enqueueOrder(businessId, base, next)
+        setQueued(Object.keys(readQueue(businessId)).length)
+      } else {
+        console.error("[salon] No se pudo guardar el pedido:", error)
+        toast({ title: t("pos_save_error"), variant: "destructive" })
+      }
     } finally {
       busy.current--
     }
   }
+
+  /** Guarda lo que quedó en cola al volver la conexión (docs/275). */
+  const flushQueue = async () => {
+    if (flushing.current) return
+    flushing.current = true
+    busy.current++
+    try {
+      for (const q of Object.values(readQueue(businessId))) {
+        try {
+          const { saved } = await saveWithMerge(q.base, q.mine)
+          dequeueOrder(businessId, q.mine.id)
+          if (!saved) toast({ title: t("pos_order_gone_title"), description: t("pos_order_gone_desc") })
+        } catch (error) {
+          if (isConnectionError(error)) break
+          console.error("[salon] No se pudo guardar un cambio en cola:", error)
+          dequeueOrder(businessId, q.mine.id)
+          toast({ title: t("pos_save_error"), variant: "destructive" })
+        }
+      }
+    } finally {
+      busy.current--
+      flushing.current = false
+      setQueued(Object.keys(readQueue(businessId)).length)
+      void reload()
+    }
+  }
+
+  useEffect(() => {
+    const onOnline = () => void flushQueue()
+    window.addEventListener("online", onOnline)
+    const id = setInterval(() => {
+      if (Object.keys(readQueue(businessId)).length) void flushQueue()
+    }, 15000)
+    return () => {
+      window.removeEventListener("online", onOnline)
+      clearInterval(id)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [businessId])
 
   const removeOrder = async (id: string) => {
     busy.current++
@@ -260,29 +413,43 @@ function SalonPageInner() {
 
   const onCheckout = async (pay: PosPayment) => {
     if (!openOrder) return
+    if (readQueue(businessId)[openOrder.id]) {
+      // Con cambios sin guardar, primero se guardan: se cobra lo que de verdad está en la mesa.
+      toast({ title: t("pos_checkout_wait_sync_title"), description: t("pos_checkout_wait_sync_desc"), variant: "destructive" })
+      void flushQueue()
+      return
+    }
     setSaving(true)
     busy.current++
     try {
-      await ensureSalesImportsLoaded(businessId)
+      const order = openOrder
       const today = toIsoDate(new Date())
       const dayStart = new Date(`${today}T00:00:00`)
       const isoDate = dayStart.toISOString()
-      const day = getSalesImports(businessId).find((imp) => imp.source === "manual" && !!imp.periodStart && toIsoDate(new Date(imp.periodStart)) === today) ?? null
-      const sale = buildPosSale(openOrder, pay, recipes, isoDate, uuidv4())
-      const merged = mergeSaleIntoDay(day, sale, { id: uuidv4(), businessId, isoDate, fileName: `${t("manual_sales_entry_label")} — ${formatDate(dayStart)}` })
-      if (day) await updateSalesImport(merged, businessId)
-      else await addSalesImport(merged, businessId)
+      // Id fijo por versión del pedido: un cobro repetido no suma la venta dos veces (docs/275).
+      const sale = buildPosSale(order, pay, recipes, isoDate, posTicketId(order))
+      const newDayId = `pos-day-${businessId || "main"}-${today}`
+      const { already } = await savePosSaleToDay(
+        businessId,
+        (list) => list.find((imp) => imp.source === "manual" && !!imp.periodStart && toIsoDate(new Date(imp.periodStart)) === today) ?? null,
+        (day) => mergeSaleIntoDay(day, sale, { id: newDayId, businessId, isoDate, fileName: `${t("manual_sales_entry_label")} — ${formatDate(dayStart)}` }),
+        newDayId,
+      )
       const charged = sale.lines.reduce((s, l) => s + l.revenue, 0) + pay.tip
-      if (sale.remaining.length) await persistOrder({ ...openOrder, items: sale.remaining, status: "open", updatedAt: new Date().toISOString() })
+      if (sale.remaining.length) await persistOrder({ ...order, items: sale.remaining, voids: [], status: "open", updatedAt: new Date().toISOString() })
       else {
-        await removeOrder(openOrder.id)
+        await removeOrder(order.id)
         setOpenKey(null)
       }
       setCheckoutOpen(false)
-      toast({ title: t("pos_paid_toast").replace("{total}", formatCurrency(charged)), description: t("pos_paid_toast_desc") })
+      toast(
+        already
+          ? { title: t("pos_paid_already_title"), description: t("pos_paid_already_desc") }
+          : { title: t("pos_paid_toast").replace("{total}", formatCurrency(charged)), description: t("pos_paid_toast_desc") },
+      )
     } catch (error) {
       console.error("[salon] No se pudo cobrar:", error)
-      toast({ title: t("pos_checkout_error"), variant: "destructive" })
+      toast({ title: t("pos_checkout_error"), description: t("pos_checkout_error_safe"), variant: "destructive" })
     } finally {
       busy.current--
       setSaving(false)
@@ -319,15 +486,6 @@ function SalonPageInner() {
     debounced("config", () => savePosConfig(next, businessId))
   }
 
-  if (canAccess === null) return null
-  if (!canAccess) {
-    return getAccessBlockReason("pos") === "admin" ? (
-      <AdminRestrictedPage sectionName={t("nav_salon")} />
-    ) : (
-      <FeatureLockedPage feature="pos" title={t("pos_locked_title")} description={t("pos_locked_desc")} />
-    )
-  }
-
   const seatLabel = seat === 0 ? t("pos_seat_table") : t("pos_seat_n").replace("{n}", String(seat))
 
   return (
@@ -338,7 +496,7 @@ function SalonPageInner() {
           <div className="h-full overflow-y-auto">
             <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
               <div className="flex items-center gap-2 md:gap-4" data-tour="salon-header">
-                <Link href={businessId !== "main" ? `/business/${businessId}` : "/dashboard"}>
+                <Link href={!legacy ? `/business/${businessId}` : "/dashboard"}>
                   <Button variant="outline" size="sm" className="gap-2 hover:bg-accent bg-transparent">
                     <ArrowLeft className="h-4 w-4" />
                     <span className="hidden sm:inline">{t("mi_plan_back_to_dashboard")}</span>
@@ -350,10 +508,37 @@ function SalonPageInner() {
                   </div>
                   <div>
                     <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("nav_salon")}</h1>
-                    <p className="text-sm md:text-base text-muted-foreground">{t("nav_salon_desc")}</p>
+                    <p className="text-sm md:text-base text-muted-foreground">
+                      {legacy ? t("pos_legacy_space") : currentBusiness ? t("pos_working_in").replace("{name}", currentBusiness.name) : t("nav_salon_desc")}
+                    </p>
                   </div>
                 </div>
               </div>
+
+              {(legacy || businesses.length > 1) && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {legacy && <p className="flex-1 text-sm text-warning">{t("pos_legacy_banner")}</p>}
+                  <Link href="/salon">
+                    <Button size="sm" variant="outline" className="gap-2">
+                      <Building2 className="h-3.5 w-3.5" />
+                      {t("pos_change_business")}
+                    </Button>
+                  </Link>
+                </div>
+              )}
+
+              {queued > 0 && (
+                <div role="status" className="flex flex-col gap-2 rounded-lg border border-warning/40 bg-warning-soft p-3 text-sm text-warning sm:flex-row sm:items-center sm:justify-between">
+                  <span className="flex items-center gap-2">
+                    <WifiOff className="h-4 w-4 shrink-0" />
+                    {t("pos_queue_banner").replace("{n}", String(queued))}
+                  </span>
+                  <Button size="sm" variant="outline" className="gap-2 self-start sm:self-auto" onClick={() => void flushQueue()}>
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    {t("pos_queue_retry")}
+                  </Button>
+                </div>
+              )}
 
               {data?.missingTable ? (
                 <Card>
@@ -448,6 +633,8 @@ function SalonPageInner() {
                       onArea={setAreaId}
                       onPlan={onPlan}
                       onConfig={onConfig}
+                      mainFloor={!legacy ? mainPos?.floor ?? null : null}
+                      mainExtras={!legacy ? mainPos?.config?.extras ?? [] : []}
                     />
                   </TabsContent>
                 </Tabs>
@@ -475,6 +662,7 @@ function SalonPageInner() {
         onAddDish={() => setPickerOpen(true)}
         onQuantity={(itemId, q) => openOrder && persistOrder(setItemQuantity(openOrder, itemId, q))}
         onServed={(itemId) => openOrder && persistOrder(setItemStatus(openOrder, itemId, "served"))}
+        onVoid={(itemId: string, reason: PosVoidReason) => openOrder && persistOrder(voidItem(openOrder, itemId, reason, recipes, uuidv4))}
         onPatch={(patch) => {
           if ("waiter" in patch) {
             try {

@@ -19,6 +19,7 @@ import { useModuleReveal } from "@/lib/module-reveal"
 import { useActiveMembership } from "@/lib/plan-access"
 import { JOURNEY_ROUTES, journeyControlsTours, readJourney } from "@/lib/journey"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { logActivity, type ActivityModule } from "@/lib/services/activity-log"
 import { markNudgeShown, NUDGE_ORDER, NUDGE_STATE_KEY, parseNudgeState, pickNudge, type NudgePick } from "@/lib/module-nudge"
 import type { TranslationKey } from "@/lib/i18n/translations"
 
@@ -77,6 +78,8 @@ export function ModuleNudge() {
         return
       }
       setPick(next)
+      const mod = NUDGE_ORDER.find((m) => m.href === next.href)?.module
+      if (mod) logActivity({ user: { id: user.id, email: user.email ?? "" }, businessId: null, module: mod as ActivityModule, action: "nudge_shown" })
     }
     timer = setTimeout(run, 8000)
     return () => {
@@ -111,6 +114,8 @@ export function ModuleNudge() {
             className="w-full"
             onClick={() => {
               close()
+              const mod = NUDGE_ORDER.find((m) => m.href === pick.href)?.module
+              if (mod && user) logActivity({ user: { id: user.id, email: user.email ?? "" }, businessId: null, module: mod as ActivityModule, action: "nudge_opened" })
               router.push(pick.href)
             }}
           >

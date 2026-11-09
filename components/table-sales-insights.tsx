@@ -104,6 +104,27 @@ export function TableSalesInsights({ imports }: { imports: SalesImport[] }) {
               <Breakdown title={t("ventas_by_hour")} rows={insights.byHour} label={hour} empty={t("ventas_by_empty_hour")} />
             </div>
 
+            {/* POS propio (docs/275): anulaciones y cortesías, con lo que costaron. */}
+            {(insights.voids.waste.units + insights.voids.courtesy.units + insights.voids.not_made.units) > 0 && (
+              <div className="space-y-2 rounded-lg border border-border p-3" data-tour="ventas-voids">
+                <p className="text-sm font-medium text-foreground">{t("pos_report_voids")}</p>
+                {(["courtesy", "waste", "not_made"] as const).map((r) =>
+                  insights.voids[r].units > 0 ? (
+                    <div key={r} className="flex items-center justify-between gap-2 text-sm">
+                      <span className="truncate">{t(`pos_void_${r}` as never)}</span>
+                      <span className="tabular-nums text-muted-foreground">
+                        {t("pos_report_voids_row")
+                          .replace("{n}", String(insights.voids[r].units))
+                          .replace("{cost}", formatCurrency(insights.voids[r].cost))
+                          .replace("{value}", formatCurrency(insights.voids[r].value))}
+                      </span>
+                    </div>
+                  ) : null,
+                )}
+                <p className="text-xs text-muted-foreground">{t("pos_report_voids_hint")}</p>
+              </div>
+            )}
+
             {/* POS propio (docs/268): extras vendidos y tiempo de cocina. */}
             {(insights.extras.length > 0 || insights.kitchenAvgMinutes !== null) && (
               <div className="grid gap-4 md:grid-cols-2">

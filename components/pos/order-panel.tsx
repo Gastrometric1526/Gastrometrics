@@ -6,7 +6,9 @@
  * abajo las acciones apiladas (la principal primero), igual que DetailPanel (docs/219).
  */
 
-import { BellRing, ChefHat, CheckCheck, Minus, Plus, Receipt, Trash2, Wallet } from "lucide-react"
+import { Ban, BellRing, ChefHat, CheckCheck, Minus, Plus, Receipt, Trash2, Wallet } from "lucide-react"
+import { useState } from "react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,7 +18,7 @@ import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
 import { itemTotal, orderTotal, pendingCount } from "@/lib/pos"
-import type { PosItemStatus, PosOrder } from "@/types/pos"
+import type { PosItemStatus, PosOrder, PosOrderItem, PosVoidReason } from "@/types/pos"
 
 const STATUS_STYLE: Record<PosItemStatus, string> = {
   new: "bg-muted text-muted-foreground",
@@ -37,6 +39,7 @@ export function OrderPanel({
   onAddDish,
   onQuantity,
   onServed,
+  onVoid,
   onPatch,
   onSend,
   onBill,
@@ -54,6 +57,8 @@ export function OrderPanel({
   onAddDish: () => void
   onQuantity: (itemId: string, quantity: number) => void
   onServed: (itemId: string) => void
+  /** Anula un plato ya mandado a cocina, con su motivo (docs/275). */
+  onVoid: (itemId: string, reason: PosVoidReason) => void
   onPatch: (patch: Partial<Pick<PosOrder, "guests" | "waiter">>) => void
   onSend: () => void
   onBill: () => void
@@ -61,6 +66,7 @@ export function OrderPanel({
   onRelease: () => void
 }) {
   const { t } = useLanguage()
+  const [voidTarget, setVoidTarget] = useState<PosOrderItem | null>(null)
   const items = order?.items ?? []
   const pending = order ? pendingCount(order) : 0
   const groups = [0, ...Array.from({ length: seats }, (_, i) => i + 1)]
@@ -154,11 +160,19 @@ export function OrderPanel({
                         </Button>
                       </div>
                     )}
-                    {i.status === "ready" && (
-                      <Button size="sm" variant="outline" className="h-7 gap-1.5" onClick={() => onServed(i.id)}>
-                        <CheckCheck className="h-3.5 w-3.5" />
-                        {t("pos_mark_served")}
-                      </Button>
+                    {i.status !== "new" && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {i.status === "ready" && (
+                          <Button size="sm" variant="outline" className="h-7 gap-1.5" onClick={() => onServed(i.id)}>
+                            <CheckCheck className="h-3.5 w-3.5" />
+                            {t("pos_mark_served")}
+                          </Button>
+                        )}
+                        <Button size="sm" variant="ghost" className="h-7 gap-1.5 text-muted-foreground" onClick={() => setVoidTarget(i)}>
+                          <Ban className="h-3.5 w-3.5" />
+                          {t("pos_void_button")}
+                        </Button>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -219,6 +233,37 @@ export function OrderPanel({
           )}
         </SheetFooter>
       </SheetContent>
+
+      {/* Anular un plato ya mandado (docs/275): siempre con motivo, para que Reportes lo cuente bien. */}
+      <Dialog open={!!voidTarget} onOpenChange={(o) => !o && setVoidTarget(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("pos_void_title").replace("{name}", voidTarget ? `${voidTarget.quantity} × ${voidTarget.name}` : "")}</DialogTitle>
+            <DialogDescription>{t("pos_void_desc")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            {(["not_made", "waste", "courtesy"] as PosVoidReason[]).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => {
+                  if (voidTarget) onVoid(voidTarget.id, r)
+                  setVoidTarget(null)
+                }}
+                className="w-full rounded-lg border border-border bg-card p-3 text-left transition hover:border-primary"
+              >
+                <span className="block text-sm font-medium">{t(`pos_void_${r}` as "pos_void_not_made")}</span>
+                <span className="block text-xs text-muted-foreground">{t(`pos_void_${r}_desc` as "pos_void_not_made_desc")}</span>
+              </button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVoidTarget(null)}>
+              {t("common_cancel")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   )
 }

@@ -36,6 +36,7 @@ import { OverviewPanel } from "@/components/admin/overview-panel"
 import { RevenuePanel } from "@/components/admin/revenue-panel"
 import { HealthPanel } from "@/components/admin/health-panel"
 import { RetentionPanel } from "@/components/admin/retention-panel"
+import { FunnelPanel } from "@/components/admin/funnel-panel"
 import { AccountHistoryPanel } from "@/components/admin/account-history-panel"
 import { OPEN_ACCOUNT_EVENT } from "@/lib/admin/open-account"
 
@@ -416,6 +417,7 @@ function AdminPageInner() {
               items={[
                 { value: "retencion", label: t("admin_sub_retention"), content: <RetentionPanel /> },
                 { value: "activacion", label: t("admin_tab_activation"), content: <ActivationPanel /> },
+                { value: "etapas", label: t("admin_sub_account_funnel"), content: <FunnelPanel /> },
                 { value: "referidos", label: t("admin_sub_referrals"), content: <ReferralsPanel /> },
                 { value: "usuarios", label: t("admin_sub_top_users"), content: <TopUsersPanel /> },
                 { value: "inactivos", label: t("admin_sub_inactive"), content: <BusinessHealthPanel /> },
