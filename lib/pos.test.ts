@@ -23,6 +23,7 @@ import {
 } from "@/lib/pos"
 import type { PosConfig, PosOrder, PosOrderItem } from "@/types/pos"
 import type { SalesImport } from "@/types/sales-import"
+import { summarizeTickets } from "@/lib/manual-sales"
 
 let n = 0
 const id = () => `id${++n}`
@@ -161,7 +162,7 @@ describe("cobro", () => {
     expect(orderTotal(o)).toBe(220 + 400 + 150)
     const sale = buildPosSale(o, { seats: null, payment: "card", discount: 0, tip: 50 }, recipes, "2026-11-10T06:00:00.000Z", "t1", NOW)
     expect(sale.lines.reduce((s, l) => s + l.revenue, 0)).toBe(770)
-    expect(sale.lines.find((l) => l.id === "a")?.modifiers).toEqual([{ name: "Extra queso", recipeId: "queso", quantity: 1 }])
+    expect(sale.lines.find((l) => l.id === "a")?.modifiers).toEqual([{ name: "Extra queso", recipeId: "queso", quantity: 1, price: 20 }])
     expect(sale.lines.find((l) => l.id === "a")?.theoreticalCost).toBe(78)
     expect(sale.ticket).toMatchObject({ table: "5", payment: "card", tip: 50, time: "19:30", waiter: "Ana" })
     expect(sale.remaining).toEqual([])
@@ -174,6 +175,17 @@ describe("cobro", () => {
     expect(sale.ticket.guests).toBe(1)
     expect(sale.remaining.map((i) => i.id)).toEqual(["a", "c"])
     expect(orderTotal(o, [0])).toBe(150)
+  })
+
+  it("Reportes recibe los extras vendidos y el tiempo de cocina", () => {
+    const sent = { ...o, items: o.items.map((i) => ({ ...i, status: "ready" as const, sentAt: "2026-11-10T19:00:00.000Z", readyAt: "2026-11-10T19:12:00.000Z" })) }
+    const sale = buildPosSale(sent, { seats: null, payment: "cash", discount: 0, tip: 0 }, recipes, "2026-11-10T06:00:00.000Z", "tk", NOW)
+    expect(sale.ticket).toMatchObject({ pos: true, kitchenMinutes: 12 })
+    const day = mergeSaleIntoDay(null, sale, { id: "d", businessId: "main", isoDate: "2026-11-10T06:00:00.000Z", fileName: "R", now: NOW })
+    const ins = summarizeTickets([day])
+    expect(ins.kitchenAvgMinutes).toBe(12)
+    expect(ins.extras).toEqual([{ name: "Extra queso", units: 1, revenue: 20 }])
+    expect(ins.byWaiter[0]).toMatchObject({ key: "Ana", revenue: 770 })
   })
 
   it("se suma al registro manual del día y conserva el cuadre de caja", () => {

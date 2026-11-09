@@ -160,7 +160,7 @@ export const plans: Plan[] = [
     features: [
       "Todo lo del plan Chef de Partie",
       "Finanzas completas: P&L e importación del reporte de ventas de tu POS (Excel o CSV)",
-        "Salón y pedidos: mapa de mesas, pedidos por silla con fotos y extras, cocina y cobro (no emite facturas fiscales)",
+        "POS propio: mapa de mesas, pedidos por silla con fotos y extras, cocina y cobro (no emite facturas fiscales)",
       "Menu Engineering (Estrellas, Vacas, Puzzles, Perros)",
       "Varianza de precios de proveedores",
       "Dashboard financiero histórico",

@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-11-09b",
+    tutorialHref: tourHref("estadisticas"),
+    content: {
+      es: { title: "El POS en el menú y todo en Reportes", items: ["Salón ahora se llama «POS» en el menú, y Ventas tiene una tarjeta para abrirlo.", "Reportes → Finanzas muestra lo que anotas en Ventas y cobras en el POS: ventas por mesa, mesero, forma de pago y hora, propinas, extras vendidos y tiempo de cocina.", "También en Finanzas: el resumen de tus cuadres de caja, con faltantes, sobrantes y días sin cuadrar."] },
+      en: { title: "The POS in the menu and everything in Reports", items: ["Floor is now called “POS” in the menu, and Sales has a card to open it.", "Reports → Finance shows what you record in Sales and charge in the POS: sales by table, server, payment method and hour, tips, extras sold and kitchen time.", "Also in Finance: a summary of your cash-ups, with shortages, overages and days not cashed up."] },
+      da: { title: "POS i menuen og alt i Rapporter", items: ["Salon hedder nu »POS« i menuen, og Salg har et kort til at åbne det.", "Rapporter → Økonomi viser det, du registrerer i Salg og tager betaling for i POS: salg pr. bord, tjener, betalingsform og time, drikkepenge, solgte tilvalg og køkkentid.", "Også i Økonomi: en oversigt over dine kasseopgørelser med manko, overskud og dage uden opgørelse."] },
+      fr: { title: "Le POS dans le menu et tout dans Rapports", items: ["Salle s'appelle désormais « POS » dans le menu, et Ventes a une carte pour l'ouvrir.", "Rapports → Finances affiche ce que vous saisissez dans Ventes et encaissez dans le POS : ventes par table, serveur, mode de paiement et heure, pourboires, suppléments vendus et temps en cuisine.", "Aussi dans Finances : le résumé de vos clôtures de caisse, avec manques, excédents et jours non clôturés."] },
+      pt: { title: "O POS no menu e tudo em Relatórios", items: ["Salão agora se chama “POS” no menu, e Vendas tem um cartão para abri-lo.", "Relatórios → Finanças mostra o que você registra em Vendas e cobra no POS: vendas por mesa, garçom, forma de pagamento e hora, gorjetas, extras vendidos e tempo de cozinha.", "Também em Finanças: o resumo dos seus fechamentos de caixa, com faltas, sobras e dias sem fechamento."] },
+      zh: { title: "菜单中的 POS，报表里的一切", items: ["“餐厅”在菜单中改名为“POS”，销售页面有一张卡片可以打开它。", "报表 → 财务显示你在销售中记录、在 POS 中收款的数据：按餐桌、服务员、付款方式和时段的销售额、小费、已售加料和出餐时间。", "财务中还有收银对账汇总：短款、长款和未对账的日子。"] },
+    },
+  },
+  {
     version: "2026-11-09",
     tutorialHref: tourHref("salon"),
     content: {

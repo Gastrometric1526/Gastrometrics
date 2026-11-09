@@ -60,8 +60,14 @@ import type { Recipe } from "@/types/recipe"
 import type { Menu } from "@/lib/types/menus"
 import { computeCOGSByArea, filterDishesByArea, splitSalesByArea, type SalesArea } from "@/lib/bar-analytics"
 import { formatDateTime } from "@/lib/date-format"
+import { TableSalesInsights } from "@/components/table-sales-insights"
+import { CashUpSummaryCard } from "@/components/cash-up-summary"
+import { useFeatureAccess } from "@/lib/plan-access"
+import { useRouter } from "next/navigation"
 
 export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) {
+  const router = useRouter()
+  const canCashUp = useFeatureAccess("cash_up")
   const { t, language } = useLanguage()
   const { toast } = useToast()
 
@@ -353,6 +359,17 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
         menus={combinedMenus}
         combinedBusinessCount={combinedBusinessCount}
       />
+
+      {/* Mesas, meseros, pago, hora, propinas, extras y cocina del registro por cuentas y del POS (docs/268) */}
+      <TableSalesInsights imports={combinedSalesImports} />
+
+      {/* Cuadre de caja (docs/217) también en Reportes (docs/270): abre el día en Ventas. */}
+      {canCashUp === true && (
+        <CashUpSummaryCard
+          imports={salesImports}
+          onOpenDay={() => router.push(businessId === "main" ? "/ventas" : `/ventas?business=${businessId}`)}
+        />
+      )}
 
       {salesImports.length === 0 ? (
         <Card className="border-2 border-dashed border-border bg-card">

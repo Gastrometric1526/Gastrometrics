@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, ShoppingBag, UploadCloud, Receipt as ReceiptIcon, ClipboardList } from "lucide-react"
+import { ArrowLeft, Armchair, ShoppingBag, UploadCloud, Receipt as ReceiptIcon, ClipboardList } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -54,6 +54,8 @@ function VentasPageInner() {
   const canSeeSalesHistory = useFeatureAccess("sales_history")
   // Cuadre de caja: permiso propio de Equipo (docs/217).
   const canCashUp = useFeatureAccess("cash_up")
+  // POS propio (docs/268), desde Sous Chef.
+  const canAccessPos = useFeatureAccess("pos")
 
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [menus, setMenus] = useState<Menu[]>([])
@@ -138,6 +140,22 @@ function VentasPageInner() {
                 <TabsContent value="registrar" className="space-y-6 mt-4">
                   {canAccessManualSales || canAccessFinance || canSeeSalesHistory ? (
                     <>
+                      {/* POS propio (docs/268): lo cobrado ahí entra a este registro del día. */}
+                      <Card>
+                        <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+                          <div>
+                            <CardTitle className="text-base">{t("ventas_pos_own_title")}</CardTitle>
+                            <CardDescription>{t("ventas_pos_own_desc")}</CardDescription>
+                          </div>
+                          <Link href={businessId !== "main" ? `/salon?business=${businessId}` : "/salon"} className="shrink-0">
+                            <Button variant={canAccessPos ? "default" : "outline"} className="gap-2">
+                              <Armchair className="h-4 w-4" />
+                              {t("ventas_pos_own_open")}
+                            </Button>
+                          </Link>
+                        </CardHeader>
+                      </Card>
+
                       {canAccessFinance && (
                         <Card>
                           <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">

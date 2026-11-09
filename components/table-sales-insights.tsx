@@ -103,6 +103,28 @@ export function TableSalesInsights({ imports }: { imports: SalesImport[] }) {
               <Breakdown title={t("ventas_by_waiter")} rows={insights.byWaiter} label={(k) => k} empty={t("ventas_by_empty_waiter")} />
               <Breakdown title={t("ventas_by_hour")} rows={insights.byHour} label={hour} empty={t("ventas_by_empty_hour")} />
             </div>
+
+            {/* POS propio (docs/268): extras vendidos y tiempo de cocina. */}
+            {(insights.extras.length > 0 || insights.kitchenAvgMinutes !== null) && (
+              <div className="grid gap-4 md:grid-cols-2">
+                {insights.kitchenAvgMinutes !== null && (
+                  <Kpi label={t("pos_report_kitchen")} value={t("pos_report_minutes").replace("{n}", String(insights.kitchenAvgMinutes))} hint={t("pos_report_kitchen_hint")} />
+                )}
+                {insights.extras.length > 0 && (
+                  <div className="space-y-2 rounded-lg border border-border p-3">
+                    <p className="text-sm font-medium text-foreground">{t("pos_report_extras")}</p>
+                    {insights.extras.slice(0, 8).map((e) => (
+                      <div key={e.name} className="flex items-center justify-between gap-2 text-sm">
+                        <span className="truncate">{e.name}</span>
+                        <span className="tabular-nums text-muted-foreground">
+                          {e.units} · {formatCurrency(e.revenue)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </CardContent>

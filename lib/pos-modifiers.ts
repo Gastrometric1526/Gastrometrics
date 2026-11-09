@@ -15,6 +15,11 @@ export interface SaleModifier {
   recipeId: string | null
   /** Cuántas veces va el modificador en cada unidad del plato (casi siempre 1). */
   quantity: number
+  /**
+   * Precio de una unidad del extra, solo en las ventas del POS propio (docs/268), donde el
+   * extra SÍ suma venta (ya está dentro del revenue de la línea). Sirve para Reportes.
+   */
+  price?: number
 }
 
 /** Palabras que indican que el modificador quita algo, en los 6 idiomas. */

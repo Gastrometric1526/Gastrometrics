@@ -319,6 +319,12 @@ export function EstadisticasTour({
             description: t("tour_stats_finanzas_cards_desc"),
             selector: '[data-tour="finanzas-key-cards"]',
           } as TourStep,
+          {
+            id: "finanzas-sales-detail",
+            title: t("tour_stats_finanzas_sales_title"),
+            description: t("tour_stats_finanzas_sales_desc"),
+            selector: '[data-tour="ventas-tables-card"]',
+          } as TourStep,
         ]
       : []),
   ]

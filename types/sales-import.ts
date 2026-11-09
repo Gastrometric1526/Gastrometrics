@@ -65,6 +65,10 @@ export interface SalesTicket {
   discount: number
   tip: number
   note?: string | null
+  /** Cuenta cobrada en el POS propio (docs/268). */
+  pos?: boolean
+  /** POS propio: minutos promedio entre «Mandar a cocina» y «Listo» de sus platos. */
+  kitchenMinutes?: number | null
 }
 
 /** Una salida de efectivo de la caja durante el día (compra de hielo, vuelto a un proveedor…). */

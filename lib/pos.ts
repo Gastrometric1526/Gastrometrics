@@ -103,7 +103,16 @@ export function itemUnitPrice(item: Pick<PosOrderItem, "unitPrice" | "extras">):
 
 /** Extras como modificadores (lib/pos-modifiers.ts), para el costo y el inventario teórico. */
 export function extrasAsModifiers(extras: PosOrderExtra[]): SaleModifier[] {
-  return extras.map((e) => ({ name: e.name, recipeId: e.recipeId, quantity: e.quantity }))
+  return extras.map((e) => ({ name: e.name, recipeId: e.recipeId, quantity: e.quantity, price: e.price }))
+}
+
+/** Minutos promedio entre «Mandar a cocina» y «Listo» de los platos que pasaron por cocina. */
+export function kitchenMinutes(items: PosOrderItem[]): number | null {
+  const spans = items
+    .filter((i) => i.sentAt && i.readyAt)
+    .map((i) => (Date.parse(i.readyAt as string) - Date.parse(i.sentAt as string)) / 60000)
+    .filter((m) => Number.isFinite(m) && m >= 0)
+  return spans.length ? Math.round((spans.reduce((s, m) => s + m, 0) / spans.length) * 10) / 10 : null
 }
 
 /** Costo de una unidad con el costo de sus extras unidos a una receta. */
@@ -269,7 +278,8 @@ export function buildPosSale(
     const item = byId.get(l.id)
     return item && item.extras.length ? { ...l, modifiers: extrasAsModifiers(item.extras) } : l
   })
-  const [ticket] = ticketsToSave([draft])
+  const [saved] = ticketsToSave([draft])
+  const ticket: SalesTicket = { ...saved, pos: true, kitchenMinutes: kitchenMinutes(charged) }
   return { ticket, lines, remaining }
 }
 
