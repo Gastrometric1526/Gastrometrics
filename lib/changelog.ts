@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-11-09f",
+    tutorialHref: tourHref("salon"),
+    content: {
+      es: { title: "Extras del POS desde tus recetas", items: ["En POS → Ajustes, «Desde una receta» convierte una receta o subreceta en extra con su nombre, precio y costo; «Extra propio» sigue creando uno a mano.", "Las ventanas y paneles laterales quedan alineados con su contenido en celular y computadora."] },
+      en: { title: "POS extras from your recipes", items: ["In POS → Settings, “From a recipe” turns a recipe or sub-recipe into an extra with its name, price and cost; “Custom extra” still creates one by hand.", "Dialogs and side panels are now aligned with their content on phone and computer."] },
+      da: { title: "POS-tilvalg fra dine opskrifter", items: ["Under POS → Indstillinger gør »Fra en opskrift« en opskrift eller underopskrift til et tilvalg med navn, pris og omkostning; »Eget tilvalg« opretter stadig ét i hånden.", "Vinduer og sidepaneler flugter nu med indholdet på telefon og computer."] },
+      fr: { title: "Suppléments du POS depuis vos recettes", items: ["Dans POS → Réglages, « Depuis une recette » transforme une recette ou sous-recette en supplément avec son nom, son prix et son coût ; « Supplément libre » en crée toujours un à la main.", "Les fenêtres et panneaux latéraux sont alignés avec leur contenu sur téléphone et ordinateur."] },
+      pt: { title: "Extras do POS a partir das suas receitas", items: ["Em POS → Ajustes, “De uma receita” transforma uma receita ou subreceita em extra com nome, preço e custo; “Extra próprio” continua criando um à mão.", "As janelas e painéis laterais ficam alinhados com o conteúdo no celular e no computador."] },
+      zh: { title: "用你的配方创建 POS 加料", items: ["在 POS → 设置中，“从配方添加”可把配方或子配方变成加料，沿用名称、价格和成本；“自定义加料”仍可手动创建。", "弹窗和侧边面板在手机和电脑上都与内容对齐。"] },
+    },
+  },
+  {
     version: "2026-11-09e",
     tutorialHref: tourHref("salon"),
     content: {

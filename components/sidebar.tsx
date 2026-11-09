@@ -517,7 +517,8 @@ function SidebarInner() {
         )}
 
         {/* Navigation */}
-        <nav className={cn("flex-1 p-2 space-y-1 overflow-y-auto", effectiveCollapsed ? "overflow-hidden" : "")}>
+        {/* docs/274: degradado abajo para que un ítem cortado se lea como «hay más», no como encimado. */}
+        <nav className={cn("flex-1 p-2 pb-6 space-y-1 overflow-y-auto [mask-image:linear-gradient(to_bottom,black_calc(100%-1.5rem),transparent)]", effectiveCollapsed ? "overflow-hidden" : "")}>
           {navigationItems.map((item) => {
             // BUG CORREGIDO: "Órdenes de Compra" apunta a /menu-y-compras, que es solo un
             // shell que hace router.replace() a /business/{id}/ordenes-compra (o
