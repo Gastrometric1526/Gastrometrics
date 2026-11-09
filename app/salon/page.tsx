@@ -28,6 +28,7 @@ import { SalonTour } from "@/components/page-tours"
 import { FloorMap } from "@/components/pos/floor-map"
 import { OrderPanel } from "@/components/pos/order-panel"
 import { DishPicker, type PosSellable } from "@/components/pos/dish-picker"
+import { buildCartas } from "@/lib/pos-carta"
 import { CheckoutDialog } from "@/components/pos/checkout-dialog"
 import { KitchenBoard } from "@/components/pos/kitchen-board"
 import { PosSettings } from "@/components/pos/pos-settings"
@@ -35,10 +36,9 @@ import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
 import { useFeatureAccess, getAccessBlockReason } from "@/lib/plan-access"
 import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
-import { getMenus, ensureMenusLoaded, getMenuUnitPriceAndCost } from "@/lib/menus"
+import { getMenus, ensureMenusLoaded } from "@/lib/menus"
 import { getSalesImports, ensureSalesImportsLoaded, addSalesImport, updateSalesImport } from "@/lib/storage/sales-imports"
 import { fetchPosData, saveFloorPlan, savePosConfig, savePosOrder, deletePosOrder, type PosData } from "@/lib/storage/pos"
-import { currentUnitPrice } from "@/lib/recipe-pricing"
 import { toIsoDate, formatDate } from "@/lib/date-format"
 import { formatCurrency } from "@/lib/currency"
 import {
@@ -136,27 +136,11 @@ function SalonPageInner() {
   const byTable = useMemo(() => new Map(orders.filter((o) => o.tableId).map((o) => [o.tableId as string, o])), [orders])
   const takeaways = orders.filter((o) => !o.tableId)
 
-  const sellables = useMemo<PosSellable[]>(() => {
-    const fromRecipes: PosSellable[] = recipes
-      .filter((r) => !r.isSubRecipe)
-      .map((r) => ({
-        key: `recipe:${r.id}`,
-        sourceType: "recipe",
-        refId: r.id,
-        name: r.name,
-        category: r.classification || t("pos_category_other"),
-        price: currentUnitPrice(r),
-        cost: r.costPerServing ?? 0,
-        image: r.image,
-        classification: r.classification || null,
-      }))
-    const fromMenus: PosSellable[] = menus.map((m) => {
-      const pc = getMenuUnitPriceAndCost(m, recipes)
-      return { key: `menu:${m.id}`, sourceType: "menu", refId: m.id, name: m.name, category: t("nav_menus"), price: pc.price, cost: pc.cost, classification: null }
-    })
-    return [...fromRecipes, ...fromMenus].sort((a, b) => a.name.localeCompare(b.name))
-  }, [recipes, menus, t])
-  const shownSellables = useMemo(() => sellables.filter((s) => !config.hidden.includes(s.key)), [sellables, config.hidden])
+  // Cartas del POS (docs/271): cada menú creado y «Mis Recetas».
+  const cartas = useMemo(
+    () => buildCartas(menus, recipes, { recipes: t("pos_carta_all_recipes"), other: t("pos_category_other"), wholeMenu: t("pos_carta_whole_menu") }),
+    [recipes, menus, t],
+  )
 
   // ---------- pedido abierto ----------
   const openTable = floor?.tables.find((tb) => tb.id === openKey) ?? null
@@ -408,7 +392,6 @@ function SalonPageInner() {
                       plan={floor}
                       config={config}
                       recipes={recipes.filter((r) => !!r.id)}
-                      sellables={sellables}
                       areaId={area?.id ?? floor.areas[0]?.id}
                       onArea={setAreaId}
                       onPlan={onPlan}
@@ -457,7 +440,7 @@ function SalonPageInner() {
         }}
       />
 
-      <DishPicker open={pickerOpen} onOpenChange={setPickerOpen} sellables={shownSellables} config={config} seatLabel={seatLabel} onAdd={onAddDish} />
+      <DishPicker open={pickerOpen} onOpenChange={setPickerOpen} cartas={cartas} config={config} seatLabel={seatLabel} onAdd={onAddDish} />
       <CheckoutDialog open={checkoutOpen} onOpenChange={setCheckoutOpen} order={openOrder} saving={saving} onConfirm={onCheckout} />
     </AuthGuard>
   )

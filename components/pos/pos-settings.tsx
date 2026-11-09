@@ -1,8 +1,8 @@
 "use client"
 
 /**
- * Ajustes del POS (docs/268): el plano del salón (áreas y mesas que se arrastran), los
- * extras con precio y qué platos se muestran en la carta.
+ * Ajustes del POS (docs/268): el plano del salón (áreas y mesas que se arrastran) y los
+ * extras con precio. Qué se vende sale de los menús creados y de Mis Recetas (docs/271).
  */
 
 import { useState } from "react"
@@ -12,12 +12,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { NumericInput } from "@/components/ui/numeric-input"
-import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useConfirmDialog } from "@/components/confirm-dialog"
 import { useLanguage } from "@/contexts/language-context"
 import { FloorMap } from "@/components/pos/floor-map"
-import type { PosSellable } from "@/components/pos/dish-picker"
 import { nextTableLabel, shapeSize, snapTable } from "@/lib/pos"
 import type { FloorPlan, FloorTable, PosConfig, PosExtra, TableShape } from "@/types/pos"
 
@@ -27,7 +25,6 @@ export function PosSettings({
   plan,
   config,
   recipes,
-  sellables,
   areaId,
   onArea,
   onPlan,
@@ -36,7 +33,6 @@ export function PosSettings({
   plan: FloorPlan
   config: PosConfig
   recipes: { id: string; name: string; classification: string; isSubRecipe?: boolean }[]
-  sellables: PosSellable[]
   areaId: string
   onArea: (id: string) => void
   onPlan: (plan: FloorPlan) => void
@@ -88,8 +84,6 @@ export function PosSettings({
     if (!(await confirm(t("pos_extra_delete_confirm").replace("{name}", extra.name || t("pos_extras_title"))))) return
     onConfig({ ...config, extras: config.extras.filter((e) => e.id !== extra.id), updatedAt: now() })
   }
-  const toggleHidden = (key: string, visible: boolean) =>
-    onConfig({ ...config, hidden: visible ? config.hidden.filter((h) => h !== key) : [...new Set([...config.hidden, key])], updatedAt: now() })
 
   return (
     <div className="space-y-6">
@@ -250,21 +244,6 @@ export function PosSettings({
                 </div>
               </div>
             </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">{t("pos_settings_menu_title")}</CardTitle>
-          <CardDescription>{t("pos_settings_menu_desc")}</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-2 sm:grid-cols-2">
-          {sellables.map((s) => (
-            <label key={s.key} className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
-              <span className="text-sm truncate">{s.name}</span>
-              <Switch checked={!config.hidden.includes(s.key)} onCheckedChange={(v) => toggleHidden(s.key, v)} />
-            </label>
           ))}
         </CardContent>
       </Card>

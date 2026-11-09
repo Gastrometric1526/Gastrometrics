@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-11-09c",
+    tutorialHref: tourHref("salon"),
+    content: {
+      es: { title: "POS: elige la carta al tomar el pedido", items: ["Al agregar un plato eliges la carta: uno de tus menús, con sus platos por paso y el menú completo, o todas tus recetas.", "Los platos con foto en su receta se ven con su foto; los demás, solo con el nombre y el precio.", "Ya no hace falta apagar platos en Ajustes: lo que no se vende en un menú, quítalo de ese menú."] },
+      en: { title: "POS: choose the menu when taking an order", items: ["When you add a dish, you choose the menu: one of your menus, with its dishes by course and the whole menu, or all your recipes.", "Dishes whose recipe has a photo show it; the rest show just the name and price.", "No more turning dishes off in Settings: if something isn't sold on a menu, remove it from that menu."] },
+      da: { title: "POS: vælg menukortet, når du tager imod en bestilling", items: ["Når du tilføjer en ret, vælger du menukortet: en af dine menuer med retterne pr. servering og hele menuen, eller alle dine opskrifter.", "Retter, hvis opskrift har et billede, vises med det; de øvrige kun med navn og pris.", "Du skal ikke længere slå retter fra under Indstillinger: sælges noget ikke på en menu, fjerner du det fra den menu."] },
+      fr: { title: "POS : choisissez la carte en prenant la commande", items: ["En ajoutant un plat, vous choisissez la carte : l'un de vos menus, avec ses plats par service et le menu complet, ou toutes vos recettes.", "Les plats dont la recette a une photo l'affichent ; les autres, seulement le nom et le prix.", "Plus besoin de désactiver des plats dans Réglages : ce qui ne se vend pas dans un menu, retirez-le de ce menu."] },
+      pt: { title: "POS: escolha o cardápio ao anotar o pedido", items: ["Ao adicionar um prato, você escolhe o cardápio: um dos seus cardápios, com os pratos por etapa e o cardápio completo, ou todas as suas receitas.", "Os pratos com foto na receita aparecem com a foto; os demais, só com o nome e o preço.", "Não é mais preciso desligar pratos em Ajustes: o que não se vende em um cardápio, tire-o desse cardápio."] },
+      zh: { title: "POS：点单时选择菜单", items: ["添加菜品时可选择菜单：你的某个套餐（按道次列出菜品，另有整套套餐）或全部配方。", "配方有照片的菜品显示照片，其余只显示名称和价格。", "不必再在设置中关闭菜品：某道菜不在套餐中出售，就把它从该套餐中移除。"] },
+    },
+  },
+  {
     version: "2026-11-09b",
     tutorialHref: tourHref("estadisticas"),
     content: {
