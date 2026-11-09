@@ -48,8 +48,10 @@ import {
   defaultFloorPlan,
   emptyConfig,
   mergeSaleIntoDay,
+  kitchenQueue,
   orderTotal,
   sendToKitchen,
+  serviceSummary,
   setItemQuantity,
   setItemStatus,
 } from "@/lib/pos"
@@ -58,6 +60,24 @@ import type { Recipe } from "@/types/recipe"
 import type { Menu } from "@/lib/types/menus"
 
 const POLL_MS = 5000
+
+const WAITER_KEY = "gm_pos_waiter"
+
+// Resumen del servicio (docs/273): mismos colores que el plano.
+const SUMMARY_STYLE = { free: "border-border bg-card", busy: "border-primary/30 bg-primary/5", ready: "border-success/40 bg-success-soft", bill: "border-warning/40 bg-warning-soft" } as const
+const SUMMARY_DOT = { free: "bg-card border-border", busy: "bg-primary/15 border-primary", ready: "bg-success/20 border-success", bill: "bg-warning/20 border-warning" } as const
+
+function TabBadge({ n, label, tone }: { n: number; label: string; tone: "success" | "info" }) {
+  return (
+    <span
+      aria-label={label}
+      title={label}
+      className={`ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums ${tone === "success" ? "bg-success-soft text-success" : "bg-info-soft text-info"}`}
+    >
+      {n}
+    </span>
+  )
+}
 
 export default function SalonPage() {
   return (
@@ -136,6 +156,10 @@ function SalonPageInner() {
   const areaTables = useMemo(() => (floor && area ? floor.tables.filter((tb) => tb.areaId === area.id) : []), [floor, area])
   const byTable = useMemo(() => new Map(orders.filter((o) => o.tableId).map((o) => [o.tableId as string, o])), [orders])
   const takeaways = orders.filter((o) => !o.tableId)
+  // Resumen del servicio y avisos de las pestañas (docs/273).
+  const summary = useMemo(() => serviceSummary(areaTables, byTable, takeaways), [areaTables, byTable, takeaways])
+  const kitchenWaiting = useMemo(() => kitchenQueue(orders).filter((g) => g.items.some((i) => i.status === "sent")).length, [orders])
+  const readyTables = useMemo(() => orders.filter((o) => o.items.some((i) => i.status === "ready")).length, [orders])
 
   // Cartas del POS (docs/271): cada menú creado y «Mis Recetas».
   const cartas = useMemo(
@@ -156,7 +180,12 @@ function SalonPageInner() {
 
   const newOrder = (tableId: string | null, label: string, areaName: string | null, channel: PosOrder["channel"]): PosOrder => {
     const now = new Date().toISOString()
-    return { id: uuidv4(), tableId, tableLabel: label, areaName, channel, guests: null, waiter: null, openedAt: now, status: "open", items: [], updatedAt: now }
+    // El mesero del aparato se recuerda (docs/273): no hay que escribirlo en cada mesa.
+    let waiter: string | null = null
+    try {
+      waiter = localStorage.getItem(WAITER_KEY) || null
+    } catch {}
+    return { id: uuidv4(), tableId, tableLabel: label, areaName, channel, guests: null, waiter, openedAt: now, status: "open", items: [], updatedAt: now }
   }
 
   /** Guarda un pedido (optimista) y relee después. */
@@ -226,8 +255,7 @@ function SalonPageInner() {
       readyAt: null,
     })
     persistOrder(next)
-    setPickerOpen(false)
-    toast({ title: t("pos_added_toast").replace("{dish}", s.name) })
+    // La carta queda abierta para seguir pidiendo; ella misma avisa lo agregado (docs/273).
   }
 
   const onCheckout = async (pay: PosPayment) => {
@@ -344,10 +372,12 @@ function SalonPageInner() {
                     <TabsTrigger id="salon-tab-salon" value="salon" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       <LayoutGrid className="h-4 w-4" />
                       {t("pos_tab_floor")}
+                      {readyTables > 0 && <TabBadge tone="success" n={readyTables} label={t("pos_badge_ready").replace("{n}", String(readyTables))} />}
                     </TabsTrigger>
                     <TabsTrigger id="salon-tab-cocina" value="cocina" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       <ChefHat className="h-4 w-4" />
                       {t("pos_tab_kitchen")}
+                      {kitchenWaiting > 0 && <TabBadge tone="info" n={kitchenWaiting} label={t("pos_badge_kitchen").replace("{n}", String(kitchenWaiting))} />}
                     </TabsTrigger>
                     <TabsTrigger id="salon-tab-ajustes" value="ajustes" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       <Settings2 className="h-4 w-4" />
@@ -379,13 +409,28 @@ function SalonPageInner() {
                         ))}
                       </div>
                     )}
+                    {areaTables.length > 0 && (
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5" data-tour="salon-summary">
+                        {(["free", "busy", "ready", "bill"] as const).map((s) => (
+                          <div key={s} className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${SUMMARY_STYLE[s]}`}>
+                            <span className={`h-3 w-3 shrink-0 rounded-sm border ${SUMMARY_DOT[s]}`} />
+                            <span className="min-w-0 flex-1 truncate text-xs">{t(`pos_status_${s}` as "pos_status_free")}</span>
+                            <span className="text-base font-semibold tabular-nums">{summary[s]}</span>
+                          </div>
+                        ))}
+                        <div className="col-span-2 flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 sm:col-span-1">
+                          <span className="text-xs text-muted-foreground">{t("pos_summary_open_total")}</span>
+                          <span className="text-base font-semibold tabular-nums">{formatCurrency(summary.openTotal)}</span>
+                        </div>
+                      </div>
+                    )}
                     <div data-tour="salon-map">
                       {areaTables.length === 0 ? (
                         <Card>
                           <CardContent className="py-10 text-center text-sm text-muted-foreground">{t("pos_area_empty")}</CardContent>
                         </Card>
                       ) : (
-                        <FloorMap tables={areaTables} orders={byTable} mode="service" selectedId={openKey} onSelect={onSelectTable} />
+                        <FloorMap tables={areaTables} orders={byTable} mode="service" selectedId={openKey} onSelect={onSelectTable} showLegend={false} />
                       )}
                     </div>
                   </TabsContent>
@@ -431,6 +476,12 @@ function SalonPageInner() {
         onQuantity={(itemId, q) => openOrder && persistOrder(setItemQuantity(openOrder, itemId, q))}
         onServed={(itemId) => openOrder && persistOrder(setItemStatus(openOrder, itemId, "served"))}
         onPatch={(patch) => {
+          if ("waiter" in patch) {
+            try {
+              if (patch.waiter) localStorage.setItem(WAITER_KEY, patch.waiter)
+              else localStorage.removeItem(WAITER_KEY)
+            } catch {}
+          }
           const order = ensureOrder()
           if (order) persistOrder({ ...order, ...patch, updatedAt: new Date().toISOString() })
         }}

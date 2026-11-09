@@ -74,6 +74,8 @@ import {
   getBarKindForIngredientCategory,
   isBarClassification,
   isBeverageRecipe,
+  formatServingAmount,
+  servingUnitFor,
 } from "@/lib/beverage"
 import { BeverageServiceCard, BeverageSourceCard, RecipeKindPicker, type RecipeKind } from "./beverage-sections"
 import { useToast } from "@/hooks/use-toast"
@@ -628,7 +630,9 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     (result: { line: RecipeIngredient; beverage: RecipeBeverage; ingredient: Ingredient } | null) => {
       if (!result) return
       const kind = getBarKindForIngredientCategory(result.ingredient.category)
-      const servingLabel = result.beverage.servingMl ? `${result.beverage.servingMl} ml` : t("bebidas_serving_package")
+      const servingLabel = result.beverage.servingMl
+        ? formatServingAmount(result.beverage.servingMl, servingUnitFor(result.ingredient.unit))
+        : t("bebidas_serving_package")
       setRecipe((prev) => ({
         ...prev,
         ingredients: [result.line],

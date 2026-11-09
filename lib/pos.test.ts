@@ -15,6 +15,7 @@ import {
   pendingCount,
   seatPositions,
   seatsInOrder,
+  serviceSummary,
   sendToKitchen,
   setItemQuantity,
   setItemStatus,
@@ -199,5 +200,15 @@ describe("cobro", () => {
     expect(again.tickets).toHaveLength(2)
     expect(again.totalRevenue).toBe(1540)
     expect((again as unknown as { cashUp: { openingFloat: number } }).cashUp.openingFloat).toBe(500)
+  })
+})
+
+describe("resumen del servicio (docs/273)", () => {
+  it("cuenta mesas por estado y suma lo abierto", () => {
+    const busy = { ...order([item()]), id: "a", tableId: "t1" }
+    const bill = { ...order([item({ quantity: 2 })]), id: "b", tableId: "t2", status: "bill" as const }
+    const take = { ...order([item({ unitPrice: 100 })]), id: "c", tableId: null }
+    const s = serviceSummary([{ id: "t1" }, { id: "t2" }, { id: "t3" }], new Map([["t1", busy], ["t2", bill]]), [take])
+    expect(s).toMatchObject({ free: 1, busy: 1, bill: 1, ready: 0, openTotal: 200 + 400 + 100 })
   })
 })

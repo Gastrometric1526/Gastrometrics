@@ -22,12 +22,8 @@ export function FichaTecnicaTour({ hasIngredients }: { hasIngredients: boolean }
       description: t("tour_ficha_header_desc"),
       selector: '[data-tour="ficha-header"]',
     },
-    {
-      id: "ingredientes-btn",
-      title: t("tour_ficha_ingredientes_btn_title"),
-      description: t("tour_ficha_ingredientes_btn_desc"),
-      selector: '[data-tour="ficha-ingredientes-btn"]',
-    },
+    // Flujo coherente (docs/273): solo se invita a ir a Ingredientes si todavía no hay
+    // ninguno; con ingredientes ya cargados, el recorrido va directo a armar la receta.
     ...(hasIngredients
       ? []
       : [
@@ -36,6 +32,12 @@ export function FichaTecnicaTour({ hasIngredients }: { hasIngredients: boolean }
             title: t("tour_ficha_warning_title"),
             description: t("tour_ficha_warning_desc"),
             selector: '[data-tour="ficha-warning"]',
+          } as TourStep,
+          {
+            id: "ingredientes-btn",
+            title: t("tour_ficha_ingredientes_btn_title"),
+            description: t("tour_ficha_ingredientes_btn_desc"),
+            selector: '[data-tour="ficha-ingredientes-btn"]',
           } as TourStep,
         ]),
     {
@@ -98,7 +100,13 @@ export function FichaTecnicaTour({ hasIngredients }: { hasIngredients: boolean }
   return <PageTour steps={steps} storageKey="tour_completed_ficha-tecnica" />
 }
 
-export function IngredientesTour({ onOpenImport }: { onOpenImport?: () => void } = {}) {
+// docs/273: con ingredientes ya cargados, terminar no abre la importación; con recetas ya
+// hechas, cerrar no empuja a la Ficha Técnica (esa persona ya pasó por ahí).
+export function IngredientesTour({
+  onOpenImport,
+  hasIngredients = false,
+  hasRecipes = false,
+}: { onOpenImport?: () => void; hasIngredients?: boolean; hasRecipes?: boolean } = {}) {
   const { t } = useLanguage()
   const router = useRouter()
   // Terminar el recorrido abre la importación masiva (docs/145); saltarlo sigue llevando
@@ -143,14 +151,15 @@ export function IngredientesTour({ onOpenImport }: { onOpenImport?: () => void }
     <PageTour
       steps={steps}
       storageKey="tour_completed_ingredientes"
-      finishLabel={onOpenImport ? t("tour_finish_open_import") : t("tour_finish_go_ficha")}
+      finishLabel={onOpenImport && !hasIngredients ? t("tour_finish_open_import") : hasRecipes ? undefined : t("tour_finish_go_ficha")}
       onFinish={() => {
         finishedRef.current = true
-        onOpenImport?.()
+        if (!hasIngredients) onOpenImport?.()
       }}
       onClose={() =>
         setTimeout(() => {
-          if (!finishedRef.current || !onOpenImport) router.push("/ficha-tecnica")
+          if (hasRecipes) return
+          if (!finishedRef.current || !onOpenImport || hasIngredients) router.push("/ficha-tecnica")
         }, 0)
       }
     />
@@ -176,7 +185,8 @@ export function InventarioTour() {
   return <PageTour steps={steps} storageKey="tour_completed_inventario" />
 }
 
-export function MisRecetasTour({ onOpenImport }: { onOpenImport?: () => void } = {}) {
+// docs/273: si ya hay recetas, terminar no abre «Importar receta».
+export function MisRecetasTour({ onOpenImport, hasRecipes = false }: { onOpenImport?: () => void; hasRecipes?: boolean } = {}) {
   const { t } = useLanguage()
   const steps: TourStep[] = [
     {
@@ -199,8 +209,8 @@ export function MisRecetasTour({ onOpenImport }: { onOpenImport?: () => void } =
     <PageTour
       steps={steps}
       storageKey="tour_completed_mis-recetas"
-      finishLabel={onOpenImport ? t("tour_finish_open_recipe_import") : undefined}
-      onFinish={onOpenImport}
+      finishLabel={onOpenImport && !hasRecipes ? t("tour_finish_open_recipe_import") : undefined}
+      onFinish={hasRecipes ? undefined : onOpenImport}
     />
   )
 }
@@ -364,6 +374,7 @@ export function SalonTour({ canEdit = true }: { canEdit?: boolean } = {}) {
   }
   const steps: TourStep[] = [
     { id: "header", title: t("tour_salon_header_title"), description: t("tour_salon_header_desc"), selector: '[data-tour="salon-header"]' },
+    { id: "summary", title: t("tour_salon_summary_title"), description: t("tour_salon_summary_desc"), selector: '[data-tour="salon-summary"]', beforeShow: clickTab("salon-tab-salon") },
     { id: "map", title: t("tour_salon_map_title"), description: t("tour_salon_map_desc"), selector: '[data-tour="salon-map"]', beforeShow: clickTab("salon-tab-salon") },
     { id: "takeaway", title: t("tour_salon_takeaway_title"), description: t("tour_salon_takeaway_desc"), selector: '[data-tour="salon-takeaway"]' },
     { id: "kitchen", title: t("tour_salon_kitchen_title"), description: t("tour_salon_kitchen_desc"), selector: '[data-tour="salon-kitchen-tab"]', beforeShow: clickTab("salon-tab-cocina") },

@@ -11,28 +11,34 @@
  */
 
 import { useMemo, useState } from "react"
-import { Beer, Check, ChevronsUpDown, CupSoda, GlassWater, Martini, UtensilsCrossed, Wine } from "lucide-react"
+import { Beer, CupSoda, GlassWater, Martini, Search, UtensilsCrossed, Wine } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { NumericInput } from "@/components/ui/numeric-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
-import { getUnitLabel } from "@/lib/ingredient-labels"
+import { getCategoryLabel, getUnitLabel } from "@/lib/ingredient-labels"
+import { normalizeSearch } from "@/lib/manual-sales"
 import {
   BEVERAGE_METHODS,
   buildServingLine,
   getPackageContent,
-  getServingPresets,
+  getServingOptions,
+  isBeverageCategory,
   mlPerIngredientUnit,
+  mlToServingUnit,
+  sameServing,
+  servingUnitFor,
+  servingUnitToMl,
   sortForBeverageSource,
 } from "@/lib/beverage"
 import type { Ingredient } from "@/types/ingredient"
+import { unitAbbreviations } from "@/types/ingredient"
+import { SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
 import type { BeverageMode, RecipeBeverage, RecipeIngredient } from "@/types/recipe"
 
 export type RecipeKind = "food" | "drink"
@@ -117,6 +123,52 @@ export function RecipeKindPicker({
 
 type ServingChoice = string // clave del preset, o "custom"
 
+/**
+ * Productos que se pueden vender por medida o por envase (docs/273): solo bebidas, es decir,
+ * ingredientes con categoría de barra (Vinos, Destilados, Cervezas, Refrescos y mixers…).
+ * Por medida, además, tienen que estar en volumen (ml, L, oz o galones) para poder medir el
+ * servicio. «Ver también los demás ingredientes» abre el resto, por si alguien guardó una
+ * bebida en otra categoría.
+ */
+export function beverageSourceOptions<T extends Pick<Ingredient, "name" | "category" | "unit">>(
+  ingredients: T[],
+  mode: "measure" | "package",
+  includeAll: boolean,
+): T[] {
+  return sortForBeverageSource(
+    ingredients.filter(
+      (ing) =>
+        ing.category !== SUBRECIPE_CLASSIFICATION &&
+        (includeAll || isBeverageCategory(ing.category)) &&
+        (mode === "package" || mlPerIngredientUnit(ing.unit) !== null),
+    ),
+  )
+}
+
+function ProductTile({ ingredient, selected, onPick }: { ingredient: Ingredient; selected: boolean; onPick: () => void }) {
+  const { language } = useLanguage()
+  const content = getPackageContent(ingredient)
+  return (
+    <button
+      type="button"
+      onClick={onPick}
+      aria-pressed={selected}
+      className={cn(
+        "flex min-h-[4.5rem] flex-col justify-between rounded-lg border p-2.5 text-left transition",
+        selected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border bg-card hover:border-primary/60",
+      )}
+    >
+      <span className="text-sm font-medium leading-tight line-clamp-2">{ingredient.name}</span>
+      <span className="mt-1 flex items-baseline justify-between gap-2 text-xs text-muted-foreground tabular-nums">
+        <span>
+          {content} {unitAbbreviations[ingredient.unit as keyof typeof unitAbbreviations] || getUnitLabel(ingredient.unit, language)}
+        </span>
+        <span>{formatCurrency(ingredient.pricing?.purchasePrice || 0)}</span>
+      </span>
+    </button>
+  )
+}
+
 export function BeverageSourceCard({
   mode,
   beverage,
@@ -131,15 +183,27 @@ export function BeverageSourceCard({
   onApply: (result: { line: RecipeIngredient; beverage: RecipeBeverage; ingredient: Ingredient } | null) => void
 }) {
   const { t, language } = useLanguage()
-  const [open, setOpen] = useState(false)
-  const options = useMemo(() => sortForBeverageSource(ingredients), [ingredients])
+  const [picking, setPicking] = useState(false)
+  const [query, setQuery] = useState("")
+  const [category, setCategory] = useState<string | null>(null)
+  const [includeAll, setIncludeAll] = useState(false)
   const source = ingredients.find((i) => i.id === beverage?.sourceIngredientId) ?? null
   const isVolume = source ? mlPerIngredientUnit(source.unit) !== null : false
-  const presets = useMemo(() => (source && isVolume ? getServingPresets(source.category).filter((p) => p.ml !== null) : []), [source, isVolume])
+  // Medidas en la unidad de la base de datos (docs/273): oz si la bebida está en oz o galones.
+  const servingUnit = source ? servingUnitFor(source.unit) : "ml"
+  const presets = useMemo(() => (source ? getServingOptions(source.category, source.unit) : []), [source])
   const servingMl = mode === "package" ? null : beverage?.servingMl ?? null
-  const choice: ServingChoice =
-    servingMl === null ? "" : presets.find((p) => p.ml === servingMl)?.key ?? "custom"
+  const choice: ServingChoice = servingMl === null ? "" : presets.find((p) => sameServing(p.ml, servingMl))?.key ?? "custom"
   const built = source ? buildServingLine(source, servingMl, "bev-line") : null
+
+  const options = useMemo(() => beverageSourceOptions(ingredients, mode, includeAll), [ingredients, mode, includeAll])
+  const hasOthers = useMemo(() => beverageSourceOptions(ingredients, mode, true).length > options.length, [ingredients, mode, options])
+  const categories = useMemo(() => [...new Set(options.map((o) => o.category))], [options])
+  const shown = useMemo(() => {
+    const q = normalizeSearch(query)
+    return options.filter((o) => (!category || o.category === category) && (!q || normalizeSearch(o.name).includes(q)))
+  }, [options, category, query])
+  const showPicker = !disabled && (picking || !source)
 
   const apply = (ingredient: Ingredient | null, ml: number | null) => {
     if (!ingredient) return onApply(null)
@@ -153,11 +217,11 @@ export function BeverageSourceCard({
   }
 
   const pickIngredient = (ingredient: Ingredient) => {
-    setOpen(false)
+    setPicking(false)
+    setQuery("")
     if (mode === "package") return apply(ingredient, null)
-    const volume = mlPerIngredientUnit(ingredient.unit) !== null
-    const first = volume ? getServingPresets(ingredient.category).find((p) => p.ml !== null)?.ml ?? 150 : null
-    apply(ingredient, volume ? (servingMl ?? first) : null)
+    const first = getServingOptions(ingredient.category, ingredient.unit)[0]?.ml ?? servingUnitToMl(servingUnitFor(ingredient.unit) === "oz" ? 5 : 150, servingUnitFor(ingredient.unit))
+    apply(ingredient, servingMl ?? first)
   }
 
   const content = source ? getPackageContent(source) : 0
@@ -172,82 +236,107 @@ export function BeverageSourceCard({
         <p className="text-sm text-muted-foreground">{mode === "package" ? t("bev_source_desc_package") : t("bev_source_desc_measure")}</p>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label>{t("bev_source_ingredient")}</Label>
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" role="combobox" disabled={disabled} className="w-full justify-between font-normal">
-                  <span className={cn("truncate", !source && "text-muted-foreground")}>{source ? source.name : t("bev_source_pick")}</span>
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[16rem] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder={t("bev_source_search")} />
-                  <CommandList>
-                    <CommandEmpty>{t("bev_source_none")}</CommandEmpty>
-                    <CommandGroup>
-                      {options.map((ing) => (
-                        <CommandItem key={ing.id} value={`${ing.name} ${ing.id}`} onSelect={() => pickIngredient(ing)}>
-                          <Check className={cn("mr-2 h-4 w-4", source?.id === ing.id ? "opacity-100" : "opacity-0")} />
-                          <span className="truncate">{ing.name}</span>
-                          <span className="ml-auto pl-2 text-xs text-muted-foreground">
-                            {getPackageContent(ing)} {getUnitLabel(ing.unit, language)}
-                          </span>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+        {/* Producto elegido: una fila compacta con «Cambiar». */}
+        {source && !showPicker && (
+          <div className="flex items-center gap-3 rounded-xl border border-primary/40 bg-primary/5 p-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              {mode === "package" ? <Beer className="h-5 w-5" /> : <Wine className="h-5 w-5" />}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-foreground">{source.name}</p>
+              <p className="text-xs text-muted-foreground">
+                {getCategoryLabel(source.category, language)} · {content} {getUnitLabel(source.unit, language)} · {formatCurrency(source.pricing?.purchasePrice || 0)}
+              </p>
+            </div>
+            {!disabled && (
+              <Button variant="outline" size="sm" onClick={() => setPicking(true)}>
+                {t("bev_source_change")}
+              </Button>
+            )}
           </div>
+        )}
 
-          {mode === "measure" && source && isVolume && (
-            <div className="space-y-1.5">
-              <Label>{t("bev_source_serving")}</Label>
+        {/* Elegir el producto: buscador, categorías de barra y tarjetas. */}
+        {showPicker && (
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("bev_source_search")} className="pl-9" aria-label={t("bev_source_search")} />
+            </div>
+            {categories.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                <Button size="sm" variant={category === null ? "default" : "outline"} className="shrink-0" onClick={() => setCategory(null)}>
+                  {t("pos_picker_all")}
+                </Button>
+                {categories.map((c) => (
+                  <Button key={c} size="sm" variant={category === c ? "default" : "outline"} className="shrink-0" onClick={() => setCategory(c)}>
+                    {getCategoryLabel(c, language)}
+                  </Button>
+                ))}
+              </div>
+            )}
+            {options.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">{t("bev_source_empty_bar")}</p>
+            ) : shown.length === 0 ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">{t("bev_source_no_match")}</p>
+            ) : (
+              <div className="grid max-h-80 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3">
+                {shown.map((ing) => (
+                  <ProductTile key={ing.id} ingredient={ing} selected={source?.id === ing.id} onPick={() => pickIngredient(ing)} />
+                ))}
+              </div>
+            )}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {mode === "measure" ? <p className="text-xs text-muted-foreground">{t("bev_source_measure_hint")}</p> : <span />}
               <div className="flex gap-2">
-                <Select
-                  value={choice}
-                  disabled={disabled}
-                  onValueChange={(v) => {
-                    if (v === "custom") return apply(source, servingMl ?? 60)
-                    apply(source, presets.find((p) => p.key === v)?.ml ?? null)
-                  }}
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {presets.map((p) => (
-                      <SelectItem key={p.key} value={p.key}>
-                        {t(`bebidas_serving_${p.key}` as never)}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="custom">{t("bebidas_serving_custom")}</SelectItem>
-                  </SelectContent>
-                </Select>
-                {choice === "custom" && (
-                  <NumericInput
-                    aria-label={t("bev_source_custom_ml")}
-                    value={servingMl ?? 60}
-                    onChange={(v) => apply(source, v > 0 ? v : 1)}
-                    decimalPlaces={0}
-                    min={1}
-                    className="w-24"
-                    disabled={disabled}
-                  />
+                {(hasOthers || includeAll) && (
+                  <Button variant="ghost" size="sm" onClick={() => { setIncludeAll(!includeAll); setCategory(null) }}>
+                    {includeAll ? t("bev_source_show_bar") : t("bev_source_show_all")}
+                  </Button>
+                )}
+                {source && (
+                  <Button variant="ghost" size="sm" onClick={() => setPicking(false)}>
+                    {t("common_cancel")}
+                  </Button>
                 )}
               </div>
-              {choice === "custom" && <p className="text-xs text-muted-foreground">{t("bev_source_custom_ml")}</p>}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {mode === "measure" && source && isVolume && !showPicker && (
+          <div className="space-y-1.5">
+            <Label>{t("bev_source_serving")}</Label>
+            <div className="flex flex-wrap gap-2">
+              {presets.map((p) => (
+                <Button key={p.key} size="sm" variant={choice === p.key ? "default" : "outline"} disabled={disabled} onClick={() => apply(source, p.ml)}>
+                  {t(p.labelKey as never)}
+                </Button>
+              ))}
+              <Button size="sm" variant={choice === "custom" ? "default" : "outline"} disabled={disabled} onClick={() => apply(source, servingMl ?? servingUnitToMl(servingUnit === "oz" ? 2 : 60, servingUnit))}>
+                {t("bebidas_serving_custom")}
+              </Button>
+              {choice === "custom" && (
+                <div className="flex items-center gap-2">
+                  <NumericInput
+                    aria-label={servingUnit === "oz" ? t("bev_custom_oz_label") : t("bev_source_custom_ml")}
+                    value={mlToServingUnit(servingMl ?? servingUnitToMl(servingUnit === "oz" ? 2 : 60, servingUnit), servingUnit)}
+                    onChange={(v) => apply(source, servingUnitToMl(v > 0 ? v : 1, servingUnit))}
+                    decimalPlaces={servingUnit === "oz" ? 1 : 0}
+                    min={servingUnit === "oz" ? 0.1 : 1}
+                    className="h-9 w-24"
+                    disabled={disabled}
+                  />
+                  <span className="text-sm text-muted-foreground">{servingUnit}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {mode === "measure" && source && !isVolume && <p className="text-sm text-warning">{t("bev_source_not_volume")}</p>}
 
-        {source && built && (
+        {source && built && !showPicker && (
           <div className="grid grid-cols-3 divide-x rounded-xl border text-sm">
             <div className="px-3 py-2.5 sm:px-4">
               <p className="text-xs text-muted-foreground">{t("bev_source_package_content")}</p>

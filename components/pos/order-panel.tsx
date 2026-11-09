@@ -67,11 +67,13 @@ export function OrderPanel({
     .map((s) => ({ seat: s, items: items.filter((i) => (i.seat ?? 0) === s) }))
     .filter((g) => g.items.length > 0)
   const seatName = (s: number) => (s === 0 ? t("pos_seat_table") : t("pos_seat_n").replace("{n}", String(s)))
+  // Una sola acción principal según el momento (docs/273): pedir, mandar a cocina o cobrar.
+  const primary: "add" | "send" | "checkout" = items.length === 0 ? "add" : pending > 0 ? "send" : order?.status === "bill" ? "checkout" : "add"
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-lg">
-        <SheetHeader className="space-y-1 border-b px-5 py-4 pr-12 text-left">
+      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-lg" onOpenAutoFocus={(e) => e.preventDefault()}>
+        <SheetHeader className="space-y-1 border-b px-5 py-4 pr-12 text-left sm:px-5 sm:pr-12">
           <SheetTitle className="flex items-center gap-2">
             {title}
             {order?.status === "bill" && <Badge className="bg-warning-soft text-warning hover:bg-warning-soft">{t("pos_status_bill")}</Badge>}
@@ -108,7 +110,13 @@ export function OrderPanel({
 
         <div className="flex-1 overflow-y-auto px-5 py-3 space-y-4">
           {groups.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">{t("pos_order_empty")}</p>
+            <div className="space-y-3 py-6 text-center">
+              <p className="text-sm text-muted-foreground">{t("pos_order_empty")}</p>
+              <Button onClick={onAddDish} size="lg" className="gap-2">
+                <Plus className="h-4 w-4" />
+                {t("pos_add_dish").replace("{seat}", seatName(seat))}
+              </Button>
+            </div>
           ) : (
             groups.map((g) => (
               <div key={g.seat} className="space-y-1.5">
@@ -165,24 +173,44 @@ export function OrderPanel({
           <span className="text-lg font-semibold tabular-nums">{formatCurrency(order ? orderTotal(order) : 0)}</span>
         </div>
         <SheetFooter className="flex-col gap-2 border-t px-5 py-4 sm:flex-col sm:space-x-0" data-tour="salon-actions">
-          <Button onClick={onAddDish} className="w-full gap-2">
-            <Plus className="h-4 w-4" />
-            {t("pos_add_dish").replace("{seat}", seatName(seat))}
-          </Button>
-          <Button variant="outline" onClick={onSend} disabled={pending === 0} className="w-full gap-2">
-            <ChefHat className="h-4 w-4" />
-            {pending > 0 ? t("pos_send_kitchen_n").replace("{n}", String(pending)) : t("pos_send_kitchen")}
-          </Button>
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" onClick={onBill} disabled={items.length === 0 || order?.status === "bill"} className="gap-2">
-              <BellRing className="h-4 w-4" />
-              {t("pos_ask_bill")}
+          {primary === "send" && (
+            <Button onClick={onSend} size="lg" className="w-full gap-2">
+              <ChefHat className="h-4 w-4" />
+              {t("pos_send_kitchen_n").replace("{n}", String(pending))}
             </Button>
-            <Button variant="outline" onClick={onCheckout} disabled={items.length === 0} className="gap-2">
+          )}
+          {primary === "checkout" && (
+            <Button onClick={onCheckout} size="lg" className="w-full gap-2">
               <Wallet className="h-4 w-4" />
-              {t("pos_checkout")}
+              {t("pos_checkout")} · {formatCurrency(order ? orderTotal(order) : 0)}
             </Button>
-          </div>
+          )}
+          {items.length > 0 && (
+            <Button variant={primary === "add" ? "default" : "outline"} size={primary === "add" ? "lg" : "default"} onClick={onAddDish} className="w-full gap-2">
+              <Plus className="h-4 w-4" />
+              {t("pos_add_dish").replace("{seat}", seatName(seat))}
+            </Button>
+          )}
+          {items.length > 0 && (
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" onClick={onBill} disabled={order?.status === "bill"} className="gap-2">
+                <BellRing className="h-4 w-4" />
+                {t("pos_ask_bill")}
+              </Button>
+              {primary !== "checkout" && (
+                <Button variant="outline" onClick={onCheckout} className="gap-2">
+                  <Wallet className="h-4 w-4" />
+                  {t("pos_checkout")}
+                </Button>
+              )}
+              {primary === "checkout" && (
+                <Button variant="outline" onClick={onSend} disabled={pending === 0} className="gap-2">
+                  <ChefHat className="h-4 w-4" />
+                  {t("pos_send_kitchen")}
+                </Button>
+              )}
+            </div>
+          )}
           {order && items.length === 0 && (
             <Button variant="ghost" onClick={onRelease} className="w-full gap-2 text-muted-foreground">
               <Receipt className="h-4 w-4" />

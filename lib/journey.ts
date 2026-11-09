@@ -82,10 +82,11 @@ const all = (...conds: ((f: JourneyFacts) => boolean)[]) => (f: JourneyFacts) =>
 
 export const CHAPTERS: ChapterMeta[] = [
   { id: "welcome", kind: "steps", route: null },
-  { id: "ingredients-add", kind: "steps", memberFeature: "ingredients", route: "/ingredientes" },
+  // docs/273: si ya hay ingredientes (p. ej. importados) o recetas, no se vuelve a pedir el primero.
+  { id: "ingredients-add", kind: "steps", memberFeature: "ingredients", route: "/ingredientes", alreadyDone: (f) => f.ingredients >= 1 },
   { id: "ingredients-three", kind: "goal", memberFeature: "ingredients", route: "/ingredientes", goal: (f) => ({ current: f.ingredients, target: 3 }) },
   { id: "merma", kind: "steps", memberFeature: "merma", route: "/ingredientes", features: ["merma"], unlocked: atLeast("ingredients", 3), alreadyDone: (f) => f.mermaActive },
-  { id: "ficha-basic", kind: "steps", memberFeature: "recipes", route: "/ficha-tecnica", unlocked: atLeast("ingredients", 3) },
+  { id: "ficha-basic", kind: "steps", memberFeature: "recipes", route: "/ficha-tecnica", unlocked: atLeast("ingredients", 3), alreadyDone: (f) => f.recipes >= 1 },
   { id: "ficha-advanced", kind: "steps", memberFeature: "recipes", route: "/ficha-tecnica", unlocked: atLeast("ingredients", 3) },
   { id: "recipes", kind: "steps", memberFeature: "recipes", route: "/mis-recetas", unlocked: atLeast("recipes", 1) },
   { id: "estadisticas", kind: "page-tour", memberFeature: "stats_panorama", route: "/estadisticas", tourKey: "tour_completed_estadisticas", features: ["stats_panorama"], unlocked: atLeast("recipes", 1) },

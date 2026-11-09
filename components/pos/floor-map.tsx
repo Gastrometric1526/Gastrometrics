@@ -27,6 +27,7 @@ export function FloorMap({
   selectedId,
   onSelect,
   onMove,
+  showLegend = true,
 }: {
   tables: FloorTable[]
   /** Pedido abierto de cada mesa. */
@@ -35,6 +36,8 @@ export function FloorMap({
   selectedId?: string | null
   onSelect: (tableId: string) => void
   onMove?: (table: FloorTable) => void
+  /** En servicio, la página ya muestra el resumen con los mismos colores (docs/273). */
+  showLegend?: boolean
 }) {
   const { t } = useLanguage()
   const svgRef = useRef<SVGSVGElement>(null)
@@ -127,7 +130,7 @@ export function FloorMap({
           })}
         </svg>
       </div>
-      {mode === "service" && (
+      {mode === "service" && showLegend && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           {(["free", "busy", "ready", "bill"] as TableStatus[]).map((s) => (
             <span key={s} className="inline-flex items-center gap-1.5">

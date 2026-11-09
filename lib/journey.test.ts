@@ -166,11 +166,19 @@ describe("invitado del equipo (docs/263)", () => {
 
   it("solo recorre lo que tiene permitido", () => {
     const seen = visited(memberFacts({ ingredients: true, recipes: true }, { ingredients: 5, recipes: 5, menus: 1 }))
-    expect(seen).toContain("ingredients-add")
-    expect(seen).toContain("ficha-basic")
+    // docs/273: con ingredientes y recetas ya hechos, no se vuelve a pedir el primero de cada uno.
+    expect(seen).not.toContain("ingredients-add")
+    expect(seen).not.toContain("ficha-basic")
+    expect(seen).toContain("ficha-advanced")
+    expect(seen).toContain("recipes")
     expect(seen).not.toContain("inventario")
     expect(seen).not.toContain("menus")
     expect(seen).not.toContain("ventas")
+  })
+
+  it("sin datos todavía, empieza por el primer ingrediente (docs/273)", () => {
+    const seen = visited(memberFacts({ ingredients: true, recipes: true }, { ingredients: 0, recipes: 0, menus: 0 }))
+    expect(seen).toContain("ingredients-add")
   })
 
   it("nunca ve Equipo, Negocios ni Mi Plan, aunque tenga todo lo demás", () => {

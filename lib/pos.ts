@@ -311,3 +311,22 @@ export function mergeSaleIntoDay(
     source: "manual",
   }
 }
+
+/**
+ * Resumen del servicio (docs/273): cuántas mesas hay libres, ocupadas, con platos listos y
+ * pidiendo la cuenta, y cuánto suma lo que está abierto (mesas del área y para llevar).
+ */
+export function serviceSummary(
+  tables: { id: string }[],
+  ordersByTable: Map<string, PosOrder>,
+  takeaways: PosOrder[] = [],
+): Record<TableStatus, number> & { openTotal: number } {
+  const out = { free: 0, busy: 0, ready: 0, bill: 0, openTotal: 0 }
+  for (const table of tables) {
+    const order = ordersByTable.get(table.id)
+    out[tableStatus(order)] += 1
+    if (order) out.openTotal += orderTotal(order)
+  }
+  for (const order of takeaways) out.openTotal += orderTotal(order)
+  return out
+}

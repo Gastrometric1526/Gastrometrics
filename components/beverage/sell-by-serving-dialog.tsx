@@ -27,6 +27,11 @@ import {
   BAR_CLASSIFICATIONS,
   BAR_KIND_MENU_STEP,
   buildServingLine,
+  formatServingAmount,
+  getServingOptions,
+  mlToServingUnit,
+  servingUnitFor,
+  servingUnitToMl,
   DEFAULT_BEVERAGE_COST_TARGET,
   computeServingCost,
   getBarKindForIngredientCategory,
@@ -63,14 +68,17 @@ export function SellByServingDialog({ ingredient: openIngredient, businessId, on
   const { user } = useAuth()
 
   const isVolume = ingredient ? mlPerIngredientUnit(ingredient.unit) !== null : false
-  const presets = useMemo(() => {
+  // Medidas en la unidad de la base de datos (docs/273): onzas si la bebida está en oz o
+  // galones, ml si está en ml o L. El servicio se sigue guardando en ml.
+  const servingUnit = ingredient ? servingUnitFor(ingredient.unit) : "ml"
+  const presets = useMemo<{ key: string; ml: number | null; labelKey?: string }[]>(() => {
     if (!ingredient) return []
-    const all = getServingPresets(ingredient.category)
-    return isVolume ? all : all.filter((preset) => preset.ml === null)
+    const withPackage = !isVolume || getServingPresets(ingredient.category).some((preset) => preset.ml === null)
+    return [...getServingOptions(ingredient.category, ingredient.unit), ...(withPackage ? [{ key: "package", ml: null }] : [])]
   }, [ingredient, isVolume])
 
   const barKind = ingredient ? getBarKindForIngredientCategory(ingredient.category) : "cocktails"
-  const [choice, setChoice] = useState<ServingChoice>("package")
+  const [choice, setChoice] = useState<string>("package")
   const [customMl, setCustomMl] = useState<number>(60)
   const [target, setTarget] = useState<number>(DEFAULT_BEVERAGE_COST_TARGET[barKind])
   const [name, setName] = useState("")
@@ -82,7 +90,7 @@ export function SellByServingDialog({ ingredient: openIngredient, businessId, on
   useEffect(() => {
     if (!ingredient) return
     setChoice(presets[0]?.key ?? "package")
-    setCustomMl(60)
+    setCustomMl(servingUnitFor(ingredient.unit) === "oz" ? servingUnitToMl(2, "oz") : 60)
     setTarget(DEFAULT_BEVERAGE_COST_TARGET[getBarKindForIngredientCategory(ingredient.category)])
     setNameEdited(false)
     setPriceInput(null)
@@ -97,10 +105,10 @@ export function SellByServingDialog({ ingredient: openIngredient, businessId, on
     : t("bebidas_serving_package")
   const choiceLabel =
     choice === "custom"
-      ? `${customMl} ml`
+      ? formatServingAmount(customMl, servingUnit)
       : choice === "package"
         ? packageLabel
-        : t(`bebidas_serving_${choice}` as Parameters<typeof t>[0])
+        : t((presets.find((preset) => preset.key === choice)?.labelKey ?? "bebidas_serving_package") as Parameters<typeof t>[0])
 
   useEffect(() => {
     if (ingredient && !nameEdited) setName(`${ingredient.name} · ${choiceLabel}`)
@@ -135,7 +143,7 @@ export function SellByServingDialog({ ingredient: openIngredient, businessId, on
       procedure: [
         servingMl === null
           ? t("bebidas_sell_procedure_package")
-          : t("bebidas_sell_procedure_serving").replace("{amount}", `${servingMl} ml`),
+          : t("bebidas_sell_procedure_serving").replace("{amount}", formatServingAmount(servingMl, servingUnit)),
       ],
       totalCost: serving.cost,
       costPerServing: serving.cost,
@@ -203,7 +211,7 @@ export function SellByServingDialog({ ingredient: openIngredient, businessId, on
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="sell-serving">{t("bebidas_sell_serving_label")}</Label>
-                <Select value={choice} onValueChange={(value) => setChoice(value as ServingChoice)}>
+                <Select value={choice} onValueChange={(value) => setChoice(value)}>
                   <SelectTrigger id="sell-serving">
                     <SelectValue />
                   </SelectTrigger>
@@ -212,7 +220,7 @@ export function SellByServingDialog({ ingredient: openIngredient, businessId, on
                       <SelectItem key={preset.key} value={preset.key}>
                         {preset.key === "package"
                           ? `${packageLabel} · ${ingredient.originalNetContent || ingredient.pricing.netContent} ${unitLabel}`
-                          : t(`bebidas_serving_${preset.key}` as Parameters<typeof t>[0])}
+                          : t(preset.labelKey as Parameters<typeof t>[0])}
                       </SelectItem>
                     ))}
                     {isVolume && <SelectItem value="custom">{t("bebidas_serving_custom")}</SelectItem>}
@@ -221,8 +229,14 @@ export function SellByServingDialog({ ingredient: openIngredient, businessId, on
               </div>
               {choice === "custom" ? (
                 <div className="space-y-1.5">
-                  <Label htmlFor="sell-custom-ml">{t("bebidas_sell_custom_ml_label")}</Label>
-                  <NumericInput id="sell-custom-ml" value={customMl} onChange={setCustomMl} decimalPlaces={0} min={1} />
+                  <Label htmlFor="sell-custom-ml">{servingUnit === "oz" ? t("bev_custom_oz_label") : t("bebidas_sell_custom_ml_label")}</Label>
+                  <NumericInput
+                    id="sell-custom-ml"
+                    value={mlToServingUnit(customMl, servingUnit)}
+                    onChange={(v) => setCustomMl(servingUnitToMl(v > 0 ? v : 1, servingUnit))}
+                    decimalPlaces={servingUnit === "oz" ? 1 : 0}
+                    min={servingUnit === "oz" ? 0.1 : 1}
+                  />
                 </div>
               ) : (
                 <div className="space-y-1.5">

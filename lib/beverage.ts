@@ -284,3 +284,61 @@ export function withBeverageSourceFromLine<T extends Pick<Recipe, "beverage" | "
   if (!b || (b.mode !== "measure" && b.mode !== "package")) return recipe
   return { ...recipe, beverage: { ...b, sourceIngredientId: recipe.ingredients[0]?.ingredientId ?? null } }
 }
+
+// ─── Medidas en la unidad de la base de datos (docs/273) ──────────────────────────
+// Si la bebida está guardada en onzas líquidas o galones, las medidas se ofrecen en onzas;
+// si está en ml o L, en ml. El servicio se guarda siempre en ml (`servingMl`).
+
+export type ServingUnit = "ml" | "oz"
+export const ML_PER_FL_OZ = 29.5735
+
+export function servingUnitFor(unit: string): ServingUnit {
+  return unit === "onzas líquidas" || unit === "galones" ? "oz" : "ml"
+}
+
+export interface ServingOption {
+  key: string
+  ml: number
+  /** Clave del texto (ya trae la cantidad: «Copa 150 ml», «Copa 5 oz»). */
+  labelKey: string
+}
+
+const OZ_OPTIONS: Record<string, [string, number][]> = {
+  VINOS: [["glass_5oz", 5], ["glass_6oz", 6]],
+  "CERVEZA DE BARRIL": [["pint_16oz", 16], ["glass_12oz", 12]],
+  "CERVEZA EMBOTELLADA": [["glass_12oz", 12]],
+  "REFRESCOS Y MIXERS": [["glass_8oz", 8], ["glass_12oz", 12]],
+  BEBIDAS: [["glass_8oz", 8], ["glass_12oz", 12]],
+}
+
+/** Medidas de servicio para una bebida, en la unidad en que está guardada. */
+export function getServingOptions(category: string, unit: string): ServingOption[] {
+  if (mlPerIngredientUnit(unit) === null) return []
+  if (servingUnitFor(unit) === "ml") {
+    return getServingPresets(category)
+      .filter((p) => p.ml !== null)
+      .map((p) => ({ key: p.key, ml: p.ml as number, labelKey: `bebidas_serving_${p.key}` }))
+  }
+  const list = OZ_OPTIONS[category] ?? [["shot_15oz", 1.5], ["double_3oz", 3]]
+  return list.map(([key, oz]) => ({ key, ml: oz * ML_PER_FL_OZ, labelKey: `bev_serving_${key}` }))
+}
+
+/** ml del servicio → cantidad en la unidad de la bebida (ml u oz). */
+export function mlToServingUnit(ml: number, unit: ServingUnit): number {
+  return unit === "oz" ? Math.round((ml / ML_PER_FL_OZ) * 10) / 10 : Math.round(ml)
+}
+
+/** Cantidad en la unidad de la bebida → ml. */
+export function servingUnitToMl(amount: number, unit: ServingUnit): number {
+  return unit === "oz" ? amount * ML_PER_FL_OZ : amount
+}
+
+/** «150 ml» o «5 oz». */
+export function formatServingAmount(ml: number, unit: ServingUnit): string {
+  return `${mlToServingUnit(ml, unit)} ${unit}`
+}
+
+/** ¿Es esta la opción elegida? (los ml de una opción en onzas no son enteros). */
+export function sameServing(a: number | null | undefined, b: number | null | undefined): boolean {
+  return typeof a === "number" && typeof b === "number" && Math.abs(a - b) < 0.05
+}

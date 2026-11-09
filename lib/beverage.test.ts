@@ -6,6 +6,12 @@ import {
   buildServingLine,
   isBeverageRecipe,
   sortForBeverageSource,
+  formatServingAmount,
+  getServingOptions,
+  mlToServingUnit,
+  sameServing,
+  servingUnitFor,
+  servingUnitToMl,
   withBeverageSourceFromLine,
   computeServingCost,
   getBarKind,
@@ -163,5 +169,25 @@ describe("migración de bebidas por medida (docs/272)", () => {
     expect(migrated.beverage?.sourceIngredientId).toBe("malbec-destino")
     const prepared = { beverage: { mode: "prepared" as const }, ingredients: [] }
     expect(withBeverageSourceFromLine(prepared)).toBe(prepared)
+  })
+})
+
+describe("medidas en la unidad de la base de datos (docs/273)", () => {
+  it("vino en ml: copas en ml; vino en onzas: copas en onzas, guardadas en ml", () => {
+    expect(getServingOptions("VINOS", "mililitros").map((o) => o.ml)).toEqual([150, 125, 500])
+    const oz = getServingOptions("VINOS", "onzas líquidas")
+    expect(oz.map((o) => o.labelKey)).toEqual(["bev_serving_glass_5oz", "bev_serving_glass_6oz"])
+    expect(oz[0].ml).toBeCloseTo(147.87, 1)
+    expect(getServingOptions("DESTILADOS", "galones")[0].labelKey).toBe("bev_serving_shot_15oz")
+    expect(getServingOptions("REFRESCOS Y MIXERS", "unidades")).toEqual([]) // por unidad: solo por envase
+  })
+
+  it("convierte y muestra la cantidad en la unidad de la bebida", () => {
+    expect(servingUnitFor("litros")).toBe("ml")
+    expect(servingUnitFor("onzas líquidas")).toBe("oz")
+    expect(formatServingAmount(servingUnitToMl(1.5, "oz"), "oz")).toBe("1.5 oz")
+    expect(formatServingAmount(150, "ml")).toBe("150 ml")
+    expect(mlToServingUnit(servingUnitToMl(5, "oz"), "oz")).toBe(5)
+    expect(sameServing(147.8675, 5 * 29.5735)).toBe(true)
   })
 })

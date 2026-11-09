@@ -1379,7 +1379,11 @@ export default function IngredientesPage() {
       <Sidebar />
       <div className="flex-1 min-w-0 p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
-          <IngredientesTour onOpenImport={() => setShowImportDialog(true)} />
+          <IngredientesTour
+            onOpenImport={() => setShowImportDialog(true)}
+            hasIngredients={!isLoading && ingredients.some((ing) => ing.category !== SUBRECIPE_CLASSIFICATION)}
+            hasRecipes={!isLoading && recipes.length > 0}
+          />
           {/* Drag overlay */}
           {isDragOver && (
             <div className="fixed inset-0 bg-primary/20 backdrop-blur-sm z-50 flex items-center justify-center">

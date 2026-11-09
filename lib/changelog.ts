@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-11-09e",
+    tutorialHref: tourHref("salon"),
+    content: {
+      es: { title: "POS más fácil en pleno servicio", items: ["Arriba del plano ves cuántas mesas hay libres, ocupadas, con platos listos y pidiendo la cuenta, y el total abierto; las pestañas avisan con un número.", "En cada mesa, un solo botón grande con lo que toca: mandar a cocina o cobrar. El mesero se recuerda en el aparato.", "En la carta, el «+» agrega un plato de un toque y la carta queda abierta para seguir pidiendo.", "En las bebidas por medida o por envase solo salen bebidas, y las medidas usan la unidad de tu base de datos (ml u onzas)."] },
+      en: { title: "An easier POS during service", items: ["Above the floor plan you see how many tables are free, occupied, dish-ready and waiting for the bill, plus the open total; the tabs show a number.", "On each table, one big button with what's next: send to kitchen or check out. The server's name is remembered on the device.", "In the menu, the “+” adds a dish in one tap and the menu stays open to keep ordering.", "For drinks by measure or by package, only drinks are listed, and measures use your database's unit (ml or ounces)."] },
+      da: { title: "Et nemmere POS midt i serveringen", items: ["Over plantegningen ser du, hvor mange borde der er ledige, optagne, med retter klar og venter på regningen, plus det åbne beløb; fanerne viser et tal.", "Ved hvert bord én stor knap med det næste: send til køkkenet eller tag betaling. Tjenerens navn huskes på enheden.", "I menuen tilføjer »+« en ret med ét tryk, og menuen forbliver åben, så du kan bestille videre.", "Ved drikke pr. mål eller pr. emballage vises kun drikkevarer, og målene bruger enheden fra din database (ml eller ounces)."] },
+      fr: { title: "Un POS plus simple en plein service", items: ["Au-dessus du plan, vous voyez combien de tables sont libres, occupées, avec des plats prêts et en attente de l'addition, et le total en cours ; les onglets affichent un nombre.", "Sur chaque table, un seul grand bouton pour l'étape suivante : envoyer en cuisine ou encaisser. Le nom du serveur est mémorisé sur l'appareil.", "Dans la carte, le « + » ajoute un plat en un geste et la carte reste ouverte pour continuer.", "Pour les boissons à la mesure ou à l'unité, seules les boissons apparaissent, et les mesures suivent l'unité de votre base (ml ou onces)."] },
+      pt: { title: "Um POS mais fácil em pleno serviço", items: ["Acima da planta você vê quantas mesas estão livres, ocupadas, com pratos prontos e esperando a conta, e o total em aberto; as abas mostram um número.", "Em cada mesa, um só botão grande com o próximo passo: enviar para a cozinha ou cobrar. O nome do garçom fica salvo no aparelho.", "No cardápio, o “+” adiciona um prato com um toque e o cardápio fica aberto para continuar pedindo.", "Nas bebidas por medida ou por embalagem só aparecem bebidas, e as medidas usam a unidade do seu banco de dados (ml ou onças)."] },
+      zh: { title: "服务高峰时更好用的 POS", items: ["平面图上方显示空闲、用餐中、菜已备好和等待结账的桌数，以及未结金额；标签页也会显示数字。", "每张桌子只有一个大按钮显示下一步：送到厨房或结账。设备会记住服务员姓名。", "在菜单中点“+”即可一键加菜，菜单保持打开以便继续点单。", "按量或按瓶罐的饮品只列出饮品，份量使用你数据库中的单位（毫升或盎司）。"] },
+    },
+  },
+  {
     version: "2026-11-09d",
     tutorialHref: tourHref("ficha-tecnica"),
     content: {

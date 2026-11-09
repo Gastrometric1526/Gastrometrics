@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react"
-import { Minus, Plus, Search } from "lucide-react"
+import { Check, Minus, Plus, Search } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,6 +25,15 @@ import type { PosConfig, PosOrderExtra } from "@/types/pos"
 export type { PosSellable } from "@/lib/pos-carta"
 
 const CARTA_KEY = "gm_pos_carta"
+
+/** «+»: agrega 1 sin abrir el detalle (sin extras ni nota), para pedir rápido (docs/273). */
+function QuickAddButton({ label, onClick, className }: { label: string; onClick: () => void; className?: string }) {
+  return (
+    <Button type="button" size="icon" variant="outline" className={cn("h-9 w-9 shrink-0 rounded-full bg-card text-primary shadow-sm hover:text-primary", className)} onClick={onClick} aria-label={label} title={label}>
+      <Plus className="h-4 w-4" />
+    </Button>
+  )
+}
 
 export function DishPicker({
   open,
@@ -49,6 +58,19 @@ export function DishPicker({
   const [quantity, setQuantity] = useState(1)
   const [extras, setExtras] = useState<Record<string, number>>({})
   const [note, setNote] = useState("")
+  // Aviso de lo recién agregado sin cerrar la carta (docs/273).
+  const [lastAdded, setLastAdded] = useState<string | null>(null)
+  useEffect(() => {
+    if (!lastAdded) return
+    const id = setTimeout(() => setLastAdded(null), 2500)
+    return () => clearTimeout(id)
+  }, [lastAdded])
+  const [addedCount, setAddedCount] = useState(0)
+  const quickAdd = (s: PosSellable) => {
+    onAdd(s, 1, [], null)
+    setLastAdded(s.name)
+    setAddedCount((n) => n + 1)
+  }
 
   // La última carta elegida se recuerda en el aparato; si ya no existe, la primera.
   useEffect(() => {
@@ -102,12 +124,16 @@ export function DishPicker({
     if (!o) {
       reset()
       setQuery("")
+      setAddedCount(0)
+      setLastAdded(null)
     }
     onOpenChange(o)
   }
   const add = () => {
     if (!picked) return
     onAdd(picked, quantity, chosen, note.trim() || null)
+    setLastAdded(quantity > 1 ? `${quantity} × ${picked.name}` : picked.name)
+    setAddedCount((n) => n + quantity)
     reset()
   }
 
@@ -117,6 +143,11 @@ export function DishPicker({
         <DialogHeader>
           <DialogTitle>{picked ? picked.name : t("pos_picker_title")}</DialogTitle>
           <DialogDescription>{t("pos_picker_for_seat").replace("{seat}", seatLabel)}</DialogDescription>
+          {lastAdded && !picked && (
+            <p role="status" className="rounded-md bg-success-soft px-3 py-1.5 text-sm text-success">
+              {t("pos_picker_added").replace("{name}", lastAdded)}
+            </p>
+          )}
         </DialogHeader>
 
         {!picked ? (
@@ -163,36 +194,40 @@ export function DishPicker({
                       {g.withPhoto.length > 0 && (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                           {g.withPhoto.map((s) => (
-                            <button
-                              key={s.key}
-                              type="button"
-                              onClick={() => setPicked(s)}
-                              className="text-left rounded-xl border border-border bg-card hover:border-primary hover:shadow-sm transition overflow-hidden"
-                            >
-                              <div className="aspect-[4/3] bg-muted overflow-hidden">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={s.image} alt="" className="h-full w-full object-cover" />
-                              </div>
-                              <div className="p-2.5 space-y-0.5">
-                                <p className="text-sm font-medium leading-tight line-clamp-2">{s.name}</p>
-                                <p className="text-sm tabular-nums text-muted-foreground">{s.price > 0 ? formatCurrency(s.price) : t("pos_no_price")}</p>
-                              </div>
-                            </button>
+                            <div key={s.key} className="relative">
+                              <button
+                                type="button"
+                                onClick={() => setPicked(s)}
+                                className="w-full text-left rounded-xl border border-border bg-card hover:border-primary hover:shadow-sm transition overflow-hidden"
+                              >
+                                <div className="aspect-[4/3] bg-muted overflow-hidden">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={s.image} alt="" className="h-full w-full object-cover" />
+                                </div>
+                                <div className="p-2.5 pr-11 space-y-0.5">
+                                  <p className="text-sm font-medium leading-tight line-clamp-2">{s.name}</p>
+                                  <p className="text-sm tabular-nums text-muted-foreground">{s.price > 0 ? formatCurrency(s.price) : t("pos_no_price")}</p>
+                                </div>
+                              </button>
+                              <QuickAddButton label={t("pos_quick_add").replace("{name}", s.name)} onClick={() => quickAdd(s)} className="absolute bottom-2.5 right-2.5" />
+                            </div>
                           ))}
                         </div>
                       )}
                       {g.nameOnly.length > 0 && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                           {g.nameOnly.map((s) => (
-                            <button
-                              key={s.key}
-                              type="button"
-                              onClick={() => setPicked(s)}
-                              className="flex items-center justify-between gap-3 text-left rounded-lg border border-border bg-card px-3 py-2.5 hover:border-primary hover:shadow-sm transition"
-                            >
-                              <span className="text-sm font-medium leading-tight line-clamp-2">{s.name}</span>
-                              <span className="shrink-0 text-sm tabular-nums text-muted-foreground">{s.price > 0 ? formatCurrency(s.price) : t("pos_no_price")}</span>
-                            </button>
+                            <div key={s.key} className="flex items-stretch gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setPicked(s)}
+                                className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left rounded-lg border border-border bg-card px-3 py-2.5 hover:border-primary hover:shadow-sm transition"
+                              >
+                                <span className="text-sm font-medium leading-tight line-clamp-2">{s.name}</span>
+                                <span className="shrink-0 text-sm tabular-nums text-muted-foreground">{s.price > 0 ? formatCurrency(s.price) : t("pos_no_price")}</span>
+                              </button>
+                              <QuickAddButton label={t("pos_quick_add").replace("{name}", s.name)} onClick={() => quickAdd(s)} className="self-center" />
+                            </div>
                           ))}
                         </div>
                       )}
@@ -262,6 +297,14 @@ export function DishPicker({
           </div>
         )}
 
+        {!picked && addedCount > 0 && (
+          <DialogFooter>
+            <Button onClick={() => close(false)} className="w-full gap-2 sm:w-auto">
+              <Check className="h-4 w-4" />
+              {t("pos_picker_done").replace("{n}", String(addedCount))}
+            </Button>
+          </DialogFooter>
+        )}
         {picked && (
           <DialogFooter className="gap-2 sm:gap-2">
             <Button variant="outline" onClick={reset}>
