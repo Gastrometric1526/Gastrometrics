@@ -29,6 +29,7 @@ import { FloorMap } from "@/components/pos/floor-map"
 import { OrderPanel } from "@/components/pos/order-panel"
 import { DishPicker, type PosSellable } from "@/components/pos/dish-picker"
 import { buildCartas } from "@/lib/pos-carta"
+import { getClassificationLabel } from "@/lib/classification-labels"
 import { CheckoutDialog } from "@/components/pos/checkout-dialog"
 import { KitchenBoard } from "@/components/pos/kitchen-board"
 import { PosSettings } from "@/components/pos/pos-settings"
@@ -69,7 +70,7 @@ export default function SalonPage() {
 function SalonPageInner() {
   const searchParams = useSearchParams()
   const businessId = searchParams.get("business") || "main"
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const { toast } = useToast()
   const canAccess = useFeatureAccess("pos")
 
@@ -138,8 +139,14 @@ function SalonPageInner() {
 
   // Cartas del POS (docs/271): cada menú creado y «Mis Recetas».
   const cartas = useMemo(
-    () => buildCartas(menus, recipes, { recipes: t("pos_carta_all_recipes"), other: t("pos_category_other"), wholeMenu: t("pos_carta_whole_menu") }),
-    [recipes, menus, t],
+    () =>
+      buildCartas(menus, recipes, {
+        recipes: t("pos_carta_all_recipes"),
+        other: t("pos_category_other"),
+        wholeMenu: t("pos_carta_whole_menu"),
+        classification: (c) => getClassificationLabel(c as never, language),
+      }),
+    [recipes, menus, t, language],
   )
 
   // ---------- pedido abierto ----------

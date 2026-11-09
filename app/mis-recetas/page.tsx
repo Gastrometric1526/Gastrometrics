@@ -74,6 +74,7 @@ import {
 } from "@/lib/storage/recipes"
 import { SUBRECIPE_CLASSIFICATION, classifications as recipeClassifications } from "@/types/recipe"
 import { unitMarginPercent } from "@/lib/recipe-pricing"
+import { isBeverageRecipe } from "@/lib/beverage"
 import { getClassificationLabel } from "@/lib/classification-labels"
 import { useLanguage } from "@/contexts/language-context"
 import { syncSubRecipeToIngredient, deleteSubRecipeIngredient } from "@/lib/subrecipe/core"
@@ -176,6 +177,8 @@ export default function MisRecetasPage() {
   const [restoringRecipeIds, setRestoringRecipeIds] = useState<Set<string>>(new Set())
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedClassification, setSelectedClassification] = useState("Todas")
+  // Comida o bebidas (docs/272): las dos viven en el mismo catálogo.
+  const [selectedKind, setSelectedKind] = useState<"all" | "food" | "drink">("all")
   const [sortBy, setSortBy] = useState("recent")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [showFilters, setShowFilters] = useState(false)
@@ -309,6 +312,10 @@ export default function MisRecetasPage() {
       )
     }
 
+    if (selectedKind !== "all") {
+      filtered = filtered.filter((recipe) => (isBeverageRecipe(recipe) ? "drink" : "food") === selectedKind)
+    }
+
     // Aplicar filtro de clasificación
     if (selectedClassification !== "Todas") {
       filtered = filtered.filter((recipe) => recipe.classification === selectedClassification)
@@ -346,7 +353,7 @@ export default function MisRecetasPage() {
     })
 
     return filtered
-  }, [recipes, searchQuery, selectedClassification, sortBy])
+  }, [recipes, searchQuery, selectedClassification, selectedKind, sortBy])
 
   // Calcular estadísticas
   const stats = useMemo(() => {
@@ -810,6 +817,16 @@ export default function MisRecetasPage() {
                     className={`${isMobile && !showFilters ? "hidden" : "flex"} flex-col md:flex-row gap-3 md:gap-4`}
                   >
                     <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                      <Select value={selectedKind} onValueChange={(v) => setSelectedKind(v as "all" | "food" | "drink")}>
+                        <SelectTrigger className="w-full sm:w-44 border-border focus:ring-2 focus:ring-primary" aria-label={t("bev_kind_title")} data-tour="recetas-kind-filter">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">{t("recetas_kind_all")}</SelectItem>
+                          <SelectItem value="food">{t("bev_kind_food")}</SelectItem>
+                          <SelectItem value="drink">{t("bev_kind_drink")}</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <Select value={selectedClassification} onValueChange={setSelectedClassification}>
                         <SelectTrigger className="w-full sm:w-48 border-border focus:ring-2 focus:ring-primary">
                           <Filter className="h-4 w-4 mr-2" />

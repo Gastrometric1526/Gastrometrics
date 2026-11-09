@@ -17,6 +17,7 @@ const CAPABILITY_ORDER = [
   "base_recipes",
   "base_kitchen_pdf",
   "merma",
+  "merma_custom",
   "pdf_admin",
   "invoices",
   "price_import",
@@ -37,7 +38,8 @@ const LABELS: Record<CapabilityLang, Record<CapabilityKey, string> & { businesse
   es: {
     base_recipes: "Fichas técnicas ilimitadas, base de ingredientes e importación desde Excel",
     base_kitchen_pdf: "PDF de cocina (sin costos)",
-    merma: "Sistema de merma",
+    merma: "Merma por categoría, con recálculo de recetas",
+    merma_custom: "Merma personalizada por ingrediente (% o cantidad)",
     pdf_admin: "PDF administrativo (con costos y rentabilidad)",
     invoices: "Facturación a clientes",
     purchase_orders_manual: "Órdenes de compra manuales",
@@ -58,7 +60,8 @@ const LABELS: Record<CapabilityLang, Record<CapabilityKey, string> & { businesse
   en: {
     base_recipes: "Unlimited recipe sheets, ingredient database and Excel import",
     base_kitchen_pdf: "Kitchen PDF (no costs)",
-    merma: "Waste system",
+    merma: "Waste by category, with recipes recalculated",
+    merma_custom: "Custom waste per ingredient (% or amount)",
     pdf_admin: "Administrative PDF (with costs and profitability)",
     invoices: "Customer invoicing",
     purchase_orders_manual: "Manual purchase orders",
@@ -79,7 +82,8 @@ const LABELS: Record<CapabilityLang, Record<CapabilityKey, string> & { businesse
   da: {
     base_recipes: "Ubegrænsede opskriftsark, ingrediensdatabase og import fra Excel",
     base_kitchen_pdf: "Køkken-PDF (uden priser)",
-    merma: "Svindsystem",
+    merma: "Svind pr. kategori, med genberegning af opskrifter",
+    merma_custom: "Tilpasset svind pr. ingrediens (% eller mængde)",
     pdf_admin: "Administrativ PDF (med omkostninger og rentabilitet)",
     invoices: "Fakturering til kunder",
     purchase_orders_manual: "Manuelle indkøbsordrer",
@@ -100,7 +104,8 @@ const LABELS: Record<CapabilityLang, Record<CapabilityKey, string> & { businesse
   fr: {
     base_recipes: "Fiches techniques illimitées, base d'ingrédients et import depuis Excel",
     base_kitchen_pdf: "PDF cuisine (sans coûts)",
-    merma: "Système de pertes",
+    merma: "Pertes par catégorie, avec recalcul des recettes",
+    merma_custom: "Pertes personnalisées par ingrédient (% ou quantité)",
     pdf_admin: "PDF administratif (avec coûts et rentabilité)",
     invoices: "Facturation clients",
     purchase_orders_manual: "Commandes d'achat manuelles",
@@ -121,7 +126,8 @@ const LABELS: Record<CapabilityLang, Record<CapabilityKey, string> & { businesse
   pt: {
     base_recipes: "Fichas técnicas ilimitadas, base de ingredientes e importação do Excel",
     base_kitchen_pdf: "PDF de cozinha (sem custos)",
-    merma: "Sistema de perdas",
+    merma: "Perdas por categoria, com recálculo das receitas",
+    merma_custom: "Perdas personalizadas por ingrediente (% ou quantidade)",
     pdf_admin: "PDF administrativo (com custos e rentabilidade)",
     invoices: "Faturamento para clientes",
     purchase_orders_manual: "Pedidos de compra manuais",
@@ -142,7 +148,8 @@ const LABELS: Record<CapabilityLang, Record<CapabilityKey, string> & { businesse
   zh: {
     base_recipes: "无限技术配方表、食材数据库和 Excel 导入",
     base_kitchen_pdf: "厨房版 PDF（不含成本）",
-    merma: "损耗系统",
+    merma: "按类别计算损耗，并重新计算配方",
+    merma_custom: "按食材自定义损耗（百分比或数量）",
     pdf_admin: "管理版 PDF（含成本与盈利）",
     invoices: "客户开票",
     purchase_orders_manual: "手动采购订单",

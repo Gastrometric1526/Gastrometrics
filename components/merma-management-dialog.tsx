@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { AlertTriangle, RefreshCw, Info } from "lucide-react"
+import { AlertTriangle, RefreshCw, Info, Lock } from "lucide-react"
+import { useFeatureAccess } from "@/lib/plan-access"
 import { getCategoryMermaPercentage, calculateCategoryMerma, getMermaLevel } from "@/lib/merma-categories"
 import { MermaInfoDialog } from "./merma-info-dialog"
 import { useToast } from "@/hooks/use-toast"
@@ -66,6 +67,9 @@ export function MermaManagementDialog({
   const { toast } = useToast()
   const { t, language } = useLanguage()
   const { user } = useAuth()
+  // Merma por categoría en todos los planes; la personalizada por ingrediente, desde Home
+  // Cook (docs/272). Quien bajó de plan conserva sus valores y puede volver a la global.
+  const canCustom = useFeatureAccess("merma_custom") === true
 
   useEffect(() => {
     if (open && initialIngredients.length > 0) {
@@ -183,6 +187,11 @@ export function MermaManagementDialog({
 
   const toggleCustomization = (id: string) => {
     if (!mermaSystemActive) return
+    const current = ingredients.find((ing) => ing.id === id)
+    if (!canCustom && current?.merma?.useGlobal !== false) {
+      toast({ title: t("ingredientes_merma_custom_locked_title"), description: t("ingredientes_merma_custom_locked_desc") })
+      return
+    }
 
     setIngredients((prev) =>
       prev.map((ing) => {
@@ -511,6 +520,7 @@ export function MermaManagementDialog({
                                   : "bg-success-soft hover:bg-success-soft text-success"
                               }
                             >
+                              {!canCustom && ingredient.merma?.useGlobal !== false && <Lock className="h-3.5 w-3.5 mr-1 opacity-70" />}
                               {ingredient.merma?.useGlobal === false
                                 ? t("ingredientes_merma_custom_button")
                                 : t("ingredientes_merma_global_button")}
@@ -524,7 +534,7 @@ export function MermaManagementDialog({
                                   onValueChange={(value) =>
                                     updateMermaType(ingredient.id, value as "quantity" | "percentage")
                                   }
-                                  disabled={!mermaSystemActive}
+                                  disabled={!mermaSystemActive || !canCustom}
                                 >
                                   <SelectTrigger className="w-24">
                                     <SelectValue />
@@ -544,7 +554,7 @@ export function MermaManagementDialog({
                                   onChange={(e) =>
                                     updateMermaValue(ingredient.id, Number.parseFloat(e.target.value) || 0)
                                   }
-                                  disabled={!mermaSystemActive}
+                                  disabled={!mermaSystemActive || !canCustom}
                                   className="w-20"
                                   min="0"
                                   step={ingredient.merma?.customType === "percentage" ? "0.1" : "1"}

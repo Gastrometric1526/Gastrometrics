@@ -4,6 +4,8 @@
 // teórico, órdenes de compra, Menu Engineering) funciona igual que con la comida.
 
 import type { Ingredient } from "@/types/ingredient"
+import type { BeverageMode, Recipe, RecipeIngredient } from "@/types/recipe"
+import { unitAbbreviations } from "@/types/ingredient"
 
 export const BEVERAGE_INGREDIENT_CATEGORIES = [
   "ALCOHOL",
@@ -208,4 +210,77 @@ export function bottleFractionFromWeight(weightG: number, weights: BottleWeights
   const span = weights.fullG - weights.emptyG
   if (!(span > 0) || !Number.isFinite(weightG)) return null
   return Math.min(1, Math.max(0, (weightG - weights.emptyG) / span))
+}
+
+// ─── Ficha Técnica de Bebidas (docs/272) ──────────────────────────────────────────
+// No es otro sistema de recetas: es la misma Ficha Técnica (mismo motor de costo,
+// cascada de subrecetas, ventas, menús, POS, inventario y reportes) con un formulario
+// propio para bebidas. `recipe.beverage` guarda cómo se vende y los datos de servicio.
+
+
+/** ¿Es una bebida? Con `beverage` o con clasificación de barra (recetas de antes de docs/272). */
+export function isBeverageRecipe(recipe: Pick<Recipe, "classification" | "beverage"> | null | undefined): boolean {
+  return !!recipe && (!!recipe.beverage || isBarClassification(recipe.classification))
+}
+
+/** Modalidad de venta de una bebida, o null si es comida. */
+export function beverageModeOf(recipe: Pick<Recipe, "classification" | "beverage"> | null | undefined): BeverageMode | null {
+  if (!recipe) return null
+  if (recipe.beverage?.mode) return recipe.beverage.mode
+  return isBarClassification(recipe.classification) ? "prepared" : null
+}
+
+/** Métodos de preparación de barra (textos en `bebidas_method_<clave>`). */
+export const BEVERAGE_METHODS = ["shaken", "stirred", "built", "blended", "layered", "brewed"] as const
+export type BeverageMethod = (typeof BEVERAGE_METHODS)[number]
+
+/**
+ * Línea única de una bebida por medida o por envase: `servingMl` ml del ingrediente
+ * (o el envase entero con null), con el costo por servicio de `computeServingCost`.
+ * La usan la Ficha Técnica de Bebidas y «Vender por copa o botella», así las dos dan
+ * exactamente el mismo costo.
+ */
+export function buildServingLine(
+  ingredient: Pick<Ingredient, "id" | "name" | "category" | "unit" | "originalNetContent" | "pricing">,
+  servingMl: number | null,
+  lineId: string,
+): { line: RecipeIngredient; serving: ServingCost } | null {
+  const serving = computeServingCost(ingredient, servingMl)
+  if (!serving) return null
+  return {
+    serving,
+    line: {
+      id: lineId,
+      ingredientId: ingredient.id,
+      name: ingredient.name,
+      category: ingredient.category,
+      quantity: serving.quantity,
+      unit: ingredient.unit,
+      measure: unitAbbreviations[ingredient.unit as keyof typeof unitAbbreviations] || ingredient.unit,
+      cost: 0,
+      unitCost: ingredient.pricing.pricePerUnit,
+      costPerMeasure: ingredient.pricing.pricePerUnit,
+      extension: serving.cost,
+    },
+  }
+}
+
+/** Ingredientes que sirven para vender por medida/envase: los de barra primero, luego el resto. */
+export function sortForBeverageSource<T extends Pick<Ingredient, "name" | "category">>(ingredients: T[]): T[] {
+  return [...ingredients].sort((a, b) => {
+    const da = isBeverageCategory(a.category) ? 0 : 1
+    const db = isBeverageCategory(b.category) ? 0 : 1
+    return da - db || a.name.localeCompare(b.name)
+  })
+}
+
+/**
+ * Por medida / por envase: el producto es el ingrediente de la única línea. Al migrar una
+ * receta a otro negocio la línea se vuelve a unir con los ingredientes del destino, así que
+ * el producto se toma de ahí (docs/272); sin esto la copia quedaba sin producto elegido.
+ */
+export function withBeverageSourceFromLine<T extends Pick<Recipe, "beverage" | "ingredients">>(recipe: T): T {
+  const b = recipe.beverage
+  if (!b || (b.mode !== "measure" && b.mode !== "package")) return recipe
+  return { ...recipe, beverage: { ...b, sourceIngredientId: recipe.ingredients[0]?.ingredientId ?? null } }
 }

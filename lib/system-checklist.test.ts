@@ -19,9 +19,11 @@ import type { Ingredient } from "@/types/ingredient"
 const recipe = (over: Partial<Recipe>): Recipe => ({ id: "r", name: "r", ingredients: [], yieldAmount: 1, isv: 0, ...over }) as unknown as Recipe
 
 describe("2. Planes y permisos", () => {
-  it("2.1 Foodie no desbloquea funciones de pago", () => expect(getPlanBySlug("foodie").unlockedFeatures).toEqual([]))
+  // Desde docs/272 (decisión del dueño): Foodie solo trae la merma por categoría.
+  it("2.1 Foodie no desbloquea funciones de pago (solo la merma por categoría)", () => expect(getPlanBySlug("foodie").unlockedFeatures).toEqual(["merma"]))
   it("2.8 plan mínimo por función (para el candado)", () => {
-    expect(getMinimumPlanForFeature("merma")?.slug).toBe("home-cook")
+    expect(getMinimumPlanForFeature("merma")?.slug).toBe("foodie")
+    expect(getMinimumPlanForFeature("merma_custom")?.slug).toBe("home-cook")
     expect(getMinimumPlanForFeature("price_import")?.slug).toBe("home-cook")
     expect(getMinimumPlanForFeature("inventory")?.slug).toBe("chef-de-partie")
     expect(getMinimumPlanForFeature("menus")?.slug).toBe("chef-de-partie")

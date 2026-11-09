@@ -31,6 +31,12 @@ export interface PdfLabels {
   procedimiento: string
   alergenos: string
   fotoDelPlato: string
+  servicio: string
+  vaso: string
+  hielo: string
+  decoracion: string
+  metodo: string
+  metodosBebida: Record<string, string>
   marketing: string
   total: string
   ultimaRevision: string
@@ -207,6 +213,12 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     procedimiento: "Procedimiento",
     alergenos: "Alérgenos",
     fotoDelPlato: "Foto del plato",
+    servicio: "Servicio",
+    vaso: "Vaso o copa",
+    hielo: "Hielo",
+    decoracion: "Decoración",
+    metodo: "Método",
+    metodosBebida: {shaken: "Agitado en coctelera", stirred: "Mezclado en vaso mezclador", built: "Directo en el vaso", blended: "Licuado", layered: "En capas", brewed: "Preparación de café o té"},
     marketing: "Marketing",
     total: "TOTAL",
     ultimaRevision: "Última revisión",
@@ -380,6 +392,12 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     procedimiento: "Procedure",
     alergenos: "Allergens",
     fotoDelPlato: "Photo of the dish",
+    servicio: "Service",
+    vaso: "Glass",
+    hielo: "Ice",
+    decoracion: "Garnish",
+    metodo: "Method",
+    metodosBebida: {shaken: "Shaken", stirred: "Stirred", built: "Built in the glass", blended: "Blended", layered: "Layered", brewed: "Brewed (coffee or tea)"},
     marketing: "Marketing",
     total: "TOTAL",
     ultimaRevision: "Last revised",
@@ -553,6 +571,12 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     procedimiento: "Fremgangsmåde",
     alergenos: "Allergener",
     fotoDelPlato: "Foto af retten",
+    servicio: "Servering",
+    vaso: "Glas",
+    hielo: "Is",
+    decoracion: "Pynt",
+    metodo: "Metode",
+    metodosBebida: {shaken: "Rystet i shaker", stirred: "Rørt i røreglas", built: "Bygget i glasset", blended: "Blendet", layered: "I lag", brewed: "Brygget (kaffe eller te)"},
     marketing: "Markedsføring",
     total: "TOTAL",
     ultimaRevision: "Sidst redigeret",
@@ -726,6 +750,12 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     procedimiento: "Procédure",
     alergenos: "Allergènes",
     fotoDelPlato: "Photo du plat",
+    servicio: "Service",
+    vaso: "Verre",
+    hielo: "Glace",
+    decoracion: "Décoration",
+    metodo: "Méthode",
+    metodosBebida: {shaken: "Au shaker", stirred: "Remué au verre à mélange", built: "Monté au verre", blended: "Mixé", layered: "En couches", brewed: "Infusion (café ou thé)"},
     marketing: "Marketing",
     total: "TOTAL",
     ultimaRevision: "Dernière révision",
@@ -899,6 +929,12 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     procedimiento: "Procedimento",
     alergenos: "Alergênicos",
     fotoDelPlato: "Foto do prato",
+    servicio: "Serviço",
+    vaso: "Copo ou taça",
+    hielo: "Gelo",
+    decoracion: "Decoração",
+    metodo: "Método",
+    metodosBebida: {shaken: "Batido na coqueteleira", stirred: "Mexido no mixing glass", built: "Direto no copo", blended: "Batido no liquidificador", layered: "Em camadas", brewed: "Preparo de café ou chá"},
     marketing: "Marketing",
     total: "TOTAL",
     ultimaRevision: "Última revisão",
@@ -1072,6 +1108,12 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     procedimiento: "步骤",
     alergenos: "过敏原",
     fotoDelPlato: "菜品照片",
+    servicio: "出品",
+    vaso: "杯型",
+    hielo: "冰",
+    decoracion: "装饰",
+    metodo: "制作方法",
+    metodosBebida: {shaken: "摇和", stirred: "搅拌", built: "直调", blended: "搅打", layered: "分层", brewed: "冲泡（咖啡或茶）"},
     marketing: "营销",
     total: "总计",
     ultimaRevision: "最后修改",

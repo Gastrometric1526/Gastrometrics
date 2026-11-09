@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { computeCOGSByArea, filterDishesByArea, splitSalesByArea } from "./bar-analytics"
+import { computeCOGSByArea, filterDishesByArea, splitBarByKind, splitSalesByArea } from "./bar-analytics"
 import { BAR_CLASSIFICATIONS } from "./beverage"
 import type { DishPerformance } from "./sales-analytics"
 import type { Recipe } from "@/types/recipe"
@@ -87,5 +87,27 @@ describe("computeCOGSByArea", () => {
       ingredients,
     })
     expect(result.hasFullData).toBe(false)
+  })
+})
+
+describe("splitBarByKind (docs/272)", () => {
+  it("pour cost por tipo de bebida, con el objetivo ponderado de sus fichas", () => {
+    const withTarget = (id: string, classification: string, target: number) =>
+      ({ id, classification, pricingMethod: "food_cost", targetFoodCostPercent: target }) as unknown as Recipe
+    const list = [
+      recipe("steak", "Parrilla (Grillardin)"),
+      withTarget("margarita", BAR_CLASSIFICATIONS.cocktails, 20),
+      withTarget("mojito", BAR_CLASSIFICATIONS.cocktails, 18),
+      withTarget("malbec", BAR_CLASSIFICATIONS.wine, 30),
+    ]
+    const rows = splitBarByKind(
+      [dish("steak", 500, 150), dish("margarita", 300, 66), dish("mojito", 100, 20), dish("malbec", 200, 70)],
+      list,
+    )
+    expect(rows.map((r) => r.kind)).toEqual(["cocktails", "wine"])
+    expect(rows[0].revenue).toBe(400)
+    expect(rows[0].pourCost).toBeCloseTo(21.5, 6) // (66 + 20) ÷ 400
+    expect(rows[0].target).toBeCloseTo(19.5, 6) // (20 × 300 + 18 × 100) ÷ 400
+    expect(rows[1].pourCost).toBeCloseTo(35, 6)
   })
 })

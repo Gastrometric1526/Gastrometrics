@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest"
 import {
+  BAR_CLASSIFICATIONS,
+  beverageModeOf,
   bottleFractionFromWeight,
+  buildServingLine,
+  isBeverageRecipe,
+  sortForBeverageSource,
+  withBeverageSourceFromLine,
   computeServingCost,
   getBarKind,
   getPackageContent,
@@ -10,6 +16,8 @@ import {
   toPackages,
 } from "./beverage"
 import { roundSalePrice } from "./price-rounding"
+import type { Ingredient } from "@/types/ingredient"
+import { SUBRECIPE_CLASSIFICATION as SUBRECIPE } from "@/types/recipe"
 import { classifications } from "@/types/recipe"
 import { categories } from "@/types/ingredient"
 import { mermaPorCategoria } from "./merma-categories"
@@ -97,5 +105,63 @@ describe("conteo de barra", () => {
     expect(bottleFractionFromWeight(1300, weights)).toBe(1)
     expect(bottleFractionFromWeight(850, { fullG: 500, emptyG: 500 })).toBeNull()
     expect(bottleFractionFromWeight(850, null)).toBeNull()
+  })
+})
+
+describe("Ficha Técnica de Bebidas (docs/272)", () => {
+  const wine = {
+    id: "malbec",
+    name: "Malbec",
+    category: "VINOS",
+    unit: "mililitros",
+    originalNetContent: 750,
+    pricing: { netContent: 750, pricePerUnit: 0.4, purchasePrice: 300 },
+  } as unknown as Ingredient
+  const coke = {
+    id: "coke",
+    name: "Coca-Cola lata",
+    category: "REFRESCOS Y MIXERS",
+    unit: "unidades",
+    pricing: { netContent: 1, pricePerUnit: 18, purchasePrice: 18 },
+  } as unknown as Ingredient
+
+  it("copa de 150 ml: 5 copas por botella y el costo de una copa", () => {
+    const built = buildServingLine(wine, 150, "l1")!
+    expect(built.serving.servingsPerPackage).toBeCloseTo(5, 6)
+    expect(built.serving.cost).toBeCloseTo(60, 6)
+    expect(built.line).toMatchObject({ ingredientId: "malbec", quantity: 150, extension: 60 })
+  })
+
+  it("por envase: el costo es el precio de compra de una lata", () => {
+    const built = buildServingLine(coke, null, "l2")!
+    expect(built.serving.cost).toBe(18)
+    expect(built.line.quantity).toBe(1)
+    expect(buildServingLine(coke, 250, "l3")).toBeNull() // no está en volumen
+  })
+
+  it("una receta es bebida con `beverage` o con clasificación de barra", () => {
+    expect(isBeverageRecipe({ classification: "Parrilla (Grillardin)" })).toBe(false)
+    expect(isBeverageRecipe({ classification: BAR_CLASSIFICATIONS.wine })).toBe(true)
+    expect(beverageModeOf({ classification: BAR_CLASSIFICATIONS.cocktails })).toBe("prepared")
+    expect(beverageModeOf({ classification: SUBRECIPE, beverage: { mode: "prepared" } })).toBe("prepared")
+    expect(beverageModeOf({ classification: BAR_CLASSIFICATIONS.wine, beverage: { mode: "measure", servingMl: 150 } })).toBe("measure")
+    expect(beverageModeOf({ classification: "Parrilla (Grillardin)" })).toBeNull()
+  })
+
+  it("en la lista de productos van primero los de barra", () => {
+    const sorted = sortForBeverageSource([{ name: "Azúcar", category: "ACEITES" as const }, { name: "Ron", category: "DESTILADOS" as const }])
+    expect(sorted[0].name).toBe("Ron")
+  })
+})
+
+describe("migración de bebidas por medida (docs/272)", () => {
+  it("el producto se toma de la línea ya unida al negocio de destino", () => {
+    const migrated = withBeverageSourceFromLine({
+      beverage: { mode: "measure" as const, sourceIngredientId: "malbec-origen", servingMl: 150 },
+      ingredients: [{ ingredientId: "malbec-destino" }] as never,
+    })
+    expect(migrated.beverage?.sourceIngredientId).toBe("malbec-destino")
+    const prepared = { beverage: { mode: "prepared" as const }, ingredients: [] }
+    expect(withBeverageSourceFromLine(prepared)).toBe(prepared)
   })
 })

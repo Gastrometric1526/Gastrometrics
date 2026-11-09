@@ -58,7 +58,9 @@ import { salesImportDisplayName } from "@/lib/sales-import-labels"
 import type { SalesImport } from "@/types/sales-import"
 import type { Recipe } from "@/types/recipe"
 import type { Menu } from "@/lib/types/menus"
-import { computeCOGSByArea, filterDishesByArea, splitSalesByArea, type SalesArea } from "@/lib/bar-analytics"
+import { computeCOGSByArea, filterDishesByArea, splitBarByKind, splitSalesByArea, type SalesArea } from "@/lib/bar-analytics"
+import { BAR_CLASSIFICATIONS } from "@/lib/beverage"
+import { getClassificationLabel } from "@/lib/classification-labels"
 import { formatDateTime } from "@/lib/date-format"
 import { TableSalesInsights } from "@/components/table-sales-insights"
 import { CashUpSummaryCard } from "@/components/cash-up-summary"
@@ -228,6 +230,8 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
   // comparar la popularidad de un shot con la de un plato fuerte no dice nada.
   const areaSplit = useMemo(() => splitSalesByArea(dishPerformance, recipes), [dishPerformance, recipes])
   const hasBarSales = areaSplit.bar.dishCount > 0
+  // Pour cost por tipo de bebida (docs/272).
+  const barKinds = useMemo(() => splitBarByKind(dishPerformance, recipes), [dishPerformance, recipes])
   const [menuEngineeringArea, setMenuEngineeringArea] = useState<SalesArea | "all">("all")
   const menuEngineeringDishes = useMemo(
     () => filterDishesByArea(dishPerformance, recipes, hasBarSales ? menuEngineeringArea : "all"),
@@ -518,6 +522,42 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
                 <p className="text-xs text-muted-foreground mt-3">
                   {areaCogs.hasFullData ? t("finanzas_area_bar_hint") : t("finanzas_area_real_missing")}
                 </p>
+
+                {barKinds.length > 0 && (
+                  <div className="mt-5 space-y-2" data-tour="finanzas-bar-kinds">
+                    <p className="text-sm font-semibold">{t("bar_kind_report_title")}</p>
+                    <p className="text-xs text-muted-foreground">{t("bar_kind_report_desc")}</p>
+                    <div className="overflow-x-auto rounded-lg border border-border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>{t("bar_kind_col_type")}</TableHead>
+                            <TableHead className="text-right">{t("bar_kind_col_sales")}</TableHead>
+                            <TableHead className="hidden text-right sm:table-cell">{t("bar_kind_col_cost")}</TableHead>
+                            <TableHead className="text-right">{t("bar_kind_col_pour")}</TableHead>
+                            <TableHead className="text-right">{t("bar_kind_col_target")}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {barKinds.map((row) => {
+                            const over = row.target !== null && row.pourCost > row.target + 0.05
+                            return (
+                              <TableRow key={row.kind}>
+                                <TableCell className="font-medium">{getClassificationLabel(BAR_CLASSIFICATIONS[row.kind], language)}</TableCell>
+                                <TableCell className="text-right tabular-nums">{formatCurrency(row.revenue)}</TableCell>
+                                <TableCell className="hidden text-right tabular-nums sm:table-cell">{formatCurrency(row.theoreticalCost)}</TableCell>
+                                <TableCell className={`text-right tabular-nums font-medium ${over ? "text-warning" : ""}`} title={over ? t("bar_kind_over_target") : undefined}>
+                                  {row.pourCost.toFixed(1)}%
+                                </TableCell>
+                                <TableCell className="text-right tabular-nums text-muted-foreground">{row.target !== null ? `${row.target.toFixed(1)}%` : "—"}</TableCell>
+                              </TableRow>
+                            )
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

@@ -145,7 +145,7 @@ export default {
         ["formula", "Custo real com perdas", ["Conteúdo aproveitável = Conteúdo líquido × (1 − % de perda)", "Preço por unidade = Preço de compra ÷ Conteúdo aproveitável"], "Você paga por tudo, mas só aproveita uma parte: por isso o preço real por unidade sobe. Se você desativar as perdas, tudo volta aos valores originais."],
         ["p", "Se você já tem receitas, ao salvar mostramos antes quais mudam de custo e como: o custo novo e o que acontece com o preço. Ao confirmar, as fichas técnicas são recalculadas sozinhas, inclusive as que usam uma subreceita com esse ingrediente. Acontece o mesmo cada vez que você liga ou desliga a perda ou muda um percentual. O preço segue a regra de sempre: se o custo sobe e o deixa curto, sobe para o sugerido; se o custo baixa, ele se mantém e sua margem sobe."],
         ["p", "Algumas porcentagens típicas por categoria: Frutos do mar 63 %, Peixe 52 %, Carne bovina 33 %, Aves 27 %, Frutas 24 %, Verduras 21 %. Produtos secos e embalados começam em 0 %. As categorias de bar têm sua própria perda típica: destilados 2 %, vinhos 5 %, chope 18 % e cerveja engarrafada 0 % (capítulo 6)."],
-        ["info", "Plano", "O gerenciamento de perdas está disponível a partir do plano <strong>Home Cook</strong>."],
+        ["info", "Plano", "As perdas por categoria estão em todos os planos, também no Foodie. Escrever sua própria porcentagem ou quantidade por ingrediente é a partir do <strong>Home Cook</strong>."],
         ["h3", "Alergênicos"],
         ["p", "No último passo de cada ingrediente você marca quais dos 14 alergênicos de declaração obrigatória ele contém (glúten, leite, ovos, oleaginosas, soja, peixe, crustáceos, gergelim…). As receitas que o usam —também através das sub-receitas— os mostram sozinhas na Ficha Técnica, nos três PDFs da ficha e embaixo de cada prato no cardápio do cliente. Nunca são digitados à mão na receita, então não ficam desatualizados."],
         ["h3", "Excluir um ingrediente"],
@@ -265,6 +265,22 @@ export default {
           ["Cerveja engarrafada", "0 %", "Garrafa ou lata inteira"],
           ["Refrigerantes e mixers", "2 %", "Embalagem inteira ou copo 250 ml"],
         ]],
+        ["h3", "Ficha técnica de bebidas"],
+        ["p", "No alto da Ficha Técnica você escolhe <strong>Comida</strong> ou <strong>Bebida</strong>. As duas usam os mesmos ingredientes, o mesmo custo e a mesma cascata de subreceitas, e funcionam igual em Minhas Receitas, cardápios, POS, estoque e relatórios. Ao escolher Bebida, você escolhe como ela é vendida:"],
+        ["table", ["Modalidade", "Para", "Como é custeada"], [
+          ["Preparada", "Coquetéis, limonadas, cafés preparados, smoothies e xaropes", "Uma receita com vários ingredientes, como um prato"],
+          ["Por medida", "Taça de vinho, dose, pint de chope ou um refrigerante de 1,5 L em copos", "Mililitros servidos × preço por mililitro"],
+          ["Por embalagem", "Latas, cervejas engarrafadas e águas", "O preço de compra de uma embalagem"],
+        ]],
+        ["steps", [
+          "Em <strong>Por medida</strong> ou <strong>Por embalagem</strong>, escolha o ingrediente em “Produto e medida” (os do bar aparecem primeiro).",
+          "Escolha a medida de cada dose (taça de 150 ml, dose, pint…) ou “Outra medida” em mililitros.",
+          "Você vê o conteúdo da embalagem, quantas doses saem e o custo de cada uma. O preço sugerido sai do pour cost alvo, como em qualquer bebida.",
+          "Salve: se você não deu um nome, ele é criado sozinho, por exemplo “Malbec · 150 ml”.",
+        ]],
+        ["p", "O cartão <strong>Serviço</strong> guarda o copo ou taça, o gelo, a decoração e o método (batido, mexido, direto, liquidificado, em camadas ou preparo de café ou chá), para que todos no bar sirvam do mesmo jeito. Sai nos três PDF da ficha, e o método de preço diz “Pour Cost”."],
+        ["p", "Os <strong>xaropes, cordiais, infusões e misturas</strong> do bar são feitos como bebida preparada com a classificação de subreceita e rendimento em ml ou L. Se o açúcar sobe, o xarope sobe e, em cascata, cada coquetel que o usa. Em Minhas Receitas, o filtro “Comida e bebidas” mostra só uma das duas."],
+        ["info", "Plano", "Ficha técnica de bebidas: todos os planos, também o Foodie."],
         ["h3", "Drinks na Ficha Técnica"],
         ["p", "Um coquetel é uma receita com as linhas em mililitros. Ao escolher uma classificação <strong>Bar · …</strong>, o preço passa a ser calculado com <strong>pour cost</strong>: a parte do preço que é custo do produto. Esse objetivo é só daquela receita: não muda o dos seus pratos."],
         ["table", ["Classificação", "Pour cost padrão", "Faixa típica"], [
@@ -303,7 +319,8 @@ export default {
         ["tip", "O que a contagem mostra", "Num bar, o custo real costuma ficar alguns pontos acima do teórico por derramamentos, doses generosas ou cortesias. A diferença da contagem, em garrafas, mostra onde olhar primeiro."],
         ["h3", "Cozinha e bar nos Relatórios"],
         ["p", "Em Relatórios → Finanças, o cartão <strong>Cozinha vs. bar</strong> mostra as vendas, a participação nas vendas e o custo teórico de cada área, e o custo real se você fez uma contagem inicial e uma final no período. O Menu Engineering tem um filtro Tudo / Cozinha / Bar para comparar drinks com drinks e pratos com pratos."],
-        ["info", "Plano", "Receitas de bar e «Vender por taça»: todos os planos. Perda: a partir do <strong>Home Cook</strong>. Estoque: a partir do <strong>Chef de Partie</strong>. Cozinha vs. bar em Finanças: a partir do <strong>Sous Chef</strong>."],
+        ["p", "Abaixo, <strong>Pour cost por tipo de bebida</strong> separa coquetéis, vinhos, cervejas, sem álcool e café: vendas, custo teórico e pour cost de cada tipo, contra a meta média das suas fichas (em laranja se ficar acima)."],
+        ["info", "Plano", "Receitas de bar e «Vender por taça»: todos os planos. Perdas por categoria: todos os planos; personalizadas: a partir do <strong>Home Cook</strong>. Estoque: a partir do <strong>Chef de Partie</strong>. Cozinha vs. bar em Finanças: a partir do <strong>Sous Chef</strong>."],
       ],
     },
     {
@@ -531,8 +548,8 @@ export default {
       intro: "Você começa grátis e muda de plano quando precisar. Seus dados nunca se perdem ao trocar de plano.",
       blocks: [
         ["table", ["Plano", "Preço", "Negócios", "Usuários (com você)", "Adiciona"], [
-          ["Foodie", "Grátis", "1", "1", "Receitas, ingredientes, importação de onde seus dados já estão (texto, Excel, PDF, fotos e cupons) e ficha de cozinha em PDF (incluídos em todos os planos)."],
-          ["Home Cook", "$15 / mês", "1", "1", "Perdas, pedidos de compra manuais, ficha administrativa, faturas e atualização de preços a partir de cupons ou listas."],
+          ["Foodie", "Grátis", "1", "1", "Receitas, ingredientes, importação de onde seus dados já estão (texto, Excel, PDF, fotos e cupons) e ficha de cozinha em PDF, fichas de bebidas e perdas por categoria (incluídos em todos os planos)."],
+          ["Home Cook", "$15 / mês", "1", "1", "Perdas personalizadas, pedidos de compra manuais, ficha administrativa, faturas e atualização de preços a partir de cupons ou listas."],
           ["Chef de Partie", "$35 / mês", "1", "1", "Estoque (com contagem a partir de uma foto, PDF ou Excel), cardápios, pedidos sugeridos, Relatórios · Panorama e registro manual de vendas."],
           ["Sous Chef", "$70 / mês", "2", "2", "Relatórios · Finanças, DRE, Menu Engineering, importação do PDV e Equipe (você + 1 pessoa)."],
           ["Chef Ejecutivo", "$120 / mês", "5", "5", "Equipe de até 4 pessoas além de você."],

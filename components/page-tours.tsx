@@ -39,6 +39,12 @@ export function FichaTecnicaTour({ hasIngredients }: { hasIngredients: boolean }
           } as TourStep,
         ]),
     {
+      id: "kind",
+      title: t("tour_ficha_kind_title"),
+      description: t("tour_ficha_kind_desc"),
+      selector: '[data-tour="ficha-kind"]',
+    },
+    {
       id: "name-classification",
       title: t("tour_ficha_name_title"),
       description: t("tour_ficha_name_desc"),

@@ -142,6 +142,28 @@ export interface RecipeMetadata {
   lastExportType?: string // Track last export type
 }
 
+/**
+ * Cómo se vende una bebida (docs/272):
+ * - prepared: receta con varios ingredientes (cóctel, limonada, café preparado, jarabe);
+ * - measure: un servicio sacado de un envase más grande (copa de vino, shot, vaso de 250 ml
+ *   de una gaseosa de 1.5 L, pinta de barril);
+ * - package: el envase tal como se compra (lata, botella de cerveza, agua).
+ */
+export type BeverageMode = "prepared" | "measure" | "package"
+
+export interface RecipeBeverage {
+  mode: BeverageMode
+  /** measure/package: ingrediente del que sale el servicio. */
+  sourceIngredientId?: string | null
+  /** measure: ml de cada servicio (null = el envase entero, que es `package`). */
+  servingMl?: number | null
+  /** Servicio (todas): vaso o copa, hielo, decoración y método. Texto libre. */
+  glass?: string
+  ice?: string
+  garnish?: string
+  method?: string
+}
+
 export interface RecipeOriginalCosts {
   totalCost: number
   costPerServing: number
@@ -224,6 +246,11 @@ export interface Recipe {
 
   // Sub-recipes
   subRecipes?: any[]
+
+  // Ficha Técnica de Bebidas (docs/272). Si existe, la receta es una bebida (también una
+  // subreceta de barra, como un jarabe). Sin este campo, una receta con clasificación de
+  // barra se trata igual como bebida «preparada» (recetas de antes de docs/272).
+  beverage?: RecipeBeverage
 
   // Rendimiento e ingredientes tal como estaban ANTES de guardar la receta con un
   // Modificador de PAX activo — permite el botón "Restaurar receta original" en

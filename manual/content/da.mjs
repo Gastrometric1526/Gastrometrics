@@ -145,7 +145,7 @@ export default {
         ["formula", "Reel kostpris med svind", ["Brugbart indhold = Nettoindhold × (1 − svind %)", "Pris pr. enhed = Indkøbspris ÷ Brugbart indhold"], "Du betaler for det hele, men bruger kun en del, så den reelle pris pr. enhed stiger. Slår du svind fra, vender alt tilbage til de oprindelige værdier."],
         ["p", "Har du allerede opskrifter, viser vi først, når du gemmer, hvilke der ændrer omkostning og hvordan: den nye omkostning og hvad der sker med prisen. Når du bekræfter, genberegnes de automatisk, også dem der bruger en underopskrift med den ingrediens. Det sker hver gang, du slår svind til eller fra eller ændrer en procent. Prisen følger den sædvanlige regel: stiger omkostningen, så prisen bliver for lav, hæves den til den foreslåede; falder omkostningen, forbliver den, og din margin stiger."],
         ["p", "Nogle typiske procenter pr. kategori: Skaldyr 63 %, Fisk 52 %, Oksekød 33 %, Fjerkræ 27 %, Frugt 24 %, Grøntsager 21 %. Tørvarer og emballerede varer starter på 0 %. Barkategorierne har deres eget typiske svind: spiritus 2 %, vin 5 %, fadøl 18 % og flaskeøl 0 % (kapitel 6)."],
-        ["info", "Plan", "Svindstyring er tilgængelig fra planen <strong>Home Cook</strong>."],
+        ["info", "Plan", "Svind pr. kategori er i alle planer, også Foodie. At angive din egen procent eller mængde pr. ingrediens er fra <strong>Home Cook</strong>."],
         ["h3", "Allergener"],
         ["p", "I det sidste trin for hver ingrediens markerer du, hvilke af de 14 allergener, der skal deklareres, den indeholder (gluten, mælk, æg, nødder, soja, fisk, krebsdyr, sesam…). Opskrifter, der bruger den —også via deres underopskrifter— viser dem automatisk i Opskriftsarket, i opskriftens tre PDF'er og under hver ret på gæstemenuen. De skrives aldrig manuelt i opskriften, så de bliver ikke forældede."],
         ["h3", "Slet en ingrediens"],
@@ -265,6 +265,22 @@ export default {
           ["Flaskeøl", "0 %", "Hel flaske eller dåse"],
           ["Sodavand og mixere", "2 %", "Hel beholder eller glas 250 ml"],
         ]],
+        ["h3", "Opskriftsark til drikke"],
+        ["p", "Øverst i opskriftsarket vælger du <strong>Mad</strong> eller <strong>Drik</strong>. Begge bruger de samme ingredienser, samme omkostning og samme kaskade af underopskrifter og fungerer ens i Mine opskrifter, menuer, POS, lager og rapporter. Når du vælger Drik, vælger du, hvordan den sælges:"],
+        ["table", ["Type", "Til", "Sådan beregnes den"], [
+          ["Tilberedt", "Cocktails, lemonader, kaffedrikke, smoothies og siruper", "En opskrift med flere ingredienser, som en ret"],
+          ["Pr. mål", "Et glas vin, en shot, en pint fadøl eller en 1,5 L sodavand i glas", "Serverede milliliter × pris pr. milliliter"],
+          ["Pr. emballage", "Dåser, flaskeøl og vand", "Købsprisen for én emballage"],
+        ]],
+        ["steps", [
+          "Under <strong>Pr. mål</strong> eller <strong>Pr. emballage</strong> vælger du ingrediensen i »Produkt og mål« (barvarer står først).",
+          "Vælg målet pr. servering (glas 150 ml, shot, pint …) eller »Andet mål« i milliliter.",
+          "Du ser emballagens indhold, hvor mange serveringer den giver, og hvad hver koster. Den foreslåede pris kommer fra målet for pour cost, som ved enhver drik.",
+          "Gem: har du ikke givet den et navn, får den et automatisk, fx »Malbec · 150 ml«.",
+        ]],
+        ["p", "Kortet <strong>Servering</strong> gemmer glas, is, pynt og metode (rystet, rørt, bygget, blendet, i lag eller brygget), så alle i baren serverer den ens. Det kommer med i alle tre PDF'er af arket, og prismetoden hedder »Pour Cost«."],
+        ["p", "Barens <strong>siruper, cordials, infusioner og mixe</strong> laves som tilberedte drikke med klassifikationen underopskrift og udbytte i ml eller L. Stiger sukkeret, stiger siruppen og dermed hver cocktail, der bruger den. I Mine opskrifter viser filteret »Mad og drikke« kun den ene af de to."],
+        ["info", "Plan", "Opskriftsark til drikke: alle planer, også Foodie."],
         ["h3", "Cocktails i Opskriftsarket"],
         ["p", "En cocktail er en opskrift med linjerne i milliliter. Når du vælger en <strong>Bar · …</strong>-klassifikation, beregnes prisen med <strong>pour cost</strong>: den andel af prisen, der er vareomkostning. Målet gælder kun den opskrift: det ændrer ikke målet for dine retter."],
         ["table", ["Klassifikation", "Standard pour cost", "Typisk interval"], [
@@ -303,7 +319,8 @@ export default {
         ["tip", "Hvad optællingen fortæller dig", "I en bar ender den faktiske omkostning ofte flere point over den teoretiske på grund af spild, overskænkning eller gratis drinks. Forskellen ved optællingen, i flasker, viser dig, hvor du skal kigge først."],
         ["h3", "Køkken og bar i Rapporter"],
         ["p", "Under Rapporter → Økonomi viser kortet <strong>Køkken vs. bar</strong> hvert områdes salg, andel af salget og teoretiske omkostning, samt den faktiske omkostning, hvis du har lavet en start- og en slutoptælling i perioden. Menu Engineering har et filter Alle / Køkken / Bar, så drinks sammenlignes med drinks og retter med retter."],
-        ["info", "Plan", "Baropskrifter og »Sælg pr. glas«: alle planer. Svind: fra <strong>Home Cook</strong>. Lager: fra <strong>Chef de Partie</strong>. Køkken vs. bar i Økonomi: fra <strong>Sous Chef</strong>."],
+        ["p", "Nedenunder deler <strong>Pour cost pr. drikketype</strong> cocktails, vin, øl, alkoholfrit og kaffe op: salg, teoretisk omkostning og pour cost pr. type mod det gennemsnitlige mål i dine opskriftsark (orange, når den ligger over)."],
+        ["info", "Plan", "Baropskrifter og »Sælg pr. glas«: alle planer. Svind pr. kategori: alle planer; tilpasset svind: fra <strong>Home Cook</strong>. Lager: fra <strong>Chef de Partie</strong>. Køkken vs. bar i Økonomi: fra <strong>Sous Chef</strong>."],
       ],
     },
     {
@@ -531,8 +548,8 @@ export default {
       intro: "Du starter gratis og opgraderer, når du har brug for det. Dine data går aldrig tabt, når du skifter plan.",
       blocks: [
         ["table", ["Plan", "Pris", "Virksomheder", "Brugere (inkl. dig)", "Tilføjer"], [
-          ["Foodie", "Gratis", "1", "1", "Opskrifter, ingredienser, import fra hvor dine data allerede ligger (tekst, Excel, PDF, fotos og kvitteringer) og køkkenark som PDF (med i alle planer)."],
-          ["Home Cook", "$15 / md.", "1", "1", "Svind, manuelle indkøbsordrer, administrativt ark, fakturaer og prisopdatering fra kvitteringer eller lister."],
+          ["Foodie", "Gratis", "1", "1", "Opskrifter, ingredienser, import fra hvor dine data allerede ligger (tekst, Excel, PDF, fotos og kvitteringer) og køkkenark som PDF, opskriftsark til drikke og svind pr. kategori (med i alle planer)."],
+          ["Home Cook", "$15 / md.", "1", "1", "Tilpasset svind, manuelle indkøbsordrer, administrativt ark, fakturaer og prisopdatering fra kvitteringer eller lister."],
           ["Chef de Partie", "$35 / md.", "1", "1", "Lager (med optælling fra et foto, en PDF eller Excel), menuer, foreslåede ordrer, Rapporter · Overblik og manuel salgsregistrering."],
           ["Sous Chef", "$70 / md.", "2", "2", "Rapporter · Økonomi, P&L, Menu Engineering, POS-import og Team (dig + 1 person)."],
           ["Chef Ejecutivo", "$120 / md.", "5", "5", "Team på op til 4 personer ud over dig."],

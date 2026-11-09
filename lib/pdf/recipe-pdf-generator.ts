@@ -18,6 +18,7 @@ import { trackEvent } from "@/lib/analytics/track-event"
 import { formatDate, fileDate } from "@/lib/date-format"
 import { priceBreakdown, unitCostPercent, unitMarginAmount, unitMarginPercent } from "@/lib/recipe-pricing"
 import { recordPdfExport } from "@/lib/pdf/track-export"
+import { isBarClassification } from "@/lib/beverage"
 
 // ============== HELPERS ==============
 
@@ -289,6 +290,40 @@ function drawAllergensLine(
     y = 20
   }
   doc.setTextColor(143, 44, 16)
+  doc.text(lines, x, y)
+  doc.setTextColor(0, 0, 0)
+  return y + lines.length * 4.5 + 5
+}
+
+// Servicio de una bebida (docs/272): vaso o copa, hielo, decoración y método, en una línea
+// antes del procedimiento. Sin datos de servicio (o si no es bebida) no dibuja nada.
+function drawBeverageServiceLine(
+  doc: jsPDF,
+  labels: ReturnType<typeof getPdfLabels>,
+  recipe: Recipe,
+  x: number,
+  y: number,
+  width: number,
+  pageHeight: number,
+  font: "helvetica" | "times",
+): number {
+  const b = recipe.beverage
+  if (!b) return y
+  const parts = [
+    b.glass ? `${labels.vaso}: ${sanitizeText(b.glass)}` : null,
+    b.ice ? `${labels.hielo}: ${sanitizeText(b.ice)}` : null,
+    b.garnish ? `${labels.decoracion}: ${sanitizeText(b.garnish)}` : null,
+    b.method ? `${labels.metodo}: ${labels.metodosBebida[b.method] ?? sanitizeText(b.method)}` : null,
+  ].filter(Boolean) as string[]
+  if (parts.length === 0) return y
+  doc.setFontSize(9)
+  doc.setFont(font, "bold")
+  const lines = doc.splitTextToSize(`${labels.servicio}: ${parts.join(" · ")}`, width)
+  if (y + lines.length * 4.5 > pageHeight - 20) {
+    doc.addPage()
+    y = 20
+  }
+  doc.setTextColor(60, 60, 60)
   doc.text(lines, x, y)
   doc.setTextColor(0, 0, 0)
   return y + lines.length * 4.5 + 5
@@ -1008,7 +1043,7 @@ function generateAdministrativePDF(
     const { foodCostPct: statsFoodCostPct, marginPct: statsMarginPct } = recipePdfFigures(recipe)
     const methodLabel =
       recipe.pricingMethod === "food_cost"
-        ? `Food Cost % (${labels.metaObjetivo} ${recipe.targetFoodCostPercent ?? 30}%)`
+        ? `${isBarClassification(recipe.classification) ? "Pour Cost" : "Food Cost"} % (${labels.metaObjetivo} ${recipe.targetFoodCostPercent ?? 30}%)`
         : isWhiteLabelPdf(recipe.businessId)
           ? labels.metodoSeisRubrosSinMarca
           : labels.metodoSeisRubros
@@ -1080,6 +1115,7 @@ function generateAdministrativePDF(
     pageHeight,
     "helvetica",
   )
+  yPosition = drawBeverageServiceLine(doc, labels, recipe, margin, yPosition, doc.internal.pageSize.getWidth() - margin * 2, pageHeight, "helvetica")
 
   const allProcedureLines = [...(recipe.procedure || []), ...(recipe.observations || [])].filter((s) =>
     sanitizeText(s),
@@ -1288,6 +1324,7 @@ function generateEmployeePDF(
   // (esas van solo en la copia administrativa) — también llevan notas de preparación
   // útiles para cocina, como sustituciones o tiempos de reposo.
   yPosition = drawAllergensLine(doc, labels.alergenos, options.allergens, margin, yPosition, contentWidth, ctx.pageHeight, "times")
+  yPosition = drawBeverageServiceLine(doc, labels, recipe, margin, yPosition, contentWidth, ctx.pageHeight, "times")
   {
     const allProcedureLines = [...(recipe.procedure || []), ...(recipe.observations || [])].filter((s) =>
       sanitizeText(s),
@@ -1472,6 +1509,7 @@ function generateNormalPDF(
     ctx.pageHeight,
     "helvetica",
   )
+  yPosition = drawBeverageServiceLine(doc, labels, recipe, margin, yPosition, doc.internal.pageSize.getWidth() - margin * 2, ctx.pageHeight, "helvetica")
   {
     const allProcedureLines = [...(recipe.procedure || []), ...(recipe.observations || [])].filter((s) =>
       sanitizeText(s),

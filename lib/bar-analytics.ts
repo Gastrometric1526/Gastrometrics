@@ -11,7 +11,7 @@ import type { Recipe } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 import type { InventorySnapshot } from "@/types/inventory"
 import type { PurchaseOrder } from "@/types/purchase-order"
-import { isBarClassification, isBeverageCategory } from "@/lib/beverage"
+import { BAR_CLASSIFICATIONS, getBarKind, isBarClassification, isBeverageCategory, type BarKind } from "@/lib/beverage"
 import { snapshotItemValue } from "@/lib/inventory-value"
 
 export type SalesArea = "kitchen" | "bar"
@@ -123,4 +123,50 @@ export function computeCOGSByArea(params: {
     bar: Math.max(0, initial.bar + barPurchases - final.bar),
     hasFullData: true,
   }
+}
+
+export interface BarKindRow {
+  kind: BarKind
+  revenue: number
+  theoreticalCost: number
+  /** Costo teórico ÷ venta neta (sin ISV incluido), en %. */
+  pourCost: number
+  /** Promedio de los objetivos de pour cost de sus fichas, ponderado por la venta. null si no hay. */
+  target: number | null
+}
+
+/**
+ * Pour cost por tipo de bebida (docs/272): cócteles, vinos, cervezas, sin alcohol y café.
+ * Mismas ventas y costo teórico que «Cocina vs. barra», separadas por la clasificación de
+ * barra de cada ficha. El objetivo de cada tipo es el que la persona puso en sus fichas.
+ */
+export function splitBarByKind(dishes: DishPerformance[], recipes: Recipe[]): BarKindRow[] {
+  const recipesById = new Map(recipes.map((recipe) => [recipe.id, recipe]))
+  const acc = new Map<BarKind, { revenue: number; net: number; cost: number; targetSum: number; targetWeight: number }>()
+  for (const dish of dishes) {
+    const recipe = dish.recipeId ? recipesById.get(dish.recipeId) : undefined
+    const kind = recipe ? getBarKind(recipe.classification) : null
+    if (!kind || !recipe) continue
+    const row = acc.get(kind) ?? { revenue: 0, net: 0, cost: 0, targetSum: 0, targetWeight: 0 }
+    row.revenue += dish.revenue
+    row.net += dish.revenue - (dish.tax || 0)
+    row.cost += dish.theoreticalCost
+    if (recipe.pricingMethod === "food_cost" && typeof recipe.targetFoodCostPercent === "number" && dish.revenue > 0) {
+      row.targetSum += recipe.targetFoodCostPercent * dish.revenue
+      row.targetWeight += dish.revenue
+    }
+    acc.set(kind, row)
+  }
+  return (Object.keys(BAR_CLASSIFICATIONS) as BarKind[])
+    .filter((kind) => acc.has(kind))
+    .map((kind) => {
+      const row = acc.get(kind)!
+      return {
+        kind,
+        revenue: row.revenue,
+        theoreticalCost: row.cost,
+        pourCost: row.net > 0 ? (row.cost / row.net) * 100 : 0,
+        target: row.targetWeight > 0 ? row.targetSum / row.targetWeight : null,
+      }
+    })
 }

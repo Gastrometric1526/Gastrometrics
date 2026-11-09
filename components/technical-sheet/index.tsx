@@ -45,7 +45,7 @@ import {
 import { syncSubRecipeToIngredient } from "@/lib/subrecipe/core"
 import { recalculateDependentsOfSubRecipe, requestSubRecipePricePrompt, subRecipePriceModeOf, type SubRecipePriceMode } from "@/lib/recalculate"
 import { logPriceRuleChanges } from "@/lib/services/activity-log"
-import type { Recipe, RecipeIngredient } from "@/types/recipe"
+import type { BeverageMode, Recipe, RecipeBeverage, RecipeIngredient } from "@/types/recipe"
 import { classifications, recipeSteps, yieldUnits, SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 import { unitAbbreviations } from "@/types/ingredient"
@@ -64,7 +64,18 @@ import { formatCurrency, formatUnitPrice, getCurrentCurrencyCode } from "@/lib/c
 import { roundSalePrice, roundUpToStep } from "@/lib/price-rounding"
 import { coverCommission, foodCostBasePrice, taxIncludedIn } from "@/lib/food-cost-pricing"
 import { normalizeUploadedPhoto } from "@/lib/pdf/pdf-image"
-import { BEVERAGE_COST_TARGET_RANGE, DEFAULT_BEVERAGE_COST_TARGET, getBarKind } from "@/lib/beverage"
+import {
+  BAR_CLASSIFICATIONS,
+  BAR_KIND_MENU_STEP,
+  BEVERAGE_COST_TARGET_RANGE,
+  DEFAULT_BEVERAGE_COST_TARGET,
+  beverageModeOf,
+  getBarKind,
+  getBarKindForIngredientCategory,
+  isBarClassification,
+  isBeverageRecipe,
+} from "@/lib/beverage"
+import { BeverageServiceCard, BeverageSourceCard, RecipeKindPicker, type RecipeKind } from "./beverage-sections"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
 import { logActivity } from "@/lib/services/activity-log"
@@ -492,6 +503,14 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
   // los platos (un 20 % de un trago no debe convertirse en el food cost de la cocina).
   const barKind = getBarKind(recipe.classification)
   const isBarRecipe = barKind !== null
+  // Ficha Técnica de Bebidas (docs/272): mismo motor, otro formulario. «Por medida» y «Por
+  // envase» arman una sola línea desde un ingrediente (BeverageSourceCard) en lugar de la
+  // tabla de ingredientes; «Preparada» usa la tabla de siempre más los datos de servicio.
+  const recipeKind: RecipeKind = isBeverageRecipe(recipe) ? "drink" : "food"
+  const bevMode = beverageModeOf(recipe)
+  const isServedDrink = bevMode === "measure" || bevMode === "package"
+  // Líneas de la bebida preparada, guardadas al pasar a «por medida/envase» y devueltas al volver.
+  const preparedLinesRef = useRef<RecipeIngredient[] | null>(null)
 
   const handlePricingMethodChange = useCallback(
     (value: PricingMethod) => {
@@ -542,6 +561,87 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       }
     },
     [recipe.classification, businessId, toast, t],
+  )
+
+  const emptyLine = (): RecipeIngredient => ({
+    id: `ing-${Date.now()}`,
+    ingredientId: null,
+    name: "",
+    category: "",
+    quantity: 0,
+    unit: "",
+    measure: "",
+    cost: 0,
+    unitCost: 0,
+    costPerMeasure: 0,
+    extension: 0,
+  })
+
+  const handleKindChange = useCallback(
+    (next: RecipeKind) => {
+      if (next === recipeKind) return
+      if (next === "drink") {
+        setRecipe((prev) => ({ ...prev, beverage: { ...(prev.beverage ?? {}), mode: prev.beverage?.mode ?? "prepared" } }))
+        if (!isBarClassification(recipe.classification) && recipe.classification !== SUBRECIPE_CLASSIFICATION) {
+          handleClassificationChange(BAR_CLASSIFICATIONS.cocktails)
+        }
+        return
+      }
+      setRecipe((prev) => {
+        const { beverage: _drop, ...rest } = prev
+        const restoreLines = prev.beverage && prev.beverage.mode !== "prepared" ? preparedLinesRef.current ?? [emptyLine()] : prev.ingredients
+        return { ...(rest as Recipe), ingredients: restoreLines }
+      })
+      if (isBarClassification(recipe.classification)) handleClassificationChange("")
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [recipeKind, recipe.classification, handleClassificationChange],
+  )
+
+  const handleBeverageModeChange = useCallback(
+    (next: BeverageMode) => {
+      setRecipe((prev) => {
+        const wasServed = prev.beverage?.mode === "measure" || prev.beverage?.mode === "package"
+        const served = next !== "prepared"
+        let ingredients = prev.ingredients
+        if (served && !wasServed) {
+          preparedLinesRef.current = prev.ingredients
+          ingredients = []
+        } else if (!served && wasServed) {
+          ingredients = preparedLinesRef.current ?? [emptyLine()]
+        } else if (served && wasServed) {
+          ingredients = [] // otra modalidad: se vuelve a elegir el producto
+        }
+        const beverage: RecipeBeverage = served
+          ? { ...(prev.beverage ?? {}), mode: next, sourceIngredientId: wasServed ? prev.beverage?.sourceIngredientId ?? null : null, servingMl: null }
+          : { ...(prev.beverage ?? {}), mode: next, sourceIngredientId: null, servingMl: null }
+        return { ...prev, beverage, ingredients, ...(served ? { yieldAmount: 1, yieldUnit: "porciones", servings: 1 } : {}) }
+      })
+      if (next !== "prepared" && recipe.classification === SUBRECIPE_CLASSIFICATION) handleClassificationChange(BAR_CLASSIFICATIONS.cocktails)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [recipe.classification, handleClassificationChange],
+  )
+
+  // Por medida / por envase: la única línea sale del ingrediente y la medida elegidos.
+  const handleBeverageSource = useCallback(
+    (result: { line: RecipeIngredient; beverage: RecipeBeverage; ingredient: Ingredient } | null) => {
+      if (!result) return
+      const kind = getBarKindForIngredientCategory(result.ingredient.category)
+      const servingLabel = result.beverage.servingMl ? `${result.beverage.servingMl} ml` : t("bebidas_serving_package")
+      setRecipe((prev) => ({
+        ...prev,
+        ingredients: [result.line],
+        beverage: result.beverage,
+        yieldAmount: 1,
+        yieldUnit: "porciones",
+        servings: 1,
+        name: prev.name.trim() ? prev.name : `${result.ingredient.name} · ${servingLabel}`,
+        plate: prev.plate || BAR_KIND_MENU_STEP[kind],
+      }))
+      if (!isBarClassification(recipe.classification)) handleClassificationChange(BAR_CLASSIFICATIONS[kind])
+    },
+    [recipe.classification, handleClassificationChange, t],
   )
 
   const calculations = useMemo(() => {
@@ -1258,8 +1358,8 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
 
     if (validIngredients.length === 0) {
       toast({
-        title: t("ficha_tecnica_toast_missing_ingredient_title"),
-        description: t("ficha_tecnica_toast_missing_ingredient_desc"),
+        title: isServedDrink ? t("bev_toast_pick_product_title") : t("ficha_tecnica_toast_missing_ingredient_title"),
+        description: isServedDrink ? t("bev_toast_pick_product_desc") : t("ficha_tecnica_toast_missing_ingredient_desc"),
         variant: "destructive",
       })
       return
@@ -1288,6 +1388,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     recipe.name,
     recipe.classification,
     recipe.ingredients,
+    isServedDrink,
     recipe.yieldAmount,
     calculations.yieldByWeight,
     calculations.paxMultiplier,
@@ -1453,6 +1554,9 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                   </Button>
                 </div>
               )}
+              {(isEditMode || recipeKind === "drink") && (
+                <RecipeKindPicker kind={recipeKind} mode={bevMode} disabled={!isEditMode} onKind={handleKindChange} onMode={handleBeverageModeChange} />
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" data-tour="ficha-name-classification">
                 <div>
                   <Label htmlFor="name">{t("ficha_tecnica_field_name")}</Label>
@@ -1486,11 +1590,16 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                       <SelectValue placeholder={t("ficha_tecnica_classification_placeholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {classifications.map((classification) => (
-                        <SelectItem key={classification} value={classification}>
-                          {getClassificationLabel(classification, language)}
-                        </SelectItem>
-                      ))}
+                      {classifications
+                        .filter((c) =>
+                          c === recipe.classification ||
+                          (recipeKind === "drink" ? isBarClassification(c) || c === SUBRECIPE_CLASSIFICATION : !isBarClassification(c)),
+                        )
+                        .map((classification) => (
+                          <SelectItem key={classification} value={classification}>
+                            {getClassificationLabel(classification, language)}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -1611,7 +1720,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                 </div>
               )}
 
-              <div className="bg-muted p-4 rounded-lg" data-tour="ficha-pax">
+              <div className={cn("bg-muted p-4 rounded-lg", isServedDrink && "hidden")} data-tour="ficha-pax">
                 <Label htmlFor="paxModifier" className="font-semibold">
                   {t("tour_ficha_pax_title")}
                 </Label>
@@ -1720,6 +1829,15 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
         </CardContent>
       </Card>
 
+      {isServedDrink ? (
+        <BeverageSourceCard
+          mode={bevMode as "measure" | "package"}
+          beverage={recipe.beverage ? { ...recipe.beverage, sourceIngredientId: recipe.beverage.sourceIngredientId ?? recipe.ingredients[0]?.ingredientId ?? null } : undefined}
+          ingredients={availableIngredients}
+          disabled={!isEditMode}
+          onApply={handleBeverageSource}
+        />
+      ) : (
       <Card className="w-full mx-auto" data-tour="ficha-ingredients-table">
         <CardHeader className="px-3 sm:px-6">
           <CardTitle>{t("nav_ingredientes")}</CardTitle>
@@ -1891,6 +2009,15 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
           </div>
         </CardContent>
       </Card>
+      )}
+
+      {recipeKind === "drink" && (
+        <BeverageServiceCard
+          beverage={recipe.beverage ?? { mode: "prepared" }}
+          disabled={!isEditMode}
+          onChange={(next) => setRecipe((prev) => ({ ...prev, beverage: next }))}
+        />
+      )}
 
       <Card className="w-full mx-auto border-2">
         <CardContent className="px-3 pt-6 sm:px-6">

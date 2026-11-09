@@ -16,7 +16,7 @@ import type { GainedCapabilityKey } from "@/lib/plan-capabilities"
 // En el orden del menú lateral (components/sidebar.tsx), para que el tour baje por él.
 export const PLAN_TOUR_MODULES: { href: string; navKey: string; capabilities: GainedCapabilityKey[] }[] = [
   { href: "/mis-recetas", navKey: "nav_mis_recetas", capabilities: ["pdf_admin"] },
-  { href: "/ingredientes", navKey: "nav_ingredientes", capabilities: ["merma", "price_import"] },
+  { href: "/ingredientes", navKey: "nav_ingredientes", capabilities: ["merma", "merma_custom", "price_import"] },
   { href: "/inventario", navKey: "nav_inventario", capabilities: ["inventory"] },
   { href: "/equipo", navKey: "nav_equipo", capabilities: ["team", "users"] },
   { href: "/menus", navKey: "nav_menus", capabilities: ["menus"] },

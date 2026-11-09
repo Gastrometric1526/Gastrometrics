@@ -26,6 +26,7 @@ import { getPresentationLabel, getUnitLabel } from "@/lib/ingredient-labels"
 import {
   BAR_CLASSIFICATIONS,
   BAR_KIND_MENU_STEP,
+  buildServingLine,
   DEFAULT_BEVERAGE_COST_TARGET,
   computeServingCost,
   getBarKindForIngredientCategory,
@@ -35,7 +36,6 @@ import {
   type ServingPresetKey,
 } from "@/lib/beverage"
 import type { Ingredient } from "@/types/ingredient"
-import { unitAbbreviations } from "@/types/ingredient"
 import type { Recipe } from "@/types/recipe"
 
 type Props = {
@@ -119,6 +119,7 @@ export function SellByServingDialog({ ingredient: openIngredient, businessId, on
     if (!ingredient || !serving || !name.trim() || finalPrice <= 0) return
     setSaving(true)
     const now = new Date().toISOString()
+    const line = buildServingLine(ingredient, servingMl, `ing-${Date.now()}`)?.line
     const customPrice = priceInput && priceInput > 0 && priceInput !== suggestedPrice ? priceInput : undefined
     const recipe: Recipe = {
       id: `recipe-${Date.now()}`,
@@ -128,21 +129,9 @@ export function SellByServingDialog({ ingredient: openIngredient, businessId, on
       servings: 1,
       yieldAmount: 1,
       yieldUnit: "porciones",
-      ingredients: [
-        {
-          id: `ing-${Date.now()}`,
-          ingredientId: ingredient.id,
-          name: ingredient.name,
-          category: ingredient.category,
-          quantity: serving.quantity,
-          unit: ingredient.unit,
-          measure: unitAbbreviations[ingredient.unit] || ingredient.unit,
-          cost: 0,
-          unitCost: ingredient.pricing.pricePerUnit,
-          costPerMeasure: ingredient.pricing.pricePerUnit,
-          extension: serving.cost,
-        },
-      ],
+      // Misma línea que la Ficha Técnica de Bebidas (buildServingLine, docs/272).
+      ingredients: line ? [line] : [],
+      beverage: { mode: servingMl === null ? "package" : "measure", sourceIngredientId: ingredient.id, servingMl },
       procedure: [
         servingMl === null
           ? t("bebidas_sell_procedure_package")

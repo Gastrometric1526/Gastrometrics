@@ -92,6 +92,9 @@ function isFeatureAllowedForMember(member: TeamMember, feature: FeatureKey): boo
     if (!DEFAULT_ALWAYS_ON_FEATURES.includes(check) && !planUnlocks(ownerPlan, check)) return false
   }
   if (feature === "price_import") return features.includes("ingredients")
+  // Merma personalizada (docs/272): se da con el mismo permiso «merma» de Equipo; el plan del
+  // dueño ya se revisó arriba (tiene que incluir «merma_custom», desde Home Cook).
+  if (feature === "merma_custom") return features.includes("merma")
   return features.includes(feature)
 }
 

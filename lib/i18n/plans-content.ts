@@ -24,16 +24,17 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     foodie: {
       price: "Gratis",
       tagline: "Para empezar a organizar tus recetas",
-      description: "Base de datos, fichas técnicas ilimitadas, importación de recetas e ingredientes y PDF de cocina.",
+      description: "Base de datos, fichas técnicas ilimitadas de comida y bebidas, merma por categoría, importación de recetas e ingredientes y PDF de cocina.",
       features: [
         "Base de datos de ingredientes",
-        "Fichas técnicas ilimitadas",
+        "Fichas técnicas ilimitadas de comida y de bebidas, con subrecetas, costo y precio de venta",
         "Importa tus recetas e ingredientes desde donde ya los tienes: Excel, PDF, texto, fotos y tickets",
+        "Merma por categoría, con recálculo de tus recetas",
         "Exportar PDF de cocina (ingredientes y procedimiento, sin costos)",
       ],
       locked: [
         "Actualización de precios desde tickets o listas",
-        "Sistema de merma",
+        "Merma personalizada por ingrediente",
         "PDF administrativo (con costos y rentabilidad)",
         "Facturación a clientes",
         "Órdenes de compra",
@@ -45,10 +46,10 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     "home-cook": {
       price: "$15/mes",
       tagline: "Para quien ya calcula costos en serio",
-      description: "Todo lo de Foodie, más sistema de merma, facturación, órdenes de compra manuales y PDF administrativo.",
+      description: "Todo lo de Foodie, más merma personalizada, facturación, órdenes de compra manuales y PDF administrativo.",
       features: [
         "Todo lo del plan Foodie",
-        "Sistema de merma",
+        "Merma personalizada por ingrediente (% o cantidad)",
         "Facturación a clientes",
         "Órdenes de compra manuales",
         "PDF administrativo (con costos y rentabilidad)",
@@ -109,16 +110,17 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     foodie: {
       price: "Free",
       tagline: "To start organizing your recipes",
-      description: "Ingredient database, unlimited recipe sheets, recipe and ingredient import and kitchen PDF.",
+      description: "Ingredient database, unlimited food and drink recipe sheets, waste by category, recipe and ingredient import and kitchen PDF.",
       features: [
         "Ingredient database",
-        "Unlimited recipe sheets",
+        "Unlimited recipe sheets for food and drinks, with sub-recipes, cost and sale price",
         "Import your recipes and ingredients from wherever they already are: Excel, PDF, text, photos and receipts",
+        "Waste by category, with your recipes recalculated",
         "Kitchen PDF export (ingredients and procedure, no costs)",
       ],
       locked: [
         "Price updates from receipts or lists",
-        "Waste system",
+        "Custom waste per ingredient",
         "Administrative PDF (with costs and profitability)",
         "Client invoicing",
         "Purchase orders",
@@ -130,10 +132,10 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     "home-cook": {
       price: "$15/mo",
       tagline: "For those already calculating costs seriously",
-      description: "Everything in Foodie, plus a waste system, invoicing, manual purchase orders, and administrative PDF.",
+      description: "Everything in Foodie, plus custom waste, invoicing, manual purchase orders, and administrative PDF.",
       features: [
         "Everything in the Foodie plan",
-        "Waste system",
+        "Custom waste per ingredient (% or amount)",
         "Client invoicing",
         "Manual purchase orders",
         "Administrative PDF (with costs and profitability)",
@@ -194,16 +196,17 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     foodie: {
       price: "Gratis",
       tagline: "Til at begynde at organisere dine opskrifter",
-      description: "Ingrediensdatabase, ubegrænsede opskriftsark, import af opskrifter og ingredienser og køkken-PDF.",
+      description: "Ingrediensdatabase, ubegrænsede opskriftsark til mad og drikke, svind pr. kategori, import af opskrifter og ingredienser og køkken-PDF.",
       features: [
         "Ingrediensdatabase",
-        "Ubegrænsede opskriftsark",
+        "Ubegrænsede opskriftsark til mad og drikke, med underopskrifter, omkostning og salgspris",
         "Importér dine opskrifter og ingredienser, hvor de end ligger i dag: Excel, PDF, tekst, fotos og kvitteringer",
+        "Svind pr. kategori, med genberegning af dine opskrifter",
         "Eksportér køkken-PDF (ingredienser og fremgangsmåde, uden omkostninger)",
       ],
       locked: [
         "Prisopdatering fra kvitteringer eller lister",
-        "Svindsystem",
+        "Tilpasset svind pr. ingrediens",
         "Administrativ PDF (med omkostninger og rentabilitet)",
         "Fakturering til kunder",
         "Indkøbsordrer",
@@ -215,10 +218,10 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     "home-cook": {
       price: "$15/md",
       tagline: "For dig der allerede beregner omkostninger seriøst",
-      description: "Alt fra Foodie, plus svindsystem, fakturering, manuelle indkøbsordrer og administrativ PDF.",
+      description: "Alt fra Foodie, plus tilpasset svind, fakturering, manuelle indkøbsordrer og administrativ PDF.",
       features: [
         "Alt fra Foodie-planen",
-        "Svindsystem",
+        "Tilpasset svind pr. ingrediens (% eller mængde)",
         "Fakturering til kunder",
         "Manuelle indkøbsordrer",
         "Administrativ PDF (med omkostninger og rentabilitet)",
@@ -279,16 +282,17 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     foodie: {
       price: "Gratuit",
       tagline: "Pour commencer à organiser vos recettes",
-      description: "Base de données d'ingrédients, fiches techniques illimitées, import de recettes et d'ingrédients et PDF pour la cuisine.",
+      description: "Base de données d'ingrédients, fiches techniques illimitées pour les plats et les boissons, pertes par catégorie, import de recettes et d'ingrédients et PDF pour la cuisine.",
       features: [
         "Base de données d'ingrédients",
-        "Fiches techniques illimitées",
+        "Fiches techniques illimitées pour les plats et les boissons, avec sous-recettes, coût et prix de vente",
         "Importez vos recettes et ingrédients là où ils se trouvent déjà : Excel, PDF, texte, photos et tickets",
+        "Pertes par catégorie, avec recalcul de vos recettes",
         "Export PDF cuisine (ingrédients et procédure, sans les coûts)",
       ],
       locked: [
         "Mise à jour des prix depuis des tickets ou des listes",
-        "Système de pertes",
+        "Pertes personnalisées par ingrédient",
         "PDF administratif (avec coûts et rentabilité)",
         "Facturation client",
         "Bons de commande",
@@ -300,10 +304,10 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     "home-cook": {
       price: "15 $/mois",
       tagline: "Pour ceux qui calculent déjà les coûts sérieusement",
-      description: "Tout ce qu'offre Foodie, plus un système de pertes, la facturation, des bons de commande manuels et le PDF administratif.",
+      description: "Tout ce qu'offre Foodie, plus les pertes personnalisées, la facturation, des bons de commande manuels et le PDF administratif.",
       features: [
         "Tout ce qu'offre le plan Foodie",
-        "Système de pertes",
+        "Pertes personnalisées par ingrédient (% ou quantité)",
         "Facturation client",
         "Bons de commande manuels",
         "PDF administratif (avec coûts et rentabilité)",
@@ -364,16 +368,17 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     foodie: {
       price: "Grátis",
       tagline: "Para começar a organizar suas receitas",
-      description: "Banco de dados de ingredientes, fichas técnicas ilimitadas, importação de receitas e ingredientes e PDF de cozinha.",
+      description: "Banco de dados de ingredientes, fichas técnicas ilimitadas de comida e bebidas, perdas por categoria, importação de receitas e ingredientes e PDF de cozinha.",
       features: [
         "Banco de dados de ingredientes",
-        "Fichas técnicas ilimitadas",
+        "Fichas técnicas ilimitadas de comida e de bebidas, com subreceitas, custo e preço de venda",
         "Importe suas receitas e ingredientes de onde eles já estão: Excel, PDF, texto, fotos e cupons",
+        "Perdas por categoria, com recálculo das suas receitas",
         "Exportar PDF de cozinha (ingredientes e procedimento, sem custos)",
       ],
       locked: [
         "Atualização de preços a partir de cupons ou listas",
-        "Sistema de perdas",
+        "Perdas personalizadas por ingrediente",
         "PDF administrativo (com custos e rentabilidade)",
         "Faturamento para clientes",
         "Pedidos de compra",
@@ -385,10 +390,10 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     "home-cook": {
       price: "US$15/mês",
       tagline: "Para quem já calcula custos a sério",
-      description: "Tudo do Foodie, mais sistema de perdas, faturamento, pedidos de compra manuais e PDF administrativo.",
+      description: "Tudo do Foodie, mais perdas personalizadas, faturamento, pedidos de compra manuais e PDF administrativo.",
       features: [
         "Tudo do plano Foodie",
-        "Sistema de perdas",
+        "Perdas personalizadas por ingrediente (% ou quantidade)",
         "Faturamento para clientes",
         "Pedidos de compra manuais",
         "PDF administrativo (com custos e rentabilidade)",
@@ -449,15 +454,15 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     foodie: {
       price: "免费",
       tagline: "开始整理你的配方",
-      description: "食材数据库、无限配方卡、配方和食材导入以及厨房版PDF。",
-      features: ["食材数据库", "无限配方卡", "从你现有的资料直接导入配方和食材：Excel、PDF、文本、照片和小票", "导出厨房版PDF（食材和步骤，不含成本）"],
-      locked: ["通过小票或价目表更新价格", "损耗系统", "管理版PDF（含成本和利润率）", "客户开票", "采购订单", "库存", "菜单", "统计与财务"],
+      description: "食材数据库、无限配方卡（菜品和饮品）、按类别损耗、配方和食材导入以及厨房版PDF。",
+      features: ["食材数据库", "无限配方卡（菜品和饮品，含子配方、成本和售价）", "从你现有的资料直接导入配方和食材：Excel、PDF、文本、照片和小票", "按类别计算损耗，并重新计算配方", "导出厨房版PDF（食材和步骤，不含成本）"],
+      locked: ["通过小票或价目表更新价格", "按食材自定义损耗", "管理版PDF（含成本和利润率）", "客户开票", "采购订单", "库存", "菜单", "统计与财务"],
     },
     "home-cook": {
       price: "$15/月",
       tagline: "适合已经认真核算成本的你",
-      description: "包含Foodie的全部功能，另加损耗系统、开票功能、手动采购订单和管理版PDF。",
-      features: ["Foodie套餐的全部功能", "损耗系统", "客户开票", "手动采购订单", "管理版PDF（含成本和利润率）", "用小票照片或供应商价目表更新价格"],
+      description: "包含Foodie的全部功能，另加自定义损耗、开票功能、手动采购订单和管理版PDF。",
+      features: ["Foodie套餐的全部功能", "按食材自定义损耗（百分比或数量）", "客户开票", "手动采购订单", "管理版PDF（含成本和利润率）", "用小票照片或供应商价目表更新价格"],
       locked: ["库存及自动订单建议", "菜单", "高级统计与财务", "多商家"],
     },
     "chef-de-partie": {

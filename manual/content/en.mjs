@@ -145,7 +145,7 @@ export default {
         ["formula", "Real cost with waste", ["Usable content = Net content × (1 − waste %)", "Price per unit = Purchase price ÷ Usable content"], "You pay for all of it but only use part, so the real price per unit goes up. Turn waste off and everything returns to the original values."],
         ["p", "If you already have recipes, when you save we first show which ones change cost and how: the new cost and what happens to the price. When you confirm, their recipe sheets are recalculated automatically, including those that use a sub-recipe with that ingredient. The same happens every time you turn waste on or off or change a percentage. The price follows the usual rule: if the cost rises and leaves it short, it goes up to the suggested price; if the cost drops, it stays and your margin goes up."],
         ["p", "Some typical percentages by category: Seafood 63 %, Fish 52 %, Beef 33 %, Poultry 27 %, Fruit 24 %, Vegetables 21 %. Dry and packaged goods start at 0 %. Bar categories have their own typical waste: spirits 2 %, wine 5 %, draft beer 18 % and bottled beer 0 % (chapter 6)."],
-        ["info", "Plan", "Waste management is available from the <strong>Home Cook</strong> plan."],
+        ["info", "Plan", "Waste by category is on every plan, Foodie included. Entering your own percentage or amount per ingredient is from <strong>Home Cook</strong>."],
         ["h3", "Allergens"],
         ["p", "In the last step of each ingredient you tick which of the 14 allergens that must be declared it contains (gluten, milk, eggs, tree nuts, soy, fish, crustaceans, sesame…). Recipes that use it —also through their sub-recipes— show them automatically in the Recipe Sheet, in the recipe's three PDFs and under each dish on the customer menu. They're never typed into the recipe by hand, so they don't go out of date."],
         ["h3", "Deleting an ingredient"],
@@ -265,6 +265,22 @@ export default {
           ["Bottled beer", "0 %", "Whole bottle or can"],
           ["Soft drinks & mixers", "2 %", "Whole container or glass 250 ml"],
         ]],
+        ["h3", "Drink recipe sheets"],
+        ["p", "At the top of the Recipe Sheet you choose <strong>Food</strong> or <strong>Drink</strong>. Both use the same ingredients, the same cost and the same sub-recipe cascade, and they work the same in My Recipes, menus, POS, inventory and reports. When you choose Drink, you choose how it's sold:"],
+        ["table", ["Type", "For", "How it's costed"], [
+          ["Prepared", "Cocktails, lemonades, coffee drinks, smoothies and syrups", "A recipe with several ingredients, like a dish"],
+          ["By measure", "A glass of wine, a shot, a pint of draft beer or a 1.5 L soda by the glass", "Milliliters served × price per milliliter"],
+          ["By package", "Cans, bottled beer and water", "The purchase price of one package"],
+        ]],
+        ["steps", [
+          "With <strong>By measure</strong> or <strong>By package</strong>, pick the ingredient in “Product and measure” (bar ingredients come first).",
+          "Pick the size of each serving (150 ml glass, shot, pint…) or “Other amount” in milliliters.",
+          "You see the package content, how many servings it gives and what each one costs. The suggested price comes from the target pour cost, as with any drink.",
+          "Save: if you didn't name it, it's named for you, for example “Malbec · 150 ml”.",
+        ]],
+        ["p", "The <strong>Service</strong> card keeps the glass, ice, garnish and method (shaken, stirred, built, blended, layered or brewed), so everyone behind the bar serves it the same way. It's printed in all three recipe-sheet PDFs, and the pricing method says “Pour Cost”."],
+        ["p", "Bar <strong>syrups, cordials, infusions and mixes</strong> are prepared drinks with the sub-recipe classification and a yield in ml or L. If sugar goes up, the syrup goes up and so does every cocktail that uses it. In My Recipes, the “Food and drinks” filter shows just one of the two."],
+        ["info", "Plan", "Drink recipe sheets: every plan, Foodie included."],
         ["h3", "Cocktails in the Recipe Sheet"],
         ["p", "A cocktail is a recipe with its lines in milliliters. When you pick a <strong>Bar · …</strong> classification, the price is calculated with <strong>pour cost</strong>: the share of the price that is product cost. That target belongs to that recipe only: it doesn't change your dishes' target."],
         ["table", ["Classification", "Default pour cost", "Typical range"], [
@@ -303,7 +319,8 @@ export default {
         ["tip", "What the count tells you", "In a bar, actual cost usually ends up several points above theoretical because of spills, over-pouring or comps. The count's difference, in bottles, tells you where to look first."],
         ["h3", "Kitchen and bar in Reports"],
         ["p", "In Reports → Finance, the <strong>Kitchen vs. bar</strong> card shows each area's sales, share of sales and theoretical cost, plus the actual cost if you did an opening and a closing count in the period. Menu Engineering has an All / Kitchen / Bar filter to compare drinks with drinks and dishes with dishes."],
-        ["info", "Plan", "Bar recipes and “Sell by the glass”: all plans. Waste: from <strong>Home Cook</strong>. Inventory: from <strong>Chef de Partie</strong>. Kitchen vs. bar in Finance: from <strong>Sous Chef</strong>."],
+        ["p", "Below it, <strong>Pour cost by drink type</strong> splits cocktails, wine, beer, soft drinks and coffee: sales, theoretical cost and pour cost for each type, against the average target of your recipe sheets (orange when it's above)."],
+        ["info", "Plan", "Bar recipes and “Sell by the glass”: all plans. Waste by category: every plan; custom waste: from <strong>Home Cook</strong>. Inventory: from <strong>Chef de Partie</strong>. Kitchen vs. bar in Finance: from <strong>Sous Chef</strong>."],
       ],
     },
     {
@@ -531,8 +548,8 @@ export default {
       intro: "Start for free and move up when you need to. Your data is never lost when you change plans.",
       blocks: [
         ["table", ["Plan", "Price", "Businesses", "Users (incl. you)", "Adds"], [
-          ["Foodie", "Free", "1", "1", "Recipes, ingredients, import from wherever your data already is (text, Excel, PDF, photos and receipts) and kitchen recipe sheet PDF (included in every plan)."],
-          ["Home Cook", "$15 / month", "1", "1", "Waste, manual purchase orders, administrative sheet, invoices and price updates from receipts or lists."],
+          ["Foodie", "Free", "1", "1", "Recipes, ingredients, import from wherever your data already is (text, Excel, PDF, photos and receipts) and kitchen recipe sheet PDF, drink recipe sheets and waste by category (included in every plan)."],
+          ["Home Cook", "$15 / month", "1", "1", "Custom waste, manual purchase orders, administrative sheet, invoices and price updates from receipts or lists."],
           ["Chef de Partie", "$35 / month", "1", "1", "Inventory (with counts from a photo, PDF or Excel), menus, suggested orders, Reports · Overview and manual sales entry."],
           ["Sous Chef", "$70 / month", "2", "2", "Reports · Finance, P&L, Menu Engineering, POS import and Team (you + 1 person)."],
           ["Chef Ejecutivo", "$120 / month", "5", "5", "Team of up to 4 people besides you."],

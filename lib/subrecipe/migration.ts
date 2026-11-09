@@ -3,6 +3,7 @@
  * Handles complete migration of recipes and their dependencies between businesses
  */
 
+import { withBeverageSourceFromLine } from "@/lib/beverage"
 import type { Recipe } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 import { getRecipes, saveRecipes, isSubRecipe, ensureRecipesLoaded } from "../storage/recipes"
@@ -162,7 +163,7 @@ function migrateRecipeOnly(recipe: Recipe, sourceBusinessId: string, targetBusin
   const totalCost = ingredients.reduce((sum, line) => sum + (line.extension || 0), 0)
   const yieldAmount = recipe.yieldAmount > 0 ? recipe.yieldAmount : 1
   const now = new Date().toISOString()
-  const migratedRecipe: Recipe = {
+  const migratedRecipe: Recipe = withBeverageSourceFromLine({
     ...recipe,
     id: `migrated_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     businessId: targetBusinessId,
@@ -171,7 +172,7 @@ function migrateRecipeOnly(recipe: Recipe, sourceBusinessId: string, targetBusin
     costPerServing: totalCost / yieldAmount,
     originalSnapshot: undefined,
     metadata: { ...recipe.metadata, migratedFrom: sourceBusinessId, migratedAt: now, updatedAt: now, version: 1 },
-  }
+  })
   void saveRecipes([...getRecipes(targetBusinessId), migratedRecipe], targetBusinessId)
   if (typeof window !== "undefined") {
     window.dispatchEvent(
@@ -381,7 +382,8 @@ export async function migrateCompleteRecipe(
     }
 
     const costedRecipe = recostWithTarget(migratedRecipe, getIngredients(targetBusinessId) || [])
-    Object.assign(migratedRecipe, costedRecipe)
+    // Bebida por medida/envase (docs/272): el producto es el de la línea ya unida al destino.
+    Object.assign(migratedRecipe, withBeverageSourceFromLine(costedRecipe))
     const others = getRecipes(targetBusinessId).filter((r) => r.id !== migratedRecipe.id)
     await saveRecipes([...others, migratedRecipe], targetBusinessId)
 

@@ -56,8 +56,10 @@ function fromRecipe(r: CartaRecipe, key: string, category: string, price: number
 export function buildCartas(
   menus: Menu[],
   recipes: CartaRecipe[],
-  labels: { recipes: string; other: string; wholeMenu: string },
+  labels: { recipes: string; other: string; wholeMenu: string; classification?: (classification: string) => string },
 ): PosCarta[] {
+  // Nombre visible de la clasificación (traducido); sin función, el texto guardado.
+  const groupOf = (c: string | undefined) => (c ? (labels.classification ? labels.classification(c) : c) : labels.other)
   const byId = new Map(recipes.map((r) => [r.id, r]))
   const cartas: PosCarta[] = []
 
@@ -89,7 +91,7 @@ export function buildCartas(
 
   const all = recipes
     .filter((r) => !r.isSubRecipe)
-    .map((r) => fromRecipe(r, `recipe:${r.id}`, r.classification || labels.other, currentUnitPrice(r)))
+    .map((r) => fromRecipe(r, `recipe:${r.id}`, groupOf(r.classification), currentUnitPrice(r)))
     .sort((a, b) => a.name.localeCompare(b.name))
   cartas.push({ id: RECIPES_CARTA, name: labels.recipes, kind: "recipes", items: all })
   return cartas

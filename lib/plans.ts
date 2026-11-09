@@ -62,6 +62,10 @@ export type FeatureKey =
   | "cash_up"
   // POS propio (docs/268): salón, pedidos, cocina y cobro. Desde Sous Chef (decisión del dueño).
   | "pos"
+  // Merma (docs/272, pedido del dueño): «merma» = la merma por categoría, en TODOS los planes
+  // (incluido Foodie); «merma_custom» = la merma personalizada por ingrediente (% o cantidad),
+  // desde Home Cook. En Equipo, las dos se dan con el mismo permiso «merma».
+  | "merma_custom"
 
 export interface Plan {
   slug: string
@@ -86,16 +90,17 @@ export const plans: Plan[] = [
     price: "Gratis",
     priceUsdCents: 0,
     tagline: "Para empezar a organizar tus recetas",
-    description: "Base de datos, fichas técnicas ilimitadas, exportación de receta en PDF de cocina.",
+    description: "Base de datos, fichas técnicas ilimitadas de comida y bebidas, merma por categoría y PDF de cocina.",
     features: [
       "Base de datos de ingredientes",
-      "Fichas técnicas ilimitadas",
+      "Fichas técnicas ilimitadas de comida y de bebidas, con subrecetas, costo y precio de venta",
       "Importa tus recetas e ingredientes desde donde ya los tienes: Excel, PDF, texto, fotos y tickets",
+      "Merma por categoría, con recálculo de tus recetas",
       "Exportar PDF de cocina (ingredientes y procedimiento, sin costos)",
     ],
     locked: [
       "Actualización de precios desde tickets o listas",
-      "Sistema de merma",
+      "Merma personalizada por ingrediente",
       "PDF administrativo (con costos y rentabilidad)",
       "Facturación a clientes",
       "Órdenes de compra",
@@ -105,7 +110,7 @@ export const plans: Plan[] = [
     ],
     maxBusinesses: 1,
     maxUsers: 1,
-    unlockedFeatures: [],
+    unlockedFeatures: ["merma"],
   },
   {
     slug: "home-cook",
@@ -113,10 +118,10 @@ export const plans: Plan[] = [
     price: "$15/mes",
     priceUsdCents: 1500,
     tagline: "Para quien ya calcula costos en serio",
-    description: "Todo lo de Foodie, más sistema de merma, facturación, órdenes de compra manuales y PDF administrativo.",
+    description: "Todo lo de Foodie, más merma personalizada, facturación, órdenes de compra manuales y PDF administrativo.",
     features: [
       "Todo lo del plan Foodie",
-      "Sistema de merma",
+      "Merma personalizada por ingrediente (% o cantidad)",
       "Facturación a clientes",
       "Órdenes de compra manuales",
       "PDF administrativo (con costos y rentabilidad)",
@@ -125,7 +130,7 @@ export const plans: Plan[] = [
     locked: ["Inventario y auto-sugerencia de órdenes", "Menús", "Estadísticas y Finanzas avanzadas", "Multi-negocio"],
     maxBusinesses: 1,
     maxUsers: 1,
-    unlockedFeatures: ["merma", "purchase_orders_manual", "pdf_admin", "invoices", "price_import"],
+    unlockedFeatures: ["merma", "merma_custom", "purchase_orders_manual", "pdf_admin", "invoices", "price_import"],
   },
   {
     slug: "chef-de-partie",
@@ -147,7 +152,7 @@ export const plans: Plan[] = [
     locked: ["Finanzas completas (P&L, importación de POS, Menu Engineering)", "Multi-negocio", "Usuarios extra"],
     maxBusinesses: 1,
     maxUsers: 1,
-    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "price_import"],
+    unlockedFeatures: ["merma", "merma_custom", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "price_import"],
   },
   {
     slug: "sous-chef",
@@ -170,7 +175,7 @@ export const plans: Plan[] = [
     locked: ["Multi-negocio masivo (+5)", "Soporte prioritario", "Más de 2 usuarios"],
     maxBusinesses: 2,
     maxUsers: 2,
-    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance", "team", "price_import", "pos"],
+    unlockedFeatures: ["merma", "merma_custom", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance", "team", "price_import", "pos"],
     highlighted: true,
   },
   {
@@ -192,7 +197,7 @@ export const plans: Plan[] = [
     locked: [],
     maxBusinesses: 5,
     maxUsers: 5,
-    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance", "team", "price_import", "pos"],
+    unlockedFeatures: ["merma", "merma_custom", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance", "team", "price_import", "pos"],
     // Contratable directo desde docs/239 (pedido del dueño); antes `comingSoon: true` lo
     // dejaba solo con «Hablar con ventas».
   },

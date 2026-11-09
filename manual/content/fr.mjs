@@ -145,7 +145,7 @@ export default {
         ["formula", "Coût réel avec pertes", ["Contenu utilisable = Contenu net × (1 − % de pertes)", "Prix par unité = Prix d'achat ÷ Contenu utilisable"], "Vous payez la totalité mais n'en utilisez qu'une partie : le prix réel par unité augmente donc. Si vous désactivez les pertes, tout revient aux valeurs d'origine."],
         ["p", "Si vous avez déjà des recettes, à l'enregistrement nous montrons d'abord celles dont le coût change et comment : le nouveau coût et ce qui arrive au prix. Quand vous confirmez, leurs fiches techniques sont recalculées automatiquement, y compris celles qui utilisent une sous-recette avec cet ingrédient. C'est pareil chaque fois que vous activez ou désactivez les pertes ou changez un pourcentage. Le prix suit la règle habituelle : si le coût monte et le rend insuffisant, il passe au prix suggéré ; si le coût baisse, il reste et votre marge augmente."],
         ["p", "Quelques pourcentages types par catégorie : Fruits de mer 63 %, Poisson 52 %, Bœuf 33 %, Volaille 27 %, Fruits 24 %, Légumes 21 %. Les produits secs et emballés partent de 0 %. Les catégories de bar ont leur propre perte type : spiritueux 2 %, vins 5 %, bière pression 18 % et bière en bouteille 0 % (chapitre 6)."],
-        ["info", "Forfait", "La gestion des pertes est disponible à partir du forfait <strong>Home Cook</strong>."],
+        ["info", "Forfait", "Les pertes par catégorie sont dans tous les forfaits, Foodie compris. Saisir votre propre pourcentage ou quantité par ingrédient est possible à partir de <strong>Home Cook</strong>."],
         ["h3", "Allergènes"],
         ["p", "À la dernière étape de chaque ingrédient, vous cochez lesquels des 14 allergènes à déclarer obligatoirement il contient (gluten, lait, œufs, fruits à coque, soja, poisson, crustacés, sésame…). Les recettes qui l'utilisent —y compris via leurs sous-recettes— les affichent automatiquement dans la Fiche Technique, dans les trois PDF de la fiche et sous chaque plat sur la carte client. Ils ne se saisissent jamais à la main dans la recette : ils ne sont donc jamais périmés."],
         ["h3", "Supprimer un ingrédient"],
@@ -265,6 +265,22 @@ export default {
           ["Bière en bouteille", "0 %", "Bouteille ou canette entière"],
           ["Sodas et mixers", "2 %", "Contenant entier ou verre 250 ml"],
         ]],
+        ["h3", "Fiches techniques de boissons"],
+        ["p", "En haut de la fiche technique, vous choisissez <strong>Plat</strong> ou <strong>Boisson</strong>. Les deux utilisent les mêmes ingrédients, le même coût et la même cascade de sous-recettes, et fonctionnent de la même façon dans Mes recettes, les menus, le POS, l'inventaire et les rapports. Avec Boisson, vous choisissez comment elle se vend :"],
+        ["table", ["Type", "Pour", "Comment se calcule le coût"], [
+          ["Préparée", "Cocktails, citronnades, cafés préparés, smoothies et sirops", "Une recette à plusieurs ingrédients, comme un plat"],
+          ["À la mesure", "Un verre de vin, un shot, une pinte de pression ou un soda de 1,5 L au verre", "Millilitres servis × prix par millilitre"],
+          ["À l'unité", "Canettes, bières en bouteille et eaux", "Le prix d'achat d'une unité"],
+        ]],
+        ["steps", [
+          "Avec <strong>À la mesure</strong> ou <strong>À l'unité</strong>, choisissez l'ingrédient dans « Produit et mesure » (ceux du bar apparaissent en premier).",
+          "Choisissez la mesure de chaque service (verre de 150 ml, shot, pinte…) ou « Autre mesure » en millilitres.",
+          "Vous voyez le contenu du contenant, le nombre de services et le coût de chacun. Le prix suggéré vient du pour cost cible, comme pour toute boisson.",
+          "Enregistrez : sans nom, elle est nommée automatiquement, par exemple « Malbec · 150 ml ».",
+        ]],
+        ["p", "La carte <strong>Service</strong> garde le verre, la glace, la décoration et la méthode (au shaker, remué, monté au verre, mixé, en couches ou infusion), pour que tout le bar la serve de la même façon. Elle figure dans les trois PDF de la fiche, et la méthode de prix indique « Pour Cost »."],
+        ["p", "Les <strong>sirops, cordiaux, infusions et mélanges</strong> du bar se créent comme boisson préparée avec la classification sous-recette et un rendement en ml ou L. Si le sucre augmente, le sirop augmente, et chaque cocktail qui l'utilise aussi. Dans Mes recettes, le filtre « Plats et boissons » n'affiche que l'un des deux."],
+        ["info", "Forfait", "Fiches techniques de boissons : tous les forfaits, Foodie compris."],
         ["h3", "Les cocktails dans la Fiche Technique"],
         ["p", "Un cocktail est une recette dont les lignes sont en millilitres. Quand vous choisissez une classification <strong>Bar · …</strong>, le prix est calculé avec le <strong>pour cost</strong> : la part du prix qui correspond au coût du produit. Cet objectif ne concerne que cette recette : il ne change pas celui de vos plats."],
         ["table", ["Classification", "Pour cost par défaut", "Fourchette type"], [
@@ -303,7 +319,8 @@ export default {
         ["tip", "Ce que le comptage vous dit", "Dans un bar, le coût réel finit souvent plusieurs points au-dessus du théorique à cause des éclaboussures, du sur-dosage ou des offerts. L'écart du comptage, en bouteilles, vous indique où regarder en premier."],
         ["h3", "Cuisine et bar dans les Rapports"],
         ["p", "Dans Rapports → Finances, la carte <strong>Cuisine vs bar</strong> affiche les ventes, la part des ventes et le coût théorique de chaque zone, ainsi que le coût réel si vous avez fait un comptage initial et un comptage final sur la période. Le Menu Engineering propose un filtre Tout / Cuisine / Bar pour comparer les cocktails entre eux et les plats entre eux."],
-        ["info", "Forfait", "Recettes de bar et « Vendre au verre » : tous les forfaits. Pertes : à partir de <strong>Home Cook</strong>. Inventaire : à partir de <strong>Chef de Partie</strong>. Cuisine vs bar dans Finances : à partir de <strong>Sous Chef</strong>."],
+        ["p", "En dessous, <strong>Pour cost par type de boisson</strong> sépare cocktails, vins, bières, sans alcool et café : ventes, coût théorique et pour cost de chaque type, face à l'objectif moyen de vos fiches (en orange s'il est dépassé)."],
+        ["info", "Forfait", "Recettes de bar et « Vendre au verre » : tous les forfaits. Pertes par catégorie : tous les forfaits ; personnalisées : à partir de <strong>Home Cook</strong>. Inventaire : à partir de <strong>Chef de Partie</strong>. Cuisine vs bar dans Finances : à partir de <strong>Sous Chef</strong>."],
       ],
     },
     {
@@ -531,8 +548,8 @@ export default {
       intro: "Vous commencez gratuitement et passez à un forfait supérieur quand vous en avez besoin. Vos données ne se perdent jamais en changeant de forfait.",
       blocks: [
         ["table", ["Forfait", "Prix", "Établissements", "Utilisateurs (vous inclus)", "Ajoute"], [
-          ["Foodie", "Gratuit", "1", "1", "Recettes, ingrédients, import depuis là où se trouvent déjà vos données (texte, Excel, PDF, photos et tickets) et fiche de cuisine en PDF (inclus dans tous les forfaits)."],
-          ["Home Cook", "15 $ / mois", "1", "1", "Pertes, commandes d'achat manuelles, fiche administrative, factures et mise à jour des prix depuis des tickets ou des listes."],
+          ["Foodie", "Gratuit", "1", "1", "Recettes, ingrédients, import depuis là où se trouvent déjà vos données (texte, Excel, PDF, photos et tickets) et fiche de cuisine en PDF, fiches de boissons et pertes par catégorie (inclus dans tous les forfaits)."],
+          ["Home Cook", "15 $ / mois", "1", "1", "Pertes personnalisées, commandes d'achat manuelles, fiche administrative, factures et mise à jour des prix depuis des tickets ou des listes."],
           ["Chef de Partie", "35 $ / mois", "1", "1", "Inventaire (avec comptage depuis une photo, un PDF ou Excel), menus, commandes suggérées, Rapports · Vue d'ensemble et saisie manuelle des ventes."],
           ["Sous Chef", "70 $ / mois", "2", "2", "Rapports · Finances, P&L, Menu Engineering, import de la caisse et Équipe (vous + 1 personne)."],
           ["Chef Ejecutivo", "120 $ / mois", "5", "5", "Équipe jusqu'à 4 personnes en plus de vous."],
