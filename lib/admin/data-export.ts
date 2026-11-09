@@ -34,6 +34,7 @@ export const EXPORT_TABLES: ExportTable[] = [
   byId("sales_imports"),
   byId("pos_column_mappings"),
   byId("dish_name_mappings"),
+  byId("pos_data"),
   byId("activity_log"),
   byId("product_events"),
   byId("page_views"),

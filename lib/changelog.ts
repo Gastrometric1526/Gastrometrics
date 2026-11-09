@@ -32,6 +32,18 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2026-11-09",
+    tutorialHref: tourHref("salon"),
+    content: {
+      es: { title: "Salón: tu POS dentro de GastroMetrics", items: ["Dibuja tu salón con sus áreas y mesas, con el número y las sillas de cada una.", "Toca una mesa, elige la silla y agrega platos desde su foto, con extras con precio («Extra queso +L 20») y notas como «sin cebolla».", "Manda el pedido a cocina, que lo ve en su pantalla y marca cada plato «Listo». Cobra toda la cuenta o por sillas: la venta se guarda sola en Ventas y en tus reportes. Desde Sous Chef."] },
+      en: { title: "Floor: your POS inside GastroMetrics", items: ["Draw your floor with its areas and tables, each with its number and seats.", "Tap a table, pick the seat and add dishes from their photo, with priced extras (“Extra cheese +L 20”) and notes like “no onion”.", "Send the order to the kitchen, which sees it on its screen and marks each dish “Ready”. Charge the whole bill or by seat: the sale is saved in Sales and your reports. From Sous Chef."] },
+      da: { title: "Salon: dit POS i GastroMetrics", items: ["Tegn din salon med områder og borde, hver med nummer og stole.", "Tryk på et bord, vælg stolen, og tilføj retter fra deres billede, med tilvalg med pris (»Ekstra ost +L 20«) og noter som »uden løg«.", "Send bestillingen til køkkenet, der ser den på sin skærm og markerer hver ret »Klar«. Tag betaling for hele regningen eller pr. stol: salget gemmes i Salg og dine rapporter. Fra Sous Chef."] },
+      fr: { title: "Salle : votre caisse dans GastroMetrics", items: ["Dessinez votre salle avec ses zones et ses tables, chacune avec son numéro et ses places.", "Touchez une table, choisissez la place et ajoutez les plats depuis leur photo, avec des suppléments payants (« Supplément fromage +L 20 ») et des notes comme « sans oignon ».", "Envoyez la commande en cuisine, qui la voit sur son écran et marque chaque plat « Prêt ». Encaissez toute l'addition ou par place : la vente est enregistrée dans Ventes et vos rapports. À partir de Sous Chef."] },
+      pt: { title: "Salão: seu PDV dentro do GastroMetrics", items: ["Desenhe seu salão com as áreas e mesas, cada uma com número e cadeiras.", "Toque em uma mesa, escolha a cadeira e adicione pratos pela foto, com extras com preço (“Extra queijo +L 20”) e notas como “sem cebola”.", "Envie o pedido para a cozinha, que o vê na tela dela e marca cada prato como “Pronto”. Cobre a conta toda ou por cadeira: a venda fica salva em Vendas e nos seus relatórios. A partir do Sous Chef."] },
+      zh: { title: "餐厅：GastroMetrics 里的 POS", items: ["绘制你的餐厅，包括区域和桌子，每张桌子都有编号和座位。", "点一张桌子，选择座位，通过照片添加菜品，可加带价格的加料（“加芝士 +L 20”）和备注（如“不要洋葱”）。", "把订单送到厨房，厨房在自己的屏幕上看到并把每道菜标为“备好”。可整桌或按座位结账：销售自动记入销售和报表。Sous Chef 套餐起提供。"] },
+    },
+  },
+  {
     version: "2026-11-08f",
     tutorialHref: tourHref("ordenes-compra"),
     content: {

@@ -44,6 +44,7 @@ import {
   Sparkles,
   Gift,
   Users,
+  Armchair,
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
@@ -89,6 +90,8 @@ export function useNavigationItems() {
   const canAccessInvoices = useFeatureAccess("invoices")
   const canAccessManualSalesNav = useFeatureAccess("manual_sales")
   const canAccessFinanceNav = useFeatureAccess("stats_finance")
+  // POS propio (docs/268), desde Sous Chef.
+  const canAccessPos = useFeatureAccess("pos")
 
   const lockedByHref: Record<string, { locked: boolean; feature: FeatureKey }> = {
     "/inventario": { locked: canAccessInventory === false, feature: "inventory" },
@@ -145,6 +148,14 @@ export function useNavigationItems() {
       feature: lockedByHref["/menu-y-compras"].feature as FeatureKey | null,
     },
     {
+      title: t("nav_salon"),
+      href: "/salon",
+      icon: Armchair,
+      description: t("nav_salon_desc"),
+      locked: canAccessPos === false,
+      feature: "pos" as FeatureKey | null,
+    },
+    {
       title: t("nav_ventas"),
       href: "/ventas",
       icon: ShoppingBag,
@@ -179,6 +190,7 @@ export function useNavigationItems() {
       "/menu-y-compras": ["purchase_orders_manual", "purchase_orders_auto"],
       "/estadisticas": ["stats_panorama", "stats_finance"],
       "/ventas": ["manual_sales", "stats_finance", "invoices", "sales_history"],
+      "/salon": ["pos"],
       // Delegable desde docs/75 — un miembro con la función 'team' habilitada
       // también puede gestionar el equipo (ver supabase/migrations/
       // 0015_team_delegate_management.sql para el porqué hacía falta una migración,

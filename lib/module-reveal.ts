@@ -25,6 +25,7 @@ import { useRecipes, ensureRecipesLoaded, isSubRecipe, countOwnRecipesAllBusines
 export const MODULE_STAGES: Record<string, number> = {
   "/estadisticas": 1,
   "/ventas": 1,
+  "/salon": 3,
   "/inventario": 3,
   "/menus": 3,
   "/mep": 3,

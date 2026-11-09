@@ -13,6 +13,7 @@ const STYLE: Record<string, number> = {
   "/mep": 3,
   "/menu-y-compras": 4,
   "/ventas": 2,
+  "/salon": 6,
   "/estadisticas": 7,
   "/negocios": 5,
   "/mi-plan#invita": 4,

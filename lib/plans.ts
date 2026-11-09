@@ -60,6 +60,8 @@ export type FeatureKey =
   | "sales_history"
   // Cuadre de caja (docs/217): se desbloquea con "manual_sales".
   | "cash_up"
+  // POS propio (docs/268): salón, pedidos, cocina y cobro. Desde Sous Chef (decisión del dueño).
+  | "pos"
 
 export interface Plan {
   slug: string
@@ -157,7 +159,8 @@ export const plans: Plan[] = [
       "Todo lo anterior, más finanzas completas: P&L real, importación de ventas del POS, Menu Engineering y varianza de precios de proveedores.",
     features: [
       "Todo lo del plan Chef de Partie",
-      "Finanzas completas: P&L e importación del reporte de ventas de tu POS (Excel o CSV; no es una caja registradora)",
+      "Finanzas completas: P&L e importación del reporte de ventas de tu POS (Excel o CSV)",
+        "Salón y pedidos: mapa de mesas, pedidos por silla con fotos y extras, cocina y cobro (no emite facturas fiscales)",
       "Menu Engineering (Estrellas, Vacas, Puzzles, Perros)",
       "Varianza de precios de proveedores",
       "Dashboard financiero histórico",
@@ -167,7 +170,7 @@ export const plans: Plan[] = [
     locked: ["Multi-negocio masivo (+5)", "Soporte prioritario", "Más de 2 usuarios"],
     maxBusinesses: 2,
     maxUsers: 2,
-    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance", "team", "price_import"],
+    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance", "team", "price_import", "pos"],
     highlighted: true,
   },
   {
@@ -189,7 +192,7 @@ export const plans: Plan[] = [
     locked: [],
     maxBusinesses: 5,
     maxUsers: 5,
-    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance", "team", "price_import"],
+    unlockedFeatures: ["merma", "purchase_orders_manual", "purchase_orders_auto", "pdf_admin", "invoices", "inventory", "menus", "stats_panorama", "manual_sales", "stats_finance", "team", "price_import", "pos"],
     // Contratable directo desde docs/239 (pedido del dueño); antes `comingSoon: true` lo
     // dejaba solo con «Hablar con ventas».
   },

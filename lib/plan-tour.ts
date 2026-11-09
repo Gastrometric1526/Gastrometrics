@@ -21,6 +21,7 @@ export const PLAN_TOUR_MODULES: { href: string; navKey: string; capabilities: Ga
   { href: "/equipo", navKey: "nav_equipo", capabilities: ["team", "users"] },
   { href: "/menus", navKey: "nav_menus", capabilities: ["menus"] },
   { href: "/menu-y-compras", navKey: "nav_ordenes_compra", capabilities: ["purchase_orders_manual", "purchase_orders_auto"] },
+  { href: "/salon", navKey: "nav_salon", capabilities: ["pos"] },
   { href: "/ventas", navKey: "nav_ventas", capabilities: ["invoices", "manual_sales"] },
   { href: "/estadisticas", navKey: "nav_estadisticas", capabilities: ["stats_panorama", "stats_finance"] },
   { href: "/negocios", navKey: "nav_negocios", capabilities: ["businesses"] },

@@ -343,6 +343,28 @@ export function VentasTour() {
   return <PageTour steps={steps} storageKey="tour_completed_ventas" />
 }
 
+// Salón (docs/268): POS propio — plano, pedido por silla, cocina y ajustes.
+export function SalonTour({ canEdit = true }: { canEdit?: boolean } = {}) {
+  const { t } = useLanguage()
+  // Radix Tabs: la pestaña inactiva no existe en el DOM y el trigger reacciona a mousedown.
+  const clickTab = (id: string) => () => {
+    document.getElementById(id)?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }))
+  }
+  const steps: TourStep[] = [
+    { id: "header", title: t("tour_salon_header_title"), description: t("tour_salon_header_desc"), selector: '[data-tour="salon-header"]' },
+    { id: "map", title: t("tour_salon_map_title"), description: t("tour_salon_map_desc"), selector: '[data-tour="salon-map"]', beforeShow: clickTab("salon-tab-salon") },
+    { id: "takeaway", title: t("tour_salon_takeaway_title"), description: t("tour_salon_takeaway_desc"), selector: '[data-tour="salon-takeaway"]' },
+    { id: "kitchen", title: t("tour_salon_kitchen_title"), description: t("tour_salon_kitchen_desc"), selector: '[data-tour="salon-kitchen-tab"]', beforeShow: clickTab("salon-tab-cocina") },
+    ...(canEdit
+      ? [
+          { id: "floor", title: t("tour_salon_floor_title"), description: t("tour_salon_floor_desc"), selector: '[data-tour="salon-settings"]', beforeShow: clickTab("salon-tab-ajustes") } as TourStep,
+          { id: "extras", title: t("tour_salon_extras_title"), description: t("tour_salon_extras_desc"), selector: '[data-tour="salon-extras"]' } as TourStep,
+        ]
+      : []),
+  ]
+  return <PageTour steps={steps} storageKey="tour_completed_salon" />
+}
+
 export function OrdenesCompraTour() {
   const { t } = useLanguage()
   const steps: TourStep[] = [

@@ -43,7 +43,7 @@ export function effectiveMemberFeatures(stored: readonly string[]): FeatureKey[]
  * Permisos que necesitan otro para funcionar: el cuadre de caja se guarda en el registro de
  * ventas del día, que la base solo deja escribir con «Registro manual de ventas» (docs/217).
  */
-export const FEATURE_REQUIRES: Partial<Record<FeatureKey, FeatureKey>> = { cash_up: "manual_sales" }
+export const FEATURE_REQUIRES: Partial<Record<FeatureKey, FeatureKey>> = { cash_up: "manual_sales", pos: "manual_sales" }
 
 /** Marca o desmarca un permiso respetando sus dependencias. */
 export function toggleTeamFeature(selected: readonly FeatureKey[], key: FeatureKey, checked: boolean): FeatureKey[] {

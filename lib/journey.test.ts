@@ -27,6 +27,7 @@ const allFeatures = {
   purchase_orders_manual: true,
   purchase_orders_auto: true,
   team: true,
+  pos: true,
 }
 const facts = (over: Partial<JourneyFacts> = {}): JourneyFacts => ({ ingredients: 0, recipes: 0, menus: 0, mermaActive: false, features: allFeatures, ...over })
 const doneUpTo = (id: string) => CHAPTERS.slice(0, CHAPTERS.findIndex((c) => c.id === id)).map((c) => c.id)

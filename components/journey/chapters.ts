@@ -264,6 +264,7 @@ export const CHAPTER_GO: Record<string, { title: TranslationKey; description: Tr
   "menus-one": { title: "journey_goal_menus_title", description: "journey_goal_menus_desc", module: "nav_menus" },
   mep: { title: "journey_go_mep_title", description: "journey_go_mep_desc", module: "nav_mep" },
   ordenes: { title: "journey_go_orders_title", description: "journey_go_orders_desc", module: "nav_ordenes_compra" },
+  salon: { title: "journey_go_salon_title", description: "journey_go_salon_desc", module: "nav_salon" },
   equipo: { title: "journey_go_team_title", description: "journey_go_team_desc", module: "nav_equipo" },
   negocios: { title: "journey_go_business_title", description: "journey_go_business_desc", module: "nav_negocios" },
   "mi-plan": { title: "journey_go_plan_title", description: "journey_go_plan_desc", module: "mi_plan_title" },

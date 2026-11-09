@@ -79,7 +79,8 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
         "Todo lo anterior, más finanzas completas: P&L real, importación de ventas del POS, Menu Engineering y varianza de precios de proveedores.",
       features: [
         "Todo lo del plan Chef de Partie",
-        "Finanzas completas: P&L e importación del reporte de ventas de tu POS (Excel o CSV; no es una caja registradora)",
+        "Finanzas completas: P&L e importación del reporte de ventas de tu POS (Excel o CSV)",
+        "Salón y pedidos: mapa de mesas, pedidos por silla con fotos y extras, cocina y cobro (no emite facturas fiscales)",
         "Menu Engineering (Estrellas, Vacas, Puzzles, Perros)",
         "Varianza de precios de proveedores",
         "Dashboard financiero histórico",
@@ -163,7 +164,8 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
         "Everything above, plus full finance: real P&L, POS sales import, Menu Engineering, and supplier price variance.",
       features: [
         "Everything in the Chef de Partie plan",
-        "Full finance: P&L and import of your POS sales report (Excel or CSV; not a cash register)",
+        "Full finance: P&L and import of your POS sales report (Excel or CSV)",
+        "Floor and orders: table map, orders by seat with photos and extras, kitchen and checkout (does not issue tax invoices)",
         "Menu Engineering (Stars, Cows, Puzzles, Dogs)",
         "Supplier price variance",
         "Historical financial dashboard",
@@ -247,7 +249,8 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
         "Alt ovenstående, plus komplet økonomi: reel P&L, import af POS-salg, Menu Engineering og leverandørprisvarians.",
       features: [
         "Alt fra Chef de Partie-planen",
-        "Komplet økonomi: P&L og import af salgsrapporten fra dit POS (Excel eller CSV; ikke et kasseapparat)",
+        "Komplet økonomi: P&L og import af salgsrapporten fra dit POS (Excel eller CSV)",
+        "Salon og bestillinger: bordkort, bestillinger pr. stol med billeder og tilvalg, køkken og betaling (udsteder ikke momsfakturaer)",
         "Menu Engineering (Stjerner, Køer, Puslespil, Hunde)",
         "Leverandørprisvarians",
         "Historisk økonomisk dashboard",
@@ -331,7 +334,8 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
         "Tout ce qui précède, plus les finances complètes : P&L réel, import des ventes POS, Menu Engineering et variance des prix fournisseurs.",
       features: [
         "Tout ce qu'offre le plan Chef de Partie",
-        "Finances complètes : P&L et import du rapport de ventes de votre caisse (Excel ou CSV ; ce n'est pas une caisse enregistreuse)",
+        "Finances complètes : P&L et import du rapport de ventes de votre caisse (Excel ou CSV)",
+        "Salle et commandes : plan des tables, commandes par place avec photos et suppléments, cuisine et encaissement (n'émet pas de factures fiscales)",
         "Menu Engineering (Étoiles, Vaches, Puzzles, Chiens)",
         "Variance des prix fournisseurs",
         "Tableau de bord financier historique",
@@ -415,7 +419,8 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
         "Tudo o anterior, mais finanças completas: P&L real, importação de vendas do POS, Menu Engineering e variação de preços de fornecedores.",
       features: [
         "Tudo do plano Chef de Partie",
-        "Finanças completas: P&L e importação do relatório de vendas do seu PDV (Excel ou CSV; não é um caixa registradora)",
+        "Finanças completas: P&L e importação do relatório de vendas do seu PDV (Excel ou CSV)",
+        "Salão e pedidos: mapa das mesas, pedidos por cadeira com fotos e extras, cozinha e cobrança (não emite notas fiscais)",
         "Menu Engineering (Estrelas, Vacas, Quebra-cabeças, Cães)",
         "Variação de preços de fornecedores",
         "Painel financeiro histórico",
@@ -477,7 +482,8 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       description: "包含以上全部，另加完整财务：真实P&L、POS销售数据导入、菜单工程分析和供应商价格波动分析。",
       features: [
         "Chef de Partie套餐的全部功能",
-        "完整财务：P&L 和 POS 销售报表导入（Excel 或 CSV；不是收银机）",
+        "完整财务：P&L 和 POS 销售报表导入（Excel 或 CSV）",
+        "餐厅与点单：桌位图、按座位点单（含菜品照片和加料）、厨房与结账（不开具税务发票）",
         "菜单工程分析（明星、瘦狗、问题、金牛）",
         "供应商价格波动分析",
         "历史财务看板",

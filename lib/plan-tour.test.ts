@@ -35,7 +35,7 @@ describe("planTourModules", () => {
 
   it("Chef de Partie → Sous Chef: finanzas, equipo y un segundo negocio", () => {
     const mods = planTourModules(gainedCapabilities("chef-de-partie", "sous-chef", "es"), 5, false)
-    expect(mods.map((m) => m.href)).toEqual(["/equipo", "/estadisticas", "/negocios"])
+    expect(mods.map((m) => m.href)).toEqual(["/equipo", "/salon", "/estadisticas", "/negocios"])
   })
 
   it("al bajar de plan no hay módulos nuevos", () => {

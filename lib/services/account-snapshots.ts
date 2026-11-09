@@ -58,6 +58,7 @@ export const SNAPSHOT_TABLES = [
   "sales_imports",
   "pos_column_mappings",
   "dish_name_mappings",
+  "pos_data",
 ] as const
 type SnapshotTable = (typeof SNAPSHOT_TABLES)[number]
 
