@@ -29,6 +29,9 @@ export type ActivityModule =
   | "ordenes_compra"
   | "estadisticas"
   | "negocios"
+  // Ventas y Salón (docs/269): solo «entró», para la invitación a volver a un módulo.
+  | "ventas"
+  | "salon"
   | "merma"
   // Lecturas de fotos con OCR (docs/153): solo para contar el uso por plan y verlo en
   // /admin; no se muestran en "Actividad reciente" ni en "Notificaciones".
@@ -253,6 +256,8 @@ const MODULE_NAV_KEY: Record<ActivityModule, string> = {
   ordenes_compra: "nav_ordenes_compra",
   estadisticas: "nav_estadisticas",
   negocios: "nav_negocios",
+  ventas: "nav_ventas",
+  salon: "nav_salon",
   merma: "nav_ingredientes",
   ocr: "nav_ingredientes",
   plan: "nav_dashboard",

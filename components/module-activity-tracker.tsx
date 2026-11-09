@@ -27,6 +27,8 @@ const MODULE_ROUTES: Record<string, ActivityModule> = {
   "/mep": "mep",
   "/menu-y-compras": "ordenes_compra",
   "/estadisticas": "estadisticas",
+  "/ventas": "ventas",
+  "/salon": "salon",
   "/negocios": "negocios",
 }
 

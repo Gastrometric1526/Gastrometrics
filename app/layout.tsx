@@ -25,6 +25,7 @@ import { PaymentNoticeDialog } from "@/components/payment-notice-dialog"
 import { FeedbackOrchestrator } from "@/components/feedback/feedback-orchestrator"
 import { SupportChat } from "@/components/support-chat"
 import { ModuleActivityTracker } from "@/components/module-activity-tracker"
+import { ModuleNudge } from "@/components/module-nudge"
 import { PwaBackGuard } from "@/components/pwa-back-guard"
 import { EmailClickTracker } from "@/components/email-click-tracker"
 import { SubRecipePricePrompt } from "@/components/subrecipe-price-prompt"
@@ -143,6 +144,10 @@ export default function RootLayout({
                   <SubRecipePricePrompt />
                   <Suspense fallback={null}>
                     <ModuleActivityTracker />
+                  </Suspense>
+                  {/* Invitación a volver a un módulo sin usar (docs/269) */}
+                  <Suspense fallback={null}>
+                    <ModuleNudge />
                   </Suspense>
                   <PwaBackGuard />
                   <main className="flex min-h-screen flex-col">
