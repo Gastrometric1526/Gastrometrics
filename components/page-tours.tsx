@@ -614,7 +614,8 @@ export function BusinessDetailTour({ hasScenarioSection }: { hasScenarioSection:
   if (!isMember) {
     const intro: TourStep[] = [
       { id: "same", title: t("tour_business_intro_title"), description: t("tour_business_intro_desc"), selector: '[data-tour="business-header"]' },
-      { id: "migrate", title: t("tour_business_migrate_title"), description: t("tour_business_migrate_desc"), selector: '[data-tour="business-modules"]' },
+      // docs/284: señala «Traer de mi espacio principal», que trae de una vez recetas e ingredientes.
+      { id: "migrate", title: t("tour_business_migrate_title"), description: t("tour_business_migrate_desc"), selector: '[data-tour="business-bring"]' },
     ]
     return <PageTour steps={intro} storageKey="tour_completed_business-intro" />
   }

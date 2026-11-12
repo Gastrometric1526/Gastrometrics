@@ -69,6 +69,7 @@ export default {
         ]],
         ["chips", ["Restaurante", "Cafeteria", "Padaria", "Confeitaria", "Food Truck", "Catering", "Bar", "Pizzaria", "Fast Food", "Outro"]],
         ["p", "Cada negócio tem sua própria base de ingredientes, receitas, estoque, cardápios e compras: nada se mistura entre negócios. No painel de cada negócio você pode escolher entre 12 cores de tema, que também colorem os destaques dos PDFs dele."],
+        ["info", "Traga o que está no dashboard principal", "Um negócio novo começa vazio. Ao criá-lo, oferecemos <strong>Trazer do meu espaço principal</strong>: escolha as receitas (ou todas) e elas chegam com os ingredientes e subreceitas, já calculadas com os preços do negócio; se quiser, também os ingredientes que nenhuma receita usa. O que já está lá com o mesmo nome não é duplicado e o dashboard principal não muda. O mesmo botão está no alto da página de cada negócio, e em Minhas receitas você pode migrar receita por receita com «Migrar para outro negócio»."],
         ["h3", "Alternar entre negócios"],
         ["p", "Em <strong>Negócios</strong> você vê um cartão por negócio com o botão «Acessar». Enquanto trabalha em qualquer módulo, o menu lateral também mostra seus negócios para você pular de um para outro sem voltar ao início."],
         ["h3", "O Painel"],

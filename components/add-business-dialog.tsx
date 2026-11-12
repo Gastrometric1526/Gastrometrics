@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { BusinessWelcomeDialog } from "@/components/business/business-welcome"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -39,6 +40,10 @@ const TOTAL_STEPS = 3
 
 export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBusinessDialogProps) {
   const [step, setStep] = useState(1)
+  // Bienvenida del negocio recién creado (docs/284): explica que empieza vacío y ofrece
+  // traer lo del dashboard principal. Vive fuera del Dialog del formulario para seguir
+  // abierta aunque quien usa este componente lo cierre al crear el negocio.
+  const [welcomeBusiness, setWelcomeBusiness] = useState<Business | null>(null)
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -180,11 +185,8 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
       setLogoPreview(null)
       setStep(1)
       onOpenChange(false)
-
-      toast({
-        title: t("addbiz_toast_created_title"),
-        description: t("addbiz_toast_created_desc").replace("{name}", newBusiness.name),
-      })
+      // En vez del aviso corto, la bienvenida con «Traer de mi espacio principal» (docs/284).
+      setWelcomeBusiness(newBusiness)
     } catch (error) {
       console.error("Error creating business:", error)
       toast({
@@ -284,6 +286,8 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
   }
 
   return (
+    <>
+    <BusinessWelcomeDialog business={welcomeBusiness} onClose={() => setWelcomeBusiness(null)} />
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
@@ -572,5 +576,6 @@ export function AddBusinessDialog({ open, onOpenChange, onBusinessAdded }: AddBu
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   )
 }

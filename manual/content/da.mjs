@@ -69,6 +69,7 @@ export default {
         ]],
         ["chips", ["Restaurant", "Café", "Bageri", "Konditori", "Food Truck", "Catering", "Bar", "Pizzeria", "Fastfood", "Andet"]],
         ["p", "Hver virksomhed har sine egne ingredienser, opskrifter, lager, menuer og indkøb: intet blandes mellem virksomheder. I hver virksomheds panel kan du vælge mellem 12 temafarver, som også farver accenterne i dens PDF'er."],
+        ["info", "Hent det, der er på dit hoveddashboard", "En ny virksomhed starter tom. Når du opretter den, tilbyder vi <strong>Hent fra mit hovedområde</strong>: vælg opskrifterne (eller alle), og de kommer med råvarer og underopskrifter, beregnet med virksomhedens priser; hvis du vil, også de råvarer, som ingen opskrift bruger. Det, der allerede findes med samme navn, dubleres ikke, og dit hoveddashboard ændres ikke. Samme knap findes øverst på hver virksomheds side, og i Mine opskrifter kan du flytte opskrift for opskrift med »Flyt til anden virksomhed«."],
         ["h3", "Skift mellem virksomheder"],
         ["p", "<strong>Virksomheder</strong> viser et kort for hver virksomhed med knappen »Åbn«. Mens du arbejder i et modul, viser sidemenuen også dine virksomheder, så du kan skifte uden at gå tilbage til start."],
         ["h3", "Dashboard"],

@@ -58,6 +58,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { updateBusiness, getBusinessById, refreshBusinesses } from "@/lib/storage/businesses"
 import { compressLogoToDataUrl } from "@/lib/utils/logo-compress"
 import { useActiveMembership } from "@/lib/plan-access"
+import { BringFromMainDialog } from "@/components/business/business-welcome"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts"
 import { ThemeSwitcher } from "@/components/theme-switcher"
@@ -80,7 +81,7 @@ import { formatCurrency, getCurrentCurrencyOption } from "@/lib/currency"
 import { useNavigationItems, BUSINESS_ROUTES } from "@/components/sidebar"
 import { moduleCardStyle } from "@/lib/module-card-style"
 import { getMinimumPlanForFeature } from "@/lib/plan-access"
-import { Lock } from "lucide-react"
+import { Download, Lock } from "lucide-react"
 import type { TranslationKey } from "@/lib/i18n/translations"
 
 const roundToNextHundred = (num: number) => {
@@ -127,6 +128,8 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
   const { t, language } = useLanguage()
   const { isLoggedIn, authChecked, user } = useAuth()
   const { active: previewActive, member: previewMember } = useActiveMembership()
+  // «Traer de mi espacio principal» (docs/284), solo para el dueño.
+  const [bringOpen, setBringOpen] = useState(false)
   const { setTheme } = useTheme()
 
   // Paleta del tema (--chart-1..7, ver app/globals.css) en vez de hex fijos — así el
@@ -661,6 +664,22 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                 </DropdownMenu>
               </div>
             </div>
+
+            {/* Traer lo del dashboard principal (docs/284): el negocio empieza vacío; el dueño
+                lleva sus recetas e ingredientes de una vez. El invitado no lo ve. */}
+            {!previewActive && business && (
+              <div className="mb-6 flex flex-col gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4 sm:flex-row sm:items-center" data-tour="business-bring">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-foreground">{t("bizbring_banner_title")}</p>
+                  <p className="text-sm text-muted-foreground">{t("bizbring_banner_desc")}</p>
+                </div>
+                <Button variant="outline" className="shrink-0 gap-1.5 bg-background" onClick={() => setBringOpen(true)}>
+                  <Download className="h-4 w-4" />
+                  {t("bizbring_button")}
+                </Button>
+              </div>
+            )}
+            <BringFromMainDialog business={bringOpen && business ? { id: business.id, name: business.name } : null} onClose={() => setBringOpen(false)} />
 
             {/* Stats Grid - Tarjetas de módulos optimizadas */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6" data-tour="business-modules">

@@ -24,7 +24,7 @@ interface MigrationResult {
  * Find similar ingredient in target database
  * Compares name, category, content, price, and supplier
  */
-function findSimilarIngredient(ingredient: Ingredient, targetIngredients: Ingredient[]): Ingredient | undefined {
+export function findSimilarIngredient(ingredient: Ingredient, targetIngredients: Ingredient[]): Ingredient | undefined {
   return targetIngredients.find((target) => {
     const nameMatch = target.name.toLowerCase().trim() === ingredient.name.toLowerCase().trim()
     const categoryMatch = target.category === ingredient.category

@@ -69,6 +69,7 @@ export default {
         ]],
         ["chips", ["Restaurant", "Café", "Boulangerie", "Pâtisserie", "Food Truck", "Traiteur", "Bar", "Pizzeria", "Restauration rapide", "Autre"]],
         ["p", "Chaque établissement a ses propres ingrédients, recettes, inventaire, menus et achats : rien ne se mélange entre établissements. Dans le panneau de chaque établissement, vous pouvez choisir parmi 12 couleurs de thème, qui colorent aussi les accents de ses PDF."],
+        ["info", "Importez ce qui est sur votre tableau de bord principal", "Un nouvel établissement commence vide. En le créant, nous vous proposons <strong>Importer depuis mon espace principal</strong> : choisissez les recettes (ou toutes) et elles arrivent avec leurs ingrédients et sous-recettes, déjà calculées aux prix de l'établissement ; si vous voulez, aussi les ingrédients qu'aucune recette n'utilise. Ce qui existe déjà sous le même nom n'est pas dupliqué et votre tableau de bord principal ne change pas. Le même bouton est en haut de la page de chaque établissement, et dans Mes recettes vous pouvez migrer recette par recette avec « Migrer vers un autre établissement »."],
         ["h3", "Passer d'un établissement à l'autre"],
         ["p", "<strong>Établissements</strong> affiche une carte par établissement avec le bouton « Ouvrir ». Pendant que vous travaillez dans un module, le menu latéral liste aussi vos établissements pour passer de l'un à l'autre sans revenir au début."],
         ["h3", "Le Tableau de bord"],

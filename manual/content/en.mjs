@@ -69,6 +69,7 @@ export default {
         ]],
         ["chips", ["Restaurant", "Coffee shop", "Bakery", "Pastry shop", "Food Truck", "Catering", "Bar", "Pizzeria", "Fast Food", "Other"]],
         ["p", "Each business has its own ingredients, recipes, inventory, menus and purchasing: nothing mixes between businesses. Inside each business panel you can choose from 12 theme colors, which also color the accents of its PDFs."],
+        ["info", "Bring what's on your main dashboard", "A new business starts empty. When you create it we offer <strong>Bring from my main space</strong>: choose the recipes (or all of them) and they arrive with their ingredients and sub-recipes, already costed with the business's prices; if you want, also the ingredients no recipe uses. Anything already there with the same name isn't duplicated and your main dashboard doesn't change. The same button is at the top of each business's page, and in My Recipes you can migrate recipe by recipe with “Migrate to another business”."],
         ["h3", "Switching between businesses"],
         ["p", "<strong>Businesses</strong> shows one card per business with an “Open” button. While you work in any module, the side menu also lists your businesses so you can jump between them without going back to the start."],
         ["h3", "The Dashboard"],

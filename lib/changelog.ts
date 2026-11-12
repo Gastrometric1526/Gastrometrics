@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Traer lo del dashboard principal a un negocio (docs/284).
+    version: "2026-11-12b",
+    tutorialHref: tourHref("negocios"),
+    content: {
+      es: { title: "Trae tu dashboard principal a un negocio nuevo", items: ["Al crear un negocio te contamos que empieza vacío —sus datos no se mezclan— y te ofrecemos traer lo que ya tienes en tu dashboard principal.", "«Traer de mi espacio principal» lleva de una vez las recetas que elijas (o todas) con sus ingredientes y subrecetas, ya costeadas con los precios del negocio, y si quieres también los ingredientes que ninguna receta usa. Lo que ya está con el mismo nombre no se duplica.", "Está también en la página de cada negocio, arriba. Tu dashboard principal no cambia."] },
+      en: { title: "Bring your main dashboard into a new business", items: ["When you create a business we tell you it starts empty —its data never mixes— and offer to bring what you already have on your main dashboard.", "“Bring from my main space” takes the recipes you choose (or all of them) at once, with their ingredients and sub-recipes, already costed with the business's prices, and, if you want, the ingredients no recipe uses. Anything already there with the same name isn't duplicated.", "It's also at the top of each business's page. Your main dashboard doesn't change."] },
+      da: { title: "Hent dit hoveddashboard til en ny virksomhed", items: ["Når du opretter en virksomhed, fortæller vi, at den starter tom —dens data blandes ikke— og tilbyder at hente det, du allerede har på dit hoveddashboard.", "»Hent fra mit hovedområde« henter de opskrifter, du vælger (eller alle), på én gang med råvarer og underopskrifter, beregnet med virksomhedens priser, og hvis du vil, også de råvarer, som ingen opskrift bruger. Det, der allerede findes med samme navn, dubleres ikke.", "Det findes også øverst på hver virksomheds side. Dit hoveddashboard ændres ikke."] },
+      fr: { title: "Importez votre tableau de bord principal dans un nouvel établissement", items: ["Quand vous créez un établissement, nous vous indiquons qu'il commence vide —ses données ne se mélangent pas— et vous proposons d'importer ce que vous avez déjà sur votre tableau de bord principal.", "« Importer depuis mon espace principal » importe d'un coup les recettes choisies (ou toutes) avec leurs ingrédients et sous-recettes, déjà calculées aux prix de l'établissement, et si vous voulez les ingrédients qu'aucune recette n'utilise. Ce qui existe déjà sous le même nom n'est pas dupliqué.", "C'est aussi en haut de la page de chaque établissement. Votre tableau de bord principal ne change pas."] },
+      pt: { title: "Traga seu dashboard principal para um negócio novo", items: ["Ao criar um negócio, avisamos que ele começa vazio —os dados não se misturam— e oferecemos trazer o que você já tem no dashboard principal.", "«Trazer do meu espaço principal» leva de uma vez as receitas que você escolher (ou todas) com os ingredientes e subreceitas, já calculadas com os preços do negócio, e, se quiser, também os ingredientes que nenhuma receita usa. O que já está lá com o mesmo nome não é duplicado.", "Também está no alto da página de cada negócio. O dashboard principal não muda."] },
+      zh: { title: "把主控制台带到新商户", items: ["创建商户时，我们会告诉你它从空白开始（数据不会混在一起），并提供把主控制台已有内容带过来的选项。", "「从我的主空间带入」可一次带入你选的配方（或全部），连同食材和子配方，并按商户的价格计算成本；也可以选择带入没有配方使用的食材。已有的同名内容不会重复。", "每个商户页面顶部也有这个按钮。主控制台保持不变。"] },
+    },
+  },
+  {
     // Pérdidas fuera de las ventas y faltantes en dinero (docs/283).
     version: "2026-11-12",
     tutorialHref: tourHref("inventario"),
