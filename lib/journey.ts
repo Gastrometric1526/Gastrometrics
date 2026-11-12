@@ -92,11 +92,14 @@ export const CHAPTERS: ChapterMeta[] = [
   { id: "estadisticas", kind: "page-tour", memberFeature: "stats_panorama", route: "/estadisticas", tourKey: "tour_completed_estadisticas", features: ["stats_panorama"], unlocked: atLeast("recipes", 1) },
   { id: "ventas", kind: "page-tour", memberFeature: "manual_sales", route: "/ventas", tourKey: "tour_completed_ventas", features: ["manual_sales", "stats_finance", "invoices"], unlocked: atLeast("recipes", 1) },
   { id: "recipes-three", kind: "goal", memberFeature: "recipes", route: "/ficha-tecnica", goal: (f) => ({ current: f.recipes, target: 3 }) },
-  { id: "inventario", kind: "page-tour", memberFeature: "inventory", route: "/inventario", tourKey: "tour_completed_inventario", features: ["inventory"], unlocked: all(atLeast("recipes", 3), atLeast("ingredients", 3)) },
+  // Orden según cómo se usa la app (docs/279): con las recetas se arma el menú → su MEP (qué
+  // producir) → Inventario (qué hay) → Órdenes (comprar lo que falta) → POS (vender, con el
+  // menú como carta). Antes Inventario iba antes de Menús.
   { id: "menus", kind: "page-tour", memberFeature: "menus", route: "/menus", tourKey: "tour_completed_menus", features: ["menus"], unlocked: atLeast("recipes", 3) },
   // El MEP sale de un menú: primero hay que tener uno.
   { id: "menus-one", kind: "goal", memberFeature: "menus", route: "/menus", features: ["menus"], goal: (f) => ({ current: f.menus, target: 1 }) },
   { id: "mep", kind: "page-tour", memberFeature: "menus", route: "/mep", tourKey: "tour_completed_mep", features: ["menus"], unlocked: all(atLeast("recipes", 3), atLeast("menus", 1)) },
+  { id: "inventario", kind: "page-tour", memberFeature: "inventory", route: "/inventario", tourKey: "tour_completed_inventario", features: ["inventory"], unlocked: all(atLeast("recipes", 3), atLeast("ingredients", 3)) },
   { id: "ordenes", kind: "page-tour", memberFeature: "purchase_orders_manual", route: "/menu-y-compras", tourKey: "tour_completed_ordenes-compra", features: ["purchase_orders_manual", "purchase_orders_auto"], unlocked: all(atLeast("recipes", 3), atLeast("ingredients", 3)) },
   { id: "salon", kind: "page-tour", memberFeature: "pos", route: "/salon", tourKey: "tour_completed_salon", features: ["pos"], unlocked: atLeast("recipes", 3) },
   { id: "equipo", kind: "page-tour", memberFeature: "owner", route: "/equipo", tourKey: "tour_completed_equipo", features: ["team"], unlocked: atLeast("recipes", 3) },

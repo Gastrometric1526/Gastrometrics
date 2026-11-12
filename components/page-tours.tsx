@@ -136,6 +136,9 @@ export function IngredientesTour({
     { id: "table", title: t("tour_ing_table_title"), description: t("tour_ing_table_desc"), selector: '[data-tour="ing-table"]' },
     // docs/219: tocar un ingrediente abre su panel (editar, merma, eliminar).
     { id: "row", title: t("tour_ing_row_title"), description: t("tour_ing_row_desc"), selector: "[data-ingredient-row]" },
+    // Merma (docs/272, docs/279): por categoría en todos los planes; antes el recorrido de la
+    // página no la mencionaba y solo la enseñaba el tutorial guiado.
+    { id: "merma", title: t("tour_ing_merma_title"), description: t("tour_ing_merma_desc"), selector: '[data-tour="ingredientes-merma-button"]' },
     // Último paso (docs/145): carga masiva primero, sin esconder la opción manual.
     { id: "bulk", title: t("tour_ing_bulk_title"), description: t("tour_ing_bulk_desc"), selector: '[data-tour="ing-import"]' },
   ]

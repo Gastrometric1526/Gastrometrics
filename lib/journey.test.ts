@@ -66,7 +66,8 @@ describe("tutorial guiado progresivo (docs/221)", () => {
     const upgraded = journeyPosition(s, facts({ ingredients: 5, recipes: 5, features: { ...lowPlan, merma: true } }))
     expect(upgraded.status === "active" && upgraded.chapter.id).toBe("merma")
     const afterMerma = journeyPosition(markDone(s, ["merma"]), facts({ ingredients: 5, recipes: 5, features: allFeatures }))
-    expect(afterMerma.status === "active" && afterMerma.chapter.id).toBe("inventario")
+    // docs/279: Menús va antes que Inventario (menú → MEP → inventario → órdenes → POS).
+    expect(afterMerma.status === "active" && afterMerma.chapter.id).toBe("menus")
   })
 
   it("Mis Recetas se activa al guardar la primera receta", () => {

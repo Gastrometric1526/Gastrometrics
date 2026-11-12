@@ -7,9 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLanguage } from "@/contexts/language-context"
-import { ArrowLeft, Lock, LayoutDashboard, Users, Inbox, LineChart, TrendingUp, Mail, RefreshCw, DollarSign, HeartPulse, LogOut } from "lucide-react"
+import { ArrowLeft, Lock, RefreshCw, LogOut, BookOpen, X, Wrench } from "lucide-react"
 import { StatsPanel, type AdminStats } from "@/components/admin/stats-panel"
 import { AdminLiveProvider, useAdminLive } from "@/components/admin/live"
 import { AccountsPanel } from "@/components/admin/accounts-panel"
@@ -38,7 +37,12 @@ import { HealthPanel } from "@/components/admin/health-panel"
 import { RetentionPanel } from "@/components/admin/retention-panel"
 import { FunnelPanel } from "@/components/admin/funnel-panel"
 import { AccountHistoryPanel } from "@/components/admin/account-history-panel"
+import { AdminSidebar, AdminMobileNav, type AdminBadges } from "@/components/admin/admin-nav"
+import { AdminSearch } from "@/components/admin/admin-search"
+import { GuidePanel, QuickTasks, SectionHeader } from "@/components/admin/guide-panel"
+import { AdminCard } from "@/components/admin/ui"
 import { OPEN_ACCOUNT_EVENT } from "@/lib/admin/open-account"
+import { ADMIN_SECTIONS, isAdminTab, taskSteps, type AdminTab, type AdminTask } from "@/lib/admin/nav"
 
 // Candado de acceso — pedido explícito: agregar algún control de acceso a /admin,
 // que hoy cualquiera con el link puede ver. SIN backend no existe un sistema de roles
@@ -57,10 +61,11 @@ import { OPEN_ACCOUNT_EVENT } from "@/lib/admin/open-account"
 const ADMIN_SESSION_STORAGE_KEY = "gm_admin_unlocked"
 
 // Panel administrativo — pedido explícito: "ahi debo poder manejar TODO" (ver docs/63).
-// Desde docs/191 se organiza en 6 secciones según lo que hace el dueño (Resumen con
-// pendientes del día, Cuentas, Buzón y reseñas, Crecimiento, Uso de la app,
-// Comunicación), con sub-pestañas y la pestaña guardada en la URL. La lógica de cada
-// panel vive en components/admin/*-panel.tsx; este archivo mantiene el candado y el layout.
+// Rediseño de docs/279: barra lateral con 3 grupos (Día a día, Cómo va el negocio,
+// Herramientas), buscador «¿Qué quieres hacer?», «Cómo se usa esta sección» en cada una,
+// Guía con las tareas paso a paso y accesos rápidos en el Resumen. El mapa vive en
+// lib/admin/nav.ts; la lógica de cada panel en components/admin/*-panel.tsx. Los id de
+// sección y sub-sección siguen siendo los de la URL (?tab=…&sub=…) de docs/191.
 
 // En vivo (docs/192): todo el panel cuelga del proveedor que dispara las actualizaciones.
 export default function AdminPage() {
@@ -87,14 +92,17 @@ function AdminPageInner() {
   const [legalPending, setLegalPending] = useState<number | null>(null)
   const [tab, setTab] = useState<AdminTab>("resumen")
   const [subTab, setSubTab] = useState<Record<string, string>>({})
+  // Tarea elegida en la Guía, el buscador o los accesos rápidos: sus pasos se muestran
+  // arriba de la sección a la que lleva, hasta cerrarlos (docs/279).
+  const [activeTask, setActiveTask] = useState<AdminTask | null>(null)
 
   // Pestaña en la URL (?tab=crecimiento&sub=referidos, docs/191): al recargar se vuelve
   // a la misma sección y se puede enlazar. Se lee de window (no useSearchParams) para no
   // exigir <Suspense> en esta página.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const fromUrl = params.get("tab") as AdminTab | null
-    if (fromUrl && ADMIN_TABS.includes(fromUrl)) {
+    const fromUrl = params.get("tab")
+    if (isAdminTab(fromUrl)) {
       setTab(fromUrl)
       const sub = params.get("sub")
       if (sub) setSubTab({ [fromUrl]: sub })
@@ -104,23 +112,33 @@ function AdminPageInner() {
   const goTo = (next: AdminTab, sub?: string) => {
     setTab(next)
     if (sub) setSubTab((prev) => ({ ...prev, [next]: sub }))
+    if (activeTask && activeTask.tab !== next) setActiveTask(null)
     const params = new URLSearchParams(window.location.search)
     params.set("tab", next)
     if (sub) params.set("sub", sub)
     else params.delete("sub")
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`)
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
   const setSub = (group: AdminTab, sub: string) => goTo(group, sub)
+
+  const runTask = (task: AdminTask) => {
+    if (task.prepare === "sortExpiring") {
+      // Abre Cuentas ya ordenada «por vencer» (docs/197).
+      try {
+        sessionStorage.setItem("gm_admin_accounts_sort", "expiring")
+      } catch {}
+    }
+    goTo(task.tab, task.sub)
+    setActiveTask(task)
+  }
 
   // Clic en una cuenta desde cualquier panel (docs/214): se va a Cuentas → Lista, donde
   // AccountsPanel abre su ficha.
   const goToRef = useRef(goTo)
   goToRef.current = goTo
   useEffect(() => {
-    const open = () => {
-      goToRef.current("cuentas", "lista")
-      window.scrollTo({ top: 0, behavior: "smooth" })
-    }
+    const open = () => goToRef.current("cuentas", "lista")
     window.addEventListener(OPEN_ACCOUNT_EVENT, open)
     return () => window.removeEventListener(OPEN_ACCOUNT_EVENT, open)
   }, [])
@@ -281,205 +299,168 @@ function AdminPageInner() {
     )
   }
 
+  const inboxCount = feedbackCounts.nuevo + supportWaiting
+  const badges: AdminBadges = { buzon: inboxCount, comunicacion: legalPending ?? 0 }
+  const subBadges: Record<string, number> = { "buzon.chat": supportWaiting, "buzon.mensajes": feedbackCounts.nuevo, "comunicacion.legal": legalPending ?? 0 }
+  const subItems = (group: AdminTab, contents: Record<string, React.ReactNode>) =>
+    (ADMIN_SECTIONS[group].subs ?? []).map((s) => ({
+      value: s.id,
+      label: subBadges[`${group}.${s.id}`] ? `${t(s.label)} (${subBadges[`${group}.${s.id}`]})` : t(s.label),
+      description: t(s.desc),
+      content: contents[s.id],
+    }))
+  const subTabs = (group: AdminTab, contents: Record<string, React.ReactNode>) => (
+    <AdminSubTabs value={subTab[group] || ADMIN_SECTIONS[group].subs![0].id} onChange={(v) => setSub(group, v)} items={subItems(group, contents)} pillsOnDesktop={false} />
+  )
+
+  const logout = async () => {
+    await fetch("/api/admin/verify", { method: "DELETE" })
+    sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY)
+    setUnlocked(false)
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-7xl space-y-8">
-        {/* Encabezado (docs/266): título y estado a la izquierda, acciones en una fila a la
-            derecha; en el celular todo baja en orden. */}
-        <div className="space-y-4">
-          <Link href="/dashboard">
-            <Button variant="ghost" size="sm" className="gap-2 -ml-3">
+      {/* Encabezado fijo (docs/279): volver y título a la izquierda, buscador al centro y
+          las acciones del panel a la derecha. En el celular el buscador baja a su fila. */}
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="mx-auto flex max-w-[1440px] items-center gap-3 px-4 py-3 lg:px-6">
+          <Link href="/dashboard" aria-label={t("common_back")}>
+            <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0">
               <ArrowLeft className="h-4 w-4" />
-              {t("common_back")}
             </Button>
           </Link>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-1">
-              <h1 className="text-3xl font-bold text-foreground">{t("admin_page_title")}</h1>
-              <p className="text-muted-foreground">{t("admin_page_subtitle")}</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Un solo botón: todas las tablas + el informe PDF, en un ZIP (docs/250, docs/266) */}
-              {/* Centro de notificaciones: mensajes, encuestas, cuentas nuevas… (docs/267) */}
-              <AdminNotificationsBell onNavigate={(tab, sub) => ADMIN_TABS.includes(tab as AdminTab) && goTo(tab as AdminTab, sub)} />
-              <FullExportButton />
-              <AdminPushToggle />
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-1.5"
-                onClick={async () => {
-                  await fetch("/api/admin/verify", { method: "DELETE" })
-                  sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY)
-                  setUnlocked(false)
-                }}
-              >
-                <LogOut className="h-4 w-4" />
-                {t("admin_logout")}
-              </Button>
-            </div>
-          </div>
-          {/* Estado de un vistazo: quién está en línea ahora y cuándo se actualizó el panel. */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <OnlineNow onOpenAccounts={() => goTo("cuentas")} />
+          <div className="min-w-0 lg:w-56 lg:shrink-0">
+            <h1 className="truncate text-base font-semibold text-foreground">{t("admin_page_title")}</h1>
             <LiveIndicator lastUpdatedAt={lastUpdatedAt} onRefresh={refreshNow} />
           </div>
+          <AdminSearch onGo={goTo} onTask={runTask} className="hidden flex-1 md:block md:max-w-xl" />
+          <div className="ml-auto flex shrink-0 items-center gap-1.5">
+            <OnlineNow onOpenAccounts={() => goTo("cuentas")} />
+            {/* Centro de notificaciones: mensajes, encuestas, cuentas nuevas… (docs/267) */}
+            <AdminNotificationsBell onNavigate={(next, sub) => isAdminTab(next) && goTo(next, sub)} />
+            <Button variant="ghost" size="sm" className="gap-1.5" onClick={logout} aria-label={t("admin_logout")}>
+              <LogOut className="h-4 w-4" />
+              <span className="hidden xl:inline">{t("admin_logout")}</span>
+            </Button>
+          </div>
         </div>
+        <div className="px-4 pb-3 md:hidden">
+          <AdminSearch onGo={goTo} onTask={runTask} />
+        </div>
+      </header>
 
-        <Tabs value={tab} onValueChange={(v) => goTo(v as AdminTab)}>
-          <TabsList className="flex h-auto flex-wrap justify-start">
-            <TabsTrigger value="resumen" className="gap-1.5">
-              <LayoutDashboard className="h-4 w-4" />
-              {t("admin_tab_resumen")}
-            </TabsTrigger>
-            <TabsTrigger value="cuentas" className="gap-1.5">
-              <Users className="h-4 w-4" />
-              {t("admin_tab_accounts")}
-            </TabsTrigger>
-            <TabsTrigger value="ingresos" className="gap-1.5">
-              <DollarSign className="h-4 w-4" />
-              {t("admin_tab_revenue")}
-            </TabsTrigger>
-            <TabsTrigger value="buzon" className="gap-1.5">
-              <Inbox className="h-4 w-4" />
-              {t("admin_tab_inbox_group")}
-              {feedbackCounts.nuevo + supportWaiting > 0 && (
-                <span className="ml-1 rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground tabular-nums">
-                  {feedbackCounts.nuevo + supportWaiting}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="crecimiento" className="gap-1.5">
-              <TrendingUp className="h-4 w-4" />
-              {t("admin_tab_growth")}
-            </TabsTrigger>
-            <TabsTrigger value="uso" className="gap-1.5">
-              <LineChart className="h-4 w-4" />
-              {t("admin_tab_usage")}
-            </TabsTrigger>
-            <TabsTrigger value="comunicacion" className="gap-1.5">
-              <Mail className="h-4 w-4" />
-              {t("admin_tab_comms")}
-            </TabsTrigger>
-            <TabsTrigger value="sistema" className="gap-1.5">
-              <HeartPulse className="h-4 w-4" />
-              {t("admin_tab_system")}
-            </TabsTrigger>
-          </TabsList>
+      <div className="mx-auto flex max-w-[1440px] gap-8 px-4 lg:px-6">
+        <aside className="hidden w-60 shrink-0 lg:block">
+          <div className="sticky top-[4.5rem] max-h-[calc(100vh-5rem)] overflow-y-auto py-6 pr-1">
+            <AdminSidebar tab={tab} sub={subTab[tab]} badges={badges} subBadges={subBadges} onGo={goTo} />
+          </div>
+        </aside>
 
-          <TabsContent value="resumen" className="mt-6 space-y-6">
-            <TabIntro text={t("admin_tabdesc_resumen")} />
-            <OverviewPanel
-              feedbackCounts={feedbackCounts}
-              expiringSoon={stats?.expiringSoon.length ?? 0}
-              legalPending={legalPending ?? 0}
-              goTo={(next, sub) => goTo(next as AdminTab, sub)}
-            />
-            <StatsPanel feedbackCounts={feedbackCounts} stats={stats} />
-          </TabsContent>
+        <main className="min-w-0 flex-1 space-y-6 py-6 pb-16">
+          <div className="lg:hidden">
+            <AdminMobileNav tab={tab} badges={badges} onGo={(next) => goTo(next)} />
+          </div>
 
-          <TabsContent value="ingresos" className="mt-6 space-y-6">
-            <TabIntro text={t("admin_tabdesc_revenue")} />
-            <RevenuePanel estimatedMrrUsdCents={stats?.estimatedMrrUsdCents} />
-          </TabsContent>
+          <SectionHeader tab={tab} />
 
-          <TabsContent value="cuentas" className="mt-6 space-y-6">
-            <TabIntro text={t("admin_tabdesc_accounts")} />
-            <AdminSubTabs
-              value={subTab.cuentas || "lista"}
-              onChange={(v) => setSub("cuentas", v)}
-              items={[
-                { value: "lista", label: t("admin_sub_accounts_list"), content: <AccountsPanel /> },
-                { value: "historial", label: t("admin_sub_accounts_history"), content: <AccountHistoryPanel /> },
-              ]}
-            />
-          </TabsContent>
+          {activeTask && activeTask.tab === tab && <TaskBanner task={activeTask} onClose={() => setActiveTask(null)} />}
 
-          <TabsContent value="buzon" className="mt-6 space-y-6">
-            <TabIntro text={t("admin_tabdesc_inbox")} />
-            <AdminSubTabs
-              value={subTab.buzon || "chat"}
-              onChange={(v) => setSub("buzon", v)}
-              items={[
-                { value: "chat", label: `${t("admin_tab_support_chat")}${supportWaiting ? ` (${supportWaiting})` : ""}`, content: <SupportInbox onWaitingChange={setSupportWaiting} /> },
-                { value: "mensajes", label: `${t("admin_tab_feedback")} (${feedbackCounts.total})`, content: <FeedbackPanel onCountsChange={setFeedbackCounts} /> },
-                { value: "encuestas", label: t("admin_tab_surveys"), content: <SurveyPanel /> },
-                { value: "resenas", label: t("admin_tab_reviews"), content: <ReviewsPanel /> },
-              ]}
-            />
-          </TabsContent>
+          {tab === "resumen" && (
+            <div className="space-y-6">
+              <OverviewPanel
+                feedbackCounts={feedbackCounts}
+                expiringSoon={stats?.expiringSoon?.length ?? 0}
+                legalPending={legalPending ?? 0}
+                goTo={(next, sub) => isAdminTab(next) && goTo(next, sub)}
+              />
+              <QuickTasks onTask={runTask} onOpenGuide={() => goTo("guia")} />
+              <StatsPanel feedbackCounts={feedbackCounts} stats={stats} />
+            </div>
+          )}
 
-          <TabsContent value="crecimiento" className="mt-6 space-y-6">
-            <TabIntro text={t("admin_tabdesc_growth")} />
-            <AdminSubTabs
-              value={subTab.crecimiento || "retencion"}
-              onChange={(v) => setSub("crecimiento", v)}
-              items={[
-                { value: "retencion", label: t("admin_sub_retention"), content: <RetentionPanel /> },
-                { value: "activacion", label: t("admin_tab_activation"), content: <ActivationPanel /> },
-                { value: "etapas", label: t("admin_sub_account_funnel"), content: <FunnelPanel /> },
-                { value: "referidos", label: t("admin_sub_referrals"), content: <ReferralsPanel /> },
-                { value: "usuarios", label: t("admin_sub_top_users"), content: <TopUsersPanel /> },
-                { value: "inactivos", label: t("admin_sub_inactive"), content: <BusinessHealthPanel /> },
-              ]}
-            />
-          </TabsContent>
+          {tab === "buzon" &&
+            subTabs("buzon", {
+              chat: <SupportInbox onWaitingChange={setSupportWaiting} />,
+              mensajes: <FeedbackPanel onCountsChange={setFeedbackCounts} />,
+              encuestas: <SurveyPanel />,
+              resenas: <ReviewsPanel />,
+            })}
 
-          <TabsContent value="uso" className="mt-6 space-y-6">
-            <TabIntro text={t("admin_tabdesc_usage")} />
-            <AdminSubTabs
-              value={subTab.uso || "embudo"}
-              onChange={(v) => setSub("uso", v)}
-              items={[
-                { value: "embudo", label: t("admin_sub_funnel"), content: <AnalyticsPanel /> },
-                { value: "correos", label: t("admin_sub_email_clicks"), content: <EmailClicksPanel /> },
-                {
-                  value: "importaciones",
-                  label: t("admin_sub_imports"),
-                  // Importaciones masivas y descargas del manual por cuenta (docs/208), y el uso del OCR.
-                  content: (
-                    <>
-                      <UsageEventsPanel />
-                      <OcrUsagePanel />
-                    </>
-                  ),
-                },
-              ]}
-            />
-          </TabsContent>
+          {tab === "cuentas" && subTabs("cuentas", { lista: <AccountsPanel />, historial: <AccountHistoryPanel /> })}
 
-          <TabsContent value="comunicacion" className="mt-6 space-y-6">
-            <TabIntro text={t("admin_tabdesc_comms")} />
-            <AdminSubTabs
-              value={subTab.comunicacion || "novedades"}
-              onChange={(v) => setSub("comunicacion", v)}
-              items={[
-                { value: "novedades", label: t("admin_tab_product_updates"), content: <ProductUpdatesPanel /> },
-                {
-                  value: "legal",
-                  label: legalPending ? `${t("admin_sub_legal")} (${legalPending})` : t("admin_sub_legal"),
-                  content: <LegalUpdatePanel />,
-                },
-              ]}
-            />
-          </TabsContent>
+          {tab === "ingresos" && <RevenuePanel estimatedMrrUsdCents={stats?.estimatedMrrUsdCents} />}
 
-          <TabsContent value="sistema" className="mt-6 space-y-6">
-            <TabIntro text={t("admin_tabdesc_system")} />
-            <HealthPanel />
-          </TabsContent>
-        </Tabs>
+          {tab === "crecimiento" &&
+            subTabs("crecimiento", {
+              etapas: <FunnelPanel />,
+              retencion: <RetentionPanel />,
+              activacion: <ActivationPanel />,
+              referidos: <ReferralsPanel />,
+              usuarios: <TopUsersPanel />,
+              inactivos: <BusinessHealthPanel />,
+            })}
+
+          {tab === "uso" &&
+            subTabs("uso", {
+              embudo: <AnalyticsPanel />,
+              correos: <EmailClicksPanel />,
+              // Importaciones masivas y descargas del manual por cuenta (docs/208), y el uso del OCR.
+              importaciones: (
+                <>
+                  <UsageEventsPanel />
+                  <OcrUsagePanel />
+                </>
+              ),
+            })}
+
+          {tab === "comunicacion" && subTabs("comunicacion", { novedades: <ProductUpdatesPanel />, legal: <LegalUpdatePanel /> })}
+
+          {tab === "sistema" && (
+            <div className="space-y-6">
+              <HealthPanel />
+              {/* Herramientas del panel (docs/279): antes solo estaban en el encabezado. */}
+              <AdminCard title={t("admin_tools_title")} icon={Wrench} description={t("admin_tools_desc")}>
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Un solo botón: todas las tablas + el informe PDF, en un ZIP (docs/250, docs/266) */}
+                  <FullExportButton />
+                  <AdminPushToggle />
+                </div>
+              </AdminCard>
+            </div>
+          )}
+
+          {tab === "guia" && <GuidePanel onGo={goTo} onTask={runTask} />}
+        </main>
       </div>
     </div>
   )
 }
 
-const ADMIN_TABS = ["resumen", "cuentas", "ingresos", "buzon", "crecimiento", "uso", "comunicacion", "sistema"] as const
-type AdminTab = (typeof ADMIN_TABS)[number]
-
-/** Una línea que dice para qué sirve la sección (docs/191). */
-function TabIntro({ text }: { text: string }) {
-  return <p className="text-sm text-muted-foreground -mt-2">{text}</p>
+/** Los pasos de la tarea elegida, arriba de la sección a la que llevó (docs/279). */
+function TaskBanner({ task, onClose }: { task: AdminTask; onClose: () => void }) {
+  const { t } = useLanguage()
+  return (
+    <div className="rounded-lg border border-primary/40 bg-primary/5 p-4" role="note">
+      <div className="flex items-start gap-3">
+        <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <p className="text-sm font-semibold text-foreground">{t(task.title)}</p>
+          <ol className="space-y-1 text-sm text-muted-foreground">
+            {taskSteps(task, t).map((s, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="w-4 shrink-0 text-right font-semibold text-primary tabular-nums">{i + 1}.</span>
+                <span>{s}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onClose} aria-label={t("common_close")}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  )
 }
 
 /** «En vivo · actualizado …» con el botón para actualizar ya (docs/192). */
@@ -488,16 +469,13 @@ function LiveIndicator({ lastUpdatedAt, onRefresh }: { lastUpdatedAt: number; on
   const d = new Date(lastUpdatedAt)
   const time = [d.getHours(), d.getMinutes(), d.getSeconds()].map((n) => String(n).padStart(2, "0")).join(":")
   return (
-    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-      <span className="relative flex h-2 w-2">
+    <button type="button" onClick={onRefresh} title={t("admin_live_refresh")} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+      <span className="relative flex h-2 w-2 shrink-0">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
         <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
       </span>
-      <span>{t("admin_live_updated").replace("{time}", time)}</span>
-      <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={onRefresh}>
-        <RefreshCw className="h-3.5 w-3.5" />
-        {t("admin_live_refresh")}
-      </Button>
-    </div>
+      <span className="truncate">{t("admin_live_updated").replace("{time}", time)}</span>
+      <RefreshCw className="h-3 w-3 shrink-0" />
+    </button>
   )
 }
