@@ -1166,8 +1166,8 @@ export function AccountsPanel() {
                 const online = !!presence?.online
                 const inactive = !online && !!presence?.lastSeenAt && Date.now() - new Date(presence.lastSeenAt as string).getTime() > INACTIVE_THRESHOLD_MS
                 const extras = [
-                  a.businessCount ? `${a.businessCount} ${t("admin_accounts_table_businesses").toLowerCase()}` : null,
-                  a.teamMemberCount ? `${a.teamMemberCount} ${t("admin_accounts_table_team").toLowerCase()}` : null,
+                  a.businessCount ? `${t("admin_accounts_table_businesses")}: ${a.businessCount}` : null,
+                  a.teamMemberCount ? `${t("admin_accounts_table_team")}: ${a.teamMemberCount}` : null,
                   a.referralSent || a.referralCreated
                     ? t("admin_accounts_invites_cell").replace("{sent}", String(a.referralSent)).replace("{created}", String(a.referralCreated)).replace("{active}", String(a.referralActive))
                     : null,
