@@ -1,13 +1,15 @@
 /**
- * Mapa de /admin (docs/279): grupos, secciones, sub-secciones y la guía de tareas.
- * Una sola fuente para la barra lateral, el buscador «¿Qué quieres hacer?», la Guía y el
- * «Cómo se usa» de cada sección. Los id de sección y sub-sección son los de la URL
- * (`?tab=…&sub=…`), los mismos que usan los avisos push y NOTICE_TARGET: no cambiarlos.
+ * Mapa de /admin (docs/279, rediseñado en docs/281): un Inicio con 6 tarjetas grandes
+ * (áreas) y, dentro de cada área, sus bloques uno debajo del otro —sin barra lateral ni
+ * submenús—. Una sola fuente para el Inicio, el buscador «¿Qué quieres hacer?», la Guía y
+ * el «Cómo se usa». Los id de área y bloque son los de la URL (`?tab=…&sub=…`), los mismos
+ * que usan los avisos push y NOTICE_TARGET: no cambiarlos. `?tab=uso` (antes una sección
+ * aparte) abre «Crecimiento y uso».
  */
 
 import type { TranslationKey } from "@/lib/i18n/translations"
 
-export const ADMIN_TABS = ["resumen", "buzon", "cuentas", "ingresos", "crecimiento", "uso", "comunicacion", "sistema", "guia"] as const
+export const ADMIN_TABS = ["resumen", "buzon", "cuentas", "ingresos", "crecimiento", "comunicacion", "sistema", "guia"] as const
 export type AdminTab = (typeof ADMIN_TABS)[number]
 
 export type AdminSub = { id: string; label: TranslationKey; desc: TranslationKey }
@@ -15,56 +17,56 @@ export type AdminSection = {
   id: AdminTab
   label: TranslationKey
   desc: TranslationKey
-  /** Pasos de «Cómo se usa esta sección», separados por salto de línea. */
-  howTo?: TranslationKey
+  /** Una línea corta para la tarjeta del Inicio. */
+  short?: TranslationKey
+  /** Pasos de «Cómo se usa», separados por salto de línea (uno o varios textos). */
+  howTo?: TranslationKey[]
+  /** Bloques del área, en el orden en que se muestran. */
   subs?: AdminSub[]
 }
 
 export const ADMIN_SECTIONS: Record<AdminTab, AdminSection> = {
-  resumen: { id: "resumen", label: "admin_tab_resumen", desc: "admin_tabdesc_resumen", howTo: "admin_howto_resumen" },
+  resumen: { id: "resumen", label: "admin_home_title", desc: "admin_tabdesc_resumen", howTo: ["admin_howto_resumen"] },
   buzon: {
     id: "buzon",
-    label: "admin_tab_inbox_group",
+    label: "admin_area_buzon",
     desc: "admin_tabdesc_inbox",
-    howTo: "admin_howto_buzon",
+    short: "admin_area_buzon_short",
+    howTo: ["admin_howto_buzon"],
     subs: [
       { id: "chat", label: "admin_tab_support_chat", desc: "admin_subdesc_chat" },
-      { id: "mensajes", label: "admin_tab_feedback", desc: "admin_subdesc_mensajes" },
+      { id: "mensajes", label: "admin_block_mensajes", desc: "admin_subdesc_mensajes" },
       { id: "encuestas", label: "admin_tab_surveys", desc: "admin_subdesc_encuestas" },
       { id: "resenas", label: "admin_tab_reviews", desc: "admin_subdesc_resenas" },
     ],
   },
   cuentas: {
     id: "cuentas",
-    label: "admin_tab_accounts",
+    label: "admin_area_cuentas",
     desc: "admin_tabdesc_accounts",
-    howTo: "admin_howto_cuentas",
+    short: "admin_area_cuentas_short",
+    howTo: ["admin_howto_cuentas"],
     subs: [
-      { id: "lista", label: "admin_sub_accounts_list", desc: "admin_subdesc_lista" },
-      { id: "historial", label: "admin_sub_accounts_history", desc: "admin_subdesc_historial" },
+      { id: "lista", label: "admin_block_lista", desc: "admin_subdesc_lista" },
+      { id: "cifras", label: "admin_block_cifras", desc: "admin_subdesc_cifras" },
+      { id: "historial", label: "admin_block_historial", desc: "admin_subdesc_historial" },
     ],
   },
-  ingresos: { id: "ingresos", label: "admin_tab_revenue", desc: "admin_tabdesc_revenue", howTo: "admin_howto_ingresos" },
+  ingresos: { id: "ingresos", label: "admin_area_ingresos", desc: "admin_tabdesc_revenue", short: "admin_area_ingresos_short", howTo: ["admin_howto_ingresos"] },
   crecimiento: {
     id: "crecimiento",
-    label: "admin_tab_growth",
-    desc: "admin_tabdesc_growth",
-    howTo: "admin_howto_crecimiento",
+    label: "admin_area_crecimiento",
+    desc: "admin_area_crecimiento_desc",
+    short: "admin_area_crecimiento_short",
+    howTo: ["admin_howto_crecimiento", "admin_howto_uso"],
     subs: [
+      { id: "numeros", label: "admin_block_numeros", desc: "admin_subdesc_numeros" },
       { id: "etapas", label: "admin_sub_account_funnel", desc: "admin_subdesc_etapas" },
       { id: "retencion", label: "admin_sub_retention", desc: "admin_subdesc_retencion" },
       { id: "activacion", label: "admin_tab_activation", desc: "admin_subdesc_activacion" },
-      { id: "referidos", label: "admin_sub_referrals", desc: "admin_subdesc_referidos" },
       { id: "usuarios", label: "admin_sub_top_users", desc: "admin_subdesc_usuarios" },
       { id: "inactivos", label: "admin_sub_inactive", desc: "admin_subdesc_inactivos" },
-    ],
-  },
-  uso: {
-    id: "uso",
-    label: "admin_tab_usage",
-    desc: "admin_tabdesc_usage",
-    howTo: "admin_howto_uso",
-    subs: [
+      { id: "referidos", label: "admin_sub_referrals", desc: "admin_subdesc_referidos" },
       { id: "embudo", label: "admin_sub_funnel", desc: "admin_subdesc_embudo" },
       { id: "correos", label: "admin_sub_email_clicks", desc: "admin_subdesc_correos" },
       { id: "importaciones", label: "admin_sub_imports", desc: "admin_subdesc_importaciones" },
@@ -72,28 +74,30 @@ export const ADMIN_SECTIONS: Record<AdminTab, AdminSection> = {
   },
   comunicacion: {
     id: "comunicacion",
-    label: "admin_tab_comms",
+    label: "admin_area_comunicacion",
     desc: "admin_tabdesc_comms",
-    howTo: "admin_howto_comunicacion",
+    short: "admin_area_comunicacion_short",
+    howTo: ["admin_howto_comunicacion"],
     subs: [
       { id: "novedades", label: "admin_tab_product_updates", desc: "admin_subdesc_novedades" },
       { id: "legal", label: "admin_sub_legal", desc: "admin_subdesc_legal" },
     ],
   },
-  sistema: { id: "sistema", label: "admin_tab_system", desc: "admin_tabdesc_system", howTo: "admin_howto_sistema" },
+  sistema: { id: "sistema", label: "admin_tab_system", desc: "admin_tabdesc_system", short: "admin_area_sistema_short", howTo: ["admin_howto_sistema"] },
   guia: { id: "guia", label: "admin_tab_guide", desc: "admin_tabdesc_guide" },
 }
 
-/** Grupos de la barra lateral, en el orden en que se usan: lo de cada día primero. */
-export const ADMIN_GROUPS: { id: string; label: TranslationKey; sections: AdminTab[] }[] = [
-  { id: "daily", label: "admin_nav_group_daily", sections: ["resumen", "buzon", "cuentas"] },
-  { id: "business", label: "admin_nav_group_business", sections: ["ingresos", "crecimiento", "uso"] },
-  { id: "tools", label: "admin_nav_group_tools", sections: ["comunicacion", "sistema", "guia"] },
-]
+/** Las 6 tarjetas del Inicio, en este orden: lo de cada día primero. */
+export const HOME_AREAS: AdminTab[] = ["buzon", "cuentas", "ingresos", "crecimiento", "comunicacion", "sistema"]
 
-/** Sub-sección por defecto de cada sección (la primera de su lista). */
-export function defaultSub(tab: AdminTab): string | undefined {
-  return ADMIN_SECTIONS[tab].subs?.[0]?.id
+/** Direcciones viejas que siguen funcionando (`?tab=uso` → Crecimiento y uso). */
+const TAB_ALIASES: Record<string, AdminTab> = { uso: "crecimiento" }
+
+/** Lee el área de la dirección (con los alias viejos); null si no es un área. */
+export function resolveAdminTab(value: string | null | undefined): AdminTab | null {
+  if (!value) return null
+  if ((ADMIN_TABS as readonly string[]).includes(value)) return value as AdminTab
+  return TAB_ALIASES[value] ?? null
 }
 
 export function isAdminTab(value: string | null | undefined): value is AdminTab {
@@ -148,29 +152,29 @@ export const QUICK_TASKS = ["chat", "plan", "access", "restore", "expiring", "ne
  * para que en cada idioma digan exactamente lo que dice la barra lateral.
  */
 export const COMMON_VARS: Record<string, TranslationKey> = {
-  overview: "admin_tab_resumen",
+  overview: "admin_home_title",
   today: "admin_todo_title",
-  inbox: "admin_tab_inbox_group",
+  inbox: "admin_area_buzon",
   chat: "admin_tab_support_chat",
-  feedback: "admin_tab_feedback",
+  feedback: "admin_block_mensajes",
   surveys: "admin_tab_surveys",
   reviews: "admin_tab_reviews",
-  accounts: "admin_tab_accounts",
-  list: "admin_sub_accounts_list",
-  history: "admin_sub_accounts_history",
-  revenue: "admin_tab_revenue",
-  growth: "admin_tab_growth",
+  accounts: "admin_area_cuentas",
+  list: "admin_block_lista",
+  history: "admin_block_historial",
+  revenue: "admin_area_ingresos",
+  growth: "admin_area_crecimiento",
   stages: "admin_sub_account_funnel",
   retention: "admin_sub_retention",
   activation: "admin_tab_activation",
   referrals: "admin_sub_referrals",
   topusers: "admin_sub_top_users",
   inactive: "admin_sub_inactive",
-  usage: "admin_tab_usage",
+  usage: "admin_area_crecimiento",
   funnel: "admin_sub_funnel",
   emails: "admin_sub_email_clicks",
   imports: "admin_sub_imports",
-  comms: "admin_tab_comms",
+  comms: "admin_area_comunicacion",
   news: "admin_tab_product_updates",
   legal: "admin_sub_legal",
   system: "admin_tab_system",
@@ -187,7 +191,9 @@ export function fillVars(text: string, vars: Record<string, TranslationKey> | un
 /** Pasos de «Cómo se usa» de una sección, ya con los nombres reales. */
 export function howToSteps(section: AdminSection, t: (key: TranslationKey) => string): string[] {
   if (!section.howTo) return []
-  return fillVars(t(section.howTo), undefined, t)
+  return section.howTo
+    .map((key) => fillVars(t(key), undefined, t))
+    .join("\n")
     .split("\n")
     .map((s) => s.trim())
     .filter(Boolean)

@@ -29,20 +29,20 @@ import { ActivationPanel } from "@/components/admin/activation-panel"
 import { ReferralsPanel } from "@/components/admin/referrals-panel"
 import { ProductUpdatesPanel } from "@/components/admin/product-updates-panel"
 import { LegalUpdatePanel } from "@/components/admin/legal-update-panel"
-import { AdminSubTabs } from "@/components/admin/sub-tabs"
 import { AdminPushToggle } from "@/components/admin/push-toggle"
-import { OverviewPanel } from "@/components/admin/overview-panel"
+import { OverviewNumbers } from "@/components/admin/overview-panel"
 import { RevenuePanel } from "@/components/admin/revenue-panel"
 import { HealthPanel } from "@/components/admin/health-panel"
 import { RetentionPanel } from "@/components/admin/retention-panel"
 import { FunnelPanel } from "@/components/admin/funnel-panel"
 import { AccountHistoryPanel } from "@/components/admin/account-history-panel"
-import { AdminSidebar, AdminMobileNav, type AdminBadges } from "@/components/admin/admin-nav"
 import { AdminSearch } from "@/components/admin/admin-search"
-import { GuidePanel, QuickTasks, SectionHeader } from "@/components/admin/guide-panel"
+import { GuidePanel } from "@/components/admin/guide-panel"
+import { AdminHome } from "@/components/admin/admin-home"
+import { AreaPage, blockId } from "@/components/admin/area-page"
 import { AdminCard } from "@/components/admin/ui"
 import { OPEN_ACCOUNT_EVENT } from "@/lib/admin/open-account"
-import { ADMIN_SECTIONS, isAdminTab, taskSteps, type AdminTab, type AdminTask } from "@/lib/admin/nav"
+import { resolveAdminTab, taskSteps, type AdminTab, type AdminTask } from "@/lib/admin/nav"
 
 // Candado de acceso — pedido explícito: agregar algún control de acceso a /admin,
 // que hoy cualquiera con el link puede ver. SIN backend no existe un sistema de roles
@@ -61,11 +61,12 @@ import { ADMIN_SECTIONS, isAdminTab, taskSteps, type AdminTab, type AdminTask } 
 const ADMIN_SESSION_STORAGE_KEY = "gm_admin_unlocked"
 
 // Panel administrativo — pedido explícito: "ahi debo poder manejar TODO" (ver docs/63).
-// Rediseño de docs/279: barra lateral con 3 grupos (Día a día, Cómo va el negocio,
-// Herramientas), buscador «¿Qué quieres hacer?», «Cómo se usa esta sección» en cada una,
-// Guía con las tareas paso a paso y accesos rápidos en el Resumen. El mapa vive en
-// lib/admin/nav.ts; la lógica de cada panel en components/admin/*-panel.tsx. Los id de
-// sección y sub-sección siguen siendo los de la URL (?tab=…&sub=…) de docs/191.
+// Diseño de docs/281 (pedido del dueño): un Inicio con «Para atender hoy» y 6 tarjetas
+// grandes; cada tarjeta abre su área a pantalla completa con «← Inicio» y sus bloques uno
+// debajo del otro, sin barra lateral ni submenús. Buscador «¿Qué quieres hacer?» y Guía con
+// las tareas paso a paso (docs/279). El mapa vive en lib/admin/nav.ts; la lógica de cada
+// panel en components/admin/*-panel.tsx. Los id siguen siendo los de la URL
+// (?tab=…&sub=…, docs/191): `sub` ahora lleva al bloque dentro del área.
 
 // En vivo (docs/192): todo el panel cuelga del proveedor que dispara las actualizaciones.
 export default function AdminPage() {
@@ -91,7 +92,8 @@ function AdminPageInner() {
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [legalPending, setLegalPending] = useState<number | null>(null)
   const [tab, setTab] = useState<AdminTab>("resumen")
-  const [subTab, setSubTab] = useState<Record<string, string>>({})
+  // Bloque al que hay que bajar dentro del área (de ?sub=, una tarea o un aviso).
+  const [scrollTo, setScrollTo] = useState<{ tab: AdminTab; sub: string; n: number } | null>(null)
   // Tarea elegida en la Guía, el buscador o los accesos rápidos: sus pasos se muestran
   // arriba de la sección a la que lleva, hasta cerrarlos (docs/279).
   const [activeTask, setActiveTask] = useState<AdminTask | null>(null)
@@ -101,26 +103,39 @@ function AdminPageInner() {
   // exigir <Suspense> en esta página.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const fromUrl = params.get("tab")
-    if (isAdminTab(fromUrl)) {
+    const fromUrl = resolveAdminTab(params.get("tab"))
+    if (fromUrl) {
       setTab(fromUrl)
       const sub = params.get("sub")
-      if (sub) setSubTab({ [fromUrl]: sub })
+      if (sub) setScrollTo({ tab: fromUrl, sub, n: Date.now() })
     }
   }, [])
 
+  // Baja al bloque cuando ya está en pantalla (los paneles cargan después de abrir el área).
+  useEffect(() => {
+    if (!scrollTo || scrollTo.tab !== tab) return
+    let tries = 0
+    const timer = window.setInterval(() => {
+      const el = document.getElementById(blockId(scrollTo.tab, scrollTo.sub))
+      if (el || ++tries > 20) {
+        window.clearInterval(timer)
+        el?.scrollIntoView({ behavior: "smooth", block: "start" })
+      }
+    }, 100)
+    return () => window.clearInterval(timer)
+  }, [scrollTo, tab])
+
   const goTo = (next: AdminTab, sub?: string) => {
     setTab(next)
-    if (sub) setSubTab((prev) => ({ ...prev, [next]: sub }))
+    setScrollTo(sub ? { tab: next, sub, n: Date.now() } : null)
     if (activeTask && activeTask.tab !== next) setActiveTask(null)
     const params = new URLSearchParams(window.location.search)
     params.set("tab", next)
     if (sub) params.set("sub", sub)
     else params.delete("sub")
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`)
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    if (!sub) window.scrollTo({ top: 0, behavior: "smooth" })
   }
-  const setSub = (group: AdminTab, sub: string) => goTo(group, sub)
 
   const runTask = (task: AdminTask) => {
     if (task.prepare === "sortExpiring") {
@@ -300,18 +315,12 @@ function AdminPageInner() {
   }
 
   const inboxCount = feedbackCounts.nuevo + supportWaiting
-  const badges: AdminBadges = { buzon: inboxCount, comunicacion: legalPending ?? 0 }
-  const subBadges: Record<string, number> = { "buzon.chat": supportWaiting, "buzon.mensajes": feedbackCounts.nuevo, "comunicacion.legal": legalPending ?? 0 }
-  const subItems = (group: AdminTab, contents: Record<string, React.ReactNode>) =>
-    (ADMIN_SECTIONS[group].subs ?? []).map((s) => ({
-      value: s.id,
-      label: subBadges[`${group}.${s.id}`] ? `${t(s.label)} (${subBadges[`${group}.${s.id}`]})` : t(s.label),
-      description: t(s.desc),
-      content: contents[s.id],
-    }))
-  const subTabs = (group: AdminTab, contents: Record<string, React.ReactNode>) => (
-    <AdminSubTabs value={subTab[group] || ADMIN_SECTIONS[group].subs![0].id} onChange={(v) => setSub(group, v)} items={subItems(group, contents)} pillsOnDesktop={false} />
-  )
+  const goHome = () => goTo("resumen")
+  const go = (next: string, sub?: string) => {
+    const resolved = resolveAdminTab(next)
+    if (resolved) goTo(resolved, sub)
+  }
+  const banner = activeTask && activeTask.tab === tab ? <TaskBanner task={activeTask} onClose={() => setActiveTask(null)} /> : null
 
   const logout = async () => {
     await fetch("/api/admin/verify", { method: "DELETE" })
@@ -320,89 +329,100 @@ function AdminPageInner() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Encabezado fijo (docs/279): volver y título a la izquierda, buscador al centro y
-          las acciones del panel a la derecha. En el celular el buscador baja a su fila. */}
+    <div className="min-h-screen bg-muted/30">
+      {/* Encabezado fijo (docs/281): volver a la app, el nombre del panel (lleva al Inicio),
+          el buscador y, a la derecha, en línea, notificaciones y salir. En el celular el
+          buscador baja a su propia fila. */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="mx-auto flex max-w-[1440px] items-center gap-3 px-4 py-3 lg:px-6">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
           <Link href="/dashboard" aria-label={t("common_back")}>
             <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div className="min-w-0 lg:w-56 lg:shrink-0">
+          <button type="button" onClick={goHome} className="min-w-0 text-left md:w-52 md:shrink-0">
             <h1 className="truncate text-base font-semibold text-foreground">{t("admin_page_title")}</h1>
-            <LiveIndicator lastUpdatedAt={lastUpdatedAt} onRefresh={refreshNow} />
-          </div>
-          <AdminSearch onGo={goTo} onTask={runTask} className="hidden flex-1 md:block md:max-w-xl" />
+          </button>
+          <AdminSearch onGo={goTo} onTask={runTask} className="hidden flex-1 md:block md:max-w-lg" />
           <div className="ml-auto flex shrink-0 items-center gap-1.5">
             <OnlineNow onOpenAccounts={() => goTo("cuentas")} />
             {/* Centro de notificaciones: mensajes, encuestas, cuentas nuevas… (docs/267) */}
-            <AdminNotificationsBell onNavigate={(next, sub) => isAdminTab(next) && goTo(next, sub)} />
+            <AdminNotificationsBell onNavigate={go} />
             <Button variant="ghost" size="sm" className="gap-1.5" onClick={logout} aria-label={t("admin_logout")}>
               <LogOut className="h-4 w-4" />
-              <span className="hidden xl:inline">{t("admin_logout")}</span>
+              <span className="hidden lg:inline">{t("admin_logout")}</span>
             </Button>
           </div>
         </div>
-        <div className="px-4 pb-3 md:hidden">
+        <div className="space-y-2 px-4 pb-3 md:hidden">
           <AdminSearch onGo={goTo} onTask={runTask} />
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-[1440px] gap-8 px-4 lg:px-6">
-        <aside className="hidden w-60 shrink-0 lg:block">
-          <div className="sticky top-[4.5rem] max-h-[calc(100vh-5rem)] overflow-y-auto py-6 pr-1">
-            <AdminSidebar tab={tab} sub={subTab[tab]} badges={badges} subBadges={subBadges} onGo={goTo} />
-          </div>
-        </aside>
+      <main className="mx-auto max-w-6xl space-y-8 px-4 py-8 pb-20 sm:px-6 sm:py-10">
+        <div className="flex justify-end">
+          <LiveIndicator lastUpdatedAt={lastUpdatedAt} onRefresh={refreshNow} />
+        </div>
 
-        <main className="min-w-0 flex-1 space-y-6 py-6 pb-16">
-          <div className="lg:hidden">
-            <AdminMobileNav tab={tab} badges={badges} onGo={(next) => goTo(next)} />
-          </div>
+        {tab === "resumen" && (
+          <AdminHome
+            inboxCount={inboxCount}
+            supportWaiting={supportWaiting}
+            feedbackCounts={feedbackCounts}
+            expiringSoon={stats?.expiringSoon?.length ?? 0}
+            legalPending={legalPending ?? 0}
+            onGo={goTo}
+            onTask={runTask}
+          />
+        )}
 
-          <SectionHeader tab={tab} />
-
-          {activeTask && activeTask.tab === tab && <TaskBanner task={activeTask} onClose={() => setActiveTask(null)} />}
-
-          {tab === "resumen" && (
-            <div className="space-y-6">
-              <OverviewPanel
-                feedbackCounts={feedbackCounts}
-                expiringSoon={stats?.expiringSoon?.length ?? 0}
-                legalPending={legalPending ?? 0}
-                goTo={(next, sub) => isAdminTab(next) && goTo(next, sub)}
-              />
-              <QuickTasks onTask={runTask} onOpenGuide={() => goTo("guia")} />
-              <StatsPanel feedbackCounts={feedbackCounts} stats={stats} />
-            </div>
-          )}
-
-          {tab === "buzon" &&
-            subTabs("buzon", {
+        {tab === "buzon" && (
+          <AreaPage
+            tab="buzon"
+            onHome={goHome}
+            banner={banner}
+            counts={{ chat: supportWaiting, mensajes: feedbackCounts.nuevo }}
+            blocks={{
               chat: <SupportInbox onWaitingChange={setSupportWaiting} />,
               mensajes: <FeedbackPanel onCountsChange={setFeedbackCounts} />,
               encuestas: <SurveyPanel />,
               resenas: <ReviewsPanel />,
-            })}
+            }}
+          />
+        )}
 
-          {tab === "cuentas" && subTabs("cuentas", { lista: <AccountsPanel />, historial: <AccountHistoryPanel /> })}
+        {tab === "cuentas" && (
+          <AreaPage
+            tab="cuentas"
+            onHome={goHome}
+            banner={banner}
+            blocks={{
+              lista: <AccountsPanel />,
+              cifras: <StatsPanel feedbackCounts={feedbackCounts} stats={stats} />,
+              historial: <AccountHistoryPanel />,
+            }}
+          />
+        )}
 
-          {tab === "ingresos" && <RevenuePanel estimatedMrrUsdCents={stats?.estimatedMrrUsdCents} />}
+        {tab === "ingresos" && (
+          <AreaPage tab="ingresos" onHome={goHome} banner={banner}>
+            <RevenuePanel estimatedMrrUsdCents={stats?.estimatedMrrUsdCents} />
+          </AreaPage>
+        )}
 
-          {tab === "crecimiento" &&
-            subTabs("crecimiento", {
+        {tab === "crecimiento" && (
+          <AreaPage
+            tab="crecimiento"
+            onHome={goHome}
+            banner={banner}
+            blocks={{
+              numeros: <OverviewNumbers goTo={go} />,
               etapas: <FunnelPanel />,
               retencion: <RetentionPanel />,
               activacion: <ActivationPanel />,
-              referidos: <ReferralsPanel />,
               usuarios: <TopUsersPanel />,
               inactivos: <BusinessHealthPanel />,
-            })}
-
-          {tab === "uso" &&
-            subTabs("uso", {
+              referidos: <ReferralsPanel />,
               embudo: <AnalyticsPanel />,
               correos: <EmailClicksPanel />,
               // Importaciones masivas y descargas del manual por cuenta (docs/208), y el uso del OCR.
@@ -412,27 +432,40 @@ function AdminPageInner() {
                   <OcrUsagePanel />
                 </>
               ),
-            })}
+            }}
+          />
+        )}
 
-          {tab === "comunicacion" && subTabs("comunicacion", { novedades: <ProductUpdatesPanel />, legal: <LegalUpdatePanel /> })}
+        {tab === "comunicacion" && (
+          <AreaPage
+            tab="comunicacion"
+            onHome={goHome}
+            banner={banner}
+            counts={{ legal: legalPending ?? 0 }}
+            blocks={{ novedades: <ProductUpdatesPanel />, legal: <LegalUpdatePanel /> }}
+          />
+        )}
 
-          {tab === "sistema" && (
-            <div className="space-y-6">
-              <HealthPanel />
-              {/* Herramientas del panel (docs/279): antes solo estaban en el encabezado. */}
-              <AdminCard title={t("admin_tools_title")} icon={Wrench} description={t("admin_tools_desc")}>
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* Un solo botón: todas las tablas + el informe PDF, en un ZIP (docs/250, docs/266) */}
-                  <FullExportButton />
-                  <AdminPushToggle />
-                </div>
-              </AdminCard>
-            </div>
-          )}
+        {tab === "sistema" && (
+          <AreaPage tab="sistema" onHome={goHome} banner={banner}>
+            <HealthPanel />
+            {/* Herramientas del panel (docs/279). */}
+            <AdminCard title={t("admin_tools_title")} icon={Wrench} description={t("admin_tools_desc")}>
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Un solo botón: todas las tablas + el informe PDF, en un ZIP (docs/250, docs/266) */}
+                <FullExportButton />
+                <AdminPushToggle />
+              </div>
+            </AdminCard>
+          </AreaPage>
+        )}
 
-          {tab === "guia" && <GuidePanel onGo={goTo} onTask={runTask} />}
-        </main>
-      </div>
+        {tab === "guia" && (
+          <AreaPage tab="guia" onHome={goHome} banner={banner}>
+            <GuidePanel onGo={goTo} onTask={runTask} />
+          </AreaPage>
+        )}
+      </main>
     </div>
   )
 }
