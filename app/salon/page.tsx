@@ -593,7 +593,7 @@ function SalonPageInner({ businessId }: { businessId: string }) {
                       </div>
                     )}
                     {areaTables.length > 0 && (
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5" data-tour="salon-summary">
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5" data-tour="salon-summary">
                         {(["free", "busy", "ready", "bill"] as const).map((s) => (
                           <div key={s} className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${SUMMARY_STYLE[s]}`}>
                             <span className={`h-3 w-3 shrink-0 rounded-sm border ${SUMMARY_DOT[s]}`} />
@@ -601,7 +601,7 @@ function SalonPageInner({ businessId }: { businessId: string }) {
                             <span className="text-base font-semibold tabular-nums">{summary[s]}</span>
                           </div>
                         ))}
-                        <div className="col-span-2 flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 sm:col-span-1">
+                        <div className="col-span-2 flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 sm:col-span-2 xl:col-span-1">
                           <span className="text-xs text-muted-foreground">{t("pos_summary_open_total")}</span>
                           <span className="text-base font-semibold tabular-nums">{formatCurrency(summary.openTotal)}</span>
                         </div>

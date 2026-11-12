@@ -7,6 +7,7 @@
 
 import type { Menu } from "@/lib/types/menus"
 import type { Recipe } from "@/types/recipe"
+import { SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
 import { currentUnitPrice } from "@/lib/recipe-pricing"
 import { getMenuUnitPriceAndCost } from "@/lib/menus"
 
@@ -90,7 +91,8 @@ export function buildCartas(
   }
 
   const all = recipes
-    .filter((r) => !r.isSubRecipe)
+    // Las subrecetas (marca o clasificación) no se venden solas: no van a la carta (docs/277).
+    .filter((r) => !r.isSubRecipe && r.classification !== SUBRECIPE_CLASSIFICATION)
     .map((r) => fromRecipe(r, `recipe:${r.id}`, groupOf(r.classification), currentUnitPrice(r)))
     .sort((a, b) => a.name.localeCompare(b.name))
   cartas.push({ id: RECIPES_CARTA, name: labels.recipes, kind: "recipes", items: all })
