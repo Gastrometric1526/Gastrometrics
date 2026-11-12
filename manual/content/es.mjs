@@ -359,6 +359,10 @@ export default {
         ["formula", "Stock teórico", ["Stock teórico = Último conteo + Compras recibidas − Consumo de las ventas"], "Un plato vendido consume una porción de su receta; un menú vendido, una porción de cada plato activo."],
         ["p", "El semáforo de cada producto usa el <strong>stock teórico</strong> cuando lo hay (un conteo y ventas o compras registradas después). Así un producto se marca bajo o crítico aunque en el último conteo hubiera bastante, si las ventas desde entonces ya lo gastaron. Sin stock teórico, usa lo contado."],
         ["p", "Cuando haces un conteo nuevo, verás la <strong>diferencia en el último conteo</strong>: lo que contaste menos lo que la teoría esperaba. Si es negativa, salió más de lo que explican tus recetas (merma, desperdicio, porciones más grandes o faltantes): es la señal para revisar."],
+        ["h3", "Pérdidas y faltantes"],
+        ["p", "Lo que se pierde fuera de las ventas —un derrame, una botella rota, una cortesía servida sin pasar por el POS o algo vencido— se anota en el panel del producto con <strong>Registrar pérdida</strong>: eliges el motivo, la cantidad (con botellas y latas, ¼, ½ o 1 envase de un toque) y una nota. Se resta del stock y el stock teórico la descuenta."],
+        ["formula", "Faltante sin explicar", ["Debería haber = Conteo anterior + Compras recibidas − Consumo de las ventas − Pérdidas registradas", "Faltante = Lo que contaste − Lo que debería haber"], "Ejemplo: debían quedar 1800 ml de ron y contaste 1500 ml: faltan 300 ml sin explicar. Si la botella cuesta L 300 por 750 ml, son L 120."],
+        ["p", "La pestaña <strong>Faltantes y pérdidas</strong> de Inventario (y Reportes → Merma) muestra en dinero lo que falta sin explicación en tu último conteo y lo perdido por motivo. Con bebidas, <strong>Solo barra</strong> muestra solo la barra. Lo que falta sin explicación suele ser sobreservido, derrames sin anotar o cortesías no registradas. Lo anulado en el POS ya se descuenta solo."],
       ],
     },
     {

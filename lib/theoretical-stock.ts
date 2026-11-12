@@ -21,9 +21,13 @@
  *   teoría esperaba desde el registro anterior. Negativo = salió más de lo que explican
  *   las recetas (merma, desperdicio, porciones más grandes, faltantes); positivo = hay más
  *   de lo esperado (compras o ventas sin registrar).
+ * - Pérdidas registradas a mano (docs/283: derrames, rotas, cortesías fuera del POS,
+ *   vencidos) se restan del teórico y de lo esperado en el conteo: la diferencia que queda
+ *   es lo que falta SIN explicación.
  */
 
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
+import { lostAfter, sumLosses } from "@/lib/stock-losses"
 import type { Recipe } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 import type { Menu } from "@/lib/types/menus"
@@ -40,16 +44,21 @@ export interface TheoreticalStockEntry {
   consumed: number
   /** Mercadería recibida (órdenes de compra marcadas «Recibida») desde el conteo. */
   received: number
+  /** Pérdidas registradas a mano desde el conteo (docs/283). */
+  lost: number
   /** baseline + received − consumed (puede quedar negativo: faltan compras o conteos por registrar). */
   theoretical: number
   /** Diferencia real vs. teórica en el último registro de inventario (null si no hay dos registros). */
   lastCountVariance: number | null
+  /** Pérdidas registradas entre los dos últimos registros (ya descontadas de la diferencia). */
+  lastCountLost: number
 }
 
 interface CountPoint {
   quantity: number
   at: string
   receivedSincePrevious: number
+  lostSincePrevious: number
 }
 
 function dayOf(iso: string): string {
@@ -73,7 +82,7 @@ function countHistoryByItem(snapshots: InventorySnapshot[]): Map<string, CountPo
     for (const entry of snap.items ?? []) {
       if (typeof entry.quantity !== "number" || !isFinite(entry.quantity)) continue
       const list = history.get(entry.id) ?? []
-      list.push({ quantity: entry.quantity, at: snap.date, receivedSincePrevious: entry.receivedSincePrevious || 0 })
+      list.push({ quantity: entry.quantity, at: snap.date, receivedSincePrevious: entry.receivedSincePrevious || 0, lostSincePrevious: sumLosses(entry.lostSincePrevious) })
       history.set(entry.id, list)
     }
   }
@@ -183,21 +192,25 @@ export function computeTheoreticalStock(input: {
       // actual y abajo se volvía a sumar lo recibido: lo recibido contaba dos veces (docs/218).
       const countedAt = item.stockCountedAt
       const receivedAfterCount = (item.stockReceipts ?? []).filter((r) => r.at > countedAt).reduce((sum, r) => sum + r.quantity, 0)
-      baseline = { quantity: item.currentStock - receivedAfterCount, at: countedAt, receivedSincePrevious: 0 }
+      // Igual con las pérdidas (docs/283): ya se restaron del stock actual.
+      baseline = { quantity: item.currentStock - receivedAfterCount + lostAfter(item, countedAt), at: countedAt, receivedSincePrevious: 0, lostSincePrevious: 0 }
     }
     if (!baseline) continue
 
     const consumed = consumptionSince(baseline.at).get(item.id)?.quantity ?? 0
     const baselineAt = baseline.at
     const received = (item.stockReceipts ?? []).filter((r) => r.at > baselineAt).reduce((sum, r) => sum + r.quantity, 0)
+    const lost = lostAfter(item, baselineAt)
 
     let lastCountVariance: number | null = null
+    let lastCountLost = 0
     if (counts.length >= 2) {
       const [latest, previous] = counts
       const between = salesConsumption(salesImports, recipes, ingredients, menus, (day, reg) =>
         saleCountsBetween(day, reg, previous.at, latest.at),
       )
-      const expected = previous.quantity + latest.receivedSincePrevious - (between.get(item.id)?.quantity ?? 0)
+      lastCountLost = latest.lostSincePrevious
+      const expected = previous.quantity + latest.receivedSincePrevious - (between.get(item.id)?.quantity ?? 0) - lastCountLost
       lastCountVariance = latest.quantity - expected
     }
 
@@ -206,8 +219,10 @@ export function computeTheoreticalStock(input: {
       baselineAt: baseline.at,
       consumed,
       received,
-      theoretical: baseline.quantity + received - consumed,
+      lost,
+      theoretical: baseline.quantity + received - consumed - lost,
       lastCountVariance,
+      lastCountLost,
     })
   }
   return result

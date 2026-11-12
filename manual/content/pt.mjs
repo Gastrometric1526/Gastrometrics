@@ -358,6 +358,10 @@ export default {
         ["formula", "Estoque teórico", ["Estoque teórico = Última contagem + Compras recebidas − Consumo das vendas"], "Um prato vendido consome uma porção da receita; um cardápio vendido, uma porção de cada prato ativo."],
         ["p", "O semáforo de cada produto usa o <strong>estoque teórico</strong> quando ele existe (uma contagem mais vendas ou compras registradas depois). Assim, um produto aparece como baixo ou crítico mesmo que a última contagem mostrasse bastante, se as vendas desde então já o consumiram. Sem estoque teórico, usa o contado."],
         ["p", "Ao fazer uma contagem nova, você verá a <strong>diferença na última contagem</strong>: o que você contou menos o que a teoria esperava. Se for negativa, saiu mais do que as receitas explicam (perdas, desperdício, porções maiores ou faltas): é o sinal para investigar."],
+        ["h3", "Perdas e faltas"],
+        ["p", "O que se perde fora das vendas —um derramamento, uma garrafa quebrada, uma cortesia servida sem passar pelo POS ou algo vencido— é anotado no painel do produto com <strong>Registrar perda</strong>: escolha o motivo, a quantidade (com garrafas e latas, ¼, ½ ou 1 embalagem com um toque) e uma nota. Sai do estoque e o estoque teórico desconta."],
+        ["formula", "Falta sem explicação", ["Deveria haver = Contagem anterior + Compras recebidas − Consumo das vendas − Perdas registradas", "Falta = O que você contou − O que deveria haver"], "Exemplo: deveriam restar 1800 ml de rum e você contou 1500 ml: faltam 300 ml sem explicação. Se a garrafa custa L 300 por 750 ml, são L 120."],
+        ["p", "A aba <strong>Faltas e perdas</strong> do Estoque (e Relatórios → Perdas) mostra em dinheiro o que falta sem explicação na última contagem e o que se perdeu por motivo. Com bebidas, <strong>Só bar</strong> mostra só o bar. O que falta sem explicação costuma ser dose exagerada, derramamentos não anotados ou cortesias não registradas. O que foi anulado no POS já é descontado."],
       ],
     },
     {

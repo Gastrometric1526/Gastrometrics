@@ -57,7 +57,11 @@ import { RegisterInventoryModal } from "@/components/inventory/register-inventor
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { getBusinessById } from "@/lib/storage/businesses"
 import { downloadInventorySnapshotPDF, downloadCurrentInventoryPDF } from "@/lib/pdf/inventory-pdf-generator"
-import { Download, Info, Edit, Trash2, History } from "lucide-react"
+import { Download, Info, Edit, Trash2, History, PackageMinus } from "lucide-react"
+import { StockLossDialog } from "@/components/inventory/stock-loss-dialog"
+import { StockControlCard } from "@/components/inventory/stock-control-card"
+import { recordStockLoss } from "@/lib/storage/inventory"
+import { inventoryItemPackageContent } from "@/lib/inventory-value"
 import { InventarioInfoDialog } from "@/components/inventory/inventario-info-dialog"
 import { useFeatureAccess, hasFeatureAccess } from "@/lib/plan-access"
 import { FeatureLockedPage } from "@/components/feature-locked"
@@ -105,6 +109,8 @@ export default function InventoryPage() {
   const [activeTab, setActiveTab] = useState("inventory")
   // Panel de acciones del producto (docs/219).
   const [detailItem, setDetailItem] = useState<InventoryItem | null>(null)
+  // Pérdida que se está registrando (docs/283).
+  const [lossItem, setLossItem] = useState<InventoryItem | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isNoIngredientsDialogOpen, setIsNoIngredientsDialogOpen] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState("")
@@ -404,8 +410,8 @@ export default function InventoryPage() {
       // Editar el stock a mano cuenta como conteo real para el stock teórico (docs/134);
       // si el stock no cambió, se conserva el punto de partida anterior.
       ...(existingItem && existingItem.currentStock === data.currentStock
-        ? { stockCountedAt: existingItem.stockCountedAt, stockReceipts: existingItem.stockReceipts }
-        : { stockCountedAt: new Date().toISOString(), stockReceipts: [] }),
+        ? { stockCountedAt: existingItem.stockCountedAt, stockReceipts: existingItem.stockReceipts, stockLosses: existingItem.stockLosses }
+        : { stockCountedAt: new Date().toISOString(), stockReceipts: [], stockLosses: [] }),
       // BUG CORREGIDO: comparaba data.currentStock (que InventoryForm puede dejar en
       // null si no se ingresa nada) directo contra minStock — `null <= minStock`
       // coerce null a 0, así que un ítem recién creado sin stock ingresado quedaba
@@ -687,6 +693,11 @@ export default function InventoryPage() {
                     <Calendar className="mr-2 h-4 w-4" />
                     {t("inventario_tab_history")}
                   </TabsTrigger>
+                  {/* Faltantes y pérdidas (docs/283). */}
+                  <TabsTrigger value="control" className="flex-1 sm:flex-initial" data-tour="inv-control-tab">
+                    <PackageMinus className="mr-2 h-4 w-4" />
+                    {t("inventario_tab_control")}
+                  </TabsTrigger>
                 </TabsList>
               </div>
 
@@ -836,6 +847,10 @@ export default function InventoryPage() {
                     </p>
                   </CardFooter>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="control">
+                <StockControlCard items={items} theoretical={theoreticalStock} packageLookup={packageLookup} />
               </TabsContent>
 
               <TabsContent value="dashboard">
@@ -1004,6 +1019,15 @@ export default function InventoryPage() {
                     ? `${Number(theoreticalStock.get(detailItem.id)!.theoretical.toFixed(2))} ${getUnitLabel(detailItem.unit, language)}`
                     : "—",
                 },
+                // Pérdidas registradas desde el último conteo (docs/283).
+                ...((detailItem.stockLosses ?? []).length
+                  ? [
+                      {
+                        label: t("panel_stock_lost"),
+                        value: `${Number((detailItem.stockLosses ?? []).reduce((s, l) => s + l.quantity, 0).toFixed(2))} ${getUnitLabel(detailItem.unit, language)}`,
+                      },
+                    ]
+                  : []),
                 { label: t("panel_stock_value"), value: formatCurrency(inventoryTotalValue([detailItem], packageLookup)) },
                 { label: t("panel_purchase_price"), value: formatCurrency(detailItem.price || 0) },
                 { label: t("ingredientes_col_supplier"), value: detailItem.supplier || "—" },
@@ -1015,11 +1039,32 @@ export default function InventoryPage() {
             ? [
                 { key: "edit", label: t("common_edit"), icon: Edit, primary: true, onClick: () => handleEdit(detailItem) },
                 { key: "count", label: t("inventario_register_button"), icon: ClipboardList, onClick: () => handleRegisterInventoryClick() },
+                // Derrame, rota, cortesía fuera del POS, vencido (docs/283).
+                { key: "loss", label: t("stock_loss_action"), icon: PackageMinus, onClick: () => setLossItem(detailItem) },
                 { key: "history", label: t("panel_view_history"), icon: History, onClick: () => setActiveTab("history") },
               ]
             : []
         }
         danger={detailItem ? { key: "delete", label: t("common_delete"), icon: Trash2, onClick: () => handleDelete(detailItem.id) } : undefined}
+      />
+
+      <StockLossDialog
+        item={lossItem}
+        packageContent={lossItem ? inventoryItemPackageContent(lossItem, packageLookup) : undefined}
+        open={lossItem !== null}
+        onOpenChange={(open) => !open && setLossItem(null)}
+        onSave={async ({ quantity, reason, note }) => {
+          if (!lossItem) return false
+          const updated = await recordStockLoss(lossItem.id, { quantity, reason, note, by: user?.email ?? undefined }, businessId)
+          if (!updated) {
+            toast({ title: t("stock_loss_error"), variant: "destructive" })
+            return false
+          }
+          setItems((prev) => prev.map((it) => (it.id === updated.id ? updated : it)))
+          if (detailItem?.id === updated.id) setDetailItem(updated)
+          toast({ title: t("stock_loss_saved").replace("{name}", updated.name) })
+          return true
+        }}
       />
 
       {/* Pistas por acción (docs/219): después del primer conteo, el stock teórico; y el primer panel. */}

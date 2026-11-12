@@ -20,6 +20,22 @@ export interface InventoryItem {
   // «Recibida» (receivePurchaseOrderIntoInventory). El stock teórico la suma; un conteo
   // nuevo la limpia.
   stockReceipts?: { quantity: number; at: string }[]
+  // Pérdidas registradas a mano desde el último conteo (docs/283): derrames, botellas
+  // rotas, cortesías servidas sin pasar por el POS, vencidos… Ya están restadas de
+  // currentStock; el stock teórico las resta y la diferencia del conteo deja de contarlas
+  // como faltante. Un conteo nuevo las guarda en el registro (lostSincePrevious) y las limpia.
+  stockLosses?: StockLoss[]
+}
+
+export type StockLossReason = "spill" | "broken" | "courtesy" | "expired" | "other"
+
+export interface StockLoss {
+  /** En la unidad del producto (ml, g, unidad…). */
+  quantity: number
+  at: string
+  reason: StockLossReason
+  note?: string
+  by?: string
 }
 
 export interface InventorySnapshotItem {
@@ -27,6 +43,8 @@ export interface InventorySnapshotItem {
   // Mercadería recibida (órdenes «Recibida») entre el conteo anterior y este — para que
   // la diferencia vs. el stock teórico no la cuente como sobrante (docs/134).
   receivedSincePrevious?: number
+  // Pérdidas registradas desde el registro anterior, por motivo (docs/283).
+  lostSincePrevious?: Partial<Record<StockLossReason, number>>
   name: string
   category: string
   quantity: number

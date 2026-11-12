@@ -358,6 +358,10 @@ export default {
         ["formula", "Teoretisk lager", ["Teoretisk lager = Seneste optælling + Modtagne indkøb − Forbrug fra salg"], "En solgt ret bruger én portion af sin opskrift; en solgt menu én portion af hver aktiv ret."],
         ["p", "Hver vares trafiklys bruger det <strong>teoretiske lager</strong>, når det findes (en optælling plus salg eller indkøb registreret bagefter). Så vises en vare som lav eller kritisk, selv om sidste optælling viste rigeligt, hvis salget siden har brugt den op. Uden teoretisk lager bruges det optalte."],
         ["p", "Når du laver en ny optælling, ser du <strong>afvigelsen ved seneste optælling</strong>: det optalte minus det, teorien forventede. Er den negativ, er der gået mere ud, end opskrifterne forklarer (svind, spild, større portioner eller manko): så er det tid til at undersøge det."],
+        ["h3", "Svind og mangler"],
+        ["p", "Det, der går tabt uden for salget —et spild, en knust flaske, en gratis drink uden om POS eller noget udløbet— noteres i produktets panel med <strong>Registrér svind</strong>: vælg årsag, mængde (med flasker og dåser ¼, ½ eller 1 emballage med ét tryk) og en note. Det trækkes fra lageret, og det teoretiske lager trækker det fra."],
+        ["formula", "Mangel uden forklaring", ["Burde være = Forrige optælling + Modtagne køb − Forbrug fra salg − Registreret svind", "Mangel = Det, du talte − Det, der burde være"], "Eksempel: der burde være 1800 ml rom, og du talte 1500 ml: der mangler 300 ml uden forklaring. Koster flasken L 300 for 750 ml, er det L 120."],
+        ["p", "Fanen <strong>Mangler og svind</strong> i Lager (og Rapporter → Svind) viser i penge, hvad der mangler uden forklaring ved seneste optælling, og hvad der er tabt pr. årsag. Med drikkevarer viser <strong>Kun bar</strong> kun baren. Det, der mangler uden forklaring, er oftest overskænkning, spild der ikke er noteret, eller gratis drinks der ikke er registreret. Det, der er annulleret i POS, er allerede trukket fra."],
       ],
     },
     {

@@ -7,6 +7,8 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { emitValueMoment } from "@/lib/feedback/ask-store"
 import { createBusinessScopedCache } from "./supabase-cache"
 import type { Database } from "@/types/database"
+import { applyStockLoss } from "@/lib/stock-losses"
+import type { StockLossReason } from "@/types/inventory"
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
 import { getIngredients } from "./ingredients"
 import { buildPackageContentLookup, inventoryTotalValue } from "@/lib/inventory-value"
@@ -169,6 +171,23 @@ export async function updateInventoryItem(
     return null
   }
   return updated
+}
+
+/**
+ * Registra una pérdida (docs/283): derrame, botella rota, cortesía fuera del POS, vencido…
+ * Resta del stock contado y queda en el producto hasta el próximo conteo. Devuelve el
+ * producto actualizado, o null si la cantidad no vale o no se pudo guardar.
+ */
+export async function recordStockLoss(
+  id: string,
+  input: { quantity: number; reason: StockLossReason; note?: string; by?: string },
+  businessId?: string | null,
+): Promise<InventoryItem | null> {
+  const current = getInventory(businessId).find((item) => item.id === id)
+  if (!current) return null
+  const patch = applyStockLoss(current, input)
+  if (!patch) return null
+  return updateInventoryItem(id, patch, businessId)
 }
 
 /**

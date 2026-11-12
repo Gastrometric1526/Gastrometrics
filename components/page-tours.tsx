@@ -182,6 +182,9 @@ export function InventarioTour() {
     { id: "register", title: t("tour_inv_register_title"), description: t("tour_inv_register_desc"), selector: '[data-tour="inv-register"]' },
     // docs/219: tocar un producto abre su panel (editar, registrar conteo, historial).
     { id: "row", title: t("tour_inv_row_title"), description: t("tour_inv_row_desc"), selector: "[data-inventory-row]" },
+    // Pérdidas fuera de las ventas y su control en dinero (docs/283).
+    { id: "loss", title: t("tour_inv_loss_title"), description: t("tour_inv_loss_desc"), selector: "[data-inventory-row]" },
+    { id: "control", title: t("tour_inv_control_title"), description: t("tour_inv_control_desc"), selector: '[data-tour="inv-control-tab"]' },
     { id: "export-pdf", title: t("tour_inv_export_pdf_title"), description: t("tour_inv_export_pdf_desc"), selector: '[data-tour="inv-export-pdf"]' },
   ]
 

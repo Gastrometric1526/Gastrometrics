@@ -21,6 +21,7 @@ import { formatMepAmount } from "@/lib/mep"
 import { shortUnit } from "@/lib/share-text"
 import type { Ingredient } from "@/types/ingredient"
 import type { PurchaseOrder } from "@/types/purchase-order"
+import { StockControlReport } from "@/components/inventory/stock-control-card"
 
 function Kpi({ icon: Icon, label, value, sub }: { icon: typeof Scale; label: string; value: string; sub?: string }) {
   return (
@@ -63,6 +64,8 @@ export function EstadisticasMermaTab({
 
   return (
     <div className="space-y-6" data-tour="stats-merma">
+      {/* Faltantes y pérdidas del inventario, en dinero (docs/283): todo dato llega a Reportes. */}
+      <StockControlReport businessId={businessId} />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Kpi icon={Scale} label={t("merma_kpi_with")} value={String(m.withMerma)} sub={t("merma_kpi_with_sub")} />
         <Kpi icon={Percent} label={t("merma_kpi_avg")} value={`${m.averagePercent.toFixed(1)}%`} sub={t("merma_kpi_avg_sub")} />

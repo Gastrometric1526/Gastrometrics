@@ -358,6 +358,10 @@ export default {
         ["formula", "Theoretical stock", ["Theoretical stock = Last count + Purchases received − Sales consumption"], "A dish sold consumes one portion of its recipe; a menu sold, one portion of each active dish."],
         ["p", "Each product's traffic light uses the <strong>theoretical stock</strong> when there is one (a count plus sales or purchases recorded afterwards). So a product shows as low or critical even if the last count had plenty, when sales since then have used it up. Without theoretical stock, it uses what was counted."],
         ["p", "When you do a new count, you'll see the <strong>last count difference</strong>: what you counted minus what the theory expected. If it's negative, more went out than your recipes explain (waste, waste, larger portions or missing stock): that's your cue to look into it."],
+        ["h3", "Losses and shortages"],
+        ["p", "What's lost outside of sales —a spill, a broken bottle, a courtesy poured without going through the POS or something expired— is logged in the product's panel with <strong>Record a loss</strong>: choose the reason, the quantity (with bottles and cans, ¼, ½ or 1 package in one tap) and a note. It's taken off the stock and the theoretical stock deducts it."],
+        ["formula", "Unexplained shortage", ["Should be = Previous count + Purchases received − Sales usage − Recorded losses", "Shortage = What you counted − What there should be"], "Example: there should be 1800 ml of rum and you counted 1500 ml: 300 ml are missing with no explanation. If the bottle costs L 300 for 750 ml, that's L 120."],
+        ["p", "The Inventory tab <strong>Shortages and losses</strong> (and Reports → Waste) shows in money what's missing with no explanation at your last count and what was lost by reason. With drinks, <strong>Bar only</strong> shows just the bar. What's missing with no explanation is usually over-pouring, unrecorded spills or unregistered courtesies. Items voided in the POS are already deducted."],
       ],
     },
     {

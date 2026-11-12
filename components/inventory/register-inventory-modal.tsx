@@ -42,6 +42,7 @@ import { updateIngredientPriceAndRecalculate, requestSubRecipePricePrompt } from
 import { computeWeightedAverageCost } from "@/lib/utils/weighted-average-cost"
 import { useLanguage } from "@/contexts/language-context"
 import { getPackageContent, isBeverageCategory, type BottleWeights } from "@/lib/beverage"
+import { lossesByReason } from "@/lib/stock-losses"
 import { stockValue } from "@/lib/inventory-value"
 import { formatDate, toDate } from "@/lib/date-format"
 import { useFormDraft } from "@/hooks/use-form-draft"
@@ -369,6 +370,8 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
     const receivedById = new Map(
       getInventory(businessId).map((inv) => [inv.id, (inv.stockReceipts ?? []).reduce((sum, r) => sum + r.quantity, 0)]),
     )
+    // Pérdidas registradas desde el último conteo, por motivo (docs/283).
+    const lostById = new Map(getInventory(businessId).map((inv) => [inv.id, lossesByReason(inv.stockLosses)]))
 
     // Create a new inventory snapshot for history
     const newInventorySnapshot: InventorySnapshot = {
@@ -401,6 +404,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
         previousPrice: item.previousPrice || item.price || 0,
         supplier: item.supplier || "No especificado", // Guardar el proveedor
         receivedSincePrevious: receivedById.get(item.id) || 0,
+        ...(Object.keys(lostById.get(item.id) ?? {}).length ? { lostSincePrevious: lostById.get(item.id) } : {}),
       })),
       createdAt: new Date().toISOString(),
       createdBy: user?.email || undefined,
@@ -432,6 +436,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
           // Punto de partida del stock teórico (docs/134): este registro es un conteo real.
           stockCountedAt: newInventorySnapshot.date,
           stockReceipts: [],
+          stockLosses: [],
           price: matchingItem.price, // Update purchase price
           presentation: matchingItem.presentation, // Asegurar que se actualice la presentación
           status:

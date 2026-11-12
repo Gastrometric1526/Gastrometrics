@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Pérdidas fuera de las ventas y faltantes en dinero (docs/283).
+    version: "2026-11-12",
+    tutorialHref: tourHref("inventario"),
+    content: {
+      es: { title: "Faltantes y pérdidas en dinero", items: ["En el panel de cada producto de Inventario, «Registrar pérdida» anota un derrame, una botella rota, una cortesía servida fuera del POS o algo vencido, con su motivo. Con botellas y latas, ¼, ½ o 1 envase de un toque.", "La pérdida se resta del stock y el próximo conteo ya no la cuenta como faltante.", "Inventario → «Faltantes y pérdidas» (y Reportes → Merma) muestra lo que falta sin explicación en tu último conteo y lo perdido por motivo, en dinero. Con bebidas, «Solo barra» muestra la barra."] },
+      en: { title: "Shortages and losses in money", items: ["In each Inventory product's panel, “Record a loss” logs a spill, a broken bottle, a courtesy poured outside the POS or something expired, with its reason. With bottles and cans, ¼, ½ or 1 package in one tap.", "The loss is taken off the stock and the next count no longer treats it as a shortage.", "Inventory → “Shortages and losses” (and Reports → Waste) shows what's missing with no explanation in your last count and what was lost by reason, in money. With drinks, “Bar only” shows the bar."] },
+      da: { title: "Mangler og svind i penge", items: ["I hvert produkts panel i Lager noterer »Registrér svind« et spild, en knust flaske, en gratis drink uden om POS eller noget udløbet med årsagen. Med flasker og dåser ¼, ½ eller 1 emballage med ét tryk.", "Svindet trækkes fra lageret, og næste optælling regner det ikke længere som en mangel.", "Lager → »Mangler og svind« (og Rapporter → Svind) viser, hvad der mangler uden forklaring ved seneste optælling, og hvad der er tabt pr. årsag, i penge. Med drikkevarer viser »Kun bar« baren."] },
+      fr: { title: "Manques et pertes en argent", items: ["Dans le panneau de chaque produit de l'Inventaire, « Enregistrer une perte » note un renversement, une bouteille cassée, une offerte servie hors POS ou un produit périmé, avec son motif. Avec les bouteilles et canettes, ¼, ½ ou 1 contenant en un geste.", "La perte est retirée du stock et le prochain comptage ne la compte plus comme un manque.", "Inventaire → « Manques et pertes » (et Rapports → Pertes) montre ce qui manque sans explication au dernier comptage et ce qui a été perdu par motif, en argent. Avec les boissons, « Bar seulement » montre le bar."] },
+      pt: { title: "Faltas e perdas em dinheiro", items: ["No painel de cada produto do Estoque, «Registrar perda» anota um derramamento, uma garrafa quebrada, uma cortesia servida fora do POS ou algo vencido, com o motivo. Com garrafas e latas, ¼, ½ ou 1 embalagem com um toque.", "A perda sai do estoque e a próxima contagem não a conta mais como falta.", "Estoque → «Faltas e perdas» (e Relatórios → Perdas) mostra o que falta sem explicação na última contagem e o que se perdeu por motivo, em dinheiro. Com bebidas, «Só bar» mostra o bar."] },
+      zh: { title: "以金额显示短缺与损失", items: ["在库存中每个产品的面板里，「登记损失」可记录洒出、打碎、POS 之外的招待或过期，并注明原因。瓶装和罐装可一键选择 ¼、½ 或 1 个包装。", "损失会从库存扣除，下次盘点不再算作短缺。", "库存 →「短缺与损失」（以及报表 → 损耗）以金额显示上次盘点中无法解释的短缺和按原因分类的损失。有饮品时，「仅吧台」只显示吧台。"] },
+    },
+  },
+  {
     version: "2026-11-09h",
     tutorialHref: tourHref("salon"),
     content: {
