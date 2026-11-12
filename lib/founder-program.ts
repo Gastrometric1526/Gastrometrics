@@ -18,7 +18,27 @@ export const FOUNDER_PROGRAM = {
   durationDays: 30,
   /** Espera desde la creación de la cuenta antes de cambiar el plan. */
   delayMs: 60_000,
+  /**
+   * Pedido del dueño (docs/289): una fundadora que terminó sus 30 días sin haber creado al
+   * menos estas recetas (subrecetas incluidas, también las que después mandó a la papelera)
+   * deja de contar entre las 100, y su lugar pasa a la siguiente cuenta.
+   */
+  minRecipesToKeepSeat: 5,
 } as const
+
+/** Fin del período fundador de una cuenta (fecha en que se le dio + 30 días). */
+export function founderPeriodEnd(grantedAt: string): number {
+  return new Date(grantedAt).getTime() + FOUNDER_PROGRAM.durationDays * 86_400_000
+}
+
+/**
+ * ¿Liberó su lugar? Solo cuando ya terminó el período y creó menos de
+ * `minRecipesToKeepSeat` recetas dentro de él. Mientras el período corre, siempre cuenta.
+ */
+export function founderSeatReleased(input: { grantedAt: string; recipesInPeriod: number; now: number }): boolean {
+  if (input.now < founderPeriodEnd(input.grantedAt)) return false
+  return input.recipesInPeriod < FOUNDER_PROGRAM.minRecipesToKeepSeat
+}
 
 export type FounderDecision =
   | { action: "grant"; expiresAt: string }

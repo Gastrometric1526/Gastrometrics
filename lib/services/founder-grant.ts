@@ -15,42 +15,81 @@
  */
 
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
-import { FOUNDER_PROGRAM, founderDecision, type FounderDecision } from "@/lib/founder-program"
+import { FOUNDER_PROGRAM, founderDecision, founderPeriodEnd, founderSeatReleased, type FounderDecision } from "@/lib/founder-program"
 import { sendPlanChangedEmail } from "@/lib/services/notify-billing"
 import { recordPlanChangeNotice } from "@/lib/services/plan-change-notice"
 import { sendOwnerNotification, hondurasTime } from "@/lib/services/notify-owner"
 import { isConfirmedAccount } from "@/lib/admin/confirmed-accounts"
 import { selectAll } from "@/lib/admin/select-all"
 
-/** Ids de las cuentas con el correo confirmado (Supabase Auth). */
-async function confirmedAccountIds(): Promise<Set<string>> {
+/**
+ * Cuentas con el correo confirmado (Supabase Auth) y, de las fundadoras, cuándo se les dio
+ * el plan (app_metadata.founder_grant.at).
+ */
+async function confirmedAccounts(): Promise<{ ids: Set<string>; founders: Map<string, string> }> {
   const admin = getSupabaseAdminClient()
   const ids = new Set<string>()
+  const founders = new Map<string, string>()
   for (let page = 1; ; page++) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 })
     if (error) throw error
-    for (const u of data.users) if (isConfirmedAccount(u)) ids.add(u.id)
+    for (const u of data.users) {
+      if (!isConfirmedAccount(u)) continue
+      ids.add(u.id)
+      const at = ((u.app_metadata as Record<string, unknown> | undefined)?.founder_grant as { at?: string } | undefined)?.at
+      if (at) founders.set(u.id, at)
+    }
     if (data.users.length < 200) break
   }
-  return ids
+  return { ids, founders }
+}
+
+/**
+ * Fundadoras que liberaron su lugar (docs/289): terminaron sus 30 días con menos de
+ * `minRecipesToKeepSeat` recetas creadas dentro del período. Cuenta las recetas que siguen
+ * (por `created_at`) y las que mandó a la papelera antes de que terminara el período.
+ */
+export async function releasedFounderIds(founders: Map<string, string>, now = Date.now()): Promise<Set<string>> {
+  const ended = [...founders].filter(([, at]) => now >= founderPeriodEnd(at))
+  const released = new Set<string>()
+  if (ended.length === 0) return released
+  const admin = getSupabaseAdminClient()
+  const ids = ended.map(([id]) => id)
+  const [recipes, trash] = await Promise.all([
+    selectAll<{ owner_id: string; created_at: string }>((from, to) => admin.from("recipes").select("owner_id, created_at").in("owner_id", ids).range(from, to)),
+    selectAll<{ owner_id: string; deleted_at: string }>((from, to) => admin.from("recipes_trash").select("owner_id, deleted_at").in("owner_id", ids).range(from, to)),
+  ])
+  if (recipes.error) throw recipes.error
+  if (trash.error) throw trash.error
+
+  for (const [id, at] of ended) {
+    const end = founderPeriodEnd(at)
+    const inPeriod =
+      (recipes.data ?? []).filter((r) => r.owner_id === id && new Date(r.created_at).getTime() <= end).length +
+      (trash.data ?? []).filter((r) => r.owner_id === id && new Date(r.deleted_at).getTime() <= end).length
+    if (founderSeatReleased({ grantedAt: at, recipesInPeriod: inPeriod, now })) released.add(id)
+  }
+  return released
 }
 
 export type FounderGrantResult = FounderDecision & { ordinal?: number; planSlug?: string }
 
-async function accountOrdinal(createdAt: string): Promise<number | null> {
+async function accountOrdinal(createdAt: string, accountId: string, now: number): Promise<number | null> {
   const admin = getSupabaseAdminClient()
   // Cuentas eliminadas no cuentan (docs/165): las borradas desde /admin ya no tienen fila;
   // las que pidieron su eliminación (30 días de gracia) se excluyen aquí.
-  // Y solo las confirmadas (docs/201).
+  // Y solo las confirmadas (docs/201), sin las fundadoras que liberaron su lugar (docs/289).
   try {
-    const [confirmed, { data, error }] = await Promise.all([
-      confirmedAccountIds(),
+    const [{ ids: confirmed, founders }, { data, error }] = await Promise.all([
+      confirmedAccounts(),
       selectAll<{ id: string }>((from, to) =>
         admin.from("profiles").select("id").lte("created_at", createdAt).is("deletion_requested_at", null).order("created_at").range(from, to),
       ),
     ])
     if (error) throw error
-    return (data ?? []).filter((p) => confirmed.has(p.id)).length
+    founders.delete(accountId)
+    const released = await releasedFounderIds(founders, now)
+    return (data ?? []).filter((p) => confirmed.has(p.id) && !released.has(p.id)).length
   } catch (error) {
     console.error("[founder-grant] No se pudo contar las cuentas:", error)
     return null
@@ -73,7 +112,7 @@ export async function runFounderGrant(accountId: string, now = Date.now()): Prom
   // de antes del programa.
   if ((authUser.app_metadata as Record<string, unknown> | undefined)?.founder_grant) return { action: "skip", reason: "already_granted" }
   if (new Date(createdAt).getTime() < new Date(FOUNDER_PROGRAM.startsAt).getTime()) return { action: "skip", reason: "before_program" }
-  const ordinal = await accountOrdinal(createdAt)
+  const ordinal = await accountOrdinal(createdAt, accountId, now)
   if (ordinal === null) return { action: "wait", waitMs: 60_000 }
 
   const decision = founderDecision({

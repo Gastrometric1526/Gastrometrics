@@ -4,13 +4,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 // tick antes de responder, como la red, para que tres llamadas a la vez se crucen igual
 // que en producción (docs/163: 3 correos en el mismo segundo).
 type Plan = { account_id: string; plan_slug: string; stripe_subscription_id: string | null; plan_expires_at?: string }
-const db: { plans: Map<string, Plan>; metadata: Record<string, unknown>; createdAt: string; confirmed: boolean; others: { id: string; confirmed: boolean }[] } = {
+type Other = { id: string; confirmed: boolean; founderAt?: string }
+type RecipeRow = { owner_id: string; created_at: string }
+type TrashRow = { owner_id: string; deleted_at: string }
+const db: { plans: Map<string, Plan>; metadata: Record<string, unknown>; createdAt: string; confirmed: boolean; others: Other[]; recipes: RecipeRow[]; trash: TrashRow[] } = {
   plans: new Map(),
   metadata: {},
   createdAt: "",
   confirmed: true,
   // Cuentas anteriores (todas con created_at ≤ la de u1): 27 confirmadas → u1 es la #28.
   others: [],
+  // Recetas y papelera de las fundadoras anteriores (docs/289).
+  recipes: [],
+  trash: [],
 }
 const tick = () => new Promise((r) => setTimeout(r, 0))
 
@@ -22,6 +28,11 @@ function query(table: string) {
   let ranged = false
   const run = async () => {
     await tick()
+    if (table === "recipes" || table === "recipes_trash") {
+      const ids = (filters.find((f) => f[0] === "in")?.[2] as string[]) ?? []
+      const rows = (table === "recipes" ? db.recipes : db.trash) as { owner_id: string }[]
+      return { data: rows.filter((r) => ids.includes(r.owner_id)), error: null }
+    }
     if (table === "profiles") {
       if (countHead) return { count: 28, error: null }
       if (ranged) return { data: [...db.others.map((o) => ({ id: o.id })), { id: "u1" }], error: null }
@@ -51,6 +62,7 @@ function query(table: string) {
     upsert: (p: Record<string, unknown>) => ((op = "upsert"), (payload = p), b),
     eq: (c: string, v: unknown) => (filters.push(["eq", c, v]), b),
     is: (c: string, v: unknown) => (filters.push(["is", c, v]), b),
+    in: (c: string, v: unknown) => (filters.push(["in", c, v]), b),
     lte: () => b,
     order: () => b,
     range: () => ((ranged = true), b),
@@ -73,7 +85,10 @@ const admin = {
       },
       listUsers: async ({ page = 1, perPage = 200 }: { page?: number; perPage?: number } = {}) => {
         await tick()
-        const all = [...db.others.map((o) => ({ id: o.id, email_confirmed_at: o.confirmed ? db.createdAt : null })), { id: "u1", email_confirmed_at: db.confirmed ? db.createdAt : null }]
+        const all = [
+          ...db.others.map((o) => ({ id: o.id, email_confirmed_at: o.confirmed ? db.createdAt : null, app_metadata: o.founderAt ? { founder_grant: { at: o.founderAt } } : {} })),
+          { id: "u1", email_confirmed_at: db.confirmed ? db.createdAt : null, app_metadata: {} },
+        ]
         return { data: { users: all.slice((page - 1) * perPage, page * perPage) }, error: null }
       },
       updateUserById: async (_id: string, attrs: { app_metadata: Record<string, unknown> }) => {
@@ -109,6 +124,8 @@ describe("runFounderGrant con llamadas simultáneas (docs/163)", () => {
     db.createdAt = created
     db.confirmed = true
     db.others = Array.from({ length: 27 }, (_, i) => ({ id: `c${i}`, confirmed: true }))
+    db.recipes = []
+    db.trash = []
     sendPlanChangedEmail.mockClear()
     recordPlanChangeNotice.mockClear()
     sendOwnerNotification.mockClear()
@@ -150,5 +167,52 @@ describe("runFounderGrant con llamadas simultáneas (docs/163)", () => {
     const again = await runFounderGrant("u1", now)
     expect(again.action).toBe("skip")
     expect(sendOwnerNotification).toHaveBeenCalledTimes(1)
+  })
+  // docs/289: la fundadora que terminó sus 30 días con menos de 5 recetas libera su lugar.
+  describe("lugares que se liberan", () => {
+    const day = 86_400_000
+    // 100 confirmadas antes: u1 sería la #101 (fuera).
+    const full = () => Array.from({ length: 100 }, (_, i) => ({ id: `c${i}`, confirmed: true }) as Other)
+    const recipesFor = (id: string, n: number, at: string) => Array.from({ length: n }, () => ({ owner_id: id, created_at: at }))
+
+    it("sin fundadoras que liberen, la #101 se queda fuera", async () => {
+      db.others = full()
+      const result = await runFounderGrant("u1", now)
+      expect(result).toMatchObject({ action: "skip", reason: "over_limit", ordinal: 101 })
+    })
+
+    it("una fundadora que terminó con 4 recetas libera su lugar y la siguiente entra", async () => {
+      db.others = full()
+      const grantedAt = new Date(now - 31 * day).toISOString()
+      db.others[0].founderAt = grantedAt
+      db.recipes = recipesFor("c0", 3, new Date(now - 20 * day).toISOString())
+      // Una en la papelera, borrada dentro del período: también cuenta como creada.
+      db.trash = [{ owner_id: "c0", deleted_at: new Date(now - 10 * day).toISOString() }]
+      const result = await runFounderGrant("u1", now)
+      expect(result).toMatchObject({ action: "grant", ordinal: 100 })
+    })
+
+    it("con 5 recetas dentro del período conserva su lugar", async () => {
+      db.others = full()
+      db.others[0].founderAt = new Date(now - 31 * day).toISOString()
+      db.recipes = recipesFor("c0", 5, new Date(now - 20 * day).toISOString())
+      const result = await runFounderGrant("u1", now)
+      expect(result).toMatchObject({ action: "skip", reason: "over_limit", ordinal: 101 })
+    })
+
+    it("las recetas creadas después del período no cuentan", async () => {
+      db.others = full()
+      db.others[0].founderAt = new Date(now - 40 * day).toISOString()
+      db.recipes = recipesFor("c0", 6, new Date(now - 2 * day).toISOString())
+      const result = await runFounderGrant("u1", now)
+      expect(result).toMatchObject({ action: "grant", ordinal: 100 })
+    })
+
+    it("mientras su período corre, la fundadora cuenta aunque no tenga recetas", async () => {
+      db.others = full()
+      db.others[0].founderAt = new Date(now - 10 * day).toISOString()
+      const result = await runFounderGrant("u1", now)
+      expect(result).toMatchObject({ action: "skip", reason: "over_limit", ordinal: 101 })
+    })
   })
 })
