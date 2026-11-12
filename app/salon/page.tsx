@@ -105,14 +105,12 @@ export default function SalonPage() {
 }
 
 /**
- * El POS trabaja siempre dentro de un negocio (docs/276). Sin negocio en la dirección, se
- * elige uno (PosBusinessPicker). El espacio principal solo se abre para cerrar cuentas que
- * quedaron de antes (`?business=main&legacy=1`).
+ * El POS trabaja siempre dentro de un negocio a la vez (docs/276). Sin negocio en la dirección,
+ * se elige uno (PosBusinessPicker); el espacio principal es el primero de la cuenta.
  */
 function SalonRouter() {
   const searchParams = useSearchParams()
   const business = searchParams.get("business")
-  const legacy = searchParams.get("legacy") === "1"
   const canAccess = useFeatureAccess("pos")
   const { t } = useLanguage()
   if (canAccess === null) return null
@@ -123,29 +121,30 @@ function SalonRouter() {
       <FeatureLockedPage feature="pos" title={t("pos_locked_title")} description={t("pos_locked_desc")} />
     )
   }
-  if (!business || (business === "main" && !legacy)) {
+  if (!business) {
     return (
       <AuthGuard>
         <PosBusinessPicker />
       </AuthGuard>
     )
   }
-  return <SalonPageInner businessId={business} legacy={business === "main"} />
+  return <SalonPageInner businessId={business} />
 }
 
-function SalonPageInner({ businessId, legacy }: { businessId: string; legacy: boolean }) {
+function SalonPageInner({ businessId }: { businessId: string }) {
+  const isMain = businessId === "main"
   const { t, language } = useLanguage()
   const businesses = useAllBusinesses()
-  const currentBusiness = businesses.find((b) => b.id === businessId) ?? null
+  const businessName = isMain ? t("pos_main_space") : businesses.find((b) => b.id === businessId)?.name ?? null
   useEffect(() => {
-    if (!legacy) rememberPosBusiness(businessId)
-  }, [businessId, legacy])
-  // Plano y extras del espacio principal (POS de antes de docs/276), para traerlos a este negocio.
+    rememberPosBusiness(businessId)
+  }, [businessId])
+  // Plano y extras del espacio principal, para copiarlos a un negocio nuevo (docs/276).
   const [mainPos, setMainPos] = useState<PosData | null>(null)
   useEffect(() => {
-    if (legacy) return
+    if (isMain) return
     fetchPosData("main").then(setMainPos).catch(() => {})
-  }, [legacy])
+  }, [isMain])
   const { toast } = useToast()
   const canAccess = useFeatureAccess("pos")
 
@@ -496,7 +495,7 @@ function SalonPageInner({ businessId, legacy }: { businessId: string; legacy: bo
           <div className="h-full overflow-y-auto">
             <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
               <div className="flex items-center gap-2 md:gap-4" data-tour="salon-header">
-                <Link href={!legacy ? `/business/${businessId}` : "/dashboard"}>
+                <Link href={!isMain ? `/business/${businessId}` : "/dashboard"}>
                   <Button variant="outline" size="sm" className="gap-2 hover:bg-accent bg-transparent">
                     <ArrowLeft className="h-4 w-4" />
                     <span className="hidden sm:inline">{t("mi_plan_back_to_dashboard")}</span>
@@ -509,15 +508,14 @@ function SalonPageInner({ businessId, legacy }: { businessId: string; legacy: bo
                   <div>
                     <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("nav_salon")}</h1>
                     <p className="text-sm md:text-base text-muted-foreground">
-                      {legacy ? t("pos_legacy_space") : currentBusiness ? t("pos_working_in").replace("{name}", currentBusiness.name) : t("nav_salon_desc")}
+                      {businessName ? t("pos_working_in").replace("{name}", businessName) : t("nav_salon_desc")}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {(legacy || businesses.length > 1) && (
+              {businesses.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
-                  {legacy && <p className="flex-1 text-sm text-warning">{t("pos_legacy_banner")}</p>}
                   <Link href="/salon">
                     <Button size="sm" variant="outline" className="gap-2">
                       <Building2 className="h-3.5 w-3.5" />
@@ -633,8 +631,8 @@ function SalonPageInner({ businessId, legacy }: { businessId: string; legacy: bo
                       onArea={setAreaId}
                       onPlan={onPlan}
                       onConfig={onConfig}
-                      mainFloor={!legacy ? mainPos?.floor ?? null : null}
-                      mainExtras={!legacy ? mainPos?.config?.extras ?? [] : []}
+                      mainFloor={!isMain ? mainPos?.floor ?? null : null}
+                      mainExtras={!isMain ? mainPos?.config?.extras ?? [] : []}
                     />
                   </TabsContent>
                 </Tabs>

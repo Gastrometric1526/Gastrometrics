@@ -1,28 +1,24 @@
 "use client"
 
 /**
- * El POS trabaja siempre dentro de un negocio (pedido del dueño, docs/276): cada negocio tiene
- * su salón, su carta, sus extras, su caja, sus ventas y sus reportes, y nada se mezcla entre
- * negocios. /salon sin negocio muestra esta pantalla para elegirlo:
- * - con un solo negocio disponible, entra directo;
- * - a un invitado con alcance de un negocio, se le abre el suyo;
- * - sin negocios, invita a crear el primero;
- * - si quedó un POS en el espacio principal (de antes de docs/276) con cuentas abiertas, deja
- *   entrar a cerrarlas.
+ * El POS trabaja siempre dentro de UN negocio a la vez (pedido del dueño, docs/276): cada uno
+ * tiene su salón, su carta, sus extras, su caja, sus ventas y sus reportes, y nada se mezcla.
+ * El espacio principal es el primer negocio de la cuenta (ahí viven sus recetas y menús).
+ * /salon sin negocio muestra esta pantalla; con un solo negocio disponible entra directo, y a
+ * un invitado con alcance de un negocio se le abre el suyo.
  */
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Armchair, ArrowLeft, Building2, Lock, Plus, Store } from "lucide-react"
+import { Armchair, ArrowLeft, Building2, Lock, Store } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Sidebar } from "@/components/sidebar"
 import { useLanguage } from "@/contexts/language-context"
 import { useAllBusinesses } from "@/lib/storage/businesses"
 import { useLockedBusinessIds } from "@/components/business-lock-overlay"
-import { getActiveMemberScope, hasActiveMembership } from "@/lib/plan-access"
-import { fetchPosData } from "@/lib/storage/pos"
+import { getActiveMemberScope } from "@/lib/plan-access"
 import { cn } from "@/lib/utils"
 
 export const POS_BUSINESS_KEY = "gm_pos_business"
@@ -39,45 +35,32 @@ export function PosBusinessPicker() {
   const businesses = useAllBusinesses()
   const locked = useLockedBusinessIds()
   const [scope, setScope] = useState<string | null>(null)
-  const [member, setMember] = useState(false)
   const [last, setLast] = useState<string | null>(null)
-  const [legacyOpen, setLegacyOpen] = useState(0)
-  const [legacyFloor, setLegacyFloor] = useState(false)
-  const [checked, setChecked] = useState(false)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     setScope(getActiveMemberScope())
-    setMember(hasActiveMembership())
     try {
       setLast(localStorage.getItem(POS_BUSINESS_KEY))
     } catch {}
+    // La lista de negocios llega en segundo plano: se espera un momento antes de entrar solo.
+    const id = setTimeout(() => setReady(true), 1200)
+    return () => clearTimeout(id)
   }, [])
 
-  // POS que quedó en el espacio principal (solo el dueño lo tenía ahí).
-  useEffect(() => {
-    if (member) {
-      setChecked(true)
-      return
-    }
-    fetchPosData("main")
-      .then((d) => {
-        setLegacyOpen(d.orders.filter((o) => o.items.length > 0).length)
-        setLegacyFloor(!!d.floor)
-      })
-      .catch(() => {})
-      .finally(() => setChecked(true))
-  }, [member])
+  // El espacio principal es el primer negocio de la cuenta (ahí viven sus recetas y menús).
+  // Un invitado con alcance de un negocio solo ve ese negocio.
+  const options = useMemo(() => {
+    const own = [{ id: "main", name: t("pos_main_space") }, ...businesses.map((b) => ({ id: b.id, name: b.name }))]
+    const list = scope && scope !== "dashboard" ? own.filter((b) => b.id === scope) : own
+    return [...list].sort((a, b) => (a.id === last ? -1 : b.id === last ? 1 : a.id === "main" ? -1 : b.id === "main" ? 1 : a.name.localeCompare(b.name)))
+  }, [businesses, scope, last, t])
+  const usable = options.filter((b) => !locked.includes(b.id))
 
-  const available = useMemo(() => {
-    const list = scope && scope !== "dashboard" ? businesses.filter((b) => b.id === scope) : businesses
-    return [...list].sort((a, b) => (a.id === last ? -1 : b.id === last ? 1 : a.name.localeCompare(b.name)))
-  }, [businesses, scope, last])
-  const usable = available.filter((b) => !locked.includes(b.id))
-
-  // Un solo negocio disponible (y nada pendiente de antes): se entra directo.
+  // Con un solo negocio disponible se entra directo.
   useEffect(() => {
-    if (checked && usable.length === 1 && legacyOpen === 0) router.replace(`/salon?business=${usable[0].id}`)
-  }, [checked, usable, legacyOpen, router])
+    if (ready && usable.length === 1) router.replace(`/salon?business=${usable[0].id}`)
+  }, [ready, usable, router])
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -102,34 +85,16 @@ export function PosBusinessPicker() {
             </div>
           </div>
 
-          {legacyOpen > 0 && (
-            <div className="flex flex-col gap-3 rounded-lg border border-warning/40 bg-warning-soft p-4 text-sm text-warning sm:flex-row sm:items-center sm:justify-between">
-              <span>{t("pos_pick_legacy").replace("{n}", String(legacyOpen))}</span>
-              <Button size="sm" variant="outline" className="shrink-0 self-start sm:self-auto" onClick={() => router.push("/salon?business=main&legacy=1")}>
-                {t("pos_pick_legacy_open")}
-              </Button>
-            </div>
-          )}
-
-          {available.length === 0 ? (
+          {options.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
                 <Store className="h-10 w-10 text-muted-foreground" />
                 <p className="text-base font-semibold">{t("pos_pick_none_title")}</p>
-                <p className="max-w-md text-sm text-muted-foreground">{t("pos_pick_none_desc")}</p>
-                {!member && (
-                  <Link href="/negocios">
-                    <Button className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      {t("pos_pick_create")}
-                    </Button>
-                  </Link>
-                )}
               </CardContent>
             </Card>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {available.map((b) => {
+              {options.map((b) => {
                 const isLocked = locked.includes(b.id)
                 return (
                   <button
@@ -146,7 +111,7 @@ export function PosBusinessPicker() {
                     )}
                   >
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      {isLocked ? <Lock className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
+                      {isLocked ? <Lock className="h-5 w-5" /> : b.id === "main" ? <Store className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
                     </span>
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold text-foreground">{b.name}</span>
@@ -159,8 +124,6 @@ export function PosBusinessPicker() {
               })}
             </div>
           )}
-
-          {legacyFloor && available.length > 0 && <p className="text-xs text-muted-foreground">{t("pos_pick_legacy_floor")}</p>}
         </div>
       </div>
     </div>
