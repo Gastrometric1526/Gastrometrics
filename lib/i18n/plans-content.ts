@@ -60,7 +60,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     "chef-de-partie": {
       price: "$35/mes",
       tagline: "Para operar una cocina completa",
-      description: "Todo lo anterior, más inventario completo, órdenes automáticas, menús y estadísticas de uso.",
+      description: "Todo lo anterior, más inventario completo, órdenes automáticas, menús con su MEP, registro de ventas y reportes.",
       features: [
         "Todo lo del plan Home Cook",
         "Inventario completo (stock y alertas)",
@@ -77,7 +77,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       price: "$70/mes",
       tagline: "El control total de tu negocio",
       description:
-        "Todo lo anterior, más finanzas completas: P&L real, importación de ventas del POS, Menu Engineering y varianza de precios de proveedores.",
+        "Todo lo anterior, más el POS de GastroMetrics, tu equipo con permisos y finanzas completas: P&L real, ventas de tu POS, Menu Engineering y varianza de precios de proveedores.",
       features: [
         "Todo lo del plan Chef de Partie",
         "Finanzas completas: P&L e importación del reporte de ventas de tu POS (Excel o CSV)",
@@ -146,7 +146,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     "chef-de-partie": {
       price: "$35/mo",
       tagline: "To run a full kitchen",
-      description: "Everything above, plus full inventory, automatic orders, menus, and usage statistics.",
+      description: "Everything above, plus full inventory, automatic orders, menus with their prep sheets, sales logging and reports.",
       features: [
         "Everything in the Home Cook plan",
         "Full inventory (stock and alerts)",
@@ -163,7 +163,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       price: "$70/mo",
       tagline: "Total control of your business",
       description:
-        "Everything above, plus full finance: real P&L, POS sales import, Menu Engineering, and supplier price variance.",
+        "Everything above, plus the GastroMetrics POS, your team with permissions and full finance: real P&L, sales from your POS, Menu Engineering and supplier price variance.",
       features: [
         "Everything in the Chef de Partie plan",
         "Full finance: P&L and import of your POS sales report (Excel or CSV)",
@@ -232,7 +232,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     "chef-de-partie": {
       price: "$35/md",
       tagline: "Til at drive et komplet køkken",
-      description: "Alt ovenstående, plus fuldt lager, automatiske ordrer, menuer og brugsstatistik.",
+      description: "Alt ovenstående, plus fuldt lager, automatiske ordrer, menuer med MEP, registrering af salg og rapporter.",
       features: [
         "Alt fra Home Cook-planen",
         "Fuldt lager (beholdning og advarsler)",
@@ -249,7 +249,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       price: "$70/md",
       tagline: "Fuld kontrol over din virksomhed",
       description:
-        "Alt ovenstående, plus komplet økonomi: reel P&L, import af POS-salg, Menu Engineering og leverandørprisvarians.",
+        "Alt ovenstående, plus GastroMetrics' POS, dit team med rettigheder og komplet økonomi: reel P&L, salg fra dit POS, Menu Engineering og leverandørprisvarians.",
       features: [
         "Alt fra Chef de Partie-planen",
         "Komplet økonomi: P&L og import af salgsrapporten fra dit POS (Excel eller CSV)",
@@ -318,7 +318,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     "chef-de-partie": {
       price: "35 $/mois",
       tagline: "Pour faire tourner une cuisine complète",
-      description: "Tout ce qui précède, plus l'inventaire complet, les commandes automatiques, les menus et les statistiques d'utilisation.",
+      description: "Tout ce qui précède, plus l'inventaire complet, les commandes automatiques, les menus avec leur mise en place, la saisie des ventes et les rapports.",
       features: [
         "Tout ce qu'offre le plan Home Cook",
         "Inventaire complet (stock et alertes)",
@@ -335,7 +335,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       price: "70 $/mois",
       tagline: "Le contrôle total de votre établissement",
       description:
-        "Tout ce qui précède, plus les finances complètes : P&L réel, import des ventes POS, Menu Engineering et variance des prix fournisseurs.",
+        "Tout ce qui précède, plus le POS de GastroMetrics, votre équipe avec permissions et les finances complètes : P&L réel, ventes de votre POS, Menu Engineering et variance des prix fournisseurs.",
       features: [
         "Tout ce qu'offre le plan Chef de Partie",
         "Finances complètes : P&L et import du rapport de ventes de votre caisse (Excel ou CSV)",
@@ -404,7 +404,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     "chef-de-partie": {
       price: "US$35/mês",
       tagline: "Para operar uma cozinha completa",
-      description: "Tudo o anterior, mais estoque completo, pedidos automáticos, cardápios e estatísticas de uso.",
+      description: "Tudo o anterior, mais estoque completo, pedidos automáticos, cardápios com MEP, registro de vendas e relatórios.",
       features: [
         "Tudo do plano Home Cook",
         "Estoque completo (níveis e alertas)",
@@ -421,7 +421,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
       price: "US$70/mês",
       tagline: "O controle total do seu negócio",
       description:
-        "Tudo o anterior, mais finanças completas: P&L real, importação de vendas do POS, Menu Engineering e variação de preços de fornecedores.",
+        "Tudo o anterior, mais o POS do GastroMetrics, sua equipe com permissões e finanças completas: P&L real, vendas do seu POS, Menu Engineering e variação de preços de fornecedores.",
       features: [
         "Tudo do plano Chef de Partie",
         "Finanças completas: P&L e importação do relatório de vendas do seu PDV (Excel ou CSV)",
@@ -468,7 +468,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     "chef-de-partie": {
       price: "$35/月",
       tagline: "适合运营一整间厨房",
-      description: "包含以上全部，另加完整库存、自动订单、菜单和使用统计。",
+      description: "包含以上全部，另加完整库存、自动订单、菜单及备料单（MEP）、销售登记和报表。",
       features: [
         "Home Cook套餐的全部功能",
         "完整库存（库存量与预警）",
@@ -484,7 +484,7 @@ export const planContentByLanguage: Record<LanguageCode, Record<string, PlanLoca
     "sous-chef": {
       price: "$70/月",
       tagline: "全面掌控你的生意",
-      description: "包含以上全部，另加完整财务：真实P&L、POS销售数据导入、菜单工程分析和供应商价格波动分析。",
+      description: "包含以上全部，另加 GastroMetrics POS、按权限管理的团队，以及完整财务：真实P&L、POS销售数据、菜单工程分析和供应商价格波动分析。",
       features: [
         "Chef de Partie套餐的全部功能",
         "完整财务：P&L 和 POS 销售报表导入（Excel 或 CSV）",

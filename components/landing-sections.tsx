@@ -17,6 +17,7 @@ import {
   Tag,
   RefreshCw,
   Camera,
+  Wine,
   BarChart3,
   ShoppingCart,
   Gift,
@@ -245,8 +246,39 @@ function BentoPrice({ on }: { on: boolean }) {
 function BentoCascade({ on }: { on: boolean }) {
   return <RealCrop on={on} screen="dashboard" focus={[30, 30]} zoom={1.35} alt="" />
 }
-function BentoImport({ on }: { on: boolean }) {
-  return <RealCrop on={on} screen="ingredientes" focus={[50, 20]} zoom={1.05} alt="" />
+/**
+ * Barra y bebidas (docs/288; fichas de bebidas docs/272, pérdidas docs/283, volumen docs/286).
+ * Dibujado con los mismos cálculos de la app (pour cost = costo ÷ precio). No hay captura de la
+ * barra en public/landing: si se agrega una, cambiar por RealCrop.
+ */
+function BentoBar({ on }: { on: boolean }) {
+  const { t } = useLanguage()
+  const rows = [
+    { name: t("landing_bar_row1"), pct: 18 },
+    { name: t("landing_bar_row2"), pct: 24 },
+    { name: t("landing_bar_row3"), pct: 31 },
+  ]
+  return (
+    <div className="rounded-xl border border-hairline bg-background p-4 space-y-3 text-sm">
+      {rows.map((r, i) => (
+        <div key={r.name} className="space-y-1">
+          <div className="flex items-center justify-between gap-3">
+            <span className="truncate text-foreground">{r.name}</span>
+            <span className="tabular-nums text-text-3">
+              {t("landing_bar_pour")} {r.pct} %
+            </span>
+          </div>
+          <div className="h-1.5 rounded-full bg-muted">
+            <div
+              className="gm-anim h-full rounded-full bg-primary transition-[width] duration-1000 ease-out"
+              style={{ width: on ? `${r.pct * 2.5}%` : "0%", transitionDelay: `${i * 150}ms` }}
+            />
+          </div>
+        </div>
+      ))}
+      <p className="rounded-lg bg-warning-soft px-3 py-2 text-xs text-foreground">{t("landing_bar_loss")}</p>
+    </div>
+  )
 }
 function BentoReports({ on }: { on: boolean }) {
   return <RealCrop on={on} screen="reportes" focus={[50, 70]} zoom={1.15} alt="" />
@@ -299,7 +331,8 @@ export function LandingBento() {
     { key: "1", icon: Calculator, span: "md:col-span-2 md:row-span-2", Visual: BentoCostBars },
     { key: "2", icon: Tag, span: "", Visual: BentoPrice },
     { key: "3", icon: RefreshCw, span: "", Visual: BentoCascade },
-    { key: "4", icon: Camera, span: "md:col-span-2", Visual: BentoImport },
+    // Antes «importar» (ya tiene su sección «Trae lo que ya tienes»); desde docs/288, la barra.
+    { key: "4", icon: Wine, span: "md:col-span-2", Visual: BentoBar },
     { key: "5", icon: BarChart3, span: "", Visual: BentoReports },
     { key: "6", icon: ShoppingCart, span: "md:col-span-2", Visual: BentoStock },
     // MEP (docs/202): una hoja de mise en place por sección.

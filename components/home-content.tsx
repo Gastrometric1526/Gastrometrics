@@ -12,20 +12,11 @@ import type { TranslationKey } from "@/lib/i18n/translations"
 import { useLanguage } from "@/contexts/language-context"
 import { LandingRecipeDemo } from "@/components/landing-recipe-demo"
 import { LandingReferralSection } from "@/components/landing-referral-section"
-import { LandingAppTour, LandingPriceStory, LandingInContext } from "@/components/landing-showcase"
+import { LandingAppTour, LandingPriceStory } from "@/components/landing-showcase"
 import { LandingHeroDemo } from "@/components/landing-hero-demo"
 import { LandingTrustStrip, LandingProblem, LandingHowItWorks, LandingImport, LandingBento, LandingCompare, LandingRiskAndFounder, LandingClosing } from "@/components/landing-sections"
-import { ChefHat, ArrowRight, CheckCircle2, UtensilsCrossed, Store, Building2, Wine, Upload } from "lucide-react"
+import { ArrowRight, CheckCircle2, Upload } from "lucide-react"
 import { PublicReviews } from "@/components/public-reviews"
-
-// Qué plan encaja con cada tipo de negocio (docs/145) — funciones reales de cada plan.
-const BUSINESS_FIT = [
-  { key: "chef", icon: ChefHat, plan: "home-cook" },
-  { key: "catering", icon: UtensilsCrossed, plan: "chef-de-partie" },
-  { key: "bar", icon: Wine, plan: "chef-de-partie" },
-  { key: "restaurant", icon: Store, plan: "sous-chef" },
-  { key: "group", icon: Building2, plan: "chef-ejecutivo" },
-] as const
 
 // Landing rediseñada (docs/196, pedido del dueño: «rediseña todo, que tenga coherencia, que
 // una persona entienda qué es GastroMetrics, cómo funciona, y la convenza o le dé
@@ -37,7 +28,8 @@ const BUSINESS_FIT = [
 //   ¿Qué más hace? → bento de beneficios (LandingBento).
 //   ¿Qué lo hace distinto? → cambias un precio y todo se ajusta (LandingPriceStory).
 //   ¿Lo puedo probar ya? → la calculadora sin cuenta (LandingRecipeDemo).
-//   ¿Me sirve a mí? → donde estés, para quién, planes.
+//   ¿Me sirve a mí? → planes, cada uno con «Ideal para» (docs/288: se quitaron «Donde estés»
+//   y «¿Qué plan le sirve?», y Referidos quedó en una franja, para que la página no esté tan llena).
 //   ¿Qué arriesgo? → sin riesgo + nota del fundador; dudas → FAQ; cierre.
 // Un solo llamado a la acción («Crear mi cuenta gratis» → /signup), repetido. Sin
 // testimonios inventados: las opiniones reales salen solo desde 3 publicadas (docs/173).
@@ -112,43 +104,6 @@ export function HomeContent() {
 
         <LandingRecipeDemo />
 
-        <LandingInContext />
-
-        {/* ¿Qué plan le sirve a cada negocio? (docs/145) — pedido del dueño: decir qué
-            funciones encajan con cada tipo de negocio según el plan. Las funciones
-            listadas son las reales de cada plan (lib/plans.ts → unlockedFeatures). */}
-        <section className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 space-y-10">
-          <div className="max-w-2xl space-y-3">
-            <h2 className="text-3xl md:text-[40px] font-semibold tracking-[-0.038em] text-foreground">{t("landing_fit_title")}</h2>
-            <p className="text-text-3">{t("landing_fit_subtitle")}</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            {BUSINESS_FIT.map((fit) => {
-              const plan = plans.find((p) => p.slug === fit.plan)
-              return (
-                <div key={fit.key} className="rounded-2xl border border-hairline bg-card p-5 flex flex-col gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary-soft flex items-center justify-center">
-                    <fit.icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <p className="text-base font-semibold text-foreground leading-snug">{t(`landing_fit_${fit.key}_title` as TranslationKey)}</p>
-                  <p className="text-xs font-medium text-primary">
-                    {plan?.name} · {plan?.price}
-                  </p>
-                  <ul className="text-sm text-text-3 space-y-1.5 flex-1">
-                    {[1, 2, 3].map((n) => (
-                      <li key={n} className="flex items-start gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                        <span>{t(`landing_fit_${fit.key}_f${n}` as TranslationKey)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )
-            })}
-          </div>
-          <p className="text-xs text-text-4">{t("landing_fit_note")}</p>
-        </section>
-
         {/* Planes reales — los cinco de lib/plans.ts, Sous Chef destacado en negro. */}
         <section className="max-w-[1200px] mx-auto px-6 md:px-10 py-16 md:py-24 space-y-10">
           <div className="max-w-2xl space-y-3">
@@ -176,6 +131,10 @@ export function HomeContent() {
                       </p>
                     </div>
                     <p className={"text-xs " + (isHighlighted ? "text-background/70" : "text-text-3")}>{plan.tagline}</p>
+                    {/* Para qué negocio es (docs/288; antes una sección aparte, docs/145). */}
+                    <p className={"text-xs font-medium " + (isHighlighted ? "text-background" : "text-primary")}>
+                      {t("landing_plan_ideal_label")} {t(`landing_plan_ideal_${plan.slug.replace(/-/g, "_")}` as TranslationKey)}
+                    </p>
                     <p className={"text-xs leading-relaxed flex-1 " + (isHighlighted ? "text-background/80" : "text-text-3")}>
                       {plan.description}
                     </p>

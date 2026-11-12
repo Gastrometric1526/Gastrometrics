@@ -138,7 +138,7 @@ export const plans: Plan[] = [
     price: "$35/mes",
     priceUsdCents: 3500,
     tagline: "Para operar una cocina completa",
-    description: "Todo lo anterior, más inventario completo, órdenes automáticas, menús y estadísticas de uso.",
+    description: "Todo lo anterior, más inventario completo, órdenes automáticas, menús con su MEP, registro de ventas y reportes.",
     features: [
       "Todo lo del plan Home Cook",
       "Inventario completo (stock y alertas)",
@@ -161,7 +161,7 @@ export const plans: Plan[] = [
     priceUsdCents: 7000,
     tagline: "El control total de tu negocio",
     description:
-      "Todo lo anterior, más finanzas completas: P&L real, importación de ventas del POS, Menu Engineering y varianza de precios de proveedores.",
+      "Todo lo anterior, más el POS de GastroMetrics, tu equipo con permisos y finanzas completas: P&L real, ventas de tu POS, Menu Engineering y varianza de precios de proveedores.",
     features: [
       "Todo lo del plan Chef de Partie",
       "Finanzas completas: P&L e importación del reporte de ventas de tu POS (Excel o CSV)",
