@@ -24,6 +24,7 @@ type Tone = "default" | "attention" | "good" | "bad"
 export function AdminHome({
   inboxCount,
   supportWaiting,
+  recoveryPending = 0,
   feedbackCounts,
   expiringSoon,
   legalPending,
@@ -32,6 +33,7 @@ export function AdminHome({
 }: {
   inboxCount: number
   supportWaiting: number
+  recoveryPending?: number
   feedbackCounts: { total: number; nuevo: number; bug: number }
   expiringSoon: number
   legalPending: number
@@ -68,7 +70,7 @@ export function AdminHome({
       </div>
 
       <div data-tour="admin-todo">
-        <TodoCard feedbackCounts={feedbackCounts} supportWaiting={supportWaiting} expiringSoon={expiringSoon} legalPending={legalPending} goTo={(tab, sub) => onGo(tab as AdminTab, sub)} />
+        <TodoCard feedbackCounts={feedbackCounts} supportWaiting={supportWaiting} recoveryPending={recoveryPending} expiringSoon={expiringSoon} legalPending={legalPending} goTo={(tab, sub) => onGo(tab as AdminTab, sub)} />
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">

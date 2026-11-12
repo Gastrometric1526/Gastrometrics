@@ -29,22 +29,26 @@ function useOverviewData() {
 export function TodoCard({
   feedbackCounts,
   supportWaiting = 0,
+  recoveryPending = 0,
   expiringSoon,
   legalPending,
   goTo,
 }: {
   feedbackCounts: { total: number; nuevo: number; bug: number }
   supportWaiting?: number
+  recoveryPending?: number
   expiringSoon: number
   legalPending: number
   goTo: AdminGoTo
 }) {
   const { t } = useLanguage()
-  const { rev, health } = useOverviewData()
+  const { rev, health, revenue } = useOverviewData()
+  const loadingTodo = (revenue.loading && !revenue.data) || (health.loading && !health.data)
   const todo: { key: string; count: number; label: string; tone: "bad" | "warn" | "info"; onClick: () => void }[] = [
     { key: "failed", count: rev?.failed?.length ?? 0, label: t("admin_todo_failed_payments"), tone: "bad" as const, onClick: () => goTo("ingresos") },
     { key: "system", count: health.data?.problems?.length ?? 0, label: t("admin_todo_system"), tone: "bad" as const, onClick: () => goTo("sistema") },
     { key: "chat", count: supportWaiting, label: t("admin_todo_chat"), tone: "warn" as const, onClick: () => goTo("buzon", "chat") },
+    { key: "recovery", count: recoveryPending, label: t("admin_todo_recovery"), tone: "warn" as const, onClick: () => goTo("buzon", "recuperar") },
     { key: "bugs", count: feedbackCounts.bug, label: t("admin_todo_bugs_short"), tone: "bad" as const, onClick: () => goTo("buzon", "mensajes") },
     { key: "unread", count: feedbackCounts.nuevo, label: t("admin_todo_unread_short"), tone: "warn" as const, onClick: () => goTo("buzon", "mensajes") },
     {
@@ -68,7 +72,9 @@ export function TodoCard({
 
   return (
     <AdminCard title={t("admin_todo_title")} icon={ListTodo} description={t("admin_todo_desc")}>
-      {todo.length === 0 ? (
+      {todo.length === 0 && loadingTodo ? (
+        <LoadingBlock rows={2} />
+      ) : todo.length === 0 ? (
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
           <CheckCircle2 className="h-4 w-4 text-success" />
           {t("admin_todo_clear")}

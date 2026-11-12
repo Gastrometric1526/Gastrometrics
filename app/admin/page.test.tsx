@@ -45,6 +45,7 @@ vi.mock("@/components/admin/health-panel", () => ({ HealthPanel: stub("health") 
 vi.mock("@/components/admin/retention-panel", () => ({ RetentionPanel: stub("retention") }))
 vi.mock("@/components/admin/funnel-panel", () => ({ FunnelPanel: stub("funnel") }))
 vi.mock("@/components/admin/account-history-panel", () => ({ AccountHistoryPanel: stub("history") }))
+vi.mock("@/components/admin/recovery-panel", () => ({ RecoveryPanel: stub("recovery") }))
 
 import AdminPage from "./page"
 
@@ -111,14 +112,15 @@ describe("/admin con Inicio de tarjetas (docs/281)", () => {
     expect(container.querySelector('[role="tablist"]')).toBeNull()
   })
 
-  it("cada tarjeta abre su área con todos sus bloques uno debajo del otro, y «Inicio» vuelve", async () => {
+  // docs/285: lo que se usa poco empieza plegado (una fila) y no se carga hasta abrirlo.
+  it("cada tarjeta abre su área con sus bloques principales abiertos, y «Inicio» vuelve", async () => {
     await act(async () => root.render(<AdminPage />))
     await flush()
     const expected: [string, string, string[]][] = [
-      ["buzon", es.admin_area_buzon, ["support", "feedback", "survey", "reviews"]],
-      ["cuentas", es.admin_area_cuentas, ["accounts", "stats", "history"]],
+      ["buzon", es.admin_area_buzon, ["support", "feedback", "recovery"]],
+      ["cuentas", es.admin_area_cuentas, ["accounts"]],
       ["ingresos", es.admin_area_ingresos, ["revenue"]],
-      ["crecimiento", es.admin_area_crecimiento, ["numbers", "funnel", "retention", "activation", "top-users", "inactive", "referrals", "analytics", "email-clicks", "usage-events", "ocr"]],
+      ["crecimiento", es.admin_area_crecimiento, ["numbers", "funnel"]],
       ["comunicacion", es.admin_area_comunicacion, ["news", "legal"]],
       ["sistema", es.admin_tab_system, ["health", "export", "push"]],
     ]
@@ -132,12 +134,18 @@ describe("/admin con Inicio de tarjetas (docs/281)", () => {
     }
   })
 
-  it("«Ir a:» lista los bloques del área en orden", async () => {
+  it("«Ir a:» lista los bloques en orden y abre uno plegado; tocar su fila lo abre y lo cierra", async () => {
     await act(async () => root.render(<AdminPage />))
     await flush()
     await click(tile("buzon"))
-    expect(blocks()).toEqual(["chat", "mensajes", "encuestas", "resenas"])
-    expect(container.textContent).toContain(es.admin_area_jump)
+    expect(blocks()).toEqual(["chat", "mensajes", "recuperar", "encuestas", "resenas"])
+    expect(container.querySelector('[data-panel="survey"]')).toBeNull()
+    const jumpRow = container.querySelector('nav[aria-label="' + es.admin_area_jump + '"]')
+    await click([...(jumpRow?.querySelectorAll("button") ?? [])].find((b) => b.textContent?.includes(es.admin_tab_surveys)))
+    expect(container.querySelector('[data-panel="survey"]')).toBeTruthy()
+    const header = container.querySelector('[data-admin-block="encuestas"] > button')
+    await click(header)
+    expect(container.querySelector('[data-panel="survey"]')).toBeNull()
   })
 
   it("la Guía lleva a la tarea y muestra sus pasos con los nombres nuevos", async () => {

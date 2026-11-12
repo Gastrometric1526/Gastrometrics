@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { RestoreContentRequest } from "@/components/account-recovery-cards"
 import Link from "next/link"
 import { ArrowLeft, Settings2, Building2, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -331,6 +332,8 @@ export default function MiPlanPage() {
                   }}
                 />
               )}
+              {/* ¿Borraste tu contenido por error? Pide un respaldo (docs/285). */}
+              <RestoreContentRequest />
               <AccountDangerZone />
             </div>
           </div>

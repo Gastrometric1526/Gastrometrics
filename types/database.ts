@@ -200,6 +200,27 @@ export interface Database {
         Relationships: never[]
       }
       // POS propio (docs/268, migración 0039): plano, extras y pedidos abiertos.
+      // Solicitudes para recuperar una cuenta (0041, docs/285).
+      account_recovery_requests: {
+        Row: {
+          id: string
+          kind: "forgot_email" | "lost_email" | "restore_content"
+          full_name: string | null
+          business_name: string | null
+          contact: string
+          possible_emails: string | null
+          details: string | null
+          user_id: string | null
+          user_email: string | null
+          language: string | null
+          status: "nuevo" | "resuelto"
+          resolved_at: string | null
+          created_at: string
+        }
+        Insert: Partial<Omit<Database["public"]["Tables"]["account_recovery_requests"]["Row"], "kind" | "contact">> & { kind: Database["public"]["Tables"]["account_recovery_requests"]["Row"]["kind"]; contact: string }
+        Update: Partial<Database["public"]["Tables"]["account_recovery_requests"]["Row"]>
+        Relationships: never[]
+      }
       // Personas con acceso a /admin (0040, docs/282).
       admin_members: {
         Row: {

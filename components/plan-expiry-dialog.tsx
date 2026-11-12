@@ -25,7 +25,7 @@ import { usePlanStatus, planExpiryOf, refreshPlanStatus, OPEN_PLAN_EXPIRY_EVENT 
 import { formatWeekdayDate } from "@/lib/date-format"
 
 // Páginas públicas y de cuenta: ahí no se interrumpe con la ventana.
-const QUIET_PATHS = ["/", "/login", "/signup", "/forgot-password", "/reset-password", "/planes", "/about", "/contacto", "/admin"]
+const QUIET_PATHS = ["/", "/login", "/signup", "/forgot-password", "/reset-password", "/recuperar-cuenta", "/planes", "/about", "/contacto", "/admin"]
 
 function seenKey(userId: string, stage: string, ref: string) {
   return `gm_plan_expiry_seen:${userId}:${stage}:${ref}`

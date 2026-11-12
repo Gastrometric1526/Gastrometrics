@@ -47,6 +47,8 @@ export const EXPORT_TABLES: ExportTable[] = [
   byId("reengagement_emails_sent"),
   // Personas con acceso a /admin (docs/282).
   { name: "admin_members", order: ["email"] },
+  // Solicitudes para recuperar una cuenta (docs/285).
+  byId("account_recovery_requests"),
 ]
 
 /** Fuentes que no son tablas: cuentas de acceso, Stripe y archivos guardados. */

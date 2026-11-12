@@ -18,7 +18,7 @@ import { formatDate } from "@/lib/date-format"
 import { getPlanBySlug } from "@/lib/plans"
 import type { PaymentRecord } from "@/lib/payment-notice"
 
-const QUIET_PATHS = ["/", "/login", "/signup", "/forgot-password", "/reset-password", "/planes", "/about", "/contacto", "/admin"]
+const QUIET_PATHS = ["/", "/login", "/signup", "/forgot-password", "/reset-password", "/recuperar-cuenta", "/planes", "/about", "/contacto", "/admin"]
 
 export const formatMoney = (cents: number | null, currency: string) =>
   typeof cents === "number" ? `${currency.toUpperCase() === "USD" ? "$" : `${currency.toUpperCase()} `}${(cents / 100).toFixed(2)}` : "—"

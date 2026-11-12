@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Recuperar la cuenta (docs/285). Lo de /admin no se menciona (docs/280).
+    version: "2026-11-12c",
+    tutorialHref: tourHref("mi-plan"),
+    content: {
+      es: { title: "Recupera tu cuenta, aunque no recuerdes tu correo", items: ["Al iniciar sesión, «¿Problemas para entrar?» te ayuda si olvidaste tu contraseña, no recuerdas con qué correo te registraste o ya no tienes acceso a tu correo. Lo revisa una persona y te contesta en 1 o 2 días hábiles.", "Si pediste eliminar tu cuenta, al entrar ves cuándo se borrará y la reactivas con un toque, sin escribirnos.", "¿Borraste tu contenido por error? En Mi Plan → Tu cuenta pides que restauremos un respaldo."] },
+      en: { title: "Recover your account, even if you don't remember your email", items: ["When signing in, “Trouble signing in?” helps if you forgot your password, don't remember which email you used or no longer have access to it. A person reviews it and replies within 1 or 2 business days.", "If you asked to delete your account, when you sign in you see when it will be deleted and can reactivate it in one tap, without writing to us.", "Deleted your content by mistake? In My Plan → Your account you can ask us to restore a backup."] },
+      da: { title: "Gendan din konto, også selvom du ikke kan huske din e-mail", items: ["Ved login hjælper »Problemer med at logge ind?«, hvis du har glemt din adgangskode, ikke kan huske, hvilken e-mail du brugte, eller ikke længere har adgang til den. En person gennemgår det og svarer inden for 1-2 hverdage.", "Har du bedt om at slette din konto, ser du ved login, hvornår den slettes, og kan genaktivere den med ét tryk uden at skrive til os.", "Har du slettet dit indhold ved en fejl? Under Min plan → Din konto kan du bede os om at gendanne en sikkerhedskopi."] },
+      fr: { title: "Récupérez votre compte, même sans vous souvenir de votre e-mail", items: ["À la connexion, « Un problème pour vous connecter ? » vous aide si vous avez oublié votre mot de passe, ne vous souvenez plus de votre e-mail ou n'y avez plus accès. Une personne l'examine et répond sous 1 ou 2 jours ouvrés.", "Si vous avez demandé la suppression de votre compte, vous voyez en vous connectant quand il sera supprimé et pouvez le réactiver d'un geste, sans nous écrire.", "Vous avez supprimé votre contenu par erreur ? Dans Mon forfait → Votre compte, demandez-nous de restaurer une sauvegarde."] },
+      pt: { title: "Recupere sua conta, mesmo sem lembrar o e-mail", items: ["Ao entrar, «Problemas para entrar?» ajuda se você esqueceu a senha, não lembra com qual e-mail se cadastrou ou não tem mais acesso a ele. Uma pessoa revisa e responde em 1 ou 2 dias úteis.", "Se você pediu para excluir a conta, ao entrar vê quando ela será excluída e pode reativá-la com um toque, sem nos escrever.", "Apagou seu conteúdo por engano? Em Meu plano → Sua conta, peça para restaurarmos um backup."] },
+      zh: { title: "即使不记得邮箱也能找回账户", items: ["登录时，「登录遇到问题？」可帮助你处理忘记密码、不记得注册邮箱或无法访问邮箱的情况。工作人员会审核，并在 1–2 个工作日内回复。", "如果你申请了删除账户，登录后会看到删除日期，一键即可重新激活，无需联系我们。", "误删了内容？在「我的套餐」→「你的账户」中申请恢复备份。"] },
+    },
+  },
+  {
     // Traer lo del dashboard principal a un negocio (docs/284).
     version: "2026-11-12b",
     tutorialHref: tourHref("negocios"),

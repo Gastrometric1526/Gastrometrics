@@ -266,6 +266,11 @@ export default function LoginPage() {
               <Link href="/forgot-password" className="text-sm text-primary hover:text-primary/80 transition-colors">
                 {t("login_forgot_password")}
               </Link>
+              {/* Recuperar la cuenta sin el correo (docs/285). */}
+              <span className="mx-2 text-muted-foreground">·</span>
+              <Link href="/recuperar-cuenta" className="text-sm text-primary hover:text-primary/80 transition-colors">
+                {t("login_trouble_signing_in")}
+              </Link>
             </div>
             <div className="text-center text-sm text-muted-foreground">
               {t("login_no_account")}{" "}

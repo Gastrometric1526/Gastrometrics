@@ -65,7 +65,8 @@ describe("/admin → Cuentas: en línea primero (docs/212)", () => {
     })
     await act(async () => {})
     expect(container.textContent).toContain("1 en línea ahora · van primero")
-    const emails = [...container.querySelectorAll("tbody tr")].map((tr) => tr.querySelector("td")?.textContent)
+    // docs/285: la tabla pasó a ser una lista; el correo es el primer texto de cada fila.
+    const emails = [...container.querySelectorAll("[data-accounts-list] > li")].map((li) => li.querySelector("p span.truncate")?.textContent)
     expect(emails).toEqual(["b@x.test", "a@x.test"])
   })
 })

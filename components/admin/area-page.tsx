@@ -8,7 +8,7 @@
 
 import type React from "react"
 import { useEffect, useState } from "react"
-import { ArrowLeft, ChevronDown, Lightbulb } from "lucide-react"
+import { ArrowLeft, ChevronDown, ChevronRight, Lightbulb } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/contexts/language-context"
 import { ADMIN_SECTIONS, howToSteps, type AdminTab } from "@/lib/admin/nav"
@@ -28,6 +28,7 @@ export function AreaPage({
   banner,
   onHome,
   counts,
+  focus,
 }: {
   tab: AdminTab
   /** Contenido de cada bloque por id; sin bloques, se muestra `children`. */
@@ -37,6 +38,8 @@ export function AreaPage({
   onHome: () => void
   /** Número junto al nombre del bloque en «Ir a:» (p. ej. chats esperando). */
   counts?: Record<string, number>
+  /** Bloque al que se llegó por un enlace, una tarea o «Ir a:»: se abre aunque esté plegado. */
+  focus?: string
 }) {
   const { t } = useLanguage()
   const section = ADMIN_SECTIONS[tab]
@@ -44,6 +47,22 @@ export function AreaPage({
   const steps = howToSteps(section, t)
   const subs = (section.subs ?? []).filter((s) => blocks?.[s.id] !== undefined)
   const [open, setOpen] = useState(false)
+  // Bloques abiertos (docs/285): los marcados `folded` empiezan plegados.
+  const [unfolded, setUnfolded] = useState<Set<string>>(() => new Set(subs.filter((s) => !s.folded).map((s) => s.id)))
+  useEffect(() => {
+    setUnfolded(new Set(subs.filter((s) => !s.folded).map((s) => s.id)))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab])
+  useEffect(() => {
+    if (focus) setUnfolded((prev) => (prev.has(focus) ? prev : new Set([...prev, focus])))
+  }, [focus])
+  const toggleBlock = (id: string) =>
+    setUnfolded((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(HOWTO_KEY) || "{}") as Record<string, boolean>
@@ -60,7 +79,10 @@ export function AreaPage({
       localStorage.setItem(HOWTO_KEY, JSON.stringify({ ...saved, [tab]: next }))
     } catch {}
   }
-  const jump = (id: string) => document.getElementById(blockId(tab, id))?.scrollIntoView({ behavior: "smooth", block: "start" })
+  const jump = (id: string) => {
+    setUnfolded((prev) => (prev.has(id) ? prev : new Set([...prev, id])))
+    window.setTimeout(() => document.getElementById(blockId(tab, id))?.scrollIntoView({ behavior: "smooth", block: "start" }), 50)
+  }
 
   return (
     <div className="space-y-8">
@@ -119,16 +141,26 @@ export function AreaPage({
       {banner}
 
       {subs.length > 0 ? (
-        <div className="space-y-14">
-          {subs.map((s) => (
-            <section key={s.id} id={blockId(tab, s.id)} data-admin-block={s.id} className="scroll-mt-36 space-y-5">
-              <div className="space-y-1 border-b border-border pb-3">
-                <h3 className="text-xl font-semibold text-foreground">{t(s.label)}</h3>
-                <p className="text-sm text-muted-foreground">{t(s.desc)}</p>
-              </div>
-              <div className="space-y-6">{blocks![s.id]}</div>
-            </section>
-          ))}
+        <div className="space-y-4">
+          {subs.map((s) => {
+            const isOpen = unfolded.has(s.id)
+            return (
+              <section key={s.id} id={blockId(tab, s.id)} data-admin-block={s.id} data-open={isOpen} className="scroll-mt-36 rounded-2xl border border-border bg-background">
+                <button type="button" onClick={() => toggleBlock(s.id)} aria-expanded={isOpen} className="flex w-full items-center gap-3 p-5 text-left">
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                      {t(s.label)}
+                      {counts?.[s.id] ? <span className="rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground tabular-nums">{counts[s.id]}</span> : null}
+                    </span>
+                    <span className="block text-sm text-muted-foreground">{t(s.desc)}</span>
+                  </span>
+                  <ChevronRight className={cn("h-5 w-5 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-90")} />
+                </button>
+                {/* Plegado = no se carga (menos consultas y menos ruido). */}
+                {isOpen && <div className="space-y-6 border-t border-border p-5">{blocks![s.id]}</div>}
+              </section>
+            )
+          })}
         </div>
       ) : (
         <div className="space-y-6">{children}</div>

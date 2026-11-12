@@ -40,6 +40,7 @@ import { AdminLogin } from "@/components/admin/admin-login"
 import { AdminPanelTour } from "@/components/admin/admin-tour"
 import { AdminAccessPanel } from "@/components/admin/admin-access-panel"
 import type { AdminSessionInfo } from "@/lib/admin/session-info"
+import { RecoveryPanel } from "@/components/admin/recovery-panel"
 import { AreaPage, blockId } from "@/components/admin/area-page"
 import { AdminCard } from "@/components/admin/ui"
 import { OPEN_ACCOUNT_EVENT } from "@/lib/admin/open-account"
@@ -88,6 +89,8 @@ function AdminPageInner() {
   const [session, setSession] = useState<AdminSessionInfo | null>(null)
   const [feedbackCounts, setFeedbackCounts] = useState({ total: 0, nuevo: 0, bug: 0 })
   const [supportWaiting, setSupportWaiting] = useState(0)
+  // Solicitudes para recuperar una cuenta sin resolver (docs/285).
+  const [recoveryPending, setRecoveryPending] = useState(0)
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [legalPending, setLegalPending] = useState<number | null>(null)
   const [tab, setTab] = useState<AdminTab>("resumen")
@@ -192,6 +195,10 @@ function AdminPageInner() {
         // notificaciones para todo tipo de aviso (docs/267).
       })
       .catch(() => {})
+    fetch("/api/admin/recovery")
+      .then((res) => res.json())
+      .then((data) => typeof data.pending === "number" && setRecoveryPending(data.pending))
+      .catch(() => {})
     fetch("/api/admin/legal-update-email")
       .then((res) => res.json())
       .then((data) => {
@@ -229,7 +236,7 @@ function AdminPageInner() {
     return <AdminLogin info={session} onUnlocked={loadSession} />
   }
 
-  const inboxCount = feedbackCounts.nuevo + supportWaiting
+  const inboxCount = feedbackCounts.nuevo + supportWaiting + recoveryPending
   const goHome = () => goTo("resumen")
   const go = (next: string, sub?: string) => {
     const resolved = resolveAdminTab(next)
@@ -291,6 +298,7 @@ function AdminPageInner() {
           <AdminHome
             inboxCount={inboxCount}
             supportWaiting={supportWaiting}
+            recoveryPending={recoveryPending}
             feedbackCounts={feedbackCounts}
             expiringSoon={stats?.expiringSoon?.length ?? 0}
             legalPending={legalPending ?? 0}
@@ -302,12 +310,14 @@ function AdminPageInner() {
         {tab === "buzon" && (
           <AreaPage
             tab="buzon"
+            focus={scrollTo?.tab === "buzon" ? scrollTo.sub : undefined}
             onHome={goHome}
             banner={banner}
-            counts={{ chat: supportWaiting, mensajes: feedbackCounts.nuevo }}
+            counts={{ chat: supportWaiting, mensajes: feedbackCounts.nuevo, recuperar: recoveryPending }}
             blocks={{
               chat: <SupportInbox onWaitingChange={setSupportWaiting} />,
               mensajes: <FeedbackPanel onCountsChange={setFeedbackCounts} />,
+              recuperar: <RecoveryPanel onPendingChange={setRecoveryPending} />,
               encuestas: <SurveyPanel />,
               resenas: <ReviewsPanel />,
             }}
@@ -317,6 +327,7 @@ function AdminPageInner() {
         {tab === "cuentas" && (
           <AreaPage
             tab="cuentas"
+            focus={scrollTo?.tab === "cuentas" ? scrollTo.sub : undefined}
             onHome={goHome}
             banner={banner}
             blocks={{
@@ -336,6 +347,7 @@ function AdminPageInner() {
         {tab === "crecimiento" && (
           <AreaPage
             tab="crecimiento"
+            focus={scrollTo?.tab === "crecimiento" ? scrollTo.sub : undefined}
             onHome={goHome}
             banner={banner}
             blocks={{
@@ -362,6 +374,7 @@ function AdminPageInner() {
         {tab === "comunicacion" && (
           <AreaPage
             tab="comunicacion"
+            focus={scrollTo?.tab === "comunicacion" ? scrollTo.sub : undefined}
             onHome={goHome}
             banner={banner}
             counts={{ legal: legalPending ?? 0 }}

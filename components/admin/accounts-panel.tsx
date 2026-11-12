@@ -1081,7 +1081,7 @@ export function AccountsPanel() {
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1.5">
-            <CardTitle>{t("admin_accounts_list_title")}</CardTitle>
+            <CardTitle>{t("admin_tile_accounts").replace("{count}", String(total))}</CardTitle>
             <CardDescription>{t("admin_accounts_subtitle")}</CardDescription>
           </div>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={exportCsv} disabled={exporting}>
@@ -1141,200 +1141,82 @@ export function AccountsPanel() {
 
         {onlineTotal > 0 && (
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <span className="h-2 w-2 rounded-full bg-green-500" />
+            <span className="h-2 w-2 rounded-full bg-success" />
             {t("admin_accounts_online_now").replace("{count}", String(onlineTotal))}
           </p>
         )}
 
-        <div className="rounded-lg border border-border overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("admin_accounts_table_email")}</TableHead>
-                <TableHead>{t("admin_accounts_table_last_online")}</TableHead>
-                <TableHead>
-                  <Globe className="h-3.5 w-3.5 inline mr-1" />
-                  {t("admin_accounts_table_country")}
-                </TableHead>
-                <TableHead>
-                  <Clock className="h-3.5 w-3.5 inline mr-1" />
-                  {t("admin_accounts_table_time_spent")}
-                </TableHead>
-                <TableHead>{t("admin_accounts_table_plan")}</TableHead>
-                <TableHead>
-                  <Building2 className="h-3.5 w-3.5 inline mr-1" />
-                  {t("admin_accounts_table_businesses")}
-                </TableHead>
-                <TableHead>
-                  <Users className="h-3.5 w-3.5 inline mr-1" />
-                  {t("admin_accounts_table_team")}
-                </TableHead>
-                <TableHead>
-                  <Gift className="h-3.5 w-3.5 inline mr-1" />
-                  {t("admin_accounts_table_invites")}
-                </TableHead>
-                <TableHead>
-                  <FileText className="h-3.5 w-3.5 inline mr-1" />
-                  {t("admin_accounts_table_recipes")}
-                </TableHead>
-                <TableHead>
-                  <Package className="h-3.5 w-3.5 inline mr-1" />
-                  {t("admin_accounts_table_ingredients")}
-                </TableHead>
-                <TableHead>{t("admin_accounts_table_pos_import")}</TableHead>
-                <TableHead>{t("admin_accounts_table_manual_sales")}</TableHead>
-                <TableHead>{t("admin_accounts_table_created")}</TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loadingList && accounts.length === 0
-                ? Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={`skeleton-${i}`}>
-                      {Array.from({ length: 14 }).map((__, j) => (
-                        <TableCell key={j}>
-                          <Skeleton className="h-4 w-full" />
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                : onlineFirst(
-                    accounts.map((a) => ({ ...a, id: a.userId })),
-                    new Set(accounts.filter((a) => presenceByUserId[a.userId]?.online).map((a) => a.userId)),
-                  ).map((a) => (
-                    // Toda la fila abre la ficha de la cuenta (docs/232); antes solo el botón «Ver».
-                    <TableRow
-                      key={a.userId}
-                      className="cursor-pointer"
-                      tabIndex={0}
-                      onClick={() => loadDetail(a)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault()
-                          loadDetail(a)
-                        }
-                      }}
-                    >
-                      <TableCell className="text-foreground font-medium">
-                        <span className="inline-flex items-center gap-1.5">
-                          <span
-                            className={`h-2 w-2 shrink-0 rounded-full ${
-                              presenceByUserId[a.userId]?.online ? "bg-green-500" : "bg-muted-foreground/30"
-                            }`}
-                            title={
-                              presenceByUserId[a.userId]?.online
-                                ? t("admin_accounts_online")
-                                : presenceByUserId[a.userId]?.lastSeenAt
-                                  ? t("admin_accounts_last_seen").replace(
-                                      "{date}",
-                                      formatDateTime(presenceByUserId[a.userId]!.lastSeenAt as string),
-                                    )
-                                  : t("admin_accounts_never_seen")
-                            }
-                          />
-                          {a.email}
-                        </span>
-                      </TableCell>
-                      {/* Última vez en línea, visible (antes solo en el título del punto). */}
-                      <TableCell className="whitespace-nowrap text-muted-foreground">
-                        {presenceByUserId[a.userId]?.online ? (
-                          <span className="font-medium text-green-600">{t("admin_accounts_online")}</span>
-                        ) : presenceByUserId[a.userId]?.lastSeenAt ? (
-                          formatDateTime(presenceByUserId[a.userId]!.lastSeenAt as string)
-                        ) : (
-                          <span className="text-xs">{t("admin_accounts_never_seen")}</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {countryName(a.country) || (
-                          <span className="text-xs">{t("admin_accounts_no_country")}</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        <span className="inline-flex items-center gap-1.5">
-                          {formatActiveTime(a.totalActiveSeconds, t)}
-                          {!presenceByUserId[a.userId]?.online &&
-                            presenceByUserId[a.userId]?.lastSeenAt &&
-                            Date.now() - new Date(presenceByUserId[a.userId]!.lastSeenAt as string).getTime() >
-                              INACTIVE_THRESHOLD_MS && (
-                              <span title={t("admin_accounts_inactive_badge")} className="shrink-0">
-                                <CircleAlert className="h-3.5 w-3.5 text-amber-500" />
-                              </span>
-                            )}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {getPlanBySlug(a.planSlug).name}
-                        {a.planExpiresAt && <ExpiryHint at={a.planExpiresAt} />}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{a.businessCount}</TableCell>
-                      <TableCell className="text-muted-foreground">{a.teamMemberCount}</TableCell>
-                      <TableCell className="whitespace-nowrap text-muted-foreground">
-                        {a.referralSent || a.referralCreated ? (
-                          <span title={t("admin_accounts_invites_title")}>
-                            {t("admin_accounts_invites_cell")
-                              .replace("{sent}", String(a.referralSent))
-                              .replace("{created}", String(a.referralCreated))
-                              .replace("{active}", String(a.referralActive))}
-                          </span>
-                        ) : (
-                          <span className="text-xs">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{a.recipeCount}</TableCell>
-                      <TableCell className="text-muted-foreground">{a.ingredientCount}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {a.posImportCount > 0 ? (
-                          <Badge
-                            variant="secondary"
-                            title={
-                              a.lastPosImportAt
-                                ? formatDate(a.lastPosImportAt)
-                                : undefined
-                            }
-                          >
-                            {t("admin_accounts_pos_imported").replace("{count}", String(a.posImportCount))}
-                          </Badge>
-                        ) : (
-                          <span className="text-xs">{t("admin_accounts_pos_none")}</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {a.manualSalesCount > 0 ? (
-                          <Badge
-                            variant="secondary"
-                            title={
-                              a.lastManualSalesAt
-                                ? formatDate(a.lastManualSalesAt)
-                                : undefined
-                            }
-                          >
-                            {t("admin_accounts_manual_sales_recorded").replace("{count}", String(a.manualSalesCount))}
-                          </Badge>
-                        ) : (
-                          <span className="text-xs">{t("admin_accounts_manual_sales_none")}</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {formatDate(a.createdAt)}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            loadDetail(a)
-                          }}
-                        >
-                          {t("admin_accounts_view_detail")}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-            </TableBody>
-          </Table>
-        </div>
+        {/* Lista de cuentas (docs/285): antes una tabla de 13 columnas que medía 1673 px y
+            obligaba a desplazarse de lado. Ahora cada cuenta es una fila que se lee de un
+            vistazo; lo que no tiene datos no se muestra. Todo lo demás está en su ficha y en
+            «Exportar a Excel». */}
+        <ul className="divide-y divide-border rounded-xl border border-border" data-accounts-list>
+          {loadingList && accounts.length === 0
+            ? Array.from({ length: 5 }).map((_, i) => (
+                <li key={`skeleton-${i}`} className="space-y-2 p-4">
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-3 w-1/3" />
+                </li>
+              ))
+            : onlineFirst(
+                accounts.map((a) => ({ ...a, id: a.userId })),
+                new Set(accounts.filter((a) => presenceByUserId[a.userId]?.online).map((a) => a.userId)),
+              ).map((a) => {
+                const presence = presenceByUserId[a.userId]
+                const online = !!presence?.online
+                const inactive = !online && !!presence?.lastSeenAt && Date.now() - new Date(presence.lastSeenAt as string).getTime() > INACTIVE_THRESHOLD_MS
+                const extras = [
+                  a.businessCount ? `${a.businessCount} ${t("admin_accounts_table_businesses").toLowerCase()}` : null,
+                  a.teamMemberCount ? `${a.teamMemberCount} ${t("admin_accounts_table_team").toLowerCase()}` : null,
+                  a.referralSent || a.referralCreated
+                    ? t("admin_accounts_invites_cell").replace("{sent}", String(a.referralSent)).replace("{created}", String(a.referralCreated)).replace("{active}", String(a.referralActive))
+                    : null,
+                  a.posImportCount ? t("admin_accounts_pos_imported").replace("{count}", String(a.posImportCount)) : null,
+                  a.manualSalesCount ? t("admin_accounts_manual_sales_recorded").replace("{count}", String(a.manualSalesCount)) : null,
+                ].filter(Boolean)
+                return (
+                  // Toda la fila abre la ficha de la cuenta (docs/232).
+                  <li key={a.userId}>
+                    <button type="button" onClick={() => loadDetail(a)} className="flex w-full flex-col gap-2 p-4 text-left transition-colors hover:bg-muted/50 sm:flex-row sm:items-center sm:gap-4">
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <p className="flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
+                          <span className={`h-2 w-2 shrink-0 rounded-full ${online ? "bg-success" : "bg-muted-foreground/30"}`} />
+                          <span className="truncate">{a.email}</span>
+                        </p>
+                        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                          <span className="rounded-full border border-border px-2 py-0.5 font-medium text-foreground">{getPlanBySlug(a.planSlug).name}</span>
+                          {a.planExpiresAt && <ExpiryHint at={a.planExpiresAt} />}
+                          <span>{countryName(a.country) || t("admin_accounts_no_country")}</span>
+                          <span>·</span>
+                          {online ? (
+                            <span className="font-medium text-success">{t("admin_accounts_online")}</span>
+                          ) : presence?.lastSeenAt ? (
+                            <span className={inactive ? "text-warning" : undefined}>{t("admin_accounts_last_seen").replace("{date}", formatDateTime(presence.lastSeenAt as string))}</span>
+                          ) : (
+                            <span>{t("admin_accounts_never_seen")}</span>
+                          )}
+                        </p>
+                        {extras.length > 0 && <p className="text-xs text-muted-foreground">{extras.join(" · ")}</p>}
+                      </div>
+                      <div className="flex shrink-0 gap-4 text-center text-xs sm:gap-5">
+                        <div>
+                          <p className="text-base font-semibold tabular-nums text-foreground">{a.recipeCount}</p>
+                          <p className="text-muted-foreground">{t("admin_accounts_table_recipes")}</p>
+                        </div>
+                        <div>
+                          <p className="text-base font-semibold tabular-nums text-foreground">{a.ingredientCount}</p>
+                          <p className="text-muted-foreground">{t("admin_accounts_table_ingredients")}</p>
+                        </div>
+                        <div>
+                          <p className="text-base font-semibold tabular-nums text-foreground">{formatActiveTime(a.totalActiveSeconds, t)}</p>
+                          <p className="text-muted-foreground">{t("admin_accounts_table_time_spent")}</p>
+                        </div>
+                      </div>
+                    </button>
+                  </li>
+                )
+              })}
+        </ul>
 
         {total > pageSize && (
           <div className="flex items-center justify-between pt-2">
