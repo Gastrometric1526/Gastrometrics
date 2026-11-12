@@ -42,7 +42,7 @@ import { AdminAccessPanel } from "@/components/admin/admin-access-panel"
 import type { AdminSessionInfo } from "@/lib/admin/session-info"
 import { RecoveryPanel } from "@/components/admin/recovery-panel"
 import { AppOverviewPanel } from "@/components/admin/app-overview-panel"
-import { AreaPage, blockId } from "@/components/admin/area-page"
+import { AreaPage } from "@/components/admin/area-page"
 import { AdminCard } from "@/components/admin/ui"
 import { OPEN_ACCOUNT_EVENT } from "@/lib/admin/open-account"
 import { resolveAdminTab, taskSteps, type AdminTab, type AdminTask } from "@/lib/admin/nav"
@@ -116,20 +116,6 @@ function AdminPageInner() {
     }
   }, [])
 
-  // Baja al bloque cuando ya está en pantalla (los paneles cargan después de abrir el área).
-  useEffect(() => {
-    if (!scrollTo || scrollTo.tab !== tab) return
-    let tries = 0
-    const timer = window.setInterval(() => {
-      const el = document.getElementById(blockId(scrollTo.tab, scrollTo.sub))
-      if (el || ++tries > 20) {
-        window.clearInterval(timer)
-        el?.scrollIntoView({ behavior: "smooth", block: "start" })
-      }
-    }, 100)
-    return () => window.clearInterval(timer)
-  }, [scrollTo, tab])
-
   const goTo = (next: AdminTab, sub?: string) => {
     setTab(next)
     setScrollTo(sub ? { tab: next, sub, n: Date.now() } : null)
@@ -139,7 +125,8 @@ function AdminPageInner() {
     if (sub) params.set("sub", sub)
     else params.delete("sub")
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`)
-    if (!sub) window.scrollTo({ top: 0, behavior: "smooth" })
+    // Cada parte se ve sola (docs/287): siempre se empieza arriba.
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   const runTask = (task: AdminTask) => {
@@ -312,6 +299,7 @@ function AdminPageInner() {
           <AreaPage
             tab="buzon"
             focus={scrollTo?.tab === "buzon" ? scrollTo.sub : undefined}
+            onOpen={(sub) => goTo("buzon", sub ?? undefined)}
             onHome={goHome}
             banner={banner}
             counts={{ chat: supportWaiting, mensajes: feedbackCounts.nuevo, recuperar: recoveryPending }}
@@ -329,6 +317,7 @@ function AdminPageInner() {
           <AreaPage
             tab="cuentas"
             focus={scrollTo?.tab === "cuentas" ? scrollTo.sub : undefined}
+            onOpen={(sub) => goTo("cuentas", sub ?? undefined)}
             onHome={goHome}
             banner={banner}
             blocks={{
@@ -349,6 +338,7 @@ function AdminPageInner() {
           <AreaPage
             tab="crecimiento"
             focus={scrollTo?.tab === "crecimiento" ? scrollTo.sub : undefined}
+            onOpen={(sub) => goTo("crecimiento", sub ?? undefined)}
             onHome={goHome}
             banner={banner}
             blocks={{
@@ -377,6 +367,7 @@ function AdminPageInner() {
           <AreaPage
             tab="comunicacion"
             focus={scrollTo?.tab === "comunicacion" ? scrollTo.sub : undefined}
+            onOpen={(sub) => goTo("comunicacion", sub ?? undefined)}
             onHome={goHome}
             banner={banner}
             counts={{ legal: legalPending ?? 0 }}
@@ -385,19 +376,28 @@ function AdminPageInner() {
         )}
 
         {tab === "sistema" && (
-          <AreaPage tab="sistema" onHome={goHome} banner={banner}>
-            {/* Quién puede entrar al panel (docs/282). */}
-            <AdminAccessPanel />
-            <HealthPanel />
-            {/* Herramientas del panel (docs/279). */}
-            <AdminCard title={t("admin_tools_title")} icon={Wrench} description={t("admin_tools_desc")}>
-              <div className="flex flex-wrap items-center gap-2">
-                {/* Un solo botón: todas las tablas + el informe PDF, en un ZIP (docs/250, docs/266) */}
-                <FullExportButton />
-                <AdminPushToggle />
-              </div>
-            </AdminCard>
-          </AreaPage>
+          <AreaPage
+            tab="sistema"
+            focus={scrollTo?.tab === "sistema" ? scrollTo.sub : undefined}
+            onOpen={(sub) => goTo("sistema", sub ?? undefined)}
+            onHome={goHome}
+            banner={banner}
+            blocks={{
+              salud: <HealthPanel />,
+              // Quién puede entrar al panel (docs/282).
+              acceso: <AdminAccessPanel />,
+              // Herramientas del panel (docs/279).
+              herramientas: (
+                <AdminCard title={t("admin_tools_title")} icon={Wrench} description={t("admin_tools_desc")}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Un solo botón: todas las tablas + el informe PDF, en un ZIP (docs/250, docs/266) */}
+                    <FullExportButton />
+                    <AdminPushToggle />
+                  </div>
+                </AdminCard>
+              ),
+            }}
+          />
         )}
 
         {tab === "guia" && (

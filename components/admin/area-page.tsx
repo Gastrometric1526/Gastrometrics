@@ -1,17 +1,21 @@
 "use client"
 
 /**
- * Pantalla de un área de /admin (docs/281): «← Inicio», ícono, título y para qué sirve,
- * «Cómo se usa» (plegable) y los bloques uno debajo del otro, cada uno con su título y una
- * línea. Si hay varios bloques, una fila «Ir a:» salta a cada uno. Sin submenús.
+ * Pantalla de un área de /admin. Navegación por pasos (pedido del dueño, docs/287: «no es tan
+ * fácil navegar ni entender»):
+ *   Inicio (tarjetas) → área (índice: sus partes en tarjetas, con para qué sirve y si hay
+ *   algo pendiente) → una parte sola en pantalla, con «Inicio › Área» arriba y
+ *   anterior/siguiente abajo.
+ * Nunca hay varias partes abiertas una debajo de la otra. Un área con una sola parte (o sin
+ * partes) se muestra directa. Sin barra lateral ni submenús (docs/281).
  */
 
 import type React from "react"
 import { useEffect, useState } from "react"
-import { ArrowLeft, ChevronDown, ChevronRight, Lightbulb } from "lucide-react"
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronRight, Lightbulb } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/contexts/language-context"
-import { ADMIN_SECTIONS, howToSteps, type AdminTab } from "@/lib/admin/nav"
+import { ADMIN_SECTIONS, howToSteps, type AdminSub, type AdminTab } from "@/lib/admin/nav"
 import { SECTION_ICONS } from "@/components/admin/admin-nav"
 import { cn } from "@/lib/utils"
 
@@ -21,24 +25,32 @@ export function blockId(tab: AdminTab, sub: string) {
   return `admin-block-${tab}-${sub}`
 }
 
+function Badge({ n }: { n?: number }) {
+  if (!n) return null
+  return <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground tabular-nums">{n}</span>
+}
+
 export function AreaPage({
   tab,
   blocks,
   children,
   banner,
   onHome,
+  onOpen,
   counts,
   focus,
 }: {
   tab: AdminTab
-  /** Contenido de cada bloque por id; sin bloques, se muestra `children`. */
+  /** Contenido de cada parte por id; sin partes, se muestra `children`. */
   blocks?: Record<string, React.ReactNode>
   children?: React.ReactNode
   banner?: React.ReactNode
   onHome: () => void
-  /** Número junto al nombre del bloque en «Ir a:» (p. ej. chats esperando). */
+  /** Abre una parte (id) o vuelve al índice del área (null). Cambia `?sub=` en la dirección. */
+  onOpen?: (sub: string | null) => void
+  /** Número junto al nombre de la parte (p. ej. chats esperando). */
   counts?: Record<string, number>
-  /** Bloque al que se llegó por un enlace, una tarea o «Ir a:»: se abre aunque esté plegado. */
+  /** Parte abierta (de ?sub=, una tarea, un aviso o un toque en el índice). */
   focus?: string
 }) {
   const { t } = useLanguage()
@@ -47,22 +59,6 @@ export function AreaPage({
   const steps = howToSteps(section, t)
   const subs = (section.subs ?? []).filter((s) => blocks?.[s.id] !== undefined)
   const [open, setOpen] = useState(false)
-  // Bloques abiertos (docs/285): los marcados `folded` empiezan plegados.
-  const [unfolded, setUnfolded] = useState<Set<string>>(() => new Set(subs.filter((s) => !s.folded).map((s) => s.id)))
-  useEffect(() => {
-    setUnfolded(new Set(subs.filter((s) => !s.folded).map((s) => s.id)))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab])
-  useEffect(() => {
-    if (focus) setUnfolded((prev) => (prev.has(focus) ? prev : new Set([...prev, focus])))
-  }, [focus])
-  const toggleBlock = (id: string) =>
-    setUnfolded((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(HOWTO_KEY) || "{}") as Record<string, boolean>
@@ -79,13 +75,82 @@ export function AreaPage({
       localStorage.setItem(HOWTO_KEY, JSON.stringify({ ...saved, [tab]: next }))
     } catch {}
   }
-  const jump = (id: string) => {
-    setUnfolded((prev) => (prev.has(id) ? prev : new Set([...prev, id])))
-    window.setTimeout(() => document.getElementById(blockId(tab, id))?.scrollIntoView({ behavior: "smooth", block: "start" }), 50)
+
+  const activeIndex = subs.length > 1 ? subs.findIndex((s) => s.id === focus) : -1
+  const active = activeIndex >= 0 ? subs[activeIndex] : null
+
+  // ── Una parte sola en pantalla ──────────────────────────────────────────────
+  if (active) {
+    const prev = subs[activeIndex - 1]
+    const next = subs[activeIndex + 1]
+    return (
+      <div className="space-y-6" data-admin-view="block">
+        <nav aria-label={t("admin_area_path")} className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
+          <button type="button" onClick={onHome} className="rounded-md px-1.5 py-1 hover:text-primary">
+            {t("admin_home_back")}
+          </button>
+          <ChevronRight className="h-4 w-4" />
+          <button type="button" data-area-index onClick={() => onOpen?.(null)} className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:text-primary">
+            <Icon className="h-4 w-4" />
+            {t(section.label)}
+          </button>
+        </nav>
+        <div className="space-y-1.5">
+          <h2 className="flex flex-wrap items-center gap-2 text-3xl font-semibold tracking-tight text-foreground">
+            {t(active.label)}
+            <Badge n={counts?.[active.id]} />
+          </h2>
+          <p className="max-w-3xl text-muted-foreground">{t(active.desc)}</p>
+        </div>
+        {banner}
+        <section id={blockId(tab, active.id)} data-admin-block={active.id} className="space-y-6">
+          {blocks![active.id]}
+        </section>
+        <div className="grid gap-3 border-t border-border pt-5 sm:grid-cols-2">
+          {prev ? (
+            <button type="button" onClick={() => onOpen?.(prev.id)} className="flex items-center gap-3 rounded-2xl border border-border p-4 text-left hover:border-primary">
+              <ArrowLeft className="h-5 w-5 shrink-0 text-muted-foreground" />
+              <span className="min-w-0">
+                <span className="block text-xs text-muted-foreground">{t("admin_area_prev")}</span>
+                <span className="block truncate font-medium text-foreground">{t(prev.label)}</span>
+              </span>
+            </button>
+          ) : (
+            <span className="hidden sm:block" />
+          )}
+          {next ? (
+            <button type="button" onClick={() => onOpen?.(next.id)} className="flex items-center justify-end gap-3 rounded-2xl border border-border p-4 text-right hover:border-primary">
+              <span className="min-w-0">
+                <span className="block text-xs text-muted-foreground">{t("admin_area_next")}</span>
+                <span className="block truncate font-medium text-foreground">{t(next.label)}</span>
+              </span>
+              <ArrowRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+            </button>
+          ) : (
+            <button type="button" onClick={() => onOpen?.(null)} className="flex items-center justify-end gap-3 rounded-2xl border border-border p-4 text-right hover:border-primary">
+              <span className="min-w-0">
+                <span className="block text-xs text-muted-foreground">{t("admin_area_all_parts")}</span>
+                <span className="block truncate font-medium text-foreground">{t(section.label)}</span>
+              </span>
+              <ArrowRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Índice del área ────────────────────────────────────────────────────────
+  // Partes agrupadas por `group` (en el orden en que aparecen); sin grupo, una sola lista.
+  const groups: { label?: AdminSub["group"]; items: AdminSub[] }[] = []
+  for (const s of subs) {
+    const last = groups[groups.length - 1]
+    if (last && last.label === s.group) last.items.push(s)
+    else groups.push({ label: s.group, items: [s] })
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" data-admin-view={subs.length > 1 ? "index" : "single"}>
       <div className="space-y-5">
         <Button variant="ghost" size="sm" className="-ml-3 gap-1.5 text-muted-foreground" onClick={onHome}>
           <ArrowLeft className="h-4 w-4" />
@@ -119,49 +184,41 @@ export function AreaPage({
         )}
       </div>
 
-      {subs.length > 1 && (
-        <nav aria-label={t("admin_area_jump")} className="sticky top-[4.25rem] z-30 -mx-4 border-y border-border bg-background/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border">
-          <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none]">
-            <span className="shrink-0 text-xs font-medium text-muted-foreground">{t("admin_area_jump")}</span>
-            {subs.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => jump(s.id)}
-                className="shrink-0 whitespace-nowrap rounded-full border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:border-primary hover:text-primary"
-              >
-                {t(s.label)}
-                {counts?.[s.id] ? <span className="ml-1.5 rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground tabular-nums">{counts[s.id]}</span> : null}
-              </button>
-            ))}
-          </div>
-        </nav>
-      )}
-
       {banner}
 
-      {subs.length > 0 ? (
-        <div className="space-y-4">
-          {subs.map((s) => {
-            const isOpen = unfolded.has(s.id)
-            return (
-              <section key={s.id} id={blockId(tab, s.id)} data-admin-block={s.id} data-open={isOpen} className="scroll-mt-36 rounded-2xl border border-border bg-background">
-                <button type="button" onClick={() => toggleBlock(s.id)} aria-expanded={isOpen} className="flex w-full items-center gap-3 p-5 text-left">
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2 text-lg font-semibold text-foreground">
-                      {t(s.label)}
-                      {counts?.[s.id] ? <span className="rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground tabular-nums">{counts[s.id]}</span> : null}
+      {subs.length > 1 ? (
+        <div className="space-y-8">
+          <p className="text-sm font-medium text-muted-foreground">{t("admin_area_pick")}</p>
+          {groups.map((g, gi) => (
+            <div key={gi} className="space-y-3">
+              {g.label && <h3 className="text-sm font-semibold text-foreground">{t(g.label)}</h3>}
+              <div className="grid gap-3 md:grid-cols-2">
+                {g.items.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    data-admin-block-link={s.id}
+                    onClick={() => onOpen?.(s.id)}
+                    className="group flex items-center gap-4 rounded-2xl border border-border bg-background p-5 text-left transition-colors hover:border-primary"
+                  >
+                    <span className="min-w-0 flex-1 space-y-1">
+                      <span className="flex items-center gap-2 text-lg font-semibold text-foreground group-hover:text-primary">
+                        {t(s.label)}
+                        <Badge n={counts?.[s.id]} />
+                      </span>
+                      <span className="block text-sm text-muted-foreground">{t(s.desc)}</span>
                     </span>
-                    <span className="block text-sm text-muted-foreground">{t(s.desc)}</span>
-                  </span>
-                  <ChevronRight className={cn("h-5 w-5 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-90")} />
-                </button>
-                {/* Plegado = no se carga (menos consultas y menos ruido). */}
-                {isOpen && <div className="space-y-6 border-t border-border p-5">{blocks![s.id]}</div>}
-              </section>
-            )
-          })}
+                    <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground group-hover:text-primary" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
+      ) : subs.length === 1 ? (
+        <section id={blockId(tab, subs[0].id)} data-admin-block={subs[0].id} className="space-y-6">
+          {blocks![subs[0].id]}
+        </section>
       ) : (
         <div className="space-y-6">{children}</div>
       )}

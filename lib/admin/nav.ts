@@ -1,7 +1,7 @@
 /**
  * Mapa de /admin (docs/279, rediseñado en docs/281): un Inicio con 6 tarjetas grandes
- * (áreas) y, dentro de cada área, sus bloques uno debajo del otro —sin barra lateral ni
- * submenús—. Una sola fuente para el Inicio, el buscador «¿Qué quieres hacer?», la Guía y
+ * (áreas); cada área abre un índice de sus partes y
+ * cada parte se ve sola (docs/287) —sin barra lateral ni submenús—. Una sola fuente para el Inicio, el buscador «¿Qué quieres hacer?», la Guía y
  * el «Cómo se usa». Los id de área y bloque son los de la URL (`?tab=…&sub=…`), los mismos
  * que usan los avisos push y NOTICE_TARGET: no cambiarlos. `?tab=uso` (antes una sección
  * aparte) abre «Crecimiento y uso».
@@ -12,8 +12,11 @@ import type { TranslationKey } from "@/lib/i18n/translations"
 export const ADMIN_TABS = ["resumen", "buzon", "cuentas", "ingresos", "crecimiento", "comunicacion", "sistema", "guia"] as const
 export type AdminTab = (typeof ADMIN_TABS)[number]
 
-/** `folded`: empieza plegado (una fila con su título); se abre con un toque o con «Ir a:» (docs/285). */
-export type AdminSub = { id: string; label: TranslationKey; desc: TranslationKey; folded?: boolean }
+/**
+ * Una parte de un área. En el índice del área se muestra como tarjeta; al tocarla queda sola
+ * en pantalla (docs/287). `group`: título que agrupa partes seguidas en el índice.
+ */
+export type AdminSub = { id: string; label: TranslationKey; desc: TranslationKey; group?: TranslationKey }
 export type AdminSection = {
   id: AdminTab
   label: TranslationKey
@@ -39,8 +42,8 @@ export const ADMIN_SECTIONS: Record<AdminTab, AdminSection> = {
       { id: "mensajes", label: "admin_block_mensajes", desc: "admin_subdesc_mensajes" },
       // Solicitudes para recuperar una cuenta (docs/285).
       { id: "recuperar", label: "admin_recovery_title", desc: "admin_subdesc_recuperar" },
-      { id: "encuestas", label: "admin_tab_surveys", desc: "admin_subdesc_encuestas", folded: true },
-      { id: "resenas", label: "admin_tab_reviews", desc: "admin_subdesc_resenas", folded: true },
+      { id: "encuestas", label: "admin_tab_surveys", desc: "admin_subdesc_encuestas" },
+      { id: "resenas", label: "admin_tab_reviews", desc: "admin_subdesc_resenas" },
     ],
   },
   cuentas: {
@@ -51,8 +54,8 @@ export const ADMIN_SECTIONS: Record<AdminTab, AdminSection> = {
     howTo: ["admin_howto_cuentas"],
     subs: [
       { id: "lista", label: "admin_block_lista", desc: "admin_subdesc_lista" },
-      { id: "cifras", label: "admin_block_cifras", desc: "admin_subdesc_cifras", folded: true },
-      { id: "historial", label: "admin_block_historial", desc: "admin_subdesc_historial", folded: true },
+      { id: "cifras", label: "admin_block_cifras", desc: "admin_subdesc_cifras" },
+      { id: "historial", label: "admin_block_historial", desc: "admin_subdesc_historial" },
     ],
   },
   ingresos: { id: "ingresos", label: "admin_area_ingresos", desc: "admin_tabdesc_revenue", short: "admin_area_ingresos_short", howTo: ["admin_howto_ingresos"] },
@@ -63,18 +66,18 @@ export const ADMIN_SECTIONS: Record<AdminTab, AdminSection> = {
     short: "admin_area_crecimiento_short",
     howTo: ["admin_howto_crecimiento", "admin_howto_uso"],
     subs: [
-      { id: "numeros", label: "admin_block_numeros", desc: "admin_subdesc_numeros" },
+      { id: "numeros", label: "admin_block_numeros", desc: "admin_subdesc_numeros", group: "admin_group_overview" },
       // Toda la app: totales, uso por módulo, actividad y reparto de las cuentas (docs/286).
-      { id: "app", label: "admin_block_app", desc: "admin_subdesc_app" },
-      { id: "etapas", label: "admin_sub_account_funnel", desc: "admin_subdesc_etapas" },
-      { id: "retencion", label: "admin_sub_retention", desc: "admin_subdesc_retencion", folded: true },
-      { id: "activacion", label: "admin_tab_activation", desc: "admin_subdesc_activacion", folded: true },
-      { id: "usuarios", label: "admin_sub_top_users", desc: "admin_subdesc_usuarios", folded: true },
-      { id: "inactivos", label: "admin_sub_inactive", desc: "admin_subdesc_inactivos", folded: true },
-      { id: "referidos", label: "admin_sub_referrals", desc: "admin_subdesc_referidos", folded: true },
-      { id: "embudo", label: "admin_sub_funnel", desc: "admin_subdesc_embudo", folded: true },
-      { id: "correos", label: "admin_sub_email_clicks", desc: "admin_subdesc_correos", folded: true },
-      { id: "importaciones", label: "admin_sub_imports", desc: "admin_subdesc_importaciones", folded: true },
+      { id: "app", label: "admin_block_app", desc: "admin_subdesc_app", group: "admin_group_overview" },
+      { id: "etapas", label: "admin_sub_account_funnel", desc: "admin_subdesc_etapas", group: "admin_group_accounts" },
+      { id: "retencion", label: "admin_sub_retention", desc: "admin_subdesc_retencion", group: "admin_group_accounts" },
+      { id: "activacion", label: "admin_tab_activation", desc: "admin_subdesc_activacion", group: "admin_group_accounts" },
+      { id: "usuarios", label: "admin_sub_top_users", desc: "admin_subdesc_usuarios", group: "admin_group_accounts" },
+      { id: "inactivos", label: "admin_sub_inactive", desc: "admin_subdesc_inactivos", group: "admin_group_accounts" },
+      { id: "referidos", label: "admin_sub_referrals", desc: "admin_subdesc_referidos", group: "admin_group_growth" },
+      { id: "embudo", label: "admin_sub_funnel", desc: "admin_subdesc_embudo", group: "admin_group_growth" },
+      { id: "correos", label: "admin_sub_email_clicks", desc: "admin_subdesc_correos", group: "admin_group_growth" },
+      { id: "importaciones", label: "admin_sub_imports", desc: "admin_subdesc_importaciones", group: "admin_group_growth" },
     ],
   },
   comunicacion: {
@@ -88,7 +91,19 @@ export const ADMIN_SECTIONS: Record<AdminTab, AdminSection> = {
       { id: "legal", label: "admin_sub_legal", desc: "admin_subdesc_legal" },
     ],
   },
-  sistema: { id: "sistema", label: "admin_tab_system", desc: "admin_tabdesc_system", short: "admin_area_sistema_short", howTo: ["admin_howto_sistema"] },
+  sistema: {
+    id: "sistema",
+    label: "admin_tab_system",
+    desc: "admin_tabdesc_system",
+    short: "admin_area_sistema_short",
+    howTo: ["admin_howto_sistema"],
+    // Partes con nombre (docs/287): antes eran 3 tarjetas sueltas una debajo de la otra.
+    subs: [
+      { id: "salud", label: "admin_block_health", desc: "admin_subdesc_health" },
+      { id: "acceso", label: "admin_block_access", desc: "admin_subdesc_access" },
+      { id: "herramientas", label: "admin_block_tools", desc: "admin_subdesc_tools" },
+    ],
+  },
   guia: { id: "guia", label: "admin_tab_guide", desc: "admin_tabdesc_guide" },
 }
 
@@ -145,10 +160,10 @@ export const ADMIN_TASKS: AdminTask[] = [
   { id: "stuck", title: "admin_task_stuck", steps: "admin_task_stuck_steps", tab: "crecimiento", sub: "etapas" },
   { id: "news", title: "admin_task_news", steps: "admin_task_news_steps", tab: "comunicacion", sub: "novedades", vars: { send: "admin_product_updates_send_button" } },
   { id: "legal", title: "admin_task_legal", steps: "admin_task_legal_steps", tab: "comunicacion", sub: "legal", vars: { send: "admin_legal_update_send_button" } },
-  { id: "system", title: "admin_task_system", steps: "admin_task_system_steps", tab: "sistema" },
-  { id: "export", title: "admin_task_export", steps: "admin_task_export_steps", tab: "sistema", vars: { export: "admin_export_all_button" } },
-  { id: "admin-access", title: "admin_task_access_panel", steps: "admin_task_access_panel_steps", tab: "sistema", vars: { accesstitle: "admin_access_title", send: "admin_access_add_send", save: "admin_access_add_save", sendlater: "admin_access_send" } },
-  { id: "push", title: "admin_task_push", steps: "admin_task_push_steps", tab: "sistema", vars: { push: "admin_push_enable" } },
+  { id: "system", title: "admin_task_system", steps: "admin_task_system_steps", tab: "sistema", sub: "salud" },
+  { id: "export", title: "admin_task_export", steps: "admin_task_export_steps", tab: "sistema", sub: "herramientas", vars: { export: "admin_export_all_button" } },
+  { id: "admin-access", title: "admin_task_access_panel", steps: "admin_task_access_panel_steps", tab: "sistema", sub: "acceso", vars: { accesstitle: "admin_access_title", send: "admin_access_add_send", save: "admin_access_add_save", sendlater: "admin_access_send" } },
+  { id: "push", title: "admin_task_push", steps: "admin_task_push_steps", tab: "sistema", sub: "herramientas", vars: { push: "admin_push_enable" } },
 ]
 
 /** Las tareas que salen como accesos rápidos en el Resumen. */
@@ -185,6 +200,9 @@ export const COMMON_VARS: Record<string, TranslationKey> = {
   news: "admin_tab_product_updates",
   legal: "admin_sub_legal",
   system: "admin_tab_system",
+  health: "admin_block_health",
+  access: "admin_block_access",
+  tools: "admin_block_tools",
   guide: "admin_tab_guide",
   go: "admin_guide_go",
 }

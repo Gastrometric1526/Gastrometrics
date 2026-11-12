@@ -96,6 +96,7 @@ const click = async (el: Element | null | undefined) => {
 const tile = (id: string) => container.querySelector(`[data-area-tile="${id}"]`)
 const homeButton = () => [...container.querySelectorAll("main button")].find((b) => b.textContent?.trim() === es.admin_home_back)
 const blocks = () => [...container.querySelectorAll("[data-admin-block]")].map((b) => b.getAttribute("data-admin-block"))
+const links = () => [...container.querySelectorAll("[data-admin-block-link]")].map((b) => b.getAttribute("data-admin-block-link"))
 
 describe("/admin con Inicio de tarjetas (docs/281)", () => {
   it("abre en el Inicio con «Para atender hoy», 6 tarjetas y sus números", async () => {
@@ -112,40 +113,51 @@ describe("/admin con Inicio de tarjetas (docs/281)", () => {
     expect(container.querySelector('[role="tablist"]')).toBeNull()
   })
 
-  // docs/285: lo que se usa poco empieza plegado (una fila) y no se carga hasta abrirlo.
-  it("cada tarjeta abre su área con sus bloques principales abiertos, y «Inicio» vuelve", async () => {
+  // docs/287: cada área abre un índice de sus partes; cada parte se ve sola.
+  it("cada tarjeta abre el índice de su área, una parte se ve sola y «Inicio» vuelve", async () => {
     await act(async () => root.render(<AdminPage />))
     await flush()
-    const expected: [string, string, string[]][] = [
-      ["buzon", es.admin_area_buzon, ["support", "feedback", "recovery"]],
-      ["cuentas", es.admin_area_cuentas, ["accounts"]],
-      ["ingresos", es.admin_area_ingresos, ["revenue"]],
-      ["crecimiento", es.admin_area_crecimiento, ["numbers", "funnel"]],
-      ["comunicacion", es.admin_area_comunicacion, ["news", "legal"]],
-      ["sistema", es.admin_tab_system, ["health", "export", "push"]],
+    const expected: [string, string, string[], string, string][] = [
+      ["buzon", es.admin_area_buzon, ["chat", "mensajes", "recuperar", "encuestas", "resenas"], "chat", "support"],
+      ["cuentas", es.admin_area_cuentas, ["lista", "cifras", "historial"], "lista", "accounts"],
+      ["crecimiento", es.admin_area_crecimiento, ["numeros", "app", "etapas", "retencion", "activacion", "usuarios", "inactivos", "referidos", "embudo", "correos", "importaciones"], "etapas", "funnel"],
+      ["comunicacion", es.admin_area_comunicacion, ["novedades", "legal"], "legal", "legal"],
+      ["sistema", es.admin_tab_system, ["salud", "acceso", "herramientas"], "herramientas", "export"],
     ]
-    for (const [id, title, panels] of expected) {
+    for (const [id, title, parts, open, panel] of expected) {
       await click(tile(id))
       expect(container.querySelector("main h2")?.textContent).toBe(title)
-      for (const panel of panels) expect(container.querySelector(`[data-panel="${panel}"]`), `${id}: ${panel}`).toBeTruthy()
-      expect(window.location.search).toContain(`tab=${id}`)
+      expect(links()).toEqual(parts)
+      // En el índice no se carga ningún panel.
+      expect(container.querySelector("[data-admin-block]")).toBeNull()
+      await click(container.querySelector(`[data-admin-block-link="${open}"]`))
+      expect(blocks()).toEqual([open])
+      expect(container.querySelector(`[data-panel="${panel}"]`), `${id}: ${panel}`).toBeTruthy()
+      expect(window.location.search).toContain(`sub=${open}`)
+      // «Inicio › Área» vuelve al índice.
+      await click(container.querySelector("[data-area-index]"))
+      expect(links()).toEqual(parts)
+      expect(window.location.search).not.toContain("sub=")
       await click(homeButton())
       expect(container.querySelectorAll("[data-area-tile]").length).toBe(6)
     }
+    // Un área sin partes (Dinero) se muestra directa.
+    await click(tile("ingresos"))
+    expect(container.querySelector('[data-panel="revenue"]')).toBeTruthy()
   })
 
-  it("«Ir a:» lista los bloques en orden y abre uno plegado; tocar su fila lo abre y lo cierra", async () => {
+  it("anterior y siguiente recorren las partes del área en orden", async () => {
     await act(async () => root.render(<AdminPage />))
     await flush()
     await click(tile("buzon"))
-    expect(blocks()).toEqual(["chat", "mensajes", "recuperar", "encuestas", "resenas"])
-    expect(container.querySelector('[data-panel="survey"]')).toBeNull()
-    const jumpRow = container.querySelector('nav[aria-label="' + es.admin_area_jump + '"]')
-    await click([...(jumpRow?.querySelectorAll("button") ?? [])].find((b) => b.textContent?.includes(es.admin_tab_surveys)))
-    expect(container.querySelector('[data-panel="survey"]')).toBeTruthy()
-    const header = container.querySelector('[data-admin-block="encuestas"] > button')
-    await click(header)
-    expect(container.querySelector('[data-panel="survey"]')).toBeNull()
+    await click(container.querySelector('[data-admin-block-link="chat"]'))
+    const nextButton = () => [...container.querySelectorAll("main button")].find((b) => b.textContent?.startsWith(es.admin_area_next))
+    await click(nextButton())
+    expect(blocks()).toEqual(["mensajes"])
+    await click(nextButton())
+    expect(blocks()).toEqual(["recuperar"])
+    await click([...container.querySelectorAll("main button")].find((b) => b.textContent?.startsWith(es.admin_area_prev)))
+    expect(blocks()).toEqual(["mensajes"])
   })
 
   it("la Guía lleva a la tarea y muestra sus pasos con los nombres nuevos", async () => {
@@ -173,6 +185,7 @@ describe("/admin con Inicio de tarjetas (docs/281)", () => {
     await act(async () => root.render(<AdminPage />))
     await flush()
     expect(container.querySelector('[data-panel="email-clicks"]')).toBeTruthy()
-    expect(container.querySelector("main h2")?.textContent).toBe(es.admin_area_crecimiento)
+    expect(container.querySelector("main h2")?.textContent).toBe(es.admin_sub_email_clicks)
+    expect(container.querySelector("[data-area-index]")?.textContent).toBe(es.admin_area_crecimiento)
   })
 })
