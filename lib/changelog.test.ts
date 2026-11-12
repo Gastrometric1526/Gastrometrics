@@ -17,6 +17,17 @@ describe("novedades con tutorial (docs/167)", () => {
     }
   })
 
+  // Pedido del dueño (docs/280): los cambios de /admin no se cuentan en las Novedades que ven
+  // las personas (ventana, Notificaciones y correo). «PDF administrativo» sí es de la app.
+  it("ninguna novedad habla del panel de administración", () => {
+    const panel = /\/admin\b|panel (de )?admin|admin panel|panneau d'admin|painel (de )?admin|admin-?panel|管理面板|后台/i
+    for (const entry of CHANGELOG) {
+      for (const [lang, c] of Object.entries(entry.content)) {
+        for (const text of [c.title, ...c.items]) expect(text, `${entry.version} (${lang}) menciona /admin`).not.toMatch(panel)
+      }
+    }
+  })
+
   it("?tour= abre solo el tutorial de esa página", () => {
     expect(tourHref("mi-plan")).toBe("/mi-plan?tour=mi-plan")
     expect(requestedTourMatches("?tour=mi-plan", "tour_completed_mi-plan")).toBe(true)
