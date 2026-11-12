@@ -235,6 +235,36 @@ export const BEVERAGE_METHODS = ["shaken", "stirred", "built", "blended", "layer
 export type BeverageMethod = (typeof BEVERAGE_METHODS)[number]
 
 /**
+ * Agua que suma el hielo según el método (docs/286), valores de referencia de barra:
+ * agitado ~25 %, revuelto ~20 %, directo ~10 %, licuado ~30 %; en capas y preparado
+ * (café, té) no se diluye. Sirve para elegir el vaso, no es una medida exacta.
+ */
+export const DILUTION_BY_METHOD: Record<BeverageMethod, number> = { shaken: 0.25, stirred: 0.2, built: 0.1, blended: 0.3, layered: 0, brewed: 0 }
+
+/**
+ * Volumen de una bebida preparada, por servicio (docs/286): suma los ml de las líneas cuyo
+ * ingrediente está en una unidad de volumen (las de peso, como la hierbabuena, no cuentan) y,
+ * con el método, estima lo que se sirve con la dilución del hielo.
+ */
+export function preparedVolume(
+  lines: Pick<RecipeIngredient, "ingredientId" | "quantity">[],
+  ingredientsById: Map<string, Pick<Ingredient, "unit">>,
+  servings: number,
+  method?: string | null,
+): { liquidMl: number; servedMl: number | null } | null {
+  let total = 0
+  for (const line of lines) {
+    const ing = line.ingredientId ? ingredientsById.get(line.ingredientId) : undefined
+    const ml = ing ? mlPerIngredientUnit(ing.unit) : null
+    if (ml && line.quantity > 0) total += line.quantity * ml
+  }
+  if (!(total > 0)) return null
+  const per = total / Math.max(1, servings || 1)
+  const dilution = method && method in DILUTION_BY_METHOD ? DILUTION_BY_METHOD[method as BeverageMethod] : null
+  return { liquidMl: Math.round(per), servedMl: dilution === null ? null : Math.round(per * (1 + dilution)) }
+}
+
+/**
  * Línea única de una bebida por medida o por envase: `servingMl` ml del ingrediente
  * (o el envase entero con null), con el costo por servicio de `computeServingCost`.
  * La usan la Ficha Técnica de Bebidas y «Vender por copa o botella», así las dos dan

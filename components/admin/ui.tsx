@@ -236,11 +236,14 @@ export function BarList({
   format = (n: number) => String(n),
   empty,
   max: maxOverride,
+  showShare = true,
 }: {
   rows: { label: React.ReactNode; value: number; sub?: React.ReactNode; key?: string }[]
   format?: (n: number) => string
   empty?: string
   max?: number
+  /** % de cada fila sobre la suma (docs/286): no tiene sentido cuando las filas no se suman (adopción por módulo). */
+  showShare?: boolean
 }) {
   const { t } = useLanguage()
   if (rows.length === 0) return <EmptyState text={empty || t("admin_ui_empty")} />
@@ -254,7 +257,7 @@ export function BarList({
             <span className="text-foreground truncate">{r.label}</span>
             <span className="shrink-0 tabular-nums text-foreground font-medium">
               {format(r.value)}
-              {total > 0 && <span className="ml-1.5 text-xs font-normal text-muted-foreground">{Math.round((r.value / total) * 100)}%</span>}
+              {showShare && total > 0 && <span className="ml-1.5 text-xs font-normal text-muted-foreground">{Math.round((r.value / total) * 100)}%</span>}
             </span>
           </div>
           <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -282,8 +285,10 @@ export function DailyBars({
   const { t } = useLanguage()
   const [hover, setHover] = useState<number | null>(null)
   if (data.length === 0) return <EmptyState text={t("admin_ui_empty")} />
-  const max = Math.max(1, ...data.map((d) => d.value))
   const total = data.reduce((s, d) => s + d.value, 0)
+  // Sin datos en el período (docs/286): antes decía «Máximo: $0.01» (el mínimo de 1 centavo).
+  if (total === 0) return <EmptyState text={t("admin_ui_no_data_period")} />
+  const max = Math.max(...data.map((d) => d.value))
   const shown = hover !== null ? data[hover] : null
   return (
     <div className="space-y-2">

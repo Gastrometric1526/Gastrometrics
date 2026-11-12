@@ -41,6 +41,7 @@ import { AdminPanelTour } from "@/components/admin/admin-tour"
 import { AdminAccessPanel } from "@/components/admin/admin-access-panel"
 import type { AdminSessionInfo } from "@/lib/admin/session-info"
 import { RecoveryPanel } from "@/components/admin/recovery-panel"
+import { AppOverviewPanel } from "@/components/admin/app-overview-panel"
 import { AreaPage, blockId } from "@/components/admin/area-page"
 import { AdminCard } from "@/components/admin/ui"
 import { OPEN_ACCOUNT_EVENT } from "@/lib/admin/open-account"
@@ -352,6 +353,7 @@ function AdminPageInner() {
             banner={banner}
             blocks={{
               numeros: <OverviewNumbers goTo={go} />,
+              app: <AppOverviewPanel />,
               etapas: <FunnelPanel />,
               retencion: <RetentionPanel />,
               activacion: <ActivationPanel />,

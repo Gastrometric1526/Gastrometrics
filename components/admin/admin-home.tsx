@@ -114,6 +114,10 @@ function AreaTile({ id, metric, onOpen }: { id: AdminTab; metric: { text: string
       <div className="space-y-1.5">
         <p className="text-xl font-semibold text-foreground">{t(section.label)}</p>
         {section.short && <p className="text-sm leading-snug text-muted-foreground">{t(section.short)}</p>}
+        {/* Qué hay adentro (docs/286): los bloques del área, para saber dónde está cada cosa sin abrirla. */}
+        {section.subs && section.subs.length > 1 && (
+          <p className="text-xs leading-snug text-muted-foreground/80">{section.subs.map((s) => t(s.label)).join(" · ")}</p>
+        )}
         <p className={cn("min-h-[1.25rem] text-sm font-semibold", metric ? TONE_CLS[metric.tone] : "text-transparent")}>{metric?.text ?? "·"}</p>
       </div>
     </button>

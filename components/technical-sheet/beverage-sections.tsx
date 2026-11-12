@@ -371,10 +371,13 @@ export function BeverageServiceCard({
   beverage,
   disabled,
   onChange,
+  volume,
 }: {
   beverage: RecipeBeverage
   disabled?: boolean
   onChange: (next: RecipeBeverage) => void
+  /** Bebida preparada: ml de líquido por servicio y volumen servido estimado (docs/286). */
+  volume?: { liquidMl: number; servedMl: number | null } | null
 }) {
   const { t } = useLanguage()
   const set = (key: "glass" | "ice" | "garnish" | "method", value: string) => onChange({ ...beverage, [key]: value || undefined })
@@ -413,6 +416,15 @@ export function BeverageServiceCard({
             </SelectContent>
           </Select>
         </div>
+        {volume && (
+          <div className="rounded-lg bg-muted/50 p-3 text-sm sm:col-span-2" data-beverage-volume>
+            <p className="text-foreground">
+              {t("bev_volume_liquid").replace("{ml}", String(volume.liquidMl))}
+              {volume.servedMl !== null && <> · {t("bev_volume_served").replace("{ml}", String(volume.servedMl))}</>}
+            </p>
+            <p className="text-xs text-muted-foreground">{volume.servedMl !== null ? t("bev_volume_hint") : t("bev_volume_pick_method")}</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

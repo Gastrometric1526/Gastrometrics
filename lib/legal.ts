@@ -14,4 +14,7 @@
 // bajar aplica de inmediato con saldo a favor; la 3 quita el límite de 15 recetas, que no existe.
 // 1.7 (docs/252): Política de Privacidad 1.6. Las copias de seguridad se guardan hasta 6 meses,
 // también después de eliminar la cuenta. Términos y Aviso no cambiaron.
-export const CURRENT_LEGAL_VERSION = "1.7"
+// 1.8 (docs/286): Política de Privacidad 1.7. La sección 2 declara las solicitudes para
+// recuperar la cuenta (nombre, negocio, contacto y lo que la persona cuente) y que se borran
+// 12 meses después de resolverse. Términos y Aviso no cambiaron.
+export const CURRENT_LEGAL_VERSION = "1.8"

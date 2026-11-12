@@ -64,6 +64,8 @@ export const ADMIN_SECTIONS: Record<AdminTab, AdminSection> = {
     howTo: ["admin_howto_crecimiento", "admin_howto_uso"],
     subs: [
       { id: "numeros", label: "admin_block_numeros", desc: "admin_subdesc_numeros" },
+      // Toda la app: totales, uso por módulo, actividad y reparto de las cuentas (docs/286).
+      { id: "app", label: "admin_block_app", desc: "admin_subdesc_app" },
       { id: "etapas", label: "admin_sub_account_funnel", desc: "admin_subdesc_etapas" },
       { id: "retencion", label: "admin_sub_retention", desc: "admin_subdesc_retencion", folded: true },
       { id: "activacion", label: "admin_tab_activation", desc: "admin_subdesc_activacion", folded: true },

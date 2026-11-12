@@ -76,6 +76,7 @@ import {
   isBeverageRecipe,
   formatServingAmount,
   servingUnitFor,
+  preparedVolume,
 } from "@/lib/beverage"
 import { BeverageServiceCard, BeverageSourceCard, RecipeKindPicker, type RecipeKind } from "./beverage-sections"
 import { useToast } from "@/hooks/use-toast"
@@ -2018,6 +2019,12 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       {recipeKind === "drink" && (
         <BeverageServiceCard
           beverage={recipe.beverage ?? { mode: "prepared" }}
+          // Volumen por servicio de una bebida preparada (docs/286).
+          volume={
+            (recipe.beverage?.mode ?? "prepared") === "prepared"
+              ? preparedVolume(recipe.ingredients, new Map(availableIngredients.map((i) => [i.id, i])), recipe.yieldAmount || recipe.servings || 1, recipe.beverage?.method)
+              : null
+          }
           disabled={!isEditMode}
           onChange={(next) => setRecipe((prev) => ({ ...prev, beverage: next }))}
         />

@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Volumen de las bebidas preparadas (docs/286).
+    version: "2026-11-12d",
+    tutorialHref: tourHref("ficha-tecnica"),
+    content: {
+      es: { title: "Cócteles: cuánto se sirve", items: ["En una bebida preparada, la Ficha Técnica suma el líquido de cada servicio y, con el método (agitado, removido, directo, licuado…), estima cuánto se sirve con la dilución del hielo. Te ayuda a elegir el vaso.", "Solo cuentan los ingredientes medidos en volumen (ml, L, oz…)."] },
+      en: { title: "Cocktails: how much is served", items: ["For a prepared drink, the Recipe Sheet adds up the liquid per serving and, with the method (shaken, stirred, built, blended…), estimates how much is served with the ice dilution. It helps you choose the glass.", "Only ingredients measured by volume (ml, L, oz…) count."] },
+      da: { title: "Cocktails: hvor meget der serveres", items: ["For en tilberedt drik lægger opskriftsarket væsken pr. servering sammen og anslår ud fra metoden (rystet, rørt, bygget, blendet…), hvor meget der serveres med fortyndingen fra isen. Det hjælper dig med at vælge glas.", "Kun råvarer målt i volumen (ml, L, oz…) tæller."] },
+      fr: { title: "Cocktails : ce qui est servi", items: ["Pour une boisson préparée, la fiche technique additionne le liquide par service et, selon la méthode (shaker, mélangé, au verre, mixé…), estime ce qui est servi avec la dilution de la glace. Cela aide à choisir le verre.", "Seuls les ingrédients mesurés en volume (ml, L, oz…) comptent."] },
+      pt: { title: "Coquetéis: quanto é servido", items: ["Numa bebida preparada, a Ficha Técnica soma o líquido de cada serviço e, pelo método (batido, mexido, montado, batido no liquidificador…), estima quanto é servido com a diluição do gelo. Ajuda a escolher o copo.", "Só contam os ingredientes medidos em volume (ml, L, oz…)."] },
+      zh: { title: "鸡尾酒：出品量", items: ["调制饮品的技术配方表会汇总每份的液体量，并根据调制方法（摇和、搅拌、直调、搅打……）估算加冰稀释后的出品量，方便选择杯子。", "只计算按体积计量的食材（ml、L、oz……）。"] },
+    },
+  },
+  {
     // Recuperar la cuenta (docs/285). Lo de /admin no se menciona (docs/280).
     version: "2026-11-12c",
     tutorialHref: tourHref("mi-plan"),

@@ -37,6 +37,8 @@ export function PoliticaPrivacidadContent() {
           <p className="text-muted-foreground">{t("privacidad_s2_body")}</p>
           <p className="text-muted-foreground">{t("privacidad_s2_referral")}</p>
           <p className="text-muted-foreground">{t("privacidad_s2_push")}</p>
+          {/* Solicitudes para recuperar la cuenta (Privacidad 1.7, docs/286). */}
+          <p className="text-muted-foreground">{t("privacidad_s2_recovery")}</p>
         </section>
 
         <section className="space-y-3">
