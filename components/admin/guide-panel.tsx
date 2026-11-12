@@ -6,7 +6,7 @@
  * «Cómo se usa esta sección» y los accesos rápidos del Resumen.
  */
 
-import { ArrowRight, Map, Zap } from "lucide-react"
+import { ArrowRight, Map, PlayCircle, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useLanguage } from "@/contexts/language-context"
@@ -41,10 +41,30 @@ function TaskCard({ task, onTask }: { task: AdminTask; onTask: (task: AdminTask)
   )
 }
 
-export function GuidePanel({ onGo, onTask }: { onGo: (tab: AdminTab, sub?: string) => void; onTask: (task: AdminTask) => void }) {
+export function GuidePanel({ onGo, onTask, onStartTour }: { onGo: (tab: AdminTab, sub?: string) => void; onTask: (task: AdminTask) => void; onStartTour?: () => void }) {
   const { t } = useLanguage()
   return (
     <div className="space-y-8">
+      {/* Recorrido completo del panel (docs/282): vuelve al Inicio y lo abre. */}
+      {onStartTour && (
+        <button
+          type="button"
+          onClick={() => {
+            onGo("resumen")
+            onStartTour()
+          }}
+          className="group flex w-full items-center gap-4 rounded-2xl border border-primary/40 bg-primary/5 p-5 text-left transition-colors hover:border-primary"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <PlayCircle className="h-6 w-6" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold text-foreground">{t("admin_tour_restart")}</span>
+            <span className="block text-sm text-muted-foreground">{t("admin_tour_restart_desc")}</span>
+          </span>
+          <ArrowRight className="h-5 w-5 shrink-0 text-muted-foreground group-hover:text-primary" />
+        </button>
+      )}
       <section className="space-y-3">
         <h3 className="text-lg font-semibold text-foreground">{t("admin_guide_tasks_title")}</h3>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

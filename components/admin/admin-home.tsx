@@ -67,7 +67,9 @@ export function AdminHome({
         <p className="text-muted-foreground">{t("admin_tabdesc_resumen")}</p>
       </div>
 
-      <TodoCard feedbackCounts={feedbackCounts} supportWaiting={supportWaiting} expiringSoon={expiringSoon} legalPending={legalPending} goTo={(tab, sub) => onGo(tab as AdminTab, sub)} />
+      <div data-tour="admin-todo">
+        <TodoCard feedbackCounts={feedbackCounts} supportWaiting={supportWaiting} expiringSoon={expiringSoon} legalPending={legalPending} goTo={(tab, sub) => onGo(tab as AdminTab, sub)} />
+      </div>
 
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {HOME_AREAS.map((id) => (
@@ -75,7 +77,9 @@ export function AdminHome({
         ))}
       </div>
 
-      <QuickTasks onTask={onTask} onOpenGuide={() => onGo("guia")} />
+      <div data-tour="admin-quick">
+        <QuickTasks onTask={onTask} onOpenGuide={() => onGo("guia")} />
+      </div>
 
     </div>
   )

@@ -200,6 +200,23 @@ export interface Database {
         Relationships: never[]
       }
       // POS propio (docs/268, migración 0039): plano, extras y pedidos abiertos.
+      // Personas con acceso a /admin (0040, docs/282).
+      admin_members: {
+        Row: {
+          email: string
+          role: "owner" | "admin"
+          status: "pending" | "invited" | "active"
+          invited_at: string | null
+          invited_by: string | null
+          accepted_at: string | null
+          last_login_at: string | null
+          created_at: string
+          created_by: string | null
+        }
+        Insert: Partial<Omit<Database["public"]["Tables"]["admin_members"]["Row"], "email">> & { email: string }
+        Update: Partial<Database["public"]["Tables"]["admin_members"]["Row"]>
+        Relationships: never[]
+      }
       pos_data: {
         Row: {
           id: string

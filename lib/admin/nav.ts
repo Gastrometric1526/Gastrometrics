@@ -141,6 +141,7 @@ export const ADMIN_TASKS: AdminTask[] = [
   { id: "legal", title: "admin_task_legal", steps: "admin_task_legal_steps", tab: "comunicacion", sub: "legal", vars: { send: "admin_legal_update_send_button" } },
   { id: "system", title: "admin_task_system", steps: "admin_task_system_steps", tab: "sistema" },
   { id: "export", title: "admin_task_export", steps: "admin_task_export_steps", tab: "sistema", vars: { export: "admin_export_all_button" } },
+  { id: "admin-access", title: "admin_task_access_panel", steps: "admin_task_access_panel_steps", tab: "sistema", vars: { accesstitle: "admin_access_title", send: "admin_access_add_send", save: "admin_access_add_save", sendlater: "admin_access_send" } },
   { id: "push", title: "admin_task_push", steps: "admin_task_push_steps", tab: "sistema", vars: { push: "admin_push_enable" } },
 ]
 

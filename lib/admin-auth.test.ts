@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: () => undefined }) }))
 
-import { createAdminSessionValue, getAdminPasscode, isValidAdminSessionValue, safeEqual } from "./admin-auth"
+import { createAdminSessionValue, getAdminPasscode, isValidAdminSessionValue, readAdminSessionValue, safeEqual } from "./admin-auth"
+import { createHash, createHmac } from "crypto"
 import { isAuthorizedCronRequest } from "./cron-auth"
 
 const env = { ...process.env }
@@ -27,6 +28,27 @@ describe("sesión de /admin firmada (docs/154)", () => {
     const [expires, signature] = value.split(".")
     expect(isValidAdminSessionValue(`${Number(expires) + 99999}.${signature}`, now)).toBe(false)
     expect(isValidAdminSessionValue(value, now + 5 * 60 * 60 * 1000)).toBe(false)
+  })
+
+  // docs/282: la sesión dice quién entró y no se puede cambiar el correo.
+  it("la sesión de una cuenta guarda su correo y no se puede cambiar por otro", () => {
+    const now = Date.now()
+    const value = createAdminSessionValue(now, { kind: "account", email: "Socia@Correo.com" })!
+    expect(readAdminSessionValue(value, now)).toEqual({ kind: "account", email: "socia@correo.com" })
+    const [expires, , signature] = value.split(".")
+    const otro = "a-" + Buffer.from("intruso@correo.com").toString("base64url")
+    expect(readAdminSessionValue(`${expires}.${otro}.${signature}`, now)).toBeNull()
+    expect(readAdminSessionValue(`${expires}.code.${signature}`, now)).toBeNull()
+  })
+
+  it("el código de emergencia abre una sesión «code» y las cookies viejas de dos partes siguen valiendo", () => {
+    const now = Date.now()
+    expect(readAdminSessionValue(createAdminSessionValue(now)!, now)).toEqual({ kind: "code" })
+    // Cookie de antes de docs/282: vencimiento.firma, firmada con la misma llave.
+    const key = createHash("sha256").update("gm-admin-session-v1:codigo-de-prueba:llave-de-servidor").digest()
+    const expires = String(Math.floor(now / 1000) + 60)
+    const legacy = `${expires}.${createHmac("sha256", key).update(expires).digest("base64url")}`
+    expect(readAdminSessionValue(legacy, now)).toEqual({ kind: "code" })
   })
 
   it("cambiar el código invalida las sesiones abiertas", () => {

@@ -3,12 +3,9 @@
 import type React from "react"
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { useLanguage } from "@/contexts/language-context"
-import { ArrowLeft, Lock, RefreshCw, LogOut, BookOpen, X, Wrench } from "lucide-react"
+import { ArrowLeft, RefreshCw, LogOut, BookOpen, X, Wrench } from "lucide-react"
 import { StatsPanel, type AdminStats } from "@/components/admin/stats-panel"
 import { AdminLiveProvider, useAdminLive } from "@/components/admin/live"
 import { AccountsPanel } from "@/components/admin/accounts-panel"
@@ -39,6 +36,10 @@ import { AccountHistoryPanel } from "@/components/admin/account-history-panel"
 import { AdminSearch } from "@/components/admin/admin-search"
 import { GuidePanel } from "@/components/admin/guide-panel"
 import { AdminHome } from "@/components/admin/admin-home"
+import { AdminLogin } from "@/components/admin/admin-login"
+import { AdminPanelTour } from "@/components/admin/admin-tour"
+import { AdminAccessPanel } from "@/components/admin/admin-access-panel"
+import type { AdminSessionInfo } from "@/lib/admin/session-info"
 import { AreaPage, blockId } from "@/components/admin/area-page"
 import { AdminCard } from "@/components/admin/ui"
 import { OPEN_ACCOUNT_EVENT } from "@/lib/admin/open-account"
@@ -83,10 +84,8 @@ function AdminPageInner() {
 
   const [unlocked, setUnlocked] = useState(false)
   const [checkedSession, setCheckedSession] = useState(false)
-  const [passcodeInput, setPasscodeInput] = useState("")
-  const [passcodeError, setPasscodeError] = useState(false)
-  const [lockedUntil, setLockedUntil] = useState<number | null>(null)
-  const [lockoutSecondsLeft, setLockoutSecondsLeft] = useState(0)
+  // Quién entró y si puede dar acceso (docs/282).
+  const [session, setSession] = useState<AdminSessionInfo | null>(null)
   const [feedbackCounts, setFeedbackCounts] = useState({ total: 0, nuevo: 0, bug: 0 })
   const [supportWaiting, setSupportWaiting] = useState(0)
   const [stats, setStats] = useState<AdminStats | null>(null)
@@ -97,6 +96,8 @@ function AdminPageInner() {
   // Tarea elegida en la Guía, el buscador o los accesos rápidos: sus pasos se muestran
   // arriba de la sección a la que lleva, hasta cerrarlos (docs/279).
   const [activeTask, setActiveTask] = useState<AdminTask | null>(null)
+  // Cada vez que sube, se abre el recorrido del panel desde el Inicio (botón de la Guía).
+  const [tourRun, setTourRun] = useState(0)
 
   // Pestaña en la URL (?tab=crecimiento&sub=referidos, docs/191): al recargar se vuelve
   // a la misma sección y se puede enlazar. Se lee de window (no useSearchParams) para no
@@ -199,119 +200,33 @@ function AdminPageInner() {
       .catch(() => {})
   }, [unlocked, tick])
 
-  useEffect(() => {
-    // La cookie httpOnly no se puede leer desde JS — se le pregunta al servidor si
-    // hay una sesión admin válida. sessionStorage solo se usa como caché optimista
-    // para no parpadear la pantalla de candado en cada navegación dentro de /admin.
-    const cached = sessionStorage.getItem(ADMIN_SESSION_STORAGE_KEY) === "true"
-    if (cached) setUnlocked(true)
-
+  // La cookie httpOnly no se puede leer desde JS: se le pregunta al servidor si hay sesión
+  // del panel, de quién es y qué cuenta de la app está abierta (docs/282). sessionStorage
+  // solo evita el parpadeo de la pantalla de entrada al recargar.
+  const loadSession = () =>
     fetch("/api/admin/verify")
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: AdminSessionInfo) => {
+        setSession(data)
         setUnlocked(!!data.unlocked)
         if (data.unlocked) sessionStorage.setItem(ADMIN_SESSION_STORAGE_KEY, "true")
         else sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY)
       })
       .catch(() => {})
       .finally(() => setCheckedSession(true))
-  }, [])
 
-  // Cuenta regresiva visible mientras dura el bloqueo, para que el mensaje de espera
-  // no quede pegado con el mismo número.
   useEffect(() => {
-    if (!lockedUntil) {
-      setLockoutSecondsLeft(0)
-      return
-    }
-    const tick = () => {
-      const secondsLeft = Math.max(0, Math.ceil((lockedUntil - Date.now()) / 1000))
-      setLockoutSecondsLeft(secondsLeft)
-      if (secondsLeft === 0) setLockedUntil(null)
-    }
-    tick()
-    const interval = setInterval(tick, 1000)
-    return () => clearInterval(interval)
-  }, [lockedUntil])
-
-  const handleUnlock = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (lockedUntil && lockedUntil > Date.now()) return
-
-    try {
-      const res = await fetch("/api/admin/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ passcode: passcodeInput }),
-      })
-      const data = await res.json()
-
-      if (res.ok && data.ok) {
-        sessionStorage.setItem(ADMIN_SESSION_STORAGE_KEY, "true")
-        setUnlocked(true)
-        setPasscodeError(false)
-      } else {
-        if (data.lockedForSeconds) setLockedUntil(Date.now() + data.lockedForSeconds * 1000)
-        setPasscodeError(true)
-        setPasscodeInput("")
-      }
-    } catch {
-      setPasscodeError(true)
-    }
-  }
+    if (sessionStorage.getItem(ADMIN_SESSION_STORAGE_KEY) === "true") setUnlocked(true)
+    loadSession()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   if (!checkedSession) {
     return null
   }
 
   if (!unlocked) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-sm">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-2 h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-              <Lock className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <CardTitle>{t("admin_login_title")}</CardTitle>
-            <CardDescription>{t("admin_login_subtitle")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleUnlock} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="admin-passcode">{t("admin_login_passcode_label")}</Label>
-                <Input
-                  id="admin-passcode"
-                  type="password"
-                  value={passcodeInput}
-                  onChange={(e) => {
-                    setPasscodeInput(e.target.value)
-                    setPasscodeError(false)
-                  }}
-                  disabled={lockoutSecondsLeft > 0}
-                  autoFocus
-                />
-                {passcodeError && lockoutSecondsLeft === 0 && (
-                  <p className="text-sm text-destructive">{t("admin_login_error")}</p>
-                )}
-                {lockoutSecondsLeft > 0 && (
-                  <p className="text-sm text-destructive">
-                    {t("admin_login_locked").replace("{seconds}", String(lockoutSecondsLeft))}
-                  </p>
-                )}
-              </div>
-              <Button type="submit" className="w-full" disabled={lockoutSecondsLeft > 0}>
-                {t("admin_login_submit")}
-              </Button>
-              <Link href="/dashboard">
-                <Button type="button" variant="ghost" className="w-full">
-                  {t("common_back")}
-                </Button>
-              </Link>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    )
+    return <AdminLogin info={session} onUnlocked={loadSession} />
   }
 
   const inboxCount = feedbackCounts.nuevo + supportWaiting
@@ -326,6 +241,7 @@ function AdminPageInner() {
     await fetch("/api/admin/verify", { method: "DELETE" })
     sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY)
     setUnlocked(false)
+    loadSession()
   }
 
   return (
@@ -340,15 +256,22 @@ function AdminPageInner() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <button type="button" onClick={goHome} className="min-w-0 text-left md:w-52 md:shrink-0">
+          <button type="button" onClick={goHome} className="min-w-0 text-left md:w-52 md:shrink-0" data-tour="admin-title">
             <h1 className="truncate text-base font-semibold text-foreground">{t("admin_page_title")}</h1>
           </button>
-          <AdminSearch onGo={goTo} onTask={runTask} className="hidden flex-1 md:block md:max-w-lg" />
+          <AdminSearch onGo={goTo} onTask={runTask} className="hidden flex-1 md:block md:max-w-lg" data-tour="admin-search" />
           <div className="ml-auto flex shrink-0 items-center gap-1.5">
             <OnlineNow onOpenAccounts={() => goTo("cuentas")} />
             {/* Centro de notificaciones: mensajes, encuestas, cuentas nuevas… (docs/267) */}
-            <AdminNotificationsBell onNavigate={go} />
-            <Button variant="ghost" size="sm" className="gap-1.5" onClick={logout} aria-label={t("admin_logout")}>
+            <span data-tour="admin-bell">
+              <AdminNotificationsBell onNavigate={go} />
+            </span>
+            {session?.identity?.kind === "account" && (
+              <span className="hidden max-w-[14rem] truncate text-xs text-muted-foreground xl:inline" title={session.identity.email}>
+                {session.identity.email}
+              </span>
+            )}
+            <Button variant="ghost" size="sm" className="gap-1.5" onClick={logout} aria-label={t("admin_logout")} data-tour="admin-logout">
               <LogOut className="h-4 w-4" />
               <span className="hidden lg:inline">{t("admin_logout")}</span>
             </Button>
@@ -448,6 +371,8 @@ function AdminPageInner() {
 
         {tab === "sistema" && (
           <AreaPage tab="sistema" onHome={goHome} banner={banner}>
+            {/* Quién puede entrar al panel (docs/282). */}
+            <AdminAccessPanel />
             <HealthPanel />
             {/* Herramientas del panel (docs/279). */}
             <AdminCard title={t("admin_tools_title")} icon={Wrench} description={t("admin_tools_desc")}>
@@ -462,8 +387,14 @@ function AdminPageInner() {
 
         {tab === "guia" && (
           <AreaPage tab="guia" onHome={goHome} banner={banner}>
-            <GuidePanel onGo={goTo} onTask={runTask} />
+            <GuidePanel onGo={goTo} onTask={runTask} onStartTour={() => setTourRun((n) => n + 1)} />
           </AreaPage>
+        )}
+
+        {/* Recorrido completo del panel (docs/282): sale solo la primera vez a quien
+            administra sin ser dueño; cualquiera lo vuelve a ver desde la Guía. */}
+        {tab === "resumen" && (
+          <AdminPanelTour key={tourRun} autoStart={session?.identity?.kind === "account" && session.identity.role === "admin"} forceStart={tourRun > 0} />
         )}
       </main>
     </div>

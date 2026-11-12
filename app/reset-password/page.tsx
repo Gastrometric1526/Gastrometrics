@@ -68,12 +68,15 @@ export default function ResetPasswordPage() {
     setIsLoading(true)
     try {
       const supabase = getSupabaseBrowserClient()
-      const { error } = await supabase.auth.updateUser({ password })
+      const { data: updated, error } = await supabase.auth.updateUser({ password })
       if (error) throw error
 
       await storePasswordHash(password)
       setSuccess(true)
-      setTimeout(() => router.push("/dashboard"), 2000)
+      // Invitación al panel de administración (docs/282): al crear su contraseña va directo
+      // a /admin, donde entra con su cuenta y ve el recorrido del panel.
+      const toAdmin = updated?.user?.user_metadata?.admin_invite === true
+      setTimeout(() => router.push(toAdmin ? "/admin" : "/dashboard"), 2000)
     } catch (error) {
       console.error("Error resetting password:", error)
       setErrorMessage(t("reset_password_error_generic"))

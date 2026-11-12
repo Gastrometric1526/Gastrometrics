@@ -45,6 +45,8 @@ export const EXPORT_TABLES: ExportTable[] = [
   byId("activation_emails_sent"),
   byId("engagement_emails_sent"),
   byId("reengagement_emails_sent"),
+  // Personas con acceso a /admin (docs/282).
+  { name: "admin_members", order: ["email"] },
 ]
 
 /** Fuentes que no son tablas: cuentas de acceso, Stripe y archivos guardados. */
