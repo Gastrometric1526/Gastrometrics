@@ -771,7 +771,7 @@ function SidebarInner() {
               {effectiveCollapsed && <PlanCountdownDot className="top-1 right-2" />}
               {effectiveCollapsed && (
                 <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-foreground text-background text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                  {t("admin_accounts_plan_label")}: {currentPlanName}
+                  {t("sidebar_plan_line").replace("{plan}", currentPlanName)}
                 </div>
               )}
             </Button>

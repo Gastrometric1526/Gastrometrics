@@ -225,7 +225,8 @@ export function minutesSince(iso: string | null, now = new Date()): number {
 
 /** Extras que se ofrecen para un plato según su clasificación. */
 export function extrasFor(config: PosConfig, classification: string | null | undefined): PosExtra[] {
-  return config.extras.filter((e) => e.classifications.length === 0 || (!!classification && e.classifications.includes(classification)))
+  // Un extra sin nombre (recién agregado en Ajustes) no se ofrece todavía (docs/278).
+  return config.extras.filter((e) => e.name.trim() && (e.classifications.length === 0 || (!!classification && e.classifications.includes(classification))))
 }
 
 export function emptyConfig(now = new Date()): PosConfig {

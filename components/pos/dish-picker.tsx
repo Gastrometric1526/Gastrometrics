@@ -292,7 +292,7 @@ export function DishPicker({
 
             <div className="space-y-1.5">
               <p className="text-sm font-medium">{t("ventas_note_label")}</p>
-              <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("pos_note_placeholder")} rows={2} />
+              <Textarea value={note} maxLength={140} onChange={(e) => setNote(e.target.value)} placeholder={t("pos_note_placeholder")} rows={2} />
             </div>
           </div>
         )}

@@ -23,6 +23,7 @@ import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
 import { getCategoryLabel, getUnitLabel } from "@/lib/ingredient-labels"
 import { normalizeSearch } from "@/lib/manual-sales"
+import { distinguishLabel, repeatedNames } from "@/lib/ingredient-match"
 import {
   BEVERAGE_METHODS,
   buildServingLine,
@@ -145,7 +146,7 @@ export function beverageSourceOptions<T extends Pick<Ingredient, "name" | "categ
   )
 }
 
-function ProductTile({ ingredient, selected, onPick }: { ingredient: Ingredient; selected: boolean; onPick: () => void }) {
+function ProductTile({ ingredient, selected, onPick, distinct }: { ingredient: Ingredient; selected: boolean; onPick: () => void; distinct: string }) {
   const { language } = useLanguage()
   const content = getPackageContent(ingredient)
   return (
@@ -159,6 +160,8 @@ function ProductTile({ ingredient, selected, onPick }: { ingredient: Ingredient;
       )}
     >
       <span className="text-sm font-medium leading-tight line-clamp-2">{ingredient.name}</span>
+      {/* Mismo nombre, otro proveedor (docs/222, docs/278): se distingue con distinguishLabel. */}
+      {distinct && <span className="text-xs text-muted-foreground truncate">{distinct}</span>}
       <span className="mt-1 flex items-baseline justify-between gap-2 text-xs text-muted-foreground tabular-nums">
         <span>
           {content} {unitAbbreviations[ingredient.unit as keyof typeof unitAbbreviations] || getUnitLabel(ingredient.unit, language)}
@@ -197,6 +200,7 @@ export function BeverageSourceCard({
   const built = source ? buildServingLine(source, servingMl, "bev-line") : null
 
   const options = useMemo(() => beverageSourceOptions(ingredients, mode, includeAll), [ingredients, mode, includeAll])
+  const repeated = useMemo(() => repeatedNames(options), [options])
   const hasOthers = useMemo(() => beverageSourceOptions(ingredients, mode, true).length > options.length, [ingredients, mode, options])
   const categories = useMemo(() => [...new Set(options.map((o) => o.category))], [options])
   const shown = useMemo(() => {
@@ -282,7 +286,7 @@ export function BeverageSourceCard({
             ) : (
               <div className="grid max-h-80 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3">
                 {shown.map((ing) => (
-                  <ProductTile key={ing.id} ingredient={ing} selected={source?.id === ing.id} onPick={() => pickIngredient(ing)} />
+                  <ProductTile key={ing.id} ingredient={ing} selected={source?.id === ing.id} onPick={() => pickIngredient(ing)} distinct={distinguishLabel(ing, repeated)} />
                 ))}
               </div>
             )}
@@ -335,6 +339,10 @@ export function BeverageSourceCard({
         )}
 
         {mode === "measure" && source && !isVolume && <p className="text-sm text-warning">{t("bev_source_not_volume")}</p>}
+        {/* docs/278: una medida más grande que el envase casi siempre es un error de tipeo. */}
+        {mode === "measure" && built?.serving.servingsPerPackage != null && built.serving.servingsPerPackage < 1 && !showPicker && (
+          <p className="text-sm text-warning">{t("bev_source_bigger_than_package")}</p>
+        )}
 
         {source && built && !showPicker && (
           <div className="grid grid-cols-3 divide-x rounded-xl border text-sm">
@@ -379,15 +387,15 @@ export function BeverageServiceCard({
       <CardContent className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="bev-glass">{t("bev_service_glass")}</Label>
-          <Input id="bev-glass" value={beverage.glass ?? ""} onChange={(e) => set("glass", e.target.value)} placeholder={t("bev_service_glass_ph")} disabled={disabled} />
+          <Input id="bev-glass" maxLength={80} value={beverage.glass ?? ""} onChange={(e) => set("glass", e.target.value)} placeholder={t("bev_service_glass_ph")} disabled={disabled} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="bev-ice">{t("bev_service_ice")}</Label>
-          <Input id="bev-ice" value={beverage.ice ?? ""} onChange={(e) => set("ice", e.target.value)} placeholder={t("bev_service_ice_ph")} disabled={disabled} />
+          <Input id="bev-ice" maxLength={80} value={beverage.ice ?? ""} onChange={(e) => set("ice", e.target.value)} placeholder={t("bev_service_ice_ph")} disabled={disabled} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="bev-garnish">{t("bev_service_garnish")}</Label>
-          <Input id="bev-garnish" value={beverage.garnish ?? ""} onChange={(e) => set("garnish", e.target.value)} placeholder={t("bev_service_garnish_ph")} disabled={disabled} />
+          <Input id="bev-garnish" maxLength={80} value={beverage.garnish ?? ""} onChange={(e) => set("garnish", e.target.value)} placeholder={t("bev_service_garnish_ph")} disabled={disabled} />
         </div>
         <div className="space-y-1.5">
           <Label>{t("bev_service_method")}</Label>

@@ -245,6 +245,10 @@ export function MermaManagementDialog({
       prev.map((ing) => {
         if (ing.id === id && ing.merma && !ing.merma.useGlobal) {
           const originalContent = ing.originalNetContent || originalValues[ing.id]?.netContent || ing.pricing.netContent
+          // docs/278: nunca 100 % o más (ni negativo): el contenido aprovechable quedaba en 0 o
+          // menos y el precio por unidad se disparaba. Tope: 95 % o el 95 % del contenido.
+          value = Number.isFinite(value) ? Math.max(0, value) : 0
+          value = ing.merma.customType === "percentage" ? Math.min(value, 95) : Math.min(value, originalContent * 0.95)
           let adjustedContent = originalContent
 
           if (value > 0) {

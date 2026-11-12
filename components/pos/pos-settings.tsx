@@ -192,7 +192,7 @@ export function PosSettings({
             <div className="flex flex-wrap items-end gap-2">
               <label className="space-y-1">
                 <span className="text-xs text-muted-foreground">{t("pos_area_name")}</span>
-                <Input value={area.name} onChange={(e) => renameArea(e.target.value)} className="w-56" />
+                <Input value={area.name} maxLength={30} onChange={(e) => renameArea(e.target.value)} className="w-56" />
               </label>
               {plan.areas.length > 1 && (
                 <Button size="sm" variant="outline" className="gap-1.5" onClick={removeArea}>
@@ -241,7 +241,7 @@ export function PosSettings({
                   </label>
                   <label className="space-y-1 block">
                     <span className="text-xs text-muted-foreground">{t("pos_table_seats")}</span>
-                    <Input type="number" min={1} max={20} value={selected.seats} onChange={(e) => putTable({ ...selected, seats: Number(e.target.value) || 1 })} />
+                    <Input type="number" min={1} max={20} value={selected.seats} onChange={(e) => putTable({ ...selected, seats: Math.min(20, Math.max(1, Math.round(Number(e.target.value) || 1))) })} />
                   </label>
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <Button size="sm" variant="outline" className="gap-1.5" onClick={() => duplicate(selected)}>
@@ -284,7 +284,7 @@ export function PosSettings({
               <div className="grid gap-2 sm:grid-cols-[1fr_120px_1fr_auto] items-end">
                 <label className="space-y-1">
                   <span className="text-xs text-muted-foreground">{t("pos_extra_name")}</span>
-                  <Input value={e.name} onChange={(ev) => putExtra({ ...e, name: ev.target.value })} placeholder={t("pos_extra_name_placeholder")} />
+                  <Input value={e.name} maxLength={40} onChange={(ev) => putExtra({ ...e, name: ev.target.value })} placeholder={t("pos_extra_name_placeholder")} />
                 </label>
                 <label className="space-y-1">
                   <span className="text-xs text-muted-foreground">{t("pos_extra_price")}</span>

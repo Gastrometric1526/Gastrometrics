@@ -93,12 +93,13 @@ export function OrderPanel({
                 min={0}
                 inputMode="numeric"
                 value={order?.guests ?? ""}
-                onChange={(e) => onPatch({ guests: e.target.value ? Math.max(0, Number(e.target.value)) : null })}
+                max={999}
+                onChange={(e) => onPatch({ guests: e.target.value ? Math.min(999, Math.max(0, Math.round(Number(e.target.value) || 0))) : null })}
               />
             </label>
             <label className="space-y-1">
               <span className="text-xs text-muted-foreground">{t("ventas_waiter_label")}</span>
-              <Input value={order?.waiter ?? ""} onChange={(e) => onPatch({ waiter: e.target.value || null })} placeholder={t("ventas_optional")} />
+              <Input value={order?.waiter ?? ""} maxLength={40} onChange={(e) => onPatch({ waiter: e.target.value || null })} placeholder={t("ventas_optional")} />
             </label>
           </div>
         </SheetHeader>

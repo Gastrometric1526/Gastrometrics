@@ -1796,7 +1796,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                 {recipe.image ? (
                   <img
                     src={recipe.image || "/placeholder.svg"}
-                    alt="Recipe"
+                    alt={recipe.name || t("nav_ficha_tecnica")}
                     className="w-full h-full object-cover rounded-lg"
                   />
                 ) : (
