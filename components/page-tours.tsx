@@ -131,6 +131,8 @@ export function IngredientesTour({
       description: t("tour_ing_packaging_desc"),
       selector: '[data-tour="ing-new"]',
     },
+    // docs/299: una salsa, masa o fondo propio no se agrega aquí: va en Ficha Técnica como Subreceta.
+    { id: "subrecipe", title: t("tour_ing_subrecipe_title"), description: t("tour_ing_subrecipe_desc"), selector: '[data-tour="ing-new"]' },
     { id: "search", title: t("tour_ing_search_title"), description: t("tour_ing_search_desc"), selector: '[data-tour="ing-search"]' },
     { id: "unit-switch", title: t("tour_ing_unit_switch_title"), description: t("tour_ing_unit_switch_desc"), selector: '[data-tour="ing-unit-switch"]' },
     { id: "table", title: t("tour_ing_table_title"), description: t("tour_ing_table_desc"), selector: '[data-tour="ing-table"]' },

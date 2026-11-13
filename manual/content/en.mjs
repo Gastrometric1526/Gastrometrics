@@ -126,6 +126,7 @@ export default {
           ["A recipe using 300 g costs", "300 × 0.018 = 5.40"],
         ]],
         ["h3", "Categories and units"],
+        ["info", "Your sauces and doughs go in the Recipe Sheet", "If you make a sauce, dough or stock that you use in other dishes, don't add it here as an ingredient. Create it in the Recipe Sheet and choose <strong>Sub-recipe</strong> under Classification: it shows up in Ingredients on its own, with its cost, and updates when its ingredients change (chapter 5). Until you have a sub-recipe, we remind you when you add a new ingredient and under Classification in the Recipe Sheet."],
         ["p", "Categories are a fixed list of 40 (Poultry, Beef, Fish, Dairy, Flour, Spices, Beverages, Spirits, Wine, Beer, Soft drinks & mixers, Disposables…), plus a special one, <strong>Sub-recipe / production</strong>, assigned automatically to preparations you use as an ingredient (chapter 5). The available units are:"],
         ["chips", ["Grams", "Kilograms", "Milliliters", "Liters", "Ounces", "Fluid ounces", "Pounds", "Gallons", "Unit"]],
         ["p", "Use <strong>Unit</strong> for items you count (eggs, cans, bread rolls). The app treats them specially, for example to warn you if a recipe's yield looks too low."],

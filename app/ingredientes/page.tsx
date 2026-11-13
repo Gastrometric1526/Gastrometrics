@@ -97,6 +97,7 @@ import { useConfirmDialog } from "@/components/confirm-dialog"
 import { DetailPanel } from "@/components/detail-panel"
 import { ActionHint } from "@/components/action-hint"
 import { SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
+import { SubrecipeTip } from "@/components/subrecipe-tip"
 
 // Helper function for generating unique IDs
 const generateUniqueId = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 9)
@@ -1840,6 +1841,13 @@ export default function IngredientesPage() {
               onDismiss={ingredientDraft.dismissNotice}
             />
           )}
+
+          {/* docs/299: una salsa o masa propia va en Ficha Técnica como Subreceta, no aquí. */}
+          <SubrecipeTip
+            place="ingredientes"
+            show={!ingredientToEdit && currentStep === 0 && !isLoading && !ingredients.some((ing) => ing.category === SUBRECIPE_CLASSIFICATION)}
+            fichaHref={businessId ? `/ficha-tecnica?business=${businessId}` : "/ficha-tecnica"}
+          />
 
           {/* Progress indicator */}
           <div className="flex items-center justify-between mb-6">

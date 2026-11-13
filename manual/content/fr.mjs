@@ -126,6 +126,7 @@ export default {
           ["Une recette qui utilise 300 g coûte", "300 × 0.018 = 5.40"],
         ]],
         ["h3", "Catégories et unités"],
+        ["info", "Vos sauces et pâtes vont dans la fiche technique", "Si vous préparez une sauce, une pâte ou un fond utilisé dans d'autres plats, ne l'ajoutez pas ici comme ingrédient. Créez-le dans la fiche technique et choisissez <strong>Sous-recette</strong> dans Classification : il apparaît tout seul dans Ingrédients, avec son coût, et se met à jour quand ses ingrédients changent (chapitre 5). Tant que vous n'avez aucune sous-recette, nous vous le rappelons quand vous ajoutez un ingrédient et sous Classification dans la fiche technique."],
         ["p", "Les catégories forment une liste fixe de 40 (Volaille, Bœuf, Poisson, Produits laitiers, Farine, Épices, Boissons, Spiritueux, Vins, Bières, Sodas et mixers, Jetables…), plus une catégorie spéciale, <strong>Sous-recette / production</strong>, attribuée automatiquement aux préparations utilisées comme ingrédient (chapitre 5). Les unités disponibles sont :"],
         ["chips", ["Grammes", "Kilogrammes", "Millilitres", "Litres", "Onces", "Onces liquides", "Livres", "Gallons", "Unité"]],
         ["p", "Utilisez <strong>Unité</strong> pour ce qui se compte (œufs, boîtes, petits pains). L'application les traite de façon particulière, par exemple pour vous avertir si le rendement d'une recette semble trop faible."],

@@ -47,6 +47,7 @@ import { recalculateDependentsOfSubRecipe, requestSubRecipePricePrompt, subRecip
 import { logPriceRuleChanges } from "@/lib/services/activity-log"
 import type { BeverageMode, Recipe, RecipeBeverage, RecipeIngredient } from "@/types/recipe"
 import { classifications, recipeSteps, yieldUnits, SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
+import { SubrecipeTip } from "@/components/subrecipe-tip"
 import type { Ingredient } from "@/types/ingredient"
 import { unitAbbreviations } from "@/types/ingredient"
 import { NumericInput } from "@/components/ui/numeric-input"
@@ -1609,6 +1610,19 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                   </Select>
                 </div>
               </div>
+
+              {/* docs/299: mientras no haya ninguna subreceta, explica cómo se crea una. */}
+              <SubrecipeTip
+                place="ficha"
+                show={
+                  isEditMode &&
+                  recipeKind !== "drink" &&
+                  // Con la lista ya cargada, para no mostrarla un instante a quien ya tiene subrecetas.
+                  availableIngredients.length > 0 &&
+                  recipe.classification !== SUBRECIPE_CLASSIFICATION &&
+                  !availableIngredients.some((ing) => ing.category === SUBRECIPE_CLASSIFICATION)
+                }
+              />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" data-tour="ficha-paso-rendimiento">
                 <div>

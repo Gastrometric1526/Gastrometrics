@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Subrecetas: nota al agregar ingredientes y en la Ficha (docs/299).
+    version: "2026-11-13",
+    tutorialHref: tourHref("ingredientes"),
+    content: {
+      es: { title: "Tus salsas y masas, como subrecetas", items: ["Si preparas una salsa, masa o fondo que usas en otros platos, no la cargues como ingrediente: créala en Ficha Técnica y elige «Subreceta» en Clasificación. Aparece sola en Ingredientes con su costo y se actualiza si cambian sus ingredientes.", "Te lo recordamos al agregar un ingrediente nuevo y en la Ficha Técnica, hasta que crees tu primera subreceta."] },
+      en: { title: "Your sauces and doughs, as sub-recipes", items: ["If you make a sauce, dough or stock that you use in other dishes, don't add it as an ingredient: create it in the Recipe Sheet and choose “Sub-recipe” under Classification. It shows up in Ingredients on its own, with its cost, and updates when its ingredients change.", "We remind you when you add a new ingredient and in the Recipe Sheet, until you create your first sub-recipe."] },
+      da: { title: "Dine saucer og deje som underopskrifter", items: ["Laver du en sauce, dej eller fond, som du bruger i andre retter, så tilføj den ikke som råvare: opret den i opskriftsarket, og vælg »Underopskrift« under Klassifikation. Den dukker selv op under Råvarer med sin pris og opdateres, når dens råvarer ændres.", "Vi minder dig om det, når du tilføjer en ny råvare og i opskriftsarket, indtil du opretter din første underopskrift."] },
+      fr: { title: "Vos sauces et pâtes, en sous-recettes", items: ["Si vous préparez une sauce, une pâte ou un fond utilisé dans d'autres plats, ne l'ajoutez pas comme ingrédient : créez-le dans la fiche technique et choisissez « Sous-recette » dans Classification. Il apparaît tout seul dans Ingrédients, avec son coût, et se met à jour quand ses ingrédients changent.", "Nous vous le rappelons quand vous ajoutez un nouvel ingrédient et dans la fiche technique, jusqu'à votre première sous-recette."] },
+      pt: { title: "Seus molhos e massas, como sub-receitas", items: ["Se você prepara um molho, massa ou fundo que usa em outros pratos, não o cadastre como ingrediente: crie-o na Ficha Técnica e escolha «Sub-receita» em Classificação. Ele aparece sozinho em Ingredientes, com seu custo, e se atualiza quando os ingredientes mudam.", "Lembramos você ao adicionar um ingrediente novo e na Ficha Técnica, até criar sua primeira sub-receita."] },
+      zh: { title: "把你的酱汁和面团做成子配方", items: ["自制并用于其他菜品的酱汁、面团或高汤，不要作为食材添加：在技术配方表中创建，并在“分类”中选择“子配方”。它会自动出现在食材中并带有成本，食材变动时也会自动更新。", "在你创建第一个子配方之前，添加新食材时和在技术配方表中都会提醒你。"] },
+    },
+  },
+  {
     // Volumen de las bebidas preparadas (docs/286).
     version: "2026-11-12d",
     tutorialHref: tourHref("ficha-tecnica"),

@@ -126,6 +126,7 @@ export default {
           ["Uma receita que usa 300 g custa", "300 × 0.018 = 5.40"],
         ]],
         ["h3", "Categorias e unidades"],
+        ["info", "Seus molhos e massas vão na Ficha Técnica", "Se você prepara um molho, massa ou fundo que usa em outros pratos, não o adicione aqui como ingrediente. Crie-o na Ficha Técnica e escolha <strong>Sub-receita</strong> em Classificação: ele aparece sozinho em Ingredientes, com seu custo, e se atualiza quando os ingredientes mudam (capítulo 5). Enquanto você não tiver nenhuma sub-receita, lembramos ao adicionar um ingrediente novo e abaixo de Classificação na Ficha Técnica."],
         ["p", "As categorias são uma lista fixa de 40 (Aves, Carne bovina, Peixe, Laticínios, Farinha, Especiarias, Bebidas, Destilados, Vinhos, Cervejas, Refrigerantes e mixers, Descartáveis…), mais uma especial, <strong>Sub-receita / produção</strong>, atribuída automaticamente às preparações que você usa como ingrediente (capítulo 5). As unidades disponíveis são:"],
         ["chips", ["Gramas", "Quilogramas", "Mililitros", "Litros", "Onças", "Onças líquidas", "Libras", "Galões", "Unidade"]],
         ["p", "Use <strong>Unidade</strong> para itens que se contam (ovos, latas, pães). O app os trata de forma especial, por exemplo para avisar se o rendimento de uma receita parece baixo demais."],
