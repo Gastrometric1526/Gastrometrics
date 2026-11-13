@@ -472,3 +472,89 @@
    (la historia de precios de la landing deja su panel fijo al hacer scroll). Solo cuando ese
    contenedor tiene la landing adentro se cambia a clip, que no crea contenedor de scroll. */
 div:has(> .gm-landing-root) { overflow-x: clip; overflow-y: visible; }
+
+/*
+ * Tablas de /admin con un solo diseño (docs/293, pedido del dueño: «organiza mejor cómo se ve
+ * la información en tablas»). Todo lo que esté dentro de `.admin-tables` (el <main> del panel):
+ * encabezado gris, filas espaciadas que se resaltan al pasar el cursor y, en el celular, cada
+ * fila como una tarjeta con «columna: valor». Las etiquetas (`data-label`) las pone
+ * `useTableCardLabels` (components/admin/table-labels.ts) leyendo el encabezado de cada tabla.
+ */
+.admin-tables table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: hsl(var(--card));
+}
+.admin-tables thead th {
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+.admin-tables tbody td {
+  padding: 0.625rem 0.75rem;
+  vertical-align: top;
+  border-bottom: 1px solid hsl(var(--border));
+}
+.admin-tables tbody tr:last-child td {
+  border-bottom: 0;
+}
+.admin-tables tbody tr:hover td {
+  background: hsl(var(--muted) / 0.6);
+}
+@media (max-width: 640px) {
+  .admin-tables table,
+  .admin-tables tbody,
+  .admin-tables tr,
+  .admin-tables td {
+    display: block;
+    width: 100%;
+  }
+  .admin-tables table {
+    border: 0;
+    background: transparent;
+  }
+  .admin-tables thead {
+    display: none;
+  }
+  .admin-tables tbody tr {
+    margin-bottom: 0.75rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.75rem;
+    background: hsl(var(--card));
+    overflow: hidden;
+  }
+  .admin-tables tbody td {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    text-align: right !important;
+    padding: 0.5rem 0.875rem;
+  }
+  .admin-tables tbody td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    max-width: 50%;
+    text-align: left;
+    color: hsl(var(--muted-foreground));
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  .admin-tables tbody td:first-child {
+    background: hsl(var(--muted) / 0.6);
+    font-weight: 600;
+  }
+  .admin-tables tbody td[data-label=""]::before {
+    content: none;
+  }
+}

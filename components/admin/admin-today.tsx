@@ -105,9 +105,12 @@ export function AdminToday({
                 </span>
                 <ArrowRight className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
               </span>
-              <span className={cn("text-2xl font-semibold tabular-nums", p.tone === "bad" ? "text-destructive" : p.tone === "good" ? "text-success" : "text-foreground", !p.value && "text-transparent")}>
-                {p.value ?? "·"}
-              </span>
+              {p.value ? (
+                <span className={cn("text-2xl font-semibold tabular-nums", p.tone === "bad" ? "text-destructive" : p.tone === "good" ? "text-success" : "text-foreground")}>{p.value}</span>
+              ) : (
+                // Cargando (docs/293): antes se veía un «·» suelto mientras llegaban los datos.
+                <span className="h-8 w-16 animate-pulse rounded-md bg-muted" aria-label={t("common_loading")} />
+              )}
               {p.sub && <span className="text-xs text-muted-foreground">{p.sub}</span>}
             </button>
           ))}

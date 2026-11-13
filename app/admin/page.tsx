@@ -38,6 +38,7 @@ import { GuidePanel } from "@/components/admin/guide-panel"
 import { AdminToday } from "@/components/admin/admin-today"
 import { SpaceView } from "@/components/admin/space-view"
 import { SpaceBottomBar, SpaceTabs } from "@/components/admin/space-nav"
+import { useTableCardLabels } from "@/components/admin/table-labels"
 import { AdminLogin } from "@/components/admin/admin-login"
 import { AdminPanelTour } from "@/components/admin/admin-tour"
 import { AdminAccessPanel } from "@/components/admin/admin-access-panel"
@@ -110,6 +111,9 @@ function AdminPageInner() {
   const [tourRun, setTourRun] = useState(0)
   // Problemas del sistema, para el número junto a «Sistema» (docs/292).
   const health = useAdminData<HealthResponse>(unlocked ? "/api/admin/health" : null)
+  // Tablas como tarjetas en el celular: cada celda con el nombre de su columna (docs/293).
+  const mainRef = useRef<HTMLElement>(null)
+  useTableCardLabels(mainRef)
 
   // Pestaña en la URL (?tab=crecimiento&sub=referidos, docs/191): al recargar se vuelve
   // a la misma sección y se puede enlazar. Se lee de window (no useSearchParams) para no
@@ -366,7 +370,8 @@ function AdminPageInner() {
         <SpaceTabs current={here.space.id} badges={badges} onGo={openSpace} />
       </header>
 
-      <main className="mx-auto max-w-6xl space-y-6 px-4 pb-28 pt-6 sm:px-6 sm:pt-8 md:pb-16">
+      {/* `admin-tables`: un solo diseño para todas las tablas del panel (docs/293). */}
+      <main ref={mainRef} className="admin-tables mx-auto max-w-6xl space-y-6 px-4 pb-28 pt-6 sm:px-6 sm:pt-8 md:pb-16">
         <div className="flex justify-end">
           <LiveIndicator lastUpdatedAt={lastUpdatedAt} onRefresh={refreshNow} />
         </div>

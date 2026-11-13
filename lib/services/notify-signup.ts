@@ -88,6 +88,8 @@ export async function sendAccountCreatedNotification(input: {
 
 const CONFIRM_NOTICE_KEY = "owner_confirm_notified_at"
 const RECENT_CONFIRM_MS = 7 * 24 * 60 * 60 * 1000
+/** Espera del candado contra avisos dobles (docs/293). */
+export const CONFIRM_LOCK_WAIT_MS = 1500
 
 /**
  * Aviso al dueño de una cuenta nueva YA CONFIRMADA (docs/201). Se llama en la primera carga
@@ -108,11 +110,18 @@ export async function notifyOwnerAccountConfirmed(userId: string): Promise<boole
     if (!confirmed || meta[CONFIRM_NOTICE_KEY]) return false
     if (Date.now() - new Date(confirmed).getTime() > RECENT_CONFIRM_MS) return false
 
-    const { error: markError } = await admin.auth.admin.updateUserById(userId, { app_metadata: { ...meta, [CONFIRM_NOTICE_KEY]: new Date().toISOString() } })
+    // Candado (docs/293): dos cargas del Dashboard a la vez pasaban las dos la revisión de
+    // arriba y mandaban el aviso dos veces. Cada llamada marca con su propio valor, espera un
+    // momento y vuelve a leer: solo sigue aquella cuyo valor quedó guardado.
+    const mark = `${new Date().toISOString()}#${Math.random().toString(36).slice(2, 10)}`
+    const { error: markError } = await admin.auth.admin.updateUserById(userId, { app_metadata: { ...meta, [CONFIRM_NOTICE_KEY]: mark } })
     if (markError) {
       console.error("[notify-signup] No se pudo marcar el aviso de cuenta confirmada:", markError)
       return false
     }
+    await new Promise((resolve) => setTimeout(resolve, CONFIRM_LOCK_WAIT_MS))
+    const { data: after } = await admin.auth.admin.getUserById(userId)
+    if (((after?.user?.app_metadata || {}) as Record<string, unknown>)[CONFIRM_NOTICE_KEY] !== mark) return false
     await admin.from("product_events").insert({ event_name: "account_confirmed" } as never) // product_events no está en types/database.ts
     // Las cuentas invitadas a un equipo ya tienen su propio aviso (docs/143).
     if (user.invited_at) return false
