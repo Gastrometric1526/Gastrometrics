@@ -656,7 +656,12 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
                 label={t("admin_insights_founder")}
                 value={t("admin_insights_founder_value")
                   .replace("{n}", String(plan.founderGrant.ordinal ?? "?"))
-                  .replace("{date}", date(plan.founderGrant.at))}
+                  .replace("{date}", date(plan.founderGrant.at))
+                  .concat(
+                    plan.founderGrant.seat === "released" || plan.founderGrant.seat === "kept"
+                      ? ` · ${t(plan.founderGrant.seat === "released" ? "admin_insights_founder_released" : "admin_insights_founder_kept").replace("{k}", String(plan.founderGrant.recipes ?? 0))}`
+                      : "",
+                  )}
               />
             )}
             {plan.scheduledRenewal && (

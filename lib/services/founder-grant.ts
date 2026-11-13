@@ -46,14 +46,12 @@ async function confirmedAccounts(): Promise<{ ids: Set<string>; founders: Map<st
 }
 
 /**
- * Fundadoras que liberaron su lugar (docs/289): terminaron sus 30 días con menos de
- * `minRecipesToKeepSeat` recetas creadas dentro del período. Cuenta las recetas que siguen
- * (por `created_at`) y las que mandó a la papelera antes de que terminara el período.
+ * Recetas que cada fundadora con el período terminado creó dentro de sus 30 días (docs/289):
+ * las que siguen (por `created_at`) y las que mandó a la papelera antes de que terminara.
  */
-export async function releasedFounderIds(founders: Map<string, string>, now = Date.now()): Promise<Set<string>> {
-  const ended = [...founders].filter(([, at]) => now >= founderPeriodEnd(at))
-  const released = new Set<string>()
-  if (ended.length === 0) return released
+async function founderRecipeCounts(ended: [string, string][]): Promise<Map<string, number>> {
+  const counts = new Map<string, number>()
+  if (ended.length === 0) return counts
   const admin = getSupabaseAdminClient()
   const ids = ended.map(([id]) => id)
   const [recipes, trash] = await Promise.all([
@@ -62,15 +60,93 @@ export async function releasedFounderIds(founders: Map<string, string>, now = Da
   ])
   if (recipes.error) throw recipes.error
   if (trash.error) throw trash.error
-
   for (const [id, at] of ended) {
     const end = founderPeriodEnd(at)
-    const inPeriod =
+    counts.set(
+      id,
       (recipes.data ?? []).filter((r) => r.owner_id === id && new Date(r.created_at).getTime() <= end).length +
-      (trash.data ?? []).filter((r) => r.owner_id === id && new Date(r.deleted_at).getTime() <= end).length
-    if (founderSeatReleased({ grantedAt: at, recipesInPeriod: inPeriod, now })) released.add(id)
+        (trash.data ?? []).filter((r) => r.owner_id === id && new Date(r.deleted_at).getTime() <= end).length,
+    )
+  }
+  return counts
+}
+
+/**
+ * Fundadoras que liberaron su lugar (docs/289): terminaron sus 30 días con menos de
+ * `minRecipesToKeepSeat` recetas creadas dentro del período.
+ */
+export async function releasedFounderIds(founders: Map<string, string>, now = Date.now()): Promise<Set<string>> {
+  const ended = [...founders].filter(([, at]) => now >= founderPeriodEnd(at))
+  const released = new Set<string>()
+  const counts = await founderRecipeCounts(ended)
+  for (const [id, at] of ended) {
+    if (founderSeatReleased({ grantedAt: at, recipesInPeriod: counts.get(id) ?? 0, now })) released.add(id)
   }
   return released
+}
+
+/**
+ * Revisión diaria de las fundadoras que terminaron sus 30 días (pedido del dueño, docs/296):
+ * se anota en `app_metadata.founder_grant` si conservó su lugar o lo liberó (`seat`, `recipes`,
+ * `reviewed_at`), una sola vez, y si lo liberó se avisa al dueño (correo y aparatos de /admin).
+ * Va antes de `runPendingFounderGrants`, para que el lugar pase el mismo día a la siguiente cuenta.
+ * La persona no recibe nada aparte: su plan vence a los 30 días igual que el de todas.
+ */
+export async function runFounderSeatReviews(now = Date.now()): Promise<{ reviewed: number; released: number }> {
+  const admin = getSupabaseAdminClient()
+  const pending: { id: string; email?: string; meta: Record<string, unknown>; grant: { at: string; ordinal?: number } }[] = []
+  for (let page = 1; ; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 })
+    if (error) throw error
+    for (const u of data.users) {
+      const meta = (u.app_metadata || {}) as Record<string, unknown>
+      const grant = meta.founder_grant as { at?: string; ordinal?: number; reviewed_at?: string } | undefined
+      if (!grant?.at || grant.reviewed_at || now < founderPeriodEnd(grant.at)) continue
+      pending.push({ id: u.id, email: u.email, meta, grant: { at: grant.at, ordinal: grant.ordinal } })
+    }
+    if (data.users.length < 200) break
+  }
+  if (pending.length === 0) return { reviewed: 0, released: 0 }
+
+  const counts = await founderRecipeCounts(pending.map((p) => [p.id, p.grant.at]))
+  let released = 0
+  for (const founder of pending) {
+    const recipes = counts.get(founder.id) ?? 0
+    const isReleased = founderSeatReleased({ grantedAt: founder.grant.at, recipesInPeriod: recipes, now })
+    const { error } = await admin.auth.admin.updateUserById(founder.id, {
+      app_metadata: {
+        ...founder.meta,
+        founder_grant: {
+          ...(founder.meta.founder_grant as Record<string, unknown>),
+          seat: isReleased ? "released" : "kept",
+          recipes,
+          reviewed_at: new Date(now).toISOString(),
+        },
+      },
+    })
+    // Sin la marca no se avisa: mañana se vuelve a intentar, y nunca sale dos veces.
+    if (error) {
+      console.error("[founder-grant] No se pudo anotar la revisión de la fundadora:", error)
+      continue
+    }
+    if (!isReleased) continue
+    released++
+    const { data: profile } = await admin.from("profiles").select("full_name").eq("id", founder.id).maybeSingle()
+    await sendOwnerNotification({
+      subject: `Cocina fundadora #${founder.grant.ordinal ?? "?"} liberó su lugar (${recipes} de ${FOUNDER_PROGRAM.minRecipesToKeepSeat} recetas)`,
+      rows: [
+        ["Cuenta", founder.email],
+        ["Nombre", profile?.full_name],
+        ["Posición que tenía", founder.grant.ordinal ? `${founder.grant.ordinal} de ${FOUNDER_PROGRAM.maxAccounts}` : null],
+        ["Recetas en sus 30 días", `${recipes} (mínimo ${FOUNDER_PROGRAM.minRecipesToKeepSeat})`],
+        ["Período", `${hondurasTime(founder.grant.at)} → ${hondurasTime(new Date(founderPeriodEnd(founder.grant.at)).toISOString())}`],
+      ],
+      footnote: "Ya no cuenta entre las 100 cocinas fundadoras: su lugar pasa a la siguiente cuenta en la fila. Su plan vence igual que el de todas, al terminar los 30 días.",
+      label: "fundadora liberó su lugar",
+      url: adminAccountUrl({ userId: founder.id }),
+    })
+  }
+  return { reviewed: pending.length, released }
 }
 
 export type FounderGrantResult = FounderDecision & { ordinal?: number; planSlug?: string }

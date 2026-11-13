@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 // tick antes de responder, como la red, para que tres llamadas a la vez se crucen igual
 // que en producción (docs/163: 3 correos en el mismo segundo).
 type Plan = { account_id: string; plan_slug: string; stripe_subscription_id: string | null; plan_expires_at?: string }
-type Other = { id: string; confirmed: boolean; founderAt?: string }
+type Other = { id: string; confirmed: boolean; founderAt?: string; meta?: Record<string, unknown> }
 type RecipeRow = { owner_id: string; created_at: string }
 type TrashRow = { owner_id: string; deleted_at: string }
 const db: { plans: Map<string, Plan>; metadata: Record<string, unknown>; createdAt: string; confirmed: boolean; others: Other[]; recipes: RecipeRow[]; trash: TrashRow[] } = {
@@ -86,14 +86,16 @@ const admin = {
       listUsers: async ({ page = 1, perPage = 200 }: { page?: number; perPage?: number } = {}) => {
         await tick()
         const all = [
-          ...db.others.map((o) => ({ id: o.id, email_confirmed_at: o.confirmed ? db.createdAt : null, app_metadata: o.founderAt ? { founder_grant: { at: o.founderAt } } : {} })),
+          ...db.others.map((o) => ({ id: o.id, email: `${o.id}@example.com`, email_confirmed_at: o.confirmed ? db.createdAt : null, app_metadata: o.meta ?? (o.founderAt ? { founder_grant: { at: o.founderAt, ordinal: 1 } } : {}) })),
           { id: "u1", email_confirmed_at: db.confirmed ? db.createdAt : null, app_metadata: {} },
         ]
         return { data: { users: all.slice((page - 1) * perPage, page * perPage) }, error: null }
       },
-      updateUserById: async (_id: string, attrs: { app_metadata: Record<string, unknown> }) => {
+      updateUserById: async (id: string, attrs: { app_metadata: Record<string, unknown> }) => {
         await tick()
-        db.metadata = attrs.app_metadata
+        const other = db.others.find((o) => o.id === id)
+        if (other) other.meta = attrs.app_metadata
+        else db.metadata = attrs.app_metadata
         return { error: null }
       },
     },
@@ -111,7 +113,7 @@ vi.mock("@/lib/services/notify-owner", () => ({
   hondurasTime: () => "hoy",
 }))
 
-import { runFounderGrant } from "./founder-grant"
+import { runFounderGrant, runFounderSeatReviews } from "./founder-grant"
 import { FOUNDER_PROGRAM } from "@/lib/founder-program"
 
 describe("runFounderGrant con llamadas simultáneas (docs/163)", () => {
@@ -213,6 +215,24 @@ describe("runFounderGrant con llamadas simultáneas (docs/163)", () => {
       db.others[0].founderAt = new Date(now - 10 * day).toISOString()
       const result = await runFounderGrant("u1", now)
       expect(result).toMatchObject({ action: "skip", reason: "over_limit", ordinal: 101 })
+    })
+
+    // docs/296: al terminar los 30 días se anota una sola vez y se avisa al dueño si lo liberó.
+    it("la revisión diaria avisa una sola vez por cada fundadora que liberó su lugar", async () => {
+      db.others = full()
+      db.others[0].founderAt = new Date(now - 31 * day).toISOString()
+      db.others[1].founderAt = new Date(now - 31 * day).toISOString()
+      db.others[2].founderAt = new Date(now - 10 * day).toISOString()
+      db.recipes = [...recipesFor("c0", 2, new Date(now - 20 * day).toISOString()), ...recipesFor("c1", 5, new Date(now - 20 * day).toISOString())]
+      const first = await runFounderSeatReviews(now)
+      expect(first).toEqual({ reviewed: 2, released: 1 })
+      expect(sendOwnerNotification).toHaveBeenCalledTimes(1)
+      expect(db.others[0].meta?.founder_grant).toMatchObject({ seat: "released", recipes: 2 })
+      expect(db.others[1].meta?.founder_grant).toMatchObject({ seat: "kept", recipes: 5 })
+      expect(db.others[2].meta).toBeUndefined()
+      const again = await runFounderSeatReviews(now + day)
+      expect(again).toEqual({ reviewed: 0, released: 0 })
+      expect(sendOwnerNotification).toHaveBeenCalledTimes(1)
     })
   })
 })

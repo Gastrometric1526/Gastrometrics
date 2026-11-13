@@ -70,7 +70,7 @@ import { runAccountDeletionPurge } from "@/lib/services/purge-deleted-accounts"
 import { runReengagementReminders, fetchAllPages } from "@/lib/services/notify-reengagement"
 import { sendDailySignupDigest } from "@/lib/services/notify-signup"
 import { runEngagementEmails } from "@/lib/services/notify-engagement"
-import { runPendingFounderGrants } from "@/lib/services/founder-grant"
+import { runFounderSeatReviews, runPendingFounderGrants } from "@/lib/services/founder-grant"
 import { runScheduledRenewalChecks } from "@/lib/services/scheduled-renewal"
 import { runReferralChecks } from "@/lib/services/referrals"
 
@@ -201,6 +201,8 @@ export async function GET(request: Request) {
   })
 
   // Respaldo del programa automático de 100 cocinas fundadoras (docs/158): cuentas que no abrieron la app después del minuto.
+  // Fundadoras que terminaron sus 30 días: anota si conservan su lugar y avisa al dueño si lo liberaron (docs/296).
+  const founderSeats = await step("lugares de fundadoras", () => runFounderSeatReviews())
   const founderGrants = await step("cocinas fundadoras pendientes", () => runPendingFounderGrants())
   const planExpiry = await step("aviso de vencimiento de plan", () => runPlanExpiryReminders())
   // Pagos programados al vencer (docs/165): se aplican si Stripe ya cobró, antes de bajar a Foodie.
@@ -250,7 +252,7 @@ export async function GET(request: Request) {
   const engagement = await step("correos de valor", () => runEngagementEmails())
   const reengagement = await step("recordatorios", () => runReengagementReminders())
 
-  const steps = { signupDigest, activation, founderGrants, planExpiry, scheduledRenewals, expiredDowngrades, referrals, experienceSurvey, deletionPurge, recoveryPurge, engagement, reengagement }
+  const steps = { signupDigest, activation, founderSeats, founderGrants, planExpiry, scheduledRenewals, expiredDowngrades, referrals, experienceSurvey, deletionPurge, recoveryPurge, engagement, reengagement }
   const failed = Object.entries(steps)
     .filter(([, v]) => v && typeof v === "object" && "error" in v)
     .map(([k]) => k)
