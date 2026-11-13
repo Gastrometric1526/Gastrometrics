@@ -30,6 +30,7 @@ import {
   Upload,
   BookOpen,
   LifeBuoy,
+  FileDown,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -275,7 +276,7 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
     }
   };
 
-  const { account, plan, usage, content, team, emails, feedback, emailClicks, limits, activation, recentActivity, billing, surveyAnswers, referral, paymentConfirmations, imports, manualDownloads, support } = data;
+  const { account, plan, usage, content, team, emails, feedback, emailClicks, limits, activation, recentActivity, billing, surveyAnswers, referral, paymentConfirmations, imports, manualDownloads, pdfDownloads = [], support } = data;
   const accountAge = daysSince(account.createdAt) ?? 0;
   const lastSeen =
     usage.lastSeenAt || usage.lastActivityAt || account.lastSignInAt;
@@ -1009,6 +1010,33 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
                   <span className="text-xs text-muted-foreground">{dateTime(im.at)}</span>
                 </li>
               ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
+          )}
+        </Section>
+
+        {/* Qué PDF descargó y cuándo (docs/291). */}
+        <Section icon={FileDown} title={`${t("admin_block_pdf")} (${pdfDownloads.length})`}>
+          {pdfDownloads.length ? (
+            <ul className="max-h-60 space-y-1.5 overflow-y-auto text-sm" data-account-pdfs>
+              {pdfDownloads.map((d, i) => {
+                const kindKey = `admin_biz_pdf_${d.kind}`;
+                const kind = t(kindKey as TranslationKey) !== kindKey ? t(kindKey as TranslationKey) : t("admin_biz_pdf_other");
+                const variantKey = `admin_pdf_variant_${d.variant}`;
+                const variant = d.variant ? (t(variantKey as TranslationKey) !== variantKey ? t(variantKey as TranslationKey) : d.variant) : null;
+                return (
+                  <li key={i} className="flex justify-between gap-2">
+                    <span className="min-w-0 text-foreground">
+                      {kind}
+                      {d.name ? <span> · {d.name}</span> : null}
+                      {variant ? <span className="text-muted-foreground"> ({variant})</span> : null}
+                      <span className="block text-xs text-muted-foreground">{d.businessName ?? t("admin_pdf_main_space")}</span>
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{dateTime(d.at)}</span>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>

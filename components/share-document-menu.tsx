@@ -84,7 +84,8 @@ export function ShareDocumentMenu({
     try {
       const doc = await buildPdf()
       const blob = doc.output("blob") as Blob
-      if (track) recordPdfExport(track.kind, track.businessId)
+      // El nombre del archivo dice qué documento es (docs/291).
+      if (track) recordPdfExport(track.kind, track.businessId, { name: filename })
       return blob
     } catch (error) {
       console.error("[share-document-menu] No se pudo generar el PDF:", error)

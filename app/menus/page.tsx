@@ -202,7 +202,7 @@ export default function MenusPage() {
       const prefix = safeFilePart(t("menus_pdf_file_menu"), "menu")
       const suffix = safeFilePart(t(type === "interno" ? "menus_pdf_file_internal" : "menus_pdf_file_client"), type)
       doc.save(`${prefix}-${safeFilePart(menu.name.toLowerCase(), "menu")}-${suffix}.pdf`)
-      recordPdfExport("menu", businessId)
+      recordPdfExport("menu", businessId, { name: menu.name, variant: type })
       toast({
         title: t("menus_toast_pdf_generated_title"),
         description: type === "interno" ? t("menus_toast_pdf_generated_internal_desc") : t("menus_toast_pdf_generated_client_desc"),

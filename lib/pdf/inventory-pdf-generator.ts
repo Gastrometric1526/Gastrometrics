@@ -519,7 +519,7 @@ export function downloadInventorySnapshotPDF(snapshot: InventorySnapshot, option
     const data = buildInventoryPDFDataFromSnapshot(snapshot)
     const doc = generateInventoryPDF(data, options)
     doc.save(generateInventoryPDFFilename(data))
-    recordPdfExport("inventory", options.businessId)
+    recordPdfExport("inventory", options.businessId, { name: generateInventoryPDFFilename(data), variant: "count" })
   } catch (error) {
     console.error("Error generating inventory snapshot PDF:", error)
     throw new Error("No se pudo generar el PDF")
@@ -531,7 +531,7 @@ export function downloadCurrentInventoryPDF(items: InventoryItem[], options: Inv
     const data = buildInventoryPDFDataFromCurrent(items, buildPackageContentLookup(getIngredients(options.businessId)))
     const doc = generateInventoryPDF(data, options)
     doc.save(generateInventoryPDFFilename(data))
-    recordPdfExport("inventory", options.businessId)
+    recordPdfExport("inventory", options.businessId, { name: generateInventoryPDFFilename(data), variant: "current" })
   } catch (error) {
     console.error("Error generating current inventory PDF:", error)
     throw new Error("No se pudo generar el PDF")

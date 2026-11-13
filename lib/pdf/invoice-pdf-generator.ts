@@ -252,7 +252,7 @@ export function downloadInvoicePDF(invoice: Invoice, options: InvoicePDFOptions 
   try {
     const doc = generateInvoicePDF(invoice, options)
     doc.save(generateInvoicePDFFilename(invoice))
-    recordPdfExport("invoice", options.businessId)
+    recordPdfExport("invoice", options.businessId, { name: [invoice.number, invoice.clientName].filter(Boolean).join(" · ") })
   } catch (error) {
     console.error("Error generating invoice PDF:", error)
     throw new Error("No se pudo generar el PDF")

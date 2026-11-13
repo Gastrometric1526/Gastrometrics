@@ -1594,7 +1594,7 @@ export function downloadRecipePDF(recipe: Recipe, options: PDFExportOptions): vo
     const doc = generateRecipePDF(recipe, options)
     const filename = generatePDFFilename(recipe, options.type)
     doc.save(filename)
-    recordPdfExport("recipe", recipe.businessId)
+    recordPdfExport("recipe", recipe.businessId, { name: recipe.name, variant: options.type })
     trackEvent("first_pdf_exported")
   } catch (error) {
     console.error("Error generating PDF:", error)

@@ -120,7 +120,7 @@ describe("/admin con Inicio de tarjetas (docs/281)", () => {
     const expected: [string, string, string[], string, string][] = [
       ["buzon", es.admin_area_buzon, ["chat", "mensajes", "recuperar", "encuestas", "resenas"], "chat", "support"],
       ["cuentas", es.admin_area_cuentas, ["lista", "cifras", "historial"], "lista", "accounts"],
-      ["crecimiento", es.admin_area_crecimiento, ["numeros", "app", "etapas", "retencion", "activacion", "usuarios", "inactivos", "referidos", "embudo", "correos", "importaciones"], "etapas", "funnel"],
+      ["crecimiento", es.admin_area_crecimiento, ["numeros", "app", "etapas", "retencion", "activacion", "usuarios", "pdf", "inactivos", "referidos", "embudo", "correos", "importaciones"], "etapas", "funnel"],
       ["comunicacion", es.admin_area_comunicacion, ["novedades", "legal"], "legal", "legal"],
       ["sistema", es.admin_tab_system, ["salud", "acceso", "herramientas"], "herramientas", "export"],
     ]

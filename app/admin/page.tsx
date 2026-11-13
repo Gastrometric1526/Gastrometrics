@@ -43,6 +43,7 @@ import type { AdminSessionInfo } from "@/lib/admin/session-info"
 import { RecoveryPanel } from "@/components/admin/recovery-panel"
 import { AppOverviewPanel } from "@/components/admin/app-overview-panel"
 import { AreaPage } from "@/components/admin/area-page"
+import { PdfExportsPanel } from "@/components/admin/pdf-exports-panel"
 import { AdminCard } from "@/components/admin/ui"
 import { OPEN_ACCOUNT_EVENT } from "@/lib/admin/open-account"
 import { resolveAdminTab, taskSteps, type AdminTab, type AdminTask } from "@/lib/admin/nav"
@@ -348,6 +349,7 @@ function AdminPageInner() {
               retencion: <RetentionPanel />,
               activacion: <ActivationPanel />,
               usuarios: <TopUsersPanel />,
+              pdf: <PdfExportsPanel />,
               inactivos: <BusinessHealthPanel />,
               referidos: <ReferralsPanel />,
               embudo: <AnalyticsPanel />,

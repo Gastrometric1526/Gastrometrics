@@ -385,7 +385,7 @@ export function downloadPurchaseOrderPDF(order: PurchaseOrder, options: Purchase
   try {
     const doc = generatePurchaseOrderPDF(order, options)
     doc.save(generatePurchaseOrderPDFFilename(order))
-    recordPdfExport("purchase_order", options.businessId)
+    recordPdfExport("purchase_order", options.businessId, { name: `#${order.number}${order.name ? ` · ${order.name}` : ""}` })
   } catch (error) {
     console.error("Error generating purchase order PDF:", error)
     throw new Error("No se pudo generar el PDF")

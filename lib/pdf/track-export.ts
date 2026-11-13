@@ -4,13 +4,18 @@
  * Registra cada PDF exportado (docs/232), para que /admin vea cuántos sacó cada cuenta y en
  * qué negocio. Se guarda en `activity_log` (módulo «pdf», acción «exported», el tipo en
  * `entity_label`); no sale en «Actividad reciente». Nunca bloquea ni rompe la descarga.
+ * Desde docs/291 también guarda qué documento fue (`metadata.name`, p. ej. el nombre de la
+ * receta o el número de la orden) y su versión (`metadata.variant`, p. ej. cocina o
+ * administrativo), para la lista «PDF descargados» de /admin.
  */
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 
 export type PdfKind = "recipe" | "menu" | "mep" | "cash_up" | "inventory" | "invoice" | "purchase_order" | "sales_history"
 
-export function recordPdfExport(kind: PdfKind, businessId?: string | null): void {
+export type PdfExportDetails = { name?: string | null; variant?: string | null }
+
+export function recordPdfExport(kind: PdfKind, businessId?: string | null, details?: PdfExportDetails): void {
   if (typeof window === "undefined") return
   try {
     const supabase = getSupabaseBrowserClient()
@@ -26,7 +31,7 @@ export function recordPdfExport(kind: PdfKind, businessId?: string | null): void
           module: "pdf",
           action: "exported",
           entity_label: kind,
-          metadata: null,
+          metadata: details?.name || details?.variant ? { name: details.name?.slice(0, 120) || null, variant: details.variant || null } : null,
           is_notification: false,
         })
       })

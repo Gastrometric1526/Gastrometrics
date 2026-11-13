@@ -392,6 +392,20 @@ export async function getAccountInsights(userId: string) {
         }
       })
       .reverse(),
+    // PDF descargados, con el documento y la versión desde docs/291.
+    pdfDownloads: activity
+      .filter((a) => a.module === "pdf" && a.action === "exported")
+      .map((a) => {
+        const m = (a.metadata || {}) as Record<string, unknown>
+        return {
+          at: a.created_at,
+          kind: a.entity_label || "other",
+          name: typeof m.name === "string" && m.name ? m.name : null,
+          variant: typeof m.variant === "string" && m.variant ? m.variant : null,
+          businessName: a.business_id ? ((businesses ?? []).find((b) => b.id === a.business_id)?.name ?? null) : null,
+        }
+      })
+      .reverse(),
     manualDownloads: activity
       .filter((a) => a.module === "manual")
       .map((a) => ({ at: a.created_at, language: typeof (a.metadata as Record<string, unknown> | null)?.language === "string" ? String((a.metadata as Record<string, unknown>).language) : null }))

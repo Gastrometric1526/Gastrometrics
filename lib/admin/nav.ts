@@ -73,6 +73,8 @@ export const ADMIN_SECTIONS: Record<AdminTab, AdminSection> = {
       { id: "retencion", label: "admin_sub_retention", desc: "admin_subdesc_retencion", group: "admin_group_accounts" },
       { id: "activacion", label: "admin_tab_activation", desc: "admin_subdesc_activacion", group: "admin_group_accounts" },
       { id: "usuarios", label: "admin_sub_top_users", desc: "admin_subdesc_usuarios", group: "admin_group_accounts" },
+      // Qué PDF descargó cada cuenta y cuándo (docs/291).
+      { id: "pdf", label: "admin_block_pdf", desc: "admin_subdesc_pdf", group: "admin_group_accounts" },
       { id: "inactivos", label: "admin_sub_inactive", desc: "admin_subdesc_inactivos", group: "admin_group_accounts" },
       { id: "referidos", label: "admin_sub_referrals", desc: "admin_subdesc_referidos", group: "admin_group_growth" },
       { id: "embudo", label: "admin_sub_funnel", desc: "admin_subdesc_embudo", group: "admin_group_growth" },
