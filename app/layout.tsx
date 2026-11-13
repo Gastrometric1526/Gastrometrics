@@ -26,6 +26,7 @@ import { FeedbackOrchestrator } from "@/components/feedback/feedback-orchestrato
 import { SupportChat } from "@/components/support-chat"
 import { ModuleActivityTracker } from "@/components/module-activity-tracker"
 import { ModuleNudge } from "@/components/module-nudge"
+import { SubrecipeIntro } from "@/components/subrecipe-intro"
 import { PwaBackGuard } from "@/components/pwa-back-guard"
 import { EmailClickTracker } from "@/components/email-click-tracker"
 import { SubRecipePricePrompt } from "@/components/subrecipe-price-prompt"
@@ -148,6 +149,10 @@ export default function RootLayout({
                   {/* Invitación a volver a un módulo sin usar (docs/269) */}
                   <Suspense fallback={null}>
                     <ModuleNudge />
+                  </Suspense>
+                  {/* Recordatorio de subrecetas para quien ya tiene recetas (docs/300) */}
+                  <Suspense fallback={null}>
+                    <SubrecipeIntro />
                   </Suspense>
                   <PwaBackGuard />
                   <main className="flex min-h-screen flex-col">
