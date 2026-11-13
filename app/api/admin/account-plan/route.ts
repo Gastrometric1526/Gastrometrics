@@ -13,11 +13,11 @@
  */
 
 import { NextResponse } from "next/server"
-import { hasAdminSession } from "@/lib/admin-auth"
+import { getAdminIdentity, hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { plans } from "@/lib/plans"
 import { sendPlanChangedEmail } from "@/lib/services/notify-billing"
-import { recordPlanChangeNotice } from "@/lib/services/plan-change-notice"
+import { logPlanHistory, recordPlanChangeNotice } from "@/lib/services/plan-change-notice"
 import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
 
 const FREE_PLAN_SLUG = "foodie"
@@ -178,7 +178,7 @@ export async function PATCH(request: Request) {
     // (docs/89). Mismo patrón que ya usa app/api/webhooks/stripe/route.ts.
     const { data: previousRow } = await admin
       .from("account_plans")
-      .select("plan_slug, stripe_subscription_id")
+      .select("plan_slug, stripe_subscription_id, plan_expires_at")
       .eq("account_id", user.id)
       .maybeSingle()
     const previousPlanSlug = previousRow?.plan_slug || FREE_PLAN_SLUG
@@ -315,6 +315,9 @@ export async function PATCH(request: Request) {
     } catch (emailError) {
       console.error("[api/admin/account-plan] Error mandando el correo de cambio de plan:", emailError)
     }
+    // Quién lo hizo, para el historial de plan (docs/301).
+    const identity = await getAdminIdentity()
+    const by = identity?.kind === "account" ? identity.email : identity ? "código de emergencia" : null
     await recordPlanChangeNotice({
       accountId: user.id,
       fromPlanSlug: previousPlanSlug,
@@ -323,7 +326,13 @@ export async function PATCH(request: Request) {
       nextChargeUnixSeconds: null,
       expiresAtUnixSeconds,
       source: "admin",
+      origin: "admin",
+      by,
     })
+    // Mismo plan con otro vencimiento: no avisa a la persona, pero queda en el historial.
+    if (previousPlanSlug === planSlug && (previousRow?.plan_expires_at ?? null) !== (data.plan_expires_at ?? null)) {
+      await logPlanHistory({ accountId: user.id, from: planSlug, to: planSlug, origin: "admin", kind: "extended", until: data.plan_expires_at ?? null, by })
+    }
 
     return NextResponse.json({
       ok: true,

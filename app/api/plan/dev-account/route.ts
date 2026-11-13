@@ -20,6 +20,7 @@
 import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { logPlanHistory } from "@/lib/services/plan-change-notice"
 import { isTesterEmail } from "@/lib/tester-allowlist"
 
 const TESTER_PLAN_SLUG = "chef-ejecutivo"
@@ -35,6 +36,9 @@ export async function POST() {
   }
 
   const admin = getSupabaseAdminClient()
+  // Plan de antes, para el historial (docs/301): esto corre en cada inicio de sesión y solo
+  // se anota cuando de verdad cambia.
+  const { data: before } = await admin.from("account_plans").select("plan_slug").eq("account_id", user.id).maybeSingle()
   // Un tester en la lista blanca siempre tiene acceso incondicional, nunca vence — se
   // limpia explícitamente por si esta cuenta tuvo antes un plan_expires_at de un
   // vencimiento asignado a mano desde /admin (ver docs/59), que si no se limpiara
@@ -61,5 +65,6 @@ export async function POST() {
     return NextResponse.json({ applied: false })
   }
 
+  await logPlanHistory({ accountId: user.id, from: before?.plan_slug || "foodie", to: TESTER_PLAN_SLUG, origin: "tester" })
   return NextResponse.json({ applied: true, planSlug: TESTER_PLAN_SLUG })
 }

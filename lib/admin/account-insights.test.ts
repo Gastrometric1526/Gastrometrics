@@ -46,7 +46,9 @@ describe("computeUsageInsights", () => {
 
   it("los cambios de plan no cuentan como uso, pero quedan en el historial", () => {
     expect(insights.totalEvents).toBe(7)
-    expect(insights.planChanges).toEqual([{ at: "2026-10-11T18:00:00Z", from: "foodie", to: "chef-ejecutivo", source: "admin" }])
+    expect(insights.planChanges).toEqual([
+      { at: "2026-10-11T18:00:00Z", from: "foodie", to: "chef-ejecutivo", source: "admin", origin: "admin_legacy", kind: "changed", until: null, by: null, expiresAt: null },
+    ])
   })
 
   it("12 semanas, la última con el uso de esta semana", () => {

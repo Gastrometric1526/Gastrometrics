@@ -33,6 +33,7 @@ export interface HistoryInput {
   users: { id: string; email: string; createdAt: string }[]
   plans: { accountId: string; planSlug: string }[]
   deletionRequests: { id: string; requestedAt: string }[]
+  /** Solo cambios de plan de verdad (docs/301: las cancelaciones salen de Stripe abajo); `source` = origen. */
   planChanges: { userId: string; at: string; from: string | null; to: string | null; source: string | null }[]
   purged: PurgedAccountRecord[]
   subscriptions: { email: string | null; planSlug: string | null; status: string; createdAt: string; canceledAt: string | null; cancelAt: string | null; cancelAtPeriodEnd: boolean }[]

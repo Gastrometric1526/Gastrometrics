@@ -13,6 +13,7 @@
 import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { logPlanHistory } from "@/lib/services/plan-change-notice"
 import { getPlanBySlug } from "@/lib/plans"
 import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
 
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
   // mostraba "Foodie" sin ningún aviso.
   const { data: existingPlan } = await admin
     .from("account_plans")
-    .select("stripe_subscription_id")
+    .select("stripe_subscription_id, plan_slug")
     .eq("account_id", user.id)
     .maybeSingle()
 
@@ -97,6 +98,9 @@ export async function POST(request: Request) {
     console.error("[api/plan/set-free] Error guardando el plan:", error)
     return NextResponse.json({ error: "No se pudo guardar el plan." }, { status: 500 })
   }
+
+  // Historial de plan de /admin (docs/301): la persona pasó sola a un plan gratis.
+  await logPlanHistory({ accountId: user.id, from: existingPlan?.plan_slug || "foodie", to: plan.slug, origin: "self" })
 
   return NextResponse.json({ planSlug: plan.slug })
 }

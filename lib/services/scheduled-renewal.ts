@@ -187,6 +187,7 @@ async function applyPaidRenewal(accountId: string, renewal: ScheduledRenewal, su
       nextChargeUnixSeconds: periodEnd,
       expiresAtUnixSeconds: null,
       source: "stripe",
+      origin: "scheduled",
     })
     await sendOwnerBillingNotification({
       event: "new_subscription",

@@ -67,7 +67,7 @@ export function AccountHistoryPanel() {
       case "created":
         return t("admin_hist_desc_created").replace("{plan}", planName(e.plan))
       case "plan_changed":
-        return t("admin_hist_desc_plan").replace("{from}", planName(e.fromPlan)).replace("{to}", planName(e.toPlan)) + (e.source ? ` · ${t(`admin_hist_source_${e.source}` as TranslationKey)}` : "")
+        return t("admin_hist_desc_plan").replace("{from}", planName(e.fromPlan)).replace("{to}", planName(e.toPlan)) + (e.source ? ` · ${t(`admin_plan_hist_origin_${e.source}` as TranslationKey)}` : "")
       case "deletion_requested":
         return t("admin_hist_desc_deletion").replace("{date}", e.dueAt ? formatDate(e.dueAt) : "—")
       case "purged":

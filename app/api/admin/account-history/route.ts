@@ -5,6 +5,7 @@
  * lib/admin/account-history.ts. Stripe se guarda 5 minutos por instancia.
  */
 
+import { planChangeFromRow } from "@/lib/admin/plan-history"
 import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
@@ -79,13 +80,12 @@ export async function GET() {
       users,
       plans: (plans.data ?? []).map((p) => ({ accountId: p.account_id, planSlug: p.plan_slug })),
       deletionRequests: (deletion.data ?? []).map((d) => ({ id: d.id, requestedAt: d.deletion_requested_at })),
-      planChanges: (planLog.data ?? []).map((r) => ({
-        userId: r.user_id,
-        at: r.created_at,
-        from: (r.metadata?.from as string | undefined) ?? null,
-        to: (r.metadata?.to as string | undefined) ?? r.entity_label ?? null,
-        source: (r.metadata?.source as string | undefined) ?? null,
-      })),
+      // docs/301: mismo formato que la ficha; aquí solo los cambios de plan (las
+      // cancelaciones programadas salen del estado de Stripe).
+      planChanges: (planLog.data ?? [])
+        .map((r) => ({ userId: r.user_id, change: planChangeFromRow(r) }))
+        .filter(({ change }) => change.kind === "changed")
+        .map(({ userId, change }) => ({ userId, at: change.at, from: change.from, to: change.to, source: change.origin })),
       purged: (purgedRows.data ?? []).map((r) => decodePurgedRecord(r.business_id, r.created_at)),
       subscriptions,
     }

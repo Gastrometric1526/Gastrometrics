@@ -259,6 +259,7 @@ export async function runFounderGrant(accountId: string, now = Date.now()): Prom
     nextChargeUnixSeconds: null,
     expiresAtUnixSeconds,
     source: "admin",
+    origin: "founder",
   })
   await sendOwnerNotification({
     subject: `Cocina fundadora #${ordinal} de ${FOUNDER_PROGRAM.maxAccounts}: Chef Ejecutivo por 1 mes`,

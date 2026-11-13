@@ -20,12 +20,9 @@ export interface ActivityRow {
   entity_label?: string | null;
 }
 
-export interface PlanChange {
-  at: string;
-  from: string | null;
-  to: string | null;
-  source: string | null;
-}
+// Historial de plan completo desde docs/301 (lib/admin/plan-history.ts).
+import { planChangeFromRow, type PlanChange } from "./plan-history";
+export type { PlanChange };
 
 export interface UsageInsights {
   totalEvents: number;
@@ -230,12 +227,7 @@ export function computeUsageInsights(
 
   const planChanges: PlanChange[] = sorted
     .filter((r) => r.module === "plan" && r.action === "plan_changed")
-    .map((r) => ({
-      at: r.created_at,
-      from: (r.metadata?.from as string) ?? null,
-      to: (r.metadata?.to as string) ?? r.entity_label ?? null,
-      source: (r.metadata?.source as string) ?? null,
-    }));
+    .map((r) => planChangeFromRow(r));
 
   return {
     totalEvents: usage.length,

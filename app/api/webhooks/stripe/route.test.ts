@@ -38,7 +38,7 @@ vi.mock("@/lib/services/notify-billing", () => ({
   sendOwnerBillingNotification: vi.fn(),
 }))
 vi.mock("@/lib/services/payment-notice", () => ({ confirmPayment: vi.fn() }))
-vi.mock("@/lib/services/plan-change-notice", () => ({ recordPlanChangeNotice: vi.fn() }))
+vi.mock("@/lib/services/plan-change-notice", () => ({ recordPlanChangeNotice: vi.fn(), logPlanHistory: vi.fn() }))
 vi.mock("@/lib/services/scheduled-renewal", () => ({
   cancelScheduledRenewal: vi.fn(),
   getScheduledRenewal: vi.fn(async () => null),

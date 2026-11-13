@@ -28,7 +28,7 @@ import { getPlanBySlug } from "@/lib/plans"
 import { sendPlanChangedEmail, sendSubscriptionCancelledEmail, sendOwnerBillingNotification } from "@/lib/services/notify-billing"
 import { confirmPayment } from "@/lib/services/payment-notice"
 import { isNewPaymentFailure, paidRecordFromInvoice, type InvoiceLike } from "@/lib/payment-notice"
-import { recordPlanChangeNotice } from "@/lib/services/plan-change-notice"
+import { logPlanHistory, recordPlanChangeNotice } from "@/lib/services/plan-change-notice"
 import {
   getScheduledRenewal,
   saveScheduledRenewal,
@@ -288,6 +288,8 @@ export async function POST(request: Request) {
         }
         const resolvedPlanSlug = LIVE_SUBSCRIPTION_STATUSES.includes(subscription.status) ? planSlug : FREE_PLAN_SLUG
         const previousPlanSlug = await getCurrentPlanSlug(accountId)
+        // Cancelación programada antes de este evento, para el historial (docs/301).
+        const { data: cancelBefore } = await getSupabaseAdminClient().from("account_plans").select("cancel_at_period_end").eq("account_id", accountId).maybeSingle()
         const nextChargeUnixSeconds = subscription.items?.data?.[0]?.current_period_end ?? null
         const amountCents = subscription.items?.data?.[0]?.price?.unit_amount ?? null
         // "Cancelando, termina el [fecha]" — pedido explícito del dueño del proyecto:
@@ -305,6 +307,17 @@ export async function POST(request: Request) {
           cancel_at_period_end: isCancelling,
           current_period_end: nextChargeUnixSeconds ? new Date(nextChargeUnixSeconds * 1000).toISOString() : null,
         })
+        // Canceló o quitó la cancelación (mismo plan): no cambia el plan, pero va al historial.
+        if (previousPlanSlug === resolvedPlanSlug && Boolean(cancelBefore?.cancel_at_period_end) !== isCancelling) {
+          await logPlanHistory({
+            accountId,
+            from: resolvedPlanSlug,
+            to: resolvedPlanSlug,
+            origin: "stripe",
+            kind: isCancelling ? "cancel_scheduled" : "cancel_undone",
+            until: isCancelling && nextChargeUnixSeconds ? new Date(nextChargeUnixSeconds * 1000).toISOString() : null,
+          })
+        }
         // Correo best-effort — el plan ya quedó aplicado arriba sin importar si esto
         // falla, así que un error de Resend no debe hacer que Stripe reintente el
         // evento completo.
@@ -370,6 +383,8 @@ export async function POST(request: Request) {
           cancel_at_period_end: false,
           current_period_end: null,
         })
+        // Antes no quedaba en el historial de plan (docs/301).
+        await logPlanHistory({ accountId, from: previousPlanSlug, to: FREE_PLAN_SLUG, origin: "stripe_cancel" })
         try {
           await sendSubscriptionCancelledEmail({
             accountId,

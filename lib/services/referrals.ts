@@ -16,7 +16,7 @@
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
 import { sendPlanChangedEmail } from "@/lib/services/notify-billing"
-import { recordPlanChangeNotice } from "@/lib/services/plan-change-notice"
+import { logPlanHistory, recordPlanChangeNotice } from "@/lib/services/plan-change-notice"
 import { sendOwnerNotification } from "@/lib/services/notify-owner"
 import { sendReferralEmail } from "@/lib/services/notify-referral"
 import { getScheduledRenewal } from "@/lib/services/scheduled-renewal"
@@ -174,7 +174,10 @@ async function applyAction(accountId: string, action: RewardAction, label: strin
       } catch (e) {
         console.error("[referrals] Error en el correo de cambio de plan:", e)
       }
-      await recordPlanChangeNotice({ accountId, fromPlanSlug: before.planSlug, toPlanSlug: action.planSlug, amountCents: null, nextChargeUnixSeconds: null, expiresAtUnixSeconds, source: "admin" })
+      await recordPlanChangeNotice({ accountId, fromPlanSlug: before.planSlug, toPlanSlug: action.planSlug, amountCents: null, nextChargeUnixSeconds: null, expiresAtUnixSeconds, source: "admin", origin: "referral" })
+    } else {
+      // Mismo plan, más días (docs/301): queda en el historial.
+      await logPlanHistory({ accountId, from: action.planSlug, to: action.planSlug, origin: "referral", kind: "extended", until: action.expiresAt })
     }
     return { applied: true, date: action.expiresAt }
   }

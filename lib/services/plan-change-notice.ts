@@ -19,6 +19,14 @@ export async function recordPlanChangeNotice(input: {
   nextChargeUnixSeconds: number | null
   expiresAtUnixSeconds: number | null
   source: "stripe" | "admin" | "expired"
+  /**
+   * De dónde vino el cambio, para el historial de /admin (docs/301): «admin», «founder»,
+   * «referral», «scheduled», «stripe», «expired»… `source` sigue siendo lo que lee el
+   * popup y el correo; esto es solo para saber qué pasó.
+   */
+  origin?: PlanOrigin
+  /** Quién lo hizo desde /admin (correo), si se sabe. */
+  by?: string | null
 }): Promise<void> {
   if (input.fromPlanSlug === input.toPlanSlug) return // sin cambio real, nada que avisar
 
@@ -57,8 +65,55 @@ export async function recordPlanChangeNotice(input: {
     module: "plan",
     action: "plan_changed",
     entity_label: input.toPlanSlug,
-    metadata: { from: input.fromPlanSlug, to: input.toPlanSlug, source: input.source },
+    metadata: {
+      from: input.fromPlanSlug,
+      to: input.toPlanSlug,
+      source: input.source,
+      origin: input.origin ?? input.source,
+      by: input.by ?? null,
+      amount_cents: input.amountCents,
+      expires_at: input.expiresAtUnixSeconds ? new Date(input.expiresAtUnixSeconds * 1000).toISOString() : null,
+    },
     is_notification: true,
   })
   if (logError) console.error("[plan-change-notice] Error guardando la notificación de cambio de plan:", logError)
+}
+
+export type PlanOrigin = "admin" | "founder" | "referral" | "scheduled" | "stripe" | "stripe_cancel" | "expired" | "self" | "tester"
+
+/**
+ * Historial de plan para /admin (pedido del dueño, docs/301: «debo poder ver todos los cambios
+ * de planes de cada usuario»). Para lo que `recordPlanChangeNotice` no registra porque no avisa
+ * a la persona: cancelaciones de Stripe, pasar a Foodie uno mismo, testers, cancelación
+ * programada o quitada y extensiones del vencimiento. Misma tabla y misma acción
+ * (`activity_log`, «plan_changed»), sin notificación. Nunca lanza.
+ */
+export async function logPlanHistory(input: {
+  accountId: string
+  from: string | null
+  to: string | null
+  origin: PlanOrigin
+  /** «changed» (por defecto), «cancel_scheduled», «cancel_undone» o «extended». */
+  kind?: "changed" | "cancel_scheduled" | "cancel_undone" | "extended"
+  /** Fecha relevante: fin del período pagado o nuevo vencimiento. */
+  until?: string | null
+  by?: string | null
+}): Promise<void> {
+  const kind = input.kind ?? "changed"
+  if (kind === "changed" && input.from === input.to) return
+  try {
+    const { error } = await getSupabaseAdminClient().from("activity_log").insert({
+      business_id: null,
+      user_id: input.accountId,
+      user_name: "Gastrometrics",
+      module: "plan",
+      action: "plan_changed",
+      entity_label: input.to,
+      metadata: { from: input.from, to: input.to, source: input.origin, origin: input.origin, kind, until: input.until ?? null, by: input.by ?? null },
+      is_notification: false,
+    })
+    if (error) console.error("[plan-history] No se pudo guardar:", error)
+  } catch (error) {
+    console.error("[plan-history] No se pudo guardar:", error)
+  }
 }

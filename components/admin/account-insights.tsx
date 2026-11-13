@@ -308,15 +308,6 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
   const peakDay = usage.byWeekday.indexOf(Math.max(...usage.byWeekday));
   const peakHour = usage.byHour.indexOf(Math.max(...usage.byHour));
   const hasUsage = usage.totalEvents > 0;
-  const sourceLabel = (s: string | null) =>
-    s === "stripe"
-      ? t("admin_insights_source_stripe")
-      : s === "expired"
-        ? t("admin_insights_source_expired")
-        : s === "admin"
-          ? t("admin_insights_source_admin")
-          : s || "";
-
   return (
     <div className="space-y-4" data-tour="admin-account-insights">
       <div className="flex flex-wrap items-center gap-2">
@@ -679,14 +670,30 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
             </p>
             {plan.history.length ? (
               <ol className="space-y-1 border-l border-border pl-3">
-                {plan.history.map((h, i) => (
-                  <li key={i} className="text-sm text-foreground">
-                    <span className="text-muted-foreground">{date(h.at)}</span>{" "}
-                    · {planName(h.from)} → <strong>{planName(h.to)}</strong>
-                    {h.source && (
+                {/* docs/301: todo cambio, con hora, origen y quién lo hizo; lo más reciente arriba. */}
+                {[...plan.history].reverse().map((h, i) => (
+                  <li key={i} className="text-sm text-foreground" data-plan-history={h.kind}>
+                    <span className="text-muted-foreground">{dateTime(h.at)}</span>{" "}
+                    ·{" "}
+                    {h.kind === "changed" ? (
+                      <>
+                        {planName(h.from)} → <strong>{planName(h.to)}</strong>
+                        {h.expiresAt && (
+                          <span className="text-muted-foreground"> · {t("admin_plan_hist_until").replace("{date}", date(h.expiresAt))}</span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <strong>{planName(h.to)}</strong>
+                        {": "}
+                        {t(`admin_plan_hist_kind_${h.kind}` as TranslationKey).replace("{date}", date(h.until))}
+                      </>
+                    )}
+                    {h.origin && (
                       <span className="text-xs text-muted-foreground">
                         {" "}
-                        ({sourceLabel(h.source)})
+                        ({t(`admin_plan_hist_origin_${h.origin}` as TranslationKey)}
+                        {h.by ? ` · ${h.by}` : ""})
                       </span>
                     )}
                   </li>
