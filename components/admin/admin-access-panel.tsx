@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useConfirmDialog } from "@/components/confirm-dialog"
 import { AdminCard, LoadingBlock } from "@/components/admin/ui"
 import { formatDateTime } from "@/lib/date-format"
-import { normalizeAdminEmail, type AdminMember } from "@/lib/admin/members"
+import { isPermanentAdmin, normalizeAdminEmail, type AdminMember } from "@/lib/admin/members"
 import { cn } from "@/lib/utils"
 
 type MembersResponse = { ready: boolean; members: AdminMember[]; canManage: boolean; me: string | null }
@@ -52,7 +52,14 @@ export function AdminAccessPanel() {
     return { ok: res.ok && json.ok, error: json.error as string | undefined }
   }
 
-  const errorText = (error?: string) => (error === "only_owner" ? t("admin_access_only_owner") : error === "invalid_email" ? t("admin_access_invalid_email") : t("admin_access_error"))
+  const errorText = (error?: string) =>
+    error === "only_owner"
+      ? t("admin_access_only_owner")
+      : error === "invalid_email"
+        ? t("admin_access_invalid_email")
+        : error === "permanent"
+          ? t("admin_access_permanent_desc")
+          : t("admin_access_error")
 
   const add = async (send: boolean) => {
     const normalized = normalizeAdminEmail(email)
@@ -111,6 +118,12 @@ export function AdminAccessPanel() {
                     <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-foreground">
                       <span className="truncate">{m.email}</span>
                       {isMe && <span className="rounded-full bg-muted px-2 text-[11px] text-muted-foreground">{t("admin_access_you")}</span>}
+                      {/* Cuenta del negocio: nunca se quita (docs/290). */}
+                      {isPermanentAdmin(m.email) && (
+                        <span title={t("admin_access_permanent_desc")} className="rounded-full bg-primary/10 px-2 text-[11px] text-primary">
+                          {t("admin_access_permanent")}
+                        </span>
+                      )}
                     </p>
                     <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                       <span className="rounded-full border border-border px-2">{t(m.role === "owner" ? "admin_access_role_owner" : "admin_access_role_admin")}</span>
@@ -130,7 +143,7 @@ export function AdminAccessPanel() {
                           {m.status === "pending" ? t("admin_access_send") : t("admin_access_resend")}
                         </Button>
                       )}
-                      {m.role !== "owner" && (
+                      {m.role !== "owner" && !isPermanentAdmin(m.email) && (
                         <Button size="sm" variant="ghost" className="gap-1.5 text-destructive hover:text-destructive" disabled={!!busy} onClick={() => remove(m)}>
                           <Trash2 className="h-4 w-4" />
                           {t("admin_access_remove")}

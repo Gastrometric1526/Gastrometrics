@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { canManageAccess, canRemove, canSignIn, normalizeAdminEmail, sortMembers, type AdminMember } from "@/lib/admin/members"
+import { canManageAccess, canRemove, canSignIn, isPermanentAdmin, normalizeAdminEmail, PERMANENT_ADMIN_EMAIL, sortMembers, type AdminMember } from "@/lib/admin/members"
 
 const m = (email: string, role: AdminMember["role"], status: AdminMember["status"]) => ({ email, role, status })
 const owner = m("dueno@correo.com", "owner", "active")
@@ -35,6 +35,22 @@ describe("personas con acceso a /admin (docs/282)", () => {
     expect(canRemove(owner.email, { kind: "account", email: owner.email }, members)).toEqual({ ok: false, reason: "self" })
     expect(canRemove(owner.email, { kind: "code" }, members)).toEqual({ ok: false, reason: "last_owner" })
     expect(canRemove("nadie@correo.com", { kind: "code" }, members)).toEqual({ ok: false, reason: "missing" })
+  })
+
+  // docs/290: la cuenta del negocio es dueña para siempre.
+  it("la cuenta permanente nunca se quita, siempre administra y va primera", () => {
+    const perm = m(PERMANENT_ADMIN_EMAIL, "owner", "active")
+    const members = [owner, perm, partner]
+    expect(isPermanentAdmin(PERMANENT_ADMIN_EMAIL.toUpperCase())).toBe(true)
+    expect(isPermanentAdmin(owner.email)).toBe(false)
+    // Ni el otro dueño, ni el código de emergencia, aunque haya dos dueños.
+    expect(canRemove(PERMANENT_ADMIN_EMAIL, { kind: "account", email: owner.email }, members)).toEqual({ ok: false, reason: "permanent" })
+    expect(canRemove(PERMANENT_ADMIN_EMAIL, { kind: "code" }, members)).toEqual({ ok: false, reason: "permanent" })
+    // El otro dueño sí se puede quitar, porque queda la permanente.
+    expect(canRemove(owner.email, { kind: "account", email: PERMANENT_ADMIN_EMAIL }, members)).toEqual({ ok: true })
+    // Administra aunque la tabla no la tenga todavía.
+    expect(canManageAccess({ kind: "account", email: PERMANENT_ADMIN_EMAIL }, [owner])).toBe(true)
+    expect(sortMembers(members)[0].email).toBe(PERMANENT_ADMIN_EMAIL)
   })
 
   it("la lista muestra primero al dueño y después por estado", () => {
