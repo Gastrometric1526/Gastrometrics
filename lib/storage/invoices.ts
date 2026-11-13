@@ -9,6 +9,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { createBusinessScopedCache } from "./supabase-cache"
 import type { Database } from "@/types/database"
 import type { Invoice } from "@/types/invoice"
+import { notifyAdminActivity } from "@/lib/services/activity-log"
 
 type InvoiceRow = Database["public"]["Tables"]["invoices"]["Row"]
 
@@ -110,6 +111,7 @@ export async function deleteInvoice(businessId: string, invoiceId: string): Prom
     businessId,
     invoices.filter((invoice) => invoice.id !== invoiceId),
   )
+  notifyAdminActivity({ module: "facturas", action: "deleted", businessId: businessId && businessId !== "main" ? businessId : null, label: invoices.find((i) => i.id === invoiceId)?.number || null })
 }
 
 /** Próximo número de factura para este negocio — secuencial, con padding a 4 dígitos. */

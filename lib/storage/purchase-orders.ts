@@ -9,6 +9,7 @@ import { createBusinessScopedCache } from "./supabase-cache"
 import { emitValueMoment } from "@/lib/feedback/ask-store"
 import type { Database } from "@/types/database"
 import type { PurchaseOrder } from "@/types/purchase-order"
+import { notifyAdminActivity } from "@/lib/services/activity-log"
 
 type PurchaseOrderRow = Database["public"]["Tables"]["purchase_orders"]["Row"]
 
@@ -130,6 +131,7 @@ export async function updatePurchaseOrder(
 export async function deletePurchaseOrder(businessId: string, orderId: string): Promise<void> {
   const orders = getPurchaseOrders(businessId)
   await savePurchaseOrders(businessId, orders.filter((order) => order.id !== orderId))
+  notifyAdminActivity({ module: "ordenes_compra", action: "deleted", businessId: businessId && businessId !== "main" ? businessId : null })
 }
 
 /**

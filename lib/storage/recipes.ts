@@ -12,6 +12,7 @@ import { createBusinessScopedCache } from "./supabase-cache"
 import type { Database } from "@/types/database"
 import { withMissingPrice } from "@/lib/recipe-pricing"
 import { getCurrentCurrencyCode } from "@/lib/currency"
+import { notifyAdminActivity } from "@/lib/services/activity-log"
 
 type RecipeRow = Database["public"]["Tables"]["recipes"]["Row"]
 type RecipeTrashRow = Database["public"]["Tables"]["recipes_trash"]["Row"]
@@ -449,6 +450,8 @@ export async function moveRecipeToTrash(recipeId: string, businessId?: string | 
       }),
     )
     window.dispatchEvent(new CustomEvent("recipesTrashUpdated", { detail: { businessId: businessId || "main" } }))
+    // Aviso al celular del dueño (docs/295).
+    notifyAdminActivity({ module: "recetas", action: "deleted", businessId: businessId && businessId !== "main" ? businessId : null, label: recipeToDelete.name })
 
     return true
   } catch (error) {

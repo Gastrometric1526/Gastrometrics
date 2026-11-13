@@ -87,7 +87,7 @@ import { persistUnitChangeSideEffects, type UnitChange } from "@/lib/storage/uni
 import { updateIngredientPriceAndRecalculate, requestSubRecipePricePrompt, type RecalculationResult } from "@/lib/recalculate"
 import { ActivityTracker } from "@/lib/activity-tracker"
 import { trackEvent } from "@/lib/analytics/track-event"
-import { logActivity, logPriceRuleChanges, importFormat } from "@/lib/services/activity-log"
+import { logActivity, logPriceRuleChanges, importFormat, notifyAdminActivity } from "@/lib/services/activity-log"
 import { ALLERGENS, allergenLabelKey } from "@/lib/allergens"
 import { formatUnitPrice } from "@/lib/currency"
 import { fileDate } from "@/lib/date-format"
@@ -656,6 +656,7 @@ export default function IngredientesPage() {
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
+      notifyAdminActivity({ module: "ingredientes", action: "template", businessId })
       showSuccess(t("ingredientes_toast_template_downloaded_title"), t("ingredientes_toast_template_downloaded_desc"))
     } catch (error) {
       console.error("Error downloading template:", error)
@@ -1225,6 +1226,8 @@ export default function IngredientesPage() {
       a.download = `ingredientes_${fileDate()}.csv`
       a.click()
       window.URL.revokeObjectURL(url)
+      // Aviso al celular del dueño (docs/295).
+      notifyAdminActivity({ module: "ingredientes", action: "exported", businessId, count: exportData.length })
 
       showSuccess(t("ingredientes_toast_export_success_title"), t("ingredientes_toast_export_success_desc"))
     } catch (error) {

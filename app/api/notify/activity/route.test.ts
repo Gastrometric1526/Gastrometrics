@@ -40,7 +40,7 @@ describe("/api/notify/activity", () => {
   })
 
   it("rechaza acciones fuera de la lista y a quien no tiene sesión", async () => {
-    expect((await call({ module: "recetas", action: "deleted" })).status).toBe(400)
+    expect((await call({ module: "recetas", action: "nudge_shown" })).status).toBe(400)
     user = null
     expect((await call({ module: "recetas", action: "created" })).status).toBe(401)
     expect(push).not.toHaveBeenCalled()

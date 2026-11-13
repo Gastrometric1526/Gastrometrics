@@ -30,6 +30,7 @@ import { rememberAccountIdentity, snapshotBeforeSafely } from "@/lib/services/ac
 
 export const maxDuration = 60
 import { getStripeClient, isStripeConfigured } from "@/lib/stripe/client"
+import { sendActivityPush } from "@/lib/services/activity-push-server"
 
 export async function POST(request: Request) {
   const supabase = getSupabaseServerClient()
@@ -103,6 +104,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No se pudo eliminar la cuenta. Intenta de nuevo." }, { status: 500 })
     }
 
+    // Aviso al celular del dueño (docs/295): tiene 30 días para reactivarla.
+    await sendActivityPush({ user: { id: userId, email: user.email }, module: "cuenta", action: "delete_requested" })
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error("[api/account/delete] Error eliminando la cuenta:", error)

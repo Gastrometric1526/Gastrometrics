@@ -10,6 +10,7 @@
  */
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { notifyAdminActivity } from "@/lib/services/activity-log"
 
 export type PdfKind = "recipe" | "menu" | "mep" | "cash_up" | "inventory" | "invoice" | "purchase_order" | "sales_history"
 
@@ -24,6 +25,8 @@ export function recordPdfExport(kind: PdfKind, businessId?: string | null, detai
       .then(({ data }) => {
         const user = data.session?.user
         if (!user) return
+        // Aviso al celular del dueño (docs/295).
+        notifyAdminActivity({ module: "pdf", action: "exported", businessId, kind, label: details?.name || null })
         return supabase.from("activity_log").insert({
           business_id: businessId && businessId !== "main" ? businessId : null,
           user_id: user.id,

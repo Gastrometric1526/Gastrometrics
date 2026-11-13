@@ -8,6 +8,7 @@ import type { Database } from "@/types/database"
 import type { Menu, MenuItem, MenuSection, MenuStep } from "@/lib/types/menus"
 import type { Recipe } from "@/types/recipe"
 import { isBarClassification } from "./beverage"
+import { notifyAdminActivity } from "@/lib/services/activity-log"
 
 export type { Menu, MenuItem, MenuSection, MenuStep }
 
@@ -345,6 +346,7 @@ export async function deleteMenu(businessId: string, menuId: string): Promise<bo
     console.error("[Menus] Error eliminando menú:", error)
     return false
   }
+  notifyAdminActivity({ module: "menus", action: "deleted", businessId: businessId && businessId !== "main" ? businessId : null, label: menus.find((m) => m.id === menuId)?.name || null })
   return true
 }
 

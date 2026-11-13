@@ -30,6 +30,7 @@ import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { snapshotBeforeSafely } from "@/lib/services/account-snapshots"
+import { sendActivityPush } from "@/lib/services/activity-push-server"
 
 export const maxDuration = 60
 
@@ -89,6 +90,8 @@ export async function POST(request: Request) {
       }
     }
 
+    // Aviso al celular del dueño (docs/295).
+    await sendActivityPush({ user: { id: userId, email: user.email }, module: "cuenta", action: "wiped" })
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error("[api/account/wipe-content] Error borrando el contenido:", error)

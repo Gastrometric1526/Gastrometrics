@@ -17,6 +17,7 @@ import { readFile } from "fs/promises"
 import path from "path"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { sendActivityPush } from "@/lib/services/activity-push-server"
 
 const SUPPORTED_MANUAL_LANGUAGES = ["es", "en", "da", "fr", "pt", "zh"] as const
 
@@ -52,6 +53,8 @@ export async function GET() {
       is_notification: false,
     })
     .then(({ error }) => error && console.error("[api/manual] No se pudo registrar la descarga:", error))
+  // Aviso al celular del dueño (docs/295).
+  await sendActivityPush({ user: { id: user.id, email: user.email }, module: "manual", action: "downloaded", label: language.toUpperCase() })
 
   try {
     const pdfBuffer = await readFile(manualPathFor(language)).catch(() =>

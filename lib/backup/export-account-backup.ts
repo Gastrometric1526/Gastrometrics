@@ -26,6 +26,7 @@ import { getCurrentCurrencyCode } from "@/lib/currency"
 import { getCurrentPlan } from "@/lib/plan-access"
 import { translate, type LanguageCode, type TranslationKey } from "@/lib/i18n/translations"
 import { buildBackupReadme, type BackupScopeCounts } from "@/lib/backup/backup-readme"
+import { notifyAdminActivity } from "@/lib/services/activity-log"
 
 /**
  * Versión del formato de datos.json (docs/223). Subirla cuando cambie la forma de algo
@@ -205,4 +206,6 @@ export function downloadBlob(blob: Blob, filename: string): void {
   a.click()
   a.remove()
   URL.revokeObjectURL(url)
+  // Solo se usa para el respaldo de la cuenta: aviso al celular del dueño (docs/295).
+  notifyAdminActivity({ module: "respaldo", action: "downloaded" })
 }

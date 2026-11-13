@@ -161,7 +161,10 @@ export function logActivity(params: {
     })
   if (isPushActivity(params.module, params.action)) {
     const count = params.metadata?.count
-    notifyAdminActivity({ module: params.module, action: params.action, businessId: params.businessId, count })
+    // Qué fue (nombre de la receta, del ingrediente…) y, en el OCR, qué se leyó (docs/295).
+    const label = params.entityLabel?.replace(/"/g, "") || null
+    const kind = typeof params.metadata?.kind === "string" ? params.metadata.kind : null
+    notifyAdminActivity({ module: params.module, action: params.action, businessId: params.businessId, count, label, kind })
   }
 }
 
