@@ -21,6 +21,7 @@ import { sendUserPush } from "./user-push"
 import { getEmailLabels, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { sendFeedbackReplyEmail } from "./notify-feedback"
 import { googleLanguage, supportAdminLanguage, translateText, type MessageTranslation } from "./translate"
+import { adminAccountUrl } from "@/lib/admin/open-account"
 
 export interface SupportConversation {
   id: string
@@ -143,6 +144,7 @@ export async function postUserMessage(input: {
       ],
       footnote: "Respóndelo en /admin → Buzón y reseñas → Chat. La persona ve cuántas personas tiene adelante.",
       label: "chat de soporte",
+      url: adminAccountUrl({ userId: input.accountId, email: input.email }, { tab: "buzon", sub: "chat" }),
     }).catch(() => false)
   }
   return getMyConversation(input.accountId)

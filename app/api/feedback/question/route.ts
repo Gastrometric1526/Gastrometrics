@@ -16,6 +16,7 @@ import { buildReviewMessage } from "@/lib/reviews"
 import { sendFeedbackNotification } from "@/lib/services/notify-feedback"
 import { sendAdminPush } from "@/lib/services/admin-push"
 import { surveyPushText } from "@/lib/feedback/survey-push"
+import { adminAccountUrl } from "@/lib/admin/open-account"
 
 export async function POST(request: Request) {
   const {
@@ -90,7 +91,7 @@ export async function POST(request: Request) {
 
   // Aviso a /admin (docs/240). El testimonio y «qué mejorar» ya avisan como mensaje del buzón.
   if (!(question === "testimonial" || question === "improve") || !detail) {
-    await sendAdminPush({ ...surveyPushText({ question, answer, detail, userName }), url: "/admin?tab=buzon&sub=encuestas" })
+    await sendAdminPush({ ...surveyPushText({ question, answer, detail, userName }), url: adminAccountUrl({ userId: user.id }, { tab: "buzon", sub: "encuestas" }) })
   }
 
   return NextResponse.json({ ok: true })

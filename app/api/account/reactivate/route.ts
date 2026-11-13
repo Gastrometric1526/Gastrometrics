@@ -3,6 +3,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { deletionDeadline } from "@/lib/account-recovery"
 import { sendOwnerNotification } from "@/lib/services/notify-owner"
+import { adminAccountUrl } from "@/lib/admin/open-account"
 
 /**
  * Reactivar la propia cuenta dentro de los 30 días de gracia (docs/285). Antes solo se
@@ -39,6 +40,7 @@ export async function POST() {
     rows: [["Cuenta", user.email]],
     footnote: "La persona reactivó su cuenta dentro de los 30 días de gracia. Si tenía un plan pagado, tiene que volver a elegirlo en Mi Plan.",
     label: "cuenta reactivada",
+    url: adminAccountUrl({ userId: user.id }),
   })
   return NextResponse.json({ ok: true })
 }

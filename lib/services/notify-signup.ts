@@ -30,6 +30,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { formatDateTime } from "@/lib/date-format"
 import { confirmedAt } from "@/lib/admin/confirmed-accounts"
 import { notifyOwnerReferralSignup } from "./referrals"
+import { adminAccountUrl } from "@/lib/admin/open-account"
 
 const LANGUAGE_NAMES: Record<string, string> = {
   es: "Español",
@@ -47,13 +48,14 @@ function adminLink(): string {
 
 /** Devuelve true si el correo salió. Nunca lanza. */
 export async function sendAccountCreatedNotification(input: {
+  userId?: string
   email: string
   fullName?: string
   businessType?: string
   nationality?: string
   language?: string
 }): Promise<boolean> {
-  await sendAdminPush({ title: "Cuenta nueva confirmada", body: [input.fullName, input.email].filter(Boolean).join(" · "), url: "/admin?tab=cuentas" })
+  await sendAdminPush({ title: "Cuenta nueva confirmada", body: [input.fullName, input.email].filter(Boolean).join(" · "), url: adminAccountUrl({ userId: input.userId, email: input.email }) })
   if (!process.env.RESEND_API_KEY || !process.env.FEEDBACK_NOTIFY_TO) {
     console.error("[notify-signup] Falta RESEND_API_KEY o FEEDBACK_NOTIFY_TO: no se avisó de la cuenta nueva", input.email)
     return false
@@ -131,6 +133,7 @@ export async function notifyOwnerAccountConfirmed(userId: string): Promise<boole
     const fullName = profile?.full_name || um.full_name || undefined
     const language = profile?.preferred_language || um.preferred_language || undefined
     const sent = await sendAccountCreatedNotification({
+      userId,
       email: user.email,
       fullName,
       businessType: um.business_type || undefined,

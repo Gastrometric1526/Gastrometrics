@@ -21,6 +21,7 @@ import { recordPlanChangeNotice } from "@/lib/services/plan-change-notice"
 import { sendOwnerNotification, hondurasTime } from "@/lib/services/notify-owner"
 import { isConfirmedAccount } from "@/lib/admin/confirmed-accounts"
 import { selectAll } from "@/lib/admin/select-all"
+import { adminAccountUrl } from "@/lib/admin/open-account"
 
 /**
  * Cuentas con el correo confirmado (Supabase Auth) y, de las fundadoras, cuándo se les dio
@@ -195,6 +196,7 @@ export async function runFounderGrant(accountId: string, now = Date.now()): Prom
     ],
     footnote: "Asignado automáticamente por el programa de 100 cocinas fundadoras. Se puede cambiar o quitar en Cuentas y planes.",
     label: "fundadora automática",
+    url: adminAccountUrl({ userId: accountId }),
   })
 
   return { ...decision, ordinal, planSlug: FOUNDER_PROGRAM.planSlug }

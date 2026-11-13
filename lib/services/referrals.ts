@@ -40,6 +40,7 @@ import {
   type RewardAction,
   type RewardRecord,
 } from "@/lib/referrals"
+import { adminAccountUrl } from "@/lib/admin/open-account"
 
 const EVENT = "referral_signup"
 type Meta = Record<string, unknown>
@@ -144,6 +145,7 @@ export async function notifyOwnerReferralSignup(inviteeId: string, invitee: { em
       ],
       footnote: "Quien invitó gana su mes cuando esta cuenta guarde una receta con costo o elija un plan en sus primeros 30 días. Detalle en /admin → Activación → Referidos.",
       label: "cuenta nueva por invitación",
+      url: adminAccountUrl({ userId: inviteeId }),
     })
   } catch (notifyError) {
     console.error("[referrals] No se pudo avisar al dueño de la cuenta por invitación:", notifyError)
@@ -352,6 +354,7 @@ export async function runReferralChecks(now = Date.now()): Promise<{ checked: nu
           ],
           footnote: "Programa «Regala un mes, gana un mes» (docs/179). Se ve en /admin → Referidos.",
           label: "referido activo",
+          url: adminAccountUrl({ userId: pair.inviteeId }, { tab: "crecimiento", sub: "referidos" }),
         })
       }
     } else if (step.action === "activate_capped") {

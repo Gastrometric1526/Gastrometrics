@@ -48,7 +48,7 @@ import { AppOverviewPanel } from "@/components/admin/app-overview-panel"
 import { PdfExportsPanel } from "@/components/admin/pdf-exports-panel"
 import { AdminCard, useAdminData } from "@/components/admin/ui"
 import type { HealthResponse } from "@/components/admin/health-panel"
-import { OPEN_ACCOUNT_EVENT } from "@/lib/admin/open-account"
+import { ADMIN_GO_EVENT, OPEN_ACCOUNT_EVENT, accountFromSearch, openAdminAccountFromLink, withoutAccountParams } from "@/lib/admin/open-account"
 import { ADMIN_SPACES, locate, resolveAdminTab, spaceParts, taskSteps, type AdminSpaceId, type AdminTab, type AdminTask } from "@/lib/admin/nav"
 
 // Candado de acceso — pedido explícito: agregar algún control de acceso a /admin,
@@ -121,6 +121,16 @@ function AdminPageInner() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const fromUrl = resolveAdminTab(params.get("tab"))
+    // Enlace de una notificación sobre una persona (docs/294): abre su ficha en «Radiografía».
+    // La parte de la URL queda de respaldo por si la cuenta ya no existe.
+    const account = accountFromSearch(window.location.search)
+    if (account) {
+      const sub = params.get("sub") || undefined
+      openAdminAccountFromLink(account, fromUrl && fromUrl !== "cuentas" ? { tab: fromUrl, sub } : null)
+      setTab("cuentas")
+      setScrollTo({ tab: "cuentas", sub: "lista", n: Date.now() })
+      return
+    }
     if (fromUrl) {
       setTab(fromUrl)
       const sub = params.get("sub")
@@ -132,7 +142,7 @@ function AdminPageInner() {
     setTab(next)
     setScrollTo(sub ? { tab: next, sub, n: Date.now() } : null)
     if (activeTask && activeTask.tab !== next) setActiveTask(null)
-    const params = new URLSearchParams(window.location.search)
+    const params = new URLSearchParams(withoutAccountParams(window.location.search))
     params.set("tab", next)
     if (sub) params.set("sub", sub)
     else params.delete("sub")
@@ -158,8 +168,18 @@ function AdminPageInner() {
   goToRef.current = goTo
   useEffect(() => {
     const open = () => goToRef.current("cuentas", "lista")
+    // La cuenta del enlace no se encontró: se va a la parte del aviso (docs/294).
+    const back = (e: Event) => {
+      const part = (e as CustomEvent<{ tab: string; sub?: string }>).detail
+      const target = resolveAdminTab(part?.tab)
+      if (target) goToRef.current(target, part.sub)
+    }
     window.addEventListener(OPEN_ACCOUNT_EVENT, open)
-    return () => window.removeEventListener(OPEN_ACCOUNT_EVENT, open)
+    window.addEventListener(ADMIN_GO_EVENT, back)
+    return () => {
+      window.removeEventListener(OPEN_ACCOUNT_EVENT, open)
+      window.removeEventListener(ADMIN_GO_EVENT, back)
+    }
   }, [])
 
   // Contadores y pendientes desde el inicio (docs/191): antes «sin revisar», «reportes

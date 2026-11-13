@@ -33,6 +33,7 @@ import { getEmailLabels, fillLabel, normalizeEmailLang } from "@/lib/i18n/email-
 import { checkRateLimit } from "@/lib/rate-limit"
 import { getPlanBySlug, getTeamInviteLimit } from "@/lib/plans"
 import { resolveTeamOwnerId } from "@/lib/team/resolve-owner"
+import { adminAccountUrl } from "@/lib/admin/open-account"
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
@@ -263,6 +264,7 @@ export async function POST(request: Request) {
       ],
       footnote: `Invitación enviada el ${hondurasTime()}.`,
       label: "aviso de invitación a equipo",
+      url: adminAccountUrl({ userId: user.id }),
     }).catch((notifyError) => console.error("[api/team/invite] Error avisando al dueño:", notifyError))
 
     return NextResponse.json({ ok: true, invitedUserId })

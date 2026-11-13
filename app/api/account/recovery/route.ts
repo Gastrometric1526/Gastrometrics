@@ -4,6 +4,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { normalizeRecoveryRequest } from "@/lib/account-recovery"
 import { sendOwnerNotification } from "@/lib/services/notify-owner"
+import { adminAccountUrl } from "@/lib/admin/open-account"
 
 /**
  * Solicitud para recuperar una cuenta (docs/285). Público (para quien no puede entrar),
@@ -58,6 +59,8 @@ export async function POST(request: Request) {
     ],
     footnote: "Resuélvela en /admin → Mensajes → Recuperar cuentas. Verifica que sea la dueña de la cuenta antes de cambiar el correo o restaurar.",
     label: "solicitud de recuperación de cuenta",
+    // Con sesión se sabe de qué cuenta es; sin sesión, a la lista de solicitudes.
+    url: sessionUser ? adminAccountUrl({ userId: sessionUser.id }, { tab: "buzon", sub: "recuperar" }) : undefined,
   })
 
   return NextResponse.json({ ok: true })

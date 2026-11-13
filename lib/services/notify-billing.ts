@@ -16,6 +16,7 @@ import { diffPlanCapabilities } from "@/lib/plan-capabilities"
 import { getEmailLabels, fillLabel, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { withEmailTracking } from "@/lib/email-tracking"
 import { formatDate as formatDMY, formatDateTime } from "@/lib/date-format"
+import { adminAccountUrl } from "@/lib/admin/open-account"
 
 // Aviso al dueño del proyecto por cada evento REAL de dinero de Stripe (suscripción
 // nueva pagada, cambio de plan pagado, cancelación) — pedido explícito: "que me caigan
@@ -51,7 +52,7 @@ export async function sendOwnerBillingNotification(input: {
   const amountLabel =
     input.amountCents !== null && input.amountCents !== undefined ? formatUsd(input.amountCents) : null
 
-  await sendAdminPush({ title: eventLabel, body: [accountLabel, toPlanName, amountLabel].filter(Boolean).join(" · "), url: "/admin?tab=ingresos" })
+  await sendAdminPush({ title: eventLabel, body: [accountLabel, toPlanName, amountLabel].filter(Boolean).join(" · "), url: adminAccountUrl({ userId: input.accountId }, { tab: "ingresos" }) })
   if (!process.env.RESEND_API_KEY || !process.env.FEEDBACK_NOTIFY_TO) return
 
   const resend = new Resend(process.env.RESEND_API_KEY)

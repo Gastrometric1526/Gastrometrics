@@ -48,7 +48,7 @@ describe("/api/notify/activity", () => {
 
   it("avisa con el nombre del negocio", async () => {
     await call({ module: "recetas", action: "created", businessId: "b1" })
-    expect(push).toHaveBeenCalledWith({ title: "Receta creada", body: "Ana · ana@correo.com · La Terraza", url: "/admin" })
+    expect(push).toHaveBeenCalledWith({ title: "Receta creada", body: "Ana · ana@correo.com · La Terraza", url: `/admin?tab=cuentas&sub=lista&account=${user!.id}` })
   })
 
   it("sin negocio dice dashboard personal", async () => {
@@ -56,7 +56,7 @@ describe("/api/notify/activity", () => {
     expect(push).toHaveBeenCalledWith({
       title: "Ingredientes importados",
       body: "Ana · ana@correo.com · Dashboard personal · 40 elementos",
-      url: "/admin",
+      url: `/admin?tab=cuentas&sub=lista&account=${user!.id}`,
     })
   })
 

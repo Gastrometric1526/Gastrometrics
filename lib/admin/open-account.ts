@@ -38,3 +38,51 @@ export function accountLookupQuery(target: AccountTarget): string {
   else if (target.email) params.set("email", target.email)
   return params.toString()
 }
+
+/**
+ * Enlace de los avisos al dueño (docs/294): «cada vez que haga clic en una notificación que me
+ * mande mi teléfono sobre un usuario, me mande directamente a la radiografía de ese usuario».
+ * La notificación lleva `?account=<id>` (o `accountEmail` si solo se conoce el correo) además
+ * de la parte de siempre (`tab`/`sub`), que queda como respaldo si la cuenta ya no existe.
+ */
+export function adminAccountUrl(target: AccountTarget, fallback: { tab: string; sub?: string } = { tab: "cuentas", sub: "lista" }): string {
+  const params = new URLSearchParams({ tab: fallback.tab })
+  if (fallback.sub) params.set("sub", fallback.sub)
+  if (target.userId) params.set("account", target.userId)
+  else if (target.email?.trim()) params.set("accountEmail", target.email.trim().toLowerCase())
+  return `/admin?${params.toString()}`
+}
+
+/** La cuenta pedida en la dirección de /admin (de una notificación), o null. Pura. */
+export function accountFromSearch(search: string): AccountTarget | null {
+  const params = new URLSearchParams(search)
+  const userId = params.get("account")?.trim() || null
+  const email = params.get("accountEmail")?.trim() || null
+  return userId || email ? { userId, email } : null
+}
+
+/** Para volver a la parte de respaldo si la cuenta del enlace no se encuentra. */
+export const ADMIN_GO_EVENT = "gm-admin-go"
+
+let fallbackPart: { tab: string; sub?: string } | null = null
+
+/** Abre la cuenta del enlace; si no se encuentra, se vuelve a `fallback`. */
+export function openAdminAccountFromLink(target: AccountTarget, fallback: { tab: string; sub?: string } | null): void {
+  fallbackPart = fallback
+  openAdminAccount(target)
+}
+
+/** La parte de respaldo del último enlace, una sola vez. */
+export function takeAccountFallback(): { tab: string; sub?: string } | null {
+  const f = fallbackPart
+  fallbackPart = null
+  return f
+}
+
+/** Quita la cuenta del enlace de la dirección (al cerrar la ficha o cambiar de parte). */
+export function withoutAccountParams(search: string): string {
+  const params = new URLSearchParams(search)
+  params.delete("account")
+  params.delete("accountEmail")
+  return params.toString()
+}

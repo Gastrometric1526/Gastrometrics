@@ -13,6 +13,7 @@ import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { sendOwnerNotification, hondurasTime } from "@/lib/services/notify-owner"
+import { adminAccountUrl } from "@/lib/admin/open-account"
 
 const MAX_AGE_MS = 15 * 60 * 1000
 const MARK = "business_created_notified"
@@ -68,6 +69,7 @@ export async function POST(request: Request) {
       ],
       footnote: `Negocio creado el ${hondurasTime(business.created_at)}.`,
       label: "aviso de negocio nuevo",
+      url: adminAccountUrl({ userId: user.id }),
     })
     if (sent) {
       const { error: markError } = await admin.from("product_events").insert({ event_name: MARK, business_id: businessId } as never) // product_events no está en types/database.ts

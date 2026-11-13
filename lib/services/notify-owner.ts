@@ -21,15 +21,16 @@ export function hondurasTime(date: Date | string = new Date()): string {
   return formatDateTime(date, { timeZone: "America/Tegucigalpa" })
 }
 
-/** HTML simple de un aviso: filas etiqueta → valor. Puro (cubierto por pruebas). */
-export function renderOwnerNotification(rows: [string, string | undefined | null][], footnote: string): string {
+/** HTML simple de un aviso: filas etiqueta → valor. Puro (cubierto por pruebas). `link`: la parte de /admin del aviso. */
+export function renderOwnerNotification(rows: [string, string | undefined | null][], footnote: string, link?: string): string {
+  const href = link ? `${ownerAdminLink()}${link.replace(/^\/admin/, "")}` : ownerAdminLink()
   return `
     ${rows
       .filter(([, value]) => value)
       .map(([label, value]) => `<p><strong>${escapeHtml(label)}:</strong> ${escapeHtml(String(value))}</p>`)
       .join("")}
     <hr/>
-    <p style="color:#888;font-size:12px">${escapeHtml(footnote)} Detalle en <a href="${ownerAdminLink()}">/admin</a>.</p>
+    <p style="color:#888;font-size:12px">${escapeHtml(footnote)} Detalle en <a href="${escapeHtml(href)}">/admin</a>.</p>
   `
 }
 
@@ -38,9 +39,11 @@ export async function sendOwnerNotification(input: {
   rows: [string, string | undefined | null][]
   footnote: string
   label: string
+  /** Pantalla de /admin que abre la notificación; si el aviso es sobre una persona, su ficha (docs/294). */
+  url?: string
 }): Promise<boolean> {
   // También al celular o computadora de quienes activaron los avisos en /admin (docs/240).
-  await sendAdminPush({ title: input.subject, body: input.rows.filter(([, value]) => value).map(([, value]) => value).slice(0, 2).join(" · ") })
+  await sendAdminPush({ title: input.subject, body: input.rows.filter(([, value]) => value).map(([, value]) => value).slice(0, 2).join(" · "), url: input.url })
   if (!process.env.RESEND_API_KEY || !process.env.FEEDBACK_NOTIFY_TO) {
     console.error(`[notify-owner] Falta RESEND_API_KEY o FEEDBACK_NOTIFY_TO: no se mandó "${input.label}"`)
     return false
@@ -52,7 +55,7 @@ export async function sendOwnerNotification(input: {
       from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
       to: [process.env.FEEDBACK_NOTIFY_TO as string],
       subject: `[GastroMetrics] ${input.subject}`,
-      html: renderOwnerNotification(input.rows, input.footnote),
+      html: renderOwnerNotification(input.rows, input.footnote, input.url),
     },
     input.label,
   )

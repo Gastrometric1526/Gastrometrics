@@ -20,6 +20,7 @@ import { sendWithRetry } from "./send-email"
 import { renderEmailTemplate, escapeHtml, escapeHtmlWithLineBreaks } from "./email-templates"
 import { getEmailLabels, normalizeEmailLang, EMAIL_LABELS } from "@/lib/i18n/email-labels"
 import { formatDate } from "@/lib/date-format"
+import { adminAccountUrl } from "@/lib/admin/open-account"
 
 export function isFeedbackNotifyConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY && process.env.FEEDBACK_NOTIFY_TO)
@@ -114,7 +115,7 @@ export async function sendFeedbackNotification(input: {
   userEmail?: string
   page?: string
 }): Promise<void> {
-  await sendAdminPush({ title: `Mensaje nuevo: ${input.type}`, body: `${input.userName || input.userEmail || "Anónimo"}: ${input.message}`, url: "/admin?tab=buzon" })
+  await sendAdminPush({ title: `Mensaje nuevo: ${input.type}`, body: `${input.userName || input.userEmail || "Anónimo"}: ${input.message}`, url: input.userEmail ? adminAccountUrl({ email: input.userEmail }, { tab: "buzon" }) : "/admin?tab=buzon" })
   if (!isFeedbackNotifyConfigured()) return
 
   const resend = new Resend(process.env.RESEND_API_KEY)

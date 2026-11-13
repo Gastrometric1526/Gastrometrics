@@ -11,6 +11,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { sendAdminPush } from "@/lib/services/admin-push"
 import { activityPushText, isOwnerEmail, isPushActivity } from "@/lib/services/activity-push"
+import { adminAccountUrl } from "@/lib/admin/open-account"
 
 const MINUTE = 60 * 1000
 
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
     const { data: profile } = await admin.from("profiles").select("full_name").eq("id", user.id).maybeSingle()
     const who = [profile?.full_name, user.email].filter(Boolean).join(" · ")
     const count = typeof body?.count === "number" && Number.isFinite(body.count) ? Math.round(body.count) : null
-    const sent = await sendAdminPush({ ...activityPushText({ module: area, action, who, businessName, count }), url: "/admin" })
+    const sent = await sendAdminPush({ ...activityPushText({ module: area, action, who, businessName, count }), url: adminAccountUrl({ userId: user.id }) })
     return NextResponse.json({ ok: true, sent })
   } catch (error) {
     console.error("[api/notify/activity] Error:", error)

@@ -50,7 +50,7 @@ import {
 } from "lucide-react"
 import { formatDate, formatDateTime, fileDate } from "@/lib/date-format"
 import { onlineFirst } from "@/lib/admin/online-first"
-import { OPEN_ACCOUNT_EVENT, accountLookupQuery, takePendingAccount } from "@/lib/admin/open-account"
+import { ADMIN_GO_EVENT, OPEN_ACCOUNT_EVENT, accountLookupQuery, takeAccountFallback, takePendingAccount, withoutAccountParams } from "@/lib/admin/open-account"
 import { accountsToCsv, type CsvAccount } from "@/lib/admin/accounts-csv"
 import { useAdminLiveReload } from "@/components/admin/live"
 import { AdminResendConfirmation } from "@/components/admin/admin-resend-confirmation"
@@ -405,8 +405,13 @@ export function AccountsPanel() {
         const res = await fetch(`/api/admin/accounts?${accountLookupQuery(target)}`)
         const data = await res.json()
         const row: AccountRow | undefined = Array.isArray(data.accounts) ? data.accounts[0] : undefined
+        // Si vino de una notificación (docs/294) y la cuenta ya no está, se vuelve a la parte del aviso.
+        const fallback = takeAccountFallback()
         if (row) loadDetailRef.current(row)
-        else toast({ title: t("admin_account_link_not_found"), variant: "destructive" })
+        else {
+          toast({ title: t("admin_account_link_not_found"), variant: "destructive" })
+          if (fallback) window.dispatchEvent(new CustomEvent(ADMIN_GO_EVENT, { detail: fallback }))
+        }
       } catch {
         toast({ title: t("admin_accounts_error_toast"), variant: "destructive" })
       }
@@ -418,6 +423,9 @@ export function AccountsPanel() {
   }, [])
 
   const closeDetail = () => {
+    // La ficha abierta desde una notificación no vuelve a abrirse al recargar (docs/294).
+    const rest = withoutAccountParams(window.location.search)
+    window.history.replaceState(null, "", `${window.location.pathname}${rest ? `?${rest}` : ""}`)
     setSelected(null)
     setDetail(null)
     setBusinesses([])
