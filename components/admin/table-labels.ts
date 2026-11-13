@@ -29,22 +29,27 @@ export function labelTableCells(root: ParentNode): void {
   }
 }
 
-export function useTableCardLabels(ref: RefObject<HTMLElement>): void {
+/**
+ * `active`: el elemento ya está en pantalla. /admin muestra primero la entrada y después el
+ * panel; sin esto el hook corría antes de que existiera el <main> y nunca se conectaba.
+ */
+export function useTableCardLabels(ref: RefObject<HTMLElement>, active = true): void {
   useEffect(() => {
     const root = ref.current
-    if (!root) return
+    if (!active || !root) return
     labelTableCells(root)
     let pending = false
     const observer = new MutationObserver(() => {
       if (pending) return
       pending = true
-      requestAnimationFrame(() => {
+      // setTimeout y no requestAnimationFrame: este último no corre con la pestaña en segundo plano.
+      window.setTimeout(() => {
         pending = false
         labelTableCells(root)
-      })
+      }, 60)
     })
     // Solo cambios de contenido (no de atributos): poner `data-label` no vuelve a dispararlo.
     observer.observe(root, { childList: true, subtree: true, characterData: true })
     return () => observer.disconnect()
-  }, [ref])
+  }, [ref, active])
 }

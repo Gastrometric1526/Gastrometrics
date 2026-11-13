@@ -113,7 +113,7 @@ function AdminPageInner() {
   const health = useAdminData<HealthResponse>(unlocked ? "/api/admin/health" : null)
   // Tablas como tarjetas en el celular: cada celda con el nombre de su columna (docs/293).
   const mainRef = useRef<HTMLElement>(null)
-  useTableCardLabels(mainRef)
+  useTableCardLabels(mainRef, unlocked && checkedSession)
 
   // Pestaña en la URL (?tab=crecimiento&sub=referidos, docs/191): al recargar se vuelve
   // a la misma sección y se puede enlazar. Se lee de window (no useSearchParams) para no
