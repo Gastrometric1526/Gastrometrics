@@ -1,4 +1,9 @@
 /**
+ * Desde docs/292 (rediseño desde cero, pedido del dueño): 5 espacios siempre a la vista
+ * —Hoy, Mensajes, Personas, Números y Sistema— (`ADMIN_SPACES`, al final del archivo); cada
+ * espacio muestra todas sus partes en botones agrupados y la parte elegida debajo. Las áreas
+ * y bloques de abajo (`ADMIN_SECTIONS`) siguen siendo las piezas y los id de la URL.
+ *
  * Mapa de /admin (docs/279, rediseñado en docs/281): un Inicio con 6 tarjetas grandes
  * (áreas); cada área abre un índice de sus partes y
  * cada parte se ve sola (docs/287) —sin barra lateral ni submenús—. Una sola fuente para el Inicio, el buscador «¿Qué quieres hacer?», la Guía y
@@ -176,32 +181,32 @@ export const QUICK_TASKS = ["chat", "plan", "access", "restore", "expiring", "ne
  * para que en cada idioma digan exactamente lo que dice la barra lateral.
  */
 export const COMMON_VARS: Record<string, TranslationKey> = {
-  overview: "admin_home_title",
+  overview: "admin_space_hoy",
   today: "admin_todo_title",
-  inbox: "admin_area_buzon",
+  inbox: "admin_space_mensajes",
   chat: "admin_tab_support_chat",
   feedback: "admin_block_mensajes",
   surveys: "admin_tab_surveys",
   reviews: "admin_tab_reviews",
-  accounts: "admin_area_cuentas",
+  accounts: "admin_space_personas",
   list: "admin_block_lista",
   history: "admin_block_historial",
   revenue: "admin_area_ingresos",
-  growth: "admin_area_crecimiento",
+  growth: "admin_space_numeros",
   stages: "admin_sub_account_funnel",
   retention: "admin_sub_retention",
   activation: "admin_tab_activation",
   referrals: "admin_sub_referrals",
   topusers: "admin_sub_top_users",
   inactive: "admin_sub_inactive",
-  usage: "admin_area_crecimiento",
+  usage: "admin_space_numeros",
   funnel: "admin_sub_funnel",
   emails: "admin_sub_email_clicks",
   imports: "admin_sub_imports",
-  comms: "admin_area_comunicacion",
+  comms: "admin_space_mensajes",
   news: "admin_tab_product_updates",
   legal: "admin_sub_legal",
-  system: "admin_tab_system",
+  system: "admin_space_sistema",
   health: "admin_block_health",
   access: "admin_block_access",
   tools: "admin_block_tools",
@@ -260,14 +265,109 @@ export function searchAdmin(query: string, t: (key: TranslationKey) => string, l
     if (matches(`${title} ${steps.join(" ")}`)) tasks.push({ kind: "task", tab: task.tab, sub: task.sub, task, title, detail: steps[0] ?? "" })
   }
   const sections: AdminSearchResult[] = []
-  for (const tab of ADMIN_TABS) {
-    const s = ADMIN_SECTIONS[tab]
-    const title = t(s.label)
-    if (matches(`${title} ${t(s.desc)}`)) sections.push({ kind: "section", tab, title, detail: t(s.desc) })
-    for (const sub of s.subs ?? []) {
-      const subTitle = `${title} › ${t(sub.label)}`
-      if (matches(`${subTitle} ${t(sub.desc)}`)) sections.push({ kind: "section", tab, sub: sub.id, title: subTitle, detail: t(sub.desc) })
+  for (const space of ADMIN_SPACES) {
+    const spaceTitle = t(space.label)
+    for (const part of spaceParts(space)) {
+      const info = partInfo(part.tab, part.sub)
+      if (!info) continue
+      const title = space.id === "hoy" ? spaceTitle : `${spaceTitle} › ${t(info.label)}`
+      if (matches(`${spaceTitle} ${t(space.desc)} ${t(info.label)} ${t(info.desc)}`)) sections.push({ kind: "section", tab: part.tab, sub: part.sub, title, detail: t(info.desc) })
     }
   }
   return [...tasks, ...sections].slice(0, limit)
+}
+
+// ─── Espacios (docs/292) ─────────────────────────────────────────────────────
+
+export type AdminSpaceId = "hoy" | "mensajes" | "personas" | "numeros" | "sistema"
+export type AdminPartRef = { tab: AdminTab; sub: string }
+export type AdminSpace = {
+  id: AdminSpaceId
+  label: TranslationKey
+  desc: TranslationKey
+  howTo?: TranslationKey[]
+  /** Partes del espacio, en grupos con título (o un grupo sin título). */
+  groups: { label?: TranslationKey; parts: AdminPartRef[] }[]
+}
+
+/**
+ * Partes que no son bloques de un área: Dinero (el área `ingresos` entera), Hoy y la Guía.
+ * Se nombran con un `sub` propio para que todo se elija igual.
+ */
+const SINGLE_PARTS: Record<string, { label: TranslationKey; desc: TranslationKey }> = {
+  "resumen:hoy": { label: "admin_space_hoy", desc: "admin_space_hoy_desc" },
+  "ingresos:dinero": { label: "admin_area_ingresos", desc: "admin_tabdesc_revenue" },
+  "guia:guia": { label: "admin_tab_guide", desc: "admin_tabdesc_guide" },
+}
+
+const parts = (tab: AdminTab, subs: string[]): AdminPartRef[] => subs.map((sub) => ({ tab, sub }))
+
+export const ADMIN_SPACES: AdminSpace[] = [
+  { id: "hoy", label: "admin_space_hoy", desc: "admin_space_hoy_desc", howTo: ["admin_howto_resumen"], groups: [{ parts: parts("resumen", ["hoy"]) }] },
+  {
+    id: "mensajes",
+    label: "admin_space_mensajes",
+    desc: "admin_space_mensajes_desc",
+    howTo: ["admin_howto_buzon", "admin_howto_comunicacion"],
+    groups: [
+      { label: "admin_group_inbox", parts: parts("buzon", ["chat", "mensajes", "recuperar"]) },
+      { label: "admin_group_opinions", parts: parts("buzon", ["encuestas", "resenas"]) },
+      { label: "admin_group_broadcast", parts: parts("comunicacion", ["novedades", "legal"]) },
+    ],
+  },
+  { id: "personas", label: "admin_space_personas", desc: "admin_space_personas_desc", howTo: ["admin_howto_cuentas"], groups: [{ parts: parts("cuentas", ["lista", "cifras", "historial"]) }] },
+  {
+    id: "numeros",
+    label: "admin_space_numeros",
+    desc: "admin_space_numeros_desc",
+    howTo: ["admin_howto_ingresos", "admin_howto_crecimiento", "admin_howto_uso"],
+    groups: [
+      { label: "admin_group_money", parts: [{ tab: "ingresos", sub: "dinero" }] },
+      { label: "admin_group_overview", parts: parts("crecimiento", ["numeros", "app"]) },
+      { label: "admin_group_accounts", parts: parts("crecimiento", ["etapas", "retencion", "activacion", "usuarios", "pdf", "inactivos"]) },
+      { label: "admin_group_growth", parts: parts("crecimiento", ["referidos", "embudo", "correos", "importaciones"]) },
+    ],
+  },
+  {
+    id: "sistema",
+    label: "admin_space_sistema",
+    desc: "admin_space_sistema_desc",
+    howTo: ["admin_howto_sistema"],
+    groups: [{ parts: [...parts("sistema", ["salud", "acceso", "herramientas"]), { tab: "guia", sub: "guia" }] }],
+  },
+]
+
+export function spaceParts(space: AdminSpace): AdminPartRef[] {
+  return space.groups.flatMap((g) => g.parts)
+}
+
+/** Nombre y descripción de una parte. */
+export function partInfo(tab: AdminTab, sub: string): { label: TranslationKey; desc: TranslationKey } | null {
+  const single = SINGLE_PARTS[`${tab}:${sub}`]
+  if (single) return single
+  const found = ADMIN_SECTIONS[tab]?.subs?.find((s) => s.id === sub)
+  return found ? { label: found.label, desc: found.desc } : null
+}
+
+/**
+ * Dónde cae una dirección (`?tab=…&sub=…`, también las de avisos y tareas viejas): el espacio
+ * y la parte. Sin `sub` (o uno que no existe), la primera parte del espacio.
+ */
+export function locate(tab: AdminTab, sub?: string | null): { space: AdminSpace; part: AdminPartRef } {
+  const normalizedSub = tab === "ingresos" ? "dinero" : tab === "guia" ? "guia" : tab === "resumen" ? "hoy" : sub
+  for (const space of ADMIN_SPACES) {
+    const all = spaceParts(space)
+    const exact = all.find((p) => p.tab === tab && p.sub === normalizedSub)
+    if (exact) return { space, part: exact }
+  }
+  for (const space of ADMIN_SPACES) {
+    const first = spaceParts(space).find((p) => p.tab === tab)
+    if (first) return { space, part: first }
+  }
+  return { space: ADMIN_SPACES[0], part: spaceParts(ADMIN_SPACES[0])[0] }
+}
+
+/** Pasos de «Cómo se usa» de un espacio. */
+export function spaceHowTo(space: AdminSpace, t: (key: TranslationKey) => string): string[] {
+  return howToSteps({ id: "resumen", label: space.label, desc: space.desc, howTo: space.howTo }, t)
 }

@@ -10,7 +10,8 @@ import { ArrowRight, Map, PlayCircle, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useLanguage } from "@/contexts/language-context"
-import { ADMIN_SECTIONS, ADMIN_TASKS, HOME_AREAS, QUICK_TASKS, taskSteps, type AdminTab, type AdminTask } from "@/lib/admin/nav"
+import { ADMIN_SPACES, ADMIN_TASKS, QUICK_TASKS, partInfo, spaceParts, taskSteps, type AdminTab, type AdminTask } from "@/lib/admin/nav"
+import { SPACE_ICONS } from "@/components/admin/space-nav"
 import { SECTION_ICONS } from "@/components/admin/admin-nav"
 import { AdminCard } from "@/components/admin/ui"
 
@@ -50,7 +51,7 @@ export function GuidePanel({ onGo, onTask, onStartTour }: { onGo: (tab: AdminTab
         <button
           type="button"
           onClick={() => {
-            onGo("resumen")
+            onGo("resumen", "hoy")
             onStartTour()
           }}
           className="group flex w-full items-center gap-4 rounded-2xl border border-primary/40 bg-primary/5 p-5 text-left transition-colors hover:border-primary"
@@ -83,30 +84,31 @@ export function GuidePanel({ onGo, onTask, onStartTour }: { onGo: (tab: AdminTab
           <p className="text-sm text-muted-foreground">{t("admin_guide_map_desc")}</p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {HOME_AREAS.map((id) => {
-            const section = ADMIN_SECTIONS[id]
-            const Icon = SECTION_ICONS[id]
+          {/* Los 5 espacios con todas sus partes (docs/292). */}
+          {ADMIN_SPACES.filter((space) => space.id !== "hoy").map((space) => {
+            const Icon = SPACE_ICONS[space.id]
             return (
-              <Card key={id}>
+              <Card key={space.id}>
                 <CardContent className="space-y-3 p-6">
-                  <button type="button" onClick={() => onGo(id)} className="group flex items-center gap-2 text-left text-base font-semibold text-foreground hover:text-primary">
+                  <p className="flex items-center gap-2 text-base font-semibold text-foreground">
                     <Icon className="h-5 w-5 text-primary" />
-                    {t(section.label)}
-                    <ArrowRight className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
-                  </button>
-                  <p className="text-sm text-muted-foreground">{t(section.desc)}</p>
-                  {section.subs && (
-                    <ul className="space-y-1.5 border-l border-border pl-3">
-                      {section.subs.map((s) => (
-                        <li key={s.id}>
-                          <button type="button" onClick={() => onGo(id, s.id)} className="text-left text-sm">
-                            <span className="font-medium text-foreground hover:text-primary">{t(s.label)}</span>
-                            <span className="text-muted-foreground"> · {t(s.desc)}</span>
+                    {t(space.label)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">{t(space.desc)}</p>
+                  <ul className="space-y-1.5 border-l border-border pl-3">
+                    {spaceParts(space).map((part) => {
+                      const info = partInfo(part.tab, part.sub)
+                      if (!info) return null
+                      return (
+                        <li key={`${part.tab}:${part.sub}`}>
+                          <button type="button" onClick={() => onGo(part.tab, part.sub)} className="text-left text-sm">
+                            <span className="font-medium text-foreground hover:text-primary">{t(info.label)}</span>
+                            <span className="text-muted-foreground"> · {t(info.desc)}</span>
                           </button>
                         </li>
-                      ))}
-                    </ul>
-                  )}
+                      )
+                    })}
+                  </ul>
                 </CardContent>
               </Card>
             )

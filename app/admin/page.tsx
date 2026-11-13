@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/contexts/language-context"
-import { ArrowLeft, RefreshCw, LogOut, BookOpen, X, Wrench } from "lucide-react"
+import { ArrowLeft, RefreshCw, LogOut, BookOpen, X, Wrench, HelpCircle } from "lucide-react"
 import { StatsPanel, type AdminStats } from "@/components/admin/stats-panel"
 import { AdminLiveProvider, useAdminLive } from "@/components/admin/live"
 import { AccountsPanel } from "@/components/admin/accounts-panel"
@@ -35,18 +35,20 @@ import { FunnelPanel } from "@/components/admin/funnel-panel"
 import { AccountHistoryPanel } from "@/components/admin/account-history-panel"
 import { AdminSearch } from "@/components/admin/admin-search"
 import { GuidePanel } from "@/components/admin/guide-panel"
-import { AdminHome } from "@/components/admin/admin-home"
+import { AdminToday } from "@/components/admin/admin-today"
+import { SpaceView } from "@/components/admin/space-view"
+import { SpaceBottomBar, SpaceTabs } from "@/components/admin/space-nav"
 import { AdminLogin } from "@/components/admin/admin-login"
 import { AdminPanelTour } from "@/components/admin/admin-tour"
 import { AdminAccessPanel } from "@/components/admin/admin-access-panel"
 import type { AdminSessionInfo } from "@/lib/admin/session-info"
 import { RecoveryPanel } from "@/components/admin/recovery-panel"
 import { AppOverviewPanel } from "@/components/admin/app-overview-panel"
-import { AreaPage } from "@/components/admin/area-page"
 import { PdfExportsPanel } from "@/components/admin/pdf-exports-panel"
-import { AdminCard } from "@/components/admin/ui"
+import { AdminCard, useAdminData } from "@/components/admin/ui"
+import type { HealthResponse } from "@/components/admin/health-panel"
 import { OPEN_ACCOUNT_EVENT } from "@/lib/admin/open-account"
-import { resolveAdminTab, taskSteps, type AdminTab, type AdminTask } from "@/lib/admin/nav"
+import { ADMIN_SPACES, locate, resolveAdminTab, spaceParts, taskSteps, type AdminSpaceId, type AdminTab, type AdminTask } from "@/lib/admin/nav"
 
 // Candado de acceso — pedido explícito: agregar algún control de acceso a /admin,
 // que hoy cualquiera con el link puede ver. SIN backend no existe un sistema de roles
@@ -65,7 +67,10 @@ import { resolveAdminTab, taskSteps, type AdminTab, type AdminTask } from "@/lib
 const ADMIN_SESSION_STORAGE_KEY = "gm_admin_unlocked"
 
 // Panel administrativo — pedido explícito: "ahi debo poder manejar TODO" (ver docs/63).
-// Diseño de docs/281 (pedido del dueño): un Inicio con «Para atender hoy» y 6 tarjetas
+// Rediseño desde cero (docs/292, pedido del dueño: «fácil de entender y usar»): 5 espacios
+// siempre a la vista —Hoy, Mensajes, Personas, Números, Sistema— (arriba en la computadora,
+// abajo en el celular) y, dentro de cada uno, todas sus partes en botones; el mapa vive en
+// `ADMIN_SPACES` (lib/admin/nav.ts). Antes, diseño de docs/281 (pedido del dueño): un Inicio con «Para atender hoy» y 6 tarjetas
 // grandes; cada tarjeta abre su área a pantalla completa con «← Inicio» y sus bloques uno
 // debajo del otro, sin barra lateral ni submenús. Buscador «¿Qué quieres hacer?» y Guía con
 // las tareas paso a paso (docs/279). El mapa vive en lib/admin/nav.ts; la lógica de cada
@@ -103,6 +108,8 @@ function AdminPageInner() {
   const [activeTask, setActiveTask] = useState<AdminTask | null>(null)
   // Cada vez que sube, se abre el recorrido del panel desde el Inicio (botón de la Guía).
   const [tourRun, setTourRun] = useState(0)
+  // Problemas del sistema, para el número junto a «Sistema» (docs/292).
+  const health = useAdminData<HealthResponse>(unlocked ? "/api/admin/health" : null)
 
   // Pestaña en la URL (?tab=crecimiento&sub=referidos, docs/191): al recargar se vuelve
   // a la misma sección y se puede enlazar. Se lee de window (no useSearchParams) para no
@@ -226,12 +233,19 @@ function AdminPageInner() {
   }
 
   const inboxCount = feedbackCounts.nuevo + supportWaiting + recoveryPending
-  const goHome = () => goTo("resumen")
   const go = (next: string, sub?: string) => {
     const resolved = resolveAdminTab(next)
     if (resolved) goTo(resolved, sub)
   }
+  // Dónde estamos (docs/292): el espacio y la parte de la dirección actual.
+  const here = locate(tab, scrollTo?.tab === tab ? scrollTo.sub : null)
+  const openSpace = (id: AdminSpaceId) => {
+    const space = ADMIN_SPACES.find((x) => x.id === id) ?? ADMIN_SPACES[0]
+    const first = spaceParts(space)[0]
+    goTo(first.tab, first.sub)
+  }
   const banner = activeTask && activeTask.tab === tab ? <TaskBanner task={activeTask} onClose={() => setActiveTask(null)} /> : null
+  const problems = health.data?.problems?.length ?? 0
 
   const logout = async () => {
     await fetch("/api/admin/verify", { method: "DELETE" })
@@ -240,11 +254,81 @@ function AdminPageInner() {
     loadSession()
   }
 
+  // Todo el contenido del panel, por parte (`tab:sub`). Cada pieza es la misma de antes:
+  // el rediseño cambia cómo se encuentra, no qué muestra.
+  const content: Record<string, React.ReactNode> = {
+    "resumen:hoy": (
+      <AdminToday
+        supportWaiting={supportWaiting}
+        recoveryPending={recoveryPending}
+        feedbackCounts={feedbackCounts}
+        expiringSoon={stats?.expiringSoon?.length ?? 0}
+        legalPending={legalPending ?? 0}
+        onGo={goTo}
+        onTask={runTask}
+      />
+    ),
+    "buzon:chat": <SupportInbox onWaitingChange={setSupportWaiting} />,
+    "buzon:mensajes": <FeedbackPanel onCountsChange={setFeedbackCounts} />,
+    "buzon:recuperar": <RecoveryPanel onPendingChange={setRecoveryPending} />,
+    "buzon:encuestas": <SurveyPanel />,
+    "buzon:resenas": <ReviewsPanel />,
+    "comunicacion:novedades": <ProductUpdatesPanel />,
+    "comunicacion:legal": <LegalUpdatePanel />,
+    "cuentas:lista": <AccountsPanel />,
+    "cuentas:cifras": <StatsPanel feedbackCounts={feedbackCounts} stats={stats} />,
+    "cuentas:historial": <AccountHistoryPanel />,
+    "ingresos:dinero": <RevenuePanel estimatedMrrUsdCents={stats?.estimatedMrrUsdCents} />,
+    "crecimiento:numeros": <OverviewNumbers goTo={go} />,
+    "crecimiento:app": <AppOverviewPanel />,
+    "crecimiento:etapas": <FunnelPanel />,
+    "crecimiento:retencion": <RetentionPanel />,
+    "crecimiento:activacion": <ActivationPanel />,
+    "crecimiento:usuarios": <TopUsersPanel />,
+    "crecimiento:pdf": <PdfExportsPanel />,
+    "crecimiento:inactivos": <BusinessHealthPanel />,
+    "crecimiento:referidos": <ReferralsPanel />,
+    "crecimiento:embudo": <AnalyticsPanel />,
+    "crecimiento:correos": <EmailClicksPanel />,
+    // Importaciones masivas y descargas del manual por cuenta (docs/208), y el uso del OCR.
+    "crecimiento:importaciones": (
+      <>
+        <UsageEventsPanel />
+        <OcrUsagePanel />
+      </>
+    ),
+    "sistema:salud": <HealthPanel />,
+    // Quién puede entrar al panel (docs/282).
+    "sistema:acceso": <AdminAccessPanel />,
+    // Herramientas del panel (docs/279).
+    "sistema:herramientas": (
+      <AdminCard title={t("admin_tools_title")} icon={Wrench} description={t("admin_tools_desc")}>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Un solo botón: todas las tablas + el informe PDF, en un ZIP (docs/250, docs/266) */}
+          <FullExportButton />
+          <AdminPushToggle />
+        </div>
+      </AdminCard>
+    ),
+    "guia:guia": <GuidePanel onGo={goTo} onTask={runTask} onStartTour={() => setTourRun((n) => n + 1)} />,
+  }
+  const counts: Record<string, number> = {
+    "buzon:chat": supportWaiting,
+    "buzon:mensajes": feedbackCounts.nuevo,
+    "buzon:recuperar": recoveryPending,
+    "comunicacion:legal": legalPending ?? 0,
+    "sistema:salud": problems,
+  }
+  const badges = {
+    mensajes: { count: inboxCount },
+    sistema: { count: problems, tone: "bad" as const },
+  }
+
   return (
     <div className="min-h-screen bg-muted/30">
-      {/* Encabezado fijo (docs/281): volver a la app, el nombre del panel (lleva al Inicio),
-          el buscador y, a la derecha, en línea, notificaciones y salir. En el celular el
-          buscador baja a su propia fila. */}
+      {/* Encabezado fijo (docs/292): volver a la app, el nombre del panel, el buscador y, a la
+          derecha, en línea, la Guía, notificaciones y salir. Debajo, los 5 espacios (en el
+          celular van abajo, como una app). */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
           <Link href="/dashboard" aria-label={t("common_back")}>
@@ -252,12 +336,15 @@ function AdminPageInner() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <button type="button" onClick={goHome} className="min-w-0 text-left md:w-52 md:shrink-0" data-tour="admin-title">
+          <button type="button" onClick={() => openSpace("hoy")} className="min-w-0 text-left md:w-48 md:shrink-0">
             <h1 className="truncate text-base font-semibold text-foreground">{t("admin_page_title")}</h1>
           </button>
           <AdminSearch onGo={goTo} onTask={runTask} className="hidden flex-1 md:block md:max-w-lg" data-tour="admin-search" />
-          <div className="ml-auto flex shrink-0 items-center gap-1.5">
-            <OnlineNow onOpenAccounts={() => goTo("cuentas")} />
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            <OnlineNow onOpenAccounts={() => goTo("cuentas", "lista")} />
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => goTo("guia", "guia")} aria-label={t("admin_tab_guide")} title={t("admin_tab_guide")}>
+              <HelpCircle className="h-4 w-4" />
+            </Button>
             {/* Centro de notificaciones: mensajes, encuestas, cuentas nuevas… (docs/267) */}
             <span data-tour="admin-bell">
               <AdminNotificationsBell onNavigate={go} />
@@ -273,147 +360,34 @@ function AdminPageInner() {
             </Button>
           </div>
         </div>
-        <div className="space-y-2 px-4 pb-3 md:hidden">
+        <div className="px-4 pb-3 md:hidden">
           <AdminSearch onGo={goTo} onTask={runTask} />
         </div>
+        <SpaceTabs current={here.space.id} badges={badges} onGo={openSpace} />
       </header>
 
-      <main className="mx-auto max-w-6xl space-y-8 px-4 py-8 pb-20 sm:px-6 sm:py-10">
+      <main className="mx-auto max-w-6xl space-y-6 px-4 pb-28 pt-6 sm:px-6 sm:pt-8 md:pb-16">
         <div className="flex justify-end">
           <LiveIndicator lastUpdatedAt={lastUpdatedAt} onRefresh={refreshNow} />
         </div>
 
-        {tab === "resumen" && (
-          <AdminHome
-            inboxCount={inboxCount}
-            supportWaiting={supportWaiting}
-            recoveryPending={recoveryPending}
-            feedbackCounts={feedbackCounts}
-            expiringSoon={stats?.expiringSoon?.length ?? 0}
-            legalPending={legalPending ?? 0}
-            onGo={goTo}
-            onTask={runTask}
-          />
-        )}
-
-        {tab === "buzon" && (
-          <AreaPage
-            tab="buzon"
-            focus={scrollTo?.tab === "buzon" ? scrollTo.sub : undefined}
-            onOpen={(sub) => goTo("buzon", sub ?? undefined)}
-            onHome={goHome}
-            banner={banner}
-            counts={{ chat: supportWaiting, mensajes: feedbackCounts.nuevo, recuperar: recoveryPending }}
-            blocks={{
-              chat: <SupportInbox onWaitingChange={setSupportWaiting} />,
-              mensajes: <FeedbackPanel onCountsChange={setFeedbackCounts} />,
-              recuperar: <RecoveryPanel onPendingChange={setRecoveryPending} />,
-              encuestas: <SurveyPanel />,
-              resenas: <ReviewsPanel />,
-            }}
-          />
-        )}
-
-        {tab === "cuentas" && (
-          <AreaPage
-            tab="cuentas"
-            focus={scrollTo?.tab === "cuentas" ? scrollTo.sub : undefined}
-            onOpen={(sub) => goTo("cuentas", sub ?? undefined)}
-            onHome={goHome}
-            banner={banner}
-            blocks={{
-              lista: <AccountsPanel />,
-              cifras: <StatsPanel feedbackCounts={feedbackCounts} stats={stats} />,
-              historial: <AccountHistoryPanel />,
-            }}
-          />
-        )}
-
-        {tab === "ingresos" && (
-          <AreaPage tab="ingresos" onHome={goHome} banner={banner}>
-            <RevenuePanel estimatedMrrUsdCents={stats?.estimatedMrrUsdCents} />
-          </AreaPage>
-        )}
-
-        {tab === "crecimiento" && (
-          <AreaPage
-            tab="crecimiento"
-            focus={scrollTo?.tab === "crecimiento" ? scrollTo.sub : undefined}
-            onOpen={(sub) => goTo("crecimiento", sub ?? undefined)}
-            onHome={goHome}
-            banner={banner}
-            blocks={{
-              numeros: <OverviewNumbers goTo={go} />,
-              app: <AppOverviewPanel />,
-              etapas: <FunnelPanel />,
-              retencion: <RetentionPanel />,
-              activacion: <ActivationPanel />,
-              usuarios: <TopUsersPanel />,
-              pdf: <PdfExportsPanel />,
-              inactivos: <BusinessHealthPanel />,
-              referidos: <ReferralsPanel />,
-              embudo: <AnalyticsPanel />,
-              correos: <EmailClicksPanel />,
-              // Importaciones masivas y descargas del manual por cuenta (docs/208), y el uso del OCR.
-              importaciones: (
-                <>
-                  <UsageEventsPanel />
-                  <OcrUsagePanel />
-                </>
-              ),
-            }}
-          />
-        )}
-
-        {tab === "comunicacion" && (
-          <AreaPage
-            tab="comunicacion"
-            focus={scrollTo?.tab === "comunicacion" ? scrollTo.sub : undefined}
-            onOpen={(sub) => goTo("comunicacion", sub ?? undefined)}
-            onHome={goHome}
-            banner={banner}
-            counts={{ legal: legalPending ?? 0 }}
-            blocks={{ novedades: <ProductUpdatesPanel />, legal: <LegalUpdatePanel /> }}
-          />
-        )}
-
-        {tab === "sistema" && (
-          <AreaPage
-            tab="sistema"
-            focus={scrollTo?.tab === "sistema" ? scrollTo.sub : undefined}
-            onOpen={(sub) => goTo("sistema", sub ?? undefined)}
-            onHome={goHome}
-            banner={banner}
-            blocks={{
-              salud: <HealthPanel />,
-              // Quién puede entrar al panel (docs/282).
-              acceso: <AdminAccessPanel />,
-              // Herramientas del panel (docs/279).
-              herramientas: (
-                <AdminCard title={t("admin_tools_title")} icon={Wrench} description={t("admin_tools_desc")}>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {/* Un solo botón: todas las tablas + el informe PDF, en un ZIP (docs/250, docs/266) */}
-                    <FullExportButton />
-                    <AdminPushToggle />
-                  </div>
-                </AdminCard>
-              ),
-            }}
-          />
-        )}
-
-        {tab === "guia" && (
-          <AreaPage tab="guia" onHome={goHome} banner={banner}>
-            <GuidePanel onGo={goTo} onTask={runTask} onStartTour={() => setTourRun((n) => n + 1)} />
-          </AreaPage>
+        {here.space.id === "hoy" ? (
+          <>
+            {banner}
+            {content["resumen:hoy"]}
+          </>
+        ) : (
+          <SpaceView space={here.space} active={here.part} content={content} counts={counts} banner={banner} onOpen={(p) => goTo(p.tab, p.sub)} />
         )}
 
         {/* Recorrido completo del panel (docs/282): sale solo la primera vez a quien
             administra sin ser dueño; cualquiera lo vuelve a ver desde la Guía. */}
-        {tab === "resumen" && (
+        {here.space.id === "hoy" && (
           <AdminPanelTour key={tourRun} autoStart={session?.identity?.kind === "account" && session.identity.role === "admin"} forceStart={tourRun > 0} />
         )}
       </main>
+
+      <SpaceBottomBar current={here.space.id} badges={badges} onGo={openSpace} />
     </div>
   )
 }
