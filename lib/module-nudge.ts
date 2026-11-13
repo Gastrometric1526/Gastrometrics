@@ -8,7 +8,11 @@
  * - Solo a quien usa la app cada semana: entró en cada una de las últimas 2 semanas y en al
  *   menos 3 días distintos de las últimas 3 (`isWeeklyUser`).
  * - Módulo candidato: está en su menú (plan, permisos y revelación progresiva ya aplicados),
- *   y nunca lo abrió o hace más de 21 días que no entra.
+ *   y nunca lo usó. Si alguna vez lo usó, solo cuando pasaron meses (`NUDGE_IDLE_DAYS`, 90
+ *   días) sin tocarlo (pedido del dueño, docs/297: «si en algún momento utilizó el módulo, no
+ *   lo dice; si tal vez han pasado meses, ahí sí les recuerda»). «Usar» es cualquier acción
+ *   del registro en ese módulo (entrar, crear, editar…) en todo su historial, no solo los
+ *   últimos 60 días: `lastUse` lo trae la ventana con una consulta por módulo.
  * - Se elige siguiendo la línea de uso del sistema (`NUDGE_ORDER`): primero lo que alimenta
  *   a lo demás (ingredientes → fichas → inventario → menús → compras → ventas → salón →
  *   reportes → equipo).
@@ -30,7 +34,8 @@ export const NUDGE_ORDER: { href: string; module: string; slug: string }[] = [
   { href: "/equipo", module: "equipo", slug: "equipo" },
 ]
 
-export const NUDGE_IDLE_DAYS = 21
+/** Días sin usar un módulo que ya usó antes para volver a invitarlo (docs/297; antes 21). */
+export const NUDGE_IDLE_DAYS = 90
 export const NUDGE_EVERY_DAYS = 7
 export const NUDGE_REPEAT_DAYS = 30
 export const NUDGE_STATE_KEY = "gm_module_nudge"
@@ -94,6 +99,8 @@ export function pickNudge(params: {
   /** Rutas del menú que la persona puede usar (sin candado y ya reveladas). */
   available: string[]
   state: NudgeState
+  /** Último uso de cada módulo en todo el historial (cualquier acción), por nombre de módulo. */
+  lastUse?: Record<string, string>
   now?: Date
 }): NudgePick | null {
   const now = params.now ?? new Date()
@@ -101,6 +108,7 @@ export function pickNudge(params: {
   if (!isWeeklyUser(params.visits.map((v) => v.at), now)) return null
   if (params.state.lastShownAt && t - Date.parse(params.state.lastShownAt) < NUDGE_EVERY_DAYS * DAY) return null
   const last = lastVisitByModule(params.visits)
+  for (const [module, at] of Object.entries(params.lastUse ?? {})) if (!last[module] || at > last[module]) last[module] = at
   const available = new Set(params.available)
   for (const m of NUDGE_ORDER) {
     if (!available.has(m.href)) continue
@@ -117,4 +125,15 @@ export function pickNudge(params: {
 export function markNudgeShown(state: NudgeState, href: string, now = new Date()): NudgeState {
   const at = now.toISOString()
   return { lastShownAt: at, shown: { ...state.shown, [href]: at } }
+}
+
+/**
+ * Módulos del menú sin visita reciente, cuyo historial completo hay que mirar antes de
+ * invitar (docs/297): uno que se usó hace 70 días no está en las visitas de 60 días, pero ya
+ * se usó y no toca invitarlo todavía.
+ */
+export function modulesToLookUp(visits: { module: string; at: string }[], available: string[]): string[] {
+  const recent = lastVisitByModule(visits)
+  const avail = new Set(available)
+  return NUDGE_ORDER.filter((m) => avail.has(m.href) && !recent[m.module]).map((m) => m.module)
 }

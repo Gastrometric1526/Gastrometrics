@@ -1,8 +1,8 @@
 "use client"
 
 /**
- * Invitación a volver a un módulo (docs/269). A quien usa la app cada semana y hace más de
- * 21 días que no abre un módulo de su menú (o nunca lo abrió), le sale una ventana corta
+ * Invitación a volver a un módulo (docs/269). A quien usa la app cada semana y nunca usó un
+ * módulo de su menú (o, si lo usó, hace más de 90 días, docs/297), le sale una ventana corta
  * que le cuenta para qué le sirve, siguiendo la línea de uso del sistema (lib/module-nudge.ts).
  * Como mucho una cada 7 días; nunca encima de otra ventana, del tutorial guiado o de la
  * vista previa de Equipo. Las visitas salen del registro de actividad («entró a…»).
@@ -20,7 +20,7 @@ import { useActiveMembership } from "@/lib/plan-access"
 import { JOURNEY_ROUTES, journeyControlsTours, readJourney } from "@/lib/journey"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { logActivity, type ActivityModule } from "@/lib/services/activity-log"
-import { markNudgeShown, NUDGE_ORDER, NUDGE_STATE_KEY, parseNudgeState, pickNudge, type NudgePick } from "@/lib/module-nudge"
+import { isWeeklyUser, markNudgeShown, modulesToLookUp, NUDGE_ORDER, NUDGE_STATE_KEY, parseNudgeState, pickNudge, type NudgePick } from "@/lib/module-nudge"
 import type { TranslationKey } from "@/lib/i18n/translations"
 
 const DIALOG_OPEN = '[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"], [data-tour-overlay]'
@@ -59,7 +59,8 @@ export function ModuleNudge() {
         return
       }
       const since = new Date(Date.now() - 60 * 86_400_000).toISOString()
-      const { data, error } = await getSupabaseBrowserClient()
+      const supabase = getSupabaseBrowserClient()
+      const { data, error } = await supabase
         .from("activity_log")
         .select("module, created_at")
         .eq("user_id", user.id)
@@ -69,7 +70,27 @@ export function ModuleNudge() {
         .limit(2000)
       if (cancelled || error || !data) return
       const visits = data.map((r) => ({ module: r.module, at: r.created_at }))
-      const next = pickNudge({ visits, available: availableKey.split("|"), state })
+      if (!isWeeklyUser(visits.map((v) => v.at))) return
+      // Historial completo de los módulos sin visita reciente (docs/297): si alguna vez lo
+      // usó (cualquier acción), solo se invita después de meses sin tocarlo.
+      const lastUse: Record<string, string> = {}
+      const lookups = await Promise.all(
+        modulesToLookUp(visits, availableKey.split("|")).map((module) =>
+          supabase
+            .from("activity_log")
+            .select("module, created_at")
+            .eq("user_id", user.id)
+            .eq("module", module)
+            .not("action", "like", "nudge_%")
+            .order("created_at", { ascending: false })
+            .limit(1),
+        ),
+      )
+      if (cancelled) return
+      // Si una consulta falla no se sabe si lo usó: mejor no invitar hoy.
+      if (lookups.some((r) => r.error)) return
+      for (const r of lookups) for (const row of r.data ?? []) lastUse[row.module] = row.created_at
+      const next = pickNudge({ visits, available: availableKey.split("|"), state, lastUse })
       if (!next || document.querySelector(DIALOG_OPEN)) return
       try {
         window.localStorage.setItem(key, JSON.stringify(markNudgeShown(state, next.href)))

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { EMPTY_NUDGE_STATE, isWeeklyUser, markNudgeShown, parseNudgeState, pickNudge } from "@/lib/module-nudge"
+import { EMPTY_NUDGE_STATE, isWeeklyUser, markNudgeShown, modulesToLookUp, parseNudgeState, pickNudge } from "@/lib/module-nudge"
 
 const NOW = new Date("2026-11-20T12:00:00")
 const daysAgo = (n: number, module = "dashboard") => ({ module, at: new Date(NOW.getTime() - n * 86_400_000).toISOString() })
@@ -16,9 +16,20 @@ describe("invitación a volver a un módulo", () => {
     expect(isWeeklyUser([daysAgo(1), daysAgo(9)].map((v) => v.at), NOW)).toBe(false)
   })
 
-  it("sigue la línea de uso: el primer módulo sin usar hace más de 21 días", () => {
-    const visits = [...weekly, daysAgo(2, "ingredientes"), daysAgo(2, "ficha_tecnica"), daysAgo(30, "recetas"), daysAgo(1, "inventario")]
-    expect(pickNudge({ visits, available: ALL, state: EMPTY_NUDGE_STATE, now: NOW })).toEqual({ href: "/mis-recetas", slug: "recetas", idleDays: 30 })
+  it("sigue la línea de uso: el primer módulo sin usar hace más de 90 días", () => {
+    const visits = [...weekly, daysAgo(2, "ingredientes"), daysAgo(2, "ficha_tecnica"), daysAgo(1, "inventario")]
+    const lastUse = { recetas: daysAgo(120).at }
+    expect(pickNudge({ visits, available: ALL, state: EMPTY_NUDGE_STATE, lastUse, now: NOW })).toEqual({ href: "/mis-recetas", slug: "recetas", idleDays: 120 })
+  })
+
+  // docs/297: si alguna vez lo usó, no se invita hasta que pasen meses.
+  it("un módulo que ya usó hace 30 o 70 días no recibe invitación; uno nunca usado sí", () => {
+    const visits = [...weekly, daysAgo(2, "ingredientes"), daysAgo(2, "ficha_tecnica"), daysAgo(30, "recetas")]
+    const available = ["/ingredientes", "/ficha-tecnica", "/mis-recetas", "/inventario", "/menus"]
+    const lastUse = { inventario: daysAgo(70).at }
+    expect(pickNudge({ visits, available, state: EMPTY_NUDGE_STATE, lastUse, now: NOW })).toEqual({ href: "/menus", slug: "menus", idleDays: null })
+    // Sin visitas recientes, hay que mirar el historial de inventario y menús.
+    expect(modulesToLookUp(visits, available)).toEqual(["inventario", "menus"])
   })
 
   it("un módulo que nunca abrió también cuenta, y lo bloqueado o sin revelar no", () => {
