@@ -62,3 +62,10 @@ export function checkRateLimit(
 export function getClientIp(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
 }
+
+/** ¿Está bloqueada esta llave ahora? No cuenta como intento (docs/298). */
+export function rateLimitLockedFor(key: string): number {
+  const entry = buckets.get(key)
+  const now = Date.now()
+  return entry && entry.lockedUntilMs > now ? Math.ceil((entry.lockedUntilMs - now) / 1000) : 0
+}

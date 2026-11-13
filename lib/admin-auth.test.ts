@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: () => undefined }) }))
 
-import { createAdminSessionValue, getAdminPasscode, isValidAdminSessionValue, readAdminSessionValue, safeEqual } from "./admin-auth"
+import { createAdminLinkToken, readAdminLinkToken, createAdminSessionValue, getAdminPasscode, isValidAdminSessionValue, readAdminSessionValue, safeEqual } from "./admin-auth"
 import { createHash, createHmac } from "crypto"
 import { isAuthorizedCronRequest } from "./cron-auth"
 
@@ -92,5 +92,34 @@ describe("acceso a los cron (docs/154)", () => {
     expect(await isAuthorizedCronRequest(req())).toBe(false)
     expect(await isAuthorizedCronRequest(req({ "user-agent": "vercel-cron/1.0" }))).toBe(true)
     expect(await isAuthorizedCronRequest(req({ "user-agent": "vercel-cron/1.0" }), { dryRun: true })).toBe(false)
+  })
+})
+
+describe("enlace de entrada por correo (docs/298)", () => {
+  beforeEach(() => {
+    process.env.ADMIN_PASSCODE = "codigo-de-prueba"
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "llave-de-servidor"
+  })
+  afterEach(() => {
+    process.env = { ...env }
+  })
+  const now = Date.parse("2026-11-13T12:00:00Z")
+
+  it("vale para su correo, vence en 15 minutos y sirve una sola vez", async () => {
+    const token = createAdminLinkToken("Dueno@Correo.com", null, now)!
+    expect(await readAdminLinkToken(token, async () => null, now + 60_000)).toBe("dueno@correo.com")
+    // Ya entró: su última entrada cambió y el mismo enlace no vale.
+    expect(await readAdminLinkToken(token, async () => "2026-11-13T12:01:00Z", now + 120_000)).toBeNull()
+    expect(await readAdminLinkToken(token, async () => null, now + 16 * 60_000)).toBeNull()
+    // Sin acceso (undefined): no vale.
+    expect(await readAdminLinkToken(token, async () => undefined, now + 60_000)).toBeNull()
+  })
+
+  it("no se puede cambiar el correo ni falsificar", async () => {
+    const token = createAdminLinkToken("a@correo.com", null, now)!
+    const [exp, , sig] = token.split(".")
+    const forged = `${exp}.${Buffer.from("b@correo.com").toString("base64url")}.${sig}`
+    expect(await readAdminLinkToken(forged, async () => null, now)).toBeNull()
+    expect(await readAdminLinkToken("x.y.z", async () => null, now)).toBeNull()
   })
 })

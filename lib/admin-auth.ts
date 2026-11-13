@@ -115,3 +115,40 @@ export const ADMIN_COOKIE_OPTIONS = {
   maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
   path: "/",
 }
+
+/**
+ * Enlace de entrada por correo (pedido del dueño, docs/298: entrar a /admin sin abrir la
+ * sesión de la app). `vencimiento.correo.firma`, firmado con la misma llave del panel, vence
+ * en 15 minutos y sirve UNA vez: la firma incluye la última entrada de esa persona
+ * (`last_login_at`), y al entrar esa fecha cambia, así que el mismo enlace ya no vale.
+ */
+export const ADMIN_LINK_MAX_AGE_SECONDS = 15 * 60
+
+const linkPayload = (expires: string, who: string, lastLogin: string | null) => `link.${expires}.${who}.${lastLogin ?? "never"}`
+
+export function createAdminLinkToken(email: string, lastLogin: string | null, now = Date.now()): string | null {
+  const key = sessionKey()
+  if (!key) return null
+  const expires = String(Math.floor(now / 1000) + ADMIN_LINK_MAX_AGE_SECONDS)
+  const who = Buffer.from(email.toLowerCase()).toString("base64url")
+  return `${expires}.${who}.${sign(key, linkPayload(expires, who, lastLogin))}`
+}
+
+/** Correo del enlace si no venció ni se usó; `lastLoginOf` da la última entrada actual de ese correo. */
+export async function readAdminLinkToken(
+  token: string,
+  lastLoginOf: (email: string) => Promise<string | null | undefined>,
+  now = Date.now(),
+): Promise<string | null> {
+  const key = sessionKey()
+  if (!key || !token) return null
+  const parts = token.split(".")
+  if (parts.length !== 3) return null
+  const [expires, who, signature] = parts
+  if (!/^\d+$/.test(expires) || Number(expires) * 1000 < now) return null
+  const email = Buffer.from(who, "base64url").toString("utf8")
+  if (!email.includes("@")) return null
+  const lastLogin = await lastLoginOf(email)
+  if (lastLogin === undefined) return null
+  return safeEqual(signature, sign(key, linkPayload(expires, who, lastLogin))) ? email : null
+}
