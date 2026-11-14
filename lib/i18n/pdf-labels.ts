@@ -187,6 +187,19 @@ export interface PdfLabels {
   cerradoPor: string
   noAnotado: string
   granAnio: string
+  descuento: string
+  propina: string
+  mesa: string
+  mesero: string
+  comensales: string
+  preCuenta: string
+  recibo: string
+  pagado: string
+  recibido: string
+  vuelto: string
+  sillasCobradas: string
+  graciasVisita: string
+  avisoPreCuenta: string
 }
 
 const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
@@ -368,6 +381,19 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     cerradoPor: "Cerrado por",
     noAnotado: "Sin anotar",
     granAnio: "Año",
+    descuento: "Descuento",
+    propina: "Propina",
+    mesa: "Mesa",
+    mesero: "Mesero",
+    comensales: "Comensales",
+    preCuenta: "Pre-cuenta",
+    recibo: "Recibo",
+    pagado: "Pagado",
+    recibido: "Recibido",
+    vuelto: "Vuelto",
+    sillasCobradas: "Sillas",
+    graciasVisita: "¡Gracias por tu visita!",
+    avisoPreCuenta: "Esta pre-cuenta no es un comprobante de pago.",
   },
   en: {
     nombre: "Name:",
@@ -547,6 +573,19 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     cerradoPor: "Closed by",
     noAnotado: "Not noted",
     granAnio: "Year",
+    descuento: "Discount",
+    propina: "Tip",
+    mesa: "Table",
+    mesero: "Server",
+    comensales: "Guests",
+    preCuenta: "Check",
+    recibo: "Receipt",
+    pagado: "Paid",
+    recibido: "Received",
+    vuelto: "Change",
+    sillasCobradas: "Seats",
+    graciasVisita: "Thank you for your visit!",
+    avisoPreCuenta: "This check is not a proof of payment.",
   },
   da: {
     nombre: "Navn:",
@@ -726,6 +765,19 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     cerradoPor: "Lukket af",
     noAnotado: "Ikke angivet",
     granAnio: "År",
+    descuento: "Rabat",
+    propina: "Drikkepenge",
+    mesa: "Bord",
+    mesero: "Tjener",
+    comensales: "Gæster",
+    preCuenta: "Foreløbig regning",
+    recibo: "Kvittering",
+    pagado: "Betalt",
+    recibido: "Modtaget",
+    vuelto: "Byttepenge",
+    sillasCobradas: "Pladser",
+    graciasVisita: "Tak for besøget!",
+    avisoPreCuenta: "Denne foreløbige regning er ikke en betalingskvittering.",
   },
   fr: {
     nombre: "Nom :",
@@ -905,6 +957,19 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     cerradoPor: "Clôturée par",
     noAnotado: "Non indiqué",
     granAnio: "Année",
+    descuento: "Remise",
+    propina: "Pourboire",
+    mesa: "Table",
+    mesero: "Serveur",
+    comensales: "Couverts",
+    preCuenta: "Addition",
+    recibo: "Reçu",
+    pagado: "Payé",
+    recibido: "Reçu du client",
+    vuelto: "Monnaie rendue",
+    sillasCobradas: "Places",
+    graciasVisita: "Merci de votre visite !",
+    avisoPreCuenta: "Cette addition n'est pas une preuve de paiement.",
   },
   pt: {
     nombre: "Nome:",
@@ -1084,6 +1149,19 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     cerradoPor: "Fechado por",
     noAnotado: "Não anotado",
     granAnio: "Ano",
+    descuento: "Desconto",
+    propina: "Gorjeta",
+    mesa: "Mesa",
+    mesero: "Garçom",
+    comensales: "Pessoas",
+    preCuenta: "Pré-conta",
+    recibo: "Recibo",
+    pagado: "Pago",
+    recibido: "Recebido",
+    vuelto: "Troco",
+    sillasCobradas: "Lugares",
+    graciasVisita: "Obrigado pela visita!",
+    avisoPreCuenta: "Esta pré-conta não é um comprovante de pagamento.",
   },
   zh: {
     nombre: "名称：",
@@ -1263,6 +1341,19 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     cerradoPor: "结账人",
     noAnotado: "未填写",
     granAnio: "年",
+    descuento: "折扣",
+    propina: "小费",
+    mesa: "桌号",
+    mesero: "服务员",
+    comensales: "人数",
+    preCuenta: "预结单",
+    recibo: "收据",
+    pagado: "已付款",
+    recibido: "实收",
+    vuelto: "找零",
+    sillasCobradas: "座位",
+    graciasVisita: "感谢光临！",
+    avisoPreCuenta: "此预结单不是付款凭证。",
   },
 }
 

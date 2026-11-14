@@ -230,9 +230,10 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
       return sum + qty * price
     }, 0)
     const taxPercent = Number.parseFloat(draftTaxPercent) || 0
-    const taxAmount = subtotal * (taxPercent / 100)
-    return { subtotal, taxPercent, taxAmount, total: subtotal + taxAmount }
-  }, [draftItems, draftTaxPercent])
+    const discount = Math.min(editingInvoice?.discount ?? 0, subtotal)
+    const taxAmount = (subtotal - discount) * (taxPercent / 100)
+    return { subtotal, discount, taxPercent, taxAmount, total: subtotal - discount + taxAmount }
+  }, [draftItems, draftTaxPercent, editingInvoice])
 
   // Una factura ES una venta — pedido explícito del dueño del proyecto tras el
   // análisis de docs/123 (Fase 1): sin esto, facturar un catering quedaba invisible
@@ -333,7 +334,9 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
 
     const subtotal = items.reduce((sum, item) => sum + item.amount, 0)
     const taxPercent = Number.parseFloat(draftTaxPercent) || 0
-    const taxAmount = subtotal * (taxPercent / 100)
+    // Factura del cobro del POS (docs/302): conserva su descuento y su cuenta.
+    const discount = Math.min(editingInvoice?.discount ?? 0, subtotal)
+    const taxAmount = (subtotal - discount) * (taxPercent / 100)
 
     const now = new Date().toISOString()
     const invoice: Invoice = {
@@ -351,7 +354,9 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
       notes: draftNotes.trim() || undefined,
       subtotal,
       taxAmount,
-      total: subtotal + taxAmount,
+      total: subtotal - discount + taxAmount,
+      ...(discount > 0 ? { discount } : {}),
+      ...(editingInvoice?.posTicketId ? { posTicketId: editingInvoice.posTicketId } : {}),
       metadata: {
         createdAt: editingInvoice?.metadata.createdAt || now,
         updatedAt: now,
@@ -366,7 +371,8 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
       } else {
         await addInvoice(businessId, invoice)
       }
-      await syncSalesImportForInvoice(invoice, !editingInvoice)
+      // La factura del POS no se vuelve a sumar como venta: ya quedó al cobrar (docs/302).
+      if (!invoice.posTicketId) await syncSalesImportForInvoice(invoice, !editingInvoice)
       // Una factura cuenta como venta (docs/124): se registra como tal para que el correo de
       // "primera venta" (cron de activación) y los recordatorios la vean (docs/137).
       if (user && !editingInvoice) {
@@ -671,6 +677,12 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
                 <span>{t("facturas_subtotal_label")}</span>
                 <span className="tabular-nums">{formatCurrency(draftTotals.subtotal)}</span>
               </div>
+              {draftTotals.discount > 0 && (
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>{t("ventas_discount_label")}</span>
+                  <span className="tabular-nums">− {formatCurrency(draftTotals.discount)}</span>
+                </div>
+              )}
               {draftTotals.taxPercent > 0 && (
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>

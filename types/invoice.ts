@@ -36,6 +36,13 @@ export interface Invoice {
   subtotal: number
   taxAmount: number
   total: number
+  /** Descuento sobre el subtotal (facturas que salen del cobro del POS, docs/302). */
+  discount?: number
+  /**
+   * Cuenta del POS de la que sale la factura (docs/302). La venta ya está en el registro
+   * del día: Facturas no la vuelve a sumar como venta al guardarla ni al editarla.
+   */
+  posTicketId?: string
   metadata: {
     createdAt: string
     updatedAt: string

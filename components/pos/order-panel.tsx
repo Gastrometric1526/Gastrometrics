@@ -4,9 +4,10 @@
  * Pedido de una mesa (docs/268), en un panel lateral como el resto de la app: arriba las
  * sillas (toca una para pedir para ella), en medio lo pedido por silla con su estado, y
  * abajo las acciones apiladas (la principal primero), igual que DetailPanel (docs/219).
+ * Botones de al menos 40 px para el dedo del mesero y pre-cuenta en PDF (docs/302).
  */
 
-import { Ban, BellRing, ChefHat, CheckCheck, Minus, Plus, Receipt, Trash2, Wallet } from "lucide-react"
+import { Ban, BellRing, ChefHat, CheckCheck, Minus, Plus, Printer, Receipt, Trash2, Wallet } from "lucide-react"
 import { useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -44,6 +45,7 @@ export function OrderPanel({
   onSend,
   onBill,
   onCheckout,
+  onPrecheck,
   onRelease,
 }: {
   open: boolean
@@ -63,6 +65,8 @@ export function OrderPanel({
   onSend: () => void
   onBill: () => void
   onCheckout: () => void
+  /** Pre-cuenta en PDF para llevar a la mesa (docs/302). */
+  onPrecheck: () => void
   onRelease: () => void
 }) {
   const { t } = useLanguage()
@@ -108,7 +112,7 @@ export function OrderPanel({
           <p className="text-xs font-medium text-muted-foreground">{t("pos_order_for")}</p>
           <div className="flex flex-wrap gap-1.5" data-tour="salon-seats">
             {[0, ...Array.from({ length: seats }, (_, i) => i + 1)].map((s) => (
-              <Button key={s} size="sm" variant={seat === s ? "default" : "outline"} onClick={() => onSeat(s)} className="h-8">
+              <Button key={s} size="sm" variant={seat === s ? "default" : "outline"} onClick={() => onSeat(s)} className="h-10 min-w-[2.75rem]">
                 {seatName(s)}
               </Button>
             ))}
@@ -153,23 +157,24 @@ export function OrderPanel({
                     </div>
                     {i.status === "new" && (
                       <div className="flex items-center gap-1.5">
-                        <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => onQuantity(i.id, i.quantity - 1)} aria-label={t("ventas_less")}>
-                          {i.quantity > 1 ? <Minus className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
+                        <Button size="icon" variant="outline" className="h-10 w-10" onClick={() => onQuantity(i.id, i.quantity - 1)} aria-label={t("ventas_less")}>
+                          {i.quantity > 1 ? <Minus className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
                         </Button>
-                        <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => onQuantity(i.id, i.quantity + 1)} aria-label={t("ventas_more")}>
-                          <Plus className="h-3.5 w-3.5" />
+                        <span className="w-6 text-center text-sm font-medium tabular-nums">{i.quantity}</span>
+                        <Button size="icon" variant="outline" className="h-10 w-10" onClick={() => onQuantity(i.id, i.quantity + 1)} aria-label={t("ventas_more")}>
+                          <Plus className="h-4 w-4" />
                         </Button>
                       </div>
                     )}
                     {i.status !== "new" && (
                       <div className="flex flex-wrap items-center gap-1.5">
                         {i.status === "ready" && (
-                          <Button size="sm" variant="outline" className="h-7 gap-1.5" onClick={() => onServed(i.id)}>
+                          <Button size="sm" variant="outline" className="h-9 gap-1.5" onClick={() => onServed(i.id)}>
                             <CheckCheck className="h-3.5 w-3.5" />
                             {t("pos_mark_served")}
                           </Button>
                         )}
-                        <Button size="sm" variant="ghost" className="h-7 gap-1.5 text-muted-foreground" onClick={() => setVoidTarget(i)}>
+                        <Button size="sm" variant="ghost" className="h-9 gap-1.5 text-muted-foreground" onClick={() => setVoidTarget(i)}>
                           <Ban className="h-3.5 w-3.5" />
                           {t("pos_void_button")}
                         </Button>
@@ -225,6 +230,12 @@ export function OrderPanel({
                 </Button>
               )}
             </div>
+          )}
+          {items.length > 0 && (
+            <Button variant="ghost" onClick={onPrecheck} className="w-full gap-2 text-muted-foreground">
+              <Printer className="h-4 w-4" />
+              {t("pos_precheck")}
+            </Button>
           )}
           {order && items.length === 0 && (
             <Button variant="ghost" onClick={onRelease} className="w-full gap-2 text-muted-foreground">

@@ -10,12 +10,26 @@
  * pantalla relee cada pocos segundos. Al cobrar, la cuenta se suma al registro manual de
  * ventas del día (lib/pos.ts → mergeSaleIntoDay). Desde Sous Chef. No emite facturas
  * fiscales.
+ *
+ * Para el mesero con el celular (pedido del dueño, docs/302): las mesas en tarjetas grandes
+ * (el plano queda como opción), aviso cuando un plato de sus mesas está listo, el mesero se
+ * anota solo con el nombre de la cuenta, pre-cuenta y recibo en PDF, vuelto en efectivo y
+ * factura desde el cobro. El invitado que solo tiene el POS entra directo aquí y no ve
+ * Ajustes (`canEditPosSettings`).
  */
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Armchair, Building2, ChefHat, LayoutGrid, RefreshCw, Settings2, ShoppingBag, WifiOff } from "lucide-react"
+import { ArrowLeft, Armchair, Building2, ChefHat, LayoutGrid, Map as MapIcon, RefreshCw, Rows3, Settings2, ShoppingBag, WifiOff } from "lucide-react"
+import { TableGrid } from "@/components/pos/table-grid"
+import { ReceiptDialog } from "@/components/pos/receipt-dialog"
+import { realPosOnlyMember } from "@/components/pos/pos-only-redirect"
+import { buildPosReceipt, canEditPosSettings, newlyReady, readyItemIds, type PosReceipt } from "@/lib/pos-waiter"
+import { downloadPosReceiptPDF } from "@/lib/pdf/pos-receipt-pdf-generator"
+import { useActiveMembership } from "@/lib/plan-access"
+import { effectiveMemberFeatures } from "@/lib/team-access"
+import { useAuth } from "@/contexts/auth-context"
 import { PosBusinessPicker, rememberPosBusiness } from "@/components/pos/pos-business-picker"
 import { useAllBusinesses } from "@/lib/storage/businesses"
 import { v4 as uuidv4 } from "uuid"
@@ -79,6 +93,8 @@ import type { Menu } from "@/lib/types/menus"
 const POLL_MS = 5000
 
 const WAITER_KEY = "gm_pos_waiter"
+/** Mesas en tarjetas o en plano (docs/302); se recuerda en el aparato. */
+const VIEW_KEY = "gm_pos_view"
 
 // Resumen del servicio (docs/273): mismos colores que el plano.
 const SUMMARY_STYLE = { free: "border-border bg-card", busy: "border-primary/30 bg-primary/5", ready: "border-success/40 bg-success-soft", bill: "border-warning/40 bg-warning-soft" } as const
@@ -147,6 +163,35 @@ function SalonPageInner({ businessId }: { businessId: string }) {
   }, [isMain])
   const { toast } = useToast()
   const canAccess = useFeatureAccess("pos")
+  const canInvoice = useFeatureAccess("invoices") === true
+  const { user } = useAuth()
+  const { member } = useActiveMembership()
+  const memberFeatures = member ? effectiveMemberFeatures(member.allowedFeatures as string[]) : null
+  const canSettings = canEditPosSettings(memberFeatures)
+  const [posOnly, setPosOnly] = useState(false)
+  useEffect(() => setPosOnly(realPosOnlyMember()), [member])
+  // Tarjetas en el celular, plano en pantallas grandes; la elección se recuerda (docs/302).
+  const [view, setView] = useState<"grid" | "map">("grid")
+  useEffect(() => {
+    let saved: string | null = null
+    try {
+      saved = localStorage.getItem(VIEW_KEY)
+    } catch {}
+    setView(saved === "map" || saved === "grid" ? saved : window.innerWidth >= 1024 ? "map" : "grid")
+  }, [])
+  const chooseView = (v: "grid" | "map") => {
+    setView(v)
+    try {
+      localStorage.setItem(VIEW_KEY, v)
+    } catch {}
+  }
+  // Minutos de cada mesa: se refresca cada 30 segundos.
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 30000)
+    return () => clearInterval(id)
+  }, [])
+  const [receipt, setReceipt] = useState<{ receipt: PosReceipt; ticketId: string } | null>(null)
 
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [menus, setMenus] = useState<Menu[]>([])
@@ -220,6 +265,31 @@ function SalonPageInner({ businessId }: { businessId: string }) {
   const kitchenWaiting = useMemo(() => kitchenQueue(orders).filter((g) => g.items.some((i) => i.status === "sent")).length, [orders])
   const readyTables = useMemo(() => orders.filter((o) => o.items.some((i) => i.status === "ready")).length, [orders])
 
+  // «Listo para servir» (docs/302): cuando cocina marca un plato de una mesa de este mesero,
+  // aviso y vibración. La primera lectura solo toma nota (no avisa lo que ya estaba listo).
+  const seenReady = useRef<Set<string> | null>(null)
+  useEffect(() => {
+    if (!data) return
+    const ids = readyItemIds(orders)
+    if (seenReady.current) {
+      let me: string | null = null
+      try {
+        me = localStorage.getItem(WAITER_KEY)
+      } catch {}
+      const fresh = newlyReady(seenReady.current, orders, me)
+      if (fresh.length) {
+        const names = fresh.map((g) => g.order.tableLabel).join(", ")
+        const n = fresh.reduce((s, g) => s + g.items.reduce((x, i) => x + i.quantity, 0), 0)
+        toast({ title: t("pos_ready_toast_title").replace("{tables}", names), description: t("pos_ready_toast_desc").replace("{n}", String(n)) })
+        try {
+          navigator.vibrate?.([120, 60, 120])
+        } catch {}
+      }
+    }
+    seenReady.current = ids
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders])
+
   // Cartas del POS (docs/271): cada menú creado y «Mis Recetas».
   const cartas = useMemo(
     () =>
@@ -244,6 +314,8 @@ function SalonPageInner({ businessId }: { businessId: string }) {
     try {
       waiter = localStorage.getItem(WAITER_KEY) || null
     } catch {}
+    // Sin mesero guardado en el aparato, el nombre de la cuenta (docs/302); nunca el correo.
+    if (!waiter && user?.name && !user.name.includes("@")) waiter = user.name.trim().slice(0, 40) || null
     return { id: uuidv4(), tableId, tableLabel: label, areaName, channel, guests: null, waiter, openedAt: now, status: "open", items: [], updatedAt: now }
   }
 
@@ -410,7 +482,7 @@ function SalonPageInner({ businessId }: { businessId: string }) {
     // La carta queda abierta para seguir pidiendo; ella misma avisa lo agregado (docs/273).
   }
 
-  const onCheckout = async (pay: PosPayment) => {
+  const onCheckout = async (pay: PosPayment & { received: number | null }) => {
     if (!openOrder) return
     if (readQueue(businessId)[openOrder.id]) {
       // Con cambios sin guardar, primero se guardan: se cobra lo que de verdad está en la mesa.
@@ -426,7 +498,9 @@ function SalonPageInner({ businessId }: { businessId: string }) {
       const dayStart = new Date(`${today}T00:00:00`)
       const isoDate = dayStart.toISOString()
       // Id fijo por versión del pedido: un cobro repetido no suma la venta dos veces (docs/275).
-      const sale = buildPosSale(order, pay, recipes, isoDate, posTicketId(order))
+      const ticketId = posTicketId(order)
+      const sale = buildPosSale(order, pay, recipes, isoDate, ticketId)
+      const paidReceipt = buildPosReceipt(order, pay)
       const newDayId = `pos-day-${businessId || "main"}-${today}`
       const { already } = await savePosSaleToDay(
         businessId,
@@ -441,6 +515,8 @@ function SalonPageInner({ businessId }: { businessId: string }) {
         setOpenKey(null)
       }
       setCheckoutOpen(false)
+      // Recibo, vuelto y factura (docs/302).
+      setReceipt({ receipt: paidReceipt, ticketId })
       toast(
         already
           ? { title: t("pos_paid_already_title"), description: t("pos_paid_already_desc") }
@@ -457,6 +533,8 @@ function SalonPageInner({ businessId }: { businessId: string }) {
 
   const onKitchenStatus = (orderId: string, itemId: string, status: "sent" | "ready") => {
     const order = orders.find((o) => o.id === orderId)
+    // Lo que se marca listo en este aparato (la cocina) no avisa aquí mismo (docs/302).
+    if (status === "ready") seenReady.current?.add(itemId)
     if (order) persistOrder(setItemStatus(order, itemId, status))
   }
 
@@ -495,12 +573,14 @@ function SalonPageInner({ businessId }: { businessId: string }) {
           <div className="h-full overflow-y-auto">
             <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
               <div className="flex items-center gap-2 md:gap-4" data-tour="salon-header">
-                <Link href={!isMain ? `/business/${businessId}` : "/dashboard"}>
-                  <Button variant="outline" size="sm" className="gap-2 hover:bg-accent bg-transparent">
-                    <ArrowLeft className="h-4 w-4" />
-                    <span className="hidden sm:inline">{t("mi_plan_back_to_dashboard")}</span>
-                  </Button>
-                </Link>
+                {!posOnly && (
+                  <Link href={!isMain ? `/business/${businessId}` : "/dashboard"}>
+                    <Button variant="outline" size="sm" className="gap-2 hover:bg-accent bg-transparent">
+                      <ArrowLeft className="h-4 w-4" />
+                      <span className="hidden sm:inline">{t("mi_plan_back_to_dashboard")}</span>
+                    </Button>
+                  </Link>
+                )}
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-chart-6/10 rounded-lg flex items-center justify-center">
                     <Armchair className="h-6 w-6 text-chart-6" />
@@ -562,10 +642,12 @@ function SalonPageInner({ businessId }: { businessId: string }) {
                       {t("pos_tab_kitchen")}
                       {kitchenWaiting > 0 && <TabBadge tone="info" n={kitchenWaiting} label={t("pos_badge_kitchen").replace("{n}", String(kitchenWaiting))} />}
                     </TabsTrigger>
-                    <TabsTrigger id="salon-tab-ajustes" value="ajustes" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                      <Settings2 className="h-4 w-4" />
-                      {t("pos_tab_settings")}
-                    </TabsTrigger>
+                    {canSettings && (
+                      <TabsTrigger id="salon-tab-ajustes" value="ajustes" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                        <Settings2 className="h-4 w-4" />
+                        {t("pos_tab_settings")}
+                      </TabsTrigger>
+                    )}
                   </TabsList>
 
                   <TabsContent value="salon" className="space-y-4 mt-4">
@@ -577,10 +659,22 @@ function SalonPageInner({ businessId }: { businessId: string }) {
                           </Button>
                         ))}
                       </div>
-                      <Button size="sm" variant="outline" className="gap-2" onClick={addTakeaway} data-tour="salon-takeaway">
-                        <ShoppingBag className="h-4 w-4" />
-                        {t("pos_new_takeaway")}
-                      </Button>
+                      <div className="flex flex-wrap gap-2">
+                        <div className="inline-flex rounded-md border border-border p-0.5" role="group" aria-label={t("pos_view_label")} data-tour="salon-view">
+                          <Button size="sm" variant={view === "grid" ? "default" : "ghost"} className="h-9 gap-1.5" onClick={() => chooseView("grid")} aria-pressed={view === "grid"}>
+                            <Rows3 className="h-4 w-4" />
+                            {t("pos_view_grid")}
+                          </Button>
+                          <Button size="sm" variant={view === "map" ? "default" : "ghost"} className="h-9 gap-1.5" onClick={() => chooseView("map")} aria-pressed={view === "map"}>
+                            <MapIcon className="h-4 w-4" />
+                            {t("pos_view_map")}
+                          </Button>
+                        </div>
+                        <Button size="sm" variant="outline" className="h-10 gap-2" onClick={addTakeaway} data-tour="salon-takeaway">
+                          <ShoppingBag className="h-4 w-4" />
+                          {t("pos_new_takeaway")}
+                        </Button>
+                      </div>
                     </div>
                     {takeaways.length > 0 && (
                       <div className="flex flex-wrap gap-2">
@@ -613,7 +707,11 @@ function SalonPageInner({ businessId }: { businessId: string }) {
                           <CardContent className="py-10 text-center text-sm text-muted-foreground">{t("pos_area_empty")}</CardContent>
                         </Card>
                       ) : (
-                        <FloorMap tables={areaTables} orders={byTable} mode="service" selectedId={openKey} onSelect={onSelectTable} showLegend={false} />
+                        view === "grid" ? (
+                          <TableGrid tables={areaTables} orders={byTable} selectedId={openKey} onSelect={onSelectTable} now={now} />
+                        ) : (
+                          <FloorMap tables={areaTables} orders={byTable} mode="service" selectedId={openKey} onSelect={onSelectTable} showLegend={false} />
+                        )
                       )}
                     </div>
                   </TabsContent>
@@ -622,6 +720,7 @@ function SalonPageInner({ businessId }: { businessId: string }) {
                     <KitchenBoard orders={orders} onStatus={onKitchenStatus} />
                   </TabsContent>
 
+                  {canSettings && (
                   <TabsContent value="ajustes" className="mt-4" data-tour="salon-settings">
                     <PosSettings
                       plan={floor}
@@ -635,9 +734,10 @@ function SalonPageInner({ businessId }: { businessId: string }) {
                       mainExtras={!isMain ? mainPos?.config?.extras ?? [] : []}
                     />
                   </TabsContent>
+                  )}
                 </Tabs>
               )}
-              {floor && <SalonTour />}
+              {floor && <SalonTour canEdit={canSettings} />}
             </div>
           </div>
         </div>
@@ -678,6 +778,15 @@ function SalonPageInner({ businessId }: { businessId: string }) {
         }}
         onBill={() => openOrder && persistOrder({ ...openOrder, status: "bill", updatedAt: new Date().toISOString() })}
         onCheckout={() => setCheckoutOpen(true)}
+        onPrecheck={() => {
+          if (!openOrder) return
+          try {
+            downloadPosReceiptPDF(buildPosReceipt(openOrder, null), { businessId, businessName, seatName: (s) => (s === 0 ? t("pos_seat_table") : t("pos_seat_n").replace("{n}", String(s))) })
+          } catch (error) {
+            console.error("[salon] No se pudo hacer la pre-cuenta:", error)
+            toast({ title: t("pos_receipt_error"), variant: "destructive" })
+          }
+        }}
         onRelease={() => {
           if (openOrder) removeOrder(openOrder.id)
           setOpenKey(null)
@@ -686,6 +795,15 @@ function SalonPageInner({ businessId }: { businessId: string }) {
 
       <DishPicker open={pickerOpen} onOpenChange={setPickerOpen} cartas={cartas} config={config} seatLabel={seatLabel} onAdd={onAddDish} />
       <CheckoutDialog open={checkoutOpen} onOpenChange={setCheckoutOpen} order={openOrder} saving={saving} onConfirm={onCheckout} />
+      <ReceiptDialog
+        open={!!receipt}
+        onOpenChange={(o) => !o && setReceipt(null)}
+        receipt={receipt?.receipt ?? null}
+        ticketId={receipt?.ticketId ?? null}
+        businessId={businessId}
+        businessName={businessName}
+        canInvoice={canInvoice}
+      />
     </AuthGuard>
   )
 }

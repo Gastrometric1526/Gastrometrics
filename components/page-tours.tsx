@@ -383,7 +383,10 @@ export function SalonTour({ canEdit = true }: { canEdit?: boolean } = {}) {
   const steps: TourStep[] = [
     { id: "header", title: t("tour_salon_header_title"), description: t("tour_salon_header_desc"), selector: '[data-tour="salon-header"]' },
     { id: "summary", title: t("tour_salon_summary_title"), description: t("tour_salon_summary_desc"), selector: '[data-tour="salon-summary"]', beforeShow: clickTab("salon-tab-salon") },
+    // Mesas en tarjetas o plano, y lo pensado para el mesero (docs/302).
+    { id: "view", title: t("tour_salon_view_title"), description: t("tour_salon_view_desc"), selector: '[data-tour="salon-view"]', beforeShow: clickTab("salon-tab-salon") },
     { id: "map", title: t("tour_salon_map_title"), description: t("tour_salon_map_desc"), selector: '[data-tour="salon-map"]', beforeShow: clickTab("salon-tab-salon") },
+    { id: "waiter", title: t("tour_salon_waiter_title"), description: t("tour_salon_waiter_desc"), selector: '[data-tour="salon-map"]' },
     { id: "takeaway", title: t("tour_salon_takeaway_title"), description: t("tour_salon_takeaway_desc"), selector: '[data-tour="salon-takeaway"]' },
     { id: "kitchen", title: t("tour_salon_kitchen_title"), description: t("tour_salon_kitchen_desc"), selector: '[data-tour="salon-kitchen-tab"]', beforeShow: clickTab("salon-tab-cocina") },
     { id: "safe", title: t("tour_salon_safe_title"), description: t("tour_salon_safe_desc"), selector: '[data-tour="salon-header"]', beforeShow: clickTab("salon-tab-salon") },

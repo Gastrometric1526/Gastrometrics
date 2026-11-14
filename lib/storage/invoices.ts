@@ -123,3 +123,27 @@ export function getNextInvoiceNumber(businessId: string): string {
   }, 0)
   return String(highest + 1).padStart(4, "0")
 }
+
+/**
+ * Factura nueva desde el cobro del POS (docs/302): relee las facturas del servidor (otro
+ * aparato pudo facturar en el medio), le pone el número siguiente y guarda SOLO esa fila.
+ * A diferencia de `addInvoice`, si no se puede guardar lanza el error (la pantalla avisa).
+ */
+export async function addInvoiceWithNextNumber(businessId: string, invoice: Omit<Invoice, "number">): Promise<Invoice> {
+  cache.invalidate(businessId)
+  await ensureInvoicesLoaded(businessId)
+  const saved: Invoice = { ...invoice, number: getNextInvoiceNumber(businessId) } as Invoice
+  const supabase = getSupabaseBrowserClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error("no-session")
+  const { id, number, ...rest } = saved
+  const { error } = await supabase.from("invoices").insert({ id, number, business_id: toDbBusinessId(businessId), owner_id: user.id, data: rest as never })
+  if (error) throw error
+  cache.setSnapshot(businessId, [...getInvoices(businessId), saved])
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("invoicesUpdated", { detail: { businessId, count: getInvoices(businessId).length } }))
+  }
+  return saved
+}

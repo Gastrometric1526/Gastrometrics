@@ -195,6 +195,11 @@ export function generateInvoicePDF(invoice: Invoice, options: InvoicePDFOptions 
 
   totalsRow(labels.subtotal, formatCurrency(invoice.subtotal), false, yPosition)
   yPosition += 6
+  // Descuento de una factura que sale del cobro del POS (docs/302).
+  if (invoice.discount && invoice.discount > 0) {
+    totalsRow(labels.descuento, `− ${formatCurrency(invoice.discount)}`, false, yPosition)
+    yPosition += 6
+  }
   if (invoice.taxPercent > 0) {
     totalsRow(`${labels.impuesto} (${invoice.taxPercent}%)`, formatCurrency(invoice.taxAmount), false, yPosition)
     yPosition += 6

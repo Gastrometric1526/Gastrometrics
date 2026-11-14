@@ -5,6 +5,9 @@
  * Recetas»), después el grupo (paso del menú o clasificación) y el plato. Con foto, la
  * tarjeta la muestra; sin foto, solo el nombre y el precio. Al tocar un plato se eligen la
  * cantidad, los extras (con precio) y una nota, y se agrega a la silla elegida.
+ *
+ * En el celular del mesero (docs/302): ocupa toda la pantalla, el buscador no abre el
+ * teclado solo (taparía la carta) y los botones son de al menos 40 px.
  */
 
 import { useEffect, useMemo, useState } from "react"
@@ -29,7 +32,7 @@ const CARTA_KEY = "gm_pos_carta"
 /** «+»: agrega 1 sin abrir el detalle (sin extras ni nota), para pedir rápido (docs/273). */
 function QuickAddButton({ label, onClick, className }: { label: string; onClick: () => void; className?: string }) {
   return (
-    <Button type="button" size="icon" variant="outline" className={cn("h-9 w-9 shrink-0 rounded-full bg-card text-primary shadow-sm hover:text-primary", className)} onClick={onClick} aria-label={label} title={label}>
+    <Button type="button" size="icon" variant="outline" className={cn("h-11 w-11 shrink-0 rounded-full bg-card text-primary shadow-sm hover:text-primary", className)} onClick={onClick} aria-label={label} title={label}>
       <Plus className="h-4 w-4" />
     </Button>
   )
@@ -66,6 +69,13 @@ export function DishPicker({
     return () => clearTimeout(id)
   }, [lastAdded])
   const [addedCount, setAddedCount] = useState(0)
+  // En pantallas táctiles el buscador no se enfoca solo: el teclado taparía la carta.
+  const [touch, setTouch] = useState(true)
+  useEffect(() => {
+    try {
+      setTouch(window.matchMedia("(pointer: coarse)").matches)
+    } catch {}
+  }, [])
   const quickAdd = (s: PosSellable) => {
     onAdd(s, 1, [], null)
     setLastAdded(s.name)
@@ -139,7 +149,7 @@ export function DishPicker({
 
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+      <DialogContent className="flex h-[100dvh] max-h-[100dvh] w-full max-w-none flex-col rounded-none sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-lg">
         <DialogHeader>
           <DialogTitle>{picked ? picked.name : t("pos_picker_title")}</DialogTitle>
           <DialogDescription>{t("pos_picker_for_seat").replace("{seat}", seatLabel)}</DialogDescription>
@@ -169,15 +179,15 @@ export function DishPicker({
               )}
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("ventas_search_placeholder")} className="pl-9" autoFocus />
+                <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("ventas_search_placeholder")} className="pl-9" autoFocus={!touch} />
               </div>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1">
-              <Button size="sm" variant={category === null ? "default" : "outline"} onClick={() => setCategory(null)}>
+              <Button size="sm" variant={category === null ? "default" : "outline"} onClick={() => setCategory(null)} className="h-10 shrink-0">
                 {t("pos_picker_all")}
               </Button>
               {categories.map((c) => (
-                <Button key={c} size="sm" variant={category === c ? "default" : "outline"} onClick={() => setCategory(c)} className="shrink-0">
+                <Button key={c} size="sm" variant={category === c ? "default" : "outline"} onClick={() => setCategory(c)} className="h-10 shrink-0">
                   {c}
                 </Button>
               ))}
@@ -221,7 +231,7 @@ export function DishPicker({
                               <button
                                 type="button"
                                 onClick={() => setPicked(s)}
-                                className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left rounded-lg border border-border bg-card px-3 py-2.5 hover:border-primary hover:shadow-sm transition"
+                                className="flex min-h-[48px] min-w-0 flex-1 items-center justify-between gap-3 text-left rounded-lg border border-border bg-card px-3 py-2.5 hover:border-primary hover:shadow-sm transition"
                               >
                                 <span className="text-sm font-medium leading-tight line-clamp-2">{s.name}</span>
                                 <span className="shrink-0 text-sm tabular-nums text-muted-foreground">{s.price > 0 ? formatCurrency(s.price) : t("pos_no_price")}</span>
@@ -249,11 +259,11 @@ export function DishPicker({
               <div className="flex-1">
                 <p className="text-sm text-muted-foreground">{formatCurrency(picked.price)}</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQuantity((q) => Math.max(1, q - 1))} aria-label={t("ventas_less")}>
+                  <Button size="icon" variant="outline" className="h-11 w-11" onClick={() => setQuantity((q) => Math.max(1, q - 1))} aria-label={t("ventas_less")}>
                     <Minus className="h-4 w-4" />
                   </Button>
                   <span className="w-8 text-center tabular-nums font-medium">{quantity}</span>
-                  <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQuantity((q) => q + 1)} aria-label={t("ventas_more")}>
+                  <Button size="icon" variant="outline" className="h-11 w-11" onClick={() => setQuantity((q) => q + 1)} aria-label={t("ventas_more")}>
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
@@ -275,12 +285,12 @@ export function DishPicker({
                           <p className="text-xs text-muted-foreground tabular-nums">{e.price > 0 ? `+ ${formatCurrency(e.price)}` : t("pos_extra_free")}</p>
                         </div>
                         {q > 0 && (
-                          <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => setExtras({ ...extras, [e.id]: q - 1 })} aria-label={t("ventas_less")}>
+                          <Button size="icon" variant="outline" className="h-10 w-10" onClick={() => setExtras({ ...extras, [e.id]: q - 1 })} aria-label={t("ventas_less")}>
                             <Minus className="h-3.5 w-3.5" />
                           </Button>
                         )}
                         {q > 0 && <span className="w-5 text-center text-sm tabular-nums">{q}</span>}
-                        <Button size="icon" variant={q > 0 ? "outline" : "secondary"} className="h-7 w-7" onClick={() => setExtras({ ...extras, [e.id]: q + 1 })} aria-label={t("ventas_more")}>
+                        <Button size="icon" variant={q > 0 ? "outline" : "secondary"} className="h-10 w-10" onClick={() => setExtras({ ...extras, [e.id]: q + 1 })} aria-label={t("ventas_more")}>
                           <Plus className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -299,7 +309,7 @@ export function DishPicker({
 
         {!picked && addedCount > 0 && (
           <DialogFooter>
-            <Button onClick={() => close(false)} className="w-full gap-2 sm:w-auto">
+            <Button size="lg" onClick={() => close(false)} className="w-full gap-2 sm:w-auto">
               <Check className="h-4 w-4" />
               {t("pos_picker_done").replace("{n}", String(addedCount))}
             </Button>
@@ -307,10 +317,10 @@ export function DishPicker({
         )}
         {picked && (
           <DialogFooter className="gap-2 sm:gap-2">
-            <Button variant="outline" onClick={reset}>
+            <Button variant="outline" size="lg" onClick={reset}>
               {t("pos_picker_back")}
             </Button>
-            <Button onClick={add} className="gap-2">
+            <Button size="lg" onClick={add} className="gap-2">
               <Plus className="h-4 w-4" />
               {t("pos_picker_add").replace("{total}", formatCurrency(unit * quantity))}
             </Button>

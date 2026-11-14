@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react"
 import { AccountDeletionNotice } from "@/components/account-recovery-cards"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { PosOnlyRedirect } from "@/components/pos/pos-only-redirect"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
@@ -685,6 +686,8 @@ export default function DashboardPage() {
 
   return (
     <div className="flex min-h-screen bg-background">
+      {/* El mesero (solo POS) entra directo al salón (docs/302). */}
+      <PosOnlyRedirect />
       <OnboardingTour />
       <WhatsNewDialog />
       <NotificationDetailDialog entry={notificationDetail} onClose={() => setNotificationDetail(null)} />
