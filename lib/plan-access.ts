@@ -22,6 +22,7 @@ import { getMyMemberships } from "./storage/team"
 import { getCurrentPlanOverrides } from "./plan-overrides"
 import type { TeamMember } from "@/types/team"
 import { effectiveMemberFeatures, planFeaturesFor } from "./team-access"
+import { memberHasPart, type TeamPart, type TeamPdfKind } from "./team-parts"
 
 const PLAN_STORAGE_KEY = "current_plan_slug"
 const PLAN_CHANGE_EVENT = "planChanged"
@@ -183,6 +184,47 @@ export function useFeatureAccess(feature: FeatureKey): boolean | null {
   }, [])
   if (!mounted) return null
   return hasFeatureAccess(feature)
+}
+
+/**
+ * Partes de un módulo (docs/303): el dueño las tiene todas; un invitado, las que le marcaron
+ * en Equipo (lib/team-parts.ts). Además tiene que tener el módulo.
+ */
+export function hasPart(part: TeamPart): boolean {
+  const member = getActiveMembership()
+  if (!member) return true
+  return memberHasPart(member.allowedFeatures, part)
+}
+
+/**
+ * PDF por tipo (docs/303): el nivel de siempre (`pdf_export` para el cliente, `pdf_admin`
+ * administrativo) y, para un invitado, que tenga ese tipo de PDF marcado en Equipo.
+ */
+export function hasPdfAccess(kind: TeamPdfKind, level: "export" | "admin"): boolean {
+  if (!hasFeatureAccess(level === "admin" ? "pdf_admin" : "pdf_export")) return false
+  const member = getActiveMembership()
+  return !member || memberHasPart(member.allowedFeatures, `pdf.${kind}`)
+}
+
+function useAccessCheck<T>(check: () => T): T | null {
+  const [mounted, setMounted] = useState(false)
+  const [, forceUpdate] = useState(0)
+  useEffect(() => {
+    setMounted(true)
+    const onPreviewChange = () => forceUpdate((n) => n + 1)
+    window.addEventListener(TEAM_PREVIEW_EVENT, onPreviewChange)
+    return () => window.removeEventListener(TEAM_PREVIEW_EVENT, onPreviewChange)
+  }, [])
+  if (!mounted) return null
+  return check()
+}
+
+export function usePart(part: TeamPart): boolean | null {
+  return useAccessCheck(() => hasPart(part))
+}
+
+export function usePdfAccess(kind: TeamPdfKind, level: "export" | "admin"): boolean | null {
+  return useAccessCheck(() => hasPdfAccess(kind, level))
 }
 
 // Mismo patron de hidratacion que useFeatureAccess de arriba, para /planes: necesita

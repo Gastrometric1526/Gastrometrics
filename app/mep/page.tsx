@@ -44,6 +44,7 @@ import { MepTour } from "@/components/page-tours"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useFeatureAccess, getAccessBlockReason, hasFeatureAccess } from "@/lib/plan-access"
+import { hasPdfAccess, usePdfAccess } from "@/lib/plan-access" // PDF por tipo (docs/303)
 import { useMenus, ensureMenusLoaded } from "@/lib/menus"
 import { useRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { useIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
@@ -291,7 +292,7 @@ function MepContent() {
     Promise.all([ensureMenusLoaded(businessId), ensureRecipesLoaded(businessId), ensureIngredientsLoaded(businessId)])
       .catch((error) => console.error("[mep] Error cargando datos:", error))
       .finally(() => !cancelled && setLoaded(true))
-    setPdfAllowed(hasFeatureAccess("pdf_export"))
+    setPdfAllowed(hasPdfAccess("mep", "export"))
     return () => {
       cancelled = true
     }

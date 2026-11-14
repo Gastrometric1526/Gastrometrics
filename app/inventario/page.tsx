@@ -64,6 +64,7 @@ import { recordStockLoss } from "@/lib/storage/inventory"
 import { inventoryItemPackageContent } from "@/lib/inventory-value"
 import { InventarioInfoDialog } from "@/components/inventory/inventario-info-dialog"
 import { useFeatureAccess, hasFeatureAccess } from "@/lib/plan-access"
+import { hasPdfAccess, usePdfAccess } from "@/lib/plan-access" // PDF por tipo (docs/303)
 import { FeatureLockedPage } from "@/components/feature-locked"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { getAccessBlockReason } from "@/lib/plan-access"
@@ -90,7 +91,7 @@ export default function InventoryPage() {
   const { isLoggedIn, user } = useAuth()
   const canAccessInventory = useFeatureAccess("inventory")
   // El PDF de inventario lleva el valor del stock: nivel «Administrativo» en Equipo (docs/216).
-  const canExportInventoryPdf = useFeatureAccess("pdf_admin")
+  const canExportInventoryPdf = usePdfAccess("inventory", "admin")
   const { t, language } = useLanguage()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -455,7 +456,7 @@ export default function InventoryPage() {
   // nunca generaba ni descargaba ningun archivo real (ver docs/32). Ahora genera un
   // PDF real a partir del snapshot historico via lib/pdf/inventory-pdf-generator.ts.
   const exportInventory = (inventory: InventorySnapshot) => {
-    if (!hasFeatureAccess("pdf_admin")) {
+    if (!hasPdfAccess("inventory", "admin")) {
       toast({ title: t("pdf_not_allowed_title"), description: t("pdf_not_allowed_desc"), variant: "destructive" })
       return
     }

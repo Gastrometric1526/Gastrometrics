@@ -13,6 +13,7 @@
 
 import { itemsForSeats, itemTotal, itemUnitPrice, minutesSince, orderTotal, tableStatus, type TableStatus } from "@/lib/pos"
 import type { FeatureKey } from "@/lib/plans"
+import { withoutParts } from "@/lib/team-parts"
 import type { Invoice, InvoiceLineItem } from "@/types/invoice"
 import type { PosOrder, PosOrderItem, PosPayment } from "@/types/pos"
 import type { PaymentMethod } from "@/types/sales-import"
@@ -31,17 +32,11 @@ const WAITER_FEATURES: FeatureKey[] = ["pos", "manual_sales", "cash_up", "sales_
 /** ¿El invitado solo trabaja en el POS? Entonces la app lo lleva directo al salón. */
 export function isPosOnlyMember(features: readonly string[] | null | undefined): boolean {
   if (!features) return false
-  const list = features.filter((f) => f !== "access_v2")
+  const list = withoutParts(features).filter((f) => f !== "access_v2")
   return list.includes("pos") && list.every((f) => (WAITER_FEATURES as string[]).includes(f))
 }
 
-/**
- * Cambiar el plano, los extras y la carta: el dueño (sin membresía) o quien administra el
- * equipo. El mesero solo atiende: no ve Ajustes.
- */
-export function canEditPosSettings(memberFeatures: readonly string[] | null): boolean {
-  return memberFeatures === null || memberFeatures.includes("team")
-}
+// Ajustes del POS: desde docs/303 es la parte «pos.settings» de Equipo (lib/team-parts.ts).
 
 // ─── Cobro ────────────────────────────────────────────────────────────────────
 

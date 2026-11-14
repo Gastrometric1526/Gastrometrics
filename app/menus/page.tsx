@@ -58,6 +58,7 @@ import type { Recipe } from "@/types/recipe"
 import { AuthGuard } from "@/components/auth-guard"
 import { formatCurrency } from "@/lib/currency"
 import { hasFeatureAccess, useFeatureAccess } from "@/lib/plan-access"
+import { hasPdfAccess, usePdfAccess } from "@/lib/plan-access" // PDF por tipo (docs/303)
 import { FeatureLockedPage } from "@/components/feature-locked"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { getAccessBlockReason } from "@/lib/plan-access"
@@ -71,9 +72,9 @@ export default function MenusPage() {
   const { isLoggedIn } = useAuth()
   const { t, language } = useLanguage()
   const canAccessMenus = useFeatureAccess("menus")
-  const canExportAdminMenuPDF = useFeatureAccess("pdf_admin")
+  const canExportAdminMenuPDF = usePdfAccess("menu", "admin")
   // Cualquier PDF requiere el nivel «Para compartir» o más en Equipo (docs/216).
-  const canExportMenuPDF = useFeatureAccess("pdf_export")
+  const canExportMenuPDF = usePdfAccess("menu", "export")
   const { toast } = useToast()
 
   const [menus, setMenus] = useState<Menu[]>([])
@@ -169,11 +170,11 @@ export default function MenusPage() {
     // misma categoría de información sensible que "PDF Administrativo" de Ficha
     // Técnica (ya gateado a pdf_admin), pero este export se había quedado sin
     // bloquear. El PDF de cliente (sin costos) sigue libre en todos los planes.
-    if (!hasFeatureAccess("pdf_export")) {
+    if (!hasPdfAccess("menu", "export")) {
       toast({ title: t("pdf_not_allowed_title"), description: t("pdf_not_allowed_desc"), variant: "destructive" })
       return
     }
-    if (type === "interno" && !hasFeatureAccess("pdf_admin")) {
+    if (type === "interno" && !hasPdfAccess("menu", "admin")) {
       toast({
         title: t("menus_toast_plan_locked_title"),
         description: t("menus_toast_plan_locked_desc"),

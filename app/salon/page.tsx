@@ -15,7 +15,11 @@
  * (el plano queda como opción), aviso cuando un plato de sus mesas está listo, el mesero se
  * anota solo con el nombre de la cuenta, pre-cuenta y recibo en PDF, vuelto en efectivo y
  * factura desde el cobro. El invitado que solo tiene el POS entra directo aquí y no ve
- * Ajustes (`canEditPosSettings`).
+ * Ajustes (parte «pos.settings», docs/303).
+ *
+ * Desde docs/303: cada parte del POS se da por persona en Equipo (`usePart`, lib/team-parts.ts:
+ * pedidos, cocina, cobrar, descuentos, anular, recibos, plano del día y Ajustes), y el plano
+ * tiene una base y cambios del día (lib/pos-floor-base.ts).
  */
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -25,7 +29,9 @@ import { ArrowLeft, Armchair, Building2, ChefHat, LayoutGrid, Map as MapIcon, Re
 import { TableGrid } from "@/components/pos/table-grid"
 import { ReceiptDialog } from "@/components/pos/receipt-dialog"
 import { realPosOnlyMember } from "@/components/pos/pos-only-redirect"
-import { buildPosReceipt, canEditPosSettings, newlyReady, readyItemIds, type PosReceipt } from "@/lib/pos-waiter"
+import { buildPosReceipt, newlyReady, readyItemIds, type PosReceipt } from "@/lib/pos-waiter"
+import { usePart } from "@/lib/plan-access"
+import { dailyReset, differsFromBase, restoreBase } from "@/lib/pos-floor-base"
 import { downloadPosReceiptPDF } from "@/lib/pdf/pos-receipt-pdf-generator"
 import { useActiveMembership } from "@/lib/plan-access"
 import { effectiveMemberFeatures } from "@/lib/team-access"
@@ -166,8 +172,20 @@ function SalonPageInner({ businessId }: { businessId: string }) {
   const canInvoice = useFeatureAccess("invoices") === true
   const { user } = useAuth()
   const { member } = useActiveMembership()
-  const memberFeatures = member ? effectiveMemberFeatures(member.allowedFeatures as string[]) : null
-  const canSettings = canEditPosSettings(memberFeatures)
+  // Partes del POS de esta persona (docs/303); el dueño las tiene todas.
+  const canOrder = usePart("pos.orders") === true
+  const canKitchen = usePart("pos.kitchen") === true
+  const canCharge = usePart("pos.charge") === true
+  const canDiscount = usePart("pos.discount") === true
+  const canVoid = usePart("pos.void") === true
+  const canReceipts = usePart("pos.receipts") === true
+  const canFloorDay = usePart("pos.floor_day") === true
+  const canSettings = usePart("pos.settings") === true
+  const showSalon = canOrder || canCharge
+  const showAdjust = canSettings || canFloorDay
+  const [tab, setTab] = useState<string | null>(null)
+  const firstTab = showSalon ? "salon" : canKitchen ? "cocina" : showAdjust ? "ajustes" : "salon"
+  const activeTab = tab && ((tab === "salon" && showSalon) || (tab === "cocina" && canKitchen) || (tab === "ajustes" && showAdjust)) ? tab : firstTab
   const [posOnly, setPosOnly] = useState(false)
   useEffect(() => setPosOnly(realPosOnlyMember()), [member])
   // Tarjetas en el celular, plano en pantallas grandes; la elección se recuerda (docs/302).
@@ -252,6 +270,18 @@ function SalonPageInner({ businessId }: { businessId: string }) {
     setData({ ...data, floor: plan })
     saveFloorPlan(plan, businessId).catch((e) => console.error("[salon] plano inicial:", e))
   }, [data, businessId, t])
+
+  // Vuelta automática al plano base, la primera vez que se abre el POS cada día (docs/303).
+  const resetChecked = useRef(false)
+  useEffect(() => {
+    if (!data?.floor || resetChecked.current) return
+    resetChecked.current = true
+    const busy = data.orders.filter((o) => o.tableId).map((o) => o.tableId as string)
+    const next = dailyReset(data.floor, toIsoDate(new Date()), busy)
+    if (!next) return
+    setData((d) => (d ? { ...d, floor: next } : d))
+    saveFloorPlan(next, businessId).catch((e) => console.error("[salon] vuelta al plano base:", e))
+  }, [data, businessId])
 
   const floor = data?.floor ?? null
   const config = data?.config ?? emptyConfig()
@@ -554,6 +584,18 @@ function SalonPageInner({ businessId }: { businessId: string }) {
       }
     }, 600)
   }
+  // Mesas con cuenta abierta: nunca se quitan al volver a la base (docs/303).
+  const busyTableIds = useMemo(() => orders.filter((o) => o.tableId).map((o) => o.tableId as string), [orders])
+  const onRestoreBase = () => {
+    if (!floor) return
+    const { plan, kept } = restoreBase(floor, busyTableIds)
+    onPlan(plan)
+    toast(
+      kept.length
+        ? { title: t("pos_floor_restored"), description: t("pos_floor_restored_kept").replace("{tables}", kept.map((k) => k.label).join(", ")) }
+        : { title: t("pos_floor_restored") },
+    )
+  }
   const onPlan = (plan: FloorPlan) => {
     setData((d) => (d ? { ...d, floor: plan } : d))
     debounced("floor", () => saveFloorPlan(plan, businessId))
@@ -630,19 +672,23 @@ function SalonPageInner({ businessId }: { businessId: string }) {
                   <CardContent className="py-10 text-center text-sm text-muted-foreground">{loadError ? t("pos_load_error") : t("pos_loading")}</CardContent>
                 </Card>
               ) : (
-                <Tabs defaultValue="salon" className="w-full">
+                <Tabs value={activeTab} onValueChange={setTab} className="w-full">
                   <TabsList className="bg-card border border-border">
+                    {showSalon && (
                     <TabsTrigger id="salon-tab-salon" value="salon" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       <LayoutGrid className="h-4 w-4" />
                       {t("pos_tab_floor")}
                       {readyTables > 0 && <TabBadge tone="success" n={readyTables} label={t("pos_badge_ready").replace("{n}", String(readyTables))} />}
                     </TabsTrigger>
+                    )}
+                    {canKitchen && (
                     <TabsTrigger id="salon-tab-cocina" value="cocina" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       <ChefHat className="h-4 w-4" />
                       {t("pos_tab_kitchen")}
                       {kitchenWaiting > 0 && <TabBadge tone="info" n={kitchenWaiting} label={t("pos_badge_kitchen").replace("{n}", String(kitchenWaiting))} />}
                     </TabsTrigger>
-                    {canSettings && (
+                    )}
+                    {showAdjust && (
                       <TabsTrigger id="salon-tab-ajustes" value="ajustes" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                         <Settings2 className="h-4 w-4" />
                         {t("pos_tab_settings")}
@@ -670,12 +716,25 @@ function SalonPageInner({ businessId }: { businessId: string }) {
                             {t("pos_view_map")}
                           </Button>
                         </div>
-                        <Button size="sm" variant="outline" className="h-10 gap-2" onClick={addTakeaway} data-tour="salon-takeaway">
-                          <ShoppingBag className="h-4 w-4" />
-                          {t("pos_new_takeaway")}
-                        </Button>
+                        {canOrder && (
+                          <Button size="sm" variant="outline" className="h-10 gap-2" onClick={addTakeaway} data-tour="salon-takeaway">
+                            <ShoppingBag className="h-4 w-4" />
+                            {t("pos_new_takeaway")}
+                          </Button>
+                        )}
                       </div>
                     </div>
+                    {/* Cambios del día en el plano (docs/303). */}
+                    {differsFromBase(floor) && (
+                      <div role="status" className="flex flex-col gap-2 rounded-lg border border-info/40 bg-info-soft p-3 text-sm text-info sm:flex-row sm:items-center sm:justify-between">
+                        <span>{t("pos_floor_day_banner")}</span>
+                        {canFloorDay && (
+                          <Button size="sm" variant="outline" className="self-start sm:self-auto" onClick={onRestoreBase}>
+                            {t("pos_floor_restore")}
+                          </Button>
+                        )}
+                      </div>
+                    )}
                     {takeaways.length > 0 && (
                       <div className="flex flex-wrap gap-2">
                         {takeaways.map((o) => (
@@ -720,9 +779,12 @@ function SalonPageInner({ businessId }: { businessId: string }) {
                     <KitchenBoard orders={orders} onStatus={onKitchenStatus} />
                   </TabsContent>
 
-                  {canSettings && (
+                  {showAdjust && (
                   <TabsContent value="ajustes" className="mt-4" data-tour="salon-settings">
                     <PosSettings
+                      canSettings={canSettings}
+                      busyTableIds={busyTableIds}
+                      onRestoreBase={onRestoreBase}
                       plan={floor}
                       config={config}
                       recipes={recipes.filter((r) => !!r.id)}
@@ -778,6 +840,10 @@ function SalonPageInner({ businessId }: { businessId: string }) {
         }}
         onBill={() => openOrder && persistOrder({ ...openOrder, status: "bill", updatedAt: new Date().toISOString() })}
         onCheckout={() => setCheckoutOpen(true)}
+        canOrder={canOrder}
+        canCharge={canCharge}
+        canVoid={canVoid}
+        canReceipts={canReceipts}
         onPrecheck={() => {
           if (!openOrder) return
           try {
@@ -794,7 +860,7 @@ function SalonPageInner({ businessId }: { businessId: string }) {
       />
 
       <DishPicker open={pickerOpen} onOpenChange={setPickerOpen} cartas={cartas} config={config} seatLabel={seatLabel} onAdd={onAddDish} />
-      <CheckoutDialog open={checkoutOpen} onOpenChange={setCheckoutOpen} order={openOrder} saving={saving} onConfirm={onCheckout} />
+      <CheckoutDialog open={checkoutOpen} onOpenChange={setCheckoutOpen} order={openOrder} saving={saving} onConfirm={onCheckout} canDiscount={canDiscount} />
       <ReceiptDialog
         open={!!receipt}
         onOpenChange={(o) => !o && setReceipt(null)}
@@ -803,6 +869,7 @@ function SalonPageInner({ businessId }: { businessId: string }) {
         businessId={businessId}
         businessName={businessName}
         canInvoice={canInvoice}
+        canReceipts={canReceipts}
       />
     </AuthGuard>
   )

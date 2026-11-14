@@ -36,6 +36,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { logActivity } from "@/lib/services/activity-log"
 import { formatCurrency } from "@/lib/currency"
 import { useFeatureAccess, getAccessBlockReason } from "@/lib/plan-access"
+import { hasPdfAccess, usePdfAccess } from "@/lib/plan-access" // PDF por tipo (docs/303)
 import { FeatureLockedPage } from "@/components/feature-locked"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { getBusinessById } from "@/lib/storage/businesses"
@@ -92,7 +93,7 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
   const { user } = useAuth()
   const canAccessInvoices = useFeatureAccess("invoices")
   // PDF de la factura: nivel «Para compartir» o más en Equipo (docs/216).
-  const canDownloadPdf = useFeatureAccess("pdf_export")
+  const canDownloadPdf = usePdfAccess("invoice", "export")
 
   const invoices = useInvoices(businessId)
   const [recipes, setRecipes] = useState<Recipe[]>([])

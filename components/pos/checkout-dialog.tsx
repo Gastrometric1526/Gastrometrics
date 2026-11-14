@@ -31,12 +31,15 @@ export function CheckoutDialog({
   order,
   saving,
   onConfirm,
+  canDiscount = true,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   order: PosOrder | null
   saving: boolean
   onConfirm: (pay: PosPayment & { received: number | null }) => void
+  /** Dar descuentos es una parte del POS que se da por persona (docs/303). */
+  canDiscount?: boolean
 }) {
   const { t } = useLanguage()
   const [split, setSplit] = useState<number[] | null>(null)
@@ -58,7 +61,7 @@ export function CheckoutDialog({
   if (!order) return null
   const seats = seatsInOrder(order)
   const subtotal = orderTotal(order, split)
-  const disc = Math.min(Math.max(discount, 0), subtotal)
+  const disc = canDiscount ? Math.min(Math.max(discount, 0), subtotal) : 0
   const total = Math.round((subtotal - disc + Math.max(tip, 0)) * 100) / 100
   const change = payment === "cash" ? cashChange(total, received) : null
   const short = payment === "cash" && received > 0 && change === null
@@ -106,10 +109,12 @@ export function CheckoutDialog({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <label className="space-y-1">
-              <span className="text-sm font-medium">{t("ventas_discount_label")}</span>
-              <NumericInput value={discount || ""} onChange={(v) => setDiscount(v)} placeholder="0" />
-            </label>
+            {canDiscount && (
+              <label className="space-y-1">
+                <span className="text-sm font-medium">{t("ventas_discount_label")}</span>
+                <NumericInput value={discount || ""} onChange={(v) => setDiscount(v)} placeholder="0" />
+              </label>
+            )}
             <label className="space-y-1">
               <span className="text-sm font-medium">{t("ventas_tip_label")}</span>
               <NumericInput value={tip || ""} onChange={(v) => setTip(v)} placeholder="0" />

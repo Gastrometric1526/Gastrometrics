@@ -3,10 +3,16 @@
 /**
  * Ajustes del POS (docs/268): el plano del salón (áreas y mesas que se arrastran) y los
  * extras con precio. Qué se vende sale de los menús creados y de Mis Recetas (docs/271).
+ *
+ * Plano base y cambios del día (docs/303, lib/pos-floor-base.ts): se edita la base o el plano
+ * de hoy; «Volver al plano base» deshace lo del día y «Guardar hoy como base» lo vuelve fijo.
+ * Quien solo tiene «plano del día» (Equipo) edita solo hoy y no ve los extras.
  */
 
 import { useState } from "react"
-import { BookOpen, Copy, Plus, Trash2 } from "lucide-react"
+import { BookOpen, Copy, Plus, RotateCcw, Save, Trash2 } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { baseOf, differsFromBase, editBase, saveTodayAsBase } from "@/lib/pos-floor-base"
 import { v4 as uuidv4 } from "uuid"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,7 +23,7 @@ import { useConfirmDialog } from "@/components/confirm-dialog"
 import { useLanguage } from "@/contexts/language-context"
 import { FloorMap } from "@/components/pos/floor-map"
 import { nextTableLabel, shapeSize, snapTable } from "@/lib/pos"
-import type { FloorPlan, FloorTable, PosConfig, PosExtra, TableShape } from "@/types/pos"
+import type { FloorArea, FloorPlan, FloorTable, PosConfig, PosExtra, TableShape } from "@/types/pos"
 import type { Recipe } from "@/types/recipe"
 import { SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
 import { currentUnitPrice } from "@/lib/recipe-pricing"
@@ -38,6 +44,9 @@ export function PosSettings({
   onConfig,
   mainFloor = null,
   mainExtras = [],
+  canSettings = true,
+  busyTableIds = [],
+  onRestoreBase,
 }: {
   plan: FloorPlan
   config: PosConfig
@@ -49,45 +58,70 @@ export function PosSettings({
   /** Plano y extras del POS del espacio principal (de antes de docs/276), para traerlos aquí. */
   mainFloor?: FloorPlan | null
   mainExtras?: PosExtra[]
+  /** Ajustes completos (base y extras); sin esto, solo el plano de hoy (docs/303). */
+  canSettings?: boolean
+  /** Mesas con cuenta abierta: no se pueden borrar. */
+  busyTableIds?: string[]
+  onRestoreBase?: () => void
 }) {
   const { t, language } = useLanguage()
   const [confirm, confirmDialog] = useConfirmDialog()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const now = () => new Date().toISOString()
-  const area = plan.areas.find((a) => a.id === areaId) ?? plan.areas[0]
-  const tables = plan.tables.filter((tb) => tb.areaId === area?.id)
-  const selected = plan.tables.find((tb) => tb.id === selectedId) ?? null
+  // Qué se edita: la base o el plano de hoy (docs/303).
+  const changedToday = differsFromBase(plan)
+  const [modeChoice, setMode] = useState<"base" | "today" | null>(null)
+  const mode: "base" | "today" = !canSettings ? "today" : modeChoice ?? (changedToday ? "today" : "base")
+  const cur: { areas: FloorArea[]; tables: FloorTable[] } = mode === "base" ? baseOf(plan) : { areas: plan.areas, tables: plan.tables }
+  const put = (areas: FloorArea[], tables: FloorTable[]) => {
+    if (mode === "base") return onPlan(editBase(plan, { areas, tables }))
+    // El primer cambio del día guarda antes la base (planos de antes de docs/303 no la tienen).
+    const withBase = plan.base ? plan : saveTodayAsBase(plan)
+    onPlan({ ...withBase, areas, tables, updatedAt: now() })
+  }
+  const busy = new Set(busyTableIds)
+  const area = cur.areas.find((a) => a.id === areaId) ?? cur.areas[0]
+  const tables = cur.tables.filter((tb) => tb.areaId === area?.id)
+  const selected = cur.tables.find((tb) => tb.id === selectedId) ?? null
+  const asPlan = { ...plan, areas: cur.areas, tables: cur.tables }
   const classifications = [...new Set(recipes.map((r) => r.classification).filter(Boolean))].sort()
 
-  const putTable = (table: FloorTable) => onPlan({ ...plan, tables: plan.tables.map((tb) => (tb.id === table.id ? snapTable(table) : tb)), updatedAt: now() })
+  const putTable = (table: FloorTable) => put(cur.areas, cur.tables.map((tb) => (tb.id === table.id ? snapTable(table) : tb)))
   const addTable = (shape: TableShape) => {
     const size = shapeSize(shape, 4)
-    const table = snapTable({ id: uuidv4(), areaId: area.id, label: nextTableLabel(plan), shape, seats: 4, x: 40, y: 40, ...size })
-    onPlan({ ...plan, tables: [...plan.tables, table], updatedAt: now() })
+    const table = snapTable({ id: uuidv4(), areaId: area.id, label: nextTableLabel(asPlan), shape, seats: 4, x: 40, y: 40, ...size })
+    put(cur.areas, [...cur.tables, table])
     setSelectedId(table.id)
   }
   const duplicate = (table: FloorTable) => {
-    const copy = snapTable({ ...table, id: uuidv4(), label: nextTableLabel(plan), x: table.x + 40, y: table.y + 40 })
-    onPlan({ ...plan, tables: [...plan.tables, copy], updatedAt: now() })
+    const copy = snapTable({ ...table, id: uuidv4(), label: nextTableLabel(asPlan), x: table.x + 40, y: table.y + 40 })
+    put(cur.areas, [...cur.tables, copy])
     setSelectedId(copy.id)
   }
   const removeTable = async (table: FloorTable) => {
+    if (busy.has(table.id)) return
     if (!(await confirm(t("pos_table_delete_confirm").replace("{label}", table.label)))) return
-    onPlan({ ...plan, tables: plan.tables.filter((tb) => tb.id !== table.id), updatedAt: now() })
+    put(cur.areas, cur.tables.filter((tb) => tb.id !== table.id))
     setSelectedId(null)
   }
   const addArea = () => {
     const id = uuidv4()
-    onPlan({ ...plan, areas: [...plan.areas, { id, name: t("pos_area_new_name").replace("{n}", String(plan.areas.length + 1)) }], updatedAt: now() })
+    put([...cur.areas, { id, name: t("pos_area_new_name").replace("{n}", String(cur.areas.length + 1)) }], cur.tables)
     onArea(id)
   }
-  const renameArea = (name: string) => onPlan({ ...plan, areas: plan.areas.map((a) => (a.id === area.id ? { ...a, name } : a)), updatedAt: now() })
+  const renameArea = (name: string) => put(cur.areas.map((a) => (a.id === area.id ? { ...a, name } : a)), cur.tables)
+  const areaBusy = !!area && cur.tables.some((tb) => tb.areaId === area.id && busy.has(tb.id))
   const removeArea = async () => {
-    if (plan.areas.length <= 1) return
+    if (cur.areas.length <= 1 || areaBusy) return
     if (!(await confirm(t("pos_area_delete_confirm").replace("{name}", area.name)))) return
-    const rest = plan.areas.filter((a) => a.id !== area.id)
-    onPlan({ ...plan, areas: rest, tables: plan.tables.filter((tb) => tb.areaId !== area.id), updatedAt: now() })
+    const rest = cur.areas.filter((a) => a.id !== area.id)
+    put(rest, cur.tables.filter((tb) => tb.areaId !== area.id))
     onArea(rest[0].id)
+  }
+  const saveAsBase = async () => {
+    if (!(await confirm(t("pos_floor_save_base_confirm")))) return
+    onPlan(saveTodayAsBase(plan))
+    setMode("base")
   }
 
   // docs/276: traer el plano del espacio principal a este negocio. Los extras que no existan se
@@ -168,7 +202,54 @@ export function PosSettings({
         <CardHeader>
           <CardTitle className="text-base">{t("pos_settings_floor_title")}</CardTitle>
           <CardDescription>{t("pos_settings_floor_desc")}</CardDescription>
-          {mainFloor && (
+          {/* Plano base y cambios del día (docs/303). */}
+          <div className="space-y-3 pt-2" data-tour="salon-floor-base">
+            {canSettings && (
+              <div className="inline-flex rounded-md border border-border p-0.5" role="group" aria-label={t("pos_floor_mode_label")}>
+                <Button size="sm" variant={mode === "base" ? "default" : "ghost"} className="h-9" onClick={() => setMode("base")} aria-pressed={mode === "base"}>
+                  {t("pos_floor_mode_base")}
+                </Button>
+                <Button size="sm" variant={mode === "today" ? "default" : "ghost"} className="h-9" onClick={() => setMode("today")} aria-pressed={mode === "today"}>
+                  {t("pos_floor_mode_today")}
+                </Button>
+              </div>
+            )}
+            <p className="text-sm text-muted-foreground">
+              {mode === "base"
+                ? changedToday
+                  ? t("pos_floor_editing_base_changed")
+                  : t("pos_floor_editing_base")
+                : changedToday
+                  ? t("pos_floor_editing_today_changed")
+                  : t("pos_floor_editing_today")}
+            </p>
+            {(changedToday || canSettings) && (
+              <div className="flex flex-wrap gap-2">
+                {changedToday && onRestoreBase && (
+                  <Button size="sm" variant="outline" className="h-9 gap-1.5" onClick={onRestoreBase}>
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    {t("pos_floor_restore")}
+                  </Button>
+                )}
+                {changedToday && canSettings && (
+                  <Button size="sm" variant="outline" className="h-9 gap-1.5" onClick={saveAsBase}>
+                    <Save className="h-3.5 w-3.5" />
+                    {t("pos_floor_save_base")}
+                  </Button>
+                )}
+              </div>
+            )}
+            {canSettings && (
+              <label className="flex items-start gap-2 text-sm">
+                <Checkbox checked={!!plan.resetDaily} onCheckedChange={(v) => onPlan({ ...plan, resetDaily: v === true, updatedAt: now() })} className="mt-0.5" />
+                <span>
+                  <span className="block font-medium">{t("pos_floor_reset_daily")}</span>
+                  <span className="block text-xs text-muted-foreground">{t("pos_floor_reset_daily_desc")}</span>
+                </span>
+              </label>
+            )}
+          </div>
+          {mainFloor && canSettings && (
             <div className="pt-2">
               <Button size="sm" variant="outline" onClick={importMain}>
                 {t("pos_import_main_button")}
@@ -178,7 +259,7 @@ export function PosSettings({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
-            {plan.areas.map((a) => (
+            {cur.areas.map((a) => (
               <Button key={a.id} size="sm" variant={a.id === area?.id ? "default" : "outline"} onClick={() => onArea(a.id)}>
                 {a.name}
               </Button>
@@ -194,8 +275,8 @@ export function PosSettings({
                 <span className="text-xs text-muted-foreground">{t("pos_area_name")}</span>
                 <Input value={area.name} maxLength={30} onChange={(e) => renameArea(e.target.value)} className="w-56" />
               </label>
-              {plan.areas.length > 1 && (
-                <Button size="sm" variant="outline" className="gap-1.5" onClick={removeArea}>
+              {cur.areas.length > 1 && (
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={removeArea} disabled={areaBusy} title={areaBusy ? t("pos_floor_busy_area") : undefined}>
                   <Trash2 className="h-3.5 w-3.5" />
                   {t("pos_area_delete")}
                 </Button>
@@ -248,11 +329,12 @@ export function PosSettings({
                       <Copy className="h-3.5 w-3.5" />
                       {t("pos_table_duplicate")}
                     </Button>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => removeTable(selected)}>
+                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => removeTable(selected)} disabled={busy.has(selected.id)}>
                       <Trash2 className="h-3.5 w-3.5" />
                       {t("pos_table_delete")}
                     </Button>
                   </div>
+                  {busy.has(selected.id) && <p className="text-xs text-muted-foreground">{t("pos_floor_busy_table")}</p>}
                 </>
               )}
             </div>
@@ -260,6 +342,7 @@ export function PosSettings({
         </CardContent>
       </Card>
 
+      {canSettings && (
       <Card data-tour="salon-extras">
         <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
           <div>
@@ -343,6 +426,7 @@ export function PosSettings({
           ))}
         </CardContent>
       </Card>
+      )}
     </div>
   )
 }

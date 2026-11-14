@@ -393,6 +393,7 @@ export function SalonTour({ canEdit = true }: { canEdit?: boolean } = {}) {
     ...(canEdit
       ? [
           { id: "floor", title: t("tour_salon_floor_title"), description: t("tour_salon_floor_desc"), selector: '[data-tour="salon-settings"]', beforeShow: clickTab("salon-tab-ajustes") } as TourStep,
+          { id: "floor-base", title: t("tour_salon_floorbase_title"), description: t("tour_salon_floorbase_desc"), selector: '[data-tour="salon-floor-base"]' } as TourStep,
           { id: "extras", title: t("tour_salon_extras_title"), description: t("tour_salon_extras_desc"), selector: '[data-tour="salon-extras"]' } as TourStep,
         ]
       : []),
@@ -520,6 +521,8 @@ export function EquipoTour({ hasMembers }: { hasMembers: boolean }) {
       description: t("tour_equipo_permissions_desc"),
       selector: '[data-tour="equipo-invite"]',
     },
+    // Plantillas, partes de cada módulo y PDF por tipo (docs/303).
+    { id: "parts", title: t("tour_equipo_parts_title"), description: t("tour_equipo_parts_desc"), selector: '[data-tour="equipo-invite"]' },
     ...(hasMembers
       ? [
           {

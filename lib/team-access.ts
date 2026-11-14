@@ -17,6 +17,7 @@
  */
 
 import type { FeatureKey } from "@/lib/plans"
+import { withoutParts } from "@/lib/team-parts"
 
 /** Marca guardada en allowed_features: la lista ya es la de docs/216 (sin equivalencias). */
 export const TEAM_ACCESS_V2 = "access_v2"
@@ -30,7 +31,8 @@ const LEGACY_IMPLIED: { feature: FeatureKey; impliedBy: FeatureKey[] }[] = [
 
 /** Permisos reales de una persona del equipo (sin la marca y con las equivalencias antiguas). */
 export function effectiveMemberFeatures(stored: readonly string[]): FeatureKey[] {
-  const list = stored.filter((f) => f !== TEAM_ACCESS_V2) as FeatureKey[]
+  // Las partes de cada módulo y los PDF por tipo (docs/303) van aparte: lib/team-parts.ts.
+  const list = withoutParts(stored).filter((f) => f !== TEAM_ACCESS_V2) as FeatureKey[]
   if (stored.includes(TEAM_ACCESS_V2)) return list
   const out = [...list]
   for (const { feature, impliedBy } of LEGACY_IMPLIED) {

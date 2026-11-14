@@ -15,6 +15,7 @@ import { CalendarDays, Info, Download } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
 import { useFeatureAccess } from "@/lib/plan-access"
+import { hasPdfAccess, usePdfAccess } from "@/lib/plan-access" // PDF por tipo (docs/303)
 import { aggregateSalesByPeriod, type SalesGranularity } from "@/lib/sales-analytics"
 import { getBusinessById } from "@/lib/storage/businesses"
 import { downloadSalesHistoryPDF } from "@/lib/pdf/sales-history-pdf-generator"
@@ -54,7 +55,7 @@ export function SalesHistoryBreakdown({
 }: SalesHistoryBreakdownProps) {
   const { t, language } = useLanguage()
   // El historial lleva ventas y márgenes: PDF con nivel «Administrativo» en Equipo (docs/216).
-  const canExportPdf = useFeatureAccess("pdf_admin")
+  const canExportPdf = usePdfAccess("sales_history", "admin")
   const [range, setRange] = useState<RangeOption>("30")
   const [granularity, setGranularity] = useState<SalesGranularity>("day")
   const [customFrom, setCustomFrom] = useState("")

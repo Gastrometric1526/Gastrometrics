@@ -1,6 +1,8 @@
 "use client"
 
 import { effectiveMemberFeatures, toggleTeamFeature } from "@/lib/team-access"
+import { defaultParts, memberHasPart, partsToStore, POS_PARTS, rolePreset, storedParts, TEAM_PDF_KINDS, type TeamPart, type TeamRolePreset } from "@/lib/team-parts"
+import { hasFeatureAccess as ownerPlanHas } from "@/lib/plan-access"
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import {
@@ -108,6 +110,8 @@ interface MemberFormState {
   scope: string
   allowedFeatures: FeatureKey[]
   pdfAccess: TeamMemberPdfAccess
+  /** Partes de cada módulo y PDF por tipo (docs/303, lib/team-parts.ts). */
+  parts: TeamPart[]
 }
 
 const emptyForm = (): MemberFormState => ({
@@ -116,7 +120,20 @@ const emptyForm = (): MemberFormState => ({
   scope: "dashboard",
   allowedFeatures: [],
   pdfAccess: "ninguno",
+  parts: defaultParts([]),
 })
+
+// Módulos agrupados por área para que el dueño vea qué parte de cada uno da (docs/303).
+const FEATURE_GROUPS: { titleKey: "equipo_group_kitchen" | "equipo_group_stock" | "equipo_group_sales" | "equipo_group_reports" | "equipo_group_team"; keys: FeatureKey[] }[] = [
+  { titleKey: "equipo_group_kitchen", keys: ["recipes", "ingredients", "merma", "menus", "mep"] },
+  { titleKey: "equipo_group_stock", keys: ["inventory", "purchase_orders_manual", "purchase_orders_auto"] },
+  { titleKey: "equipo_group_sales", keys: ["manual_sales", "sales_history", "cash_up", "invoices", "pos"] },
+  { titleKey: "equipo_group_reports", keys: ["stats_panorama", "stats_finance"] },
+  { titleKey: "equipo_group_team", keys: ["team"] },
+]
+const ROLE_PRESETS: TeamRolePreset[] = ["waiter", "kitchen", "cashier", "manager"]
+/** PDF que solo existen como administrativos (con costos): piden el nivel «administrativo». */
+const ADMIN_ONLY_PDF = new Set(["inventory", "cash_up", "sales_history"])
 
 export default function EquipoPage() {
   const canAccessTeam = useFeatureAccess("team")
@@ -234,8 +251,18 @@ function EquipoContent() {
       // Con las equivalencias de antes (docs/216): quien tenía Menús aparece con MEP marcada.
       allowedFeatures: effectiveMemberFeatures(member.allowedFeatures),
       pdfAccess: member.pdfAccess,
+      // Quien es de antes de docs/303 aparece con lo que ya podía hacer.
+      parts: storedParts(member.allowedFeatures) ?? defaultParts(effectiveMemberFeatures(member.allowedFeatures)),
     })
     setDialogOpen(true)
+  }
+
+  const togglePart = (part: TeamPart, checked: boolean) =>
+    setForm((prev) => ({ ...prev, parts: checked ? [...new Set([...prev.parts, part])] : prev.parts.filter((x) => x !== part) }))
+
+  const applyPreset = (role: TeamRolePreset) => {
+    const preset = rolePreset(role, (m) => ownerPlanHas(m as FeatureKey))
+    setForm((prev) => ({ ...prev, allowedFeatures: preset.modules as FeatureKey[], parts: preset.parts, pdfAccess: preset.pdfAccess }))
   }
 
   const toggleFeature = (key: FeatureKey, checked: boolean) => {
@@ -262,7 +289,7 @@ function EquipoContent() {
       await updateTeamMember(editingId, {
         name: form.name.trim() || undefined,
         scope: form.scope,
-        allowedFeatures: form.allowedFeatures,
+        allowedFeatures: partsToStore(form.allowedFeatures, form.parts) as FeatureKey[],
         pdfAccess: form.pdfAccess,
       })
       if (user) {
@@ -335,7 +362,7 @@ function EquipoContent() {
           email: entry.email,
           name: entry.name,
           scope: entry.scope,
-          allowedFeatures: entry.allowedFeatures,
+          allowedFeatures: partsToStore(entry.allowedFeatures, entry.parts) as FeatureKey[],
           pdfAccess: entry.pdfAccess,
           invitedUserId,
         })
@@ -522,19 +549,57 @@ function EquipoContent() {
 
                   <div className="space-y-2">
                     <Label>{t("equipo_field_tools_label")}</Label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border border-border rounded-lg p-3">
-                      {ASSIGNABLE_FEATURES.map((feature) => (
-                        <div key={feature.key} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`feature-${feature.key}`}
-                            checked={form.allowedFeatures.includes(feature.key)}
-                            onCheckedChange={(checked) => toggleFeature(feature.key, checked === true)}
-                          />
-                          <Label htmlFor={`feature-${feature.key}`} className="text-sm font-normal cursor-pointer">
-                            {feature.label}
-                          </Label>
-                        </div>
-                      ))}
+                    {/* Plantillas de un toque (docs/303): después se puede cambiar cada casilla. */}
+                    <div className="space-y-1.5">
+                      <p className="text-xs text-muted-foreground">{t("equipo_presets_hint")}</p>
+                      <div className="flex flex-wrap gap-1.5" data-tour="equipo-presets">
+                        {ROLE_PRESETS.map((role) => (
+                          <Button key={role} type="button" size="sm" variant="outline" className="h-9" onClick={() => applyPreset(role)}>
+                            {t(`equipo_preset_${role}` as "equipo_preset_waiter")}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-4 border border-border rounded-lg p-3">
+                      {FEATURE_GROUPS.map((group) => {
+                        const items = ASSIGNABLE_FEATURES.filter((f) => group.keys.includes(f.key))
+                        if (items.length === 0) return null
+                        return (
+                          <div key={group.titleKey} className="space-y-2">
+                            <p className="text-xs font-semibold text-muted-foreground">{t(group.titleKey)}</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {items.map((feature) => (
+                                <div key={feature.key} className="flex items-center gap-2">
+                                  <Checkbox
+                                    id={`feature-${feature.key}`}
+                                    checked={form.allowedFeatures.includes(feature.key)}
+                                    onCheckedChange={(checked) => toggleFeature(feature.key, checked === true)}
+                                  />
+                                  <Label htmlFor={`feature-${feature.key}`} className="text-sm font-normal cursor-pointer">
+                                    {feature.label}
+                                  </Label>
+                                </div>
+                              ))}
+                            </div>
+                            {/* Partes del POS (docs/303). */}
+                            {group.keys.includes("pos") && form.allowedFeatures.includes("pos") && (
+                              <div className="ml-6 space-y-2 rounded-md bg-muted/40 p-3">
+                                <p className="text-xs font-medium">{t("equipo_pos_parts_label")}</p>
+                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                  {POS_PARTS.map((part) => (
+                                    <div key={part} className="flex items-start gap-2">
+                                      <Checkbox id={`part-${part}`} checked={form.parts.includes(part)} onCheckedChange={(c) => togglePart(part, c === true)} className="mt-0.5" />
+                                      <Label htmlFor={`part-${part}`} className="text-sm font-normal cursor-pointer">
+                                        {t(`equipo_part_${part.replace(".", "_")}` as "equipo_part_pos_orders")}
+                                      </Label>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
 
@@ -556,6 +621,27 @@ function EquipoContent() {
                         </div>
                       ))}
                     </RadioGroup>
+                    {/* PDF por tipo (docs/303). */}
+                    {form.pdfAccess !== "ninguno" && (
+                      <div className="space-y-2 rounded-md bg-muted/40 p-3">
+                        <p className="text-xs font-medium">{t("equipo_pdf_kinds_label")}</p>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          {TEAM_PDF_KINDS.map((kind) => {
+                            const part = `pdf.${kind}` as TeamPart
+                            const needsAdmin = ADMIN_ONLY_PDF.has(kind) && form.pdfAccess !== "administrativo"
+                            return (
+                              <div key={kind} className="flex items-start gap-2">
+                                <Checkbox id={`pdfk-${kind}`} checked={!needsAdmin && form.parts.includes(part)} disabled={needsAdmin} onCheckedChange={(c) => togglePart(part, c === true)} className="mt-0.5" />
+                                <Label htmlFor={`pdfk-${kind}`} className="text-sm font-normal cursor-pointer">
+                                  {t(`equipo_pdf_kind_${kind}` as "equipo_pdf_kind_recipe")}
+                                  {needsAdmin && <span className="block text-xs text-muted-foreground">{t("equipo_pdf_admin_only")}</span>}
+                                </Label>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {!editingId && slotsUsed + 1 < MAX_TEAM_MEMBERS && (
@@ -705,6 +791,16 @@ function EquipoContent() {
                           </Badge>
                         ))}
                       </div>
+                    )}
+                    {effectiveMemberFeatures(member.allowedFeatures).includes("pos") && (
+                      <p className="text-xs text-muted-foreground">
+                        {t("equipo_pos_parts_badge").replace(
+                          "{parts}",
+                          POS_PARTS.filter((p) => memberHasPart(member.allowedFeatures, p))
+                            .map((p) => t(`equipo_part_${p.replace(".", "_")}` as "equipo_part_pos_orders"))
+                            .join(" · ") || t("equipo_tools_none_label"),
+                        )}
+                      </p>
                     )}
 
                     <div className="pt-3 border-t border-hairline">

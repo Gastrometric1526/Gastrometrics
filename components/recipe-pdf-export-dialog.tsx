@@ -20,6 +20,7 @@ import { allergenLabelKey, getRecipeAllergens } from "@/lib/allergens"
 import { getIngredients } from "@/lib/storage/ingredients"
 import { getRecipes } from "@/lib/storage/recipes"
 import { useFeatureAccess, useActiveMembership } from "@/lib/plan-access"
+import { hasPdfAccess, usePdfAccess } from "@/lib/plan-access" // PDF por tipo (docs/303)
 import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
 
@@ -43,8 +44,8 @@ export function RecipePDFExportDialog({
   businessLogo,
   isScaledPreview,
 }: RecipePDFExportDialogProps) {
-  const canExportAdministrative = useFeatureAccess("pdf_admin")
-  const canExportAtAll = useFeatureAccess("pdf_export")
+  const canExportAdministrative = usePdfAccess("recipe", "admin")
+  const canExportAtAll = usePdfAccess("recipe", "export")
   const { member: previewMember } = useActiveMembership()
   const { t } = useLanguage()
   const { toast } = useToast()

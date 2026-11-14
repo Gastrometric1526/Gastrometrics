@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
   buildPosReceipt,
-  canEditPosSettings,
   cashChange,
   isPosOnlyMember,
   newlyReady,
@@ -52,11 +51,6 @@ describe("quién usa el POS (docs/302)", () => {
     expect(isPosOnlyMember(["pos", "manual_sales", "recipes"])).toBe(false)
     expect(isPosOnlyMember(["manual_sales"])).toBe(false)
     expect(isPosOnlyMember(null)).toBe(false)
-  })
-  it("Ajustes: el dueño o quien administra el equipo", () => {
-    expect(canEditPosSettings(null)).toBe(true)
-    expect(canEditPosSettings(["pos", "team"])).toBe(true)
-    expect(canEditPosSettings(["pos", "manual_sales"])).toBe(false)
   })
 })
 

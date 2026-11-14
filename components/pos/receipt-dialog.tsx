@@ -22,6 +22,7 @@ import { downloadPosReceiptPDF } from "@/lib/pdf/pos-receipt-pdf-generator"
 import { downloadInvoicePDF } from "@/lib/pdf/invoice-pdf-generator"
 import { addInvoiceWithNextNumber } from "@/lib/storage/invoices"
 import { getBusinessById } from "@/lib/storage/businesses"
+import { hasPdfAccess } from "@/lib/plan-access"
 
 export function ReceiptDialog({
   open,
@@ -31,6 +32,7 @@ export function ReceiptDialog({
   businessId,
   businessName,
   canInvoice,
+  canReceipts = true,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -40,6 +42,8 @@ export function ReceiptDialog({
   businessName: string | null
   /** Hacer factura pide el permiso de Facturas (Equipo) o un plan que lo incluya. */
   canInvoice: boolean
+  /** Recibo y pre-cuenta: parte del POS que se da por persona (docs/303). */
+  canReceipts?: boolean
 }) {
   const { t } = useLanguage()
   const { toast } = useToast()
@@ -98,7 +102,8 @@ export function ReceiptDialog({
       const { number: _n, ...withoutNumber } = draft
       const saved = await addInvoiceWithNextNumber(businessId, withoutNumber)
       setInvoiceNumber(saved.number)
-      downloadInvoicePDF(saved, { businessName: business?.name ?? businessName ?? undefined, businessLogo: business?.logo, businessId })
+      // El PDF de la factura, si la persona puede bajar facturas (docs/303).
+      if (hasPdfAccess("invoice", "export")) downloadInvoicePDF(saved, { businessName: business?.name ?? businessName ?? undefined, businessLogo: business?.logo, businessId })
       toast({ title: t("pos_invoice_done").replace("{n}", saved.number) })
     } catch (error) {
       console.error("[salon] No se pudo hacer la factura:", error)
@@ -163,10 +168,12 @@ export function ReceiptDialog({
             </>
           ) : (
             <>
-              <Button size="lg" className="w-full gap-2" onClick={printReceipt}>
-                <Printer className="h-4 w-4" />
-                {t("pos_receipt_download")}
-              </Button>
+              {canReceipts && (
+                <Button size="lg" className="w-full gap-2" onClick={printReceipt}>
+                  <Printer className="h-4 w-4" />
+                  {t("pos_receipt_download")}
+                </Button>
+              )}
               {canInvoice && !invoiceNumber && (
                 <Button variant="outline" size="lg" className="w-full gap-2" onClick={() => setInvoicing(true)}>
                   <FileText className="h-4 w-4" />

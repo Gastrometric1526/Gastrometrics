@@ -47,6 +47,10 @@ export function OrderPanel({
   onCheckout,
   onPrecheck,
   onRelease,
+  canOrder = true,
+  canCharge = true,
+  canVoid = true,
+  canReceipts = true,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -68,6 +72,11 @@ export function OrderPanel({
   /** Pre-cuenta en PDF para llevar a la mesa (docs/302). */
   onPrecheck: () => void
   onRelease: () => void
+  /** Partes del POS de esta persona (docs/303). */
+  canOrder?: boolean
+  canCharge?: boolean
+  canVoid?: boolean
+  canReceipts?: boolean
 }) {
   const { t } = useLanguage()
   const [voidTarget, setVoidTarget] = useState<PosOrderItem | null>(null)
@@ -78,7 +87,17 @@ export function OrderPanel({
     .filter((g) => g.items.length > 0)
   const seatName = (s: number) => (s === 0 ? t("pos_seat_table") : t("pos_seat_n").replace("{n}", String(s)))
   // Una sola acción principal según el momento (docs/273): pedir, mandar a cocina o cobrar.
-  const primary: "add" | "send" | "checkout" = items.length === 0 ? "add" : pending > 0 ? "send" : order?.status === "bill" ? "checkout" : "add"
+  const primary: "add" | "send" | "checkout" | null = !canOrder
+    ? canCharge && items.length > 0
+      ? "checkout"
+      : null
+    : items.length === 0
+      ? "add"
+      : pending > 0
+        ? "send"
+        : order?.status === "bill" && canCharge
+          ? "checkout"
+          : "add"
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -89,6 +108,7 @@ export function OrderPanel({
             {order?.status === "bill" && <Badge className="bg-warning-soft text-warning hover:bg-warning-soft">{t("pos_status_bill")}</Badge>}
           </SheetTitle>
           {subtitle && <SheetDescription>{subtitle}</SheetDescription>}
+          {canOrder && (
           <div className="grid grid-cols-2 gap-2 pt-2">
             <label className="space-y-1">
               <span className="text-xs text-muted-foreground">{t("ventas_guests_label")}</span>
@@ -106,8 +126,10 @@ export function OrderPanel({
               <Input value={order?.waiter ?? ""} maxLength={40} onChange={(e) => onPatch({ waiter: e.target.value || null })} placeholder={t("ventas_optional")} />
             </label>
           </div>
+          )}
         </SheetHeader>
 
+        {canOrder && (
         <div className="border-b px-5 py-3 space-y-2">
           <p className="text-xs font-medium text-muted-foreground">{t("pos_order_for")}</p>
           <div className="flex flex-wrap gap-1.5" data-tour="salon-seats">
@@ -118,15 +140,18 @@ export function OrderPanel({
             ))}
           </div>
         </div>
+        )}
 
         <div className="flex-1 overflow-y-auto px-5 py-3 space-y-4">
           {groups.length === 0 ? (
             <div className="space-y-3 py-6 text-center">
               <p className="text-sm text-muted-foreground">{t("pos_order_empty")}</p>
-              <Button onClick={onAddDish} size="lg" className="gap-2">
-                <Plus className="h-4 w-4" />
-                {t("pos_add_dish").replace("{seat}", seatName(seat))}
-              </Button>
+              {canOrder && (
+                <Button onClick={onAddDish} size="lg" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  {t("pos_add_dish").replace("{seat}", seatName(seat))}
+                </Button>
+              )}
             </div>
           ) : (
             groups.map((g) => (
@@ -155,7 +180,7 @@ export function OrderPanel({
                         <span className={cn("inline-block rounded px-1.5 py-0.5 text-[11px] font-medium", STATUS_STYLE[i.status])}>{t(`pos_item_${i.status}` as "pos_item_new")}</span>
                       </div>
                     </div>
-                    {i.status === "new" && (
+                    {i.status === "new" && canOrder && (
                       <div className="flex items-center gap-1.5">
                         <Button size="icon" variant="outline" className="h-10 w-10" onClick={() => onQuantity(i.id, i.quantity - 1)} aria-label={t("ventas_less")}>
                           {i.quantity > 1 ? <Minus className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
@@ -168,16 +193,18 @@ export function OrderPanel({
                     )}
                     {i.status !== "new" && (
                       <div className="flex flex-wrap items-center gap-1.5">
-                        {i.status === "ready" && (
+                        {i.status === "ready" && canOrder && (
                           <Button size="sm" variant="outline" className="h-9 gap-1.5" onClick={() => onServed(i.id)}>
                             <CheckCheck className="h-3.5 w-3.5" />
                             {t("pos_mark_served")}
                           </Button>
                         )}
-                        <Button size="sm" variant="ghost" className="h-9 gap-1.5 text-muted-foreground" onClick={() => setVoidTarget(i)}>
-                          <Ban className="h-3.5 w-3.5" />
-                          {t("pos_void_button")}
-                        </Button>
+                        {canVoid && (
+                          <Button size="sm" variant="ghost" className="h-9 gap-1.5 text-muted-foreground" onClick={() => setVoidTarget(i)}>
+                            <Ban className="h-3.5 w-3.5" />
+                            {t("pos_void_button")}
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -205,13 +232,13 @@ export function OrderPanel({
               {t("pos_checkout")} · {formatCurrency(order ? orderTotal(order) : 0)}
             </Button>
           )}
-          {items.length > 0 && (
+          {items.length > 0 && canOrder && (
             <Button variant={primary === "add" ? "default" : "outline"} size={primary === "add" ? "lg" : "default"} onClick={onAddDish} className="w-full gap-2">
               <Plus className="h-4 w-4" />
               {t("pos_add_dish").replace("{seat}", seatName(seat))}
             </Button>
           )}
-          {items.length > 0 && (
+          {items.length > 0 && canCharge && (
             <div className="grid grid-cols-2 gap-2">
               <Button variant="outline" onClick={onBill} disabled={order?.status === "bill"} className="gap-2">
                 <BellRing className="h-4 w-4" />
@@ -223,7 +250,7 @@ export function OrderPanel({
                   {t("pos_checkout")}
                 </Button>
               )}
-              {primary === "checkout" && (
+              {primary === "checkout" && canOrder && (
                 <Button variant="outline" onClick={onSend} disabled={pending === 0} className="gap-2">
                   <ChefHat className="h-4 w-4" />
                   {t("pos_send_kitchen")}
@@ -231,13 +258,13 @@ export function OrderPanel({
               )}
             </div>
           )}
-          {items.length > 0 && (
+          {items.length > 0 && canReceipts && (
             <Button variant="ghost" onClick={onPrecheck} className="w-full gap-2 text-muted-foreground">
               <Printer className="h-4 w-4" />
               {t("pos_precheck")}
             </Button>
           )}
-          {order && items.length === 0 && (
+          {order && items.length === 0 && canOrder && (
             <Button variant="ghost" onClick={onRelease} className="w-full gap-2 text-muted-foreground">
               <Receipt className="h-4 w-4" />
               {t("pos_release_table")}

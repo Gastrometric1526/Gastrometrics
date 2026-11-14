@@ -35,9 +35,19 @@ export interface FloorTable {
 }
 
 export interface FloorPlan {
+  /** Plano de HOY: el que usa el servicio (con los cambios del día, docs/303). */
   areas: FloorArea[]
   tables: FloorTable[]
   updatedAt: string
+  /**
+   * Plano base (docs/303): cómo se arma el salón normalmente. «Volver al plano base» lo
+   * copia a hoy. Ausente en planos de antes: el de hoy hace de base (lib/pos-floor-base.ts).
+   */
+  base?: { areas: FloorArea[]; tables: FloorTable[]; savedAt: string }
+  /** Volver solo a la base la primera vez que se abre el POS cada día. */
+  resetDaily?: boolean
+  /** Último día (fecha local) en que se revisó la vuelta automática. */
+  resetOn?: string
 }
 
 /**

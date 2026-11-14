@@ -51,6 +51,7 @@ import { Edit, Copy, Trash2 } from "lucide-react"
 import { purchaseOrderShareText } from "@/lib/share-text"
 import { Download } from "lucide-react"
 import { hasFeatureAccess, useFeatureAccess } from "@/lib/plan-access"
+import { hasPdfAccess, usePdfAccess } from "@/lib/plan-access" // PDF por tipo (docs/303)
 import { FeatureLockedPage } from "@/components/feature-locked"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { getAccessBlockReason } from "@/lib/plan-access"
@@ -86,7 +87,7 @@ export function PurchaseOrderPage() {
   const canAccessManualOrders = useFeatureAccess("purchase_orders_manual")
   const canAccessAutoOrders = useFeatureAccess("purchase_orders_auto")
   // PDF de la orden (para el proveedor): nivel «Para compartir» o más en Equipo (docs/216).
-  const canExportOrderPdf = useFeatureAccess("pdf_export")
+  const canExportOrderPdf = usePdfAccess("purchase_order", "export")
 
   const [orders, setOrders] = useState<PurchaseOrder[]>([])
   const [searchTerm, setSearchTerm] = useState("")

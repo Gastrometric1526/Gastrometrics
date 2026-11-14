@@ -16,6 +16,7 @@ import { formatCurrency } from "@/lib/currency"
 import { updateSalesImport } from "@/lib/storage/sales-imports"
 import { getBusinessById } from "@/lib/storage/businesses"
 import { useFeatureAccess } from "@/lib/plan-access"
+import { hasPdfAccess, usePdfAccess } from "@/lib/plan-access" // PDF por tipo (docs/303)
 import { useOcrUsage } from "@/lib/ocr-usage"
 import { OCR_LANG, recognizeRecipeImage } from "@/lib/recipe-import/ocr"
 import { CASH_UP_TOLERANCE, computeCashUp, emptyCashUp, parseTerminalTotal, type CashUpMethod } from "@/lib/cash-up"
@@ -52,7 +53,7 @@ export function CashUpDialog({ open, onOpenChange, businessId, salesImport, onSa
   const { toast } = useToast()
   const { user } = useAuth()
   const { t, language } = useLanguage()
-  const canPdf = useFeatureAccess("pdf_admin")
+  const canPdf = usePdfAccess("cash_up", "admin")
   const recordOcr = useOcrUsage()
   const [draft, setDraft] = useState<CashUp>(() => emptyCashUp(new Date().toISOString()))
   const [isSaving, setIsSaving] = useState(false)

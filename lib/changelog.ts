@@ -32,6 +32,32 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Equipo: plantillas, partes de cada módulo y PDF por tipo (docs/303).
+    version: "2026-11-14c",
+    tutorialHref: tourHref("equipo"),
+    content: {
+      es: { title: "Equipo: decide qué parte de cada módulo usa cada persona", items: ["Al invitar, una plantilla de un toque: Mesero, Cocina, Cajero o Encargado. Después puedes cambiar cada casilla.", "Los módulos van agrupados por área. En el POS eliges qué puede hacer: tomar pedidos, pantalla de cocina, cobrar, dar descuentos, anular, pre-cuenta y recibo, cambiar el plano del día o Ajustes.", "En PDF, además del nivel, eliges qué tipos puede bajar: fichas, menús, MEP, inventario, órdenes, facturas, cuadre o historial. Quien ya estaba invitado sigue igual hasta que lo edites."] },
+      en: { title: "Team: choose which part of each module each person uses", items: ["When inviting, a one-tap template: Server, Kitchen, Cashier or Manager. Then you can change each box.", "Modules are grouped by area. In the POS you choose what they can do: take orders, kitchen screen, charge, give discounts, void, check and receipt, change today's floor plan or Settings.", "For PDFs, besides the level, you choose which types they can download: recipe sheets, menus, MEP, inventory, orders, invoices, cash-up or history. People already invited stay the same until you edit them."] },
+      da: { title: "Team: vælg, hvilken del af hvert modul hver person bruger", items: ["Når du inviterer, en skabelon med ét tryk: Tjener, Køkken, Kasserer eller Leder. Bagefter kan du ændre hvert felt.", "Modulerne er grupperet efter område. I POS vælger du, hvad personen kan: tage imod bestillinger, køkkenskærm, tage betaling, give rabat, annullere, foreløbig regning og kvittering, ændre dagens plantegning eller Indstillinger.", "For PDF'er vælger du ud over niveauet, hvilke typer personen kan downloade: opskriftsark, menuer, MEP, lager, ordrer, fakturaer, kasseopgørelse eller historik. Allerede inviterede er uændrede, indtil du redigerer dem."] },
+      fr: { title: "Équipe : choisissez quelle partie de chaque module chaque personne utilise", items: ["En invitant, un modèle en un toucher : Serveur, Cuisine, Caissier ou Responsable. Ensuite, vous pouvez changer chaque case.", "Les modules sont regroupés par domaine. Dans le POS, vous choisissez ce que la personne peut faire : prendre les commandes, écran cuisine, encaisser, accorder des remises, annuler, addition et reçu, modifier le plan du jour ou Réglages.", "Pour les PDF, en plus du niveau, vous choisissez les types qu'elle peut télécharger : fiches, menus, MEP, stock, bons de commande, factures, clôture de caisse ou historique. Les personnes déjà invitées restent pareilles jusqu'à ce que vous les modifiiez."] },
+      pt: { title: "Equipe: escolha qual parte de cada módulo cada pessoa usa", items: ["Ao convidar, um modelo com um toque: Garçom, Cozinha, Caixa ou Gerente. Depois você pode mudar cada caixa.", "Os módulos ficam agrupados por área. No POS você escolhe o que a pessoa pode fazer: anotar pedidos, tela da cozinha, cobrar, dar descontos, cancelar, pré-conta e recibo, mudar a planta do dia ou Ajustes.", "Em PDF, além do nível, você escolhe quais tipos ela pode baixar: fichas, menus, MEP, estoque, ordens, faturas, fechamento de caixa ou histórico. Quem já foi convidado continua igual até você editar."] },
+      zh: { title: "团队：决定每个人能用各模块的哪些部分", items: ["邀请时可一键套用模板：服务员、厨房、收银员或经理，之后可逐项修改。", "模块按领域分组。在 POS 中选择此人能做什么：点单、厨房屏幕、收款、给折扣、作废、预结单和收据、修改当日平面图或设置。", "PDF 除了级别，还可以选择能下载哪些类型：配方表、套餐、MEP、库存、采购单、发票、收银对账或历史。已邀请的成员在你编辑之前保持不变。"] },
+    },
+  },
+  {
+    // POS: plano base y cambios del día (docs/303).
+    version: "2026-11-14b",
+    tutorialHref: tourHref("salon"),
+    content: {
+      es: { title: "POS: plano base y cambios del día", items: ["En POS → Ajustes arma tu «Plano base», cómo se arma el salón normalmente. Para un grupo, junta o mueve mesas en «Hoy» sin tocar la base.", "«Volver al plano base» deshace los cambios del día; las mesas con cuenta abierta se quedan. «Guardar hoy como base» los vuelve fijos. Si quieres, vuelve solo a la base cada día."] },
+      en: { title: "POS: base plan and day changes", items: ["In POS → Settings, set up your “Base plan”: how your floor is normally arranged. For a group, join or move tables in “Today” without touching the base.", "“Back to the base plan” undoes the day's changes; tables with an open check stay. “Save today as base” makes them permanent. If you like, it goes back to the base on its own every day."] },
+      da: { title: "POS: grundplan og dagsændringer", items: ["Under POS → Indstillinger sætter du din »Grundplan« op: sådan er lokalet normalt indrettet. Til et selskab sætter du borde sammen eller flytter dem under »I dag« uden at røre grundplanen.", "»Tilbage til grundplanen« fortryder dagens ændringer; borde med åben regning bliver. »Gem i dag som grundplan« gør dem faste. Hvis du vil, går det selv tilbage til grundplanen hver dag."] },
+      fr: { title: "POS : plan de base et changements du jour", items: ["Dans POS → Réglages, organisez votre « Plan de base » : la disposition habituelle de la salle. Pour un groupe, réunissez ou déplacez des tables dans « Aujourd'hui » sans toucher à la base.", "« Revenir au plan de base » annule les changements du jour ; les tables avec une addition ouverte restent. « Enregistrer aujourd'hui comme base » les rend permanents. Si vous voulez, la salle revient toute seule à la base chaque jour."] },
+      pt: { title: "POS: planta base e mudanças do dia", items: ["Em POS → Ajustes monte a sua «Planta base»: como o salão é montado normalmente. Para um grupo, junte ou mova mesas em «Hoje» sem mexer na base.", "«Voltar à planta base» desfaz as mudanças do dia; as mesas com conta aberta ficam. «Salvar hoje como base» as torna fixas. Se quiser, volta sozinho à base todo dia."] },
+      zh: { title: "POS：基础平面图和当日调整", items: ["在“POS → 设置”中布置“基础平面图”：餐厅平时的摆放方式。遇到团体客人时，在“今天”中拼桌或移动桌台，不影响基础布局。", "“恢复基础平面图”可撤销当日调整，有未结账单的桌台会保留。“将今天保存为基础”会让调整固定下来。也可以设为每天自动恢复基础布局。"] },
+    },
+  },
+  {
     // POS pensado para el mesero con el celular (docs/302).
     version: "2026-11-14",
     tutorialHref: tourHref("salon"),
