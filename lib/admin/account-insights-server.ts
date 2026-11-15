@@ -351,11 +351,14 @@ export async function getAccountInsights(userId: string) {
       drafts: drafts.data ?? [],
     },
     team: {
-      invited: (team.data ?? []).map((m: any) => ({
-        email: m.email,
-        status: m.status,
-        invitedAt: m.invited_at,
-      })),
+      // Lo más reciente primero (docs/316).
+      invited: (team.data ?? [])
+        .map((m: any) => ({
+          email: m.email,
+          status: m.status,
+          invitedAt: m.invited_at,
+        }))
+        .sort((a: { invitedAt: string | null }, b: { invitedAt: string | null }) => String(b.invitedAt ?? "").localeCompare(String(a.invitedAt ?? ""))),
       memberOf: memberOfBusinesses,
     },
     emails,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import translations, { type LanguageCode, type TranslationKey } from "@/lib/i18n/translations"
-import { ADMIN_SECTIONS, ADMIN_TABS, ADMIN_TASKS, HOME_AREAS, QUICK_TASKS, howToSteps, isAdminTab, resolveAdminTab, searchAdmin, taskSteps } from "@/lib/admin/nav"
+import { ADMIN_SECTIONS, ADMIN_SPACES, ADMIN_TABS, ADMIN_TASKS, HOME_AREAS, spaceParts, QUICK_TASKS, howToSteps, isAdminTab, resolveAdminTab, searchAdmin, taskSteps } from "@/lib/admin/nav"
 import { NOTICE_TARGET } from "@/lib/admin/notifications"
 
 const LANGS = Object.keys(translations) as LanguageCode[]
@@ -11,6 +11,17 @@ describe("mapa de /admin (docs/279, docs/281)", () => {
     expect(new Set(HOME_AREAS).size).toBe(HOME_AREAS.length)
     expect([...HOME_AREAS].sort()).toEqual(ADMIN_TABS.filter((t) => t !== "resumen" && t !== "guia").sort())
     for (const id of HOME_AREAS) expect(ADMIN_SECTIONS[id].short, id).toBeTruthy()
+  })
+
+  it("un solo orden (docs/316): las áreas y sus partes van como los espacios", () => {
+    const tabsInSpaceOrder = [...new Set(ADMIN_SPACES.flatMap((sp) => spaceParts(sp).map((p) => p.tab)))].filter((t) => t !== "resumen" && t !== "guia")
+    expect(HOME_AREAS).toEqual(tabsInSpaceOrder)
+    for (const tab of HOME_AREAS) {
+      const subs = ADMIN_SECTIONS[tab].subs?.map((x) => x.id)
+      if (!subs) continue
+      const inSpaces = ADMIN_SPACES.flatMap((sp) => spaceParts(sp)).filter((p) => p.tab === tab).map((p) => p.sub)
+      expect(subs, tab).toEqual(inSpaces)
+    }
   })
 
   it("las direcciones viejas siguen abriendo su lugar (?tab=uso → Crecimiento y uso)", () => {

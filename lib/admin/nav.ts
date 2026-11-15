@@ -114,8 +114,8 @@ export const ADMIN_SECTIONS: Record<AdminTab, AdminSection> = {
   guia: { id: "guia", label: "admin_tab_guide", desc: "admin_tabdesc_guide" },
 }
 
-/** Las 6 tarjetas del Inicio, en este orden: lo de cada día primero. */
-export const HOME_AREAS: AdminTab[] = ["buzon", "cuentas", "ingresos", "crecimiento", "comunicacion", "sistema"]
+/** Las áreas en el mismo orden que los espacios (docs/316): Mensajes (buzón y comunicación), Personas, Números y Sistema. */
+export const HOME_AREAS: AdminTab[] = ["buzon", "comunicacion", "cuentas", "ingresos", "crecimiento", "sistema"]
 
 /** Direcciones viejas que siguen funcionando (`?tab=uso` → Crecimiento y uso). */
 const TAB_ALIASES: Record<string, AdminTab> = { uso: "crecimiento" }

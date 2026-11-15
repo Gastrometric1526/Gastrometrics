@@ -732,14 +732,72 @@ export function AccountsPanel() {
                     label: t("admin_acc_sub_overview"),
                     // Pedido del dueño (docs/315): en la Radiografía, el desglose completo del Dashboard
                     // personal y de cada negocio de la cuenta, antes del uso de la app.
+                    // Orden fijo (docs/316): el desglose va dentro de la Radiografía, en «Negocios y contenido».
                     content: (
-                      <div className="space-y-8">
-                        <div className="space-y-3">
-                          <h2 className="text-base font-semibold text-foreground">{t("admin_biz_radiography_title")}</h2>
-                          <AccountBusinessesBreakdown userId={selected.userId} businesses={businesses} onToggle={handleToggleBusiness} />
-                        </div>
-                        <AccountInsightsPanel userId={selected.userId} />
-                      </div>
+                      <AccountInsightsPanel
+                        userId={selected.userId}
+                        businesses={<AccountBusinessesBreakdown userId={selected.userId} businesses={businesses} onToggle={handleToggleBusiness} />}
+                      />
+                    ),
+                  },
+                  // Orden fijo (docs/316): quién es (Radiografía, Acceso), su plan, sus negocios, respaldos y, al final, eliminar.
+                  {
+                    value: "acceso",
+                    label: t("admin_acc_sub_access"),
+                    content: (
+                      <>
+              {/* Asistencia real a la cuenta — correo y contraseña (docs/86). */}
+              <div className="rounded-lg border border-border p-4 space-y-4">
+                <div className="flex items-center gap-2">
+                  <LifeBuoy className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">{t("admin_accounts_credentials_title")}</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">{t("admin_accounts_credentials_desc")}</p>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="new-email-input" className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5" />
+                    {t("admin_accounts_new_email_label")}
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    <Input
+                      id="new-email-input"
+                      type="email"
+                      value={newEmailInput}
+                      onChange={(e) => setNewEmailInput(e.target.value)}
+                      placeholder={selected.email}
+                      className="max-w-xs"
+                      autoComplete="off"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={!newEmailInput.trim() || newEmailInput.trim().toLowerCase() === selected.email.toLowerCase()}
+                      onClick={() => setEmailConfirmOpen(true)}
+                    >
+                      {t("admin_accounts_change_email_button")}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <KeyRound className="h-3.5 w-3.5" />
+                    {t("admin_accounts_password_label")}
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline" onClick={handleSendResetEmail} disabled={sendingReset}>
+                      {sendingReset ? t("admin_accounts_applying") : t("admin_accounts_send_reset_button")}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleGenerateTempPassword} disabled={generatingTempPassword}>
+                      {generatingTempPassword ? t("admin_accounts_applying") : t("admin_accounts_set_temp_password_button")}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{t("admin_accounts_password_hint")}</p>
+                </div>
+              </div>
+
+                      </>
                     ),
                   },
                   {
@@ -855,65 +913,6 @@ export function AccountsPanel() {
                   </div>
                 </div>
               )}
-
-                      </>
-                    ),
-                  },
-                  {
-                    value: "acceso",
-                    label: t("admin_acc_sub_access"),
-                    content: (
-                      <>
-              {/* Asistencia real a la cuenta — correo y contraseña (docs/86). */}
-              <div className="rounded-lg border border-border p-4 space-y-4">
-                <div className="flex items-center gap-2">
-                  <LifeBuoy className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="text-sm font-semibold text-foreground">{t("admin_accounts_credentials_title")}</h3>
-                </div>
-                <p className="text-sm text-muted-foreground">{t("admin_accounts_credentials_desc")}</p>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="new-email-input" className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Mail className="h-3.5 w-3.5" />
-                    {t("admin_accounts_new_email_label")}
-                  </Label>
-                  <div className="flex flex-wrap gap-2">
-                    <Input
-                      id="new-email-input"
-                      type="email"
-                      value={newEmailInput}
-                      onChange={(e) => setNewEmailInput(e.target.value)}
-                      placeholder={selected.email}
-                      className="max-w-xs"
-                      autoComplete="off"
-                    />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={!newEmailInput.trim() || newEmailInput.trim().toLowerCase() === selected.email.toLowerCase()}
-                      onClick={() => setEmailConfirmOpen(true)}
-                    >
-                      {t("admin_accounts_change_email_button")}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <KeyRound className="h-3.5 w-3.5" />
-                    {t("admin_accounts_password_label")}
-                  </Label>
-                  <div className="flex flex-wrap gap-2">
-                    <Button size="sm" variant="outline" onClick={handleSendResetEmail} disabled={sendingReset}>
-                      {sendingReset ? t("admin_accounts_applying") : t("admin_accounts_send_reset_button")}
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={handleGenerateTempPassword} disabled={generatingTempPassword}>
-                      {generatingTempPassword ? t("admin_accounts_applying") : t("admin_accounts_set_temp_password_button")}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{t("admin_accounts_password_hint")}</p>
-                </div>
-              </div>
 
                       </>
                     ),

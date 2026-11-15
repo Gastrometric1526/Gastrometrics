@@ -64,6 +64,13 @@ export function AccountBusinessesBreakdown({
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-foreground">{t("admin_biz_summary_title")}</h3>
         <KpiGrid cols={4}>
+          {/* Orden fijo (docs/316): lo que pide atención, dinero, contenido y uso. */}
+          <KpiCard label={t("admin_biz_no_price")} value={totals.recipesWithoutPrice} icon={Tag} tone={totals.recipesWithoutPrice > 0 ? "warn" : "default"} />
+          <KpiCard label={t("admin_biz_low_stock")} value={totals.lowStock} icon={AlertTriangle} tone={totals.lowStock > 0 ? "bad" : "default"} />
+          <KpiCard label={t("admin_biz_sales_total")} value={money(totals.salesRevenue, currency)} icon={Receipt} sub={`${t("admin_biz_sales_30d")}: ${money(totals.salesRevenue30d, currency)}`} />
+          <KpiCard label={t("admin_biz_food_cost")} value={formatPercent(totals.theoreticalFoodCostPercent, 1)} icon={TrendingUp} help={t("admin_biz_food_cost_help")} />
+          <KpiCard label={t("admin_biz_avg_cost")} value={money(totals.averageCost, currency)} icon={DollarSign} help={t("admin_biz_avg_cost_help")} />
+          <KpiCard label={t("admin_biz_avg_margin")} value={formatPercent(totals.averageMargin, 1)} icon={TrendingUp} help={t("admin_biz_avg_margin_help")} />
           <KpiCard
             label={t("admin_biz_created")}
             value={totals.businessesCreated}
@@ -72,16 +79,10 @@ export function AccountBusinessesBreakdown({
           />
           <KpiCard label={t("admin_biz_recipes")} value={totals.recipes} icon={ChefHat} sub={t("admin_biz_sub_recipes").replace("{count}", String(totals.subRecipes))} />
           <KpiCard label={t("admin_biz_ingredients")} value={totals.ingredients} icon={Package} />
-          <KpiCard label={t("admin_biz_avg_cost")} value={money(totals.averageCost, currency)} icon={DollarSign} help={t("admin_biz_avg_cost_help")} />
-          <KpiCard label={t("admin_biz_avg_margin")} value={formatPercent(totals.averageMargin, 1)} icon={TrendingUp} help={t("admin_biz_avg_margin_help")} />
-          <KpiCard label={t("admin_biz_no_price")} value={totals.recipesWithoutPrice} icon={Tag} tone={totals.recipesWithoutPrice > 0 ? "warn" : "default"} />
-          <KpiCard label={t("admin_biz_low_stock")} value={totals.lowStock} icon={AlertTriangle} tone={totals.lowStock > 0 ? "bad" : "default"} />
+          <KpiCard label={t("admin_biz_team_members")} value={totals.teamMembers} icon={Users} />
           <KpiCard label={t("admin_biz_pdfs")} value={totals.pdfExports} icon={FileDown} help={t("admin_biz_pdfs_help")} sub={pdfSummary(totals.pdfByKind) || undefined} />
           <KpiCard label={t("admin_biz_migrated")} value={totals.recipesMigrated} icon={Repeat} help={t("admin_biz_migrated_help")} />
           <KpiCard label={t("admin_biz_imports")} value={totals.imports} icon={Upload} />
-          <KpiCard label={t("admin_biz_sales_total")} value={money(totals.salesRevenue, currency)} icon={Receipt} sub={`${t("admin_biz_sales_30d")}: ${money(totals.salesRevenue30d, currency)}`} />
-          <KpiCard label={t("admin_biz_food_cost")} value={formatPercent(totals.theoreticalFoodCostPercent, 1)} icon={TrendingUp} help={t("admin_biz_food_cost_help")} />
-          <KpiCard label={t("admin_biz_team_members")} value={totals.teamMembers} icon={Users} />
         </KpiGrid>
       </div>
 
@@ -124,7 +125,16 @@ function SpaceCard({
 }) {
   const { t } = useLanguage()
   const isActive = business ? business.isActive : space.isActive
+  // Mismo orden que el resumen (docs/316): atención, dinero, contenido y uso.
   const rows: [TranslationKey, string | number][] = [
+    ["admin_biz_no_price", space.recipesWithoutPrice],
+    ["admin_biz_low_stock", space.lowStock],
+    ["admin_biz_sales_total", money(space.salesRevenue, currency)],
+    ["admin_biz_sales_30d", money(space.salesRevenue30d, currency)],
+    ["admin_biz_food_cost", formatPercent(space.theoreticalFoodCostPercent, 1)],
+    ["admin_biz_avg_cost", money(space.averageCost, currency)],
+    ["admin_biz_avg_margin", formatPercent(space.averageMargin, 1)],
+    ["admin_biz_last_sale", space.lastSaleAt ? formatDate(space.lastSaleAt) : "—"],
     ["admin_biz_recipes", space.recipes],
     ["admin_biz_sub_recipes_label", space.subRecipes],
     ["admin_biz_ingredients", space.ingredients],
@@ -134,18 +144,10 @@ function SpaceCard({
     ["admin_biz_orders", space.purchaseOrders],
     ["admin_biz_invoices", space.invoices],
     ["admin_biz_sales", space.salesImports],
-    ["admin_biz_avg_cost", money(space.averageCost, currency)],
-    ["admin_biz_avg_margin", formatPercent(space.averageMargin, 1)],
-    ["admin_biz_no_price", space.recipesWithoutPrice],
-    ["admin_biz_low_stock", space.lowStock],
+    ...(space.id ? ([["admin_biz_team_members", space.teamMembers]] as [TranslationKey, number][]) : []),
     ["admin_biz_pdfs", space.pdfExports],
     ["admin_biz_migrated", space.recipesMigrated],
     ["admin_biz_imports", space.imports],
-    ["admin_biz_sales_total", money(space.salesRevenue, currency)],
-    ["admin_biz_sales_30d", money(space.salesRevenue30d, currency)],
-    ["admin_biz_food_cost", formatPercent(space.theoreticalFoodCostPercent, 1)],
-    ["admin_biz_last_sale", space.lastSaleAt ? formatDate(space.lastSaleAt) : "—"],
-    ...(space.id ? ([["admin_biz_team_members", space.teamMembers]] as [TranslationKey, number][]) : []),
   ]
   return (
     <AdminCard

@@ -86,6 +86,11 @@ function Section({
   );
 }
 
+/** Título de un grupo de la Radiografía (docs/316). */
+function GroupTitle({ children }: { children: React.ReactNode }) {
+  return <h3 className="border-b border-border pb-2 pt-4 text-base font-semibold text-foreground">{children}</h3>;
+}
+
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="min-w-0">
@@ -198,7 +203,11 @@ function Ranking({
   );
 }
 
-export function AccountInsightsPanel({ userId }: { userId: string }) {
+/**
+ * `businesses`: el desglose del Dashboard personal y cada negocio (docs/315), que va en el grupo
+ * «Negocios y contenido» en lugar del resumen de contenido.
+ */
+export function AccountInsightsPanel({ userId, businesses }: { userId: string; businesses?: React.ReactNode }) {
   const { t, language } = useLanguage();
   const [data, setData] = useState<AccountInsights | null>(null);
   const [error, setError] = useState(false);
@@ -418,7 +427,325 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
         );
       })()}
 
+      {/* Orden fijo de la Radiografía (docs/316): lo urgente arriba (alertas); luego quién es y su
+          plan, sus cobros, sus negocios y contenido, cómo usa la app y, al final, lo hablado con ella. */}
+      <GroupTitle>{t("admin_insights_group_account")}</GroupTitle>
       <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
+        <Section icon={User} title={t("admin_insights_section_profile")}>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={t("admin_insights_name")} value={account.name} />
+            <Field
+              label={t("admin_insights_country")}
+              value={countryName(account.country)}
+            />
+            <Field
+              label={t("admin_insights_currency")}
+              value={account.currency}
+            />
+            <Field
+              label={t("admin_insights_language")}
+              value={account.language?.toUpperCase()}
+            />
+            <Field
+              label={t("admin_insights_business_type")}
+              value={labelOf(BUSINESS_TYPES, account.businessType)}
+            />
+            <Field
+              label={t("admin_insights_business_size")}
+              value={labelOf(BUSINESS_SIZES, account.businessSize)}
+            />
+            <Field
+              label={t("admin_insights_experience")}
+              value={labelOf(EXPERIENCE_LEVELS, account.experience)}
+            />
+            <Field
+              label={t("admin_insights_email_confirmed")}
+              value={
+                account.emailConfirmedAt
+                  ? date(account.emailConfirmedAt)
+                  : t("admin_insights_no")
+              }
+            />
+            <Field
+              label={t("admin_insights_last_sign_in")}
+              value={dateTime(account.lastSignInAt)}
+            />
+            <Field
+              label={t("admin_insights_updates_optin")}
+              value={yesNo(account.productUpdatesOptIn)}
+            />
+            <Field
+              label={t("admin_insights_terms")}
+              value={
+                account.termsAcceptedAt
+                  ? `v${account.termsVersion ?? "?"} · ${date(account.termsAcceptedAt)}`
+                  : "—"
+              }
+            />
+            {account.deletionRequestedAt && (
+              <Field
+                label={t("admin_insights_deletion")}
+                value={date(account.deletionRequestedAt)}
+              />
+            )}
+          </div>
+        </Section>
+        <Section icon={Sparkles} title={t("admin_insights_section_plan")}>
+          <div className="grid grid-cols-2 gap-3">
+            <Field
+              label={t("admin_insights_plan_current")}
+              value={planName(plan.slug)}
+            />
+            <Field
+              label={t("admin_insights_plan_value")}
+              value={
+                plan.priceUsdCents
+                  ? `$${plan.priceUsdCents / 100}${t("admin_insights_per_month")}`
+                  : "$0"
+              }
+            />
+            <Field
+              label={t("admin_insights_plan_since")}
+              value={date(plan.since)}
+            />
+            <Field
+              label={t("admin_insights_plan_expires")}
+              value={
+                plan.expiresAt
+                  ? date(plan.expiresAt)
+                  : t("admin_insights_never")
+              }
+            />
+            <Field
+              label={t("admin_insights_subscription")}
+              value={
+                plan.hasSubscription
+                  ? plan.cancelAtPeriodEnd
+                    ? t("admin_insights_cancelling").replace(
+                        "{date}",
+                        date(plan.currentPeriodEnd),
+                      )
+                    : `${t("admin_insights_sub_active")}${plan.currentPeriodEnd ? ` · ${t("admin_insights_next_charge")} ${date(plan.currentPeriodEnd)}` : ""}`
+                  : t("admin_insights_sub_none")
+              }
+            />
+            <Field
+              label={t("admin_insights_extras")}
+              value={`${plan.extraBusinesses} / ${plan.extraTeamSeats}`}
+            />
+            {plan.founderGrant && (
+              <Field
+                label={t("admin_insights_founder")}
+                value={t("admin_insights_founder_value")
+                  .replace("{n}", String(plan.founderGrant.ordinal ?? "?"))
+                  .replace("{date}", date(plan.founderGrant.at))
+                  .concat(
+                    plan.founderGrant.seat === "released" || plan.founderGrant.seat === "kept"
+                      ? ` · ${t(plan.founderGrant.seat === "released" ? "admin_insights_founder_released" : "admin_insights_founder_kept").replace("{k}", String(plan.founderGrant.recipes ?? 0))}`
+                      : "",
+                  )}
+              />
+            )}
+            {plan.scheduledRenewal && (
+              <Field
+                label={t("admin_insights_scheduled")}
+                value={t("admin_insights_scheduled_value")
+                  .replace("{plan}", planName(plan.scheduledRenewal.planSlug))
+                  .replace("{date}", date(plan.scheduledRenewal.startsAt))}
+              />
+            )}
+          </div>
+          <div className="space-y-1.5 pt-1">
+            <p className="text-xs font-medium text-muted-foreground">
+              {t("admin_insights_history")}
+            </p>
+            {plan.history.length ? (
+              <ol className="space-y-1 border-l border-border pl-3">
+                {/* docs/301: todo cambio, con hora, origen y quién lo hizo; lo más reciente arriba. */}
+                {[...plan.history].reverse().map((h, i) => (
+                  <li key={i} className="text-sm text-foreground" data-plan-history={h.kind}>
+                    <span className="text-muted-foreground">{dateTime(h.at)}</span>{" "}
+                    ·{" "}
+                    {h.kind === "changed" ? (
+                      <>
+                        {planName(h.from)} → <strong>{planName(h.to)}</strong>
+                        {h.expiresAt && (
+                          <span className="text-muted-foreground"> · {t("admin_plan_hist_until").replace("{date}", date(h.expiresAt))}</span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <strong>{planName(h.to)}</strong>
+                        {": "}
+                        {t(`admin_plan_hist_kind_${h.kind}` as TranslationKey).replace("{date}", date(h.until))}
+                      </>
+                    )}
+                    {h.origin && (
+                      <span className="text-xs text-muted-foreground">
+                        {" "}
+                        ({t(`admin_plan_hist_origin_${h.origin}` as TranslationKey)}
+                        {h.by ? ` · ${h.by}` : ""})
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {t("admin_insights_history_empty")}
+              </p>
+            )}
+          </div>
+        </Section>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
+        <Section icon={CreditCard} title={t("admin_insights_section_billing")}>
+          {!billing ? (
+            <p className="text-sm text-muted-foreground">{t("admin_insights_no_billing")}</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <Field
+                  label={t("admin_insights_total_paid")}
+                  value={`$${(billing.totalPaidCents / 100).toFixed(2)} ${billing.currency}`}
+                />
+                <Field label={t("admin_insights_failed_payments")} value={String(billing.failedPayments)} />
+                <Field
+                  label={t("admin_insights_card")}
+                  value={
+                    billing.card
+                      ? `${billing.card.brand.toUpperCase()} •••• ${billing.card.last4} (${String(billing.card.expMonth).padStart(2, "0")}/${billing.card.expYear})`
+                      : "—"
+                  }
+                />
+                {billing.dashboardUrl && (
+                  <a
+                    href={billing.dashboardUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 self-end text-sm font-medium text-primary hover:underline"
+                  >
+                    {t("admin_insights_open_stripe")} <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                )}
+              </div>
+              {billing.invoices.length > 0 && (
+                <ul className="max-h-40 space-y-1 overflow-y-auto pt-2 text-sm">
+                  {billing.invoices.map((inv, i) => (
+                    <li key={i} className="flex justify-between gap-2">
+                      <span className="truncate text-foreground">
+                        {date(inv.at)} · ${(inv.amountCents / 100).toFixed(2)} ·{" "}
+                        {t(`admin_insights_invoice_${inv.status}` as TranslationKey) || inv.status}
+                      </span>
+                      {inv.url && (
+                        <a href={inv.url} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs text-primary hover:underline">
+                          {inv.number || "PDF"}
+                        </a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+          {/* Cobros confirmados a la persona por correo y en la app (docs/183). */}
+          {paymentConfirmations.length > 0 && (
+            <div className="space-y-1 border-t pt-2">
+              <p className="text-xs font-medium text-muted-foreground">{t("admin_insights_payment_confirmations")}</p>
+              <ul className="space-y-1 text-sm">
+                {paymentConfirmations.map((p) => (
+                  <li key={p.key} className="flex justify-between gap-2">
+                    <span className={p.status === "paid" ? "text-foreground" : "text-destructive"}>
+                      {date(p.at)} · {p.status === "paid" ? `$${((p.amountCents ?? 0) / 100).toFixed(2)} · ${t("admin_insights_payment_paid")}` : t("admin_insights_payment_failed")}
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{p.seen ? t("admin_insights_payment_seen") : t("admin_insights_payment_unseen")}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </Section>
+        {/* Referidos de la cuenta (docs/179, docs/183). */}
+        <Section icon={Gift} title={t("admin_insights_section_referral")}>
+          {!referral ? (
+            <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
+          ) : (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label={t("admin_insights_referral_code")} value={referral.code} />
+                <Field label={t("admin_insights_referral_invited_by")} value={referral.invitedBy || "—"} />
+                <Field label={t("admin_insights_referral_sent")} value={String(referral.sent)} />
+                <Field label={t("admin_insights_referral_invites")} value={String(referral.invites.length)} />
+                <Field label={t("admin_insights_referral_active")} value={String(referral.active)} />
+                <Field
+                  label={t("admin_insights_referral_rewards")}
+                  value={`${referral.rewardsEarned} (${referral.rewardsThisYear}/12)`}
+                />
+              </div>
+              {referral.invites.length > 0 && (
+                <ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
+                  {referral.invites.map((inv, i) => (
+                    <li key={i} className="flex justify-between gap-2">
+                      <AccountLink email={inv.email} className="text-foreground" />
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {date(inv.registeredAt)} · {t(`invita_status_${inv.status}` as TranslationKey) || inv.status}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </Section>
+      </div>
+
+      <GroupTitle>{t("admin_insights_group_business")}</GroupTitle>
+      {businesses ?? (
+        <Section icon={Package} title={t("admin_insights_section_content")}>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+            {(
+              [
+                ["admin_insights_c_businesses", content.businesses.length],
+                ["admin_insights_c_recipes", content.recipes],
+                ["admin_insights_c_sub_recipes", content.subRecipes],
+                ["admin_insights_c_ingredients", content.ingredients],
+                ["admin_insights_c_inventory_items", content.inventoryItems],
+                ["admin_insights_c_inventory_counts", content.inventoryCounts],
+                ["admin_insights_c_menus", content.menus],
+                ["admin_insights_c_purchase_orders", content.purchaseOrders],
+                ["admin_insights_c_invoices", content.invoices],
+                ["admin_insights_c_pos_imports", content.posImports],
+                ["admin_insights_c_manual_sales", content.manualSales],
+                ["admin_insights_c_trash", content.recipesInTrash],
+                ["admin_insights_c_drafts", content.drafts.length],
+              ] as [TranslationKey, number][]
+            ).map(([key, value]) => (
+              <div key={key} className="rounded-md bg-muted/40 p-2">
+                <p className="text-lg font-semibold tabular-nums text-foreground">
+                  {value}
+                </p>
+                <p className="text-xs text-muted-foreground">{t(key)}</p>
+              </div>
+            ))}
+          </div>
+          {content.lastSalesAt && (
+            <p className="text-xs text-muted-foreground">
+              {t("admin_insights_last_sales")}: {date(content.lastSalesAt)}
+            </p>
+          )}
+          {content.businesses.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {content.businesses
+                .map(
+                  (b) =>
+                    `${b.name}${b.isActive ? "" : ` (${t("admin_insights_inactive")})`}`,
+                )
+                .join(" · ")}
+            </p>
+          )}
+        </Section>
+      )}
+      <div className="grid gap-4 lg:grid-cols-3 [&>*]:min-w-0">
         <Section icon={CheckCircle2} title={`${t("admin_insights_section_activation")} (${activation.filter((a) => a.done).length}/${activation.length})`}>
           <div className="h-2 rounded-full bg-muted">
             <div
@@ -464,8 +791,32 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
             </p>
           </div>
         </Section>
+        <Section icon={Users} title={t("admin_insights_section_team")}>
+          <Field
+            label={t("admin_insights_invited")}
+            value={
+              team.invited.length
+                ? team.invited.map((m, i) => (
+                    <span key={m.email}>
+                      {i > 0 && ", "}
+                      <AccountLink email={m.email} className="inline" /> ({m.status})
+                    </span>
+                  ))
+                : t("admin_insights_none")
+            }
+          />
+          <Field
+            label={t("admin_insights_member_of")}
+            value={
+              team.memberOf.length
+                ? team.memberOf.map((b) => b.name).join(", ")
+                : t("admin_insights_none")
+            }
+          />
+        </Section>
       </div>
 
+      <GroupTitle>{t("admin_insights_group_usage")}</GroupTitle>
       <Section icon={Activity} title={t("admin_insights_section_usage")}>
         {!hasUsage ? (
           <p className="text-sm text-muted-foreground">
@@ -576,7 +927,8 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
               </p>
               {usage.milestones.length ? (
                 <ol className="flex flex-wrap gap-2">
-                  {usage.milestones.map((m) => (
+                  {/* Lo más reciente primero, como toda lista de /admin (docs/316). */}
+                  {[...usage.milestones].reverse().map((m) => (
                     <li
                       key={m.key}
                       className="rounded-full bg-muted px-3 py-1 text-xs text-foreground"
@@ -597,245 +949,92 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
           </div>
         )}
       </Section>
-
       <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
-        <Section icon={Sparkles} title={t("admin_insights_section_plan")}>
-          <div className="grid grid-cols-2 gap-3">
-            <Field
-              label={t("admin_insights_plan_current")}
-              value={planName(plan.slug)}
-            />
-            <Field
-              label={t("admin_insights_plan_value")}
-              value={
-                plan.priceUsdCents
-                  ? `$${plan.priceUsdCents / 100}${t("admin_insights_per_month")}`
-                  : "$0"
-              }
-            />
-            <Field
-              label={t("admin_insights_plan_since")}
-              value={date(plan.since)}
-            />
-            <Field
-              label={t("admin_insights_plan_expires")}
-              value={
-                plan.expiresAt
-                  ? date(plan.expiresAt)
-                  : t("admin_insights_never")
-              }
-            />
-            <Field
-              label={t("admin_insights_subscription")}
-              value={
-                plan.hasSubscription
-                  ? plan.cancelAtPeriodEnd
-                    ? t("admin_insights_cancelling").replace(
-                        "{date}",
-                        date(plan.currentPeriodEnd),
-                      )
-                    : `${t("admin_insights_sub_active")}${plan.currentPeriodEnd ? ` · ${t("admin_insights_next_charge")} ${date(plan.currentPeriodEnd)}` : ""}`
-                  : t("admin_insights_sub_none")
-              }
-            />
-            <Field
-              label={t("admin_insights_extras")}
-              value={`${plan.extraBusinesses} / ${plan.extraTeamSeats}`}
-            />
-            {plan.founderGrant && (
-              <Field
-                label={t("admin_insights_founder")}
-                value={t("admin_insights_founder_value")
-                  .replace("{n}", String(plan.founderGrant.ordinal ?? "?"))
-                  .replace("{date}", date(plan.founderGrant.at))
-                  .concat(
-                    plan.founderGrant.seat === "released" || plan.founderGrant.seat === "kept"
-                      ? ` · ${t(plan.founderGrant.seat === "released" ? "admin_insights_founder_released" : "admin_insights_founder_kept").replace("{k}", String(plan.founderGrant.recipes ?? 0))}`
-                      : "",
-                  )}
-              />
-            )}
-            {plan.scheduledRenewal && (
-              <Field
-                label={t("admin_insights_scheduled")}
-                value={t("admin_insights_scheduled_value")
-                  .replace("{plan}", planName(plan.scheduledRenewal.planSlug))
-                  .replace("{date}", date(plan.scheduledRenewal.startsAt))}
-              />
-            )}
-          </div>
-          <div className="space-y-1.5 pt-1">
-            <p className="text-xs font-medium text-muted-foreground">
-              {t("admin_insights_history")}
-            </p>
-            {plan.history.length ? (
-              <ol className="space-y-1 border-l border-border pl-3">
-                {/* docs/301: todo cambio, con hora, origen y quién lo hizo; lo más reciente arriba. */}
-                {[...plan.history].reverse().map((h, i) => (
-                  <li key={i} className="text-sm text-foreground" data-plan-history={h.kind}>
-                    <span className="text-muted-foreground">{dateTime(h.at)}</span>{" "}
-                    ·{" "}
-                    {h.kind === "changed" ? (
-                      <>
-                        {planName(h.from)} → <strong>{planName(h.to)}</strong>
-                        {h.expiresAt && (
-                          <span className="text-muted-foreground"> · {t("admin_plan_hist_until").replace("{date}", date(h.expiresAt))}</span>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <strong>{planName(h.to)}</strong>
-                        {": "}
-                        {t(`admin_plan_hist_kind_${h.kind}` as TranslationKey).replace("{date}", date(h.until))}
-                      </>
-                    )}
-                    {h.origin && (
-                      <span className="text-xs text-muted-foreground">
-                        {" "}
-                        ({t(`admin_plan_hist_origin_${h.origin}` as TranslationKey)}
-                        {h.by ? ` · ${h.by}` : ""})
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                {t("admin_insights_history_empty")}
-              </p>
-            )}
-          </div>
+        <Section icon={History} title={t("admin_insights_section_recent")}>
+          {recentActivity.length ? (
+            <ul className="max-h-64 space-y-1 overflow-y-auto text-sm">
+              {recentActivity.map((a, i) => (
+                <li key={i} className="flex justify-between gap-2">
+                  <span className="truncate text-foreground">
+                    {moduleLabel(a.module)} · {actionLabel(a.action)}
+                    {a.label ? <span className="text-muted-foreground"> · {a.label}</span> : null}
+                  </span>
+                  <span className="shrink-0 text-xs text-muted-foreground">{dateTime(a.at)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
+          )}
         </Section>
-
-        <Section icon={User} title={t("admin_insights_section_profile")}>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label={t("admin_insights_name")} value={account.name} />
-            <Field
-              label={t("admin_insights_country")}
-              value={countryName(account.country)}
-            />
-            <Field
-              label={t("admin_insights_currency")}
-              value={account.currency}
-            />
-            <Field
-              label={t("admin_insights_language")}
-              value={account.language?.toUpperCase()}
-            />
-            <Field
-              label={t("admin_insights_business_type")}
-              value={labelOf(BUSINESS_TYPES, account.businessType)}
-            />
-            <Field
-              label={t("admin_insights_business_size")}
-              value={labelOf(BUSINESS_SIZES, account.businessSize)}
-            />
-            <Field
-              label={t("admin_insights_experience")}
-              value={labelOf(EXPERIENCE_LEVELS, account.experience)}
-            />
-            <Field
-              label={t("admin_insights_email_confirmed")}
-              value={
-                account.emailConfirmedAt
-                  ? date(account.emailConfirmedAt)
-                  : t("admin_insights_no")
-              }
-            />
-            <Field
-              label={t("admin_insights_last_sign_in")}
-              value={dateTime(account.lastSignInAt)}
-            />
-            <Field
-              label={t("admin_insights_updates_optin")}
-              value={yesNo(account.productUpdatesOptIn)}
-            />
-            <Field
-              label={t("admin_insights_terms")}
-              value={
-                account.termsAcceptedAt
-                  ? `v${account.termsVersion ?? "?"} · ${date(account.termsAcceptedAt)}`
-                  : "—"
-              }
-            />
-            {account.deletionRequestedAt && (
-              <Field
-                label={t("admin_insights_deletion")}
-                value={date(account.deletionRequestedAt)}
-              />
-            )}
-          </div>
+        <Section icon={Upload} title={`${t("admin_insights_section_imports")} (${imports.length})`}>
+          {imports.length ? (
+            <ul className="max-h-60 space-y-1.5 overflow-y-auto text-sm">
+              {imports.map((im, i) => (
+                <li key={i} className="flex flex-wrap justify-between gap-2">
+                  <span className="min-w-0 text-foreground">
+                    <strong>{KIND_KEY[im.kind] ? t(KIND_KEY[im.kind]) : im.kind}</strong>
+                    {" · "}
+                    {im.source === "pegado" ? t("admin_usage_source_pegado") : im.source === "ticket" ? t("admin_usage_source_ticket") : im.file || "—"}
+                    {im.format ? ` · ${t(`admin_usage_format_${im.format}` as TranslationKey)}` : ""}
+                    {im.count !== null ? ` · ${t("admin_insights_import_rows").replace("{n}", String(im.count))}` : ""}
+                    {im.updated ? ` · ${t("admin_usage_updated_prices").replace("{n}", String(im.updated))}` : ""}
+                    {im.newIngredients ? ` · ${t("admin_usage_new_ingredients").replace("{n}", String(im.newIngredients))}` : ""}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{dateTime(im.at)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
+          )}
+        </Section>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
+        {/* Qué PDF descargó y cuándo (docs/291). */}
+        <Section icon={FileDown} title={`${t("admin_block_pdf")} (${pdfDownloads.length})`}>
+          {pdfDownloads.length ? (
+            <ul className="max-h-60 space-y-1.5 overflow-y-auto text-sm" data-account-pdfs>
+              {pdfDownloads.map((d, i) => {
+                const kindKey = `admin_biz_pdf_${d.kind}`;
+                const kind = t(kindKey as TranslationKey) !== kindKey ? t(kindKey as TranslationKey) : t("admin_biz_pdf_other");
+                const variantKey = `admin_pdf_variant_${d.variant}`;
+                const variant = d.variant ? (t(variantKey as TranslationKey) !== variantKey ? t(variantKey as TranslationKey) : d.variant) : null;
+                return (
+                  <li key={i} className="flex justify-between gap-2">
+                    <span className="min-w-0 text-foreground">
+                      {kind}
+                      {d.name ? <span> · {d.name}</span> : null}
+                      {variant ? <span className="text-muted-foreground"> ({variant})</span> : null}
+                      <span className="block text-xs text-muted-foreground">{d.businessName ?? t("admin_pdf_main_space")}</span>
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{dateTime(d.at)}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
+          )}
+        </Section>
+        <Section icon={BookOpen} title={`${t("admin_insights_section_manual")} (${manualDownloads.length})`}>
+          {manualDownloads.length ? (
+            <ul className="max-h-60 space-y-1 overflow-y-auto text-sm">
+              {manualDownloads.map((d, i) => (
+                <li key={i} className="flex justify-between gap-2">
+                  <span className="text-foreground">{(d.language || "—").toUpperCase()}</span>
+                  <span className="text-xs text-muted-foreground">{dateTime(d.at)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
+          )}
         </Section>
       </div>
 
-      <Section icon={Package} title={t("admin_insights_section_content")}>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-          {(
-            [
-              ["admin_insights_c_businesses", content.businesses.length],
-              ["admin_insights_c_recipes", content.recipes],
-              ["admin_insights_c_sub_recipes", content.subRecipes],
-              ["admin_insights_c_ingredients", content.ingredients],
-              ["admin_insights_c_inventory_items", content.inventoryItems],
-              ["admin_insights_c_inventory_counts", content.inventoryCounts],
-              ["admin_insights_c_menus", content.menus],
-              ["admin_insights_c_purchase_orders", content.purchaseOrders],
-              ["admin_insights_c_invoices", content.invoices],
-              ["admin_insights_c_pos_imports", content.posImports],
-              ["admin_insights_c_manual_sales", content.manualSales],
-              ["admin_insights_c_trash", content.recipesInTrash],
-              ["admin_insights_c_drafts", content.drafts.length],
-            ] as [TranslationKey, number][]
-          ).map(([key, value]) => (
-            <div key={key} className="rounded-md bg-muted/40 p-2">
-              <p className="text-lg font-semibold tabular-nums text-foreground">
-                {value}
-              </p>
-              <p className="text-xs text-muted-foreground">{t(key)}</p>
-            </div>
-          ))}
-        </div>
-        {content.lastSalesAt && (
-          <p className="text-xs text-muted-foreground">
-            {t("admin_insights_last_sales")}: {date(content.lastSalesAt)}
-          </p>
-        )}
-        {content.businesses.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            {content.businesses
-              .map(
-                (b) =>
-                  `${b.name}${b.isActive ? "" : ` (${t("admin_insights_inactive")})`}`,
-              )
-              .join(" · ")}
-          </p>
-        )}
-      </Section>
-
-      <div className="grid gap-4 lg:grid-cols-3 [&>*]:min-w-0">
-        <Section icon={Users} title={t("admin_insights_section_team")}>
-          <Field
-            label={t("admin_insights_invited")}
-            value={
-              team.invited.length
-                ? team.invited.map((m, i) => (
-                    <span key={m.email}>
-                      {i > 0 && ", "}
-                      <AccountLink email={m.email} className="inline" /> ({m.status})
-                    </span>
-                  ))
-                : t("admin_insights_none")
-            }
-          />
-          <Field
-            label={t("admin_insights_member_of")}
-            value={
-              team.memberOf.length
-                ? team.memberOf.map((b) => b.name).join(", ")
-                : t("admin_insights_none")
-            }
-          />
-        </Section>
+      <GroupTitle>{t("admin_insights_group_contact")}</GroupTitle>
+      <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
         <Section
           icon={Mail}
           title={`${t("admin_insights_section_emails")} (${emails.length})`}
@@ -884,193 +1083,6 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
           )}
         </Section>
       </div>
-
-      <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
-        <Section icon={History} title={t("admin_insights_section_recent")}>
-          {recentActivity.length ? (
-            <ul className="max-h-64 space-y-1 overflow-y-auto text-sm">
-              {recentActivity.map((a, i) => (
-                <li key={i} className="flex justify-between gap-2">
-                  <span className="truncate text-foreground">
-                    {moduleLabel(a.module)} · {actionLabel(a.action)}
-                    {a.label ? <span className="text-muted-foreground"> · {a.label}</span> : null}
-                  </span>
-                  <span className="shrink-0 text-xs text-muted-foreground">{dateTime(a.at)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
-          )}
-        </Section>
-        <Section icon={CreditCard} title={t("admin_insights_section_billing")}>
-          {!billing ? (
-            <p className="text-sm text-muted-foreground">{t("admin_insights_no_billing")}</p>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <Field
-                  label={t("admin_insights_total_paid")}
-                  value={`$${(billing.totalPaidCents / 100).toFixed(2)} ${billing.currency}`}
-                />
-                <Field label={t("admin_insights_failed_payments")} value={String(billing.failedPayments)} />
-                <Field
-                  label={t("admin_insights_card")}
-                  value={
-                    billing.card
-                      ? `${billing.card.brand.toUpperCase()} •••• ${billing.card.last4} (${String(billing.card.expMonth).padStart(2, "0")}/${billing.card.expYear})`
-                      : "—"
-                  }
-                />
-                {billing.dashboardUrl && (
-                  <a
-                    href={billing.dashboardUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 self-end text-sm font-medium text-primary hover:underline"
-                  >
-                    {t("admin_insights_open_stripe")} <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                )}
-              </div>
-              {billing.invoices.length > 0 && (
-                <ul className="max-h-40 space-y-1 overflow-y-auto pt-2 text-sm">
-                  {billing.invoices.map((inv, i) => (
-                    <li key={i} className="flex justify-between gap-2">
-                      <span className="truncate text-foreground">
-                        {date(inv.at)} · ${(inv.amountCents / 100).toFixed(2)} ·{" "}
-                        {t(`admin_insights_invoice_${inv.status}` as TranslationKey) || inv.status}
-                      </span>
-                      {inv.url && (
-                        <a href={inv.url} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs text-primary hover:underline">
-                          {inv.number || "PDF"}
-                        </a>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </>
-          )}
-          {/* Cobros confirmados a la persona por correo y en la app (docs/183). */}
-          {paymentConfirmations.length > 0 && (
-            <div className="space-y-1 border-t pt-2">
-              <p className="text-xs font-medium text-muted-foreground">{t("admin_insights_payment_confirmations")}</p>
-              <ul className="space-y-1 text-sm">
-                {paymentConfirmations.map((p) => (
-                  <li key={p.key} className="flex justify-between gap-2">
-                    <span className={p.status === "paid" ? "text-foreground" : "text-destructive"}>
-                      {date(p.at)} · {p.status === "paid" ? `$${((p.amountCents ?? 0) / 100).toFixed(2)} · ${t("admin_insights_payment_paid")}` : t("admin_insights_payment_failed")}
-                    </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">{p.seen ? t("admin_insights_payment_seen") : t("admin_insights_payment_unseen")}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </Section>
-        {/* Referidos de la cuenta (docs/179, docs/183). */}
-        <Section icon={Gift} title={t("admin_insights_section_referral")}>
-          {!referral ? (
-            <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
-          ) : (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <Field label={t("admin_insights_referral_code")} value={referral.code} />
-                <Field label={t("admin_insights_referral_invited_by")} value={referral.invitedBy || "—"} />
-                <Field label={t("admin_insights_referral_sent")} value={String(referral.sent)} />
-                <Field label={t("admin_insights_referral_invites")} value={String(referral.invites.length)} />
-                <Field label={t("admin_insights_referral_active")} value={String(referral.active)} />
-                <Field
-                  label={t("admin_insights_referral_rewards")}
-                  value={`${referral.rewardsEarned} (${referral.rewardsThisYear}/12)`}
-                />
-              </div>
-              {referral.invites.length > 0 && (
-                <ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
-                  {referral.invites.map((inv, i) => (
-                    <li key={i} className="flex justify-between gap-2">
-                      <AccountLink email={inv.email} className="text-foreground" />
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {date(inv.registeredAt)} · {t(`invita_status_${inv.status}` as TranslationKey) || inv.status}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-        </Section>
-      </div>
-
-      {/* Importaciones, manual y chat de soporte de esta cuenta (docs/214). */}
-      <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
-        <Section icon={Upload} title={`${t("admin_insights_section_imports")} (${imports.length})`}>
-          {imports.length ? (
-            <ul className="max-h-60 space-y-1.5 overflow-y-auto text-sm">
-              {imports.map((im, i) => (
-                <li key={i} className="flex flex-wrap justify-between gap-2">
-                  <span className="min-w-0 text-foreground">
-                    <strong>{KIND_KEY[im.kind] ? t(KIND_KEY[im.kind]) : im.kind}</strong>
-                    {" · "}
-                    {im.source === "pegado" ? t("admin_usage_source_pegado") : im.source === "ticket" ? t("admin_usage_source_ticket") : im.file || "—"}
-                    {im.format ? ` · ${t(`admin_usage_format_${im.format}` as TranslationKey)}` : ""}
-                    {im.count !== null ? ` · ${t("admin_insights_import_rows").replace("{n}", String(im.count))}` : ""}
-                    {im.updated ? ` · ${t("admin_usage_updated_prices").replace("{n}", String(im.updated))}` : ""}
-                    {im.newIngredients ? ` · ${t("admin_usage_new_ingredients").replace("{n}", String(im.newIngredients))}` : ""}
-                  </span>
-                  <span className="text-xs text-muted-foreground">{dateTime(im.at)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
-          )}
-        </Section>
-
-        {/* Qué PDF descargó y cuándo (docs/291). */}
-        <Section icon={FileDown} title={`${t("admin_block_pdf")} (${pdfDownloads.length})`}>
-          {pdfDownloads.length ? (
-            <ul className="max-h-60 space-y-1.5 overflow-y-auto text-sm" data-account-pdfs>
-              {pdfDownloads.map((d, i) => {
-                const kindKey = `admin_biz_pdf_${d.kind}`;
-                const kind = t(kindKey as TranslationKey) !== kindKey ? t(kindKey as TranslationKey) : t("admin_biz_pdf_other");
-                const variantKey = `admin_pdf_variant_${d.variant}`;
-                const variant = d.variant ? (t(variantKey as TranslationKey) !== variantKey ? t(variantKey as TranslationKey) : d.variant) : null;
-                return (
-                  <li key={i} className="flex justify-between gap-2">
-                    <span className="min-w-0 text-foreground">
-                      {kind}
-                      {d.name ? <span> · {d.name}</span> : null}
-                      {variant ? <span className="text-muted-foreground"> ({variant})</span> : null}
-                      <span className="block text-xs text-muted-foreground">{d.businessName ?? t("admin_pdf_main_space")}</span>
-                    </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">{dateTime(d.at)}</span>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
-          )}
-        </Section>
-
-        <Section icon={BookOpen} title={`${t("admin_insights_section_manual")} (${manualDownloads.length})`}>
-          {manualDownloads.length ? (
-            <ul className="max-h-60 space-y-1 overflow-y-auto text-sm">
-              {manualDownloads.map((d, i) => (
-                <li key={i} className="flex justify-between gap-2">
-                  <span className="text-foreground">{(d.language || "—").toUpperCase()}</span>
-                  <span className="text-xs text-muted-foreground">{dateTime(d.at)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
-          )}
-        </Section>
-      </div>
-
       <Section icon={LifeBuoy} title={`${t("admin_insights_section_support")} (${support.length})`}>
         {support.length ? (
           <div className="space-y-3">
@@ -1099,7 +1111,6 @@ export function AccountInsightsPanel({ userId }: { userId: string }) {
           <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
         )}
       </Section>
-
       {surveyAnswers.length > 0 && (
         <Section icon={MessageSquare} title={t("admin_insights_section_survey")}>
           <ul className="space-y-1.5 text-sm">
