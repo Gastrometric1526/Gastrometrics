@@ -3,7 +3,8 @@
 import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Armchair, ShoppingBag, UploadCloud, Receipt as ReceiptIcon, ClipboardList } from "lucide-react"
+import { ArrowLeft, Armchair, UploadCloud, Receipt as ReceiptIcon, ClipboardList } from "lucide-react"
+import { GmSales } from "@/components/icons/gm-icons" // ícono propio del módulo (docs/307)
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -116,7 +117,7 @@ function VentasPageInner() {
                 </Link>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-chart-3/10 rounded-lg flex items-center justify-center">
-                    <ShoppingBag className="h-6 w-6 text-chart-3" />
+                    <GmSales className="h-6 w-6 text-chart-3" />
                   </div>
                   <div>
                     <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("nav_ventas")}</h1>

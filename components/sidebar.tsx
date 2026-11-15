@@ -23,28 +23,14 @@ import {
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
 import {
-  ChefHat,
-  Package,
-  FileText,
-  BarChart3,
-  ShoppingCart,
-  ShoppingBag,
   Menu,
   X,
-  Home,
   Settings,
   LogOut,
-  Building2,
   ChevronLeft,
   ChevronRight,
-  UtensilsCrossed,
-  ListChecks,
   HelpCircle,
-  Boxes,
   Sparkles,
-  Gift,
-  Users,
-  Armchair,
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
@@ -62,6 +48,8 @@ import {
 } from "@/lib/plan-access"
 import type { FeatureKey } from "@/lib/plans"
 import { Lock } from "lucide-react"
+// Íconos propios de cada módulo (docs/307): no se usan íconos de stock para los módulos.
+import { GmBusinesses, GmDashboard, GmIngredients, GmInventory, GmInvite, GmMenus, GmMep, GmPos, GmPurchase, GmRecipes, GmReports, GmSales, GmTeam, GmTechSheet } from "@/components/icons/gm-icons"
 import { useModuleReveal } from "@/lib/module-reveal"
 import { PlanCountdownChip, PlanCountdownDot } from "@/components/plan-countdown-chip"
 import { ModuleUnlockDialog } from "@/components/module-unlock-dialog"
@@ -115,11 +103,11 @@ export function useNavigationItems() {
   }
 
   const items = [
-    { title: t("nav_dashboard"), href: "/dashboard", icon: Home, description: t("nav_dashboard_desc"), locked: false, feature: null as FeatureKey | null },
-    { title: t("nav_ficha_tecnica"), href: "/ficha-tecnica", icon: ChefHat, description: t("nav_ficha_tecnica_desc"), locked: false, feature: null as FeatureKey | null },
-    { title: t("nav_mis_recetas"), href: "/mis-recetas", icon: FileText, description: t("nav_mis_recetas_desc"), locked: false, feature: null as FeatureKey | null },
-    { title: t("nav_ingredientes"), href: "/ingredientes", icon: Package, description: t("nav_ingredientes_desc"), locked: false, feature: null as FeatureKey | null },
-    { title: t("nav_inventario"), href: "/inventario", icon: Boxes, description: t("nav_inventario_desc"), locked: lockedByHref["/inventario"].locked, feature: lockedByHref["/inventario"].feature as FeatureKey | null },
+    { title: t("nav_dashboard"), href: "/dashboard", icon: GmDashboard, description: t("nav_dashboard_desc"), locked: false, feature: null as FeatureKey | null },
+    { title: t("nav_ficha_tecnica"), href: "/ficha-tecnica", icon: GmTechSheet, description: t("nav_ficha_tecnica_desc"), locked: false, feature: null as FeatureKey | null },
+    { title: t("nav_mis_recetas"), href: "/mis-recetas", icon: GmRecipes, description: t("nav_mis_recetas_desc"), locked: false, feature: null as FeatureKey | null },
+    { title: t("nav_ingredientes"), href: "/ingredientes", icon: GmIngredients, description: t("nav_ingredientes_desc"), locked: false, feature: null as FeatureKey | null },
+    { title: t("nav_inventario"), href: "/inventario", icon: GmInventory, description: t("nav_inventario_desc"), locked: lockedByHref["/inventario"].locked, feature: lockedByHref["/inventario"].feature as FeatureKey | null },
   ]
 
   // Equipo va justo después de Inventario. Desde docs/133 lo desbloquea también Sous
@@ -129,20 +117,20 @@ export function useNavigationItems() {
   items.push({
     title: t("nav_equipo"),
     href: "/equipo",
-    icon: Users,
+    icon: GmTeam,
     description: t("nav_equipo_desc"),
     locked: canAccessTeam === false,
     feature: "team" as FeatureKey | null,
   })
 
   items.push(
-    { title: t("nav_menus"), href: "/menus", icon: UtensilsCrossed, description: t("nav_menus_desc"), locked: lockedByHref["/menus"].locked, feature: lockedByHref["/menus"].feature as FeatureKey | null },
+    { title: t("nav_menus"), href: "/menus", icon: GmMenus, description: t("nav_menus_desc"), locked: lockedByHref["/menus"].locked, feature: lockedByHref["/menus"].feature as FeatureKey | null },
     // MEP — mise en place de cada menú (docs/202): mismo permiso y plan que Menús.
-    { title: t("nav_mep"), href: "/mep", icon: ListChecks, description: t("nav_mep_desc"), locked: lockedByHref["/menus"].locked, feature: lockedByHref["/menus"].feature as FeatureKey | null },
+    { title: t("nav_mep"), href: "/mep", icon: GmMep, description: t("nav_mep_desc"), locked: lockedByHref["/menus"].locked, feature: lockedByHref["/menus"].feature as FeatureKey | null },
     {
       title: t("nav_ordenes_compra"),
       href: "/menu-y-compras",
-      icon: ShoppingCart,
+      icon: GmPurchase,
       description: t("nav_ordenes_compra_desc"),
       locked: lockedByHref["/menu-y-compras"].locked,
       feature: lockedByHref["/menu-y-compras"].feature as FeatureKey | null,
@@ -150,7 +138,7 @@ export function useNavigationItems() {
     {
       title: t("nav_salon"),
       href: "/salon",
-      icon: Armchair,
+      icon: GmPos,
       description: t("nav_salon_desc"),
       locked: canAccessPos === false,
       feature: "pos" as FeatureKey | null,
@@ -158,16 +146,16 @@ export function useNavigationItems() {
     {
       title: t("nav_ventas"),
       href: "/ventas",
-      icon: ShoppingBag,
+      icon: GmSales,
       description: t("nav_ventas_desc"),
       locked: lockedByHref["/ventas"].locked,
       feature: lockedByHref["/ventas"].feature as FeatureKey | null,
     },
-    { title: t("nav_estadisticas"), href: "/estadisticas", icon: BarChart3, description: t("nav_estadisticas_desc"), locked: lockedByHref["/estadisticas"].locked, feature: lockedByHref["/estadisticas"].feature as FeatureKey | null },
-    { title: t("nav_negocios"), href: "/negocios", icon: Building2, description: t("nav_negocios_desc"), locked: false, feature: null },
+    { title: t("nav_estadisticas"), href: "/estadisticas", icon: GmReports, description: t("nav_estadisticas_desc"), locked: lockedByHref["/estadisticas"].locked, feature: lockedByHref["/estadisticas"].feature as FeatureKey | null },
+    { title: t("nav_negocios"), href: "/negocios", icon: GmBusinesses, description: t("nav_negocios_desc"), locked: false, feature: null },
     // Referidos (docs/179): atajo a su sección en Mi Plan (docs/181); de la cuenta, nunca de un
     // invitado de equipo (se filtra abajo).
-    { title: t("nav_invita"), href: "/mi-plan#invita", icon: Gift, description: t("nav_invita_desc"), locked: false, feature: null },
+    { title: t("nav_invita"), href: "/mi-plan#invita", icon: GmInvite, description: t("nav_invita_desc"), locked: false, feature: null },
   )
 
   // Vista previa de Equipo del dueño, o sesión real de un invitado (ver
@@ -667,7 +655,7 @@ function SidebarInner() {
                   className="flex items-center gap-3 pl-[9px] pr-3 py-2 rounded-r-lg transition-colors duration-150 group relative border-l-[3px] border-transparent text-text-3 hover:text-foreground hover:bg-secondary"
                   onClick={() => setIsMobileOpen(false)}
                 >
-                  <Home className="h-4 w-4 flex-shrink-0 text-text-4 group-hover:text-foreground" />
+                  <GmDashboard className="h-4 w-4 flex-shrink-0 text-text-4 group-hover:text-foreground" />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate text-sm">{t("sidebar_dashboard_main_title")}</p>
                     <p className="text-xs text-text-4 truncate hidden sm:block">{t("sidebar_dashboard_main_subtitle")}</p>
@@ -699,7 +687,7 @@ function SidebarInner() {
                         )}
                         onClick={() => setIsMobileOpen(false)}
                       >
-                        <Building2
+                        <GmBusinesses
                           className={cn(
                             "h-4 w-4 flex-shrink-0",
                             isBusinessActive ? "text-primary" : "text-text-4 group-hover:text-foreground",

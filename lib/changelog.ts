@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Historial con el margen de Finanzas, PAX en peso e íconos propios (docs/307).
+    version: "2026-11-15d",
+    tutorialHref: tourHref("estadisticas"),
+    content: {
+      es: { title: "Historial de ventas con el mismo margen que Finanzas, e íconos propios", items: ["El historial de ventas por día, semana, mes o año (y su PDF) calcula el margen igual que Finanzas: sobre la venta sin ISV y solo con los platos que tienen receta. Si hay ventas sin receta, te dice qué parte son.", "Con un rendimiento en kg, L u otra unidad, el campo de PAX de la Ficha se llama «Nuevo rendimiento».", "GastroMetrics tiene íconos propios en el menú, la barra del celular y los encabezados: una campana, un gorro, un libro de recetas, un frasco, una mesa con sus sillas…"] },
+      en: { title: "Sales history with the same margin as Finance, and our own icons", items: ["The sales history by day, week, month or year (and its PDF) calculates margin like Finance: on sales without tax and only with dishes that have a recipe. If there are sales without a recipe, it tells you how much they are.", "With a yield in kg, L or another unit, the Recipe Sheet's PAX field is called “New yield”.", "GastroMetrics has its own icons in the menu, the phone bar and the headers: a cloche, a toque, a recipe book, a jar, a table with its chairs…"] },
+      da: { title: "Salgshistorik med samme avance som Økonomi, og egne ikoner", items: ["Salgshistorikken pr. dag, uge, måned eller år (og dens PDF) beregner avancen som Økonomi: på salg uden moms og kun med retter, der har en opskrift. Er der salg uden opskrift, viser den, hvor stor en del det er.", "Med udbytte i kg, L eller en anden enhed hedder PAX-feltet i opskriftsarket »Nyt udbytte«.", "GastroMetrics har egne ikoner i menuen, mobilbjælken og overskrifterne: en cloche, en kokkehue, en opskriftsbog, en krukke, et bord med stole…"] },
+      fr: { title: "Historique des ventes avec la même marge que Finances, et nos propres icônes", items: ["L'historique des ventes par jour, semaine, mois ou année (et son PDF) calcule la marge comme Finances : sur les ventes hors taxe et uniquement avec les plats qui ont une recette. S'il y a des ventes sans recette, il indique leur part.", "Avec un rendement en kg, L ou une autre unité, le champ PAX de la fiche s'appelle « Nouveau rendement ».", "GastroMetrics a ses propres icônes dans le menu, la barre mobile et les en-têtes : une cloche, une toque, un livre de recettes, un bocal, une table et ses chaises…"] },
+      pt: { title: "Histórico de vendas com a mesma margem de Finanças, e ícones próprios", items: ["O histórico de vendas por dia, semana, mês ou ano (e seu PDF) calcula a margem como Finanças: sobre a venda sem imposto e só com os pratos que têm receita. Se houver vendas sem receita, mostra quanto elas são.", "Com rendimento em kg, L ou outra unidade, o campo de PAX da ficha se chama «Novo rendimento».", "O GastroMetrics tem ícones próprios no menu, na barra do celular e nos cabeçalhos: uma cloche, um chapéu de chef, um livro de receitas, um pote, uma mesa com cadeiras…"] },
+      zh: { title: "销售历史与财务的毛利口径一致，并使用自有图标", items: ["按日、周、月或年的销售历史（及其 PDF）与财务使用相同的毛利计算方式：基于不含税销售额，且只计算有配方的菜品。如有无配方的销售，会显示其占比。", "产量单位为 kg、L 或其他单位时，配方表中的人数字段称为“新产量”。", "GastroMetrics 在菜单、手机底栏和标题中使用自有图标：餐盖、厨师帽、食谱书、罐子、带椅子的餐桌……"] },
+    },
+  },
+  {
     // Facturas: estado de cobro y anulación (docs/305).
     version: "2026-11-15c",
     tutorialHref: tourHref("ventas"),

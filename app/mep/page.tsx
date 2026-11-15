@@ -23,12 +23,12 @@ import {
   ChevronsUpDown,
   ExternalLink,
   Layers,
-  ListChecks,
   RotateCcw,
   ShoppingCart,
   Users,
   UtensilsCrossed,
 } from "lucide-react"
+import { GmMep } from "@/components/icons/gm-icons" // ícono propio del módulo (docs/307)
 import { Sidebar } from "@/components/sidebar"
 import { AuthGuard } from "@/components/auth-guard"
 import { Button } from "@/components/ui/button"
@@ -408,7 +408,7 @@ function MepContent() {
               </Link>
               <div className="flex items-center gap-3 min-w-0">
                 <div className="hidden sm:flex w-12 h-12 bg-primary/10 rounded-lg items-center justify-center shrink-0">
-                  <ListChecks className="h-6 w-6 text-primary" />
+                  <GmMep className="h-6 w-6 text-primary" />
                 </div>
                 <div className="min-w-0">
                   <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground leading-tight">{t("mep_page_title")}</h1>

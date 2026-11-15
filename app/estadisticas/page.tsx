@@ -17,6 +17,7 @@ import { EstadisticasProveedoresTab } from "@/components/estadisticas-proveedore
 import { EstadisticasMermaTab } from "@/components/estadisticas-merma-tab"
 import type { PurchaseOrder } from "@/types/purchase-order"
 import { Truck, Scale } from "lucide-react"
+import { GmReports } from "@/components/icons/gm-icons" // ícono propio del módulo (docs/307)
 import { useFeatureAccess } from "@/lib/plan-access"
 import { FeatureLockedPage, FeatureLockedInline } from "@/components/feature-locked"
 import { AdminRestrictedPage, AdminRestrictedInline } from "@/components/admin-restricted"
@@ -450,7 +451,7 @@ function EstadisticasContent() {
                 </Link>
                 <div className="flex items-center gap-3" data-tour="stats-header">
                   <div className="w-12 h-12 bg-chart-3/10 rounded-lg flex items-center justify-center">
-                    <BarChart3 className="h-6 w-6 text-chart-3" />
+                    <GmReports className="h-6 w-6 text-chart-3" />
                   </div>
                   <div>
                     <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("estadisticas_title")}</h1>

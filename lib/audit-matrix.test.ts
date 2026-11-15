@@ -26,12 +26,16 @@ import {
   computeVariance,
   buildSimplifiedPnL,
   classifyMenuEngineering,
+  menuEngineeringThresholds,
+  aggregateSalesByPeriod,
+  periodsTotals,
 } from "./sales-analytics"
 import { computeWeightedAverageCost } from "./utils/weighted-average-cost"
 import { convertBetweenUnits } from "./utils/calculations"
 import { crossesMassVolume } from "./unit-change"
 import { paxMultiplierFor, roundUpToStep } from "./pax-scaling"
 import { roundSalePrice } from "./price-rounding"
+import { fallbackYield } from "./yield-weight"
 import { stockStatus, effectiveStockStatus } from "./inventory-status"
 import type { Recipe } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
@@ -135,6 +139,16 @@ describe("B. Ficha Técnica y precio", () => {
       expect(down.newMargin).toBeGreaterThan(down.oldMargin)
     }
   })
+  it("B-12 · Rendimiento vacío: 500 g + 1 kg = 1 500 g (no 501); en kg = 1.5; solo piezas: se suman (6 huevos = 6)", () => {
+    const lines = [
+      { ingredientId: "a", quantity: 500, unit: "gramos" },
+      { ingredientId: "b", quantity: 1, unit: "kilogramos" },
+    ]
+    expect(fallbackYield(lines, "g")).toBe(1500)
+    expect(fallbackYield(lines, "kg")).toBe(1.5)
+    expect(fallbackYield([{ ingredientId: "h", quantity: 6, unit: "unidad" }], "un")).toBe(6)
+    expect(fallbackYield(lines, "g", 2)).toBe(3000) // con PAX × 2
+  })
   it("B-11 · PAX: 10 personas sobre rendimiento 4 = × 2.5; redondeo hacia arriba sin error de coma (0.1 × 3 = 0.3)", () => {
     expect(paxMultiplierFor(10, 4)).toBe(2.5)
     expect(roundUpToStep(0.1 * 3, 0.1)).toBe(0.3)
@@ -220,6 +234,25 @@ describe("D. Ventas", () => {
     expect(r.a).toBe("vaca")
     expect(r.b).toBe("puzzle")
   })
+  it("D-07 · El margen de referencia es PONDERADO por unidades, no la media simple: A 100 u × 20, B 10 u × 100, C 50 u × 40 → 31.25 (simple daría 53.33) y C es «estrella», no «vaca»", () => {
+    const d = (id: string, qty: number, unitMargin: number) => ({
+      recipeId: id, name: id, quantitySold: qty, revenue: qty * (unitMargin + 10), theoreticalCost: qty * 10, contributionMargin: qty * unitMargin,
+      contributionMarginPercent: 0, unitPrice: unitMargin + 10, unitCost: 10, linked: true,
+    })
+    const dishes = [d("A", 100, 20), d("B", 10, 100), d("C", 50, 40)]
+    const th = menuEngineeringThresholds(dishes)
+    expect(th.averageUnitMargin).toBeCloseTo(5000 / 160, 9) // (2 000 + 1 000 + 2 000) ÷ 160
+    expect(th.popularityThreshold).toBeCloseTo(0.7 * (160 / 3), 9) // 37.33
+    const r = Object.fromEntries(classifyMenuEngineering(dishes).map((x) => [x.name, x.classification]))
+    expect(r).toEqual({ A: "vaca", B: "puzzle", C: "estrella" })
+  })
+  it("D-08 · El historial por período usa la misma regla que Finanzas: 75.43 %, no (252 − 50) ÷ 252 = 80.16 %", () => {
+    const totals = periodsTotals(aggregateSalesByPeriod([imp], [pizza], [], "month"))
+    expect(totals.revenue).toBe(252)
+    expect(totals.marginPercent).toBeCloseTo(linkedContribution(dishes).contributionMarginPercent, 9)
+    expect(totals.marginPercent).toBeCloseTo(75.427, 3)
+    expect(totals.unlinkedPercent).toBeCloseTo(salesCoverage(dishes).unlinkedPercent, 9)
+  })
 })
 
 describe("E. Costo real, Prime Cost y P&L", () => {
@@ -249,6 +282,23 @@ describe("E. Costo real, Prime Cost y P&L", () => {
   })
   it("E-04 · Prime cost = (7 000 + 6 000) ÷ 25 000 = 52 %", () => {
     expect(computePrimeCost(7000, 6000, 25000)).toEqual({ primeCost: 13000, primeCostPercent: 52 })
+  })
+  it("E-06 · Ejemplo del auditor: 10 000 + 2 000 recibidas − 8 000 = 4 000; la pendiente de 5 000 no entra", () => {
+    const r = computeCOGS({
+      snapshots: [snap("2026-10-01", 10000), snap("2026-10-31", 8000)],
+      purchaseOrders: [po("p", 5000, "pending", "2026-10-05"), po("r", 2000, "received", "2026-10-06", "2026-10-07T10:00:00")],
+      periodStart: "2026-10-01", periodEnd: "2026-10-31", currentInventoryValue: 0,
+    })
+    expect(r.cogs).toBe(4000)
+  })
+  it("E-07 · Pedida en septiembre y recibida el 3 de octubre: cuenta en octubre, no en septiembre", () => {
+    const order = po("x", 900, "received", "2026-09-28", "2026-10-03T08:00:00")
+    const flat = (from: string, to: string) => [snap(from, 1000), snap(to, 1000)]
+    expect(computeCOGS({ snapshots: flat("2026-09-01", "2026-09-30"), purchaseOrders: [order], periodStart: "2026-09-01", periodEnd: "2026-09-30", currentInventoryValue: 0 }).purchasesValue).toBe(0)
+    expect(computeCOGS({ snapshots: flat("2026-10-01", "2026-10-31"), purchaseOrders: [order], periodStart: "2026-10-01", periodEnd: "2026-10-31", currentInventoryValue: 0 }).purchasesValue).toBe(900)
+  })
+  it("E-08 · El COGS nunca es negativo: 1 000 + 0 − 3 000 → 0", () => {
+    expect(computeCOGS({ snapshots: [snap("2026-10-01", 1000), snap("2026-10-31", 3000)], purchaseOrders: [], periodStart: "2026-10-01", periodEnd: "2026-10-31", currentInventoryValue: 0 }).cogs).toBe(0)
   })
   it("E-05 · P&L de un mes completo: 25 000 − 7 000 − 6 000 − 3 000 − 1 000 = 8 000 (32 %)", () => {
     const pnl = buildSimplifiedPnL({ revenue: 25000, cogs: 7000, expenses: { laborCosts: 6000, rent: 3000, utilities: 1000 } as never, periodStart: "2026-10-01", periodEnd: "2026-10-30" })

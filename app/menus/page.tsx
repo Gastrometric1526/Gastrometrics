@@ -15,13 +15,13 @@ import {
   Trash,
   UtensilsCrossed,
   Clock,
-  ChefHat,
   Eye,
   Calendar,
   ListChecks,
   ShoppingCart,
   Info,
 } from "lucide-react"
+import { GmMenus } from "@/components/icons/gm-icons" // ícono propio del módulo (docs/307)
 import { DetailPanel, openOnActivate } from "@/components/detail-panel"
 import { ActionHint } from "@/components/action-hint"
 import { Input } from "@/components/ui/input"
@@ -323,7 +323,7 @@ export default function MenusPage() {
                   </Link>
                   <div className="flex items-center gap-3" data-tour="menus-header">
                     <div className="w-12 h-12 bg-chart-6/10 rounded-lg flex items-center justify-center">
-                      <ChefHat className="h-6 w-6 text-chart-6" />
+                      <GmMenus className="h-6 w-6 text-chart-6" />
                     </div>
                     <div>
                       <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("menus_page_title")}</h1>

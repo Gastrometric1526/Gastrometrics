@@ -190,6 +190,8 @@ export interface PdfLabels {
   descuento: string
   /** Factura anulada (docs/305): se marca en el título del PDF. */
   anulada: string
+  /** Historial de ventas: parte de la venta sin receta (docs/307). */
+  ventaSinReceta: string
   propina: string
   mesa: string
   mesero: string
@@ -385,6 +387,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     granAnio: "Año",
     descuento: "Descuento",
     anulada: "Anulada",
+    ventaSinReceta: "{percent} % de la venta no tiene receta vinculada: el margen se calcula solo con los platos vinculados.",
     propina: "Propina",
     mesa: "Mesa",
     mesero: "Mesero",
@@ -578,6 +581,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     granAnio: "Year",
     descuento: "Discount",
     anulada: "Void",
+    ventaSinReceta: "{percent}% of sales have no linked recipe: margin is calculated only with linked dishes.",
     propina: "Tip",
     mesa: "Table",
     mesero: "Server",
@@ -771,6 +775,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     granAnio: "År",
     descuento: "Rabat",
     anulada: "Annulleret",
+    ventaSinReceta: "{percent} % af salget har ingen tilknyttet opskrift: avancen beregnes kun med tilknyttede retter.",
     propina: "Drikkepenge",
     mesa: "Bord",
     mesero: "Tjener",
@@ -964,6 +969,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     granAnio: "Année",
     descuento: "Remise",
     anulada: "Annulée",
+    ventaSinReceta: "{percent} % des ventes n'ont pas de recette liée : la marge n'est calculée qu'avec les plats liés.",
     propina: "Pourboire",
     mesa: "Table",
     mesero: "Serveur",
@@ -1157,6 +1163,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     granAnio: "Ano",
     descuento: "Desconto",
     anulada: "Anulada",
+    ventaSinReceta: "{percent}% da venda não tem receita vinculada: a margem é calculada só com os pratos vinculados.",
     propina: "Gorjeta",
     mesa: "Mesa",
     mesero: "Garçom",
@@ -1350,6 +1357,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     granAnio: "年",
     descuento: "折扣",
     anulada: "已作废",
+    ventaSinReceta: "{percent}% 的销售没有关联配方：毛利只按已关联的菜品计算。",
     propina: "小费",
     mesa: "桌号",
     mesero: "服务员",

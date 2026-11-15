@@ -29,3 +29,23 @@ export function formatYieldWeight(grams: number): string {
   if (!(grams > 0)) return ""
   return grams >= 1000 ? `${(Math.round(grams / 10) / 100).toFixed(2)} kg` : `${Math.round(grams)} g`
 }
+
+/** Gramos (o ml, 1 ml ≈ 1 g) por unidad de rendimiento de la receta. */
+const GRAMS_PER_YIELD_UNIT: Record<string, number> = { g: 1, kg: 1000, ml: 1, L: 1000, oz: 28.349523125, lb: 453.59237 }
+
+/**
+ * Rendimiento cuando el campo «Rendimiento» queda vacío (subrecetas), docs/307. Antes era la
+ * suma cruda de las cantidades: 500 g + 1 kg = 501 y el costo unitario salía mal. Ahora se
+ * convierte a gramos y se expresa en la unidad de rendimiento de la receta (kg → ÷ 1 000). Si
+ * ninguna línea tiene peso conocido (solo piezas), se suman las piezas, como antes.
+ */
+export function fallbackYield(
+  lines: { quantity?: number; unit?: string; ingredientId?: string | null }[] | undefined,
+  yieldUnit: string | undefined,
+  multiplier = 1,
+): number {
+  const used = (lines ?? []).filter((l) => l.ingredientId && (l.quantity ?? 0) > 0)
+  const grams = estimateYieldWeightGrams(used, multiplier)
+  if (grams > 0) return grams / (GRAMS_PER_YIELD_UNIT[yieldUnit || "g"] ?? 1)
+  return used.reduce((sum, l) => sum + (l.quantity as number), 0) * multiplier
+}

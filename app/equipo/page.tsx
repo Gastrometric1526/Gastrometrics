@@ -17,6 +17,7 @@ import {
   FileText,
   Info,
 } from "lucide-react"
+import { GmTeam } from "@/components/icons/gm-icons" // ícono propio del módulo (docs/307)
 import { Button } from "@/components/ui/button"
 import { EquipoTour } from "@/components/page-tours"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -446,7 +447,7 @@ function EquipoContent() {
               </Link>
               <div data-tour="equipo-header">
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-2">
-                  <Users className="h-6 w-6 text-primary" />
+                  <GmTeam className="h-6 w-6 text-primary" />
                   {t("equipo_title")}
                 </h1>
                 <p className="text-sm md:text-base text-muted-foreground">

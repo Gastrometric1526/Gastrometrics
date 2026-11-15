@@ -301,6 +301,31 @@ export function aggregateSalesByPeriod(
     .sort((a, b) => (a.periodKey < b.periodKey ? 1 : -1)) // más reciente primero
 }
 
+/**
+ * Totales de varios períodos con la misma regla que Finanzas (docs/307): margen = venta neta
+ * (sin ISV incluido) de lo vinculado − costo teórico, sobre esa venta neta. Antes el historial
+ * restaba el costo a la venta bruta con ISV y con lo sin receta: «Margen 71.5 %» no cuadraba con
+ * el margen de contribución de las tarjetas de arriba.
+ */
+export function periodsTotals(periods: Pick<PeriodSalesSummary, "revenue" | "quantitySold" | "dishes">[]) {
+  const dishes = periods.flatMap((p) => p.dishes)
+  const linked = linkedContribution(dishes)
+  const coverage = salesCoverage(dishes)
+  const revenue = periods.reduce((sum, p) => sum + p.revenue, 0)
+  const quantitySold = periods.reduce((sum, p) => sum + p.quantitySold, 0)
+  return {
+    revenue,
+    quantitySold,
+    theoreticalCost: linked.theoreticalCost,
+    margin: linked.contributionMargin,
+    marginPercent: linked.contributionMarginPercent,
+    unlinkedPercent: coverage.unlinkedPercent,
+    unlinkedNetRevenue: coverage.unlinkedNetRevenue,
+    unlinkedCount: coverage.unlinkedCount,
+    avgTicket: quantitySold > 0 ? revenue / quantitySold : 0,
+  }
+}
+
 export function aggregateSalesByDay(salesImports: SalesImport[], recipes: Recipe[], menus: Menu[] = []): DailySalesSummary[] {
   const byDate = new Map<string, SalesImportLine[]>()
 

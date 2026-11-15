@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { estimateYieldWeightGrams, formatYieldWeight } from "@/lib/yield-weight"
+import { estimateYieldWeightGrams, fallbackYield, formatYieldWeight } from "@/lib/yield-weight"
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
@@ -677,13 +677,9 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       scaleLineQuantity(ing.quantity, ing.unit, paxMultiplier),
     )
 
-    const yieldByWeight =
-      recipe.ingredients.reduce((sum, ing) => {
-        if (ing.quantity > 0 && ing.ingredientId) {
-          return sum + ing.quantity
-        }
-        return sum
-      }, 0) * paxMultiplier
+    // Rendimiento si el campo queda vacío (subrecetas): convertido a la unidad de la receta
+    // (docs/307). Antes era la suma cruda: 500 g + 1 kg = 501.
+    const yieldByWeight = fallbackYield(recipe.ingredients, recipe.yieldUnit, paxMultiplier)
 
     const effectiveYield =
       recipe.yieldAmount && recipe.yieldAmount > 0 ? recipe.yieldAmount * paxMultiplier : yieldByWeight
@@ -1744,7 +1740,8 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
 
               <div className={cn("bg-muted p-4 rounded-lg", isServedDrink && "hidden")} data-tour="ficha-pax">
                 <Label htmlFor="paxModifier" className="font-semibold">
-                  {t("tour_ficha_pax_title")}
+                  {/* Rendimiento en peso o volumen (docs/307): no son personas, es el nuevo rendimiento. */}
+                  {!recipe.yieldUnit || recipe.yieldUnit === "porciones" ? t("tour_ficha_pax_title") : t("ficha_tecnica_pax_label_unit")}
                 </Label>
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                   {isEditMode ? (

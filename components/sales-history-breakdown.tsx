@@ -16,7 +16,7 @@ import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
 import { useFeatureAccess } from "@/lib/plan-access"
 import { hasPdfAccess, usePdfAccess } from "@/lib/plan-access" // PDF por tipo (docs/303)
-import { aggregateSalesByPeriod, type SalesGranularity } from "@/lib/sales-analytics"
+import { aggregateSalesByPeriod, periodsTotals, type SalesGranularity } from "@/lib/sales-analytics"
 import { getBusinessById } from "@/lib/storage/businesses"
 import { downloadSalesHistoryPDF } from "@/lib/pdf/sales-history-pdf-generator"
 import type { SalesImport } from "@/types/sales-import"
@@ -109,19 +109,8 @@ export function SalesHistoryBreakdown({
     [periods, granularity],
   )
 
-  const totals = useMemo(() => {
-    const revenue = periods.reduce((sum, p) => sum + p.revenue, 0)
-    const quantitySold = periods.reduce((sum, p) => sum + p.quantitySold, 0)
-    const theoreticalCost = periods.reduce((sum, p) => sum + p.theoreticalCost, 0)
-    const margin = revenue - theoreticalCost
-    return {
-      revenue,
-      quantitySold,
-      margin,
-      marginPercent: revenue > 0 ? (margin / revenue) * 100 : 0,
-      avgTicket: quantitySold > 0 ? revenue / quantitySold : 0,
-    }
-  }, [periods])
+  // Misma regla que Finanzas (docs/307): margen sobre la venta neta de lo vinculado.
+  const totals = useMemo(() => periodsTotals(periods), [periods])
 
   const rangeLabel = (): string => {
     if (range === "7") return t("sales_history_range_7")
@@ -260,6 +249,11 @@ export function SalesHistoryBreakdown({
                 <p className="text-lg font-bold text-foreground tabular-nums">{totals.marginPercent.toFixed(1)}%</p>
               </div>
             </div>
+            {totals.unlinkedCount > 0 && (
+              <p className="text-xs text-warning" data-testid="sales-history-unlinked">
+                {t("sales_history_unlinked_note").replace("{percent}", totals.unlinkedPercent.toFixed(1))}
+              </p>
+            )}
 
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={chartData} margin={{ left: 0, right: 8, top: 8 }}>

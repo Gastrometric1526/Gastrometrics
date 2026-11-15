@@ -25,7 +25,8 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Armchair, Building2, ChefHat, LayoutGrid, Map as MapIcon, RefreshCw, Rows3, Settings2, ShoppingBag, WifiOff } from "lucide-react"
+import { ArrowLeft, Building2, ChefHat, LayoutGrid, Map as MapIcon, RefreshCw, Rows3, Settings2, ShoppingBag, WifiOff } from "lucide-react"
+import { GmPos } from "@/components/icons/gm-icons" // ícono propio del módulo (docs/307)
 import { TableGrid } from "@/components/pos/table-grid"
 import { ReceiptDialog } from "@/components/pos/receipt-dialog"
 import { realPosOnlyMember } from "@/components/pos/pos-only-redirect"
@@ -625,7 +626,7 @@ function SalonPageInner({ businessId }: { businessId: string }) {
                 )}
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-chart-6/10 rounded-lg flex items-center justify-center">
-                    <Armchair className="h-6 w-6 text-chart-6" />
+                    <GmPos className="h-6 w-6 text-chart-6" />
                   </div>
                   <div>
                     <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("nav_salon")}</h1>
