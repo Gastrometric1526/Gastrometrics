@@ -232,6 +232,8 @@ export function FinanzasCalculationDialog({
                 {formatCurrency(pnl.revenue)} − {formatCurrency(pnl.totalExpenses)} = {formatCurrency(pnl.netProfit)}
                 {" "}({pnl.netProfitPercent.toFixed(2)}%)
               </div>
+              {/* Sin conteos el COGS es una aproximación (docs/307): se dice, como en la tarjeta. */}
+              {!cogsResult.hasFullData && <p className="text-xs text-warning mt-1">{t("finanzas_needs_counts")}</p>}
             </div>
 
             <Separator />

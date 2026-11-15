@@ -790,7 +790,8 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t("finanzas_pnl_cogs")}</span>
-                  <span className="tabular-nums">-{formatCurrency(pnl.cogs)}</span>
+                  {/* Sin conteo inicial y final el COGS no se conoce (docs/307): antes salía 0 y la utilidad, 100 %. */}
+                  <span className="tabular-nums">{realReady ? `-${formatCurrency(pnl.cogs)}` : NOT_READY}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t("finanzas_pnl_labor_cost")}</span>
@@ -819,10 +820,11 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
                 <div className="h-px bg-border my-2" />
                 <div className="flex justify-between font-bold">
                   <span>{t("finanzas_card_net_profit")}</span>
-                  <span className={`tabular-nums ${pnl.netProfit >= 0 ? "text-chart-2" : "text-destructive"}`}>
-                    {formatCurrency(pnl.netProfit)} ({pnl.netProfitPercent.toFixed(1)}%)
+                  <span className={`tabular-nums ${!realReady ? "" : pnl.netProfit >= 0 ? "text-chart-2" : "text-destructive"}`}>
+                    {realReady ? `${formatCurrency(pnl.netProfit)} (${pnl.netProfitPercent.toFixed(1)}%)` : NOT_READY}
                   </span>
                 </div>
+                {!realReady && <p className="text-xs text-muted-foreground mt-1">{t("finanzas_needs_counts")}</p>}
               </CardContent>
             </Card>
 
