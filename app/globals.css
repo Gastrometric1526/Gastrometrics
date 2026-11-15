@@ -138,7 +138,7 @@
 
 [data-theme="ambar-miel"] {
   --primary: 32 95% 44%;
-  --primary-foreground: 60 9.1% 97.8%;
+  --primary-foreground: 32 60% 12%; /* docs/311: antes blanco (contraste ~3) */
 }
 
 /* Agregados a pedido del dueño del proyecto, fuera del set original de docs/36 (ver
@@ -160,7 +160,7 @@
 
 [data-theme="amarillo"] {
   --primary: 45 90% 38%;
-  --primary-foreground: 45 60% 97%;
+  --primary-foreground: 45 60% 12%; /* docs/311: antes blanco (contraste ~3) */
 }
 
 /* Pastel de verdad (claro, no solo "menos saturado" como los demás) — texto oscuro en
@@ -170,11 +170,37 @@
   --primary-foreground: 340 45% 20%;
 }
 
-/* docs/310: el rosa pastel como TEXTO o ÍCONO sobre blanco tenía contraste 1.8 (los íconos de
-   módulo usan text-primary desde docs/309). En modo claro, el texto y los íconos toman un rosa
-   más hondo del mismo tono; los fondos y botones siguen en pastel. En oscuro el pastel ya se lee. */
-html[data-theme="rosa-pastel"]:not(.dark) .text-primary {
-  color: hsl(340 55% 45%);
+/* docs/310 y docs/311: texto e íconos con el color del tema (text-primary) en modo claro.
+   Algunos colores, usados como TEXTO sobre blanco, no llegaban a 4.5 de contraste:
+   Rosa Pastel 1.8, Amarillo 3.1, Ámbar Miel 3.2, Naranja Brasa 3.5, Teal Especia 3.7.
+   Esos temas definen --primary-text, el mismo tono más hondo (≥ 4.6); los botones, fondos,
+   logo y PDF siguen con --primary, así que el color de marca no cambia. En oscuro todos se leen. */
+:root:not(.dark),
+html[data-theme="naranja-brasa"]:not(.dark) {
+  --primary-text: 14 87% 45%;
+}
+html[data-theme="teal-especia"]:not(.dark) {
+  --primary-text: 175 84% 28%;
+}
+html[data-theme="ambar-miel"]:not(.dark) {
+  --primary-text: 32 95% 35%;
+}
+html[data-theme="amarillo"]:not(.dark) {
+  --primary-text: 45 90% 30%;
+}
+html[data-theme="rosa-pastel"]:not(.dark) {
+  --primary-text: 340 55% 45%;
+}
+html[data-theme]:not([data-theme="naranja-brasa"]):not([data-theme="teal-especia"]):not([data-theme="ambar-miel"]):not([data-theme="amarillo"]):not([data-theme="rosa-pastel"]) {
+  --primary-text: var(--primary);
+}
+html:not(.dark) .text-primary {
+  color: hsl(var(--primary-text, var(--primary)));
+}
+/* El sitio público (portada, planes, entrar…) conserva el naranja exacto de la marca: sus
+   textos de color son títulos grandes, que ya pasan el mínimo de 3 para texto grande. */
+html:not(.dark) .gm-landing-root .text-primary {
+  color: hsl(var(--primary));
 }
 
 /* docs/309: Terracota, Oliva y Azul Marino (mismos valores que lib/theme-colors.ts). */

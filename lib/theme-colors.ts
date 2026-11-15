@@ -20,14 +20,14 @@ export const CURATED_THEMES: CuratedTheme[] = [
   { slug: "verde-albahaca", label: "Verde Albahaca", primary: "142 72% 29%", primaryForeground: "355.7 100% 97.3%", logo: "gm-verde-albahaca.png" },
   { slug: "vino-borgona", label: "Vino Borgoña", primary: "345 100% 25%", primaryForeground: "355.7 100% 97.3%", logo: "gm-vino-borgona.png" },
   { slug: "teal-especia", label: "Teal Especia", primary: "175 84% 32%", primaryForeground: "355.7 100% 97.3%", logo: "gm-teal-especia.png" },
-  { slug: "ambar-miel", label: "Ámbar Miel", primary: "32 95% 44%", primaryForeground: "60 9.1% 97.8%", logo: "gm-ambar-miel.png" },
+  { slug: "ambar-miel", label: "Ámbar Miel", primary: "32 95% 44%", primaryForeground: "32 60% 12%", logo: "gm-ambar-miel.png" },
   // Agregados a pedido del dueño del proyecto, fuera del set original de docs/36 —
   // aclarados/oscurecidos lo suficiente para que el texto blanco de --primary-foreground
   // siga siendo legible encima (mismo criterio que ya se usó para Ámbar Miel).
   { slug: "morado", label: "Morado", primary: "271 65% 48%", primaryForeground: "270 60% 97%", logo: "gm-morado.png" },
   { slug: "lavanda", label: "Lavanda", primary: "258 55% 58%", primaryForeground: "258 60% 97%", logo: "gm-lavanda.png" },
   { slug: "rosa", label: "Rosa", primary: "340 75% 48%", primaryForeground: "340 60% 97%", logo: "gm-rosa.png" },
-  { slug: "amarillo", label: "Amarillo", primary: "45 90% 38%", primaryForeground: "45 60% 97%", logo: "gm-amarillo.png" },
+  { slug: "amarillo", label: "Amarillo", primary: "45 90% 38%", primaryForeground: "45 60% 12%", logo: "gm-amarillo.png" },
   // Pastel de verdad (claro, no solo "menos saturado") — con un fondo tan claro, texto
   // blanco no se lee; usa texto oscuro en vez del blanco que usan los demás.
   { slug: "rosa-pastel", label: "Rosa Pastel", primary: "340 70% 82%", primaryForeground: "340 45% 20%", logo: "gm-rosa-pastel.png" },

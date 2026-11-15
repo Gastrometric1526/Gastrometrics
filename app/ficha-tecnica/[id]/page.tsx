@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -36,6 +36,9 @@ export default function FichaTecnicaEditPage({
   const { isLoggedIn, authChecked } = useAuth()
   const { toast } = useToast()
   const { t } = useLanguage()
+  // El efecto de carga lee el idioma ya listo, no el de su primer render (docs/311).
+  const tRef = useRef(t)
+  tRef.current = t
   const canAccessRecipes = useFeatureAccess("recipes")
 
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
@@ -69,18 +72,13 @@ export default function FichaTecnicaEditPage({
         setRecipe(targetRecipe)
         setBusiness(getBusinessById(businessId))
 
-        if (!targetRecipe) {
-          toast({
-            title: t("ficha_tecnica_recipe_not_found_title"),
-            description: t("ficha_tecnica_toast_recipe_not_found_desc"),
-            variant: "destructive",
-          })
-        }
+        // docs/311: sin aviso aparte cuando la receta no existe. La tarjeta de abajo ya lo dice,
+        // traducida; el aviso salía en español porque se armaba antes de cargar el idioma.
       } catch (error) {
         console.error("Error loading data:", error)
         toast({
-          title: t("ficha_tecnica_toast_load_error_title"),
-          description: t("ficha_tecnica_toast_load_error_desc"),
+          title: tRef.current("ficha_tecnica_toast_load_error_title"),
+          description: tRef.current("ficha_tecnica_toast_load_error_desc"),
           variant: "destructive",
         })
       } finally {
