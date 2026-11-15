@@ -8,6 +8,7 @@ import { useFormDraft } from "@/hooks/use-form-draft"
 import { DraftRestoredNotice } from "@/components/draft-restored-notice"
 import { NumericInput } from "@/components/ui/numeric-input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -176,6 +177,11 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
 
   const renameStep = (stepId: string, name: string) => {
     setSteps((prev) => prev.map((s) => (s.id === stepId ? { ...s, name } : s)))
+  }
+
+  // docs/314: «El cliente elige uno» — cada plato del paso pesa 1 ÷ N en precio, costo e inventario.
+  const setStepChoice = (stepId: string, one: boolean) => {
+    setSteps((prev) => prev.map((s) => (s.id === stepId ? { ...s, choice: one ? "one" : "all" } : s)))
   }
 
   const removeStep = (stepId: string) => {
@@ -632,7 +638,18 @@ export function MenuWizard({ open, onOpenChange, menu, businessId, onMenuSaved }
                   if (stepItems.length === 0) return null
                   return (
                     <div key={step.id} className="space-y-1.5">
-                      <h4 className="text-sm font-semibold text-foreground">{getRecipeStepLabel(step.name, language)}</h4>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h4 className="text-sm font-semibold text-foreground">{getRecipeStepLabel(step.name, language)}</h4>
+                        {stepItems.length > 1 && (
+                          <label className="flex items-center gap-2 text-xs text-muted-foreground" data-testid={`mw-step-choice-${step.id}`}>
+                            <Switch checked={step.choice === "one"} onCheckedChange={(v) => setStepChoice(step.id, v)} />
+                            {t("mw_step_choice_one")}
+                          </label>
+                        )}
+                      </div>
+                      {step.choice === "one" && stepItems.length > 1 && (
+                        <p className="text-xs text-muted-foreground">{t("mw_step_choice_one_hint").replace("{count}", String(stepItems.length))}</p>
+                      )}
                       {stepItems.map((item) => {
                         const recipe = recipes.find((r) => r.id === item.recipeId)
                         return (

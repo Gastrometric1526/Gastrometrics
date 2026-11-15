@@ -1,5 +1,7 @@
 "use client"
 
+import { breakEvenFromPeriod } from "@/lib/break-even"
+import { summarizeTickets } from "@/lib/manual-sales"
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -325,6 +327,19 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
 
   const supplierVariance = useMemo(() => computeSupplierPriceVariance(ingredients), [ingredients])
 
+  // Punto de equilibrio del período (docs/314): costos fijos = gastos del negocio prorrateados
+  // (los del P&L, sin el costo de ventas); margen y venta neta solo de los platos con receta.
+  const breakEvenResult = useMemo(() => {
+    const fixedCosts = pnl.totalExpenses - cogsResult.cogs
+    const linkedDishes = dishPerformance.filter((d) => d.linked)
+    const dishesSold = linkedDishes.reduce((sum, d) => sum + d.quantitySold, 0)
+    const guests = summarizeTickets(salesImports, { from: period.start ?? undefined, to: period.end ?? undefined }).guests
+    return {
+      fixedCosts,
+      result: breakEvenFromPeriod({ fixedCosts, linkedNetRevenue: linked.netRevenue, linkedContribution: linked.contributionMargin, dishesSold, guests }),
+    }
+  }, [pnl.totalExpenses, cogsResult.cogs, dishPerformance, salesImports, period, linked])
+
   const topMargin = [...dishPerformance].sort((a, b) => b.contributionMargin - a.contributionMargin).slice(0, 8)
   const bottomMargin = [...dishPerformance].sort((a, b) => a.contributionMargin - b.contributionMargin).slice(0, 8)
 
@@ -492,6 +507,31 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
               </CardContent>
             </Card>
           </div>
+
+          <Card className="border-border bg-card" data-testid="finanzas-break-even">
+            <CardContent className="p-4 space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("finanzas_break_even_title")}</p>
+              {breakEvenResult.result && breakEvenResult.fixedCosts > 0 ? (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div>
+                    <p className="text-2xl font-bold tabular-nums">{formatCurrency(breakEvenResult.result.netRevenue)}</p>
+                    <p className="text-xs text-muted-foreground">{t("finanzas_break_even_revenue")}</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold tabular-nums">{Math.ceil(breakEvenResult.result.units)}</p>
+                    <p className="text-xs text-muted-foreground">{t("finanzas_break_even_dishes")}</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold tabular-nums">{breakEvenResult.result.covers !== null ? Math.ceil(breakEvenResult.result.covers) : "—"}</p>
+                    <p className="text-xs text-muted-foreground">{breakEvenResult.result.covers !== null ? t("finanzas_break_even_covers") : t("finanzas_break_even_no_covers")}</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">{breakEvenResult.fixedCosts > 0 ? t("finanzas_break_even_no_margin") : t("finanzas_break_even_no_expenses")}</p>
+              )}
+              <p className="text-xs text-muted-foreground">{t("finanzas_break_even_hint")}</p>
+            </CardContent>
+          </Card>
 
           {coverage.unlinkedCount > 0 && (
             <div className="flex items-start gap-2 text-sm bg-warning-soft text-warning border border-warning/40 rounded-lg px-4 py-3" data-testid="finanzas-unlinked-warning">

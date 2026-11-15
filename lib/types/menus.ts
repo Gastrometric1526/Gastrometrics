@@ -22,6 +22,10 @@ export type MenuStep = {
   id: string
   name: string // "Entrada", "Plato Fuerte", o texto libre
   order: number
+  // docs/314: "one" = el cliente elige UNO de los platos del paso (sopa o ensalada); cada
+  // plato pesa 1 ÷ N en el precio, el costo y el consumo del menú (lib/menu-shares.ts).
+  // Sin valor o "all" = recibe todos (lo de siempre).
+  choice?: "all" | "one"
 }
 
 export type MenuItem = {

@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Menús con elecciones y punto de equilibrio (docs/314).
+    version: "2026-11-15i",
+    tutorialHref: tourHref("menus"),
+    content: {
+      es: { title: "Menús con elecciones y punto de equilibrio", items: ["Menús: si en un paso el cliente elige uno de los platos (sopa o ensalada), activa «El cliente elige uno». El precio, el costo y el inventario del menú usan el promedio de las opciones; antes sumaban todas.", "Reportes → Finanzas: nuevo «Punto de equilibrio del período», con la venta sin ISV, los platos y los comensales que necesitas para cubrir tus gastos fijos.", "El simulador de escenarios del negocio calcula el equilibrio con la venta sin ISV y descontando la comisión, igual que la Ficha Técnica."] },
+      en: { title: "Menus with choices and break-even", items: ["Menus: if the guest picks one dish in a course (soup or salad), turn on “Guest picks one”. The menu's price, cost and inventory use the average of the options; before, they added them all up.", "Reports → Finance: new “Break-even for the period”, with the sales before tax, the dishes and the guests you need to cover your fixed costs.", "The business scenario simulator calculates break-even with sales before tax and minus the commission, just like the Recipe Sheet."] },
+      da: { title: "Menuer med valg og nulpunkt", items: ["Menuer: hvis gæsten vælger én ret i en servering (suppe eller salat), slå »Gæsten vælger én« til. Menuens pris, omkostning og lager bruger gennemsnittet af valgmulighederne; før blev de lagt sammen.", "Rapporter → Økonomi: nyt »Nulpunkt for perioden« med salg uden moms, retter og gæster, du skal bruge for at dække dine faste omkostninger.", "Virksomhedens scenariesimulator beregner nulpunktet med salg uden moms og fratrukket kommission, ligesom Opskriftsarket."] },
+      fr: { title: "Menus à choix et seuil de rentabilité", items: ["Menus : si le client choisit un plat dans un service (soupe ou salade), activez « Le client en choisit un ». Le prix, le coût et le stock du menu utilisent la moyenne des options ; avant, ils les additionnaient toutes.", "Rapports → Finances : nouveau « Seuil de rentabilité de la période », avec les ventes hors taxe, les plats et les couverts nécessaires pour couvrir vos charges fixes.", "Le simulateur de scénarios de l'établissement calcule le seuil avec les ventes hors taxe et en déduisant la commission, comme la Fiche technique."] },
+      pt: { title: "Menus com escolhas e ponto de equilíbrio", items: ["Menus: se o cliente escolhe um prato em uma etapa (sopa ou salada), ative «O cliente escolhe um». O preço, o custo e o estoque do menu usam a média das opções; antes somavam todas.", "Relatórios → Finanças: novo «Ponto de equilíbrio do período», com a venda sem imposto, os pratos e os clientes que você precisa para cobrir seus custos fixos.", "O simulador de cenários do negócio calcula o equilíbrio com a venda sem imposto e descontando a comissão, igual à Ficha Técnica."] },
+      zh: { title: "可选套餐与盈亏平衡点", items: ["套餐：如果某一道菜由顾客任选其一（汤或沙拉），请开启“顾客任选其一”。套餐的价格、成本和库存按各选项的平均值计算；以前会把所有选项相加。", "报表 → 财务：新增“本期盈亏平衡点”，显示覆盖固定费用所需的不含税销售额、菜品数和客人数。", "商家情景模拟器按不含税销售额并扣除佣金计算盈亏平衡，与技术配方表一致。"] },
+    },
+  },
+  {
     // Unidades de rendimiento, escalados coherentes y valoración del inventario (docs/313).
     version: "2026-11-15h",
     tutorialHref: tourHref("inventario"),

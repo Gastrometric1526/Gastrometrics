@@ -26,6 +26,7 @@
  *   es lo que falta SIN explicación.
  */
 
+import { menuItemShares } from "./menu-shares"
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
 import { lostAfter, sumLosses } from "@/lib/stock-losses"
 import type { Recipe } from "@/types/recipe"
@@ -112,11 +113,11 @@ export function salesConsumption(
 
       if (line.menuId) {
         const menu = menusById.get(line.menuId)
-        for (const item of menu?.items ?? []) {
-          if (!item.enabled) continue
+        // docs/314: en un paso «elige uno» cada opción gasta 1 ÷ N por menú vendido.
+        for (const item of menu ? menuItemShares(menu) : []) {
           const recipe = recipesById.get(item.recipeId)
           if (!recipe) continue
-          accumulateRecipeConsumption(recipe, line.quantity / recipeBaseYield(recipe), recipesById, ingredientsById, acc, {
+          accumulateRecipeConsumption(recipe, (line.quantity * item.share) / recipeBaseYield(recipe), recipesById, ingredientsById, acc, {
             grossUpMerma: true,
           })
         }
@@ -145,9 +146,9 @@ export function salesConsumption(
         const recipe = v.recipeId ? recipesById.get(v.recipeId) : undefined
         if (recipe) accumulateRecipeConsumption(recipe, v.quantity / recipeBaseYield(recipe), recipesById, ingredientsById, acc, { grossUpMerma: true })
         const menu = v.menuId ? menusById.get(v.menuId) : undefined
-        for (const item of menu?.items ?? []) {
-          const r = item.enabled ? recipesById.get(item.recipeId) : undefined
-          if (r) accumulateRecipeConsumption(r, v.quantity / recipeBaseYield(r), recipesById, ingredientsById, acc, { grossUpMerma: true })
+        for (const item of menu ? menuItemShares(menu) : []) {
+          const r = recipesById.get(item.recipeId)
+          if (r) accumulateRecipeConsumption(r, (v.quantity * item.share) / recipeBaseYield(r), recipesById, ingredientsById, acc, { grossUpMerma: true })
         }
         for (const e of v.extras ?? []) {
           const r = e.recipeId ? recipesById.get(e.recipeId) : undefined

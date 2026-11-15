@@ -4,6 +4,8 @@ import { getMenus } from "@/lib/menus"
 import { getRecipes } from "@/lib/storage/recipes"
 import { getBusinessById } from "@/lib/storage/businesses"
 import { calculateTotalMonthlyExpenses } from "@/types/business"
+import { breakEven } from "@/lib/break-even"
+import { priceBreakdown, unitMarginAmount } from "@/lib/recipe-pricing"
 
 // Recipe data interface for analytics
 interface RecipeAnalyticsData {
@@ -346,10 +348,15 @@ export function calculateScenario(businessId: string, menuId: string, params: Sc
     })
 
     // Prepare arrays for calculations
-    const itemsData = enabledItems.map((item) => ({
-      price: getEffectivePrice(item, recipesMap),
-      cost: recipesMap[item.recipeId].cost,
-    }))
+    const itemsData = enabledItems.map((item) => {
+      const price = getEffectivePrice(item, recipesMap)
+      const cost = recipesMap[item.recipeId].cost
+      const recipe = recipes.find((r) => r.id === item.recipeId)
+      // docs/314: venta neta (sin ISV) y margen de contribución como la Ficha Técnica
+      // (unitMarginAmount: neto − comisión − costo). Antes: precio con ISV − costo.
+      const breakdown = recipe ? priceBreakdown(recipe, price, cost) : { cost, isv: 0, commission: 0, margin: price - cost }
+      return { price, cost, netPrice: price - breakdown.isv, margin: recipe ? unitMarginAmount(recipe, price, cost) : price - cost }
+    })
 
     const mixArray = enabledItems.map((item) => mix[item.recipeId] || 0)
 
@@ -357,7 +364,12 @@ export function calculateScenario(businessId: string, menuId: string, params: Sc
     const TP = computeTP(itemsData, mixArray)
     const CVp = computeCVp(itemsData, mixArray)
     const MC = TP - CVp
-    const { PE_plates, PE_revenue } = computePE(CF, TP, CVp)
+    // docs/314: equilibrio con el margen de contribución real (lib/break-even.ts).
+    const mixedMargin = itemsData.reduce((sum, it, i) => sum + (mixArray[i] || 0) * it.margin, 0)
+    const mixedNetPrice = itemsData.reduce((sum, it, i) => sum + (mixArray[i] || 0) * it.netPrice, 0)
+    const be = breakEven({ fixedCosts: CF, contributionPerUnit: mixedMargin, netPricePerUnit: mixedNetPrice })
+    const PE_plates = be ? be.units : Number.POSITIVE_INFINITY
+    const PE_revenue = be ? be.netRevenue : Number.POSITIVE_INFINITY
     const PVm_est = estimateCapacityPlates(params.capacity)
 
     // Check for overrides

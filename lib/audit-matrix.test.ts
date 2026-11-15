@@ -43,6 +43,9 @@ import type { Ingredient } from "@/types/ingredient"
 import type { SalesImport } from "@/types/sales-import"
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
 import { valueInventory, snapshotValueBy } from "./inventory-valuation"
+import { menuItemShares, menuCostRange } from "./menu-shares"
+import { breakEven, breakEvenFromPeriod } from "./break-even"
+import type { Menu } from "@/lib/types/menus"
 import type { PurchaseOrder } from "@/types/purchase-order"
 
 // ---------- Negocio de ejemplo ----------
@@ -381,5 +384,51 @@ describe("F. Valoración del inventario", () => {
     const old = { id: "x", date: "2026-10-01", type: "final", modifiedItems: 0, totalValue: 0, items: [{ id: "x", name: "x", category: "", quantity: 500, unit: "gramos", price: 50, netContent: 1000, totalPrice: 0 }] } as unknown as InventorySnapshot
     expect(snapshotValueBy(old, "weighted_average")).toBeCloseTo(25, 9)
     expect(snapshotValueBy(old, "replacement")).toBeCloseTo(25, 9)
+  })
+})
+
+// ── docs/314: escenarios administrativos (pedido del dueño) ──
+describe("G. Menús con elecciones y punto de equilibrio", () => {
+  const menu = {
+    items: [
+      { id: "i1", recipeId: "sopa", stepId: "entrada", enabled: true, priceOverride: 4 },
+      { id: "i2", recipeId: "ensalada", stepId: "entrada", enabled: true, priceOverride: 6 },
+      { id: "i3", recipeId: "pollo", stepId: "fuerte", enabled: true, priceOverride: 10 },
+    ],
+    steps: [
+      { id: "entrada", name: "Entrada", order: 0, choice: "one" },
+      { id: "fuerte", name: "Plato fuerte", order: 1 },
+    ],
+  } as unknown as Menu
+  const costs: Record<string, number> = { sopa: 1, ensalada: 3, pollo: 4 }
+  it("G-01 · «Elige uno»: sopa (1) o ensalada (3) + pollo (4) cuesta 2 + 4 = 6 (antes 8); precio (4 + 6) ÷ 2 + 10 = 15 (antes 20)", () => {
+    const shares = menuItemShares(menu)
+    expect(shares.map((s) => s.share)).toEqual([0.5, 0.5, 1])
+    const cost = shares.reduce((sum, s) => sum + costs[s.recipeId] * s.share, 0)
+    const price = shares.reduce((sum, s) => sum + (s.priceOverride ?? 0) * s.share, 0)
+    expect(cost).toBe(6)
+    expect(price).toBe(15)
+    expect(menuCostRange(menu, (id) => costs[id])).toEqual({ min: 5, max: 7 })
+  })
+  it("G-02 · Sin elección (lo de siempre): cada plato cuenta entero", () => {
+    const todos = { ...menu, steps: menu.steps.map((s) => ({ ...s, choice: undefined })) } as unknown as Menu
+    expect(menuItemShares(todos).map((s) => s.share)).toEqual([1, 1, 1])
+  })
+  it("G-03 · Equilibrio: gastos fijos 3 000; plato neto 12.5, margen 7.5 → 400 platos, venta neta 5 000; 2 platos por comensal → 200 comensales", () => {
+    const r = breakEven({ fixedCosts: 3000, contributionPerUnit: 7.5, netPricePerUnit: 12.5, unitsPerCover: 2 })
+    expect(r?.units).toBeCloseTo(400, 9)
+    expect(r?.netRevenue).toBeCloseTo(5000, 9)
+    expect(r?.covers).toBeCloseTo(200, 9)
+    expect(r?.contributionRatio).toBeCloseTo(0.6, 12)
+  })
+  it("G-04 · Margen 0 o negativo: no hay equilibrio (null, nunca un número)", () => {
+    expect(breakEven({ fixedCosts: 3000, contributionPerUnit: 0, netPricePerUnit: 10 })).toBeNull()
+    expect(breakEven({ fixedCosts: 3000, contributionPerUnit: -2, netPricePerUnit: 10 })).toBeNull()
+  })
+  it("G-05 · Desde el período: 25 000 neto con receta, margen 15 000, 2 000 platos, 1 000 comensales, fijos 9 000 → 1 200 platos, 15 000 netos, 600 comensales", () => {
+    const r = breakEvenFromPeriod({ fixedCosts: 9000, linkedNetRevenue: 25000, linkedContribution: 15000, dishesSold: 2000, guests: 1000 })
+    expect(r?.units).toBeCloseTo(1200, 9)
+    expect(r?.netRevenue).toBeCloseTo(15000, 9)
+    expect(r?.covers).toBeCloseTo(600, 9)
   })
 })

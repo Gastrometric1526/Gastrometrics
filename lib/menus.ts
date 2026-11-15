@@ -9,6 +9,7 @@ import type { Menu, MenuItem, MenuSection, MenuStep } from "@/lib/types/menus"
 import type { Recipe } from "@/types/recipe"
 import { isBarClassification } from "./beverage"
 import { servingsScale } from "./yield-units"
+import { menuItemShares } from "./menu-shares"
 import { notifyAdminActivity } from "@/lib/services/activity-log"
 
 export type { Menu, MenuItem, MenuSection, MenuStep }
@@ -88,18 +89,24 @@ export function getRecipeSection(recipe: { plate?: string; classification?: stri
  * usuario lo puso, si no el precio de venta ya calculado de la receta).
  */
 export function getMenuUnitPriceAndCost(menu: Menu, recipes: Recipe[]): { price: number; cost: number } {
-  const enabledItems = menu.items.filter((item) => item.enabled)
-  return enabledItems.reduce(
+  // docs/314: un paso «elige uno» cuenta el promedio de sus opciones (cada plato × 1 ÷ N),
+  // no la suma de todas. Los pasos «todos» suman como siempre.
+  return menuItemShares(menu).reduce(
     (acc, item) => {
       const recipe = recipes.find((r) => r.id === item.recipeId)
       const price = item.priceOverride ?? recipe?.unitPrice ?? 0
-      // Costo por porción guardado, o costo total ÷ rendimiento si la receta no lo tiene
-      // (docs/237): antes contaba 0 y el costo del menú vendido en Ventas salía de menos.
-      const cost = recipe ? recipe.costPerServing ?? (recipe.totalCost || 0) / (recipe.yieldAmount > 0 ? recipe.yieldAmount : 1) : 0
-      return { price: acc.price + price, cost: acc.cost + cost }
+      return { price: acc.price + price * item.share, cost: acc.cost + recipeServingCost(recipe) * item.share }
     },
     { price: 0, cost: 0 },
   )
+}
+
+/**
+ * Costo por porción guardado, o costo total ÷ rendimiento si la receta no lo tiene
+ * (docs/237): antes contaba 0 y el costo del menú vendido en Ventas salía de menos.
+ */
+export function recipeServingCost(recipe: Recipe | undefined): number {
+  return recipe ? recipe.costPerServing ?? (recipe.totalCost || 0) / (recipe.yieldAmount > 0 ? recipe.yieldAmount : 1) : 0
 }
 
 function generateId(prefix: string): string {
