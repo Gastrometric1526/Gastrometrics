@@ -33,5 +33,10 @@ describe("entrar con Google", () => {
     expect(safeNextPath("https://evil.com")).toBe("/dashboard")
     expect(safeNextPath("/\\evil.com")).toBe("/dashboard")
     expect(safeNextPath(null)).toBe("/dashboard")
+    // docs/312: el navegador quita tabuladores y saltos de línea («/\t/evil.com» → «//evil.com»).
+    expect(safeNextPath("/\t/evil.com")).toBe("/dashboard")
+    expect(safeNextPath("/\n/evil.com")).toBe("/dashboard")
+    expect(safeNextPath("/ /evil.com")).toBe("/dashboard")
+    expect(safeNextPath("/support?chat=1")).toBe("/support?chat=1")
   })
 })

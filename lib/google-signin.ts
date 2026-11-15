@@ -42,5 +42,8 @@ export function needsProfileCompletion(
 /** Adónde volver después del retorno de Google: solo rutas internas. Puro. */
 export function safeNextPath(raw: string | null | undefined): string {
   if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\")) return "/dashboard"
+  // docs/312: el navegador quita tabuladores y saltos de línea de una URL, así que «/\t/otro-sitio»
+  // terminaba en «//otro-sitio». Cualquier carácter de control o espacio deja la ruta por defecto.
+  if (/[\u0000- \u007f]/.test(raw)) return "/dashboard"
   return raw
 }

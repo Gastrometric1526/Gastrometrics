@@ -20,6 +20,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { setRememberChoice } from "@/lib/remember-me"
 import { AuthShell } from "@/components/auth-shell"
 import { ResendConfirmationButton } from "@/components/resend-confirmation-button"
+import { safeNextPath } from "@/lib/google-signin"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -52,8 +53,9 @@ export default function LoginPage() {
       return
     }
     // ?next= solo con rutas internas (p. ej. el chat desde el correo, docs/229).
-    const next = new URLSearchParams(window.location.search).get("next")
-    router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard")
+    // docs/312: misma regla que la entrada con Google (safeNextPath): «/\otro-sitio» el navegador
+    // lo lee como «//otro-sitio» y antes llevaba fuera de la app (redirección abierta).
+    router.push(safeNextPath(new URLSearchParams(window.location.search).get("next")))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

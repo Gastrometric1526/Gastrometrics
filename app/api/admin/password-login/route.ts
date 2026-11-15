@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { ADMIN_COOKIE_OPTIONS, ADMIN_SESSION_COOKIE_NAME, createAdminSessionValue } from "@/lib/admin-auth"
-import { checkRateLimit, getClientIp, rateLimitLockedFor } from "@/lib/rate-limit"
+import { getClientIp } from "@/lib/rate-limit"
+import { durableLockedFor, durableRecordFailure } from "@/lib/durable-rate-limit"
 import { getSupabaseEnv } from "@/lib/supabase/env"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getAdminMember, recordAdminLogin } from "@/lib/admin/members-server"
@@ -26,18 +27,17 @@ export async function POST(request: Request) {
 
   const ip = getClientIp(request)
   // Solo los intentos fallidos cuentan, por IP y por correo.
-  const fail = (status: number, error: string) => {
-    const byIp = checkRateLimit(`admin-password:${ip}`, LIMIT)
-    const byEmail = checkRateLimit(`admin-password:${email}`, LIMIT)
-    const locked = !byIp.allowed || !byEmail.allowed
+  // docs/312: el bloqueo se guarda en la base (vale para todas las instancias de Vercel).
+  const fail = async (status: number, error: string) => {
+    const locked = Math.max(await durableRecordFailure(`admin-password:${ip}`, LIMIT), await durableRecordFailure(`admin-password:${email}`, LIMIT))
     return NextResponse.json(
-      { ok: false, error: locked ? "locked" : error, lockedForSeconds: locked ? Math.max(byIp.lockedForSeconds ?? 0, byEmail.lockedForSeconds ?? 0) : 0 },
-      { status: locked ? 429 : status },
+      { ok: false, error: locked > 0 ? "locked" : error, lockedForSeconds: locked },
+      { status: locked > 0 ? 429 : status },
     )
   }
 
   // Bloqueado: ni se prueba la contraseña.
-  const lockedFor = Math.max(rateLimitLockedFor(`admin-password:${ip}`), rateLimitLockedFor(`admin-password:${email}`))
+  const lockedFor = Math.max(await durableLockedFor(`admin-password:${ip}`, LIMIT), await durableLockedFor(`admin-password:${email}`, LIMIT))
   if (lockedFor > 0) return NextResponse.json({ ok: false, error: "locked", lockedForSeconds: lockedFor }, { status: 429 })
 
   const { url, anonKey } = getSupabaseEnv()

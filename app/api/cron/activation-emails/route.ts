@@ -56,6 +56,7 @@
 
 import { recordCronRun } from "@/lib/services/cron-runs"
 import { purgeResolvedRecoveryRequests } from "@/lib/services/recovery-purge"
+import { pruneDurableRateLimits } from "@/lib/durable-rate-limit"
 import { NextResponse } from "next/server"
 import { isAuthorizedCronRequest } from "@/lib/cron-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
@@ -247,12 +248,14 @@ export async function GET(request: Request) {
   const deletionPurge = await step("purga de cuentas eliminadas", () => runAccountDeletionPurge())
   // Solicitudes de recuperación resueltas hace más de 12 meses (Privacidad 1.7, docs/286).
   const recoveryPurge = await step("purga de solicitudes de recuperación", () => purgeResolvedRecoveryRequests())
+  // Intentos de entrada viejos (docs/312, migración 0042).
+  const rateLimitPrune = await step("limpieza de límites de intentos", () => pruneDurableRateLimits())
   // Correos de valor antes que los recordatorios: comparten la pausa global y, si a una
   // cuenta le toca uno útil (stock bajo, resumen, margen…), ese gana.
   const engagement = await step("correos de valor", () => runEngagementEmails())
   const reengagement = await step("recordatorios", () => runReengagementReminders())
 
-  const steps = { signupDigest, activation, founderSeats, founderGrants, planExpiry, scheduledRenewals, expiredDowngrades, referrals, experienceSurvey, deletionPurge, recoveryPurge, engagement, reengagement }
+  const steps = { signupDigest, activation, founderSeats, founderGrants, planExpiry, scheduledRenewals, expiredDowngrades, referrals, experienceSurvey, deletionPurge, recoveryPurge, rateLimitPrune, engagement, reengagement }
   const failed = Object.entries(steps)
     .filter(([, v]) => v && typeof v === "object" && "error" in v)
     .map(([k]) => k)

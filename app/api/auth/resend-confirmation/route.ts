@@ -5,8 +5,13 @@
  */
 import { NextResponse } from "next/server"
 import { resendConfirmation } from "@/lib/services/confirmation-email"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
+  // docs/312: límite por dirección, además del minuto por correo: sin él, un script podía
+  // probar miles de correos (la respuesta dice si la cuenta ya está confirmada) y gastar el envío.
+  const limit = checkRateLimit(`resend-confirmation:${getClientIp(request)}`, { maxAttempts: 8, windowMs: 15 * 60_000, lockoutMs: 30 * 60_000 })
+  if (!limit.allowed) return NextResponse.json({ error: "TOO_SOON" }, { status: 429 })
   let email = ""
   try {
     const body = await request.json()
