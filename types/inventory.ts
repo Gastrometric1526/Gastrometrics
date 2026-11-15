@@ -57,6 +57,9 @@ export interface InventorySnapshotItem {
   priceAtDate?: number
   previousPrice?: number
   supplier?: string
+  // Costo por unidad en cada método de valoración el día del conteo (docs/313). Los
+  // conteos anteriores no lo tienen y se valoran al precio del envase, como siempre.
+  unitCosts?: import("@/lib/inventory-valuation").UnitCosts
 }
 
 export interface InventorySnapshot {

@@ -47,6 +47,7 @@ import { stockValue } from "@/lib/inventory-value"
 import { formatDate, toDate } from "@/lib/date-format"
 import { useFormDraft } from "@/hooks/use-form-draft"
 import { DraftRestoredNotice } from "@/components/draft-restored-notice"
+import { unitCostsFor } from "@/lib/inventory-valuation"
 
 // Borrador del registro de inventario (docs/171): lo que la persona cambia por producto,
 // más el tipo, la fecha, las notas y el paso. Vale la pena desde que empezó a contar (paso 2).
@@ -374,6 +375,8 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
     const lostById = new Map(getInventory(businessId).map((inv) => [inv.id, lossesByReason(inv.stockLosses)]))
 
     // Create a new inventory snapshot for history
+    // Ingredientes por id para el costo por unidad de cada método de valoración (docs/313).
+    const ingredientsForValuation = new Map(getIngredients(businessId).map((ing) => [ing.id, ing]))
     const newInventorySnapshot: InventorySnapshot = {
       id: uuidv4(),
       date: date ? date.toISOString() : new Date().toISOString(),
@@ -405,6 +408,8 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
         supplier: item.supplier || "No especificado", // Guardar el proveedor
         receivedSincePrevious: receivedById.get(item.id) || 0,
         ...(Object.keys(lostById.get(item.id) ?? {}).length ? { lostSincePrevious: lostById.get(item.id) } : {}),
+        // Costo por unidad en los tres métodos de valoración ese día (docs/313).
+        unitCosts: unitCostsFor({ price: item.price || 0 }, ingredientsForValuation.get(item.id), getPackageContent(item)),
       })),
       createdAt: new Date().toISOString(),
       createdBy: user?.email || undefined,
@@ -468,7 +473,13 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
         let weightedAverageCost = ing.pricing?.weightedAverageCost
         let weightedAverageQuantity = ing.pricing?.weightedAverageQuantity || 0
 
+        let lastPurchase: { lastPurchasePrice: number; lastPurchaseAt: string } | null = null
         if (inventoryType === "nueva compra" && matchingItem.price > 0) {
+          // Último precio de compra por unidad (docs/313): solo cuando de verdad se compra.
+          lastPurchase = {
+            lastPurchasePrice: matchingItem.price / (matchingItem.pricing?.netContent || ing.pricing?.netContent || 1),
+            lastPurchaseAt: new Date().toISOString(),
+          }
           const newStock =
             inventoryMode === "presentation"
               ? matchingItem.calculatedQuantity || matchingItem.quantity
@@ -497,6 +508,7 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
             purchasePrice: newPurchasePrice,
             weightedAverageCost,
             weightedAverageQuantity,
+            ...(lastPurchase ?? {}),
           },
           lastUpdated: new Date().toISOString(),
         }

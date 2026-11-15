@@ -33,14 +33,16 @@ import {
 import { computeWeightedAverageCost } from "./utils/weighted-average-cost"
 import { convertBetweenUnits } from "./utils/calculations"
 import { crossesMassVolume } from "./unit-change"
-import { paxMultiplierFor, roundUpToStep } from "./pax-scaling"
+import { paxMultiplierFor, roundUpToStep, scaleLineQuantity } from "./pax-scaling"
+import { yieldUnitKind, scaleTargetError, safeScaleMultiplier, scaleBaseYield, servingsScale } from "./yield-units"
 import { roundSalePrice } from "./price-rounding"
 import { fallbackYield } from "./yield-weight"
 import { stockStatus, effectiveStockStatus } from "./inventory-status"
 import type { Recipe } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 import type { SalesImport } from "@/types/sales-import"
-import type { InventorySnapshot } from "@/types/inventory"
+import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
+import { valueInventory, snapshotValueBy } from "./inventory-valuation"
 import type { PurchaseOrder } from "@/types/purchase-order"
 
 // ---------- Negocio de ejemplo ----------
@@ -152,6 +154,34 @@ describe("B. Ficha Técnica y precio", () => {
   it("B-11 · PAX: 10 personas sobre rendimiento 4 = × 2.5; redondeo hacia arriba sin error de coma (0.1 × 3 = 0.3)", () => {
     expect(paxMultiplierFor(10, 4)).toBe(2.5)
     expect(roundUpToStep(0.1 * 3, 0.1)).toBe(0.3)
+  })
+  // ── docs/313: unidades de rendimiento y escalados coherentes (pedido del dueño) ──
+  it("B-13 · Clases de rendimiento: porciones y piezas enteras; masa y volumen con decimales", () => {
+    expect(yieldUnitKind("porciones")).toBe("portions")
+    expect(yieldUnitKind("un")).toBe("pieces")
+    expect(yieldUnitKind("kg")).toBe("mass")
+    expect(yieldUnitKind("L")).toBe("volume")
+    expect(scaleTargetError(7.5, "porciones", 4)).toBe("not_whole") // no hay 7.5 personas
+    expect(scaleTargetError(7.5, "kg", 2)).toBeNull() // 7.5 kg sí
+    expect(scaleTargetError(-3, "kg", 2)).toBe("not_positive")
+    expect(safeScaleMultiplier(7.5, "porciones", 4)).toBe(1) // incoherente: no escala
+    expect(safeScaleMultiplier(10, "porciones", 4)).toBe(2.5)
+  })
+  it("B-14 · Base del PAX con Rendimiento vacío = rendimiento calculado (1.5 kg), no 1: 3 kg ÷ 1.5 = × 2 (antes × 3)", () => {
+    const sub = { yieldAmount: 0, yieldUnit: "kg", servings: 1, ingredients: [
+      { ingredientId: "a", quantity: 500, unit: "gramos" },
+      { ingredientId: "b", quantity: 1, unit: "kilogramos" },
+    ] }
+    expect(scaleBaseYield(sub)).toBe(1.5)
+    expect(safeScaleMultiplier(3, "kg", scaleBaseYield(sub))).toBe(2)
+  })
+  it("B-15 · Piezas: 3 huevos × 0.78 = 2.34 → 3 (nunca 2.4); ½ limón × 2.2 = 1.1 → 1.5", () => {
+    expect(scaleLineQuantity(3, "unidad", 0.78)).toBe(3)
+    expect(scaleLineQuantity(0.5, "unidad", 2.2)).toBe(1.5)
+  })
+  it("B-16 · Menú por porciones: receta en porciones 50 ÷ 10 = × 5; receta que rinde 2 kg no se escala por porciones (× 1, con aviso; antes × 25)", () => {
+    expect(servingsScale({ yieldAmount: 10, yieldUnit: "porciones" }, 50)).toEqual({ multiplier: 5, coherent: true })
+    expect(servingsScale({ yieldAmount: 2, yieldUnit: "kg" }, 50)).toEqual({ multiplier: 1, coherent: false })
   })
 })
 
@@ -304,5 +334,52 @@ describe("E. Costo real, Prime Cost y P&L", () => {
     const pnl = buildSimplifiedPnL({ revenue: 25000, cogs: 7000, expenses: { laborCosts: 6000, rent: 3000, utilities: 1000 } as never, periodStart: "2026-10-01", periodEnd: "2026-10-30" })
     expect(pnl.netProfit).toBeCloseTo(8000, 9)
     expect(pnl.netProfitPercent).toBeCloseTo(32, 9)
+  })
+})
+
+// ── docs/313: valoración del inventario (pedido del dueño: «diferenciar costo promedio
+// ponderado, último precio de compra y valor de reposición») ──
+describe("F. Valoración del inventario", () => {
+  const harina = {
+    id: "harina",
+    name: "Harina",
+    unit: "gramos",
+    pricing: { purchasePrice: 60, netContent: 1000, pricePerUnit: 0.06, lastUpdated: "", weightedAverageCost: 0.05, weightedAverageQuantity: 1000, lastPurchasePrice: 0.055 },
+  } as unknown as Ingredient
+  const item = { id: "harina", name: "Harina", category: "", currentStock: 1000, minStock: 0, unit: "gramos", price: 50, netContent: 1000, lastUpdated: "", status: "normal" } as InventoryItem
+  it("F-01 · 1 000 g: último precio 0.055 → 55; promedio 0.05 → 50; reposición 0.06 → 60", () => {
+    const v = valueInventory([item], [harina])
+    expect(v.totals.last_purchase).toBeCloseTo(55, 9)
+    expect(v.totals.weighted_average).toBeCloseTo(50, 9)
+    expect(v.totals.replacement).toBeCloseTo(60, 9)
+    expect(v.fallbacks).toEqual({ last_purchase: 0, weighted_average: 0, replacement: 0 })
+  })
+  it("F-02 · Sin compras registradas: último precio = precio del envase del inventario (50 ÷ 1 000 × 1 000 = 50, lo de siempre); promedio usa ese mismo y se avisa", () => {
+    const sinCompras = { ...harina, pricing: { purchasePrice: 60, netContent: 1000, pricePerUnit: 0.06, lastUpdated: "" } } as unknown as Ingredient
+    const v = valueInventory([item], [sinCompras])
+    expect(v.totals.last_purchase).toBeCloseTo(50, 9)
+    expect(v.totals.weighted_average).toBeCloseTo(50, 9)
+    expect(v.fallbacks.weighted_average).toBe(1)
+  })
+  it("F-03 · Recibir una orden mueve el promedio: 1 000 g a 0.05 + 1 000 g a 0.07 = 0.06", () => {
+    const r = computeWeightedAverageCost({ previousStock: 1000, newStock: 2000, purchasePrice: 0.07, netContent: 1, previousWeightedAverageCost: 0.05, previousWeightedAverageQuantity: 1000 })
+    expect(r.weightedAverageCost).toBeCloseTo(0.06, 12)
+  })
+  it("F-04 · COGS por método: inicial 1 000 g a 0.05 = 50; compras 30; final 400 g (último 0.06 → 24; promedio 0.05 → 20): COGS 56 vs 60", () => {
+    const snap = (date: string, quantity: number, price: number, unitCosts: Record<string, number>) =>
+      ({ id: date, date, type: "final", modifiedItems: 0, totalValue: 0, items: [{ id: "harina", name: "Harina", category: "", quantity, unit: "gramos", price, netContent: 1000, totalPrice: 0, unitCosts }] }) as unknown as InventorySnapshot
+    const snapshots = [
+      snap("2026-11-01", 1000, 50, { last_purchase: 0.05, weighted_average: 0.05, replacement: 0.05 }),
+      snap("2026-11-30", 400, 60, { last_purchase: 0.06, weighted_average: 0.05, replacement: 0.06 }),
+    ]
+    const orders = [{ id: "o", status: "received", receivedAt: "2026-11-10", date: "2026-11-10", total: 30, items: [] }] as unknown as PurchaseOrder[]
+    const base = { snapshots, purchaseOrders: orders, periodStart: "2026-11-01", periodEnd: "2026-11-30", currentInventoryValue: 0 }
+    expect(computeCOGS(base).cogs).toBeCloseTo(56, 9) // por defecto: último precio (lo de siempre)
+    expect(computeCOGS({ ...base, valuationMethod: "weighted_average" }).cogs).toBeCloseTo(60, 9)
+  })
+  it("F-05 · Un conteo de antes de docs/313 (sin costos por método) vale lo de siempre en cualquier método", () => {
+    const old = { id: "x", date: "2026-10-01", type: "final", modifiedItems: 0, totalValue: 0, items: [{ id: "x", name: "x", category: "", quantity: 500, unit: "gramos", price: 50, netContent: 1000, totalPrice: 0 }] } as unknown as InventorySnapshot
+    expect(snapshotValueBy(old, "weighted_average")).toBeCloseTo(25, 9)
+    expect(snapshotValueBy(old, "replacement")).toBeCloseTo(25, 9)
   })
 })

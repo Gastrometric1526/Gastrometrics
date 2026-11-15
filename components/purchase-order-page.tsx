@@ -236,6 +236,12 @@ export function PurchaseOrderPage() {
       }
 
       const result = generateMenuIngredientList(businessId, menu)
+      if (result.unscaledRecipes?.length) {
+        toast({
+          title: t("ordenes_toast_unscaled_title"),
+          description: t("ordenes_toast_unscaled_desc").replace("{recipes}", result.unscaledRecipes.join(", ")),
+        })
+      }
       if (result.items.length === 0) {
         toast({
           title: t("ordenes_toast_nothing_to_buy_title"),
@@ -600,7 +606,7 @@ export function PurchaseOrderPage() {
       const unmatched: string[] = []
       for (const order of created) {
         const r = await receivePurchaseOrderIntoInventory(
-          order.items.map((item) => ({ ingredientId: item.ingredientId, name: item.name, quantity: item.totalQuantity })),
+          order.items.map((item) => ({ ingredientId: item.ingredientId, name: item.name, quantity: item.totalQuantity, unitCost: item.costPerUnit })),
           businessId,
         )
         matched += r.matchedCount
@@ -691,7 +697,7 @@ export function PurchaseOrderPage() {
 
     if (isNowReceived && !wasAlreadyReceived) {
       const { matchedCount, unmatchedNames } = await receivePurchaseOrderIntoInventory(
-        order.items.map((item) => ({ ingredientId: item.ingredientId, name: item.name, quantity: item.totalQuantity })),
+        order.items.map((item) => ({ ingredientId: item.ingredientId, name: item.name, quantity: item.totalQuantity, unitCost: item.costPerUnit })),
         businessId,
       )
       if (unmatchedNames.length > 0) {

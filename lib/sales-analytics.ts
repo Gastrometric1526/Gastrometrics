@@ -5,6 +5,7 @@
 // Rotacion de Inventario, Varianza de Precios de Proveedores, P&L simplificado,
 // Menu Engineering.
 
+import { DEFAULT_VALUATION_METHOD, snapshotValueBy, type ValuationMethod } from "./inventory-valuation"
 import type { SalesImport, SalesImportLine } from "@/types/sales-import"
 import type { Recipe } from "@/types/recipe"
 import type { InventorySnapshot } from "@/types/inventory"
@@ -12,7 +13,6 @@ import type { PurchaseOrder } from "@/types/purchase-order"
 import type { BusinessExpenses } from "@/types/business"
 import type { Ingredient } from "@/types/ingredient"
 import type { Menu } from "@/lib/types/menus"
-import { snapshotValue } from "@/lib/inventory-value"
 import { taxIncludedIn } from "@/lib/food-cost-pricing"
 import { LEGACY_PRICING_METHOD } from "@/types/business"
 import { localDayOf } from "@/lib/date-format"
@@ -444,8 +444,10 @@ export function computeCOGS(params: {
   periodStart: string | null
   periodEnd: string | null
   currentInventoryValue: number
+  /** Método de valoración del inventario (docs/313). Por defecto, el último precio de compra. */
+  valuationMethod?: ValuationMethod
 }): COGSResult {
-  const { snapshots, purchaseOrders, periodStart, periodEnd, currentInventoryValue } = params
+  const { snapshots, purchaseOrders, periodStart, periodEnd, currentInventoryValue, valuationMethod = DEFAULT_VALUATION_METHOD } = params
 
   const inRange = (dateStr: string) => {
     if (!periodStart || !periodEnd) return true
@@ -461,8 +463,9 @@ export function computeCOGS(params: {
 
   // Recalculado desde las líneas del conteo (lib/inventory-value.ts, docs/136): el
   // totalValue guardado en conteos viejos quedó multiplicado por el contenido del envase.
-  const initialInventoryValue = initialSnapshot ? snapshotValue(initialSnapshot) : currentInventoryValue
-  const finalInventoryValue = finalSnapshot ? snapshotValue(finalSnapshot) : currentInventoryValue
+  // docs/313: inicial y final en el mismo método de valoración (el inventario actual también).
+  const initialInventoryValue = initialSnapshot ? snapshotValueBy(initialSnapshot, valuationMethod) : currentInventoryValue
+  const finalInventoryValue = finalSnapshot ? snapshotValueBy(finalSnapshot, valuationMethod) : currentInventoryValue
 
   const purchasesValue = receivedPurchaseOrdersIn(purchaseOrders, inRange).reduce((sum, po) => sum + (po.total || 0), 0)
 

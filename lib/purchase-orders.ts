@@ -84,6 +84,8 @@ export interface PurchaseOrderComputationResult {
     compax: number
   }[]
   warnings: string[]
+  /** Recetas del menú que rinden en kg/L y no se pudieron escalar por porciones (docs/313). */
+  unscaledRecipes?: string[]
 }
 
 /**

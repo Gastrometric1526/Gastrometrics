@@ -29,6 +29,7 @@ import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredien
 import {
   getInventoryHistory,
   getInventoryStats,
+  getInventory,
   ensureInventoryLoaded,
   ensureInventoryHistoryLoaded,
 } from "@/lib/storage/inventory"
@@ -67,6 +68,10 @@ import { formatDateTime } from "@/lib/date-format"
 import { TableSalesInsights } from "@/components/table-sales-insights"
 import { CashUpSummaryCard } from "@/components/cash-up-summary"
 import { useFeatureAccess } from "@/lib/plan-access"
+import { useAuth } from "@/contexts/auth-context"
+import { valueInventory } from "@/lib/inventory-valuation"
+import { useValuationMethod } from "@/lib/inventory-valuation-setting"
+import { buildPackageContentLookup } from "@/lib/inventory-value"
 import { useRouter } from "next/navigation"
 
 export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) {
@@ -151,6 +156,14 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
   const purchaseOrders = useMemo(() => getPurchaseOrders(businessId), [businessId, refreshKey])
   const inventoryHistory = useMemo(() => getInventoryHistory(businessId), [businessId, refreshKey])
   const inventoryStats = useMemo(() => getInventoryStats(businessId), [businessId, refreshKey])
+  // Método de valoración del inventario del negocio (docs/313): valora el inventario actual y
+  // los conteos inicial y final del costo real. Por defecto, el de siempre.
+  const { user: authUser } = useAuth()
+  const [valuationMethod] = useValuationMethod(businessId, authUser?.user_metadata as Record<string, unknown> | undefined)
+  const currentInventoryValue = useMemo(
+    () => valueInventory(getInventory(businessId), ingredients, buildPackageContentLookup(ingredients)).totals[valuationMethod],
+    [businessId, ingredients, valuationMethod, refreshKey],
+  )
   const business = useMemo(() => getBusinessById(businessId || "main"), [businessId, refreshKey])
 
   const handleImported = (imp: SalesImport) => {
@@ -267,9 +280,10 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
         purchaseOrders,
         periodStart: period.start,
         periodEnd: period.end,
-        currentInventoryValue: inventoryStats.totalValue,
+        currentInventoryValue,
+        valuationMethod,
       }),
-    [inventoryHistory, purchaseOrders, period, inventoryStats.totalValue],
+    [inventoryHistory, purchaseOrders, period, currentInventoryValue, valuationMethod],
   )
 
   const areaCogs = useMemo(
@@ -280,8 +294,9 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
         periodStart: period.start,
         periodEnd: period.end,
         ingredients,
+        valuationMethod,
       }),
-    [inventoryHistory, purchaseOrders, period, ingredients],
+    [inventoryHistory, purchaseOrders, period, ingredients, valuationMethod],
   )
 
   const realCostPercent = netRevenue > 0 ? (cogsResult.cogs / netRevenue) * 100 : 0

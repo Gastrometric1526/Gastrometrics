@@ -1,6 +1,7 @@
 import type { RecipeIngredient } from "@/types/recipe"
 import { unitAbbreviations, type Ingredient } from "@/types/ingredient"
 import { unitFactor } from "@/lib/unit-change"
+import { countableStep, isCountableIngredientUnit } from "@/lib/yield-units"
 
 /**
  * Modificador de PAX de la Ficha Técnica (docs/189): una sola regla para la pantalla, el
@@ -30,7 +31,9 @@ export function paxMultiplierFor(paxModifier: number, baseYield: number): number
 export function roundUpToStep(value: number, step: number): number {
   if (!(value > 0)) return 0
   const steps = Math.ceil(value / step - 1e-9)
-  const decimals = step >= 1 ? 0 : Math.round(-Math.log10(step))
+  // Decimales del escalón tal como se escribe (0.5 → 1, 0.25 → 2, 0.001 → 3). Antes se
+  // calculaban con log10 redondeado y 0.5 daba 0 decimales: 1.5 salía 2 (docs/313).
+  const decimals = step >= 1 ? 0 : Math.min(10, Math.max(0, -Math.floor(Math.log10(step) + 1e-9)) + (String(step).replace(/^0\.0*/, "").length - 1))
   return Number((steps * step).toFixed(decimals))
 }
 
@@ -38,6 +41,9 @@ export function roundUpToStep(value: number, step: number): number {
 export function scaleLineQuantity(quantity: number, unit: string | undefined, multiplier: number): number {
   if (multiplier === 1) return quantity
   const scaled = quantity * multiplier
+  // Piezas (huevos, latas, panes): enteras, o medias/cuartos si la receta ya usaba
+  // fracciones (docs/313). Antes 3 huevos × 0.78 daban 2.4 huevos.
+  if (isCountableIngredientUnit(unit)) return roundUpToStep(scaled, countableStep(quantity))
   // El escalón nunca pasa del 10 % de la cantidad (docs/190): con 0.1 fijo, 0.002 g de
   // azafrán se volvían 0.1 g (50 veces más). Sigue redondeando siempre hacia arriba.
   let step = paxStep(unit)

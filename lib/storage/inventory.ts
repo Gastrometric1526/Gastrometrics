@@ -10,7 +10,8 @@ import type { Database } from "@/types/database"
 import { applyStockLoss } from "@/lib/stock-losses"
 import type { StockLossReason } from "@/types/inventory"
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
-import { getIngredients } from "./ingredients"
+import { getIngredients, updateIngredient } from "./ingredients"
+import { computeWeightedAverageCost } from "@/lib/utils/weighted-average-cost"
 import { buildPackageContentLookup, inventoryTotalValue } from "@/lib/inventory-value"
 import { stockStatus } from "@/lib/inventory-status"
 
@@ -314,7 +315,7 @@ export function updateInventoryStatus(items: InventoryItem[]): InventoryItem[] {
  * persistido en la orden — ver comentario en purchase-order-page.tsx).
  */
 export async function receivePurchaseOrderIntoInventory(
-  items: { ingredientId?: string; name: string; quantity: number }[],
+  items: { ingredientId?: string; name: string; quantity: number; unitCost?: number }[],
   businessId?: string | null,
 ): Promise<{ matchedCount: number; unmatchedNames: string[] }> {
   const inventory = getInventory(businessId)
@@ -322,7 +323,7 @@ export async function receivePurchaseOrderIntoInventory(
 
   // Se empareja primero por id de ingrediente (docs/190) y si no, por nombre sin
   // distinguir mayúsculas ni espacios. Suma cantidades si la orden repite el ingrediente.
-  const totals = new Map<string, { item: InventoryItem | undefined; name: string; quantity: number }>()
+  const totals = new Map<string, { item: InventoryItem | undefined; name: string; quantity: number; cost: number; costedQuantity: number }>()
   for (const line of items) {
     if (!line.name || !line.quantity) continue
     const item =
@@ -330,13 +331,20 @@ export async function receivePurchaseOrderIntoInventory(
       inventory.find((inv) => norm(inv.name) === norm(line.name))
     const key = item ? `id:${item.id}` : `name:${norm(line.name)}`
     const prev = totals.get(key)
-    totals.set(key, { item, name: line.name, quantity: (prev?.quantity || 0) + line.quantity })
+    const costed = line.unitCost && line.unitCost > 0 ? line.quantity : 0
+    totals.set(key, {
+      item,
+      name: line.name,
+      quantity: (prev?.quantity || 0) + line.quantity,
+      cost: (prev?.cost || 0) + costed * (line.unitCost || 0),
+      costedQuantity: (prev?.costedQuantity || 0) + costed,
+    })
   }
 
   let matchedCount = 0
   const unmatchedNames: string[] = []
 
-  for (const { item: match, name, quantity } of totals.values()) {
+  for (const { item: match, name, quantity, cost, costedQuantity } of totals.values()) {
     if (!match) {
       unmatchedNames.push(name)
       continue
@@ -348,8 +356,48 @@ export async function receivePurchaseOrderIntoInventory(
       stockStatus(newStock, match.minStock)
     const receipts = [...(match.stockReceipts ?? []), { quantity, at: new Date().toISOString() }]
     await updateInventoryItem(match.id, { currentStock: newStock, status: newStatus, stockReceipts: receipts }, businessId)
+    // docs/313: recibir una orden también es una compra. Antes solo «Nueva compra» movía el
+    // costo promedio ponderado y nadie guardaba el último precio de compra.
+    if (costedQuantity > 0) await recordPurchaseCost(match.id, match.currentStock ?? 0, newStock, cost / costedQuantity, businessId)
     matchedCount++
   }
 
   return { matchedCount, unmatchedNames }
+}
+
+/**
+ * Anota una compra en el ingrediente (docs/313): costo promedio ponderado móvil (la misma
+ * función que «Nueva compra», lib/utils/weighted-average-cost.ts) y último precio de compra
+ * por unidad. No toca el precio vigente (pricePerUnit) ni recalcula recetas.
+ */
+export async function recordPurchaseCost(
+  ingredientId: string,
+  previousStock: number,
+  newStock: number,
+  unitCost: number,
+  businessId?: string | null,
+): Promise<void> {
+  const ingredient = getIngredients(businessId).find((i) => i.id === ingredientId)
+  if (!ingredient?.pricing || !(unitCost > 0)) return
+  const result = computeWeightedAverageCost({
+    previousStock,
+    newStock,
+    purchasePrice: unitCost,
+    netContent: 1,
+    previousWeightedAverageCost: ingredient.pricing.weightedAverageCost,
+    previousWeightedAverageQuantity: ingredient.pricing.weightedAverageQuantity || 0,
+  })
+  await updateIngredient(
+    ingredientId,
+    {
+      pricing: {
+        ...ingredient.pricing,
+        weightedAverageCost: result.weightedAverageCost,
+        weightedAverageQuantity: result.weightedAverageQuantity,
+        lastPurchasePrice: unitCost,
+        lastPurchaseAt: new Date().toISOString(),
+      },
+    },
+    businessId,
+  )
 }

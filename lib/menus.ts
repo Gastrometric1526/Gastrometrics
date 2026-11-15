@@ -8,6 +8,7 @@ import type { Database } from "@/types/database"
 import type { Menu, MenuItem, MenuSection, MenuStep } from "@/lib/types/menus"
 import type { Recipe } from "@/types/recipe"
 import { isBarClassification } from "./beverage"
+import { servingsScale } from "./yield-units"
 import { notifyAdminActivity } from "@/lib/services/activity-log"
 
 export type { Menu, MenuItem, MenuSection, MenuStep }
@@ -416,21 +417,28 @@ export function generateMenuIngredientList(businessId: string, menu: Menu): Purc
   const recipeIds = Array.from(new Set(menu.items.filter((item) => item.enabled).map((item) => item.recipeId)))
 
   const compaxByRecipeId: Record<string, number> = {}
+  const unscaledRecipes: string[] = []
   recipeIds.forEach((recipeId) => {
     const recipe = recipes.find((r) => r.id === recipeId)
-    const baseYield = recipe?.yieldAmount && recipe.yieldAmount > 0 ? recipe.yieldAmount : 1
-    const planned = plannedQuantityByRecipeId[recipeId]
-    compaxByRecipeId[recipeId] = planned !== undefined ? planned / baseYield : 1
+    // docs/313: misma regla que el PAX de la Ficha (lib/yield-units.ts). Base = rendimiento
+    // real (antes 1 si estaba vacío) y solo se escala por porciones lo que rinde en
+    // porciones o piezas; una receta en kg o L se pide tal cual y se avisa.
+    const { multiplier, coherent } = servingsScale(recipe, plannedQuantityByRecipeId[recipeId])
+    compaxByRecipeId[recipeId] = multiplier
+    if (!coherent && recipe) unscaledRecipes.push(recipe.name)
   })
 
   const inventorySnapshot = currentStockByIngredientId(businessId)
 
-  return buildPurchaseOrderData({
-    businessId,
-    selectedRecipeIds: recipeIds,
-    compaxByRecipeId,
-    inventorySnapshot,
-  })
+  return {
+    ...buildPurchaseOrderData({
+      businessId,
+      selectedRecipeIds: recipeIds,
+      compaxByRecipeId,
+      inventorySnapshot,
+    }),
+    unscaledRecipes,
+  }
 }
 
 /**

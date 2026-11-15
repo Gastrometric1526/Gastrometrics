@@ -120,7 +120,7 @@ describe("2. Redondeo por unidad (siempre hacia arriba)", () => {
     ["2.5", 0.01, "kilogramos", 1.5, 0.015],
     ["2.6", 0.025, "litros", 3, 0.075],
     ["2.7", 1.2, "unidad", 2.5, 3],
-    ["2.8", 0.3, "unidad", 2, 0.6],
+    ["2.8", 0.3, "unidad", 2, 0.75], // docs/313: piezas en cuartos si la receta usa menos de media pieza (antes 0.6)
     ["2.9", 2.3, "onzas", 1.7, 4], // 3.91 → 4.0
     ["2.10", 0.08, "libras", 2, 0.16],
     ["2.11", 0.01, "kilogramos", 2, 0.02], // antes 0.1

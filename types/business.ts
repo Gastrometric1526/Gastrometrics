@@ -65,6 +65,9 @@ export interface Business {
   // la persona. Se guarda aquí (no solo en el navegador) para que sea el mismo en todos los
   // aparatos. Sin valor = nunca se eligió (se sube el que tenga el navegador, si hay).
   themeColor?: string
+  // Método de valoración del inventario (docs/313): "last_purchase" (por defecto, lo de
+  // siempre), "weighted_average" o "replacement". Ver lib/inventory-valuation.ts.
+  inventoryValuationMethod?: string
   // Marca de los PDF (docs/229, docs/251): ver PdfBranding en lib/pdf/pdf-branding.ts.
   pdfBranding?: {
     name?: string

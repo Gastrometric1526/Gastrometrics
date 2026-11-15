@@ -6,6 +6,7 @@
 // (lib/beverage.ts). Las líneas de menú (combos del registro manual) y las líneas sin
 // receta quedan en cocina: no hay forma de saber qué parte del combo era bebida.
 
+import { DEFAULT_VALUATION_METHOD, snapshotItemValueBy, type ValuationMethod } from "./inventory-valuation"
 import { receivedPurchaseOrdersIn, type DishPerformance } from "@/lib/sales-analytics"
 import type { Recipe } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
@@ -82,8 +83,10 @@ export function computeCOGSByArea(params: {
   periodStart: string | null
   periodEnd: string | null
   ingredients: Ingredient[]
+  /** Método de valoración del inventario (docs/313), el mismo que el COGS total. */
+  valuationMethod?: ValuationMethod
 }): AreaCOGS {
-  const { snapshots, purchaseOrders, periodStart, periodEnd, ingredients } = params
+  const { snapshots, purchaseOrders, periodStart, periodEnd, ingredients, valuationMethod = DEFAULT_VALUATION_METHOD } = params
   const inRange = (dateStr: string) => {
     if (!periodStart || !periodEnd) return true
     const d = new Date(dateStr).getTime()
@@ -97,7 +100,7 @@ export function computeCOGSByArea(params: {
     let bar = 0
     let kitchen = 0
     for (const item of snapshot.items ?? []) {
-      const value = snapshotItemValue(item)
+      const value = snapshotItemValueBy(item, valuationMethod)
       if (isBeverageCategory(item.category)) bar += value
       else kitchen += value
     }

@@ -78,6 +78,9 @@ import { ensureSalesImportsLoaded, getSalesImports } from "@/lib/storage/sales-i
 import { computeTheoreticalStock } from "@/lib/theoretical-stock"
 import type { SalesImport } from "@/types/sales-import"
 import { buildPackageContentLookup, inventoryTotalValue } from "@/lib/inventory-value"
+import { valueInventory } from "@/lib/inventory-valuation"
+import { useValuationMethod } from "@/lib/inventory-valuation-setting"
+import { InventoryValuationCard } from "@/components/inventory/inventory-valuation-card"
 import { DetailPanel } from "@/components/detail-panel"
 import { ActionHint } from "@/components/action-hint"
 import { stockStatus, effectiveStockStatus } from "@/lib/inventory-status"
@@ -104,6 +107,7 @@ export default function InventoryPage() {
   const ingredients = useIngredients(businessId)
   // Contenido de envase por producto para valorar el stock (lib/inventory-value.ts, docs/136).
   const packageLookup = useMemo(() => buildPackageContentLookup(ingredients), [ingredients])
+  const [valuationMethod] = useValuationMethod(businessId, user?.user_metadata as Record<string, unknown> | undefined)
   const [items, setItems] = useState<InventoryItem[]>([])
   const [searchTerm, setSearchQuery] = useState("")
   const { toast } = useToast()
@@ -774,9 +778,8 @@ export default function InventoryPage() {
                         <p className="text-sm font-medium text-muted-foreground">{t("inventario_stat_total_value")}</p>
                         <div className="flex items-baseline">
                           <h3 className="text-2xl font-bold">
-                            {formatCurrency(
-                              inventoryTotalValue(items, packageLookup),
-                            )}
+                            {/* En el método de valoración del negocio (docs/313); por defecto, el de siempre. */}
+                            {formatCurrency(valueInventory(items, ingredients, packageLookup).totals[valuationMethod])}
                           </h3>
                         </div>
                       </div>
@@ -856,7 +859,10 @@ export default function InventoryPage() {
 
               <TabsContent value="control">
                 <CostOnly fallback={<p className="py-8 text-center text-sm text-muted-foreground">{t("cost_gate_hidden")}</p>}>
-                  <StockControlCard items={items} theoretical={theoreticalStock} packageLookup={packageLookup} />
+                  <div className="space-y-4">
+                    <InventoryValuationCard items={items} ingredients={ingredients} packageLookup={packageLookup} businessId={businessId} />
+                    <StockControlCard items={items} theoretical={theoreticalStock} packageLookup={packageLookup} />
+                  </div>
                 </CostOnly>
               </TabsContent>
 

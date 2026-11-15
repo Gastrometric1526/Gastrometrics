@@ -99,7 +99,8 @@ import {
 import { ActionHint } from "@/components/action-hint"
 import { signalJourney } from "@/lib/journey"
 import { formatDateTime } from "@/lib/date-format"
-import { paxMultiplierFor, refreshSnapshotLines, scaleLineQuantity, scaleRecipeLine } from "@/lib/pax-scaling"
+import { refreshSnapshotLines, scaleLineQuantity, scaleRecipeLine } from "@/lib/pax-scaling"
+import { safeScaleMultiplier, scaleBaseYield, scaleTargetDecimals, scaleTargetError } from "@/lib/yield-units"
 import { distinguishLabel, repeatedNames } from "@/lib/ingredient-match"
 
 interface TechnicalSheetProps {
@@ -660,8 +661,11 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     // lo que hacía que el multiplicador siempre partiera de una base de 1 persona
     // en vez del rendimiento real ya declarado. Ver hallazgo: "modificador de PAX
     // no funciona" — daba números ~10x más altos de lo esperado.
-    const baseYield = recipe.yieldAmount > 0 ? recipe.yieldAmount : recipe.servings || 1
-    const paxMultiplier = paxMultiplierFor(paxModifier, baseYield)
+    // docs/313: con el Rendimiento vacío, la base es el rendimiento calculado de los
+    // ingredientes (antes `servings`, siempre 1: pedir 10 multiplicaba todo por 10). Un
+    // objetivo incoherente (7.5 porciones, 0 o negativo) no escala: se avisa debajo del campo.
+    const baseYield = scaleBaseYield(recipe)
+    const paxMultiplier = safeScaleMultiplier(paxModifier, recipe.yieldUnit, baseYield)
     // Con PAX activo, el costo se calcula con las MISMAS cantidades redondeadas que se
     // guardan y salen en el PDF (lib/pax-scaling.ts, docs/189). Antes la pantalla usaba
     // costo × multiplicador sin redondear y el costo/precio cambiaba un poco al guardar.
@@ -957,6 +961,8 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
   const plateTriggerRef = useRef<HTMLButtonElement>(null)
   const yieldAmountInputRef = useRef<HTMLInputElement>(null)
   const paxModifierInputRef = useRef<HTMLInputElement>(null)
+  // docs/313: objetivo de escalado incoherente (7.5 porciones, negativo, receta sin rendimiento).
+  const paxTargetError = scaleTargetError(paxModifier, recipe.yieldUnit, scaleBaseYield(recipe))
   const [classificationOpen, setClassificationOpen] = useState(false)
   const [plateOpen, setPlateOpen] = useState(false)
 
@@ -1758,7 +1764,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                       }}
                       className="w-24"
                       placeholder="0"
-                      decimalPlaces={0}
+                      decimalPlaces={scaleTargetDecimals(recipe.yieldUnit)}
                       min={0}
                     />
                   ) : (
@@ -1779,6 +1785,11 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                       : t("ficha_tecnica_pax_hint_unit").replace("{unit}", recipe.yieldUnit)}
                   </span>
                 </div>
+                {paxTargetError && (
+                  <p className="mt-2 text-sm text-destructive" data-testid="pax-target-error">
+                    {t(`ficha_tecnica_pax_error_${paxTargetError}`)}
+                  </p>
+                )}
                 {recipe.originalSnapshot && (
                   <Button
                     type="button"

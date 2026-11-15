@@ -102,6 +102,11 @@ export interface IngredientPrice {
   // campos son un dato adicional de valuación de inventario, no reemplazan ese costeo.
   weightedAverageCost?: number
   weightedAverageQuantity?: number
+  // Último precio de COMPRA por unidad (docs/313): se anota al registrar una «Nueva compra»
+  // o al recibir una orden de compra. Distinto de pricePerUnit (el precio vigente, que
+  // también cambia al editar el ingrediente o importar una lista de precios).
+  lastPurchasePrice?: number
+  lastPurchaseAt?: string
 }
 
 export interface IngredientMetadata {

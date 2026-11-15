@@ -21,10 +21,21 @@ describe("Modificador de PAX (docs/189)", () => {
     expect(scaleLineQuantity(0.0004, "kilogramos", 3)).toBe(0.0012) // 1.2 g: el escalón baja para no inflar cantidades mínimas (docs/190)
   })
 
-  it("g/ml/oz/unidad redondean a 0.1 hacia arriba", () => {
+  it("g/ml/oz redondean a 0.1 hacia arriba", () => {
     expect(scaleLineQuantity(250, "gramos", 1.2)).toBe(300)
-    expect(scaleLineQuantity(3, "unidad", 2.5)).toBe(7.5)
     expect(scaleLineQuantity(7, "gramos", 1 / 3)).toBe(2.4) // 2.333… → 2.4
+  })
+
+  // docs/313 (pedido del dueño: «impedir escalados físicamente incoherentes»): antes 3 huevos
+  // × 2.5 daban 7.5 huevos. Las piezas se redondean hacia arriba a piezas enteras, o a medias /
+  // cuartos si la receta ya usaba fracciones.
+  it("piezas («unidad»): enteras si la receta las usa enteras; medias o cuartos si ya eran fracción", () => {
+    expect(scaleLineQuantity(3, "unidad", 2.5)).toBe(8)
+    expect(scaleLineQuantity(3, "unidad", 0.78)).toBe(3) // 2.34 → 3, nunca 2.4 huevos
+    expect(scaleLineQuantity(2, "unidad", 2)).toBe(4)
+    expect(scaleLineQuantity(0.5, "unidad", 3)).toBe(1.5) // ½ limón × 3
+    expect(scaleLineQuantity(0.5, "unidad", 2.2)).toBe(1.5) // 1.1 → 1.5
+    expect(scaleLineQuantity(0.25, "unidad", 3)).toBe(0.75)
   })
 
   it("sin error de coma flotante: 0.1 × 3 = 0.3 (antes 0.4) y 0.4 kg × 3 = 1.2 kg (antes 1.3)", () => {
