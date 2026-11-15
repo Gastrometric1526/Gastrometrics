@@ -772,7 +772,7 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
             { label: t("facturas_col_date"), value: formatDate(`${detailInvoice.issueDate}T00:00:00`) },
             { label: t("facturas_total_label"), value: formatCurrency(detailInvoice.total) },
             { label: t("facturas_subtotal_label"), value: formatCurrency(detailInvoice.subtotal) },
-            { label: t("facturas_tax_total_label"), value: formatCurrency(detailInvoice.taxAmount) },
+            { label: t("facturas_tax_total_label").replace("{percent}", String(detailInvoice.taxPercent)), value: formatCurrency(detailInvoice.taxAmount) },
             { label: t("facturas_items_title"), value: detailInvoice.items.length },
           ]}
           actions={[
