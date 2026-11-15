@@ -3,6 +3,9 @@ import {
   aggregateSalesByDish,
   classifyMenuEngineering,
   computeCOGS,
+  salesCoverage,
+  linkedContribution,
+  aggregateSalesByPeriod,
   computePrimeCost,
   prorateMonthlyExpense,
   computeInventoryTurnover,
@@ -112,9 +115,9 @@ describe("classifyMenuEngineering", () => {
   it("Kasavana y Smith: un plato muy vendido con poco margen por unidad es vaca, no estrella (docs/187)", () => {
     // Totales: 1100 u, margen 1700 → margen promedio por plato 1.545; umbral de popularidad 0.7 × 1100/3 = 256.7
     const dishes = [
-      { recipeId: "a", name: "Muy vendido", quantitySold: 1000, revenue: 2000, theoreticalCost: 1000, contributionMargin: 1000, contributionMarginPercent: 50, unitPrice: 2, unitCost: 1 },
-      { recipeId: "b", name: "Caro", quantitySold: 60, revenue: 1200, theoreticalCost: 600, contributionMargin: 600, contributionMarginPercent: 50, unitPrice: 20, unitCost: 10 },
-      { recipeId: "c", name: "Medio", quantitySold: 40, revenue: 200, theoreticalCost: 100, contributionMargin: 100, contributionMarginPercent: 50, unitPrice: 5, unitCost: 2.5 },
+      { recipeId: "a", name: "Muy vendido", quantitySold: 1000, revenue: 2000, theoreticalCost: 1000, contributionMargin: 1000, contributionMarginPercent: 50, unitPrice: 2, unitCost: 1, linked: true },
+      { recipeId: "b", name: "Caro", quantitySold: 60, revenue: 1200, theoreticalCost: 600, contributionMargin: 600, contributionMarginPercent: 50, unitPrice: 20, unitCost: 10, linked: true },
+      { recipeId: "c", name: "Medio", quantitySold: 40, revenue: 200, theoreticalCost: 100, contributionMargin: 100, contributionMarginPercent: 50, unitPrice: 5, unitCost: 2.5, linked: true },
     ]
     const byName = Object.fromEntries(classifyMenuEngineering(dishes).map((d) => [d.name, d.classification]))
     expect(byName["Muy vendido"]).toBe("vaca") // antes: estrella (margen total 1000 ≥ promedio de totales 566)
@@ -124,10 +127,10 @@ describe("classifyMenuEngineering", () => {
 
   it("clasifica en los 4 cuadrantes contra el promedio del propio menu", () => {
     const dishes = [
-      { recipeId: "star", name: "Estrella", quantitySold: 100, revenue: 1000, theoreticalCost: 300, contributionMargin: 700, contributionMarginPercent: 70, unitPrice: 10, unitCost: 3 },
-      { recipeId: "cow", name: "Vaca", quantitySold: 100, revenue: 1000, theoreticalCost: 800, contributionMargin: 200, contributionMarginPercent: 20, unitPrice: 10, unitCost: 8 },
-      { recipeId: "puzzle", name: "Puzzle", quantitySold: 5, revenue: 500, theoreticalCost: 100, contributionMargin: 400, contributionMarginPercent: 80, unitPrice: 100, unitCost: 20 },
-      { recipeId: "dog", name: "Perro", quantitySold: 5, revenue: 50, theoreticalCost: 40, contributionMargin: 10, contributionMarginPercent: 20, unitPrice: 10, unitCost: 8 },
+      { recipeId: "star", name: "Estrella", quantitySold: 100, revenue: 1000, theoreticalCost: 300, contributionMargin: 700, contributionMarginPercent: 70, unitPrice: 10, unitCost: 3, linked: true },
+      { recipeId: "cow", name: "Vaca", quantitySold: 100, revenue: 1000, theoreticalCost: 800, contributionMargin: 200, contributionMarginPercent: 20, unitPrice: 10, unitCost: 8, linked: true },
+      { recipeId: "puzzle", name: "Puzzle", quantitySold: 5, revenue: 500, theoreticalCost: 100, contributionMargin: 400, contributionMarginPercent: 80, unitPrice: 100, unitCost: 20, linked: true },
+      { recipeId: "dog", name: "Perro", quantitySold: 5, revenue: 50, theoreticalCost: 40, contributionMargin: 10, contributionMarginPercent: 20, unitPrice: 10, unitCost: 8, linked: true },
     ]
     const result = classifyMenuEngineering(dishes)
     const byName = Object.fromEntries(result.map((d) => [d.name, d.classification]))
@@ -149,7 +152,7 @@ describe("computeCOGS", () => {
       { id: "s2", date: "2026-08-07", type: "final", modifiedItems: 1, totalValue: 11200 },
     ]
     const purchaseOrders: PurchaseOrder[] = [
-      { id: "po1", name: "OC-1", number: 1, date: "2026-08-03", recipes: [], items: [], total: 8500 },
+      { id: "po1", name: "OC-1", number: 1, date: "2026-08-03", recipes: [], items: [], total: 8500, status: "received" },
     ]
     const result = computeCOGS({
       snapshots,
@@ -310,5 +313,44 @@ describe("venta neta sin ISV (docs/187)", () => {
     const recipes = [{ id: "r1", name: "Plato", pricingMethod: "gastrometrics", isv: 15 }] as unknown as Recipe[]
     const imp = makeImport({ lines: [{ rawDishName: "Plato", recipeId: "r1", quantity: 1, revenue: 115, theoreticalCost: 30 } as never] })
     expect(aggregateSalesByDish([imp], recipes)[0].tax).toBe(0)
+  })
+})
+
+describe("platos sin vincular no son costo cero (docs/305)", () => {
+  // Hamburguesa vinculada: L 200 de venta, L 70 de costo. Pizza sin receta: L 200, costo desconocido.
+  const imports = [
+    makeImport({
+      lines: [
+        { id: "h", rawDishName: "Hamburguesa", recipeId: "burger", quantity: 1, unitPrice: 200, revenue: 200, theoreticalCost: 70 },
+        { id: "p", rawDishName: "Pizza", recipeId: null, quantity: 1, unitPrice: 200, revenue: 200, theoreticalCost: 0 },
+      ],
+    }),
+  ]
+  const dishes = aggregateSalesByDish(imports, [])
+
+  it("marca qué plato tiene receta", () => {
+    expect(dishes.find((d) => d.name === "Hamburguesa")?.linked).toBe(true)
+    expect(dishes.find((d) => d.name === "Pizza")?.linked).toBe(false)
+  })
+  it("el margen se mide solo con lo vinculado: 65 %, no 82.5 %", () => {
+    const m = linkedContribution(dishes)
+    expect(m.netRevenue).toBe(200)
+    expect(m.contributionMargin).toBe(130)
+    expect(m.contributionMarginPercent).toBeCloseTo(65, 9)
+  })
+  it("dice qué parte de la venta no tiene costo conocido", () => {
+    expect(salesCoverage(dishes)).toEqual({ linkedNetRevenue: 200, unlinkedNetRevenue: 200, unlinkedPercent: 50, unlinkedCount: 1 })
+  })
+  it("el desglose por día usa la misma regla", () => {
+    const [day] = aggregateSalesByPeriod(imports, [], [], "day")
+    expect(day.revenue).toBe(400)
+    expect(day.contributionMarginPercent).toBeCloseTo(65, 9)
+  })
+  it("un menú vendido cuenta como vinculado", () => {
+    const menuDishes = aggregateSalesByDish(
+      [makeImport({ lines: [{ id: "m", rawDishName: "Almuerzo", recipeId: null, menuId: "m1", quantity: 1, unitPrice: 100, revenue: 100, theoreticalCost: 40 }] })],
+      [],
+    )
+    expect(menuDishes[0].linked).toBe(true)
   })
 })

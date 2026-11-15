@@ -18,6 +18,7 @@ const dish = (recipeId: string | null, revenue: number, theoreticalCost: number)
   contributionMarginPercent: 0,
   unitPrice: revenue,
   unitCost: theoreticalCost,
+  linked: true,
 })
 
 const recipes = [recipe("steak", "Parrilla (Grillardin)"), recipe("gin-tonic", BAR_CLASSIFICATIONS.cocktails)]
@@ -57,6 +58,7 @@ describe("computeCOGSByArea", () => {
     name: "",
     number: 1,
     date: "2026-09-10",
+    status: "received",
     recipes: [],
     total: 70,
     items: [

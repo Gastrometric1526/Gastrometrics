@@ -1775,7 +1775,11 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                     />
                   )}
                   <span className="text-sm text-muted-foreground">
-                    {t("ficha_tecnica_pax_hint")}
+                    {/* Con rendimiento en peso o volumen, el número es el nuevo rendimiento en esa
+                        unidad, no personas (docs/305): 2 kg → 10 kg multiplica por 5. */}
+                    {!recipe.yieldUnit || recipe.yieldUnit === "porciones"
+                      ? t("ficha_tecnica_pax_hint")
+                      : t("ficha_tecnica_pax_hint_unit").replace("{unit}", recipe.yieldUnit)}
                   </span>
                 </div>
                 {recipe.originalSnapshot && (
@@ -2407,6 +2411,15 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                   label: t("ficha_tecnica_item_net_profit"),
                   value: calculations.netProfitAmount,
                   percentage: contributionMargin,
+                  // «Ganancia sobre costo» no es margen sobre la venta (docs/305): 30 % del
+                  // costo es menos del 30 % del precio. Se muestra cuánto es del precio.
+                  note:
+                    calculations.finalPrice > 0 && calculations.yieldAmount > 0 && calculations.netProfitAmount > 0
+                      ? t("ficha_tecnica_profit_of_price").replace(
+                          "{percent}",
+                          ((calculations.netProfitAmount / calculations.yieldAmount / calculations.finalPrice) * 100).toFixed(1),
+                        )
+                      : undefined,
                 },
                 ...(calculations.fixedCostAmount > 0
                   ? [
@@ -2414,14 +2427,16 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                         label: t("ficha_tecnica_item_fixed_cost"),
                         value: calculations.fixedCostAmount,
                         percentage: calculations.fixedCostPercentage,
+                        note: undefined as string | undefined,
                       },
                     ]
                   : []),
-              ].map((item, index) => (
+              ].map((item: { label: string; value: number; percentage: number; note?: string }, index) => (
                 <div key={index} className="flex justify-between items-center border-b pb-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span>{item.label}</span>
                     <span className="text-xs text-muted-foreground">({item.percentage.toFixed(2)}%)</span>
+                    {item.note && <span className="text-xs text-muted-foreground">· {item.note}</span>}
                   </div>
                   <span className="font-mono">{item.value > 0 ? formatCurrency(item.value) : ""}</span>
                 </div>
@@ -2432,6 +2447,33 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                   {calculations.calculatedSalePrice > 0 ? formatCurrency(calculations.calculatedSalePrice) : ""}
                 </span>
               </div>
+              {/* Gastos contados dos veces (docs/305): con los gastos reales del negocio ya
+                  repartidos por plato, los rubros de servicios, marketing, operación y personal
+                  pueden estar cobrando lo mismo otra vez. Se avisa y se ofrece dejarlos en 0. */}
+              {calculations.fixedCostAmount > 0 && publicServices + marketing + operationalCosts + laborCosts > 0 && (
+                <div className="flex flex-col gap-2 rounded-md border border-warning/40 bg-warning-soft p-3 text-sm text-warning" data-testid="ficha-double-expenses">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                    <p>{t("ficha_tecnica_double_expenses_warning")}</p>
+                  </div>
+                  {isEditMode && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="self-start bg-transparent"
+                      onClick={() => {
+                        setPublicServices(0)
+                        setMarketing(0)
+                        setOperationalCosts(0)
+                        setLaborCosts(0)
+                      }}
+                    >
+                      {t("ficha_tecnica_double_expenses_fix")}
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </CardContent>

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { saleTaxIncluded } from "@/lib/sales-analytics"
 import { v4 as uuidv4 } from "uuid"
-import { Plus, Receipt, Search, Trash2, Pencil, Download, DollarSign, FileText, Info } from "lucide-react"
+import { Plus, Receipt, Search, Trash2, Pencil, Download, DollarSign, FileText, Info, CheckCircle2, Ban, Undo2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -102,6 +102,8 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null)
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null)
+  // Anular (docs/305): la factura queda con su número, marcada «Anulada», y deja de contar como venta.
+  const [invoiceToVoid, setInvoiceToVoid] = useState<Invoice | null>(null)
   // Panel de acciones de una factura (docs/219): tocar la fila lo abre.
   const [detailInvoice, setDetailInvoice] = useState<Invoice | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -153,7 +155,11 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
     )
   }, [invoices, searchTerm])
 
-  const totalInvoiced = useMemo(() => invoices.reduce((sum, inv) => sum + inv.total, 0), [invoices])
+  // Las anuladas no suman (docs/305).
+  const totalInvoiced = useMemo(
+    () => invoices.reduce((sum, inv) => sum + (inv.status === "void" ? 0 : inv.total), 0),
+    [invoices],
+  )
 
   const resetDraft = () => {
     setDraftNumber(getNextInvoiceNumber(businessId))
@@ -411,6 +417,39 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
     setInvoiceToDelete(null)
   }
 
+  // Estado de cobro y anulación (docs/305). La venta se reconoce al emitir la factura; «Pagada»
+  // solo dice que ya se cobró. Anular quita la venta espejo (y su consumo de inventario), salvo
+  // en una factura del POS: ahí la venta es la cuenta cobrada, no la factura.
+  const setInvoiceStatus = async (invoice: Invoice, status: Invoice["status"]) => {
+    const updated: Invoice = {
+      ...invoice,
+      status,
+      metadata: { ...invoice.metadata, updatedAt: new Date().toISOString(), version: invoice.metadata.version + 1 },
+    }
+    try {
+      await updateInvoice(businessId, invoice.id, updated)
+      if (status === "void" && !invoice.posTicketId) {
+        try {
+          await deleteSalesImport(`invoice_${invoice.id}`, businessId)
+        } catch (error) {
+          console.error("[Facturas] Error quitando la venta de la factura anulada:", error)
+        }
+      }
+      setDetailInvoice((current) => (current?.id === invoice.id ? updated : current))
+      toast({
+        title:
+          status === "void"
+            ? t("facturas_toast_voided")
+            : status === "paid"
+              ? t("facturas_toast_paid")
+              : t("facturas_toast_unpaid"),
+      })
+    } catch (error) {
+      console.error("[Facturas] Error cambiando el estado:", error)
+      toast({ title: t("facturas_toast_error_title"), description: t("facturas_toast_error_desc"), variant: "destructive" })
+    }
+  }
+
   const handleDownload = (invoice: Invoice) => {
     const business = getBusinessById(businessId)
     downloadInvoicePDF(invoice, { businessName: business?.name, businessLogo: business?.logo, businessId })
@@ -510,6 +549,7 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
                   <TableHead>{t("facturas_col_number")}</TableHead>
                   <TableHead>{t("facturas_col_client")}</TableHead>
                   <TableHead>{t("facturas_col_date")}</TableHead>
+                  <TableHead>{t("facturas_col_status")}</TableHead>
                   <TableHead className="text-right">{t("facturas_col_total")}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -531,7 +571,12 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
                       resto del proyecto (ver lib/pdf/invoice-pdf-generator.ts). */}
                       {formatDate(`${invoice.issueDate}T00:00:00`)}
                     </TableCell>
-                    <TableCell className="text-right font-medium tabular-nums">
+                    <TableCell>
+                      <InvoiceStatusBadge status={invoice.status} />
+                    </TableCell>
+                    <TableCell
+                      className={`text-right font-medium tabular-nums ${invoice.status === "void" ? "line-through text-muted-foreground" : ""}`}
+                    >
                       {formatCurrency(invoice.total)}
                     </TableCell>
                   </TableRow>
@@ -719,7 +764,10 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
           open={!!detailInvoice}
           onOpenChange={(open) => !open && setDetailInvoice(null)}
           title={`${detailInvoice.number} — ${detailInvoice.clientName}`}
-          badges={detailInvoice.clientTaxId ? [{ label: detailInvoice.clientTaxId }] : []}
+          badges={[
+            { label: t(INVOICE_STATUS_LABEL[detailInvoice.status] ?? "facturas_status_issued") },
+            ...(detailInvoice.clientTaxId ? [{ label: detailInvoice.clientTaxId }] : []),
+          ]}
           stats={[
             { label: t("facturas_col_date"), value: formatDate(`${detailInvoice.issueDate}T00:00:00`) },
             { label: t("facturas_total_label"), value: formatCurrency(detailInvoice.total) },
@@ -731,7 +779,16 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
             ...(canDownloadPdf !== false
               ? [{ key: "pdf", label: t("facturas_download_pdf"), icon: Download, primary: true, onClick: () => handleDownload(detailInvoice) }]
               : []),
-            { key: "edit", label: t("facturas_edit_button"), icon: Pencil, primary: canDownloadPdf === false, onClick: () => openEditDialog(detailInvoice) },
+            // Una factura anulada ya no se edita ni se cobra (docs/305).
+            ...(detailInvoice.status !== "void"
+              ? [
+                  { key: "edit", label: t("facturas_edit_button"), icon: Pencil, primary: canDownloadPdf === false, onClick: () => openEditDialog(detailInvoice) },
+                  detailInvoice.status === "paid"
+                    ? { key: "unpaid", label: t("facturas_mark_unpaid"), icon: Undo2, onClick: () => setInvoiceStatus(detailInvoice, "issued") }
+                    : { key: "paid", label: t("facturas_mark_paid"), icon: CheckCircle2, onClick: () => setInvoiceStatus(detailInvoice, "paid") },
+                  { key: "void", label: t("facturas_void_button"), icon: Ban, onClick: () => setInvoiceToVoid(detailInvoice) },
+                ]
+              : []),
           ]}
           danger={{ key: "delete", label: t("facturas_delete_button"), icon: Trash2, onClick: () => setInvoiceToDelete(detailInvoice) }}
         />
@@ -743,6 +800,29 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
         description={t("hint_invoices_panel_desc")}
         selector='[data-tour="detail-panel-actions"]'
       />
+
+      <AlertDialog open={!!invoiceToVoid} onOpenChange={(open) => !open && setInvoiceToVoid(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("facturas_void_confirm_title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {invoiceToVoid?.posTicketId ? t("facturas_void_confirm_desc_pos") : t("facturas_void_confirm_desc")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("facturas_cancel_button")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (invoiceToVoid) void setInvoiceStatus(invoiceToVoid, "void")
+                setInvoiceToVoid(null)
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t("facturas_void_button")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!invoiceToDelete} onOpenChange={(open) => !open && setInvoiceToDelete(null)}>
         <AlertDialogContent>
@@ -759,5 +839,27 @@ export function FacturasPanel({ businessId }: { businessId: string }) {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+const INVOICE_STATUS_LABEL = {
+  draft: "facturas_status_issued",
+  issued: "facturas_status_issued",
+  paid: "facturas_status_paid",
+  void: "facturas_status_void",
+} as const
+
+function InvoiceStatusBadge({ status }: { status: Invoice["status"] }) {
+  const { t } = useLanguage()
+  const tone =
+    status === "paid"
+      ? "bg-success-soft text-success"
+      : status === "void"
+        ? "bg-destructive/10 text-destructive"
+        : "bg-muted text-muted-foreground"
+  return (
+    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${tone}`}>
+      {t(INVOICE_STATUS_LABEL[status] ?? "facturas_status_issued")}
+    </span>
   )
 }

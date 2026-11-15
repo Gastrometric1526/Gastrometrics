@@ -188,6 +188,8 @@ export interface PdfLabels {
   noAnotado: string
   granAnio: string
   descuento: string
+  /** Factura anulada (docs/305): se marca en el título del PDF. */
+  anulada: string
   propina: string
   mesa: string
   mesero: string
@@ -382,6 +384,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     noAnotado: "Sin anotar",
     granAnio: "Año",
     descuento: "Descuento",
+    anulada: "Anulada",
     propina: "Propina",
     mesa: "Mesa",
     mesero: "Mesero",
@@ -574,6 +577,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     noAnotado: "Not noted",
     granAnio: "Year",
     descuento: "Discount",
+    anulada: "Void",
     propina: "Tip",
     mesa: "Table",
     mesero: "Server",
@@ -766,6 +770,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     noAnotado: "Ikke angivet",
     granAnio: "År",
     descuento: "Rabat",
+    anulada: "Annulleret",
     propina: "Drikkepenge",
     mesa: "Bord",
     mesero: "Tjener",
@@ -958,6 +963,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     noAnotado: "Non indiqué",
     granAnio: "Année",
     descuento: "Remise",
+    anulada: "Annulée",
     propina: "Pourboire",
     mesa: "Table",
     mesero: "Serveur",
@@ -1150,6 +1156,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     noAnotado: "Não anotado",
     granAnio: "Ano",
     descuento: "Desconto",
+    anulada: "Anulada",
     propina: "Gorjeta",
     mesa: "Mesa",
     mesero: "Garçom",
@@ -1342,6 +1349,7 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     noAnotado: "未填写",
     granAnio: "年",
     descuento: "折扣",
+    anulada: "已作废",
     propina: "小费",
     mesa: "桌号",
     mesero: "服务员",

@@ -19,6 +19,8 @@ interface FinanzasCalculationDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   totalRevenue: number
+  /** Venta neta de los platos con receta (docs/305): base del food cost teórico y del margen. */
+  linkedRevenue: number
   totalTheoreticalCost: number
   theoreticalCostPercent: number
   cogsResult: COGSResult
@@ -42,6 +44,7 @@ export function FinanzasCalculationDialog({
   open,
   onOpenChange,
   totalRevenue,
+  linkedRevenue,
   totalTheoreticalCost,
   theoreticalCostPercent,
   cogsResult,
@@ -136,7 +139,7 @@ export function FinanzasCalculationDialog({
               <p className="text-muted-foreground mb-2">{t("fcd_theoretical_body")}</p>
               <div className="p-3 bg-muted/50 rounded border font-mono text-xs sm:text-sm">
                 {formatCurrency(totalTheoreticalCost)} ({t("fcd_theoretical_formula_note")}) ÷{" "}
-                {formatCurrency(totalRevenue)} × 100 = {theoreticalCostPercent.toFixed(2)}%
+                {formatCurrency(linkedRevenue)} × 100 = {theoreticalCostPercent.toFixed(2)}%
               </div>
             </div>
 
@@ -180,10 +183,13 @@ export function FinanzasCalculationDialog({
               </h4>
               <p className="text-muted-foreground mb-2">{t("fcd_margin_body")}</p>
               <div className="p-3 bg-muted/50 rounded border font-mono text-xs sm:text-sm">
-                {formatCurrency(totalRevenue)} − {formatCurrency(totalTheoreticalCost)} ={" "}
+                {formatCurrency(linkedRevenue)} − {formatCurrency(totalTheoreticalCost)} ={" "}
                 {formatCurrency(totalContributionMargin)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">{t("fcd_margin_note")}</p>
+              {linkedRevenue < totalRevenue - 0.005 && (
+                <p className="text-xs text-warning mt-1">{t("fcd_linked_only_note")}</p>
+              )}
             </div>
 
             <Separator />

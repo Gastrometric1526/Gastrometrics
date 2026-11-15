@@ -36,6 +36,17 @@ export function unitFactor(from: string, to: string): number | null {
   return Number.isFinite(f) && f > 0 ? f : null
 }
 
+const MASS = ["gramos", "kilogramos", "onzas", "libras"]
+const VOLUME = ["mililitros", "litros", "onzas líquidas", "onzas fluidas", "galones"]
+
+/**
+ * El cambio pasa de peso a volumen o al revés (docs/305). Se convierte con 1 L = 1 kg, que solo
+ * es exacto para el agua: el aceite, la miel, los jarabes o la crema pesan distinto por litro.
+ */
+export function crossesMassVolume(from: string, to: string): boolean {
+  return (MASS.includes(from) && VOLUME.includes(to)) || (VOLUME.includes(from) && MASS.includes(to))
+}
+
 const scale = (n: number | null | undefined, f: number) => (typeof n === "number" && Number.isFinite(n) ? n * f : n)
 const round = (n: number, places = 6) => Math.round(n * 10 ** places) / 10 ** places
 

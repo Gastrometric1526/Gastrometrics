@@ -32,6 +32,45 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Facturas: estado de cobro y anulación (docs/305).
+    version: "2026-11-15c",
+    tutorialHref: tourHref("ventas"),
+    content: {
+      es: { title: "Facturas: pagadas y anuladas", items: ["Cada factura muestra su estado: Emitida, Pagada o Anulada. Desde la factura puedes marcarla como pagada o volverla a pendiente.", "«Anular» deja la factura con su número y la marca como anulada, también en el PDF. Deja de contar como venta y ya no descuenta inventario. El total facturado ya no suma las anuladas."] },
+      en: { title: "Invoices: paid and void", items: ["Each invoice shows its status: Issued, Paid or Void. From the invoice you can mark it as paid or back to unpaid.", "“Void” keeps the invoice with its number and marks it as void, also on the PDF. It stops counting as a sale and no longer deducts inventory. The invoiced total no longer adds void invoices."] },
+      da: { title: "Fakturaer: betalte og annullerede", items: ["Hver faktura viser sin status: Udstedt, Betalt eller Annulleret. Fra fakturaen kan du markere den som betalt eller tilbage til ubetalt.", "»Annullér« bevarer fakturaen med sit nummer og markerer den som annulleret, også i PDF'en. Den tæller ikke længere som salg og trækker ikke lager. Det fakturerede beløb tæller ikke annullerede med."] },
+      fr: { title: "Factures : payées et annulées", items: ["Chaque facture affiche son statut : Émise, Payée ou Annulée. Depuis la facture, vous pouvez la marquer comme payée ou la remettre en impayée.", "« Annuler la facture » la conserve avec son numéro et la marque comme annulée, y compris dans le PDF. Elle ne compte plus comme vente et ne déduit plus le stock. Le total facturé n'inclut plus les factures annulées."] },
+      pt: { title: "Faturas: pagas e anuladas", items: ["Cada fatura mostra seu estado: Emitida, Paga ou Anulada. Na fatura você pode marcá-la como paga ou voltar para pendente.", "«Anular» mantém a fatura com seu número e a marca como anulada, também no PDF. Deixa de contar como venda e não desconta mais estoque. O total faturado não soma mais as anuladas."] },
+      zh: { title: "发票：已付款和已作废", items: ["每张发票都会显示状态：已开具、已付款或已作废。可在发票中标记为已付款，或改回未付款。", "“作废”会保留发票编号并标记为已作废，PDF 中也会显示。它不再计为销售，也不再扣减库存。开票总额不再包含已作废的发票。"] },
+    },
+  },
+  {
+    // Ficha Técnica: gastos contados dos veces y ganancia sobre el precio (docs/305).
+    version: "2026-11-15b",
+    tutorialHref: tourHref("ficha-tecnica"),
+    content: {
+      es: { title: "Ficha Técnica: sin cobrar dos veces los mismos gastos", items: ["Con los seis rubros, si ya cargaste los gastos reales del negocio, la Ficha te avisa que servicios, marketing, operación y personal podrían cobrarse dos veces, con un botón para usar solo tus gastos reales.", "La ganancia de los seis rubros es un % del costo: ahora ves cuánto es del precio de venta (30 % del costo es menos del 30 % del precio).", "Con un rendimiento en kg, L u otra unidad, el modificador de PAX explica que el número es el nuevo rendimiento en esa unidad."] },
+      en: { title: "Recipe Sheet: don't charge the same expenses twice", items: ["With the six items, if you've entered the business's real expenses, the Sheet warns that utilities, marketing, operations and staff could be charged twice, with a button to use only your real expenses.", "Profit in the six items is a % of cost: you now see how much of the sale price it is (30% of cost is less than 30% of price).", "With a yield in kg, L or another unit, the PAX modifier explains that the number is the new yield in that unit."] },
+      da: { title: "Opskriftsark: opkræv ikke de samme udgifter to gange", items: ["Med de seks poster advarer arket, hvis du har indtastet virksomhedens faktiske udgifter, om at forsyning, marketing, drift og personale kan blive opkrævet to gange, med en knap til kun at bruge de faktiske udgifter.", "Fortjenesten i de seks poster er en % af omkostningen: nu ser du, hvor meget af salgsprisen det er (30 % af omkostningen er mindre end 30 % af prisen).", "Med udbytte i kg, L eller en anden enhed forklarer PAX-modifikatoren, at tallet er det nye udbytte i den enhed."] },
+      fr: { title: "Fiche technique : ne pas compter deux fois les mêmes dépenses", items: ["Avec les six postes, si vous avez saisi les dépenses réelles de l'établissement, la fiche signale que services, marketing, fonctionnement et personnel pourraient être comptés deux fois, avec un bouton pour n'utiliser que vos dépenses réelles.", "Le bénéfice des six postes est un % du coût : vous voyez maintenant ce qu'il représente du prix de vente (30 % du coût, c'est moins de 30 % du prix).", "Avec un rendement en kg, L ou une autre unité, le modificateur de PAX précise que le nombre est le nouveau rendement dans cette unité."] },
+      pt: { title: "Ficha Técnica: sem cobrar duas vezes os mesmos gastos", items: ["Com os seis itens, se você já cadastrou os gastos reais do negócio, a ficha avisa que serviços, marketing, operação e pessoal podem ser cobrados duas vezes, com um botão para usar só os gastos reais.", "O lucro dos seis itens é um % do custo: agora você vê quanto ele é do preço de venda (30 % do custo é menos de 30 % do preço).", "Com rendimento em kg, L ou outra unidade, o modificador de PAX explica que o número é o novo rendimento nessa unidade."] },
+      zh: { title: "配方表：同一笔费用不再重复计算", items: ["使用六项费用法时，如果你已录入实际经营费用，配方表会提示水电、营销、运营和人工可能被重复计算，并提供“只用我的实际费用”按钮。", "六项费用中的利润是成本的百分比：现在会显示它占售价的多少（成本的 30% 少于售价的 30%）。", "产量单位为 kg、L 或其他单位时，人数调整器会说明这个数字是该单位下的新产量。"] },
+    },
+  },
+  {
+    // Finanzas: costo real y margen más exactos (docs/305).
+    version: "2026-11-15",
+    tutorialHref: tourHref("estadisticas"),
+    content: {
+      es: { title: "Reportes → Finanzas: costo real y margen más exactos", items: ["El costo real (inventario inicial + compras − inventario final) ahora cuenta solo las órdenes de compra recibidas, por la fecha en que llegaron. Antes sumaba también las pendientes y las canceladas.", "Los platos vendidos sin receta vinculada ya no cuentan como costo cero: quedan fuera del food cost teórico, del margen y del Menu Engineering, y un aviso te dice qué parte de tu venta son."] },
+      en: { title: "Reports → Finance: more accurate real cost and margin", items: ["Real cost (opening inventory + purchases − closing inventory) now only counts received purchase orders, by the date they arrived. Before, it also added pending and cancelled ones.", "Dishes sold without a linked recipe no longer count as zero cost: they're left out of theoretical food cost, margin and Menu Engineering, and a notice tells you how much of your sales they are."] },
+      da: { title: "Rapporter → Økonomi: mere præcis reel omkostning og avance", items: ["Reel omkostning (startlager + indkøb − slutlager) tæller nu kun modtagne indkøbsordrer, efter den dato de kom. Før talte ventende og annullerede også med.", "Retter solgt uden tilknyttet opskrift tæller ikke længere som nul: de holdes uden for teoretisk food cost, dækningsbidrag og Menu Engineering, og en besked viser, hvor stor en del af salget de er."] },
+      fr: { title: "Rapports → Finances : coût réel et marge plus exacts", items: ["Le coût réel (stock initial + achats − stock final) ne compte plus que les bons de commande reçus, à leur date de réception. Avant, il ajoutait aussi les commandes en attente et annulées.", "Les plats vendus sans recette liée ne comptent plus comme un coût nul : ils sont exclus du food cost théorique, de la marge et du Menu Engineering, et un avis indique leur part dans vos ventes."] },
+      pt: { title: "Relatórios → Finanças: custo real e margem mais exatos", items: ["O custo real (estoque inicial + compras − estoque final) agora só conta as ordens de compra recebidas, pela data em que chegaram. Antes somava também as pendentes e as canceladas.", "Os pratos vendidos sem receita vinculada não contam mais como custo zero: ficam fora do food cost teórico, da margem e do Menu Engineering, e um aviso mostra quanto da venda eles representam."] },
+      zh: { title: "报表 → 财务：更准确的真实成本和毛利", items: ["真实成本（期初库存 + 采购 − 期末库存）现在只计算已收货的采购单，并按到货日期计入。以前还会计入待处理和已取消的采购单。", "没有关联配方的已售菜品不再按零成本计算：它们不计入理论食材成本率、毛利和菜单工程，并会提示它们占销售额的比例。"] },
+    },
+  },
+  {
     // Equipo: quién ve costos y márgenes (docs/304).
     version: "2026-11-14d",
     tutorialHref: tourHref("equipo"),

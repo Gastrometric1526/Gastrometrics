@@ -94,7 +94,8 @@ export function generateInvoicePDF(invoice: Invoice, options: InvoicePDFOptions 
     // «T00:00:00» fuerza medianoche local: una fecha sola se lee como UTC y en Centroamérica
     // saldría un día antes.
     meta: labels.fecha + " " + formatDate(`${invoice.issueDate}T00:00:00`),
-    title: labels.factura,
+    // Una factura anulada lo dice en el título (docs/305).
+    title: invoice.status === "void" ? `${labels.factura} — ${labels.anulada}` : labels.factura,
     subtitle: `${labels.numero} ${sanitizeText(invoice.number)}`,
     primary: COLORS.primary,
   })

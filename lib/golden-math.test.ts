@@ -105,7 +105,7 @@ describe("5. Un mes completo hasta el P&L", () => {
   // en un período de 30 días → prime cost 13 000 (52 %), utilidad 8 000 (32 %).
   const snap = (date: string, value: number) =>
     ({ id: date, date, type: "final", modifiedItems: 0, totalValue: 0, items: [{ id: "x", name: "x", category: "", quantity: value / 100, unit: "unidad", price: 100, netContent: 1, totalPrice: 0 }] }) as unknown as InventorySnapshot
-  const po = { id: "po", date: "2026-10-15", total: 5000 } as unknown as PurchaseOrder
+  const po = { id: "po", date: "2026-10-15", total: 5000, status: "received" } as unknown as PurchaseOrder
   const cogs = computeCOGS({ snapshots: [snap("2026-10-01", 10000), snap("2026-10-30", 8000)], purchaseOrders: [po], periodStart: "2026-10-01", periodEnd: "2026-10-30", currentInventoryValue: 0 })
 
   it("COGS = inicial + compras − final", () => {
@@ -127,9 +127,21 @@ describe("5. Un mes completo hasta el P&L", () => {
     expect(pnl.netProfitPercent).toBeCloseTo(32, 9)
   })
   it("una compra fuera del período no cuenta", () => {
-    const outside = { id: "po2", date: "2026-11-05", total: 9999 } as unknown as PurchaseOrder
+    const outside = { id: "po2", date: "2026-11-05", total: 9999, status: "received" } as unknown as PurchaseOrder
     const r = computeCOGS({ snapshots: [snap("2026-10-01", 10000), snap("2026-10-30", 8000)], purchaseOrders: [po, outside], periodStart: "2026-10-01", periodEnd: "2026-10-30", currentInventoryValue: 0 })
     expect(r.cogs).toBe(7000)
+  })
+  it("solo cuentan las compras recibidas, por la fecha en que se recibieron (docs/305)", () => {
+    // Inventario 10 000 → 10 000 y una orden pendiente de 5 000: no llegó nada, el costo es 0.
+    const flat = [snap("2026-10-01", 10000), snap("2026-10-30", 10000)]
+    const range = { periodStart: "2026-10-01", periodEnd: "2026-10-30", currentInventoryValue: 0 }
+    const pending = { id: "p", date: "2026-10-10", total: 5000, status: "pending" } as unknown as PurchaseOrder
+    const cancelled = { id: "c", date: "2026-10-10", total: 5000, status: "cancelled" } as unknown as PurchaseOrder
+    const legacy = { id: "l", date: "2026-10-10", total: 5000 } as unknown as PurchaseOrder
+    expect(computeCOGS({ snapshots: flat, purchaseOrders: [pending, cancelled, legacy], ...range }).cogs).toBe(0)
+    // Pedida en septiembre, recibida en octubre: cuenta en octubre.
+    const lateArrival = { id: "r", date: "2026-09-25", receivedAt: "2026-10-03T10:00:00", total: 2000, status: "received" } as unknown as PurchaseOrder
+    expect(computeCOGS({ snapshots: flat, purchaseOrders: [lateArrival], ...range }).purchasesValue).toBe(2000)
   })
 })
 

@@ -40,6 +40,8 @@ import {
   classifyMenuEngineering,
   menuEngineeringThresholds,
   computeCOGS,
+  linkedContribution,
+  salesCoverage,
   computePrimeCost,
   prorateMonthlyExpense,
   computeInventoryTurnover,
@@ -234,7 +236,8 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
   const barKinds = useMemo(() => splitBarByKind(dishPerformance, recipes), [dishPerformance, recipes])
   const [menuEngineeringArea, setMenuEngineeringArea] = useState<SalesArea | "all">("all")
   const menuEngineeringDishes = useMemo(
-    () => filterDishesByArea(dishPerformance, recipes, hasBarSales ? menuEngineeringArea : "all"),
+    // Sin los platos sin vincular (docs/305): con costo desconocido saldrían con margen del 100 %.
+    () => filterDishesByArea(dishPerformance.filter((d) => d.linked), recipes, hasBarSales ? menuEngineeringArea : "all"),
     [dishPerformance, recipes, menuEngineeringArea, hasBarSales],
   )
   const menuEngineering = useMemo(() => classifyMenuEngineering(menuEngineeringDishes), [menuEngineeringDishes])
@@ -250,8 +253,12 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
   // Técnica: el % de costo, el Prime Cost y el P&L se miden sobre lo que es del negocio.
   const totalTax = useMemo(() => dishPerformance.reduce((sum, d) => sum + (d.tax || 0), 0), [dishPerformance])
   const netRevenue = totalRevenue - totalTax
-  const theoreticalCostPercent = netRevenue > 0 ? (totalTheoreticalCost / netRevenue) * 100 : 0
-  const totalContributionMargin = netRevenue - totalTheoreticalCost
+  // Food cost teórico y margen: solo con los platos que tienen receta (docs/305). La venta sin
+  // vincular no tiene costo conocido; antes entraba con costo 0 y mejoraba los dos números.
+  const linked = useMemo(() => linkedContribution(dishPerformance), [dishPerformance])
+  const coverage = useMemo(() => salesCoverage(dishPerformance), [dishPerformance])
+  const theoreticalCostPercent = linked.netRevenue > 0 ? (totalTheoreticalCost / linked.netRevenue) * 100 : 0
+  const totalContributionMargin = linked.contributionMargin
 
   const cogsResult = useMemo(
     () =>
@@ -470,6 +477,18 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
               </CardContent>
             </Card>
           </div>
+
+          {coverage.unlinkedCount > 0 && (
+            <div className="flex items-start gap-2 text-sm bg-warning-soft text-warning border border-warning/40 rounded-lg px-4 py-3" data-testid="finanzas-unlinked-warning">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+              <p>
+                {t("finanzas_unlinked_coverage")
+                  .replace("{percent}", coverage.unlinkedPercent.toFixed(1))
+                  .replace("{amount}", formatCurrency(coverage.unlinkedNetRevenue))
+                  .replace("{count}", String(coverage.unlinkedCount))}
+              </p>
+            </div>
+          )}
 
           {!cogsResult.hasFullData && (
             <div className="flex items-start gap-2 text-sm bg-warning-soft text-warning border border-warning/40 rounded-lg px-4 py-3">
@@ -728,7 +747,7 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
                           <span className="truncate block" title={d.name}>
                             {d.name}
                           </span>
-                          {!d.recipeId && (
+                          {!d.linked && (
                             <Badge variant="outline" className="mt-1 text-[10px] text-warning">
                               {t("finanzas_unlinked_badge")}
                             </Badge>
@@ -941,6 +960,7 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
         open={isCalcInfoOpen}
         onOpenChange={setIsCalcInfoOpen}
         totalRevenue={netRevenue}
+        linkedRevenue={linked.netRevenue}
         totalTheoreticalCost={totalTheoreticalCost}
         theoreticalCostPercent={theoreticalCostPercent}
         cogsResult={cogsResult}

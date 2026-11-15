@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Edit, Trash2, Lock, Info, Wine } from "lucide-react"
 import type { Ingredient, Presentation, Unit } from "@/types/ingredient"
 import { units, presentations, unitAbbreviations } from "@/types/ingredient"
-import { convertIngredientUnit, unitFactor } from "@/lib/unit-change"
+import { convertIngredientUnit, crossesMassVolume, unitFactor } from "@/lib/unit-change"
 import { persistUnitChangeSideEffects } from "@/lib/storage/unit-change"
 import { useToast } from "@/hooks/use-toast"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
@@ -121,6 +121,10 @@ export function IngredientsTable({
           console.error("[ingredients-table] No se pudo guardar el cambio de unidad:", error)
           toast({ title: t("ingredientes_toast_unit_change_error"), variant: "destructive" })
         })
+      }
+      // Peso ⇄ volumen con 1 L = 1 kg (docs/305): exacto solo para el agua; se avisa.
+      if (crossesMassVolume(ingredient.unit, newUnit)) {
+        toast({ title: t("ingredientes_toast_density_title"), description: t("ingredientes_toast_density_desc") })
       }
       onUnitChange?.()
     },

@@ -311,7 +311,8 @@ export function InventoryTable({
                       )
                     })()
                   ) : (
-                    "-"
+                    // Sin conteo no se sabe si hay o no (docs/305): no es «normal».
+                    <span className="text-xs text-muted-foreground">{t("inventario_not_counted")}</span>
                   )}
                 </TableCell>
                 <TableCell className="text-center">{getUnitLabel(item.unit, language)}</TableCell>

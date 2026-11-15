@@ -40,6 +40,11 @@ export interface PurchaseOrder {
   tax?: number
   expectedDeliveryDate?: string
   notes?: string
+  /**
+   * Cuándo pasó a «Recibida» (docs/305). Es la fecha en que la compra entra al inventario y
+   * al costo real (COGS) de Finanzas. Las órdenes recibidas antes de este campo usan `date`.
+   */
+  receivedAt?: string
 }
 
 // New types for PDF processing

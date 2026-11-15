@@ -579,6 +579,7 @@ export function PurchaseOrderPage() {
       status: part.status,
       supplier: part.supplier,
       createdAt: new Date().toISOString(),
+      ...(part.status === "received" ? { receivedAt: new Date().toISOString() } : {}),
     }))
     const updatedOrders = [...orders, ...created]
     savePurchaseOrders(businessId, updatedOrders)
@@ -651,6 +652,11 @@ export function PurchaseOrderPage() {
       status: data.status,
       supplier: data.supplier,
       createdAt: editingOrder?.createdAt || new Date().toISOString(),
+      // Fecha de recepción (docs/305): la del momento en que pasa a «Recibida»; si deja de
+      // estar recibida, se quita (ya no cuenta como compra en Finanzas).
+      // Una orden recibida antes de este campo lo sigue sin tener (cuenta por su fecha).
+      ...(isNowReceived && !wasAlreadyReceived ? { receivedAt: new Date().toISOString() } : {}),
+      ...(isNowReceived && wasAlreadyReceived && editingOrder?.receivedAt ? { receivedAt: editingOrder.receivedAt } : {}),
     }
 
     const updatedOrders = editingOrder

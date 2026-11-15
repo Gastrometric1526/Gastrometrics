@@ -185,6 +185,7 @@ export default {
         ]],
         ["formula", "Foreslået salgspris", ["6 poster: Pris = Enhedskostpris + (Sum af poster ÷ Udbytte)", "Food Cost: Pris = Enhedskostpris ÷ Mål i % × (1 + Moms)"], "I Food Cost lægges momsen (hvis du bruger den) oven i prisen og er inkluderet; med 6 poster er den en af posterne. I begge tilfælde rundes prisen <strong>op</strong> til din valutas trin: til 5 i lempira (61 bliver 65, aldrig 60), til 0.50 i dollar eller euro (10.60 bliver 11.00), til 100 i colón. Det er den eneste afrunding i beregningen. Eksemplet nedenfor er i lempira."],
         ["p", "I 6 poster er hver post, også <strong>Tillæg på kostpris</strong>, en procent af produktionsomkostningen (et markup), ikke en avance på salget: 30 % på omkostningen betyder ikke, at du tjener 30 % af det, du sælger. Den reelle avance på salget ser du i <strong>Bidragsmargen</strong>. I 6 poster lægges momsen også til som procent af omkostningen; vil du have momsen på salgsprisen, så brug Food Cost %."],
+        ["p", "Under posterne ser du, hvor stor en del af <strong>salgsprisen</strong> fortjenesten er. Har du indtastet virksomhedens <strong>faktiske udgifter</strong> (husleje, forsyning, marketing, personale…), fordeles de på hver ret som fast omkostning; beholder du også posterne forsyning, marketing, drift og personale, opkræves udgifterne to gange. Arket advarer og tilbyder <strong>»Brug kun mine faktiske udgifter«</strong>, som sætter de fire poster til 0."],
         ["example", "Eksempel · samme kostpris, to metoder (enhedskostpris 20, udbytte 1)", [
           ["6 poster: 2 + 2 + 6 + 5 + 0 + 6", "21"],
           ["20 + 21 = 41 → afrundet", "45", true],
@@ -210,6 +211,7 @@ export default {
         ["p", "Den foreslåede pris er aldrig obligatorisk: du kan skrive din egen <strong>salgspris</strong> eller din egen <strong>enhedsfortjeneste</strong>. Marginerne genberegnes med dit tal, men kostprisen afspejler altid, hvad du reelt betaler."],
         ["h3", "Skalér med PAX-modifikatoren"],
         ["p", "Skriv, hvor mange personer du vil servere for, og appen skalerer alle mængder og omkostninger med det samme, altid rundet <strong>op</strong>, så du aldrig mangler. Det er en forhåndsvisning: den gemte opskrift ændres ikke. Der rundes til nærmeste gram eller milliliter i kg og L, og til 0.1 i g, ml, oz og stk."],
+        ["p", "Hvis opskriftens udbytte er i kg, L eller en anden enhed (ikke portioner), er tallet du skriver det nye udbytte i samme enhed: fra 2 kg til 10 kg ganges alt med 5."],
         ["list", [
           "<strong>Eksportér PDF</strong> eller <strong>Generer indkøbsordre</strong> med PAX aktiv bruger de skalerede mængder uden at gemme noget. Knappen advarer »Skaleret til N«.",
           "<strong>Gem</strong> med PAX aktiv beder om bekræftelse: opskriften gemmes i den nye størrelse, og den tidligere størrelse bevares som »original«.",
@@ -456,6 +458,7 @@ export default {
         ["tip", "Mangler og dage uden opgørelse", "Kortet «Kasseopgørelser» viser for 7, 30 eller 90 dage, hvor mange dage der er opgjort, summen af mangler og overskud, dage med difference og dage, der mangler. Fra opgørelsen kan du downloade PDF’en eller sende den på WhatsApp. Regninger uden betalingsform er ikke med: angiv den i dagens registrering."],
         ["h3", "Fakturaer til dine kunder"],
         ["p", "Under fanen <strong>Fakturaer</strong> opretter du den faktura, du giver din kunde: vælg opskrifter eller menuer (eller skriv linjer manuelt) med automatisk nummerering, redigerbar moms, noter og din virksomheds logo på PDF'en. Hver faktura tæller automatisk som et salg i dine rapporter (uden moms)."],
+        ["p", "Hver faktura viser sin status: <strong>Udstedt</strong>, <strong>Betalt</strong> eller <strong>Annulleret</strong>. Salget tæller fra udstedelsen; »Markér som betalt« viser kun, at du har fået pengene. <strong>Annullér</strong> bevarer fakturaen med sit nummer og markerer den »Annulleret«, også i PDF'en: den tæller ikke længere som salg og trækker ikke lager (en faktura fra POS rører ikke salget, som er den betalte regning). En annulleret faktura kan ikke redigeres."],
         ["warn", "Ikke en officiel skattefaktura", "Gastrometrics-fakturaen indeholder ikke nummerering godkendt af nogen skattemyndighed. Tjek dit lands krav, før du bruger den som skattebilag."],
         ["h3", "Salgshistorik"],
         ["p", "Nederst på siden samler historikken alle dine salg (manuelle, POS og fakturaer), grupperet efter dag, uge, måned eller år, for det datointerval du vælger, med en knap til at eksportere den til PDF."],
@@ -516,6 +519,7 @@ export default {
           ["Hund", "Lav", "Lav", "Overvej at lave den om eller fjerne den fra menuen."],
         ]],
         ["formula", "Vareforbrug (COGS)", ["COGS = Indledende lager + Indkøb − Afsluttende lager"], "For et præcist tal skal du have en indledende og en afsluttende optælling i perioden."],
+        ["p", "<strong>Indkøb</strong> er kun modtagne ordrer, efter den dato de kom: en ventende eller godkendt ordre er en forpligtelse, ikke varer på lager. Retter solgt <strong>uden tilknyttet opskrift</strong> tæller ikke som nul: de holdes uden for teoretisk food cost, dækningsbidrag og Menu Engineering, og en besked viser, hvor stor en del af salget de er."],
         ["p", "Alt, du registrerer i Salg og tager betaling for i POS, kommer også herind: under salgshistorikken fordeler <strong>Pr. bord</strong> salget på bord, kanal, tjener, betalingsform og time, med gennemsnitsbon, forbrug pr. gæst, drikkepenge og rabatter; bruger du POS, kommer <strong>solgte tilvalg</strong> og den gennemsnitlige <strong>køkkentid</strong> med. Længere nede opsummerer <strong>Kasseopgørelser</strong> manko, overskud og dage uden opgørelse; tryk på en dag for at åbne den i Salg."],
         ["h3", "Leverandører"],
         ["p", "Prishistorikken for hver ingrediens og hvilken leverandør du købte den hos, med en tabel, der sammenligner dine leverandører (seneste pris, laveste, antal køb). Den viser, <strong>hvor du kan spare</strong> (en anden leverandør har solgt den billigere, med den anslåede besparelse om måneden), hvad der steg mest de seneste 30 dage og et overblik over hver leverandør. Priserne kommer fra dine indkøbsordrer (uden annullerede), lagerkøb, prisændringer og hver ingrediens’ nuværende pris."],

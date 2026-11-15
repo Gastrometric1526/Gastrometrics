@@ -35,6 +35,64 @@ export interface DishPerformance {
   contributionMarginPercent: number
   unitPrice: number
   unitCost: number
+  /**
+   * Tiene receta o menú vinculado (docs/305). Un plato sin vincular trae su venta pero no su
+   * costo: NO es un plato de costo cero. Queda fuera del costo teórico, del margen y del
+   * Menu Engineering, y se avisa qué parte de la venta representa.
+   */
+  linked: boolean
+}
+
+/** Venta neta (sin ISV incluido) de una lista de platos. */
+const netOf = (d: DishPerformance) => d.revenue - (d.tax || 0)
+
+export interface SalesCoverage {
+  /** Venta neta de los platos con receta o menú. */
+  linkedNetRevenue: number
+  /** Venta neta de los platos sin vincular (su costo no se conoce). */
+  unlinkedNetRevenue: number
+  /** % de la venta neta sin vincular (0 a 100). */
+  unlinkedPercent: number
+  unlinkedCount: number
+}
+
+/** Qué parte de la venta tiene costo conocido (docs/305). */
+export function salesCoverage(dishes: DishPerformance[]): SalesCoverage {
+  let linkedNetRevenue = 0
+  let unlinkedNetRevenue = 0
+  let unlinkedCount = 0
+  for (const d of dishes) {
+    if (d.linked) linkedNetRevenue += netOf(d)
+    else {
+      unlinkedNetRevenue += netOf(d)
+      unlinkedCount += 1
+    }
+  }
+  const total = linkedNetRevenue + unlinkedNetRevenue
+  return {
+    linkedNetRevenue,
+    unlinkedNetRevenue,
+    unlinkedPercent: total > 0 ? (unlinkedNetRevenue / total) * 100 : 0,
+    unlinkedCount,
+  }
+}
+
+/**
+ * Margen de contribución de un conjunto de platos, medido solo sobre lo vinculado: venta neta
+ * de los platos con receta − su costo teórico. Antes la venta sin vincular entraba con costo 0
+ * y el margen parecía mejor de lo que es (docs/305).
+ */
+export function linkedContribution(dishes: DishPerformance[]): { netRevenue: number; theoreticalCost: number; contributionMargin: number; contributionMarginPercent: number } {
+  const linked = dishes.filter((d) => d.linked)
+  const netRevenue = linked.reduce((sum, d) => sum + netOf(d), 0)
+  const theoreticalCost = linked.reduce((sum, d) => sum + d.theoreticalCost, 0)
+  const contributionMargin = netRevenue - theoreticalCost
+  return {
+    netRevenue,
+    theoreticalCost,
+    contributionMargin,
+    contributionMarginPercent: netRevenue > 0 ? (contributionMargin / netRevenue) * 100 : 0,
+  }
 }
 
 /** ISV incluido en el importe de una venta de esa receta (0 si no aplica). */
@@ -80,6 +138,7 @@ function aggregateLines(lines: SalesImportLine[], recipes: Recipe[], menus: Menu
         contributionMarginPercent: 0,
         unitPrice: 0,
         unitCost: 0,
+        linked: Boolean(line.recipeId || line.menuId),
       })
     }
   })
@@ -224,10 +283,9 @@ export function aggregateSalesByPeriod(
     .map(([periodKey, { start, end, lines }]) => {
       const dishes = aggregateLines(lines, recipes, menus)
       const revenue = dishes.reduce((sum, d) => sum + d.revenue, 0)
-      const theoreticalCost = dishes.reduce((sum, d) => sum + d.theoreticalCost, 0)
       const quantitySold = dishes.reduce((sum, d) => sum + d.quantitySold, 0)
-      const netRevenue = revenue - dishes.reduce((sum, d) => sum + (d.tax || 0), 0)
-      const contributionMargin = netRevenue - theoreticalCost
+      // Margen solo de lo vinculado (docs/305): lo sin receta no es costo cero.
+      const { theoreticalCost, contributionMargin, contributionMarginPercent } = linkedContribution(dishes)
       return {
         periodKey,
         startDate: start,
@@ -236,7 +294,7 @@ export function aggregateSalesByPeriod(
         theoreticalCost,
         quantitySold,
         contributionMargin,
-        contributionMarginPercent: netRevenue > 0 ? (contributionMargin / netRevenue) * 100 : 0,
+        contributionMarginPercent,
         dishes,
       }
     })
@@ -259,17 +317,16 @@ export function aggregateSalesByDay(salesImports: SalesImport[], recipes: Recipe
     .map(([date, lines]) => {
       const dishes = aggregateLines(lines, recipes, menus)
       const revenue = dishes.reduce((sum, d) => sum + d.revenue, 0)
-      const theoreticalCost = dishes.reduce((sum, d) => sum + d.theoreticalCost, 0)
       const quantitySold = dishes.reduce((sum, d) => sum + d.quantitySold, 0)
-      const netRevenue = revenue - dishes.reduce((sum, d) => sum + (d.tax || 0), 0)
-      const contributionMargin = netRevenue - theoreticalCost
+      // Margen solo de lo vinculado (docs/305): lo sin receta no es costo cero.
+      const { theoreticalCost, contributionMargin, contributionMarginPercent } = linkedContribution(dishes)
       return {
         date,
         revenue,
         theoreticalCost,
         quantitySold,
         contributionMargin,
-        contributionMarginPercent: netRevenue > 0 ? (contributionMargin / netRevenue) * 100 : 0,
+        contributionMarginPercent,
         dishes,
       }
     })
@@ -334,6 +391,20 @@ export function classifyMenuEngineering(dishes: DishPerformance[]): MenuEngineer
 // ============== COGS (Costo de Mercaderia Vendida) ==============
 // Formula del dueño del proyecto: Inventario Inicial + Compras - Inventario Final.
 
+/**
+ * Compras que cuentan en el costo real (docs/305): solo las órdenes RECIBIDAS, por la fecha
+ * en que se recibieron. Antes entraban todas las del período (pendientes, aprobadas e
+ * incluso canceladas) por su fecha de orden, pero el inventario solo sube al recibir: una
+ * orden pendiente de L 5 000 aparecía como L 5 000 de costo de lo vendido sin que hubiera
+ * llegado nada. Las pendientes y aprobadas son compromisos de compra, no compras.
+ */
+export function receivedPurchaseOrdersIn(
+  purchaseOrders: PurchaseOrder[],
+  inRange: (dateStr: string) => boolean,
+): PurchaseOrder[] {
+  return purchaseOrders.filter((po) => po.status === "received" && inRange(po.receivedAt || po.date))
+}
+
 export interface COGSResult {
   initialInventoryValue: number
   finalInventoryValue: number
@@ -368,7 +439,7 @@ export function computeCOGS(params: {
   const initialInventoryValue = initialSnapshot ? snapshotValue(initialSnapshot) : currentInventoryValue
   const finalInventoryValue = finalSnapshot ? snapshotValue(finalSnapshot) : currentInventoryValue
 
-  const purchasesValue = purchaseOrders.filter((po) => inRange(po.date)).reduce((sum, po) => sum + (po.total || 0), 0)
+  const purchasesValue = receivedPurchaseOrdersIn(purchaseOrders, inRange).reduce((sum, po) => sum + (po.total || 0), 0)
 
   const cogs = Math.max(0, initialInventoryValue + purchasesValue - finalInventoryValue)
 

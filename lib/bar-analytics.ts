@@ -6,7 +6,7 @@
 // (lib/beverage.ts). Las líneas de menú (combos del registro manual) y las líneas sin
 // receta quedan en cocina: no hay forma de saber qué parte del combo era bebida.
 
-import type { DishPerformance } from "@/lib/sales-analytics"
+import { receivedPurchaseOrdersIn, type DishPerformance } from "@/lib/sales-analytics"
 import type { Recipe } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 import type { InventorySnapshot } from "@/types/inventory"
@@ -109,8 +109,7 @@ export function computeCOGSByArea(params: {
   const categoryByName = new Map(ingredients.map((ingredient) => [ingredient.name.trim().toLowerCase(), ingredient.category]))
   let barPurchases = 0
   let totalPurchases = 0
-  for (const order of purchaseOrders) {
-    if (!inRange(order.date)) continue
+  for (const order of receivedPurchaseOrdersIn(purchaseOrders, inRange)) {
     totalPurchases += order.total || 0
     for (const item of order.items ?? []) {
       if (isBeverageCategory(categoryByName.get(item.name.trim().toLowerCase()))) barPurchases += item.purchaseCost || 0

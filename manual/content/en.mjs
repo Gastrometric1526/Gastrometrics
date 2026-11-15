@@ -185,6 +185,7 @@ export default {
         ]],
         ["formula", "Suggested selling price", ["6 cost items: Price = Unit cost + (Sum of items ÷ Yield)", "Food Cost: Price = Unit cost ÷ Target % × (1 + Sales tax)"], "In Food Cost, sales tax (if you use it) is added on top of the price and included in it; with 6 cost items it's one of the items. In both cases the price is rounded <strong>up</strong> to your currency's step: to 5 in lempiras (61 becomes 65, never 60), to 0.50 in dollars or euros (10.60 becomes 11.00), to 100 in colones. It's the only rounding in the calculation. The example below is in lempiras."],
         ["p", "In 6 items, every item, including <strong>Markup over cost</strong>, is a percentage of the production cost (a markup), not a margin on sales: 30% on cost doesn't mean keeping 30% of what you sell. You see the real margin on sales in <strong>Contribution Margin</strong>. In 6 items, tax is also added as a percentage of cost; if you want tax on the sale price, use Food Cost %."],
+        ["p", "Below the items you see how much of the <strong>sale price</strong> the profit is. If you've entered your business's <strong>real expenses</strong> (rent, utilities, marketing, staff…), they're spread over each dish as a fixed cost; if you also keep the utilities, marketing, operations and staff items, those expenses are charged twice. The Sheet warns you and offers <strong>“Use only my real expenses”</strong>, which sets those four items to 0."],
         ["example", "Example · same cost, two methods (unit cost 20, yield 1)", [
           ["6 items: 2 + 2 + 6 + 5 + 0 + 6", "21"],
           ["20 + 21 = 41 → rounded", "45", true],
@@ -210,6 +211,7 @@ export default {
         ["p", "The suggested price is never mandatory: you can type your own <strong>selling price</strong> or your own <strong>unit profit</strong>. Margins recalculate with your number, but cost always reflects what you really pay."],
         ["h3", "Scaling with the PAX modifier"],
         ["p", "Enter how many people you want to serve and the app scales every quantity and cost instantly, always rounding <strong>up</strong> so you never fall short. It's a preview: the saved recipe doesn't change. Rounding is to the gram or milliliter in kg and L, and to 0.1 in g, ml, oz and units."],
+        ["p", "If the recipe's yield is in kg, L or another unit (not portions), the number you type is the new yield in that same unit: from 2 kg to 10 kg, everything is multiplied by 5."],
         ["list", [
           "<strong>Export PDF</strong> or <strong>Generate Purchase Order</strong> with PAX active uses the scaled quantities, without saving anything. The button warns you “Scaled to N”.",
           "<strong>Saving</strong> with PAX active asks for confirmation: the recipe is stored at the new size and the previous size is kept as the “original”.",
@@ -456,6 +458,7 @@ export default {
         ["tip", "Shortages and days without a cash-up", "The “Cash-ups” card shows for 7, 30 or 90 days how many days were closed, total shortages and overages, days with a difference and days still to close. From the cash-up you can download the PDF or send it on WhatsApp. Checks without a payment method aren't included: add it in the day's entry."],
         ["h3", "Invoices for your customers"],
         ["p", "In the <strong>Invoices</strong> tab you create the invoice you hand to your customer: pick recipes or menus (or type lines by hand), with automatic numbering, editable tax, notes and your business logo on the PDF. Each invoice automatically counts as a sale in your reports (without tax)."],
+        ["p", "Each invoice shows its status: <strong>Issued</strong>, <strong>Paid</strong> or <strong>Void</strong>. The sale counts from the moment you issue it; “Mark as paid” only shows you've collected it. <strong>Void</strong> keeps the invoice with its number and marks it “Void”, also on the PDF: it stops counting as a sale and no longer deducts inventory (an invoice from the POS doesn't touch the sale, which is the paid check). A void invoice can't be edited."],
         ["warn", "Not an official tax invoice", "The Gastrometrics invoice doesn't include numbering authorized by any tax authority. Check your country's requirements before using it as a tax document."],
         ["h3", "Sales history"],
         ["p", "At the bottom of the page, the history brings together all your sales (manual, POS and invoices), grouped by day, week, month or year, for the date range you choose, with a button to export it to PDF."],
@@ -516,6 +519,7 @@ export default {
           ["Dog", "Low", "Low", "Consider redesigning it or taking it off the menu."],
         ]],
         ["formula", "Cost of goods sold (COGS)", ["COGS = Opening inventory + Purchases − Closing inventory"], "For an exact figure you need an opening and a closing count in the period."],
+        ["p", "<strong>Purchases</strong> are only received orders, by the date they arrived: a pending or approved order is a commitment, not goods in your inventory. Dishes sold <strong>without a linked recipe</strong> don't count as zero cost: they're left out of theoretical food cost, contribution margin and Menu Engineering, and a notice tells you how much of your sales they are."],
         ["p", "Everything you record in Sales and charge in the POS also lands here: below the sales history, <strong>By table</strong> splits sales by table, channel, server, payment method and hour, with average ticket, spend per guest, tips and discounts; if you use the POS, it adds <strong>extras sold</strong> and the average <strong>kitchen time</strong>. Further down, the <strong>Cash-ups</strong> card sums up shortages, overages and days not cashed up; tapping a day opens it in Sales."],
         ["h3", "Suppliers"],
         ["p", "Each ingredient’s price history and which supplier you bought it from, with a table comparing your suppliers (last price, lowest, number of purchases). It shows <strong>where you could save</strong> (another supplier sold it to you cheaper, with the estimated monthly saving), what went up the most in 30 days and a summary of each supplier. Prices come from your purchase orders (excluding cancelled), Inventory purchases, price changes and each ingredient’s current price."],

@@ -71,3 +71,14 @@ describe("cambio de unidad sin cambiar costos (docs/187)", () => {
     expect(convertSnapshotsUnit([], "i1", "gramos", 1000)).toBeNull()
   })
 })
+
+describe("peso ⇄ volumen (docs/305)", () => {
+  it("avisa solo cuando cambia de peso a volumen o al revés", async () => {
+    const { crossesMassVolume } = await import("./unit-change")
+    expect(crossesMassVolume("litros", "kilogramos")).toBe(true)
+    expect(crossesMassVolume("gramos", "mililitros")).toBe(true)
+    expect(crossesMassVolume("kilogramos", "gramos")).toBe(false)
+    expect(crossesMassVolume("litros", "mililitros")).toBe(false)
+    expect(crossesMassVolume("unidad", "gramos")).toBe(false)
+  })
+})
