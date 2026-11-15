@@ -88,7 +88,7 @@ export function AdminToday({
       </div>
 
       <section className="space-y-3">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("admin_today_pulse")}</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground">{t("admin_today_pulse")}</h3>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {pulse.map((p) => (
             <button
@@ -124,7 +124,7 @@ export function AdminToday({
       {/* Dónde está cada cosa: los otros espacios con todas sus partes. */}
       <section className="space-y-3" data-admin-map>
         <div className="space-y-1">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("admin_today_map")}</h3>
+          <h3 className="text-sm font-semibold text-muted-foreground">{t("admin_today_map")}</h3>
           <p className="text-sm text-muted-foreground">{t("admin_today_map_desc")}</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">

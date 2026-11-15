@@ -108,8 +108,9 @@ export function AdminCard({
 }) {
   return (
     <Card className={className}>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-3">
+      {/* docs/317: 16 px de relleno en el celular (24 px desde sm); las acciones bajan debajo del título. */}
+      <CardHeader className="p-4 pb-3 sm:p-6 sm:pb-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1 min-w-0">
             <CardTitle className="text-base flex items-center gap-2">
               {Icon && <Icon className="h-4 w-4 text-muted-foreground shrink-0" />}
@@ -118,10 +119,10 @@ export function AdminCard({
             </CardTitle>
             {description && <CardDescription>{description}</CardDescription>}
           </div>
-          {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+          {actions && <div className="flex flex-wrap items-center gap-2 sm:shrink-0">{actions}</div>}
         </div>
       </CardHeader>
-      <CardContent>{children}</CardContent>
+      <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">{children}</CardContent>
     </Card>
   )
 }
@@ -159,7 +160,7 @@ export function KpiCard({
   onClick?: () => void
 }) {
   const body = (
-    <CardContent className="p-4 space-y-2">
+    <CardContent className="min-w-0 p-4 space-y-2">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
           {label}
@@ -171,7 +172,7 @@ export function KpiCard({
           </span>
         )}
       </div>
-      {loading ? <Skeleton className="h-8 w-20" /> : <p className={`text-2xl font-semibold tabular-nums tracking-tight ${TONE_TEXT[tone]}`}>{value}</p>}
+      {loading ? <Skeleton className="h-8 w-20" /> : <p className={`text-xl font-semibold tabular-nums tracking-tight [overflow-wrap:anywhere] sm:text-2xl ${TONE_TEXT[tone]}`}>{value}</p>}
       {!loading && (change !== undefined || sub) && (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
           {change !== undefined && <ChangeBadge change={change} invert={invertChange} />}
@@ -318,7 +319,7 @@ export function DailyBars({
           </div>
         ))}
       </div>
-      <div className="flex justify-between text-[11px] text-muted-foreground tabular-nums">
+      <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
         <span>{labelFormat(data[0].label)}</span>
         <span>{labelFormat(data[data.length - 1].label)}</span>
       </div>
@@ -379,7 +380,7 @@ export function SimpleTable({
         <thead>
           <tr className="border-b border-border">
             {columns.map((c) => (
-              <th key={c.key} className={`px-1 pb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground ${c.align === "right" ? "text-right" : "text-left"}`}>
+              <th key={c.key} className={`px-1 pb-2 text-xs font-medium text-muted-foreground ${c.align === "right" ? "text-right" : "text-left"}`}>
                 {c.label}
               </th>
             ))}

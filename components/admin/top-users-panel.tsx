@@ -115,7 +115,7 @@ export function TopUsersPanel() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Select value={days} onValueChange={setDays}>
-            <SelectTrigger className="w-[150px]" aria-label={t("admin_top_users_period")}>
+            <SelectTrigger className="w-full sm:w-[150px]" aria-label={t("admin_top_users_period")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -127,7 +127,7 @@ export function TopUsersPanel() {
             </SelectContent>
           </Select>
           <Select value={sort} onValueChange={setSort}>
-            <SelectTrigger className="w-[190px]" aria-label={t("admin_top_users_sort")}>
+            <SelectTrigger className="w-full sm:w-[190px]" aria-label={t("admin_top_users_sort")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

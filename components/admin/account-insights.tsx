@@ -147,7 +147,7 @@ function Columns({
             title={`${labels[i]}: ${v}`}
           >
             {i === peak && v > 0 && (
-              <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 -translate-y-full text-[10px] font-medium text-foreground">
+              <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 -translate-y-full text-[11px] font-medium text-foreground">
                 {v}
               </span>
             )}
@@ -162,7 +162,7 @@ function Columns({
         {labels.map((l, i) => (
           <span
             key={i}
-            className="flex-1 truncate text-center text-[10px] text-muted-foreground"
+            className="flex-1 truncate text-center text-[11px] text-muted-foreground"
           >
             {l}
           </span>

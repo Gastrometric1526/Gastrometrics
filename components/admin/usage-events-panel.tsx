@@ -85,7 +85,7 @@ export function UsageEventsPanel() {
 
   const stat = (label: string, value: number, sub?: string) => (
     <div className="rounded-xl border border-border p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{value}</p>
       {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
     </div>

@@ -222,13 +222,13 @@ export function SupportInbox({ onWaitingChange }: { onWaitingChange?: (n: number
             >
               <div className="flex items-center justify-between gap-2">
                 <span className={cn("truncate text-sm", r.admin_unread > 0 ? "font-semibold" : "font-medium")}>{r.email ?? r.account_id.slice(0, 8)}</span>
-                <span className="shrink-0 text-[11px] text-muted-foreground">{formatDateTime(r.last_message_at)}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">{formatDateTime(r.last_message_at)}</span>
               </div>
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate text-xs text-muted-foreground">{r.last_message_preview || "—"}</span>
-                {r.admin_unread > 0 && <span className="shrink-0 rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">{r.admin_unread}</span>}
+                {r.admin_unread > 0 && <span className="shrink-0 rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground">{r.admin_unread}</span>}
               </div>
-              <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                 <span className="rounded bg-muted px-1.5">{t(`support_cat_${r.category}` as TranslationKey)}</span>
                 <span>{statusLabel(r)}</span>
               </div>
@@ -283,7 +283,7 @@ export function SupportInbox({ onWaitingChange }: { onWaitingChange?: (n: number
                         </p>
                       )}
                       <Attachments items={m.attachments} />
-                      <p className="mt-1 text-[10px] text-muted-foreground">{formatDateTime(m.created_at)}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(m.created_at)}</p>
                     </div>
                   </div>
                 ))

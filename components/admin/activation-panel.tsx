@@ -78,7 +78,7 @@ export function ActivationPanel() {
               <Rocket className="h-5 w-5 text-chart-1" />
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <p className="text-xs font-medium text-muted-foreground">
                 {t("admin_activation_rate_label")}
               </p>
               {data ? (
@@ -102,7 +102,7 @@ export function ActivationPanel() {
               <Clock3 className="h-5 w-5 text-chart-2" />
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <p className="text-xs font-medium text-muted-foreground">
                 {t("admin_activation_median_time_label")}
               </p>
               {data ? (

@@ -112,7 +112,7 @@ export function AdminSearch({
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">
                           <span className="truncate text-sm font-medium text-foreground">{r.title}</span>
-                          <span className="shrink-0 rounded bg-muted px-1.5 text-[10px] text-muted-foreground">
+                          <span className="shrink-0 rounded bg-muted px-1.5 text-[11px] text-muted-foreground">
                             {r.kind === "task" ? t("admin_search_kind_task") : t("admin_search_kind_section")}
                           </span>
                         </span>

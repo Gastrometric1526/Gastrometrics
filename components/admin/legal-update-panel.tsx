@@ -96,7 +96,7 @@ export function LegalUpdatePanel() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <p className="text-xs font-medium text-muted-foreground">
                 {t("admin_legal_update_pending_label")}
               </p>
               <p className="text-2xl font-bold text-foreground">

@@ -57,7 +57,7 @@ export function RetentionPanel() {
           <div className="overflow-x-auto -mx-1">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-[11px] uppercase tracking-wide text-muted-foreground">
+                <tr className="border-b border-border text-xs text-muted-foreground">
                   <th className="px-2 pb-2 text-left font-medium">{t("admin_ret_col_week")}</th>
                   <th className="px-2 pb-2 text-right font-medium">{t("admin_ret_col_signups")}</th>
                   <th className="px-2 pb-2 text-right font-medium">{t("admin_ret_col_activated")}</th>

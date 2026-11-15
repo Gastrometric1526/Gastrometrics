@@ -545,10 +545,8 @@ div:has(> .gm-landing-root) { overflow-x: clip; overflow-y: visible; }
 .admin-tables thead th {
   background: hsl(var(--muted));
   color: hsl(var(--muted-foreground));
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   white-space: nowrap;
   padding: 0.625rem 0.75rem;
   border-bottom: 1px solid hsl(var(--border));

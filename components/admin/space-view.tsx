@@ -83,7 +83,7 @@ export function SpaceView({
         <nav aria-label={t(space.label)} className="space-y-3 rounded-2xl border border-border bg-background p-3 sm:p-4" data-admin-parts>
           {space.groups.map((group, gi) => (
             <div key={gi} className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
-              {group.label && <span className="shrink-0 pt-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:w-36">{t(group.label)}</span>}
+              {group.label && <span className="shrink-0 pt-1.5 text-xs font-semibold text-muted-foreground sm:w-36">{t(group.label)}</span>}
               <div className="flex flex-wrap gap-2">
                 {group.parts.map((p) => {
                   const pi = partInfo(p.tab, p.sub)
@@ -98,7 +98,7 @@ export function SpaceView({
                       aria-current={isActive ? "page" : undefined}
                       onClick={() => onOpen(p)}
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors",
+                        "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors",
                         isActive ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground hover:border-primary hover:text-primary",
                       )}
                     >

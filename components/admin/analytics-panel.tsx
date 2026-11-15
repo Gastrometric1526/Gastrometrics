@@ -93,7 +93,7 @@ export function AnalyticsPanel() {
                 <card.icon className={`h-5 w-5 ${card.text}`} />
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t(card.labelKey)}</p>
+                <p className="text-xs font-medium text-muted-foreground">{t(card.labelKey)}</p>
                 {data ? (
                   <p className="text-2xl font-bold text-foreground">{data[card.key]}</p>
                 ) : (
@@ -162,7 +162,7 @@ export function AnalyticsPanel() {
                 const total = group.rows.reduce((sum, r) => sum + r.count, 0) || 1
                 return (
                   <div key={group.title} className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{group.title}</p>
+                    <p className="text-xs font-medium text-muted-foreground">{group.title}</p>
                     {group.rows.length === 0 ? (
                       <p className="text-sm text-muted-foreground">—</p>
                     ) : (

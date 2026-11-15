@@ -146,7 +146,7 @@ export function AccountHistoryPanel() {
             <div className="space-y-6">
               {groups.map((g) => (
                 <div key={g.key} className="space-y-2">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{g.label}</p>
+                  <p className="text-xs font-medium text-muted-foreground">{g.label}</p>
                   <ul className="relative space-y-1 border-l border-border pl-5">
                     {g.items.map((e, i) => {
                       const m = META.get(e.type)!

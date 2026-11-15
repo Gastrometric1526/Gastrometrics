@@ -28,7 +28,7 @@ function Badge({ badge, small }: { badge?: { count: number; tone?: "primary" | "
     <span
       className={cn(
         "rounded-full font-semibold tabular-nums",
-        small ? "absolute -right-2 -top-1 min-w-[1.1rem] px-1 text-center text-[10px] leading-[1.1rem]" : "px-1.5 text-[11px]",
+        small ? "absolute -right-2 -top-1 min-w-[1.1rem] px-1 text-center text-[11px] leading-[1.1rem]" : "px-1.5 text-[11px]",
         badge.tone === "bad" ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground",
       )}
     >
@@ -89,7 +89,7 @@ export function SpaceBottomBar({ current, badges, onGo }: { current: AdminSpaceI
               data-admin-space-mobile={s.id}
               aria-current={active ? "page" : undefined}
               onClick={() => onGo(s.id)}
-              className={cn("flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium", active ? "text-primary" : "text-muted-foreground")}
+              className={cn("flex flex-col items-center gap-1 py-2.5 text-xs font-medium", active ? "text-primary" : "text-muted-foreground")}
             >
               <span className="relative">
                 <Icon className="h-5 w-5" />

@@ -120,12 +120,12 @@ export function ProductUpdatesPanel() {
         <CardContent className="space-y-4">
           <div className="rounded-lg border p-4 bg-muted/30 space-y-3">
             <div className="flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
+              <div className="w-full sm:w-auto">
+                <p className="mb-1 text-xs font-medium text-muted-foreground">
                   {t("admin_product_updates_since_label")}
                 </p>
                 <Select value={sinceVersion} onValueChange={setSinceVersion}>
-                  <SelectTrigger className="w-[260px]" aria-label={t("admin_product_updates_since_label")}>
+                  <SelectTrigger className="w-full sm:w-[260px]" aria-label={t("admin_product_updates_since_label")}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -155,7 +155,7 @@ export function ProductUpdatesPanel() {
 
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <p className="text-xs font-medium text-muted-foreground">
                 {t("admin_product_updates_recipients_label")}
               </p>
               <p className="text-2xl font-bold text-foreground">
