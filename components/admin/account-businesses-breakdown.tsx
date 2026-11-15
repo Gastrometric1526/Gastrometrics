@@ -7,14 +7,14 @@
  * actividad. Activar o desactivar un negocio sigue aquí, en su tarjeta.
  */
 
-import { Building2, ChefHat, DollarSign, FileDown, Package, Repeat, Tag, TrendingUp, Upload, AlertTriangle } from "lucide-react"
+import { Building2, ChefHat, DollarSign, FileDown, Package, Repeat, Tag, TrendingUp, Upload, AlertTriangle, Receipt, Users } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/contexts/language-context"
 import type { TranslationKey } from "@/lib/i18n/translations"
 import { formatDate, formatDateTime } from "@/lib/date-format"
 import type { AccountBusinessBreakdown } from "@/lib/admin/business-breakdown-server"
-import type { SpaceStats } from "@/lib/admin/business-breakdown"
+import type { BusinessSettingsSummary, SpaceStats } from "@/lib/admin/business-breakdown"
 import { AdminCard, EmptyState, ErrorState, KpiCard, KpiGrid, LoadingBlock, formatPercent, useAdminData } from "@/components/admin/ui"
 
 interface Business {
@@ -79,6 +79,9 @@ export function AccountBusinessesBreakdown({
           <KpiCard label={t("admin_biz_pdfs")} value={totals.pdfExports} icon={FileDown} help={t("admin_biz_pdfs_help")} sub={pdfSummary(totals.pdfByKind) || undefined} />
           <KpiCard label={t("admin_biz_migrated")} value={totals.recipesMigrated} icon={Repeat} help={t("admin_biz_migrated_help")} />
           <KpiCard label={t("admin_biz_imports")} value={totals.imports} icon={Upload} />
+          <KpiCard label={t("admin_biz_sales_total")} value={money(totals.salesRevenue, currency)} icon={Receipt} sub={`${t("admin_biz_sales_30d")}: ${money(totals.salesRevenue30d, currency)}`} />
+          <KpiCard label={t("admin_biz_food_cost")} value={formatPercent(totals.theoreticalFoodCostPercent, 1)} icon={TrendingUp} help={t("admin_biz_food_cost_help")} />
+          <KpiCard label={t("admin_biz_team_members")} value={totals.teamMembers} icon={Users} />
         </KpiGrid>
       </div>
 
@@ -138,10 +141,15 @@ function SpaceCard({
     ["admin_biz_pdfs", space.pdfExports],
     ["admin_biz_migrated", space.recipesMigrated],
     ["admin_biz_imports", space.imports],
+    ["admin_biz_sales_total", money(space.salesRevenue, currency)],
+    ["admin_biz_sales_30d", money(space.salesRevenue30d, currency)],
+    ["admin_biz_food_cost", formatPercent(space.theoreticalFoodCostPercent, 1)],
+    ["admin_biz_last_sale", space.lastSaleAt ? formatDate(space.lastSaleAt) : "—"],
+    ...(space.id ? ([["admin_biz_team_members", space.teamMembers]] as [TranslationKey, number][]) : []),
   ]
   return (
     <AdminCard
-      title={space.id ? space.name : t("admin_biz_main_space")}
+      title={space.id ? space.name : t("admin_biz_personal_dashboard")}
       icon={Building2}
       description={
         <>
@@ -172,6 +180,41 @@ function SpaceCard({
         ))}
       </dl>
       {pdfSummary && <p className="mt-3 text-xs text-muted-foreground">{t("admin_biz_pdfs")}: {pdfSummary}</p>}
+      {space.settings && <SettingsList settings={space.settings} currency={currency} />}
     </AdminCard>
+  )
+}
+
+/** Lo que la persona configuró en el negocio (docs/315). */
+function SettingsList({ settings, currency }: { settings: BusinessSettingsSummary; currency: string | null }) {
+  const { t } = useLanguage()
+  const notSet = t("admin_biz_not_set")
+  const method =
+    settings.pricingMethod === "food_cost" || (!settings.pricingMethod && settings.targetFoodCostPercent !== null)
+      ? t("admin_biz_setting_method_food_cost").replace("{percent}", String(settings.targetFoodCostPercent ?? 30))
+      : settings.pricingMethod
+        ? t("admin_biz_setting_method_six")
+        : notSet
+  const valuation = (settings.valuationMethod || "last_purchase") as "last_purchase" | "weighted_average" | "replacement"
+  const valuationKey = `admin_biz_valuation_${valuation}` as TranslationKey
+  const rows: [TranslationKey, string][] = [
+    ["admin_biz_setting_type", settings.type || notSet],
+    ["admin_biz_setting_method", method],
+    ["admin_biz_setting_plates", settings.estimatedMonthlyPlates ? String(settings.estimatedMonthlyPlates) : notSet],
+    ["admin_biz_setting_expenses", settings.monthlyFixedExpenses !== null ? money(settings.monthlyFixedExpenses, currency) : notSet],
+    ["admin_biz_setting_valuation", ["last_purchase", "weighted_average", "replacement"].includes(valuation) ? t(valuationKey) : notSet],
+  ]
+  return (
+    <div className="mt-4 space-y-2">
+      <h4 className="text-xs font-semibold text-muted-foreground">{t("admin_biz_settings_title")}</h4>
+      <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+        {rows.map(([key, value]) => (
+          <div key={key} className="flex items-baseline justify-between gap-2 border-b border-border/60 pb-1">
+            <dt className="text-muted-foreground">{t(key)}</dt>
+            <dd className="text-right font-medium text-foreground">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
   )
 }

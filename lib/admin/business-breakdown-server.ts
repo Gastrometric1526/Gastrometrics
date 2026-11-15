@@ -5,7 +5,7 @@
  */
 
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
-import { buildBusinessBreakdown, type BreakdownBusiness, type BusinessBreakdown } from "@/lib/admin/business-breakdown"
+import { buildBusinessBreakdown, type BreakdownBusiness, type BusinessBreakdown, type BusinessSettingsSummary } from "@/lib/admin/business-breakdown"
 
 async function allRows<T>(build: (from: number, to: number) => PromiseLike<{ data: unknown; error: unknown }>, cap = 20000): Promise<T[]> {
   const out: T[] = []
@@ -26,6 +26,10 @@ const s = (v: unknown) => (typeof v === "string" ? v : null)
 const RECIPE_SELECT: string =
   "business_id, is_sub_recipe, classification, total:data->totalCost, price:data->unitPrice, yield:data->yieldAmount, method:data->>pricingMethod, isv:data->isv, commission:data->salesCommissionPercent"
 const INVENTORY_SELECT: string = "business_id, status:data->>status"
+// Solo los totales de cada venta, nunca sus líneas (docs/315).
+const SALES_SELECT: string = "business_id, created_at, revenue:data->totalRevenue, cost:data->totalTheoreticalCost, at:data->>importedAt, periodEnd:data->>periodEnd"
+const BUSINESS_SELECT: string =
+  "id, type:data->>type, method:data->>pricingMethod, target:data->targetFoodCostPercent, plates:data->estimatedMonthlyPlates, expenses:data->expenses, hasFinancial:data->hasFinancialData, valuation:data->>inventoryValuationMethod"
 
 export type AccountBusinessBreakdown = BusinessBreakdown & { /** Moneda de la cuenta, para el costo promedio. */ currency: string | null }
 
@@ -47,7 +51,7 @@ export async function getBusinessBreakdown(userId: string, businesses: Breakdown
     owned<Row>("inventory_snapshots", "business_id"),
     owned<Row>("purchase_orders", "business_id"),
     owned<Row>("invoices", "business_id"),
-    owned<Row>("sales_imports", "business_id"),
+    owned<Row>("sales_imports", SALES_SELECT),
     allRows<Row>((from, to) =>
       admin
         .from("activity_log")
@@ -57,10 +61,30 @@ export async function getBusinessBreakdown(userId: string, businesses: Breakdown
         .range(from, to),
     ),
   ])
+  // Equipo y configuración de cada negocio (docs/315). Si falla, el resto se muestra igual.
+  const [membersRes, settingsRes] = ids.length
+    ? await Promise.all([
+        admin.from("business_members").select("business_id").in("business_id", ids),
+        admin.from("businesses").select(BUSINESS_SELECT).in("id", ids),
+      ])
+    : [{ data: [] }, { data: [] }]
+  const settingsById = new Map<string, BusinessSettingsSummary>()
+  for (const r of ((settingsRes.data ?? []) as unknown as Row[])) {
+    const e = (r.expenses ?? null) as Record<string, unknown> | null
+    const expenseTotal = e ? ["rent", "utilities", "operationalCosts", "marketing", "laborCosts", "otherExpenses"].reduce((sum, k) => sum + (Number(e[k]) || 0), 0) : 0
+    settingsById.set(String(r.id), {
+      type: s(r.type),
+      pricingMethod: s(r.method),
+      targetFoodCostPercent: n(r.target),
+      estimatedMonthlyPlates: n(r.plates),
+      monthlyFixedExpenses: expenseTotal > 0 ? expenseTotal : null,
+      valuationMethod: s(r.valuation),
+    })
+  }
   const bid = (r: Row) => s(r.business_id)
   const only = (rows: Row[]) => rows.map((r) => ({ businessId: bid(r) }))
   const breakdown = buildBusinessBreakdown({
-    businesses,
+    businesses: businesses.map((b) => ({ ...b, settings: settingsById.get(b.id) })),
     recipes: recipes.map((r) => ({
       businessId: bid(r),
       isSubRecipe: r.is_sub_recipe === true,
@@ -75,6 +99,8 @@ export async function getBusinessBreakdown(userId: string, businesses: Breakdown
     ingredients: ingredients.map((r) => ({ businessId: bid(r), category: s(r.category) })),
     inventory: inventory.map((r) => ({ businessId: bid(r), status: s(r.status) })),
     counted: { menus: only(menus), inventoryCounts: only(snapshots), purchaseOrders: only(orders), invoices: only(invoices), salesImports: only(sales) },
+    sales: sales.map((r) => ({ businessId: bid(r), revenue: n(r.revenue), theoreticalCost: n(r.cost), at: s(r.periodEnd) || s(r.at) || s(r.created_at) })),
+    members: ((membersRes.data ?? []) as Row[]).map((r) => ({ businessId: bid(r) })),
     activity: activity.map((r) => ({ businessId: bid(r), module: String(r.module), action: String(r.action), entityLabel: s(r.entity_label), at: String(r.created_at) })),
   })
   return { ...breakdown, currency: profile.data?.currency || null }

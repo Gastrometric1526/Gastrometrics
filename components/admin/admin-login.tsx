@@ -11,11 +11,14 @@
  * - Si ya hay una cuenta con acceso abierta en la app, sigue el atajo «Entrar como …».
  * - Abajo, plegado, el código de emergencia (docs/282). La primera vez (sin dueño todavía),
  *   entrar con el código estando con la cuenta abierta deja esa cuenta como dueña.
+ * - «Continuar con Google» (docs/315, pedido del dueño: su cuenta entra con Google y no tiene
+ *   contraseña, así que el formulario no le servía y tenía que abrir la app primero). Vuelve a
+ *   /admin?google=1 y entra solo, sin otro toque, si esa cuenta tiene acceso al panel.
  * La contraseña nunca se guarda: va directo al servidor, que la comprueba y la olvida.
  */
 
 import type React from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { ChevronDown, KeyRound, Lock, Mail, UserRound } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,8 +28,22 @@ import { Label } from "@/components/ui/label"
 import { useLanguage } from "@/contexts/language-context"
 import type { AdminSessionInfo } from "@/lib/admin/session-info"
 import { cn } from "@/lib/utils"
+import { GoogleSignInButton } from "@/components/google-sign-in-button"
 
 const LINK_PARAM = "entrar"
+const GOOGLE_PARAM = "google"
+export const ADMIN_GOOGLE_RETURN = `/admin?${GOOGLE_PARAM}=1`
+
+/** ¿Se vuelve de «Continuar con Google»? Lee y quita la marca de la URL. */
+function takeGoogleReturn(): boolean {
+  if (typeof window === "undefined") return false
+  const params = new URLSearchParams(window.location.search)
+  if (params.get(GOOGLE_PARAM) !== "1") return false
+  params.delete(GOOGLE_PARAM)
+  const query = params.toString()
+  window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`)
+  return true
+}
 
 function readLinkToken(): string | null {
   if (typeof window === "undefined") return null
@@ -86,6 +103,18 @@ export function AdminLogin({ info, onUnlocked }: { info: AdminSessionInfo | null
   const needsOwner = info?.needsOwner ?? false
 
   useEffect(() => setLinkToken(readLinkToken()), [])
+
+  // De vuelta de Google: si la cuenta tiene acceso, se entra sin otro toque (docs/315).
+  const [googleReturn] = useState(takeGoogleReturn)
+  const autoTried = useRef(false)
+  useEffect(() => {
+    if (!googleReturn || autoTried.current || !info) return
+    autoTried.current = true
+    if (info.account && info.accountAllowed && info.membersReady) void enterWithAccount()
+    else if (info.account) setAccountError(t("admin_login_not_allowed").replace("{email}", info.account.email))
+    else setAccountError(t("admin_login_error_generic"))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [googleReturn, info])
 
   // Sin dueño todavía o sin la migración, el código es el único camino: se muestra abierto.
   useEffect(() => {
@@ -229,6 +258,8 @@ export function AdminLogin({ info, onUnlocked }: { info: AdminSessionInfo | null
                 </Button>
               )}
               {accountError && <p className="text-sm text-destructive">{accountError}</p>}
+
+              {accountsReady && !(account && info?.accountAllowed) && <GoogleSignInButton next={ADMIN_GOOGLE_RETURN} />}
 
               {accountsReady && (
                 <form onSubmit={enterWithPassword} className="space-y-3" data-admin-login="form">

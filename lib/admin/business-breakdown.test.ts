@@ -82,6 +82,27 @@ describe("negocios de una cuenta en /admin (docs/232)", () => {
     input.activity = [{ businessId: null, module: "negocios", action: "deleted", entityLabel: "C", at: "2026-10-01" }]
     const out = buildBusinessBreakdown(input)
     expect(out.totals).toMatchObject({ businessesNow: 2, businessesCreated: 3, businessesDeleted: 1 })
-    expect(out.spaces.map((s) => s.id)).toEqual(["b1", "b2"]) // el principal vacío no se muestra
+    expect(out.spaces[0]).toMatchObject({ recipes: 0, salesRevenue: 0, theoreticalFoodCostPercent: null })
+    expect(out.spaces.map((s) => s.id)).toEqual([null, "b1", "b2"]) // el Dashboard personal siempre (docs/315)
+  })
+
+  it("ventas, food cost teórico, equipo y configuración por negocio (docs/315)", () => {
+    const input = empty()
+    const settings = { type: "Café", pricingMethod: "food_cost", targetFoodCostPercent: 30, estimatedMonthlyPlates: 900, monthlyFixedExpenses: 4000, valuationMethod: null }
+    input.businesses = [{ id: "b1", name: "Café", createdAt: "2026-10-01", isActive: true, settings }]
+    input.now = "2026-11-15T12:00:00Z"
+    input.sales = [
+      { businessId: "b1", revenue: 1000, theoreticalCost: 300, at: "2026-11-10T00:00:00Z" },
+      { businessId: "b1", revenue: 500, theoreticalCost: 150, at: "2026-09-01T00:00:00Z" },
+      { businessId: "b1", revenue: 0, theoreticalCost: 99, at: "2026-11-11T00:00:00Z" },
+      { businessId: null, revenue: 200, theoreticalCost: 80, at: "2026-11-01T00:00:00Z" },
+    ]
+    input.members = [{ businessId: "b1" }, { businessId: "b1" }, { businessId: "ajeno" }]
+    const out = buildBusinessBreakdown(input)
+    const cafe = out.spaces.find((s) => s.id === "b1")!
+    // 1500 vendidos; 450 de costo teórico (la venta en 0 no cuenta) = 30 %; 1000 en los últimos 30 días.
+    expect(cafe).toMatchObject({ salesRevenue: 1500, salesRevenue30d: 1000, theoreticalFoodCostPercent: 30, lastSaleAt: "2026-11-11T00:00:00Z", teamMembers: 2, settings })
+    expect(out.spaces[0]).toMatchObject({ salesRevenue: 200, theoreticalFoodCostPercent: 40, teamMembers: 0, settings: null })
+    expect(out.totals).toMatchObject({ salesRevenue: 1700, salesRevenue30d: 1200, teamMembers: 2 })
   })
 })

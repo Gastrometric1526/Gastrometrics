@@ -12,13 +12,15 @@ export async function GET(request: Request) {
   const url = new URL(request.url)
   const code = url.searchParams.get("code")
   const next = safeNextPath(url.searchParams.get("next"))
-  if (!code) return NextResponse.redirect(new URL("/login?google=error", url.origin))
+  // Desde /admin (docs/315) el error vuelve a la entrada del panel, no a /login.
+  const failed = next.startsWith("/admin") ? "/admin?google=error" : "/login?google=error"
+  if (!code) return NextResponse.redirect(new URL(failed, url.origin))
 
   const supabase = getSupabaseServerClient()
   const { error } = await supabase.auth.exchangeCodeForSession(code)
   if (error) {
     console.error("[auth/callback] No se pudo abrir la sesión con Google:", error.message)
-    return NextResponse.redirect(new URL("/login?google=error", url.origin))
+    return NextResponse.redirect(new URL(failed, url.origin))
   }
   return NextResponse.redirect(new URL(next, url.origin))
 }

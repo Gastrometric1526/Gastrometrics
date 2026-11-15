@@ -727,7 +727,21 @@ export function AccountsPanel() {
                 value={detailTab}
                 onChange={setDetailTab}
                 items={[
-                  { value: "radiografia", label: t("admin_acc_sub_overview"), content: <AccountInsightsPanel userId={selected.userId} /> },
+                  {
+                    value: "radiografia",
+                    label: t("admin_acc_sub_overview"),
+                    // Pedido del dueño (docs/315): en la Radiografía, el desglose completo del Dashboard
+                    // personal y de cada negocio de la cuenta, antes del uso de la app.
+                    content: (
+                      <div className="space-y-8">
+                        <div className="space-y-3">
+                          <h2 className="text-base font-semibold text-foreground">{t("admin_biz_radiography_title")}</h2>
+                          <AccountBusinessesBreakdown userId={selected.userId} businesses={businesses} onToggle={handleToggleBusiness} />
+                        </div>
+                        <AccountInsightsPanel userId={selected.userId} />
+                      </div>
+                    ),
+                  },
                   {
                     value: "plan",
                     label: t("admin_acc_sub_plan"),
@@ -909,8 +923,8 @@ export function AccountsPanel() {
                     label: t("admin_acc_sub_businesses"),
                     content: (
                       <>
-              {/* Resumen y cada negocio con su contenido, números y actividad (docs/232). */}
-              <AccountBusinessesBreakdown userId={selected.userId} businesses={businesses} onToggle={handleToggleBusiness} />
+              {/* El desglose de cada negocio (docs/232) pasó a la Radiografía (docs/315). */}
+              <p className="text-sm text-muted-foreground">{t("admin_acc_team_only_hint")}</p>
 
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">{t("admin_accounts_team_title")}</h3>

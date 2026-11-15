@@ -16,6 +16,27 @@ export interface BreakdownBusiness {
   name: string
   createdAt: string
   isActive: boolean
+  /** Configuración del negocio (docs/315), para la Radiografía. */
+  settings?: BusinessSettingsSummary
+}
+
+/** Lo que la persona configuró en su negocio (docs/315). */
+export interface BusinessSettingsSummary {
+  type: string | null
+  pricingMethod: string | null
+  targetFoodCostPercent: number | null
+  estimatedMonthlyPlates: number | null
+  /** Suma de los gastos fijos del mes (renta, servicios, personal…); null si no los anotó. */
+  monthlyFixedExpenses: number | null
+  valuationMethod: string | null
+}
+
+/** Una venta registrada (POS, a mano o factura) con sus totales (docs/315). */
+export interface BreakdownSale {
+  businessId: string | null
+  revenue: number | null
+  theoreticalCost: number | null
+  at: string | null
 }
 
 export interface BreakdownRecipe {
@@ -46,6 +67,12 @@ export interface BreakdownInput {
   /** Filas de las tablas que solo se cuentan. */
   counted: Record<"menus" | "inventoryCounts" | "purchaseOrders" | "invoices" | "salesImports", { businessId: string | null }[]>
   activity: BreakdownActivity[]
+  /** Ventas con sus totales (docs/315). Opcional para las llamadas anteriores. */
+  sales?: BreakdownSale[]
+  /** Una fila por persona del equipo en cada negocio (docs/315). */
+  members?: { businessId: string | null }[]
+  /** Fecha de referencia para «últimos 30 días» (ISO). Por defecto, ahora. */
+  now?: string
 }
 
 export interface SpaceStats {
@@ -72,11 +99,19 @@ export interface SpaceStats {
   recipesMigrated: number
   imports: number
   lastActivityAt: string | null
+  /** Ventas registradas (docs/315): total, últimos 30 días y food cost teórico. */
+  salesRevenue: number
+  salesRevenue30d: number
+  /** Costo teórico ÷ venta × 100, de las ventas con venta mayor que 0; null sin ventas. */
+  theoreticalFoodCostPercent: number | null
+  lastSaleAt: string | null
+  teamMembers: number
+  settings: BusinessSettingsSummary | null
 }
 
 export interface BusinessBreakdown {
   spaces: SpaceStats[]
-  totals: Omit<SpaceStats, "id" | "name" | "createdAt" | "isActive"> & {
+  totals: Omit<SpaceStats, "id" | "name" | "createdAt" | "isActive" | "settings"> & {
     businessesNow: number
     businessesCreated: number
     businessesDeleted: number
@@ -91,7 +126,14 @@ function stats(
   inventory: BreakdownInput["inventory"],
   counted: Record<keyof BreakdownInput["counted"], number>,
   activity: BreakdownActivity[],
+  sales: BreakdownSale[],
+  teamMembers: number,
+  nowMs: number,
 ) {
+  const since30 = nowMs - 30 * 86_400_000
+  const withRevenue = sales.filter((s) => num(s.revenue) > 0)
+  const salesRevenue = withRevenue.reduce((sum, s) => sum + num(s.revenue), 0)
+  const salesCost = withRevenue.reduce((sum, s) => sum + num(s.theoreticalCost), 0)
   const sellable = recipes.filter((r) => !r.isSubRecipe && r.classification !== SUBRECIPE_CLASSIFICATION)
   const costed = recipes.filter((r) => num(r.totalCost) > 0)
   const priced = sellable.filter((r) => num(r.unitPrice) > 0 && num(r.yieldAmount) > 0)
@@ -124,6 +166,12 @@ function stats(
     recipesMigrated: activity.filter((a) => a.module === "recetas" && a.action === "migrated").length,
     imports: activity.filter((a) => a.action === "imported").length,
     lastActivityAt: real.reduce<string | null>((last, a) => (!last || a.at > last ? a.at : last), null),
+    salesRevenue: Math.round(salesRevenue * 100) / 100,
+    salesRevenue30d:
+      Math.round(withRevenue.filter((s) => s.at && Date.parse(s.at) >= since30).reduce((sum, s) => sum + num(s.revenue), 0) * 100) / 100,
+    theoreticalFoodCostPercent: salesRevenue > 0 ? Math.round((salesCost / salesRevenue) * 1000) / 10 : null,
+    lastSaleAt: sales.reduce<string | null>((last, s) => (s.at && (!last || s.at > last) ? s.at : last), null),
+    teamMembers,
   }
 }
 
@@ -132,6 +180,9 @@ export function buildBusinessBreakdown(raw: BreakdownInput): BusinessBreakdown {
   // La actividad incluye la de su equipo en sus negocios; la de la persona en negocios ajenos
   // (donde es miembro) no es de esta cuenta.
   const input = { ...raw, activity: raw.activity.filter((a) => !a.businessId || ids.has(a.businessId)) }
+  const sales = raw.sales ?? []
+  const members = raw.members ?? []
+  const nowMs = raw.now ? Date.parse(raw.now) : Date.now()
   // Lo que tenga un negocio que ya no existe (o de otro dueño) cuenta en el espacio principal.
   const key = (businessId: string | null) => (businessId && ids.has(businessId) ? businessId : null)
   const of = <T extends { businessId: string | null }>(rows: T[], id: string | null) => rows.filter((r) => key(r.businessId) === id)
@@ -143,13 +194,22 @@ export function buildBusinessBreakdown(raw: BreakdownInput): BusinessBreakdown {
     name: b?.name ?? null,
     createdAt: b?.createdAt ?? null,
     isActive: b ? b.isActive : true,
-    ...stats(of(input.recipes, id), of(input.ingredients, id), of(input.inventory, id), countOf(id), of(input.activity, id)),
+    settings: b?.settings ?? null,
+    ...stats(
+      of(input.recipes, id),
+      of(input.ingredients, id),
+      of(input.inventory, id),
+      countOf(id),
+      of(input.activity, id),
+      of(sales, id),
+      id ? of(members, id).length : 0,
+      nowMs,
+    ),
   })
 
-  const main = spaceFor(null)
-  const mainHasSomething =
-    main.recipes + main.ingredients + main.menus + main.inventoryItems + main.purchaseOrders + main.invoices + main.salesImports + main.pdfExports > 0
-  const spaces = [...(mainHasSomething ? [main] : []), ...input.businesses.map((b) => spaceFor(b.id, b))]
+  // El Dashboard personal (espacio principal) se muestra siempre, aunque esté vacío (docs/315):
+  // que no lo use también es un dato.
+  const spaces = [spaceFor(null), ...input.businesses.map((b) => spaceFor(b.id, b))]
 
   const all = stats(input.recipes, input.ingredients, input.inventory, {
     menus: input.counted.menus.length,
@@ -157,7 +217,7 @@ export function buildBusinessBreakdown(raw: BreakdownInput): BusinessBreakdown {
     purchaseOrders: input.counted.purchaseOrders.length,
     invoices: input.counted.invoices.length,
     salesImports: input.counted.salesImports.length,
-  }, input.activity)
+  }, input.activity, sales.filter((x) => !x.businessId || ids.has(x.businessId)), members.filter((m) => m.businessId && ids.has(m.businessId)).length, nowMs)
   const created = input.activity.filter((a) => a.module === "negocios" && a.action === "created").length
   const deleted = input.activity.filter((a) => a.module === "negocios" && a.action === "deleted").length
   return {
