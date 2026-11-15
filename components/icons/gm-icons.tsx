@@ -5,7 +5,9 @@
  * Estilo (no cambiarlo al agregar uno nuevo):
  * - retícula de 24 × 24, trazo 1.6, puntas y uniones redondeadas, sin relleno;
  * - color del tema por `currentColor` (se pinta con las clases text-* de siempre);
- * - cada ícono es un objeto de cocina, no un símbolo de oficina.
+ * - se entiende SIN leer la etiqueta (docs/308): el objeto que un chef asocia con ese lugar
+ *   (casa = inicio, zanahoria = ingredientes, caja registradora = POS, barras = reportes).
+ *   Si hay que leer para saber qué es, se redibuja.
  *
  * Misma forma de uso que lucide-react (`className`, `strokeWidth`, `aria-*`), así que se cambian
  * uno por uno sin tocar el resto del componente.
@@ -40,24 +42,23 @@ function make(displayName: string, body: React.ReactNode) {
   return Icon
 }
 
-/** Dashboard: campana de servicio (cloche) sobre su base. */
+/** Dashboard: casa (inicio). */
 export const GmDashboard = make(
   "GmDashboard",
   <>
-    <path d="M4 16a8 8 0 0 1 16 0" />
-    <path d="M2.5 16h19" />
-    <path d="M5.5 19h13" />
-    <circle cx="12" cy="6.6" r="1.1" />
+    <path d="M3.5 11L12 4l8.5 7" />
+    <path d="M5.5 9.5V19a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V9.5" />
+    <path d="M10 20v-5h4v5" />
   </>,
 )
 
-/** Ficha Técnica: gorro de chef con banda de medida. */
+/** Ficha Técnica: gorro de chef (crear recetas). */
 export const GmTechSheet = make(
   "GmTechSheet",
   <>
-    <path d="M7 13a3.2 3.2 0 0 1-.8-6.2A4 4 0 0 1 12 4a4 4 0 0 1 5.8 2.8A3.2 3.2 0 0 1 17 13" />
-    <path d="M7 13h10v6a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1z" />
-    <path d="M9.5 20v-2M12 20v-3M14.5 20v-2" />
+    <path d="M7 14v-2.8A3 3 0 0 1 8.2 5.6a3.8 3.8 0 0 1 7.6 0A3 3 0 0 1 17 11.2V14" />
+    <path d="M7 14h10v5a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1z" />
+    <path d="M7 17h10" />
   </>,
 )
 
@@ -72,59 +73,56 @@ export const GmRecipes = make(
   </>,
 )
 
-/** Ingredientes: frasco con tapa y una hoja. */
+/** Ingredientes: zanahoria. */
 export const GmIngredients = make(
   "GmIngredients",
   <>
-    <path d="M8.5 3.5h7a.5.5 0 0 1 .5.5v2H8V4a.5.5 0 0 1 .5-.5z" />
-    <path d="M7.5 6h9A1.5 1.5 0 0 1 18 7.5v11a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 6 18.5v-11A1.5 1.5 0 0 1 7.5 6z" />
-    <path d="M10 16.5c0-2.8 1.8-4.5 4.5-4.5 0 2.8-1.8 4.5-4.5 4.5z" />
-    <path d="M10 16.5l2.4-2.4" />
+    <path d="M15.8 8.2a3 3 0 0 0-4.3 0L4.3 18.6a.8.8 0 0 0 1.1 1.1l10.4-7.2a3 3 0 0 0 0-4.3z" />
+    <path d="M15.6 8.4L19.5 4.5M16.4 9.5l3.8-1.2M14.5 7.6l1.2-3.8" />
+    <path d="M9.6 12.4l1.3 1.3M7.4 15.2l1 1" />
   </>,
 )
 
-/** Inventario: estante con envases de distinto tamaño. */
+/** Inventario: cajas apiladas (stock). */
 export const GmInventory = make(
   "GmInventory",
   <>
-    <path d="M3 11h18M3 20.5h18" />
-    <rect x="5.5" y="6" width="4" height="5" rx=".6" />
-    <rect x="12" y="7.5" width="5.5" height="3.5" rx=".6" />
-    <rect x="5" y="15" width="3.5" height="5.5" rx=".6" />
-    <path d="M11 20.5v-5.2a1.5 1.5 0 0 1 3 0v5.2" />
-    <rect x="16" y="16" width="3" height="4.5" rx=".6" />
+    <rect x="3.5" y="12.5" width="8" height="7.5" rx=".8" />
+    <rect x="12.5" y="12.5" width="8" height="7.5" rx=".8" />
+    <rect x="8" y="5" width="8" height="7.5" rx=".8" />
+    <path d="M7.5 12.5v2M16.5 12.5v2M12 5v2" />
   </>,
 )
 
-/** Equipo: dos personas, una con gorro de chef. */
+/** Equipo: dos personas. */
 export const GmTeam = make(
   "GmTeam",
   <>
-    <path d="M7 7.2a1.6 1.6 0 0 1 1.1-2.6 1.8 1.8 0 0 1 3.4 0A1.6 1.6 0 0 1 12.4 7.2z" />
-    <circle cx="9.7" cy="9.8" r="2.4" />
-    <path d="M4.7 19.5a5 5 0 0 1 10 0" />
-    <circle cx="16.6" cy="10.6" r="2" />
-    <path d="M15.3 15.1a4.2 4.2 0 0 1 4.9 4.4" />
+    <circle cx="9" cy="8" r="3" />
+    <path d="M3.5 19.5a5.5 5.5 0 0 1 11 0" />
+    <circle cx="16.8" cy="9.2" r="2.3" />
+    <path d="M15.6 14a4.5 4.5 0 0 1 5.4 5" />
   </>,
 )
 
-/** Menús: carta plegada en tres. */
+/** Menús: carta con tenedor y cuchillo. */
 export const GmMenus = make(
   "GmMenus",
   <>
-    <path d="M3.5 5l5.5 1.5 6-1.5 5.5 1.5V20l-5.5-1.5-6 1.5L3.5 18.5z" />
-    <path d="M9 6.5V20M15 5v13.5" />
-    <path d="M11 10.5h2M11 13.5h2" />
+    <rect x="5" y="3" width="14" height="18" rx="1.5" />
+    <path d="M9 7v2.6M10.2 7v2.6M11.4 7v2.6" />
+    <path d="M9 9.6a1.2 1.2 0 0 0 2.4 0M10.2 10.8V17" />
+    <path d="M14.8 17V7c-1 .7-1.6 2-1.6 3.6 0 .8.5 1.4 1.6 1.4" />
   </>,
 )
 
-/** MEP: tabla de picar con tres bowls listos. */
+/** MEP: cuchillo de chef (preparar). */
 export const GmMep = make(
   "GmMep",
   <>
-    <path d="M3.5 14.5h17a1 1 0 0 1 1 1v2.5a2.5 2.5 0 0 1-2.5 2.5H5a2.5 2.5 0 0 1-2.5-2.5v-2.5a1 1 0 0 1 1-1z" />
-    <circle cx="18.5" cy="17.5" r=".6" />
-    <path d="M4 9h4a2 2 0 0 1-4 0zM10 9h4a2 2 0 0 1-4 0zM16 9h4a2 2 0 0 1-4 0z" />
+    <path d="M3 20.5L13 10.5l3.5 3.5C13 18.5 8.5 20.5 3 20.5z" />
+    <path d="M14 9.5l4.3-4.3a1.5 1.5 0 0 1 2.1 2.1L16.1 11.6" />
+    <path d="M17.3 7.4h.01M18.9 5.8h.01" />
   </>,
 )
 
@@ -138,16 +136,15 @@ export const GmPurchase = make(
   </>,
 )
 
-/** POS: mesa vista desde arriba, con su plato y cuatro sillas. */
+/** POS: caja registradora (cobrar). */
 export const GmPos = make(
   "GmPos",
   <>
-    <circle cx="12" cy="12" r="4.6" />
-    <circle cx="12" cy="12" r="1.5" />
-    <rect x="10" y="2.8" width="4" height="2.4" rx="1" />
-    <rect x="10" y="18.8" width="4" height="2.4" rx="1" />
-    <rect x="2.8" y="10" width="2.4" height="4" rx="1" />
-    <rect x="18.8" y="10" width="2.4" height="4" rx="1" />
+    <rect x="13" y="3" width="6" height="4" rx=".8" />
+    <path d="M16 7v3" />
+    <path d="M4.5 10h15l1.3 6.5H3.2z" />
+    <rect x="3" y="16.5" width="18" height="4" rx="1" />
+    <path d="M10.5 18.5h3M7.5 13h1M11.5 13h1M15.5 13h1" />
   </>,
 )
 
@@ -160,13 +157,14 @@ export const GmSales = make(
   </>,
 )
 
-/** Reportes: plato visto desde arriba con una porción servida (gráfico de torta). */
+/** Reportes: gráfico de barras. */
 export const GmReports = make(
   "GmReports",
   <>
-    <circle cx="12" cy="12" r="9" />
-    <circle cx="12" cy="12" r="5.6" />
-    <path d="M12 12V6.4a5.6 5.6 0 0 1 5.6 5.6z" />
+    <path d="M3 20h18" />
+    <rect x="5.5" y="13" width="3" height="7" rx=".8" />
+    <rect x="10.5" y="7.5" width="3" height="12.5" rx=".8" />
+    <rect x="15.5" y="10.5" width="3" height="9.5" rx=".8" />
   </>,
 )
 
@@ -181,13 +179,14 @@ export const GmBusinesses = make(
   </>,
 )
 
-/** Invita: sobre con su sello. */
+/** Invita (regala un mes): regalo. */
 export const GmInvite = make(
   "GmInvite",
   <>
-    <rect x="3.5" y="6" width="17" height="12" rx="1.5" />
-    <path d="M3.8 6.6L12 12.5l8.2-5.9" />
-    <circle cx="12" cy="13.6" r="1.4" />
+    <rect x="4" y="11" width="16" height="9" rx="1" />
+    <rect x="3" y="7.5" width="18" height="3.5" rx="1" />
+    <path d="M12 7.5V20" />
+    <path d="M12 7.5c-1.5-3.5-5-3.5-5-1.2 0 1.2 2.6 1.2 5 1.2zM12 7.5c1.5-3.5 5-3.5 5-1.2 0 1.2-2.6 1.2-5 1.2z" />
   </>,
 )
 
