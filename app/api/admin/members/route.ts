@@ -3,6 +3,7 @@ import { getAdminIdentity, type AdminIdentity } from "@/lib/admin-auth"
 import { deleteAdminMember, insertAdminMember, listAdminMembers, updateAdminMember } from "@/lib/admin/members-server"
 import { canManageAccess, canRemove, normalizeAdminEmail, sortMembers } from "@/lib/admin/members"
 import { sendAdminInvite } from "@/lib/services/admin-invite"
+import { notifyAdminAccess } from "@/lib/services/admin-access-notify"
 
 /**
  * Personas con acceso a /admin (docs/282).
@@ -49,6 +50,8 @@ export async function POST(request: Request) {
   if (!existing) {
     const ok = await insertAdminMember({ email, role: "admin", status: "pending", createdBy: who(g.identity) })
     if (!ok) return NextResponse.json({ error: "save_failed" }, { status: 500 })
+    // docs/318: todo acceso nuevo se avisa al dueño (correo y aparatos).
+    await notifyAdminAccess({ kind: "granted", email, by: who(g.identity) })
   }
   if (body?.send === true && existing?.status !== "active") {
     const failed = await invite(email, g.identity)
@@ -77,5 +80,6 @@ export async function DELETE(request: Request) {
   const check = canRemove(email, g.identity, g.members)
   if (!check.ok) return NextResponse.json({ error: check.reason }, { status: 400 })
   const ok = await deleteAdminMember(email)
+  if (ok) await notifyAdminAccess({ kind: "removed", email, by: who(g.identity) })
   return ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: "save_failed" }, { status: 500 })
 }

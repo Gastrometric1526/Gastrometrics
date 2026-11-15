@@ -86,11 +86,19 @@ export async function deleteAdminMember(email: string): Promise<boolean> {
   return !error
 }
 
-/** Registra la entrada: «invited» pasa a «active» la primera vez. */
-export async function recordAdminLogin(member: AdminMember): Promise<void> {
+/**
+ * Registra la entrada: «invited» pasa a «active» la primera vez. Desde docs/318 la primera
+ * entrada de cada persona se avisa al dueño (correo y aparatos), con cómo entró.
+ */
+export async function recordAdminLogin(member: AdminMember, method = "su cuenta"): Promise<void> {
   const now = new Date().toISOString()
+  const first = member.status !== "active"
   await updateAdminMember(member.email, {
     last_login_at: now,
-    ...(member.status !== "active" ? { status: "active" as const, accepted_at: member.accepted_at ?? now } : {}),
+    ...(first ? { status: "active" as const, accepted_at: member.accepted_at ?? now } : {}),
   })
+  if (first) {
+    const { notifyAdminAccess } = await import("@/lib/services/admin-access-notify")
+    await notifyAdminAccess({ kind: "first_login", email: member.email, method })
+  }
 }

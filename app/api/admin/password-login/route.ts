@@ -52,7 +52,7 @@ export async function POST(request: Request) {
   if (!ready) return NextResponse.json({ ok: false, error: "not_ready" }, { status: 503 })
   if (!member || !canSignIn(member)) return fail(403, "not_allowed")
 
-  await recordAdminLogin(member)
+  await recordAdminLogin(member, "con correo y contraseña")
   const value = createAdminSessionValue(Date.now(), { kind: "account", email })
   if (!value) return NextResponse.json({ ok: false, error: "not_configured" }, { status: 503 })
   const response = NextResponse.json({ ok: true, role: member.role, firstTime: member.status !== "active" })

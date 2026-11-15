@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { notifyAdminAccess } from "@/lib/services/admin-access-notify"
 import { ADMIN_COOKIE_OPTIONS, ADMIN_SESSION_COOKIE_NAME, createAdminSessionValue, getAdminPasscode, safeEqual, type AdminIdentity } from "@/lib/admin-auth"
 import { getClientIp } from "@/lib/rate-limit"
 import { durableLockedFor, durableRecordFailure } from "@/lib/durable-rate-limit"
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
     } else {
       const member = members.find((m) => m.email === accountEmail)
       if (member && canSignIn(member)) {
-        await recordAdminLogin(member)
+        await recordAdminLogin(member, "con el código de emergencia")
         identity = { kind: "account", email: accountEmail }
       }
     }
@@ -64,6 +65,8 @@ export async function POST(request: Request) {
 
   const value = createAdminSessionValue(Date.now(), identity)
   if (!value) return NextResponse.json({ ok: false }, { status: 503 })
+  // docs/318: toda entrada con el código de emergencia se avisa al dueño (correo y aparatos).
+  await notifyAdminAccess({ kind: "code", email: accountEmail, ip })
   const response = NextResponse.json({ ok: true, claimedOwner })
   response.cookies.set(ADMIN_SESSION_COOKIE_NAME, value, ADMIN_COOKIE_OPTIONS)
   return response

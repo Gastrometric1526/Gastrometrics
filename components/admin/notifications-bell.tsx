@@ -12,7 +12,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Bell, CheckCheck, ClipboardList, CreditCard, Inbox, MessageCircle, Smile, UserPlus } from "lucide-react"
+import { Bell, CheckCheck, ClipboardList, CreditCard, Inbox, KeyRound, MessageCircle, Smile, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { ToastAction } from "@/components/ui/toast"
@@ -31,6 +31,7 @@ const KIND: Record<NoticeKind, { icon: typeof Bell; label: TranslationKey; tone:
   survey: { icon: ClipboardList, label: "admin_notices_kind_survey", tone: "bg-info-soft text-info" },
   signup: { icon: UserPlus, label: "admin_notices_kind_signup", tone: "bg-success-soft text-success" },
   plan: { icon: CreditCard, label: "admin_notices_kind_plan", tone: "bg-success-soft text-success" },
+  access: { icon: KeyRound, label: "admin_notices_kind_access", tone: "bg-warning-soft text-warning" },
 }
 
 function readSeen(): number | null {
@@ -199,6 +200,9 @@ export function AdminNotificationsBell({ onNavigate }: { onNavigate: (tab: strin
                           </span>
                           {n.who && <span className="block truncate text-sm font-medium">{n.who}</span>}
                           {n.kind === "survey" && n.detail && <span className="block text-sm text-foreground/80">{surveyLine(n)}</span>}
+                          {n.kind === "access" && (
+                            <span className="block text-sm text-foreground/80">{t(n.detail === "first_login" ? "admin_notices_access_first" : "admin_notices_access_granted")}</span>
+                          )}
                           {n.text && <span className="line-clamp-2 block text-sm text-muted-foreground">{n.text}</span>}
                         </span>
                       </button>

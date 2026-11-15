@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     if (!email) return NextResponse.json({ ok: false, error: "invalid_link" }, { status: 401 })
     const { member } = await getAdminMember(email)
     if (!member || !canSignIn(member)) return NextResponse.json({ ok: false, error: "invalid_link" }, { status: 401 })
-    await recordAdminLogin(member)
+    await recordAdminLogin(member, "con el enlace al correo")
     const value = createAdminSessionValue(Date.now(), { kind: "account", email })
     if (!value) return NextResponse.json({ ok: false, error: "not_configured" }, { status: 503 })
     const response = NextResponse.json({ ok: true, role: member.role, firstTime: member.status !== "active" })

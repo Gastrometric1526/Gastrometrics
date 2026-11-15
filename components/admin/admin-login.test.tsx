@@ -43,7 +43,7 @@ describe("entrada a /admin con la propia cuenta (docs/282)", () => {
     const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ ok: true, role: "admin" }) }) as Response)
     vi.stubGlobal("fetch", fetchMock)
     const onUnlocked = vi.fn()
-    await act(async () => root.render(<AdminLogin info={info({ account: { email: "socia@correo.com" }, accountAllowed: true })} onUnlocked={onUnlocked} />))
+    await act(async () => root.render(<AdminLogin info={info({ account: { email: "socia@correo.com", name: null }, accountAllowed: true })} onUnlocked={onUnlocked} />))
     const button = container.querySelector('[data-admin-login="account"]') as HTMLButtonElement
     expect(button.textContent).toContain("socia@correo.com")
     await act(async () => button.click())
@@ -51,6 +51,14 @@ describe("entrada a /admin con la propia cuenta (docs/282)", () => {
     expect(onUnlocked).toHaveBeenCalled()
     // El código de emergencia queda plegado: no hay campo de contraseña a la vista.
     expect(container.querySelector("#admin-passcode")).toBeNull()
+  })
+
+  // docs/318: con nombre, el botón dice el nombre y el correo queda pequeño debajo.
+  it("con nombre, «Entrar como» muestra el nombre de la persona", async () => {
+    await act(async () => root.render(<AdminLogin info={info({ account: { email: "socia@correo.com", name: "Ana López" }, accountAllowed: true })} onUnlocked={() => {}} />))
+    const button = container.querySelector('[data-admin-login="account"]') as HTMLButtonElement
+    expect(button.textContent).toBe(es.admin_login_as.replace("{name}", "Ana López"))
+    expect(container.textContent).toContain("socia@correo.com")
   })
 
   // docs/298: el panel tiene su propia entrada, sin abrir la sesión de la app.
@@ -107,7 +115,7 @@ describe("entrada a /admin con la propia cuenta (docs/282)", () => {
   })
 
   it("la primera vez (sin dueño) muestra el código abierto y explica que la cuenta queda como dueña", async () => {
-    await act(async () => root.render(<AdminLogin info={info({ account: { email: "dueno@correo.com" }, needsOwner: true })} onUnlocked={() => {}} />))
+    await act(async () => root.render(<AdminLogin info={info({ account: { email: "dueno@correo.com", name: null }, needsOwner: true })} onUnlocked={() => {}} />))
     expect(container.textContent).toContain(es.admin_login_claim_hint.replace("{email}", "dueno@correo.com"))
     expect(container.querySelector("#admin-passcode")).toBeTruthy()
   })

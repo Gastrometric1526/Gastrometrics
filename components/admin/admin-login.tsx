@@ -252,10 +252,14 @@ export function AdminLogin({ info, onUnlocked }: { info: AdminSessionInfo | null
               {linkError && <p className="rounded-xl bg-destructive-soft p-3 text-sm text-destructive">{t("admin_login_link_invalid")}</p>}
 
               {accountsReady && account && info?.accountAllowed && (
-                <Button className="h-12 w-full gap-2 text-base" onClick={enterWithAccount} disabled={busy !== null} data-admin-login="account">
-                  <UserRound className="h-5 w-5" />
-                  {busy === "account" ? t("admin_login_entering") : t("admin_login_as").replace("{email}", account.email)}
-                </Button>
+                // docs/318: con el nombre de la persona; el correo, pequeño debajo.
+                <div className="space-y-1.5">
+                  <Button className="h-12 w-full gap-2 text-base" onClick={enterWithAccount} disabled={busy !== null} data-admin-login="account">
+                    <UserRound className="h-5 w-5 shrink-0" />
+                    <span className="truncate">{busy === "account" ? t("admin_login_entering") : t("admin_login_as").replace("{name}", account.name || account.email)}</span>
+                  </Button>
+                  {account.name && <p className="text-center text-xs text-muted-foreground">{account.email}</p>}
+                </div>
               )}
               {accountError && <p className="text-sm text-destructive">{accountError}</p>}
 
@@ -311,7 +315,7 @@ export function AdminLogin({ info, onUnlocked }: { info: AdminSessionInfo | null
               )}
 
               {!accountsReady && info && <p className="rounded-xl bg-muted/60 p-4 text-sm text-muted-foreground">{t("admin_login_not_ready")}</p>}
-              {needsOwner && account && <p className="rounded-xl bg-primary/5 p-4 text-sm text-foreground">{t("admin_login_claim_hint").replace("{email}", account.email)}</p>}
+              {needsOwner && account && <p className="rounded-xl bg-primary/5 p-4 text-sm text-foreground">{t("admin_login_claim_hint").replace("{email}", account.name ? `${account.name} · ${account.email}` : account.email)}</p>}
 
               <div className="border-t border-border pt-4">
                 <button type="button" onClick={() => setShowCode((v) => !v)} aria-expanded={showCode} className="flex w-full items-center gap-2 text-sm text-muted-foreground hover:text-foreground">

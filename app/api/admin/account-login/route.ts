@@ -18,7 +18,7 @@ export async function POST() {
   if (!ready) return NextResponse.json({ ok: false, error: "not_ready" }, { status: 503 })
   if (!member || !canSignIn(member)) return NextResponse.json({ ok: false, error: "not_allowed" }, { status: 403 })
 
-  await recordAdminLogin(member)
+  await recordAdminLogin(member, "con su cuenta abierta en la app (Google o contraseña)")
   const value = createAdminSessionValue(Date.now(), { kind: "account", email })
   if (!value) return NextResponse.json({ ok: false, error: "not_configured" }, { status: 503 })
   const response = NextResponse.json({ ok: true, role: member.role, firstTime: member.status !== "active" })

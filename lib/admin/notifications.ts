@@ -9,7 +9,8 @@
  * aparato (`NOTICES_SEEN_KEY`). Aquí solo van las reglas puras, para probarlas.
  */
 
-export type NoticeKind = "chat" | "message" | "rating" | "survey" | "signup" | "plan"
+// «access» (docs/318): acceso nuevo al panel o primera entrada de una persona.
+export type NoticeKind = "chat" | "message" | "rating" | "survey" | "signup" | "plan" | "access"
 
 export interface AdminNotice {
   /** Único y estable entre lecturas (tipo + id de la fila). */
@@ -43,6 +44,7 @@ export const NOTICE_TARGET: Record<NoticeKind, { tab: string; sub?: string }> = 
   survey: { tab: "buzon", sub: "encuestas" },
   signup: { tab: "cuentas", sub: "lista" },
   plan: { tab: "cuentas", sub: "historial" },
+  access: { tab: "sistema", sub: "acceso" },
 }
 
 /** Junta las listas, quita repetidas, ordena de la más reciente a la más vieja y corta. */

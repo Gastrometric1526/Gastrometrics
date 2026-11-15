@@ -375,7 +375,7 @@ function AdminPageInner() {
             </span>
             {session?.identity?.kind === "account" && (
               <span className="hidden max-w-[14rem] truncate text-xs text-muted-foreground xl:inline" title={session.identity.email}>
-                {session.identity.email}
+                {session.identity.name || session.identity.email}
               </span>
             )}
             <Button variant="ghost" size="sm" className="gap-1.5" onClick={logout} aria-label={t("admin_logout")} data-tour="admin-logout">

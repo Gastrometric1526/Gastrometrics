@@ -153,5 +153,22 @@ export async function GET() {
       return { id: `signup:${u.id}`, kind: "signup" as const, who: u.email || null, text: name || "", at, ...NOTICE_TARGET.signup }
     })
 
-  return NextResponse.json({ notices: mergeNotices([chat, messages, surveys, plans, signups]) })
+  // Accesos al panel (docs/318): a quién se le dio acceso y quién entró por primera vez.
+  const nameByEmail = new Map(users.filter((u) => u.email).map((u) => [String(u.email).toLowerCase(), u.user_metadata]))
+  const access = await safe<AdminNotice>("accesos", async () => {
+    const { data, error } = await admin.from("admin_members").select("email, created_at, created_by, accepted_at")
+    if (error) throw error
+    const out: AdminNotice[] = []
+    for (const m of (data ?? []) as { email: string; created_at: string | null; created_by: string | null; accepted_at: string | null }[]) {
+      const meta = nameByEmail.get(m.email.toLowerCase())
+      const name = meta && typeof meta.full_name === "string" && meta.full_name.trim() ? meta.full_name.trim() : null
+      const who = name ? `${name} · ${m.email}` : m.email
+      if (m.created_at && m.created_at >= since && m.created_by !== "sistema")
+        out.push({ id: `access:granted:${m.email}`, kind: "access", who, text: m.created_by ? `← ${m.created_by}` : "", detail: "granted", at: m.created_at, ...NOTICE_TARGET.access })
+      if (m.accepted_at && m.accepted_at >= since)
+        out.push({ id: `access:first:${m.email}`, kind: "access", who, text: "", detail: "first_login", at: m.accepted_at, ...NOTICE_TARGET.access })
+    }
+    return out
+  })
+  return NextResponse.json({ notices: mergeNotices([chat, messages, surveys, plans, signups, access]) })
 }
