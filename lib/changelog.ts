@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Equipo: quién ve costos y márgenes (docs/304).
+    version: "2026-11-14d",
+    tutorialHref: tourHref("equipo"),
+    content: {
+      es: { title: "Equipo: decide quién ve costos y márgenes", items: ["Nuevo en Equipo: «Ver costos, márgenes y precios de compra». Sin eso, la persona trabaja con recetas, ingredientes, inventario y POS, pero solo ve los precios de venta.", "Se ocultan el costo de recetas e ingredientes, el food cost, el margen, el valor del inventario, los faltantes en dinero y los gastos del negocio. Puede crear un ingrediente con su precio, pero no ve ni cambia el de uno que ya existe.", "Quien ya estaba invitado los sigue viendo hasta que lo edites. Las plantillas Mesero, Cocina y Cajero vienen sin costos; Encargado, con costos."] },
+      en: { title: "Team: decide who sees costs and margins", items: ["New in Team: “See costs, margins and purchase prices”. Without it, the person works with recipes, ingredients, inventory and the POS but only sees sale prices.", "Recipe and ingredient costs, food cost, margin, inventory value, shortages in money and business expenses are hidden. They can create an ingredient with its price, but can't see or change the price of an existing one.", "People already invited keep seeing them until you edit them. The Server, Kitchen and Cashier templates come without costs; Manager, with costs."] },
+      da: { title: "Team: bestem, hvem der ser omkostninger og avancer", items: ["Nyt i Team: »Se omkostninger, avancer og indkøbspriser«. Uden det arbejder personen med opskrifter, råvarer, lager og POS, men ser kun salgspriser.", "Omkostninger for opskrifter og råvarer, food cost, avance, lagerværdi, mangler i kroner og virksomhedens udgifter skjules. Personen kan oprette en råvare med pris, men kan ikke se eller ændre prisen på en eksisterende.", "Allerede inviterede ser dem fortsat, indtil du redigerer dem. Skabelonerne Tjener, Køkken og Kasserer er uden omkostninger; Leder med."] },
+      fr: { title: "Équipe : choisissez qui voit les coûts et les marges", items: ["Nouveau dans Équipe : « Voir les coûts, les marges et les prix d'achat ». Sans cela, la personne travaille avec les recettes, les ingrédients, le stock et le POS, mais ne voit que les prix de vente.", "Le coût des recettes et des ingrédients, le food cost, la marge, la valeur du stock, les écarts en argent et les dépenses de l'établissement sont masqués. Elle peut créer un ingrédient avec son prix, mais ne voit ni ne modifie celui d'un ingrédient existant.", "Les personnes déjà invitées continuent de les voir jusqu'à ce que vous les modifiiez. Les modèles Serveur, Cuisine et Caissier sont sans coûts ; Responsable, avec."] },
+      pt: { title: "Equipe: decida quem vê custos e margens", items: ["Novo em Equipe: «Ver custos, margens e preços de compra». Sem isso, a pessoa trabalha com receitas, ingredientes, estoque e POS, mas só vê os preços de venda.", "Ficam ocultos o custo de receitas e ingredientes, o food cost, a margem, o valor do estoque, as faltas em dinheiro e os gastos do negócio. A pessoa pode criar um ingrediente com preço, mas não vê nem muda o de um que já existe.", "Quem já foi convidado continua vendo até você editar. Os modelos Garçom, Cozinha e Caixa vêm sem custos; Gerente, com custos."] },
+      zh: { title: "团队：决定谁能看到成本和毛利", items: ["团队新增“查看成本、毛利和采购价”。不勾选时，此人可以使用配方、食材、库存和 POS，但只能看到售价。", "会隐藏配方和食材成本、食材成本率、毛利、库存价值、以金额计的短缺和经营费用。此人可以新建食材并填写价格，但看不到也改不了已有食材的价格。", "已邀请的成员在你编辑之前仍可看到。服务员、厨房和收银员模板不含成本；经理模板包含成本。"] },
+    },
+  },
+  {
     // Equipo: plantillas, partes de cada módulo y PDF por tipo (docs/303).
     version: "2026-11-14c",
     tutorialHref: tourHref("equipo"),

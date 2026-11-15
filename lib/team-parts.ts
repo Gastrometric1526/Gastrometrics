@@ -23,11 +23,18 @@ export type PosPart = (typeof POS_PARTS)[number]
 export const TEAM_PDF_KINDS = ["recipe", "menu", "mep", "inventory", "purchase_order", "invoice", "cash_up", "sales_history"] as const
 export type TeamPdfKind = (typeof TEAM_PDF_KINDS)[number]
 
-export type TeamPart = PosPart | `pdf.${TeamPdfKind}`
+/**
+ * Qué información ve (docs/304): «info.costs» = costos, márgenes, food cost, precios de compra,
+ * valor del inventario y gastos del negocio. Sin ella, solo los precios de venta.
+ */
+export const INFO_PARTS = ["info.costs"] as const
+export type InfoPart = (typeof INFO_PARTS)[number]
 
-export const ALL_PARTS: TeamPart[] = [...POS_PARTS, ...TEAM_PDF_KINDS.map((k) => `pdf.${k}` as TeamPart)]
+export type TeamPart = PosPart | InfoPart | `pdf.${TeamPdfKind}`
 
-const isPart = (s: string) => s === PARTS_V1 || s.startsWith("pos.") || s.startsWith("pdf.")
+export const ALL_PARTS: TeamPart[] = [...POS_PARTS, ...INFO_PARTS, ...TEAM_PDF_KINDS.map((k) => `pdf.${k}` as TeamPart)]
+
+const isPart = (s: string) => s === PARTS_V1 || s.startsWith("pos.") || s.startsWith("pdf.") || s.startsWith("info.")
 
 /** Solo los módulos (sin partes ni marcas de partes). */
 export function withoutParts(stored: readonly string[]): string[] {
@@ -87,7 +94,7 @@ export function rolePreset(role: TeamRolePreset, planHas: (module: string) => bo
     case "manager":
       return {
         modules: keep(["recipes", "ingredients", "merma", "menus", "mep", "inventory", "purchase_orders_manual", "purchase_orders_auto", "manual_sales", "sales_history", "cash_up", "invoices", "pos", "stats_panorama", "stats_finance"]),
-        parts: [...POS_PARTS, ...allPdf],
+        parts: [...POS_PARTS, ...INFO_PARTS, ...allPdf],
         pdfAccess: "administrativo",
       }
   }

@@ -62,6 +62,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog"
 import { formatCurrency, formatUnitPrice, getCurrentCurrencyCode } from "@/lib/currency"
+import { useCanSeeCosts } from "@/components/cost-gate"
 import { roundSalePrice, roundUpToStep } from "@/lib/price-rounding"
 import { coverCommission, foodCostBasePrice, taxIncludedIn } from "@/lib/food-cost-pricing"
 import { normalizeUploadedPhoto } from "@/lib/pdf/pdf-image"
@@ -197,6 +198,8 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
   const quantityInputRefs = useRef<Record<number, HTMLInputElement | null>>({})
 
   const [recipe, setRecipe] = useState<Recipe>(() => createEmptyRecipe(recipeId, businessId))
+  // Costos, márgenes y precios de compra solo para quien puede verlos (docs/304).
+  const seeCosts = useCanSeeCosts()
 
   const [paxModifier, setPaxModifier] = useState<number>(0)
   // Confirmación explícita al guardar con el modificador de PAX activo — antes,
@@ -1887,7 +1890,8 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                   <TableHead className="text-center">{t("nav_ingredientes")}</TableHead>
                   <TableHead className="text-center">{t("ficha_tecnica_col_quantity")}</TableHead>
                   <TableHead className="text-center">{t("ficha_tecnica_col_measure")}</TableHead>
-                  <TableHead className="text-center">{t("ficha_tecnica_col_cost_per_measure")}</TableHead>
+                  {seeCosts && <TableHead className="text-center">{t("ficha_tecnica_col_cost_per_measure")}</TableHead>}
+                  {seeCosts && (
                   <TableHead className="text-center">
                     <TooltipProvider>
                       <Tooltip>
@@ -1903,6 +1907,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                       </Tooltip>
                     </TooltipProvider>
                   </TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -2015,12 +2020,16 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                       )}
                     </TableCell>
                     <TableCell className="text-center">{ingredient.measure || ""}</TableCell>
-                    <TableCell className="text-center font-mono">
-                      {ingredient.unitCost > 0 ? formatUnitPrice(ingredient.unitCost) : ""}
-                    </TableCell>
-                    <TableCell className="text-center font-mono">
-                      {(ingredient.extension ?? 0) > 0 ? formatCurrency(ingredient.extension ?? 0) : ""}
-                    </TableCell>
+                    {seeCosts && (
+                      <TableCell className="text-center font-mono">
+                        {ingredient.unitCost > 0 ? formatUnitPrice(ingredient.unitCost) : ""}
+                      </TableCell>
+                    )}
+                    {seeCosts && (
+                      <TableCell className="text-center font-mono">
+                        {(ingredient.extension ?? 0) > 0 ? formatCurrency(ingredient.extension ?? 0) : ""}
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -2044,6 +2053,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
         />
       )}
 
+      {seeCosts && (
       <Card className="w-full mx-auto border-2">
         <CardContent className="px-3 pt-6 sm:px-6">
           <div className="space-y-2">
@@ -2054,6 +2064,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Alérgenos (docs/137): se heredan de los ingredientes y subrecetas, nunca a mano. */}
       <Card className="w-full mx-auto">
@@ -2113,6 +2124,16 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
         </CardContent>
       </Card>
 
+      {/* Sin permiso de costos (docs/304): ni el costeo ni el resumen; solo el precio de venta. */}
+      {!seeCosts && calculations.finalPrice > 0 && (
+        <Card className="w-full mx-auto">
+          <CardContent className="flex items-center justify-between gap-3 px-3 pt-6 sm:px-6">
+            <span className="text-sm text-muted-foreground">{t("cost_gate_sale_price")}</span>
+            <span className="text-2xl font-semibold tabular-nums">{formatCurrency(calculations.finalPrice)}</span>
+          </CardContent>
+        </Card>
+      )}
+      {seeCosts && (
       <Card className="w-full mx-auto" data-tour="ficha-pricing">
         <CardHeader className="px-3 sm:px-6">
           <div className="flex items-center justify-between">
@@ -2415,7 +2436,9 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
           )}
         </CardContent>
       </Card>
+      )}
 
+      {seeCosts && (
       <Card className="w-full mx-auto" data-tour="ficha-summary">
         <CardHeader className="px-3 sm:px-6">
           <CardTitle>{t("tour_ficha_summary_title")}</CardTitle>
@@ -2550,6 +2573,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
           </div>
         </CardContent>
       </Card>
+      )}
 
       {isEditMode && (
         <div

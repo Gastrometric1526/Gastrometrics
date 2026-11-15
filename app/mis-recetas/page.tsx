@@ -74,6 +74,7 @@ import {
 } from "@/lib/storage/recipes"
 import { SUBRECIPE_CLASSIFICATION, classifications as recipeClassifications } from "@/types/recipe"
 import { unitMarginPercent } from "@/lib/recipe-pricing"
+import { useCanSeeCosts } from "@/components/cost-gate"
 import { isBeverageRecipe } from "@/lib/beverage"
 import { getClassificationLabel } from "@/lib/classification-labels"
 import { useLanguage } from "@/contexts/language-context"
@@ -121,6 +122,8 @@ export default function MisRecetasPage() {
   const businessId = searchParams.get("business") || "main"
   const { isLoggedIn, authChecked, user } = useAuth()
   const { t, language } = useLanguage()
+  // Costos y márgenes solo para quien puede verlos (docs/304).
+  const seeCosts = useCanSeeCosts()
   const { showSuccess, showError, showInfo } = useNotification()
   const canAccessRecipes = useFeatureAccess("recipes")
   // Un invitado de equipo (sesión real, o la "Vista previa" que corre el propio dueño)
@@ -767,6 +770,8 @@ export default function MisRecetasPage() {
                 </CardContent>
               </Card>
 
+              {seeCosts && (
+              <>
               <Card className="col-span-2 md:col-span-1 border-border transition-all duration-300 bg-card">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center gap-2 md:gap-3">
@@ -794,6 +799,8 @@ export default function MisRecetasPage() {
                   </div>
                 </CardContent>
               </Card>
+              </>
+              )}
             </div>
 
             {/* Filters and Search - Responsivo */}
@@ -852,7 +859,7 @@ export default function MisRecetasPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {sortOptions.map((option) => (
+                          {sortOptions.filter((o) => seeCosts || !/cost|margin/.test(o.value)).map((option) => (
                             <SelectItem key={option.value} value={option.value}>
                               <div className="flex items-center gap-2">
                                 <option.icon className="h-4 w-4" />
@@ -1303,7 +1310,7 @@ export default function MisRecetasPage() {
         stats={
           detailsRecipe
             ? [
-                { label: t("misrecetas_detail_total_cost"), value: formatCurrency(detailsRecipe.totalCost || 0) },
+                ...(seeCosts ? [{ label: t("misrecetas_detail_total_cost"), value: formatCurrency(detailsRecipe.totalCost || 0) }] : []),
                 { label: t("misrecetas_detail_sale_price"), value: formatCurrency(detailsRecipe.unitPrice || 0) },
                 { label: t("ficha_tecnica_field_yield"), value: detailsRecipe.yieldAmount || detailsRecipe.servings || "" },
                 { label: t("stat_ingredients"), value: detailsRecipe.ingredients?.length || 0 },

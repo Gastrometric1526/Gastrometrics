@@ -1,5 +1,6 @@
 "use client"
 
+import { useCanSeeCosts } from "@/components/cost-gate" // docs/304
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,6 +47,7 @@ export function InventoryTable({
   theoreticalStock,
 }: InventoryTableProps) {
   const { t, language } = useLanguage()
+  const seeCosts = useCanSeeCosts() // precio de compra (docs/304)
   const [editedItemId, setEditedItemId] = useState<string | null>(null)
   const [editedItems, setEditedItems] = useState([...items])
   const [ingredientsData, setIngredientsData] = useState<any[]>([])
@@ -202,7 +204,7 @@ export function InventoryTable({
                 había que comparar mentalmente). */}
             <TableHead className="w-[16%] text-center">{t("inventario_stock_combined_label")}</TableHead>
             <TableHead className="w-[8%] text-center">{t("inventario_table_unit")}</TableHead>
-            <TableHead className="w-[10%] text-center">{t("inventario_purchase_price_label")}</TableHead>
+            {seeCosts && <TableHead className="w-[10%] text-center">{t("inventario_purchase_price_label")}</TableHead>}
             <TableHead className="w-[15%] text-center">{t("inventario_supplier_label")}</TableHead>
             <TableHead className="w-[8%] text-right">{t("inventario_table_actions")}</TableHead>
           </TableRow>
@@ -313,6 +315,7 @@ export function InventoryTable({
                   )}
                 </TableCell>
                 <TableCell className="text-center">{getUnitLabel(item.unit, language)}</TableCell>
+                {seeCosts && (
                 <TableCell className="text-center">
                   {editedItemId === item.id ? (
                     <NumericInput
@@ -327,6 +330,7 @@ export function InventoryTable({
                     </span>
                   )}
                 </TableCell>
+                )}
                 {/* Proveedor es de solo lectura en esta edición rápida en línea — se edita
                     desde el diálogo completo ("Editar"). BUG CORREGIDO: antes se dibujaba
                     como un <Input readOnly> con fondo gris y un onChange que nunca podía

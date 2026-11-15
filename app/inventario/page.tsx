@@ -1,5 +1,6 @@
 "use client"
 
+import { CostOnly, useCanSeeCosts } from "@/components/cost-gate" // docs/304
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
 import { useState, useEffect, useMemo } from "react"
@@ -93,6 +94,7 @@ export default function InventoryPage() {
   // El PDF de inventario lleva el valor del stock: nivel «Administrativo» en Equipo (docs/216).
   const canExportInventoryPdf = usePdfAccess("inventory", "admin")
   const { t, language } = useLanguage()
+  const seeCosts = useCanSeeCosts() // costos y valor del inventario (docs/304)
   const router = useRouter()
   const searchParams = useSearchParams()
   const businessId = searchParams.get("business")
@@ -762,6 +764,7 @@ export default function InventoryPage() {
                     </CardContent>
                   </Card>
 
+                  <CostOnly>
                   <Card className="bg-card border border-border">
                     <CardContent className="flex items-center p-6">
                       <div className="h-12 w-12 rounded-full bg-success-soft flex items-center justify-center mr-4">
@@ -779,6 +782,7 @@ export default function InventoryPage() {
                       </div>
                     </CardContent>
                   </Card>
+                  </CostOnly>
                 </div>
 
                 <Card className="border border-border bg-card">
@@ -851,7 +855,9 @@ export default function InventoryPage() {
               </TabsContent>
 
               <TabsContent value="control">
-                <StockControlCard items={items} theoretical={theoreticalStock} packageLookup={packageLookup} />
+                <CostOnly fallback={<p className="py-8 text-center text-sm text-muted-foreground">{t("cost_gate_hidden")}</p>}>
+                  <StockControlCard items={items} theoretical={theoreticalStock} packageLookup={packageLookup} />
+                </CostOnly>
               </TabsContent>
 
               <TabsContent value="dashboard">
@@ -1029,8 +1035,12 @@ export default function InventoryPage() {
                       },
                     ]
                   : []),
-                { label: t("panel_stock_value"), value: formatCurrency(inventoryTotalValue([detailItem], packageLookup)) },
-                { label: t("panel_purchase_price"), value: formatCurrency(detailItem.price || 0) },
+                ...(seeCosts
+                  ? [
+                      { label: t("panel_stock_value"), value: formatCurrency(inventoryTotalValue([detailItem], packageLookup)) },
+                      { label: t("panel_purchase_price"), value: formatCurrency(detailItem.price || 0) },
+                    ]
+                  : []),
                 { label: t("ingredientes_col_supplier"), value: detailItem.supplier || "—" },
               ]
             : []

@@ -1,5 +1,6 @@
 "use client"
 
+import { useCanSeeCosts } from "@/components/cost-gate"
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -126,6 +127,8 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
   const router = useRouter()
   const { toast } = useToast()
   const { t, language } = useLanguage()
+  // Gastos y punto de equilibrio solo para quien puede ver costos (docs/304).
+  const seeCosts = useCanSeeCosts()
   const { isLoggedIn, authChecked, user } = useAuth()
   const { active: previewActive, member: previewMember } = useActiveMembership()
   // «Traer de mi espacio principal» (docs/284), solo para el dueño.
@@ -718,6 +721,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
             </div>
 
             {/* Business Summary */}
+            {seeCosts && (
             <Card className="border-border bg-card" data-tour="business-summary">
               <CardHeader className="bg-muted/20 border-b-2 border-border">
                 <div className="flex items-center gap-3">
@@ -936,9 +940,10 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                 </div>
               </CardContent>
             </Card>
+            )}
 
             {/* Scenario Analysis Section */}
-            {business?.hasFinancialData && menus.length > 0 && (
+            {seeCosts && business?.hasFinancialData && menus.length > 0 && (
               <Card className="border-border bg-card" data-tour="business-scenario">
                 <CardHeader className="bg-muted/20 border-b-2 border-border">
                   <div className="flex items-center justify-between">
@@ -1271,7 +1276,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
             )}
 
             {/* Empty state for scenario analysis */}
-            {business?.hasFinancialData && menus.length === 0 && (
+            {seeCosts && business?.hasFinancialData && menus.length === 0 && (
               <Card className="border-border bg-card">
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <Calculator className="h-12 w-12 text-muted-foreground mb-4" />

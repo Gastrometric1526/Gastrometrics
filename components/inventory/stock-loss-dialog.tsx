@@ -7,6 +7,7 @@
  * faltante. Con productos en envase (botellas, latas, sacos) ofrece ¼, ½ y 1 envase.
  */
 
+import { useCanSeeCosts } from "@/components/cost-gate" // docs/304
 import { useEffect, useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -35,6 +36,7 @@ export function StockLossDialog({
   onSave: (input: { quantity: number; reason: StockLossReason; note: string }) => Promise<boolean>
 }) {
   const { t, language } = useLanguage()
+  const seeCosts = useCanSeeCosts() // docs/304
   const [quantity, setQuantity] = useState("")
   const [reason, setReason] = useState<StockLossReason>("spill")
   const [note, setNote] = useState("")
@@ -126,7 +128,7 @@ export function StockLossDialog({
             <Textarea id="stock-loss-note" rows={2} maxLength={140} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("stock_loss_note_placeholder")} />
           </div>
 
-          {valid && value > 0 && (
+          {valid && value > 0 && seeCosts && (
             <p className="rounded-lg bg-muted/60 p-3 text-sm text-foreground">{t("stock_loss_value").replace("{value}", formatCurrency(value))}</p>
           )}
         </div>

@@ -1,5 +1,6 @@
 "use client"
 
+import { useCanSeeCosts } from "@/components/cost-gate"
 import type React from "react"
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { hasFeatureAccess, useFeatureAccess } from "@/lib/plan-access"
@@ -170,6 +171,8 @@ export default function IngredientesPage() {
   const canAccessIngredients = useFeatureAccess("ingredients")
   const { showSuccess, showError, showInfo } = useNotification()
   const { t, language } = useLanguage()
+  // Precios de compra, costo promedio y valor solo para quien puede ver costos (docs/304).
+  const seeCosts = useCanSeeCosts()
   // Pregunta de recálculo con la ventana de la app, no window.confirm (docs/218).
   const [askConfirm, confirmDialog] = useConfirmDialog()
 
@@ -204,6 +207,9 @@ export default function IngredientesPage() {
   }, [searchParams])
   const [showMermaDialog, setShowMermaDialog] = useState(false)
   const [ingredientToEdit, setIngredientToEdit] = useState<Ingredient | null>(null)
+  // Sin permiso de costos: el precio se escribe al crear un ingrediente, pero el de uno que ya
+  // existe no se muestra ni se cambia (docs/304).
+  const showPrice = seeCosts || !ingredientToEdit
   const [ingredientToDelete, setIngredientToDelete] = useState<Ingredient | null>(null)
   // Panel de acciones del ingrediente (docs/219).
   const [detailIngredient, setDetailIngredient] = useState<Ingredient | null>(null)
@@ -1527,6 +1533,7 @@ export default function IngredientesPage() {
                 </CardContent>
               </Card>
 
+              {seeCosts && (
               <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center gap-2 md:gap-3">
@@ -1540,6 +1547,7 @@ export default function IngredientesPage() {
                   </div>
                 </CardContent>
               </Card>
+              )}
 
               <Card className="border-border transition-all duration-300 bg-card">
                 <CardContent className="p-3 md:p-4">
@@ -1555,6 +1563,7 @@ export default function IngredientesPage() {
                 </CardContent>
               </Card>
 
+              {seeCosts && (
               <Card className="col-span-2 xl:col-span-1 border-border transition-all duration-300 bg-card">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center gap-2 md:gap-3">
@@ -1568,6 +1577,7 @@ export default function IngredientesPage() {
                   </div>
                 </CardContent>
               </Card>
+              )}
             </div>
 
             {/* Filters and Search */}
@@ -1768,6 +1778,7 @@ export default function IngredientesPage() {
                       <span className="font-semibold text-foreground">{t("ingredientes_summary_total_label")}</span>
                       <p className="text-xl font-bold text-primary">{filteredAndSortedIngredients.length}</p>
                     </div>
+                    {seeCosts && (
                     <div className="text-center">
                       <span className="font-semibold text-foreground">
                         {t("ingredientes_summary_total_value_label")}
@@ -1778,6 +1789,8 @@ export default function IngredientesPage() {
                         )}
                       </p>
                     </div>
+                    )}
+                    {seeCosts && (
                     <div className="text-center">
                       <span className="font-semibold text-foreground">{t("ingredientes_summary_avg_cost_label")}</span>
                       <p className="text-xl font-bold text-warning">
@@ -1791,6 +1804,7 @@ export default function IngredientesPage() {
                         )}
                       </p>
                     </div>
+                    )}
                     <div className="text-center">
                       <span className="font-semibold text-foreground">
                         {t("ingredientes_summary_unique_categories_label")}
@@ -2027,6 +2041,9 @@ export default function IngredientesPage() {
                         precio negativo, pero eso solo dejaba el botón "Siguiente" deshabilitado sin
                         ninguna explicación — silencioso, sin mensaje. NumericInput bloquea el guion
                         al teclear, así que ahora ni siquiera se puede escribir un precio negativo. */}
+                    {!showPrice ? (
+                      <p className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">{t("cost_gate_price_locked")}</p>
+                    ) : (
                     <NumericInput
                       id="purchasePrice"
                       min={0}
@@ -2045,7 +2062,8 @@ export default function IngredientesPage() {
                       className="border-border focus:ring-2 focus:ring-primary"
                       required
                     />
-                    <p className="text-xs text-muted-foreground">{t("ingredientes_field_purchase_price_hint")}</p>
+                    )}
+                    {showPrice && <p className="text-xs text-muted-foreground">{t("ingredientes_field_purchase_price_hint")}</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -2080,6 +2098,7 @@ export default function IngredientesPage() {
                 </div>
 
                 {/* Example calculation */}
+                {showPrice && (
                 <div className="p-3 bg-muted/30 rounded-lg text-sm">
                   <p className="font-medium mb-2">{t("ingredientes_example_calc_label")}</p>
                   <p className="text-muted-foreground">
@@ -2096,6 +2115,7 @@ export default function IngredientesPage() {
                       )}
                   </p>
                 </div>
+                )}
               </div>
             )}
 
@@ -2189,10 +2209,12 @@ export default function IngredientesPage() {
                       <span>{t("ingredientes_summary_category_label")}</span>
                       <span className="font-medium">{formData.category ? getCategoryLabel(formData.category, language) : ""}</span>
                     </div>
+                    {showPrice && (
                     <div className="flex justify-between">
                       <span>{t("ingredientes_summary_purchase_price_label")}</span>
                       <span className="font-medium">{formatCurrency(formData.pricing?.purchasePrice || 0)}</span>
                     </div>
+                    )}
                     <div className="flex justify-between">
                       <span>{t("ingredientes_summary_net_content_label")}</span>
                       <span className="font-medium">
@@ -2200,12 +2222,14 @@ export default function IngredientesPage() {
                         {formData.unit ? getUnitLabel(formData.unit, language) : ""}
                       </span>
                     </div>
+                    {showPrice && (
                     <div className="flex justify-between">
                       <span>{t("ingredientes_summary_price_per_unit_label")}</span>
                       <span className="font-medium text-primary">
                         {formatUnitPrice((formData.pricing?.purchasePrice || 0) / (formData.pricing?.netContent || 1))}
                       </span>
                     </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -2736,12 +2760,12 @@ export default function IngredientesPage() {
         stats={
           detailIngredient
             ? [
-                { label: t("panel_purchase_price"), value: formatCurrency(detailIngredient.pricing?.purchasePrice || 0) },
+                ...(seeCosts ? [{ label: t("panel_purchase_price"), value: formatCurrency(detailIngredient.pricing?.purchasePrice || 0) }] : []),
                 {
                   label: t("panel_net_content"),
                   value: `${detailIngredient.pricing?.netContent || 0} ${getUnitLabelFor(detailIngredient.unit, language, detailIngredient.pricing?.netContent || 0)}`,
                 },
-                { label: t("panel_price_per_unit"), value: formatUnitPrice(detailIngredient.pricing?.pricePerUnit || 0) },
+                ...(seeCosts ? [{ label: t("panel_price_per_unit"), value: formatUnitPrice(detailIngredient.pricing?.pricePerUnit || 0) }] : []),
                 {
                   label: t("panel_used_in"),
                   value: getRecipes(businessId || "main").filter((r) => r.ingredients?.some((i) => i.ingredientId === detailIngredient.id)).length,

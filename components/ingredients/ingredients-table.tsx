@@ -1,5 +1,7 @@
 "use client"
 
+import { useCanSeeCosts } from "@/components/cost-gate"
+
 import { useCallback, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -71,6 +73,8 @@ export function IngredientsTable({
   onOpenDetails,
 }: Props) {
   const { t, language } = useLanguage()
+  // Precios de compra y por unidad solo para quien puede ver costos (docs/304).
+  const seeCosts = useCanSeeCosts()
   const { toast } = useToast()
   const [wacInfoIngredientId, setWacInfoIngredientId] = useState<string | null>(null)
   // "Vender por copa / botella" (docs/136) — solo en ingredientes con categoría de barra.
@@ -232,15 +236,19 @@ export function IngredientsTable({
               <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[8%]">
                 {t("ingredientes_col_unit")}
               </th>
+              {seeCosts && (
               <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[12%]">
                 {t("ingredientes_col_purchase_price")}
               </th>
+              )}
               <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[10%]">
                 {t("ingredientes_col_net_content")}
               </th>
+              {seeCosts && (
               <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[12%]">
                 {t("ingredientes_col_price_per_unit")}
               </th>
+              )}
               <th className="px-4 py-4 text-center text-sm font-semibold text-foreground w-[10%]">
                 {t("ingredientes_col_supplier")}
               </th>
@@ -369,9 +377,11 @@ export function IngredientsTable({
 
                   <td className="px-4 py-4 text-center">
                     <div className="flex flex-col items-center">
-                      <span className="font-semibold text-success text-sm">
-                        {formatCurrency(Number(purchasePrice.toFixed(2)))}
-                      </span>
+                      {seeCosts && (
+                        <span className="font-semibold text-success text-sm">
+                          {formatCurrency(Number(purchasePrice.toFixed(2)))}
+                        </span>
+                      )}
                       <span className="text-xs text-muted-foreground">
                         {ingredient.presentation
                           ? getPresentationLabel(ingredient.presentation, language)
@@ -400,6 +410,7 @@ export function IngredientsTable({
                     </div>
                   </td>
 
+                  {seeCosts && (
                   <td className="px-4 py-4 text-center">
                     <div className="flex flex-col items-center">
                       <span className="font-bold text-primary text-sm">
@@ -457,6 +468,7 @@ export function IngredientsTable({
                       })()}
                     </div>
                   </td>
+                  )}
 
                   {/* Proveedor */}
                   <td className="px-4 py-4 text-center">

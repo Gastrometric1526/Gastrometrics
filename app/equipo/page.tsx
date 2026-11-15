@@ -1,7 +1,7 @@
 "use client"
 
 import { effectiveMemberFeatures, toggleTeamFeature } from "@/lib/team-access"
-import { defaultParts, memberHasPart, partsToStore, POS_PARTS, rolePreset, storedParts, TEAM_PDF_KINDS, type TeamPart, type TeamRolePreset } from "@/lib/team-parts"
+import { defaultParts, INFO_PARTS, memberHasPart, partsToStore, POS_PARTS, rolePreset, storedParts, TEAM_PDF_KINDS, type TeamPart, type TeamRolePreset } from "@/lib/team-parts"
 import { hasFeatureAccess as ownerPlanHas } from "@/lib/plan-access"
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
@@ -603,6 +603,20 @@ function EquipoContent() {
                     </div>
                   </div>
 
+                  {/* Qué información ve (docs/304): costos, márgenes y precios de compra. */}
+                  <div className="space-y-2" data-tour="equipo-info">
+                    <Label>{t("equipo_info_label")}</Label>
+                    {INFO_PARTS.map((part) => (
+                      <div key={part} className="flex items-start gap-2 rounded-lg border border-border p-3">
+                        <Checkbox id={`part-${part}`} checked={form.parts.includes(part)} onCheckedChange={(c) => togglePart(part, c === true)} className="mt-0.5" />
+                        <Label htmlFor={`part-${part}`} className="cursor-pointer text-sm font-normal">
+                          <span className="block font-medium">{t("equipo_part_info_costs")}</span>
+                          <span className="block text-xs text-muted-foreground">{t("equipo_part_info_costs_desc")}</span>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2">
                       <FileText className="h-4 w-4" />
@@ -792,6 +806,7 @@ function EquipoContent() {
                         ))}
                       </div>
                     )}
+                    {!memberHasPart(member.allowedFeatures, "info.costs") && <p className="text-xs text-muted-foreground">{t("equipo_info_no_costs_badge")}</p>}
                     {effectiveMemberFeatures(member.allowedFeatures).includes("pos") && (
                       <p className="text-xs text-muted-foreground">
                         {t("equipo_pos_parts_badge").replace(

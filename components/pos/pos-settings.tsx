@@ -9,6 +9,7 @@
  * Quien solo tiene «plano del día» (Equipo) edita solo hoy y no ve los extras.
  */
 
+import { useCanSeeCosts } from "@/components/cost-gate"
 import { useState } from "react"
 import { BookOpen, Copy, Plus, RotateCcw, Save, Trash2 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -66,6 +67,7 @@ export function PosSettings({
 }) {
   const { t, language } = useLanguage()
   const [confirm, confirmDialog] = useConfirmDialog()
+  const seeCosts = useCanSeeCosts() // docs/304
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const now = () => new Date().toISOString()
   // Qué se edita: la base o el plano de hoy (docs/303).
@@ -188,7 +190,7 @@ export function PosSettings({
                       </span>
                     </span>
                     <span className="shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-                      <span className="block">{t("pos_extra_cost_short").replace("{amount}", formatCurrency(r.costPerServing || 0))}</span>
+                      {seeCosts && <span className="block">{t("pos_extra_cost_short").replace("{amount}", formatCurrency(r.costPerServing || 0))}</span>}
                       {price > 0 && <span className="block">{t("pos_extra_price_short").replace("{amount}", formatCurrency(price))}</span>}
                     </span>
                   </button>

@@ -4,6 +4,7 @@ import { AccountDeletionNotice } from "@/components/account-recovery-cards"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { PosOnlyRedirect } from "@/components/pos/pos-only-redirect"
+import { useCanSeeCosts } from "@/components/cost-gate"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
@@ -77,6 +78,8 @@ import { unitMarginPercent } from "@/lib/recipe-pricing"
 export default function DashboardPage() {
   const { isLoggedIn, authChecked, user } = useAuth()
   const { t, language } = useLanguage()
+  // Costo promedio, margen y gastos solo para quien puede ver costos (docs/304).
+  const seeCosts = useCanSeeCosts()
   const canAccessTeam = useFeatureAccess("team")
   const canAccessManualSales = useFeatureAccess("manual_sales")
   // Mismo candado visual por plan que components/sidebar.tsx (ver ese archivo para el
@@ -807,7 +810,7 @@ export default function DashboardPage() {
                   {t("dashboard_actions_heading")}
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-hairline border border-hairline rounded-2xl overflow-hidden">
-                  {actionItems.map((item) => {
+                  {actionItems.filter((item) => seeCosts || item.id !== "avg-margin").map((item) => {
                     const toneClasses =
                       item.tone === "critical"
                         ? "text-destructive"
@@ -854,7 +857,7 @@ export default function DashboardPage() {
               className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-hairline border-y border-hairline"
               data-tour="dash-stats"
             >
-              {stats.map((stat, index) => (
+              {stats.filter((stat) => seeCosts || stat.title !== t("stat_avg_cost")).map((stat, index) => (
                 <div key={index} className="p-5 space-y-2">
                   <div className="flex items-center gap-2">
                     <stat.icon className={`h-4 w-4 ${stat.textColor}`} />
@@ -906,7 +909,7 @@ export default function DashboardPage() {
                         )}
                       </div>
 
-                      {business.hasFinancialData && business.expenses && (
+                      {seeCosts && business.hasFinancialData && business.expenses && (
                         <div className="text-sm text-text-3 mb-2">
                           {t("dashboard_operational_cost")}: {formatCurrency(roundToNextHundred(calculateTotalMonthlyExpenses(business.expenses)))}
                         </div>

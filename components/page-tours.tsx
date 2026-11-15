@@ -523,6 +523,8 @@ export function EquipoTour({ hasMembers }: { hasMembers: boolean }) {
     },
     // Plantillas, partes de cada módulo y PDF por tipo (docs/303).
     { id: "parts", title: t("tour_equipo_parts_title"), description: t("tour_equipo_parts_desc"), selector: '[data-tour="equipo-invite"]' },
+    // Quién ve costos (docs/304).
+    { id: "info", title: t("tour_equipo_info_title"), description: t("tour_equipo_info_desc"), selector: '[data-tour="equipo-invite"]' },
     ...(hasMembers
       ? [
           {

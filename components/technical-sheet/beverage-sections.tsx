@@ -20,6 +20,7 @@ import { NumericInput } from "@/components/ui/numeric-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/currency"
+import { useCanSeeCosts } from "@/components/cost-gate"
 import { useLanguage } from "@/contexts/language-context"
 import { getCategoryLabel, getUnitLabel } from "@/lib/ingredient-labels"
 import { normalizeSearch } from "@/lib/manual-sales"
@@ -149,6 +150,7 @@ export function beverageSourceOptions<T extends Pick<Ingredient, "name" | "categ
 function ProductTile({ ingredient, selected, onPick, distinct }: { ingredient: Ingredient; selected: boolean; onPick: () => void; distinct: string }) {
   const { language } = useLanguage()
   const content = getPackageContent(ingredient)
+  const seeCosts = useCanSeeCosts()
   return (
     <button
       type="button"
@@ -166,7 +168,7 @@ function ProductTile({ ingredient, selected, onPick, distinct }: { ingredient: I
         <span>
           {content} {unitAbbreviations[ingredient.unit as keyof typeof unitAbbreviations] || getUnitLabel(ingredient.unit, language)}
         </span>
-        <span>{formatCurrency(ingredient.pricing?.purchasePrice || 0)}</span>
+        {seeCosts && <span>{formatCurrency(ingredient.pricing?.purchasePrice || 0)}</span>}
       </span>
     </button>
   )
@@ -185,6 +187,7 @@ export function BeverageSourceCard({
   disabled?: boolean
   onApply: (result: { line: RecipeIngredient; beverage: RecipeBeverage; ingredient: Ingredient } | null) => void
 }) {
+  const seeCosts = useCanSeeCosts()
   const { t, language } = useLanguage()
   const [picking, setPicking] = useState(false)
   const [query, setQuery] = useState("")
@@ -249,7 +252,8 @@ export function BeverageSourceCard({
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-foreground">{source.name}</p>
               <p className="text-xs text-muted-foreground">
-                {getCategoryLabel(source.category, language)} · {content} {getUnitLabel(source.unit, language)} · {formatCurrency(source.pricing?.purchasePrice || 0)}
+                {getCategoryLabel(source.category, language)} · {content} {getUnitLabel(source.unit, language)}
+                {seeCosts ? ` · ${formatCurrency(source.pricing?.purchasePrice || 0)}` : ""}
               </p>
             </div>
             {!disabled && (
@@ -356,10 +360,12 @@ export function BeverageSourceCard({
               <p className="text-xs text-muted-foreground">{t("bev_source_servings")}</p>
               <p className="font-medium tabular-nums">{built.serving.servingsPerPackage ? built.serving.servingsPerPackage.toFixed(1) : "—"}</p>
             </div>
-            <div className="px-3 py-2.5 sm:px-4">
-              <p className="text-xs text-muted-foreground">{t("bev_source_cost")}</p>
-              <p className="font-semibold tabular-nums text-foreground">{formatCurrency(built.serving.cost)}</p>
-            </div>
+            {seeCosts && (
+              <div className="px-3 py-2.5 sm:px-4">
+                <p className="text-xs text-muted-foreground">{t("bev_source_cost")}</p>
+                <p className="font-semibold tabular-nums text-foreground">{formatCurrency(built.serving.cost)}</p>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

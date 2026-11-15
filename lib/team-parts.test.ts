@@ -37,6 +37,16 @@ describe("partes de cada módulo en Equipo (docs/303)", () => {
     expect(rolePreset("cashier", noPos).modules).not.toContain("pos")
   })
 
+  it("ver costos (docs/304): los de antes los siguen viendo; las plantillas solo al encargado", () => {
+    expect(memberHasPart(["recipes", "access_v2"], "info.costs")).toBe(true)
+    const cook = partsToStore(["recipes"], ["pdf.recipe"])
+    expect(memberHasPart(cook, "info.costs")).toBe(false)
+    const all = () => true
+    expect(rolePreset("manager", all).parts).toContain("info.costs")
+    for (const role of ["waiter", "kitchen", "cashier"] as const) expect(rolePreset(role, all).parts).not.toContain("info.costs")
+    expect(withoutParts(["recipes", "info.costs"])).toEqual(["recipes"])
+  })
+
   it("lo de siempre incluye todos los PDF por tipo", () => {
     expect(defaultParts([])).toContain("pdf.sales_history")
   })

@@ -1,5 +1,6 @@
 "use client"
 
+import { useCanSeeCosts } from "@/components/cost-gate"
 import { useState } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -52,6 +53,7 @@ export function RecipeCard({
 }: RecipeCardProps) {
   const [imageError, setImageError] = useState(false)
   const { language, t } = useLanguage()
+  const seeCosts = useCanSeeCosts() // docs/304
 
   // Calcular estadísticas de la receta
   // BUG CORREGIDO: unitCost/yield/procedures no existen en Recipe (types/recipe.ts) —
@@ -154,6 +156,7 @@ export function RecipeCard({
 
               {/* Estadísticas en grid compacto para móvil */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs sm:text-sm">
+{seeCosts && (
                 <div className="flex items-center gap-1.5">
                   <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-success" />
                   <div>
@@ -161,6 +164,7 @@ export function RecipeCard({
                     <p className="text-muted-foreground text-xs">{t("recipecard_total_cost")}</p>
                   </div>
                 </div>
+)}
 
                 <div className="flex items-center gap-1.5">
                   <Users className="h-3 w-3 sm:h-4 sm:w-4 text-info" />
@@ -256,6 +260,7 @@ export function RecipeCard({
         {/* Estadísticas */}
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3 text-sm">
+{seeCosts && (
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-success" />
               <div>
@@ -263,6 +268,7 @@ export function RecipeCard({
                 <p className="text-muted-foreground text-xs">{t("recipecard_total_cost")}</p>
               </div>
             </div>
+)}
 
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-info" />
