@@ -1454,8 +1454,8 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                 {editedBusiness && (
                   <div className="grid gap-4 py-4">
                     {expenseCategories.map((category) => (
-                      <div key={category.key} className="grid grid-cols-3 items-center gap-4">
-                        <Label htmlFor={category.key} className="text-right capitalize">
+                      <div key={category.key} className="grid grid-cols-1 items-center gap-2 sm:grid-cols-3 sm:gap-4">
+                        <Label htmlFor={category.key} className="sm:text-right capitalize">
                           {category.label}
                         </Label>
                         <Input
@@ -1482,13 +1482,13 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                           }
                           type="number"
                           min="0"
-                          className="col-span-2"
+                          className="sm:col-span-2"
                           placeholder={`${getCurrentCurrencyOption().symbol} 0.00`}
                         />
                       </div>
                     ))}
-                    <div className="grid grid-cols-3 items-center gap-4">
-                      <Label htmlFor="estimatedMonthlyPlates" className="text-right">
+                    <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-3 sm:gap-4">
+                      <Label htmlFor="estimatedMonthlyPlates" className="sm:text-right">
                         {t("business_config_plates_label")}
                       </Label>
                       <Input
@@ -1501,7 +1501,7 @@ export default function BusinessDashboard({ params }: { params: { id: string } }
                         }
                         type="number"
                         min="0"
-                        className="col-span-2"
+                        className="sm:col-span-2"
                         placeholder={t("business_config_plates_placeholder")}
                       />
                     </div>

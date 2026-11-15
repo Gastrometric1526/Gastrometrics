@@ -1387,7 +1387,7 @@ export default function IngredientesPage() {
       onDrop={handleDrop}
     >
       <Sidebar />
-      <div className="flex-1 min-w-0 p-4 md:p-8">
+      <div className="flex-1 min-w-0 p-4 md:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
           <IngredientesTour
             onOpenImport={() => setShowImportDialog(true)}
@@ -1594,9 +1594,9 @@ export default function IngredientesPage() {
                       className="pl-10 border-border focus:ring-2 focus:ring-primary"
                     />
                   </div>
-                  <div className="flex gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:flex">
                     <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                      <SelectTrigger className="w-48 border-border focus:ring-2 focus:ring-primary">
+                      <SelectTrigger className="w-full sm:w-48 border-border focus:ring-2 focus:ring-primary">
                         <Filter className="h-4 w-4 mr-2" />
                         <SelectValue />
                       </SelectTrigger>
@@ -1611,7 +1611,7 @@ export default function IngredientesPage() {
                     </Select>
 
                     <Select value={sortBy} onValueChange={setSortBy}>
-                      <SelectTrigger className="w-48 border-border focus:ring-2 focus:ring-primary">
+                      <SelectTrigger className="w-full sm:w-48 border-border focus:ring-2 focus:ring-primary">
                         <TrendingUp className="h-4 w-4 mr-2" />
                         <SelectValue />
                       </SelectTrigger>

@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Tamaños y márgenes en celular y computadora, contraste en claro y oscuro (docs/310).
+    version: "2026-11-15f",
+    tutorialHref: tourHref("ingredientes"),
+    content: {
+      es: { title: "Mejor en el teléfono y más fácil de leer", items: ["En Configuración, en el teléfono, el botón «Guardar» ya no queda fuera de la pantalla.", "En Ingredientes, la unidad (kilogramos) se lee completa y los filtros se acomodan en el teléfono. Las pantallas tienen el mismo margen.", "Los textos grises son más fáciles de leer, y en modo oscuro el rojo de errores y montos negativos se ve bien. Con Rosa Pastel, íconos y textos de color se leen sobre blanco."] },
+      en: { title: "Better on your phone and easier to read", items: ["In Settings, on your phone, the “Save” button no longer falls off the screen.", "In Ingredients, the unit (kilograms) shows in full and the filters fit on your phone. Screens share the same margins.", "Gray text is easier to read, and in dark mode the red for errors and negative amounts is clear. With Pastel Pink, colored icons and text are readable on white."] },
+      da: { title: "Bedre på telefonen og lettere at læse", items: ["I Indstillinger på telefonen ryger knappen »Gem« ikke længere ud af skærmen.", "I Ingredienser vises enheden (kilogram) helt, og filtrene passer på telefonen. Skærmene har samme margen.", "Grå tekst er lettere at læse, og i mørk tilstand ses det røde for fejl og negative beløb tydeligt. Med Pastelrosa kan farvede ikoner og tekst læses på hvidt."] },
+      fr: { title: "Mieux sur téléphone et plus facile à lire", items: ["Dans Paramètres, sur téléphone, le bouton « Enregistrer » ne sort plus de l'écran.", "Dans Ingrédients, l'unité (kilogrammes) s'affiche en entier et les filtres tiennent sur téléphone. Les écrans ont les mêmes marges.", "Le texte gris est plus lisible et, en mode sombre, le rouge des erreurs et des montants négatifs se voit bien. Avec Rose pastel, les icônes et textes colorés se lisent sur fond blanc."] },
+      pt: { title: "Melhor no celular e mais fácil de ler", items: ["Em Configurações, no celular, o botão «Salvar» não fica mais fora da tela.", "Em Ingredientes, a unidade (quilogramas) aparece inteira e os filtros cabem no celular. As telas têm as mesmas margens.", "Os textos cinza ficaram mais fáceis de ler e, no modo escuro, o vermelho de erros e valores negativos aparece bem. Com Rosa Pastel, ícones e textos coloridos se leem sobre o branco."] },
+      zh: { title: "手机上更好用，文字更易读", items: ["在手机上的设置中，“保存”按钮不再跑出屏幕。", "在食材中，单位（千克）完整显示，筛选在手机上也能放下。各页面边距一致。", "灰色文字更易读；深色模式下，错误和负数金额的红色更清楚。使用浅粉色时，彩色图标和文字在白色上也能看清。"] },
+    },
+  },
+  {
     // Color de la persona y de cada negocio en todos los aparatos, 3 colores nuevos (docs/309).
     version: "2026-11-15e",
     tutorialHref: tourHref("negocios"),

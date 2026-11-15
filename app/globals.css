@@ -42,8 +42,9 @@
        fila, y los cuatro semánticos apagados (nunca colores de semáforo puro). */
     --canvas-alt: 60 20% 99%;
     --hairline: 60 6% 96%;
-    --text-3: 60 3% 53%;
-    --text-4: 60 3% 65%;
+    /* docs/310: antes 53 % y 65 % (contraste 3.3 y 2.4 sobre blanco, el texto chico casi no se leía). */
+    --text-3: 60 3% 44%;
+    --text-4: 60 3% 48%;
     --success: 152 55% 27%;
     --success-soft: 154 35% 95%;
     --warning: 33 45% 37%;
@@ -72,8 +73,10 @@
     --muted-foreground: 60 3% 62%;
     --accent: 0 0% 14%;
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    /* docs/310: antes 0 62.8% 30.6% (rojo oscuro: como texto sobre el fondo negro tenía contraste 1.8).
+       Ahora claro, como success/warning/info del modo oscuro, con texto oscuro encima en los botones. */
+    --destructive: 4 75% 64%;
+    --destructive-foreground: 20 40% 12%;
     --border: 0 0% 15%;
     --input: 0 0% 19%;
     --ring: 14 90% 58%;
@@ -165,6 +168,13 @@
 [data-theme="rosa-pastel"] {
   --primary: 340 70% 82%;
   --primary-foreground: 340 45% 20%;
+}
+
+/* docs/310: el rosa pastel como TEXTO o ÍCONO sobre blanco tenía contraste 1.8 (los íconos de
+   módulo usan text-primary desde docs/309). En modo claro, el texto y los íconos toman un rosa
+   más hondo del mismo tono; los fondos y botones siguen en pastel. En oscuro el pastel ya se lee. */
+html[data-theme="rosa-pastel"]:not(.dark) .text-primary {
+  color: hsl(340 55% 45%);
 }
 
 /* docs/309: Terracota, Oliva y Azul Marino (mismos valores que lib/theme-colors.ts). */

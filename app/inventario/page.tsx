@@ -617,7 +617,7 @@ export default function InventoryPage() {
     <div className="flex min-h-screen bg-background">
       <Sidebar />
       <div className="flex flex-col flex-1 overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           <div className="mx-auto max-w-7xl space-y-6">
             <InventarioTour />
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

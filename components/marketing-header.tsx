@@ -34,13 +34,14 @@ export function MarketingHeader() {
           <span className="text-2xl font-semibold tracking-[-0.025em] text-foreground">Gastrometrics</span>
         </Link>
 
-        <div className="flex items-center gap-1 sm:gap-2">
+        {/* docs/310: en celular la fila de enlaces va abajo, a todo el ancho, para que «Ayuda» no se salga del borde. */}
+        <div className="order-last flex w-full items-center justify-between gap-1 sm:order-none sm:w-auto sm:justify-start sm:gap-2">
           {navItems.map((item) => (
             <Link key={item.href} href={item.href}>
               <Button
                 variant="ghost"
                 className={cn(
-                  "hover:bg-accent hover:text-accent-foreground",
+                  "px-2.5 sm:px-4 hover:bg-accent hover:text-accent-foreground",
                   pathname === item.href && "bg-accent text-accent-foreground",
                 )}
               >

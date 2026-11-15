@@ -365,7 +365,7 @@ export function IngredientsTable({
                         value={ingredient.unit}
                         onValueChange={(val) => handleUnitChange(ingredient, val as Unit)}
                       >
-                        <SelectTrigger className="w-[100px] mx-auto h-9">
+                        <SelectTrigger className="w-[140px] mx-auto h-9">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

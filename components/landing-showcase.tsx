@@ -633,8 +633,8 @@ export function LandingPriceStory() {
         </div>
 
         <div className="mt-12 lg:mt-0 flex justify-center lg:justify-start">
-          <Link href="/signup">
-            <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
+          <Link href="/signup" className="max-w-full">
+            <Button size="lg" className="h-auto min-h-11 max-w-full whitespace-normal py-2.5 text-center bg-primary text-primary-foreground hover:bg-primary/90">
               {t("landing_story_cta")} <ArrowRight className="ml-1.5 h-4 w-4" />
             </Button>
           </Link>

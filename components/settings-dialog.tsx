@@ -516,7 +516,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
 
                   <Separator />
 
-                  <div data-tour="settings-profile-fields" className="grid grid-cols-2 gap-4">
+                  <div data-tour="settings-profile-fields" className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="name">{t("settings_full_name")}</Label>
                       <Input
@@ -537,7 +537,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="country">{t("settings_country")}</Label>
                       <Select
@@ -798,8 +798,9 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
           </div>
         </Tabs>
 
-        <div className="flex items-center justify-between gap-2 pt-4 border-t shrink-0">
-          <div className="flex items-center gap-3">
+        {/* docs/310: en celular los botones van arriba a todo el ancho; antes «Guardar» quedaba fuera de la pantalla. */}
+        <div className="flex flex-col-reverse gap-3 pt-4 border-t shrink-0 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-start">
             <Link href="/contacto" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               {t("settings_feedback_link")}
             </Link>
@@ -814,7 +815,7 @@ export function SettingsDialog({ trigger, businessId }: SettingsDialogProps) {
               {t("settings_manual_link")}
             </a>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
             <Button variant="outline" onClick={() => setOpen(false)}>
               {t("common_cancel")}
             </Button>

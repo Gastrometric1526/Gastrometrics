@@ -634,7 +634,7 @@ export default function MisRecetasPage() {
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <div className="flex-1 p-2 md:p-4 lg:p-8">
+      <div className="flex-1 p-2 md:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
           <MisRecetasTour onOpenImport={() => setShowRecipeImport(true)} hasRecipes={!isLoading && recipes.length > 0} />
           <RecipeImportDialog open={showRecipeImport} onOpenChange={setShowRecipeImport} businessId={businessId} />
