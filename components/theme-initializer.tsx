@@ -1,9 +1,12 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef, useState } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useTheme } from "next-themes"
-import { applyThemeAttribute, DEFAULT_THEME_SLUG, themeStorageKey } from "@/lib/theme-colors"
+import { applyThemeAttribute, DEFAULT_THEME_SLUG, effectiveThemeSlug } from "@/lib/theme-colors"
+import { THEME_PREFS_EVENT, saveDisplayMode, syncThemeFromAccount } from "@/lib/theme-sync"
+import { useAuth } from "@/contexts/auth-context"
+import { useAllBusinesses } from "@/lib/storage/businesses"
 
 // Páginas públicas de marketing — deben verse siempre igual (claro, Naranja Brasa) sin
 // importar el modo oscuro ni el color de tema que el usuario haya guardado en la app,
@@ -45,7 +48,47 @@ export function ThemeInitializer() {
   // resolvedTheme (no theme) porque también cubre "system" resuelto al claro/oscuro real
   // del sistema operativo — es lo mismo que next-themes usa internamente para decidir la
   // clase "dark" en <html>.
-  const { resolvedTheme } = useTheme()
+  const { resolvedTheme, theme, setTheme } = useTheme()
+  const { user } = useAuth()
+  const businesses = useAllBusinesses()
+  // Sube cuando cambia una preferencia (aquí o desde la cuenta) para volver a aplicar el color.
+  const [prefsVersion, setPrefsVersion] = useState(0)
+  useEffect(() => {
+    const bump = () => setPrefsVersion((v) => v + 1)
+    window.addEventListener(THEME_PREFS_EVENT, bump)
+    return () => window.removeEventListener(THEME_PREFS_EVENT, bump)
+  }, [])
+
+  // Lo que tiene la cuenta manda en cualquier aparato (docs/309).
+  const accountMode = useRef<string | null>(null)
+  const synced = useRef(false)
+  // Modo que se está aplicando desde la cuenta: mientras llega, no se sube nada (si no, el
+  // modo viejo de este aparato pisaría el de la cuenta).
+  const incomingMode = useRef<string | null>(null)
+  useEffect(() => {
+    if (!user) return
+    const { displayMode } = syncThemeFromAccount(user.user_metadata, businesses)
+    accountMode.current = displayMode
+    synced.current = true
+    if (displayMode && displayMode !== theme) {
+      incomingMode.current = displayMode
+      setTheme(displayMode)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, businesses])
+
+  // Modo claro/oscuro elegido en este aparato: se guarda en la cuenta para los demás.
+  useEffect(() => {
+    if (!user || !synced.current || !theme) return
+    if (theme !== "light" && theme !== "dark" && theme !== "system") return
+    if (incomingMode.current) {
+      if (incomingMode.current === theme) incomingMode.current = null
+      return
+    }
+    if (accountMode.current === theme) return
+    accountMode.current = theme
+    void saveDisplayMode(theme)
+  }, [user, theme])
 
   useEffect(() => {
     const marketing = isMarketingRoute(pathname)
@@ -57,9 +100,8 @@ export function ThemeInitializer() {
     } else {
       const businessRouteMatch = pathname?.match(/^\/business\/([^/?]+)/)
       const businessId = businessRouteMatch?.[1] || searchParams.get("business")
-      const themeKey = themeStorageKey(businessId)
-      const savedTheme = typeof window !== "undefined" ? localStorage.getItem(themeKey) : null
-      applyThemeAttribute(savedTheme || DEFAULT_THEME_SLUG)
+      // El color del negocio si tiene uno propio; si no, el de la persona (docs/309).
+      applyThemeAttribute(effectiveThemeSlug(businessId))
     }
 
     // Claro/oscuro: en marketing siempre claro. Se manipula la clase "dark" de <html>
@@ -78,7 +120,7 @@ export function ThemeInitializer() {
         document.documentElement.classList.remove("dark")
       }
     }
-  }, [pathname, searchParams, resolvedTheme])
+  }, [pathname, searchParams, resolvedTheme, prefsVersion])
 
   return null
 }

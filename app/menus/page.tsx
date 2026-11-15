@@ -322,8 +322,8 @@ export default function MenusPage() {
                     </Button>
                   </Link>
                   <div className="flex items-center gap-3" data-tour="menus-header">
-                    <div className="w-12 h-12 bg-chart-6/10 rounded-lg flex items-center justify-center">
-                      <GmMenus className="h-6 w-6 text-chart-6" />
+                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <GmMenus className="h-6 w-6 text-primary" />
                     </div>
                     <div>
                       <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("menus_page_title")}</h1>

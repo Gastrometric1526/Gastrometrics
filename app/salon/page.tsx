@@ -625,8 +625,8 @@ function SalonPageInner({ businessId }: { businessId: string }) {
                   </Link>
                 )}
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-chart-6/10 rounded-lg flex items-center justify-center">
-                    <GmPos className="h-6 w-6 text-chart-6" />
+                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <GmPos className="h-6 w-6 text-primary" />
                   </div>
                   <div>
                     <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("nav_salon")}</h1>

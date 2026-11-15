@@ -167,6 +167,22 @@
   --primary-foreground: 340 45% 20%;
 }
 
+/* docs/309: Terracota, Oliva y Azul Marino (mismos valores que lib/theme-colors.ts). */
+[data-theme="terracota"] {
+  --primary: 12 62% 44%;
+  --primary-foreground: 20 60% 97%;
+}
+
+[data-theme="oliva"] {
+  --primary: 78 42% 32%;
+  --primary-foreground: 78 40% 97%;
+}
+
+[data-theme="azul-marino"] {
+  --primary: 222 58% 30%;
+  --primary-foreground: 222 60% 97%;
+}
+
 /* Temas retirados (ver docs/36): ya no aparecen en el selector, pero una cuenta que
    guardó uno de estos en localStorage antes de esta migración no debe quedarse sin
    --primary — cada bloque queda repuntado al equivalente curado de arriba (o a Naranja

@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { Check, Palette, Sun, Moon, Monitor } from "lucide-react"
 import { useTheme } from "next-themes"
-import { CURATED_THEMES, DEFAULT_THEME_SLUG, resolveThemeSlug, applyThemeAttribute, themeStorageKey } from "@/lib/theme-colors"
+import { CURATED_THEMES, FOLLOW_USER_THEME, businessOwnThemeSlug, userThemeSlug } from "@/lib/theme-colors"
+import { saveBusinessTheme, saveUserTheme } from "@/lib/theme-sync"
+import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
 
 interface ThemeSwitcherProps {
@@ -19,33 +21,23 @@ interface ThemeSwitcherProps {
 export function ThemeSwitcher({ businessId, showLightDark = true, className }: ThemeSwitcherProps) {
   const { t } = useLanguage()
   const { theme: systemTheme, setTheme: setSystemTheme } = useTheme()
-  const [currentColorTheme, setCurrentColorTheme] = useState(DEFAULT_THEME_SLUG)
+  const { toast } = useToast()
+  const isBusiness = Boolean(businessId && businessId !== "main")
+  // Selección actual: un slug, o FOLLOW_USER_THEME en un negocio que usa el color de la persona.
+  const [currentColorTheme, setCurrentColorTheme] = useState<string>(FOLLOW_USER_THEME)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
+    setCurrentColorTheme(isBusiness ? businessOwnThemeSlug(businessId) ?? FOLLOW_USER_THEME : userThemeSlug())
+  }, [businessId, isBusiness])
 
-    // Load theme for specific business or main dashboard
-    const themeKey = themeStorageKey(businessId)
-    const savedTheme = localStorage.getItem(themeKey)
-    // Un valor guardado antes de la migración a los 7 temas curados (ver docs/36) sigue
-    // pintando su color correcto vía globals.css, pero aquí en el selector se muestra
-    // resaltada la tarjeta del equivalente curado, no una tarjeta vacía/sin selección.
-    setCurrentColorTheme(resolveThemeSlug(savedTheme))
-
-    // Apply theme to document
-    applyThemeAttribute(savedTheme || DEFAULT_THEME_SLUG)
-  }, [businessId])
-
-  const handleColorThemeChange = (themeSlug: string) => {
+  // Se aplica al instante (ThemeInitializer escucha el cambio) y se guarda en la cuenta o en
+  // el negocio, para que sea el mismo en la computadora y en el teléfono (docs/309).
+  const handleColorThemeChange = async (themeSlug: string) => {
     setCurrentColorTheme(themeSlug)
-
-    // Save theme for specific business or main dashboard
-    const themeKey = themeStorageKey(businessId)
-    localStorage.setItem(themeKey, themeSlug)
-
-    // Apply theme to document (ya dispara "gm:theme-changed" — ver lib/theme-colors.ts)
-    applyThemeAttribute(themeSlug)
+    const ok = isBusiness ? await saveBusinessTheme(businessId as string, themeSlug) : await saveUserTheme(themeSlug)
+    if (!ok) toast({ title: t("themeswitch_save_error"), variant: "destructive" })
   }
 
   if (!mounted) {
@@ -98,6 +90,31 @@ export function ThemeSwitcher({ businessId, showLightDark = true, className }: T
           {businessId ? t("themeswitch_theme_colors_business") : t("themeswitch_theme_colors_main")}
         </h4>
 
+        {isBusiness && (
+          <Card
+            className={cn(
+              "cursor-pointer transition-all duration-200 border-2",
+              currentColorTheme === FOLLOW_USER_THEME ? "border-primary" : "border-border hover:border-primary/50",
+            )}
+            onClick={() => handleColorThemeChange(FOLLOW_USER_THEME)}
+            data-testid="theme-follow-user"
+          >
+            <CardContent className="p-3">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-6 h-6 rounded-full border-2 border-border flex-shrink-0"
+                  style={{ backgroundColor: `hsl(${(CURATED_THEMES.find((x) => x.slug === userThemeSlug()) || CURATED_THEMES[0]).primary})` }}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">{t("themeswitch_follow_user")}</p>
+                  <p className="text-xs text-muted-foreground">{t("themeswitch_follow_user_desc")}</p>
+                </div>
+                {currentColorTheme === FOLLOW_USER_THEME && <Check className="h-4 w-4 text-primary flex-shrink-0" />}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid grid-cols-2 gap-2">
           {CURATED_THEMES.map((theme) => (
             <Card
@@ -125,7 +142,9 @@ export function ThemeSwitcher({ businessId, showLightDark = true, className }: T
         </div>
       </div>
 
-      {businessId && (
+      <p className="text-xs text-muted-foreground">{t("themeswitch_synced_hint")}</p>
+
+      {isBusiness && (
         <div className="pt-2 border-t border-border">
           <Badge variant="secondary" className="text-xs">
             {t("themeswitch_independent_theme_badge")}

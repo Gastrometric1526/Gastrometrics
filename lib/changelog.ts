@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Color de la persona y de cada negocio en todos los aparatos, 3 colores nuevos (docs/309).
+    version: "2026-11-15e",
+    tutorialHref: tourHref("negocios"),
+    content: {
+      es: { title: "Tu color en todos tus aparatos, y un color por negocio", items: ["Tu color y el modo claro u oscuro se guardan en tu cuenta: al entrar desde la computadora o el teléfono ves lo mismo. Lo que ya habías elegido en este aparato se sube solo.", "Cada negocio puede tener un color distinto al tuyo, o «Igual que mi color». Sus pantallas y todos sus PDF salen en ese color; antes, un negocio sin color propio salía en naranja.", "Tres colores nuevos: Terracota, Oliva y Azul Marino. Los íconos de los módulos también toman tu color."] },
+      en: { title: "Your color on all your devices, and a color per business", items: ["Your color and light or dark mode are saved to your account: you see the same on your computer and phone. What you had already chosen on this device is uploaded automatically.", "Each business can have a color different from yours, or “Same as my color”. Its screens and all its PDFs use that color; before, a business without its own color came out orange.", "Three new colors: Terracotta, Olive and Navy Blue. Module icons also take your color."] },
+      da: { title: "Din farve på alle dine enheder og en farve pr. virksomhed", items: ["Din farve og lys eller mørk tilstand gemmes på din konto: du ser det samme på computer og telefon. Det, du allerede havde valgt på denne enhed, uploades automatisk.", "Hver virksomhed kan have en anden farve end din eller »Samme som min farve«. Dens skærme og alle dens PDF'er bruger den farve; før kom en virksomhed uden egen farve ud i orange.", "Tre nye farver: Terrakotta, Oliven og Marineblå. Modulikonerne får også din farve."] },
+      fr: { title: "Votre couleur sur tous vos appareils, et une couleur par établissement", items: ["Votre couleur et le mode clair ou sombre sont enregistrés dans votre compte : vous voyez la même chose sur ordinateur et téléphone. Ce que vous aviez déjà choisi sur cet appareil est envoyé automatiquement.", "Chaque établissement peut avoir une couleur différente de la vôtre, ou « Comme ma couleur ». Ses écrans et tous ses PDF prennent cette couleur ; avant, un établissement sans couleur propre sortait en orange.", "Trois nouvelles couleurs : Terracotta, Olive et Bleu marine. Les icônes des modules prennent aussi votre couleur."] },
+      pt: { title: "Sua cor em todos os seus aparelhos, e uma cor por negócio", items: ["Sua cor e o modo claro ou escuro ficam salvos na sua conta: você vê o mesmo no computador e no celular. O que você já tinha escolhido neste aparelho é enviado sozinho.", "Cada negócio pode ter uma cor diferente da sua, ou «Igual à minha cor». As telas e todos os PDFs dele saem nessa cor; antes, um negócio sem cor própria saía em laranja.", "Três cores novas: Terracota, Oliva e Azul-marinho. Os ícones dos módulos também usam sua cor."] },
+      zh: { title: "你的颜色在所有设备上一致，每个商家也可有自己的颜色", items: ["你的颜色和浅色或深色模式保存在账户中：在电脑和手机上看到的都一样。此设备上已选的设置会自动上传。", "每个商家可以使用与你不同的颜色，或选择“与我的颜色相同”。其页面和所有 PDF 都使用该颜色；以前没有自己颜色的商家会显示为橙色。", "新增三种颜色：陶土色、橄榄绿和海军蓝。模块图标也会使用你的颜色。"] },
+    },
+  },
+  {
     // Historial con el margen de Finanzas, PAX en peso e íconos propios (docs/307).
     version: "2026-11-15d",
     tutorialHref: tourHref("estadisticas"),

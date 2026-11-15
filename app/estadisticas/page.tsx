@@ -450,8 +450,8 @@ function EstadisticasContent() {
                   </Button>
                 </Link>
                 <div className="flex items-center gap-3" data-tour="stats-header">
-                  <div className="w-12 h-12 bg-chart-3/10 rounded-lg flex items-center justify-center">
-                    <GmReports className="h-6 w-6 text-chart-3" />
+                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <GmReports className="h-6 w-6 text-primary" />
                   </div>
                   <div>
                     <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("estadisticas_title")}</h1>

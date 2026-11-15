@@ -31,7 +31,17 @@ export const CURATED_THEMES: CuratedTheme[] = [
   // Pastel de verdad (claro, no solo "menos saturado") — con un fondo tan claro, texto
   // blanco no se lee; usa texto oscuro en vez del blanco que usan los demás.
   { slug: "rosa-pastel", label: "Rosa Pastel", primary: "340 70% 82%", primaryForeground: "340 45% 20%", logo: "gm-rosa-pastel.png" },
+  // Agregados en docs/309 a pedido del dueño («agrega un par de colores más»): tonos de
+  // cocina, oscuros lo suficiente para que el texto blanco se lea encima.
+  { slug: "terracota", label: "Terracota", primary: "12 62% 44%", primaryForeground: "20 60% 97%", logo: "gm-terracota.png" },
+  { slug: "oliva", label: "Oliva", primary: "78 42% 32%", primaryForeground: "78 40% 97%", logo: "gm-oliva.png" },
+  { slug: "azul-marino", label: "Azul Marino", primary: "222 58% 30%", primaryForeground: "222 60% 97%", logo: "gm-azul-marino.png" },
 ]
+
+/** Clave del color de la persona (su color en toda la app, docs/309). */
+export const USER_THEME_KEY = "main_color_theme"
+/** Valor guardado en un negocio que dice «usa el color de la persona» (docs/309). */
+export const FOLLOW_USER_THEME = "user"
 
 export const DEFAULT_THEME_SLUG = "naranja-brasa"
 
@@ -107,9 +117,38 @@ export function themeStorageKey(businessId?: string | null): string {
   return businessId && businessId !== "main" ? `business_${businessId}_color_theme` : "main_color_theme"
 }
 
-function getBusinessThemeSlug(businessId?: string | null): string {
+function readLocal(key: string): string | null {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+/** Color propio del negocio, o null si sigue el de la persona (o nunca se eligió). */
+export function businessOwnThemeSlug(businessId?: string | null): string | null {
+  if (typeof window === "undefined" || !businessId || businessId === "main") return null
+  const stored = readLocal(themeStorageKey(businessId))
+  return stored && stored !== FOLLOW_USER_THEME ? resolveThemeSlug(stored) : null
+}
+
+/** Color de la persona (el de Configuración), el mismo en computadora y teléfono (docs/309). */
+export function userThemeSlug(): string {
   if (typeof window === "undefined") return DEFAULT_THEME_SLUG
-  return resolveThemeSlug(localStorage.getItem(themeStorageKey(businessId)))
+  return resolveThemeSlug(readLocal(USER_THEME_KEY))
+}
+
+/**
+ * Color que manda en una pantalla o un PDF (docs/309): el del negocio si tiene uno propio;
+ * si no, el de la persona. Antes un negocio sin color propio salía en Naranja Brasa aunque la
+ * persona hubiera elegido otro color, y lo mismo sus PDF.
+ */
+export function effectiveThemeSlug(businessId?: string | null): string {
+  return businessOwnThemeSlug(businessId) ?? userThemeSlug()
+}
+
+function getBusinessThemeSlug(businessId?: string | null): string {
+  return effectiveThemeSlug(businessId)
 }
 
 /**

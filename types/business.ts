@@ -61,6 +61,10 @@ export interface Business {
   targetFoodCostPercent?: number
   // Rubros predeterminados del método GastroMetrics para recetas nuevas (docs/226).
   pricingPercentages?: Partial<Record<string, number>>
+  // Color del negocio (docs/309): un slug de CURATED_THEMES, o "user" para usar el color de
+  // la persona. Se guarda aquí (no solo en el navegador) para que sea el mismo en todos los
+  // aparatos. Sin valor = nunca se eligió (se sube el que tenga el navegador, si hay).
+  themeColor?: string
   // Marca de los PDF (docs/229, docs/251): ver PdfBranding en lib/pdf/pdf-branding.ts.
   pdfBranding?: {
     name?: string
