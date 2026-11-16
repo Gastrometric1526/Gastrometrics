@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Rendimiento por defecto en unidades (docs/320).
+    version: "2026-11-16",
+    tutorialHref: tourHref("ficha-tecnica"),
+    content: {
+      es: { title: "Las recetas nuevas rinden en unidades", items: ["Ficha Técnica: una receta nueva empieza con el rendimiento en unidades, así el costo y el precio salen por unidad. Para salsas, masas y bases elige kg o L.", "Si dejas vacío el número del rendimiento en unidades o porciones, la receta completa cuenta como 1. Antes podía tomar el peso de los ingredientes como si fueran porciones."] },
+      en: { title: "New recipes yield units", items: ["Recipe Sheet: a new recipe starts with its yield in units, so cost and price come out per unit. For sauces, doughs and bases choose kg or L.", "If you leave the yield number empty in units or portions, the whole recipe counts as 1. Before, it could take the ingredients' weight as if it were portions."] },
+      da: { title: "Nye opskrifter giver stykker", items: ["Opskriftsark: en ny opskrift starter med udbyttet i stykker, så omkostning og pris beregnes pr. stk. Til saucer, deje og baser vælger du kg eller L.", "Lader du udbyttets tal stå tomt i stykker eller portioner, tæller hele opskriften som 1. Før kunne den tage ingrediensernes vægt, som om det var portioner."] },
+      fr: { title: "Les nouvelles recettes rendent des unités", items: ["Fiche technique : une nouvelle recette commence avec un rendement en unités, donc le coût et le prix sortent par unité. Pour les sauces, pâtes et bases, choisissez kg ou L.", "Si vous laissez vide le nombre du rendement en unités ou en portions, la recette entière compte pour 1. Avant, le poids des ingrédients pouvait être pris comme des portions."] },
+      pt: { title: "Receitas novas rendem unidades", items: ["Ficha Técnica: uma receita nova começa com o rendimento em unidades, então o custo e o preço saem por unidade. Para molhos, massas e bases, escolha kg ou L.", "Se você deixar vazio o número do rendimento em unidades ou porções, a receita inteira conta como 1. Antes, o peso dos ingredientes podia ser tomado como porções."] },
+      zh: { title: "新配方默认按“个”计产量", items: ["技术配方表：新配方的产量默认以“个”为单位，因此成本和价格按每个计算。酱汁、面团和底料请选择 kg 或 L。", "产量单位为“个”或“份”时，如果不填数字，整份配方算作 1。以前可能会把食材的重量当作份数。"] },
+    },
+  },
+  {
     // Menús con elecciones y punto de equilibrio (docs/314).
     version: "2026-11-15i",
     tutorialHref: tourHref("menus"),

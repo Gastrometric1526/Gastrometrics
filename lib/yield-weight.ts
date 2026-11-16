@@ -46,6 +46,9 @@ export function fallbackYield(
 ): number {
   const used = (lines ?? []).filter((l) => l.ingredientId && (l.quantity ?? 0) > 0)
   const grams = estimateYieldWeightGrams(used, multiplier)
+  // Porciones o unidades con el Rendimiento vacío (docs/320): la receta completa es 1. Antes
+  // se devolvían los gramos como si fueran porciones (1 500 g → «1 500 un»).
+  if (grams > 0 && (yieldUnit === "porciones" || yieldUnit === "un")) return multiplier
   if (grams > 0) return grams / (GRAMS_PER_YIELD_UNIT[yieldUnit || "g"] ?? 1)
   return used.reduce((sum, l) => sum + (l.quantity as number), 0) * multiplier
 }

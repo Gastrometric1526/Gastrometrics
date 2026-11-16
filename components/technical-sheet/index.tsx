@@ -149,7 +149,8 @@ function createEmptyRecipe(recipeId: string | undefined, businessId: string): Re
     plate: "",
     servings: 1,
     yieldAmount: 0,
-    yieldUnit: "g",
+    // Por defecto la receta rinde en unidades (pedido del dueño, docs/320). Antes era «g».
+    yieldUnit: "un",
     ingredients: [
       {
         id: `ing-${now}`,
@@ -553,8 +554,9 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       const nextKind = getBarKind(value)
       setRecipe((prev) => ({ ...prev, classification: value }))
       if (nextKind && nextKind !== previousKind) {
-        // Un trago se rinde en porciones, no en gramos (default de la ficha en blanco).
-        setRecipe((prev) => (prev.yieldUnit === "g" ? { ...prev, yieldUnit: "porciones" } : prev))
+        // Un trago se rinde en porciones: si la ficha sigue con la unidad por defecto («un», docs/320)
+        // o con «g» (fichas de antes), pasa a porciones.
+        setRecipe((prev) => (prev.yieldUnit === "un" || prev.yieldUnit === "g" ? { ...prev, yieldUnit: "porciones" } : prev))
         const target = DEFAULT_BEVERAGE_COST_TARGET[nextKind]
         setPricingMethod("food_cost")
         setTargetFoodCostPercent(target)

@@ -165,7 +165,7 @@ export default {
         ["list", [
           "<strong>Navn</strong> og <strong>Klassifikation</strong> (22 muligheder, fra Varm linje til Konditori eller R&D). Klassifikationen »Underopskrift« gør opskriften til en ingrediens (kapitel 5). De 5 »Bar · …«-klassifikationer beregner prisen med pour cost (kapitel 6).",
           "<strong>Trin</strong>: hvor i serveringen den hører til (forret, hovedret, dessert…).",
-          "<strong>Udbytte</strong>: hvor meget opskriften giver (8 portioner, 1200 g…) med enhed.",
+          "<strong>Udbytte</strong>: hvor meget opskriften giver (8 portioner, 1200 g…) med enhed. En ny opskrift starter i stk., så omkostningen beregnes pr. stk.; til saucer, deje og baser vælger du kg eller L. I stk. eller portioner tæller hele opskriften som 1, hvis du lader tallet stå tomt.",
           "<strong>Ingredienser</strong>: søg i din database og skriv mængden. Hver linje viser, hvad den koster.",
           "<strong>Fremgangsmåde og bemærkninger</strong> samt et <strong>billede</strong> af retten.",
         ]],
@@ -176,7 +176,7 @@ export default {
         ["p", "Vil du starte forfra? Brug <strong>Ryd arket</strong> (ved siden af »Gem opskrift« eller i beskeden). Den beder om bekræftelse og sletter alt: navn, ingredienser, fremgangsmåde, billede, priser og den gemte kladde. Når du gemmer opskriften, slettes kladden automatisk."],
         ["h3", "Produktionsomkostning"],
         ["formula", "Kostpris pr. ingrediens og for opskriften", ["Linjens kostpris = Mængde × Pris pr. enhed", "Produktionsomkostning = Summen af alle linjer"]],
-        ["formula", "Enhedskostpris", ["Enhedskostpris = Produktionsomkostning ÷ Udbytte"], "Angiver du ikke et udbytte, estimerer appen det ud fra den samlede vægt af ingredienser målt i g, ml, kg eller liter."],
+        ["formula", "Enhedskostpris", ["Enhedskostpris = Produktionsomkostning ÷ Udbytte"], "Angiver du ikke et udbytte i g, ml, kg eller L, estimerer appen det ud fra ingrediensernes samlede vægt. I stk. eller portioner tæller hele opskriften som 1."],
         ["h3", "To måder at beregne prisen på"],
         ["p", "Hver opskrift bruger én af to metoder. Nye opskrifter starter med <strong>Food Cost %</strong>; din virksomhed kan ændre standarden, og du kan skifte opskrift for opskrift uden at miste noget: begge tager udgangspunkt i den samme reelle kostpris. Opskrifter, du tidligere har gemt med 6 poster, forbliver uændrede."],
         ["cards", [
