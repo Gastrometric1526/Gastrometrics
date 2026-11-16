@@ -51,6 +51,8 @@ import { allergenLabelKey, getRecipeAllergens } from "@/lib/allergens"
 import { getMenuTypeLabel } from "@/lib/menu-type-labels"
 import { getRecipeStepLabel } from "@/lib/recipe-step-labels"
 import { getIngredients } from "@/lib/storage/ingredients"
+import { DishLabelModePicker, useDishLabelMode } from "@/components/dish-label-mode-picker"
+import { pdfDishData } from "@/lib/pdf/dish-tags-export"
 import { FileDown, Lock } from "lucide-react"
 import { MenuWizard } from "@/components/menu-wizard"
 import type { Menu } from "@/lib/types/menus"
@@ -81,6 +83,9 @@ export default function MenusPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
+  // Antes de bajar el PDF, cómo salen alérgenos y tipo de plato (docs/324).
+  const [pdfAsk, setPdfAsk] = useState<{ menu: Menu; type: MenuPDFType } | null>(null)
+  const [labelMode, setLabelMode] = useDishLabelMode()
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
   const [menuToDelete, setMenuToDelete] = useState<string | null>(null)
   const [showEditor, setShowEditor] = useState(false)
@@ -165,7 +170,7 @@ export default function MenusPage() {
     }
   }
 
-  const handleExportMenuPDF = (menu: Menu, type: MenuPDFType) => {
+  const handleExportMenuPDF = async (menu: Menu, type: MenuPDFType) => {
     // BUG CORREGIDO (ver docs/34): el PDF interno de menú lleva costos y márgenes —
     // misma categoría de información sensible que "PDF Administrativo" de Ficha
     // Técnica (ya gateado a pdf_admin), pero este export se había quedado sin
@@ -193,11 +198,17 @@ export default function MenusPage() {
           return [item.recipeId, keys.map((key) => t(allergenLabelKey(key)))]
         }),
       )
+      const menuRecipes = recipes.filter((r) => menu.items.some((it) => it.recipeId === r.id))
+      const dish = await pdfDishData(menuRecipes, menuIngredients, recipes, t, labelMode, businessId || "main")
       const doc = generateMenuPDF(menu, recipes, {
         type,
         businessName: business?.name,
         businessLogo: business?.logo,
         allergensByRecipeId,
+        dishTagsByRecipeId: dish.tagsByRecipeId,
+        dishLabelMode: labelMode,
+        dishIcons: dish.icons,
+        dishLegendTitle: t("dish_labels_legend"),
       })
       // Nombre del archivo en el idioma de la app (docs/209): antes «-cliente»/«-interno» siempre.
       const prefix = safeFilePart(t("menus_pdf_file_menu"), "menu")
@@ -619,7 +630,7 @@ export default function MenusPage() {
                     { key: "duplicate", label: t("menus_action_duplicate"), icon: Copy, onClick: () => handleDuplicateMenu(detailMenu.id) },
                     ...(canExportMenuPDF !== false
                       ? [
-                          { key: "pdf-client", label: t("menus_action_export_client"), icon: FileDown, onClick: () => handleExportMenuPDF(detailMenu, "cliente") },
+                          { key: "pdf-client", label: t("menus_action_export_client"), icon: FileDown, onClick: () => setPdfAsk({ menu: detailMenu, type: "cliente" }) },
                           { key: "pdf-internal", label: t("menus_action_export_internal"), icon: canExportAdminMenuPDF === false ? Lock : FileDown, onClick: () => handleExportMenuPDF(detailMenu, "interno") },
                         ]
                       : []),
@@ -773,6 +784,30 @@ export default function MenusPage() {
                         {t("menus_preview_edit_menu")}
                       </Button>
                     )}
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              <Dialog open={!!pdfAsk} onOpenChange={(o) => !o && setPdfAsk(null)}>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>{t("menus_action_export_client")}</DialogTitle>
+                    <DialogDescription>{pdfAsk?.menu.name}</DialogDescription>
+                  </DialogHeader>
+                  <DishLabelModePicker value={labelMode} onChange={setLabelMode} />
+                  <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+                    <Button variant="outline" onClick={() => setPdfAsk(null)}>
+                      {t("common_cancel")}
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        const ask = pdfAsk
+                        setPdfAsk(null)
+                        if (ask) void handleExportMenuPDF(ask.menu, ask.type)
+                      }}
+                    >
+                      <FileDown className="mr-2 h-4 w-4" />
+                      {t("dish_labels_download")}
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>

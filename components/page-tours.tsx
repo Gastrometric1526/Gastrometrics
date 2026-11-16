@@ -82,6 +82,8 @@ export function FichaTecnicaTour({ hasIngredients }: { hasIngredients: boolean }
       description: t("tour_ficha_summary_desc"),
       selector: '[data-tour="ficha-summary"]',
     },
+    // Alérgenos y tipo de plato (docs/324).
+    { id: "dish-labels", title: t("tour_ficha_dish_labels_title"), description: t("tour_ficha_dish_labels_desc"), selector: '[data-tour="ficha-dish-labels"]' },
     {
       id: "save",
       title: t("tour_ficha_save_title"),
@@ -141,6 +143,8 @@ export function IngredientesTour({
     // Merma (docs/272, docs/279): por categoría en todos los planes; antes el recorrido de la
     // página no la mencionaba y solo la enseñaba el tutorial guiado.
     { id: "merma", title: t("tour_ing_merma_title"), description: t("tour_ing_merma_desc"), selector: '[data-tour="ingredientes-merma-button"]' },
+    // Alérgenos sugeridos (docs/324): en el formulario y la revisión de todos a la vez.
+    { id: "allergens", title: t("tour_ing_allergens_title"), description: t("tour_ing_allergens_desc"), selector: '[data-tour="ing-allergen-review"]' },
     // Último paso (docs/145): carga masiva primero, sin esconder la opción manual.
     { id: "bulk", title: t("tour_ing_bulk_title"), description: t("tour_ing_bulk_desc"), selector: '[data-tour="ing-import"]' },
   ]
@@ -209,6 +213,8 @@ export function MisRecetasTour({ onOpenImport, hasRecipes = false }: { onOpenImp
     { id: "new", title: t("tour_recetas_new_title"), description: t("tour_recetas_new_desc"), selector: '[data-tour="recetas-new"]' },
     { id: "trash", title: t("tour_recetas_trash_title"), description: t("tour_recetas_trash_desc"), selector: '[data-tour="recetas-trash"]' },
     { id: "stats", title: t("tour_recetas_stats_title"), description: t("tour_recetas_stats_desc"), selector: '[data-tour="recetas-stats"]' },
+    // Íconos y filtro por alérgenos y tipo de plato (docs/324).
+    { id: "diet-filter", title: t("tour_recetas_diet_title"), description: t("tour_recetas_diet_desc"), selector: '[data-tour="recetas-diet-filter"]' },
     // docs/219: tocar una receta abre su panel (ver, editar, PDF, duplicar, eliminar).
     { id: "card", title: t("tour_recetas_card_title"), description: t("tour_recetas_card_desc"), selector: "[data-recipe-card]" },
   ]

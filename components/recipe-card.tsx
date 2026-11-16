@@ -1,5 +1,7 @@
 "use client"
 
+import { DishTagIcons } from "@/components/dish-tag-icons"
+import type { DishTag } from "@/lib/dish-tags"
 import { useCanSeeCosts } from "@/components/cost-gate"
 import { useState } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -38,6 +40,8 @@ interface RecipeCardProps {
   onMigrate?: (recipe: Recipe) => void
   /** Doble click en la tarjeta: abre el panel lateral con todas las opciones de la receta. */
   onOpenDetails?: (recipe: Recipe) => void
+  /** Alérgenos y tipo de plato (docs/324), ya calculados por Mis Recetas. */
+  dishTags?: DishTag[]
 }
 
 export function RecipeCard({
@@ -48,6 +52,7 @@ export function RecipeCard({
   onDelete,
   onDuplicate,
   onView,
+  dishTags,
   onMigrate,
   onOpenDetails,
 }: RecipeCardProps) {
@@ -125,6 +130,7 @@ export function RecipeCard({
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-3">
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-foreground text-base sm:text-lg truncate">{recipe.name}</h3>
+                  <DishTagIcons tags={dishTags} className="mt-1" />
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     <Badge
                       variant="outline"
@@ -213,6 +219,7 @@ export function RecipeCard({
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-foreground text-lg leading-tight line-clamp-2">{recipe.name}</h3>
+            <DishTagIcons tags={dishTags} className="mt-1.5" />
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <Badge
                 variant="outline"

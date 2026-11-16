@@ -31,3 +31,31 @@ describe("tipo de plato (docs/324)", () => {
     expect(ens.mayContain).toEqual(["peanuts"])
   })
 })
+
+import { matchesDietFilter } from "./diet-filter"
+import { dishTags } from "./dish-tags"
+
+describe("filtros y etiquetas de Mis Recetas (docs/324)", () => {
+  const ings = [
+    ing("h", "Harina de arroz", "HARINA"),
+    ing("l", "Lomo", "RES"),
+    ing("q", "Queso", "LÁCTEOS Y DERIVADOS", { allergens: ["milk"] }),
+  ]
+  it("filtra por sin X, con proteína, vegetariano y sin gluten", () => {
+    const tortilla = dishLabels(rec("tortilla", ["h"], { dietClaims: { glutenFree: true } }), ings, [])
+    const carne = dishLabels(rec("carne", ["l", "q"]), ings, [])
+    expect(matchesDietFilter(tortilla, "gluten_free")).toBe(true)
+    expect(matchesDietFilter(tortilla, "vegan")).toBe(true)
+    expect(matchesDietFilter(carne, "vegetarian")).toBe(false)
+    expect(matchesDietFilter(carne, "with_beef")).toBe(true)
+    expect(matchesDietFilter(carne, "without_milk")).toBe(false)
+    expect(matchesDietFilter(tortilla, "without_milk")).toBe(true)
+  })
+  it("etiquetas en orden: confirmado, proteínas, alérgenos, trazas", () => {
+    const t = (k: string) => k
+    const l = dishLabels(rec("x", ["l", "q"], { dietClaims: { mayContain: ["peanuts"] } }), ings, [])
+    expect(dishTags(l, t as never).map((x) => `${x.kind}:${x.key}`)).toEqual(["protein:beef", "allergen:milk", "trace:may_contain"])
+    const v = dishLabels(rec("v", ["h"], { dietClaims: { vegan: true, glutenFree: true } }), ings, [])
+    expect(dishTags(v, t as never).map((x) => x.key)).toEqual(["vegan", "gluten_free"])
+  })
+})

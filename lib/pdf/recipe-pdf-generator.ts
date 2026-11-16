@@ -19,6 +19,7 @@ import { formatDate, fileDate } from "@/lib/date-format"
 import { priceBreakdown, unitCostPercent, unitMarginAmount, unitMarginPercent } from "@/lib/recipe-pricing"
 import { recordPdfExport } from "@/lib/pdf/track-export"
 import { isBarClassification } from "@/lib/beverage"
+import { drawDishTags } from "./dish-tags-pdf"
 
 // ============== HELPERS ==============
 
@@ -273,13 +274,25 @@ function drawPieChart(
 function drawAllergensLine(
   doc: jsPDF,
   label: string,
-  allergens: string[] | undefined,
+  options: PDFExportOptions,
   x: number,
   y: number,
   width: number,
   pageHeight: number,
   font: "helvetica" | "times",
 ): number {
+  // Etiquetas del plato (docs/324): íconos y/o texto, según lo elegido al exportar.
+  if (options.dishTags) {
+    return drawDishTags(doc, options.dishTags, x, y, width, {
+      mode: options.dishLabelMode ?? "both",
+      icons: options.dishIcons ?? {},
+      font,
+      fontSize: 9,
+      allergensLabel: `${label}:`,
+      pageHeight,
+    }) + 2
+  }
+  const allergens = options.allergens
   if (!allergens || allergens.length === 0) return y
   const text = `${label}: ${allergens.join(", ")}`
   doc.setFontSize(9)
@@ -1108,7 +1121,7 @@ function generateAdministrativePDF(
   yPosition = drawAllergensLine(
     doc,
     labels.alergenos,
-    options.allergens,
+    options,
     margin,
     yPosition,
     doc.internal.pageSize.getWidth() - margin * 2,
@@ -1323,7 +1336,7 @@ function generateEmployeePDF(
   // la nota completa sobre la fusión con observations). No son solo notas de costo
   // (esas van solo en la copia administrativa) — también llevan notas de preparación
   // útiles para cocina, como sustituciones o tiempos de reposo.
-  yPosition = drawAllergensLine(doc, labels.alergenos, options.allergens, margin, yPosition, contentWidth, ctx.pageHeight, "times")
+  yPosition = drawAllergensLine(doc, labels.alergenos, options, margin, yPosition, contentWidth, ctx.pageHeight, "times")
   yPosition = drawBeverageServiceLine(doc, labels, recipe, margin, yPosition, contentWidth, ctx.pageHeight, "times")
   {
     const allProcedureLines = [...(recipe.procedure || []), ...(recipe.observations || [])].filter((s) =>
@@ -1502,7 +1515,7 @@ function generateNormalPDF(
   yPosition = drawAllergensLine(
     doc,
     labels.alergenos,
-    options.allergens,
+    options,
     margin,
     yPosition,
     doc.internal.pageSize.getWidth() - margin * 2,

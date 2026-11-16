@@ -302,4 +302,9 @@ export interface PDFExportOptions {
   // Alérgenos de la receta ya traducidos (lib/allergens.ts, docs/137) — los calcula quien
   // exporta, desde los ingredientes vigentes, para que el PDF nunca muestre datos viejos.
   allergens?: string[]
+  // Etiquetas del plato (docs/324, lib/dish-tags.ts) y cómo mostrarlas; si vienen, reemplazan la
+  // línea de alérgenos. `dishIcons`: PNG de los íconos propios en el color del negocio.
+  dishTags?: import("@/lib/dish-tags").DishTag[]
+  dishLabelMode?: import("@/lib/dish-tags").DishLabelMode
+  dishIcons?: import("@/lib/pdf/dish-tags-pdf").IconPngs
 }

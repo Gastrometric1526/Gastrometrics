@@ -23,6 +23,8 @@ import { useFeatureAccess, useActiveMembership } from "@/lib/plan-access"
 import { hasPdfAccess, usePdfAccess } from "@/lib/plan-access" // PDF por tipo (docs/303)
 import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
+import { DishLabelModePicker, useDishLabelMode } from "@/components/dish-label-mode-picker"
+import { pdfDishData } from "@/lib/pdf/dish-tags-export"
 
 interface RecipePDFExportDialogProps {
   recipe: Recipe
@@ -63,12 +65,17 @@ export function RecipePDFExportDialog({
   }, [canExportAdministrative])
   const [showPreview, setShowPreview] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+  const [labelMode, setLabelMode] = useDishLabelMode()
 
   const handleExport = async () => {
     if (!canExportAtAll) return
     if (selectedType === "administrative" && !canExportAdministrative) return
     try {
       setIsExporting(true)
+      const ings = getIngredients(recipe.businessId)
+      const allRecipes = getRecipes(recipe.businessId)
+      // Etiquetas del plato (docs/324): alérgenos, proteínas y lo confirmado, como se eligió.
+      const dish = await pdfDishData([recipe], ings, allRecipes, t, labelMode, recipe.businessId)
 
       const options = {
         type: selectedType,
@@ -79,9 +86,10 @@ export function RecipePDFExportDialog({
         businessName,
         businessLogo,
         // Alérgenos vigentes, desde los ingredientes actuales (docs/137).
-        allergens: getRecipeAllergens(recipe, getIngredients(recipe.businessId), getRecipes(recipe.businessId)).map(
-          (key) => t(allergenLabelKey(key)),
-        ),
+        allergens: getRecipeAllergens(recipe, ings, allRecipes).map((key) => t(allergenLabelKey(key))),
+        dishTags: dish.tagsByRecipeId[recipe.id] ?? [],
+        dishLabelMode: labelMode,
+        dishIcons: dish.icons,
       }
 
       downloadRecipePDF(recipe, options)
@@ -192,6 +200,8 @@ export function RecipePDFExportDialog({
               )
             })}
           </RadioGroup>
+
+          <DishLabelModePicker value={labelMode} onChange={setLabelMode} />
 
           <Alert>
             <FileText className="h-4 w-4" />

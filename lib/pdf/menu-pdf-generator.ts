@@ -10,6 +10,8 @@ import { getBusinessThemeRgb, BRAND_ORANGE_RGB, getBusinessThemeTintRgb } from "
 import { drawBusinessLogo } from "./pdf-logo"
 import { drawImageFit } from "./pdf-image"
 import { formatDate } from "@/lib/date-format"
+import { drawDishLegend, drawDishTags, type IconPngs } from "./dish-tags-pdf"
+import type { DishLabelMode, DishTag } from "@/lib/dish-tags"
 
 // PDF de Menus — dos variantes con objetivos deliberadamente opuestos, no solo dos
 // temas de color sobre la misma plantilla (pedido explicito: "toma libertad creativa"):
@@ -239,6 +241,12 @@ export interface MenuPDFOptions {
   // Alérgenos ya traducidos por receta (lib/allergens.ts, docs/137). En la carta del
   // cliente van en una línea pequeña bajo cada plato.
   allergensByRecipeId?: Record<string, string[]>
+  // Etiquetas de cada plato (docs/324): reemplazan la línea de alérgenos en la carta.
+  dishTagsByRecipeId?: Record<string, DishTag[]>
+  dishLabelMode?: DishLabelMode
+  dishIcons?: IconPngs
+  /** Título de la leyenda al final de la carta cuando se exporta solo con íconos. */
+  dishLegendTitle?: string
 }
 
 export function generateMenuPDF(menu: Menu, recipes: Recipe[], options: MenuPDFOptions): jsPDF {
@@ -392,8 +400,21 @@ function generateClientMenuPDF(
         doc.setLineDashPattern([], 0)
       }
 
+      const tags = options.dishTagsByRecipeId?.[item.recipeId]
       const allergens = options.allergensByRecipeId?.[item.recipeId] ?? []
-      if (allergens.length > 0) {
+      if (tags && tags.length > 0 && options.dishLabelMode !== "none") {
+        yPosition = drawDishTags(doc, tags, margin, yPosition + 4.5, contentWidth, {
+          mode: options.dishLabelMode ?? "both",
+          icons: options.dishIcons ?? {},
+          font,
+          fontSize: 8.5,
+          allergensLabel: `${labels.alergenos}:`,
+          pageHeight,
+          textRgb: COLORS.secondary as [number, number, number],
+        }) + 3
+      } else if (tags) {
+        yPosition += 10
+      } else if (allergens.length > 0) {
         yPosition += 4.5
         doc.setFont(font, "italic")
         doc.setFontSize(8.5)
@@ -405,6 +426,19 @@ function generateClientMenuPDF(
       }
     }
     yPosition += 6
+  }
+
+  // Solo íconos: leyenda al final para que el cliente sepa qué significa cada uno (docs/324).
+  if (options.dishLabelMode === "icons" && options.dishTagsByRecipeId) {
+    const used = menu.items.filter((it) => it.enabled).flatMap((it) => options.dishTagsByRecipeId?.[it.recipeId] ?? [])
+    yPosition = drawDishLegend(doc, used, options.dishLegendTitle ?? "", margin, yPosition + 4, contentWidth, {
+      mode: "icons",
+      icons: options.dishIcons ?? {},
+      font,
+      fontSize: 8,
+      pageHeight,
+      textRgb: COLORS.secondary as [number, number, number],
+    })
   }
 
   const totalPages = doc.getNumberOfPages()

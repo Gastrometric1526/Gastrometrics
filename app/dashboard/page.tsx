@@ -58,6 +58,7 @@ import { PlanTour } from "@/components/plan-tour"
 import { GettingStartedPath } from "@/components/getting-started-path"
 import { TeamSuspendedNotice } from "@/components/team-suspended-notice"
 import { BusinessLockedNotice } from "@/components/business-lock-overlay"
+import { AllergenFeaturePrompt } from "@/components/allergen-feature-prompt"
 import { refreshPlanStatus } from "@/lib/plan-status"
 import { useFeatureAccess, useActiveMembership, setCurrentPlanSlug, getMinimumPlanForFeature } from "@/lib/plan-access"
 import type { FeatureKey } from "@/lib/plans"
@@ -848,6 +849,8 @@ export default function DashboardPage() {
             <TeamSuspendedNotice />
             <BusinessLockedNotice />
             <GettingStartedPath />
+            {/* Alérgenos y tipo de plato (docs/324): aviso a las cuentas que ya tenían ingredientes. */}
+            <AllergenFeaturePrompt />
 
             {/* Stats — sin cajas: etiqueta, cifra grande, separadas por hairline
                 (docs/80/81/82: "cuatro KPIs sin cajas" del paquete de diseño). Mismos

@@ -54,6 +54,11 @@ import { RecipeImportDialog } from "@/components/recipe-import-dialog"
 import { Sidebar } from "@/components/sidebar"
 import { MisRecetasTour } from "@/components/page-tours"
 import { RecipeCard } from "@/components/recipe-card"
+import { dishLabels, type DishLabels } from "@/lib/diet"
+import { dishTags as buildDishTags, proteinLabelKey } from "@/lib/dish-tags"
+import { DIET_FILTERS, matchesDietFilter, type DietFilter } from "@/lib/diet-filter"
+import { allergenLabelKey } from "@/lib/allergens"
+import { DietIcon } from "@/components/icons/diet-icon"
 import { useAuth } from "@/contexts/auth-context"
 import { useFeatureAccess, useActiveMembership } from "@/lib/plan-access"
 import { logActivity } from "@/lib/services/activity-log"
@@ -180,6 +185,8 @@ export default function MisRecetasPage() {
   const [restoringRecipeIds, setRestoringRecipeIds] = useState<Set<string>>(new Set())
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedClassification, setSelectedClassification] = useState("Todas")
+  // Alérgenos y tipo de plato (docs/324).
+  const [dietFilter, setDietFilter] = useState<DietFilter>("all")
   // Comida o bebidas (docs/272): las dos viven en el mismo catálogo.
   const [selectedKind, setSelectedKind] = useState<"all" | "food" | "drink">("all")
   const [sortBy, setSortBy] = useState("recent")
@@ -301,9 +308,31 @@ export default function MisRecetasPage() {
     return () => window.removeEventListener("recipesUpdated", handleRecipesUpdate as EventListener)
   }, [businessId, showError])
 
+  // Alérgenos, proteínas y lo confirmado de cada receta (docs/324), desde los ingredientes vigentes.
+  const [ingredientsTick, setIngredientsTick] = useState(0)
+  useEffect(() => {
+    void ensureIngredientsLoaded(businessId).then(() => setIngredientsTick((n) => n + 1))
+    const onUpd = () => setIngredientsTick((n) => n + 1)
+    window.addEventListener("ingredientsUpdated", onUpd)
+    return () => window.removeEventListener("ingredientsUpdated", onUpd)
+  }, [businessId])
+  const labelsById = useMemo(() => {
+    const ings = getIngredients(businessId) || []
+    const map = new Map<string, DishLabels>()
+    for (const r of recipes) map.set(r.id, dishLabels(r, ings, recipes))
+    return map
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipes, businessId, ingredientsTick])
+
   // Filtrar y ordenar recetas
   const filteredAndSortedRecipes = useMemo(() => {
     let filtered = recipes
+    if (dietFilter !== "all") {
+      filtered = filtered.filter((recipe) => {
+        const l = labelsById.get(recipe.id)
+        return !!l && matchesDietFilter(l, dietFilter)
+      })
+    }
 
     // Aplicar filtro de búsqueda
     if (searchQuery.length >= 2) {
@@ -356,7 +385,7 @@ export default function MisRecetasPage() {
     })
 
     return filtered
-  }, [recipes, searchQuery, selectedClassification, selectedKind, sortBy])
+  }, [recipes, searchQuery, selectedClassification, selectedKind, sortBy, dietFilter, labelsById])
 
   // Calcular estadísticas
   const stats = useMemo(() => {
@@ -853,6 +882,28 @@ export default function MisRecetasPage() {
                         </SelectContent>
                       </Select>
 
+                      <Select value={dietFilter} onValueChange={(v) => setDietFilter(v as DietFilter)}>
+                        <SelectTrigger className="w-full sm:w-52 border-border focus:ring-2 focus:ring-primary" aria-label={t("diet_filter_label")} data-tour="recetas-diet-filter">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DIET_FILTERS.map((f) => (
+                            <SelectItem key={f.id} value={f.id}>
+                              <span className="flex items-center gap-2">
+                                {f.icon && <DietIcon k={f.icon} className="h-4 w-4 text-primary" />}
+                                {f.id === "all"
+                                  ? t("diet_filter_all")
+                                  : f.kind === "without"
+                                    ? t("diet_filter_without").replace("{x}", t(allergenLabelKey(f.allergen!)))
+                                    : f.kind === "protein"
+                                      ? t("diet_filter_with").replace("{x}", t(proteinLabelKey(f.protein!)))
+                                      : t(f.label!)}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
                       <Select value={sortBy} onValueChange={setSortBy}>
                         <SelectTrigger className="w-full sm:w-48 border-border focus:ring-2 focus:ring-primary">
                           <TrendingUp className="h-4 w-4 mr-2" />
@@ -1019,6 +1070,7 @@ export default function MisRecetasPage() {
                   onView={handleView}
                   onMigrate={canMigrateAnywhere ? handleMigrateFromCard : undefined}
                   onOpenDetails={setDetailsRecipe}
+                  dishTags={labelsById.has(recipe.id) ? buildDishTags(labelsById.get(recipe.id)!, t) : undefined}
                 />
               ))}
             </div>

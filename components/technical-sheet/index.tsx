@@ -27,7 +27,7 @@ import {
 } from "@/lib/pricing-percentages"
 import { cn } from "@/lib/utils"
 import { getRecipeById, getRecipes, saveRecipe, ensureRecipesLoaded } from "@/lib/storage/recipes"
-import { allergenLabelKey, getRecipeAllergens } from "@/lib/allergens"
+import { DishLabelsSection } from "@/components/technical-sheet/dish-labels-section"
 import { ActivityTracker } from "@/lib/activity-tracker"
 import { trackEvent } from "@/lib/analytics/track-event"
 import { getIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
@@ -862,11 +862,6 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
   const unlinkedIngredientNames = useMemo(
     () => recipe.ingredients.filter((line) => !line.ingredientId && line.name?.trim()).map((line) => line.name.trim()),
     [recipe.ingredients],
-  )
-
-  const recipeAllergens = useMemo(
-    () => getRecipeAllergens(recipe, availableIngredients, getRecipes(businessId)),
-    [recipe, availableIngredients, businessId],
   )
 
   useEffect(() => {
@@ -2080,24 +2075,13 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       </Card>
       )}
 
-      {/* Alérgenos (docs/137): se heredan de los ingredientes y subrecetas, nunca a mano. */}
-      <Card className="w-full mx-auto">
-        <CardContent className="space-y-2 px-3 pt-6 sm:px-6">
-          <h3 className="text-base font-semibold">{t("allergens_label")}</h3>
-          {recipeAllergens.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {recipeAllergens.map((key) => (
-                <span key={key} className="rounded-full bg-warning-soft px-3 py-1 text-xs font-medium text-warning">
-                  {t(allergenLabelKey(key))}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t("allergens_recipe_none")}</p>
-          )}
-          <p className="text-xs text-muted-foreground">{t("allergens_recipe_hint")}</p>
-        </CardContent>
-      </Card>
+      {/* Alérgenos y tipo de plato (docs/137, docs/324): heredados de los ingredientes y confirmados aquí. */}
+      <DishLabelsSection
+        recipe={recipe}
+        ingredients={availableIngredients}
+        recipes={getRecipes(businessId)}
+        onChange={(dietClaims) => setRecipe((prev) => ({ ...prev, dietClaims }))}
+      />
 
       <Card className="w-full mx-auto">
         <CardHeader className="px-3 sm:px-6">

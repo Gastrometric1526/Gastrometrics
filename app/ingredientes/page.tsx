@@ -89,7 +89,8 @@ import { updateIngredientPriceAndRecalculate, requestSubRecipePricePrompt, type 
 import { ActivityTracker } from "@/lib/activity-tracker"
 import { trackEvent } from "@/lib/analytics/track-event"
 import { logActivity, logPriceRuleChanges, importFormat, notifyAdminActivity } from "@/lib/services/activity-log"
-import { ALLERGENS, allergenLabelKey } from "@/lib/allergens"
+import { IngredientAllergenFields } from "@/components/ingredient-allergen-fields"
+import { AllergenReviewBanner, AllergenReviewDialog } from "@/components/allergen-review-dialog"
 import { formatUnitPrice } from "@/lib/currency"
 import { fileDate } from "@/lib/date-format"
 import { useFormDraft } from "@/hooks/use-form-draft"
@@ -202,6 +203,16 @@ export default function IngredientesPage() {
     setShowImportDialog(true)
     const params = new URLSearchParams(searchParams.toString())
     params.delete("import")
+    router.replace(params.size ? `/ingredientes?${params}` : "/ingredientes")
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+  // Revisar alérgenos sugeridos (docs/324); ?review=allergens la abre (aviso del Dashboard).
+  const [showAllergenReview, setShowAllergenReview] = useState(false)
+  useEffect(() => {
+    if (searchParams.get("review") !== "allergens") return
+    setShowAllergenReview(true)
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete("review")
     router.replace(params.size ? `/ingredientes?${params}` : "/ingredientes")
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
@@ -1696,6 +1707,10 @@ export default function IngredientesPage() {
           </div>
 
           {/* Main Content */}
+          {!isLoading && (
+            <AllergenReviewBanner ingredients={ingredients} onOpen={() => setShowAllergenReview(true)} className="mb-4" />
+          )}
+          <AllergenReviewDialog open={showAllergenReview} onOpenChange={setShowAllergenReview} ingredients={ingredients} businessId={businessId} />
           {isLoading ? (
             <div className="flex items-center justify-center py-16">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -2163,39 +2178,8 @@ export default function IngredientesPage() {
                   />
                 </div>
 
-                {/* Alérgenos (docs/137): las recetas los heredan solas. */}
-                <div className="space-y-2">
-                  <Label className="text-foreground font-medium">{t("allergens_label")}</Label>
-                  <p className="text-xs text-muted-foreground">{t("allergens_ingredient_hint")}</p>
-                  <div className="flex flex-wrap gap-2" role="group" aria-label={t("allergens_label")}>
-                    {ALLERGENS.map((key) => {
-                      const selected = (formData.allergens || []).includes(key)
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          aria-pressed={selected}
-                          onClick={() =>
-                            setFormData((prev) => {
-                              const current = prev.allergens || []
-                              return {
-                                ...prev,
-                                allergens: selected ? current.filter((a) => a !== key) : [...current, key],
-                              }
-                            })
-                          }
-                          className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                            selected
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border bg-transparent text-foreground hover:bg-muted"
-                          }`}
-                        >
-                          {t(allergenLabelKey(key))}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
+                {/* Alérgenos sugeridos y tipo de ingrediente (docs/137, docs/324). */}
+                <IngredientAllergenFields value={formData} onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))} />
 
                 {/* Summary */}
                 <div className="p-4 bg-muted/30 rounded-lg">
