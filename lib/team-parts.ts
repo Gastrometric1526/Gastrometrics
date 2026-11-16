@@ -16,11 +16,11 @@
 /** Marca: la lista ya trae las partes elegidas una por una. */
 export const PARTS_V1 = "parts_v1"
 
-export const POS_PARTS = ["pos.orders", "pos.kitchen", "pos.charge", "pos.discount", "pos.void", "pos.receipts", "pos.floor_day", "pos.settings"] as const
+export const POS_PARTS = ["pos.orders", "pos.kitchen", "pos.charge", "pos.discount", "pos.void", "pos.receipts", "pos.floor_day", "pos.settings", "pos.schedule"] as const
 export type PosPart = (typeof POS_PARTS)[number]
 
 /** PDF que se pueden dar por tipo (además del nivel: para el cliente o administrativos). */
-export const TEAM_PDF_KINDS = ["recipe", "menu", "mep", "inventory", "purchase_order", "invoice", "cash_up", "sales_history"] as const
+export const TEAM_PDF_KINDS = ["recipe", "menu", "mep", "inventory", "purchase_order", "invoice", "cash_up", "sales_history", "schedule"] as const
 export type TeamPdfKind = (typeof TEAM_PDF_KINDS)[number]
 
 /**
@@ -47,9 +47,12 @@ export function storedParts(stored: readonly string[]): TeamPart[] | null {
   return stored.filter((s) => s !== PARTS_V1 && isPart(s)) as TeamPart[]
 }
 
-/** Lo de siempre para quien no tiene partes elegidas: todo, menos Ajustes del POS sin «team». */
+/**
+ * Lo de siempre para quien no tiene partes elegidas: todo, menos Ajustes del POS y el horario
+ * del personal (docs/323) sin «team»: armar el horario de los demás es de quien gestiona.
+ */
 export function defaultParts(modules: readonly string[]): TeamPart[] {
-  return ALL_PARTS.filter((p) => p !== "pos.settings" || modules.includes("team"))
+  return ALL_PARTS.filter((p) => (p !== "pos.settings" && p !== "pos.schedule") || modules.includes("team"))
 }
 
 /** ¿Esta persona tiene esta parte? */

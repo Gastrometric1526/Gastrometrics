@@ -7,6 +7,7 @@
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import type { FloorPlan, PosConfig, PosOrder } from "@/types/pos"
+import type { StaffSchedule } from "@/lib/staff-schedule"
 
 const dbId = (businessId?: string | null) => businessId || "main"
 const toDbBusinessId = (businessId?: string | null) => (!businessId || businessId === "main" ? null : businessId)
@@ -37,7 +38,8 @@ export async function fetchPosData(businessId?: string | null): Promise<PosData>
   }
   const rows = data ?? []
   const floorRow = rows.find((r) => r.kind === "floor")
-  const configRow = rows.find((r) => r.kind === "config")
+  // Por id exacto: en «config» también vive el horario del personal (`::staff`, docs/323).
+  const configRow = rows.find((r) => r.id === `${dbId(businessId)}::config`) ?? rows.find((r) => r.kind === "config" && !String(r.id).endsWith("::staff"))
   return {
     floor: floorRow ? (floorRow.data as unknown as FloorPlan) : null,
     config: configRow ? (configRow.data as unknown as PosConfig) : null,
@@ -140,4 +142,25 @@ export async function savePosOrderVersioned(order: PosOrder, businessId: string 
     throw insertError
   }
   return next
+}
+
+// ─── Horario del personal (docs/323) ─────────────────────────────────────────────
+// Vive en `pos_data` con id `<negocio>::staff` (kind «config»): así lo escriben el dueño y
+// las personas del equipo con el POS, sin otra migración. Quién ve y cambia el horario lo
+// decide la parte «pos.schedule» de Equipo.
+
+
+export async function fetchStaffSchedule(businessId?: string | null): Promise<StaffSchedule | null> {
+  const supabase = getSupabaseBrowserClient()
+  const { data, error } = await supabase.from("pos_data").select("data").eq("id", `${dbId(businessId)}::staff`).maybeSingle()
+  if (error) {
+    if (isMissingTable(error)) return null
+    throw error
+  }
+  const d = data?.data as unknown as StaffSchedule | undefined
+  return d && Array.isArray(d.staff) && Array.isArray(d.shifts) ? { staff: d.staff, shifts: d.shifts } : null
+}
+
+export function saveStaffSchedule(schedule: StaffSchedule, businessId?: string | null): Promise<void> {
+  return upsertRow(`${dbId(businessId)}::staff`, "config", schedule, businessId)
 }

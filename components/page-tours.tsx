@@ -417,6 +417,8 @@ export function SalonTour({ canEdit = true }: { canEdit?: boolean } = {}) {
           { id: "floor", title: t("tour_salon_floor_title"), description: t("tour_salon_floor_desc"), selector: '[data-tour="salon-settings"]', beforeShow: clickTab("salon-tab-ajustes") } as TourStep,
           { id: "floor-base", title: t("tour_salon_floorbase_title"), description: t("tour_salon_floorbase_desc"), selector: '[data-tour="salon-floor-base"]' } as TourStep,
           { id: "extras", title: t("tour_salon_extras_title"), description: t("tour_salon_extras_desc"), selector: '[data-tour="salon-extras"]' } as TourStep,
+          // Horario del personal (docs/323).
+          { id: "schedule", title: t("tour_salon_schedule_title"), description: t("tour_salon_schedule_desc"), selector: '[data-tour="salon-schedule"]', beforeShow: clickTab("salon-tab-horario") } as TourStep,
         ]
       : []),
   ]

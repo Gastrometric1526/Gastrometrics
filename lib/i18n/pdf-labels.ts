@@ -166,6 +166,11 @@ export interface PdfLabels {
   mepPreparacionBase: string
   mepReceta: string
   cuadreCaja: string
+  horarioPersonal: string
+  semanaDelAl: string
+  persona: string
+  horasCol: string
+  costoCol: string
   formaPago: string
   ventasCuentas: string
   propinas: string
@@ -364,6 +369,11 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     mepPreparacionBase: "Preparación base",
     mepReceta: "Receta",
     cuadreCaja: "Cuadre de caja",
+    horarioPersonal: "Horario del personal",
+    semanaDelAl: "Semana del {from} al {to}",
+    persona: "Persona",
+    horasCol: "Horas",
+    costoCol: "Costo",
     formaPago: "Forma de pago",
     ventasCuentas: "Ventas",
     propinas: "Propinas",
@@ -558,6 +568,11 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     mepPreparacionBase: "Base prep",
     mepReceta: "Recipe",
     cuadreCaja: "Cash-up",
+    horarioPersonal: "Staff schedule",
+    semanaDelAl: "Week of {from} to {to}",
+    persona: "Person",
+    horasCol: "Hours",
+    costoCol: "Cost",
     formaPago: "Payment",
     ventasCuentas: "Sales",
     propinas: "Tips",
@@ -752,6 +767,11 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     mepPreparacionBase: "Grundtilberedning",
     mepReceta: "Opskrift",
     cuadreCaja: "Kasseopgørelse",
+    horarioPersonal: "Vagtplan",
+    semanaDelAl: "Uge fra {from} til {to}",
+    persona: "Person",
+    horasCol: "Timer",
+    costoCol: "Omkostning",
     formaPago: "Betaling",
     ventasCuentas: "Salg",
     propinas: "Drikkepenge",
@@ -946,6 +966,11 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     mepPreparacionBase: "Préparation de base",
     mepReceta: "Recette",
     cuadreCaja: "Clôture de caisse",
+    horarioPersonal: "Planning du personnel",
+    semanaDelAl: "Semaine du {from} au {to}",
+    persona: "Personne",
+    horasCol: "Heures",
+    costoCol: "Coût",
     formaPago: "Paiement",
     ventasCuentas: "Ventes",
     propinas: "Pourboires",
@@ -1140,6 +1165,11 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     mepPreparacionBase: "Preparação base",
     mepReceta: "Receita",
     cuadreCaja: "Fechamento de caixa",
+    horarioPersonal: "Escala da equipe",
+    semanaDelAl: "Semana de {from} a {to}",
+    persona: "Pessoa",
+    horasCol: "Horas",
+    costoCol: "Custo",
     formaPago: "Pagamento",
     ventasCuentas: "Vendas",
     propinas: "Gorjetas",
@@ -1334,6 +1364,11 @@ const PDF_LABELS: Record<LanguageCode, PdfLabels> = {
     mepPreparacionBase: "基础备料",
     mepReceta: "配方",
     cuadreCaja: "收银对账",
+    horarioPersonal: "员工排班表",
+    semanaDelAl: "{from} 至 {to} 这一周",
+    persona: "人员",
+    horasCol: "工时",
+    costoCol: "成本",
     formaPago: "付款方式",
     ventasCuentas: "销售额",
     propinas: "小费",

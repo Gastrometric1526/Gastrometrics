@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Horario del personal y presentación con contenido en las órdenes (docs/323).
+    version: "2026-11-16e",
+    tutorialHref: tourHref("salon"),
+    content: {
+      es: { title: "Horario del personal y órdenes más claras", items: ["POS → Horario: agrega a tu gente y arrástrala a sus días (en el celular, tócala y luego «Poner aquí»). Mueve los turnos de un día a otro, copia la semana anterior y descarga la semana en un PDF para imprimirla o mandarla.", "En Equipo puedes darle a una persona la parte «Horario del personal» para que lo arme ella. Reportes → Personal usa el mismo horario para el costo de personal.", "Órdenes de compra: cada producto dice su presentación con el contenido, por ejemplo «3 latas de 500 ml», en la pantalla, el PDF y el mensaje para el proveedor."] },
+      en: { title: "Staff schedule and clearer purchase orders", items: ["POS → Schedule: add your people and drag them onto their days (on a phone, tap them and then “Put here”). Move shifts between days, copy last week and download the week as a PDF to print or send.", "In Team you can give someone the “Staff schedule” part so they can build it. Reports → Staff uses the same schedule for staff cost.", "Purchase orders: each product shows its pack with the content, for example “3 cans of 500 ml”, on screen, in the PDF and in the message to the supplier."] },
+      da: { title: "Personalevagtplan og tydeligere indkøbsordrer", items: ["POS → Vagtplan: tilføj dine folk og træk dem til deres dage (på mobilen: tryk og derefter »Sæt her«). Flyt vagter mellem dage, kopiér sidste uge og download ugen som PDF til print eller deling.", "I Team kan du give en person delen »Personalevagtplan«, så vedkommende kan lave den. Rapporter → Personale bruger samme vagtplan til personaleomkostningen.", "Indkøbsordrer: hvert produkt viser emballagen med indhold, f.eks. »3 dåser à 500 ml«, på skærmen, i PDF'en og i beskeden til leverandøren."] },
+      fr: { title: "Planning du personnel et bons de commande plus clairs", items: ["POS → Planning : ajoutez votre équipe et faites glisser chacun sur ses jours (sur mobile, touchez puis « Mettre ici »). Déplacez les horaires, copiez la semaine précédente et téléchargez la semaine en PDF pour l'imprimer ou l'envoyer.", "Dans Équipe, vous pouvez donner à une personne la partie « Planning du personnel » pour qu'elle le prépare. Rapports → Personnel utilise le même planning pour le coût du personnel.", "Bons de commande : chaque produit indique son conditionnement avec le contenu, par exemple « 3 canettes de 500 ml », à l'écran, dans le PDF et dans le message au fournisseur."] },
+      pt: { title: "Escala da equipe e pedidos de compra mais claros", items: ["POS → Escala: adicione sua equipe e arraste para os dias (no celular, toque e depois «Pôr aqui»). Mova turnos entre dias, copie a semana anterior e baixe a semana em PDF para imprimir ou mandar.", "Em Equipe você pode dar a uma pessoa a parte «Escala da equipe» para ela montar. Relatórios → Equipe de trabalho usa a mesma escala para o custo da equipe.", "Pedidos de compra: cada produto mostra a embalagem com o conteúdo, por exemplo «3 latas de 500 ml», na tela, no PDF e na mensagem ao fornecedor."] },
+      zh: { title: "员工排班与更清晰的采购单", items: ["POS → 排班：添加员工并拖到对应日期（手机上：先点人员再点“放到这里”）。可在日期间移动班次、复制上周，并把整周下载为 PDF 打印或发送。", "在“团队”中可以给某人“员工排班”权限，让其负责安排。“报表 → 员工”使用同一份排班计算人工成本。", "采购单：每种商品都会显示包装及净含量，例如“3 罐（每罐 500 ml）”，在页面、PDF 和发给供应商的消息中都一样。"] },
+    },
+  },
+  {
     // Planear y Personal en Reportes (docs/322).
     version: "2026-11-16d",
     tutorialHref: tourHref("estadisticas"),

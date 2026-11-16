@@ -19,6 +19,9 @@ export interface StaffMember {
   /** Pago por hora. */
   hourlyRate: number
   active?: boolean
+  /** Horario de siempre, con el que se pone en un día del horario (docs/323). */
+  defaultStart?: string
+  defaultEnd?: string
 }
 
 export interface StaffShift {

@@ -34,7 +34,10 @@ import { buildPosReceipt, newlyReady, readyItemIds, type PosReceipt } from "@/li
 import { usePart } from "@/lib/plan-access"
 import { dailyReset, differsFromBase, restoreBase } from "@/lib/pos-floor-base"
 import { downloadPosReceiptPDF } from "@/lib/pdf/pos-receipt-pdf-generator"
-import { useActiveMembership } from "@/lib/plan-access"
+import { useActiveMembership, usePdfAccess } from "@/lib/plan-access"
+import { StaffScheduleBoard } from "@/components/staff-schedule-board"
+import { useCanSeeCosts } from "@/components/cost-gate"
+import { GmShifts } from "@/components/icons/gm-icons"
 import { effectiveMemberFeatures } from "@/lib/team-access"
 import { useAuth } from "@/contexts/auth-context"
 import { PosBusinessPicker, rememberPosBusiness } from "@/components/pos/pos-business-picker"
@@ -183,11 +186,16 @@ function SalonPageInner({ businessId }: { businessId: string }) {
   const canReceipts = usePart("pos.receipts") === true
   const canFloorDay = usePart("pos.floor_day") === true
   const canSettings = usePart("pos.settings") === true
+  // Horario del personal (docs/323): lo arma el dueño o quien tenga esta parte en Equipo.
+  const canSchedule = usePart("pos.schedule") === true
+  const canSchedulePdf = usePdfAccess("schedule", "export") === true
+  const showScheduleCosts = useCanSeeCosts()
   const showSalon = canOrder || canCharge
   const showAdjust = canSettings || canFloorDay
   const [tab, setTab] = useState<string | null>(null)
-  const firstTab = showSalon ? "salon" : canKitchen ? "cocina" : showAdjust ? "ajustes" : "salon"
-  const activeTab = tab && ((tab === "salon" && showSalon) || (tab === "cocina" && canKitchen) || (tab === "ajustes" && showAdjust)) ? tab : firstTab
+  const firstTab = showSalon ? "salon" : canKitchen ? "cocina" : showAdjust ? "ajustes" : canSchedule ? "horario" : "salon"
+  const activeTab =
+    tab && ((tab === "salon" && showSalon) || (tab === "cocina" && canKitchen) || (tab === "ajustes" && showAdjust) || (tab === "horario" && canSchedule)) ? tab : firstTab
   const [posOnly, setPosOnly] = useState(false)
   useEffect(() => setPosOnly(realPosOnlyMember()), [member])
   // Tarjetas en el celular, plano en pantallas grandes; la elección se recuerda (docs/302).
@@ -693,6 +701,12 @@ function SalonPageInner({ businessId }: { businessId: string }) {
                       {kitchenWaiting > 0 && <TabBadge tone="info" n={kitchenWaiting} label={t("pos_badge_kitchen").replace("{n}", String(kitchenWaiting))} />}
                     </TabsTrigger>
                     )}
+                    {canSchedule && (
+                      <TabsTrigger id="salon-tab-horario" value="horario" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                        <GmShifts className="h-4 w-4" />
+                        {t("salon_tab_horario")}
+                      </TabsTrigger>
+                    )}
                     {showAdjust && (
                       <TabsTrigger id="salon-tab-ajustes" value="ajustes" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                         <Settings2 className="h-4 w-4" />
@@ -801,6 +815,15 @@ function SalonPageInner({ businessId }: { businessId: string }) {
                       mainExtras={!isMain ? mainPos?.config?.extras ?? [] : []}
                     />
                   </TabsContent>
+                  )}
+                  {canSchedule && (
+                    <TabsContent value="horario" className="mt-4 space-y-3" data-tour="salon-schedule">
+                      <div>
+                        <h2 className="text-lg font-bold">{t("salon_schedule_title")}</h2>
+                        <p className="text-sm text-muted-foreground">{t("salon_schedule_desc")}</p>
+                      </div>
+                      <StaffScheduleBoard businessId={businessId || "main"} canEdit={canSchedule} showCosts={showScheduleCosts} canPdf={canSchedulePdf} />
+                    </TabsContent>
                   )}
                 </Tabs>
               )}

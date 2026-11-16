@@ -30,6 +30,7 @@ import { getBusinessById } from "@/lib/storage/businesses"
 import { budgetFoodCost, budgetLine, dayOf, forecastSales, monthDays, type BudgetLine, type MonthlyBudget } from "@/lib/forecast"
 import { laborInRange } from "@/lib/labor"
 import { useBudget } from "@/lib/budget-setting"
+import { useStaffSchedule } from "@/lib/staff-schedule-store"
 
 const noon = (day: string) => `${day}T12:00:00`
 
@@ -41,6 +42,8 @@ export function EstadisticasPlanearTab({ businessId }: { businessId: string }) {
   const canAutoOrder = useFeatureAccess("purchase_orders_auto")
   const [budget, saveBudget] = useBudget(businessId, user?.user_metadata as Record<string, unknown> | undefined)
   const [editing, setEditing] = useState(false)
+  // Turnos del horario del personal (docs/323), los mismos de Reportes → Personal y del POS.
+  const { schedule: staffSchedule } = useStaffSchedule(businessId)
 
   const today = toIsoDate(new Date())
   const imports = getSalesImports(businessId)
@@ -67,7 +70,7 @@ export function EstadisticasPlanearTab({ businessId }: { businessId: string }) {
     }
     return { sales: Math.round(sales * 100) / 100, foodCost: Math.round(foodCost * 100) / 100 }
   }, [imports, start, today])
-  const shiftsMonth = business?.shifts?.length ? laborInRange(business.shifts, start, today) : null
+  const shiftsMonth = staffSchedule.shifts.length ? laborInRange(staffSchedule.shifts, start, today) : null
   const laborActual = shiftsMonth && shiftsMonth.shifts > 0 ? shiftsMonth.cost : Math.round(((business?.expenses?.laborCosts || 0) * elapsed) / daysInMonth * 100) / 100
   const laborFromShifts = !!shiftsMonth && shiftsMonth.shifts > 0
 

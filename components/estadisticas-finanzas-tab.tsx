@@ -2,6 +2,7 @@
 
 import { breakEvenFromPeriod } from "@/lib/break-even"
 import { laborCostForFinance } from "@/lib/labor"
+import { useStaffSchedule } from "@/lib/staff-schedule-store"
 import { summarizeTickets } from "@/lib/manual-sales"
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
@@ -78,6 +79,8 @@ import { buildPackageContentLookup } from "@/lib/inventory-value"
 import { useRouter } from "next/navigation"
 
 export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) {
+  // Turnos del horario del personal (docs/323): con turnos en el período, el personal sale de ahí.
+  const { schedule: staffSchedule } = useStaffSchedule(businessId)
   const router = useRouter()
   const canCashUp = useFeatureAccess("cash_up")
   const { t, language } = useLanguage()
@@ -306,7 +309,7 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
   const variance = computeVariance(realCostPercent, theoreticalCostPercent)
 
   // docs/322: con turnos anotados en el período, el personal sale de los turnos.
-  const laborFinance = laborCostForFinance(business?.shifts, period.start, period.end, prorateMonthlyExpense(business?.expenses?.laborCosts || 0, period.start, period.end))
+  const laborFinance = laborCostForFinance(staffSchedule.shifts, period.start, period.end, prorateMonthlyExpense(business?.expenses?.laborCosts || 0, period.start, period.end))
   const laborCostForPeriod = laborFinance.cost
   const primeCostResult = computePrimeCost(cogsResult.cogs, laborCostForPeriod, netRevenue)
 

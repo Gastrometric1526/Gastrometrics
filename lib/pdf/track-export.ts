@@ -12,7 +12,7 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { notifyAdminActivity } from "@/lib/services/activity-log"
 
-export type PdfKind = "recipe" | "menu" | "mep" | "cash_up" | "inventory" | "invoice" | "purchase_order" | "sales_history"
+export type PdfKind = "recipe" | "menu" | "mep" | "cash_up" | "inventory" | "invoice" | "purchase_order" | "sales_history" | "schedule"
 
 export type PdfExportDetails = { name?: string | null; variant?: string | null }
 
