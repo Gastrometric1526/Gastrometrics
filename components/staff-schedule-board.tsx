@@ -13,7 +13,7 @@
  */
 
 import { useMemo, useState } from "react"
-import { ChevronLeft, ChevronRight, Copy, Download, Pencil, Plus, UserPlus, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Copy, Download, History, Pencil, Plus, UserPlus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -30,7 +30,8 @@ import { getDateLocale } from "@/lib/i18n/translations"
 import { cn } from "@/lib/utils"
 import { addDays } from "@/lib/forecast"
 import { laborPercent, shiftCost, shiftHours, type StaffMember, type StaffShift } from "@/lib/labor"
-import { addPersonToDay, copyWeek, mondayOf, moveShift, removeShift, updateShiftTimes, weekByPerson, weekDays } from "@/lib/staff-schedule"
+import { addPersonToDay, copyWeek, mondayOf, moveShift, removeShift, scheduleHistory, snapshotWeek, updateShiftTimes, weekByPerson, weekDays, type StaffSchedule } from "@/lib/staff-schedule"
+import { formatDate } from "@/lib/date-format"
 import { useStaffSchedule } from "@/lib/staff-schedule-store"
 import { downloadStaffSchedulePDF } from "@/lib/pdf/staff-schedule-pdf-generator"
 import { getBusinessById } from "@/lib/storage/businesses"
@@ -62,6 +63,7 @@ export function StaffScheduleBoard({
   const [dragOver, setDragOver] = useState<string | null>(null)
   const [personDialog, setPersonDialog] = useState<StaffMember | "new" | null>(null)
   const [shiftDialog, setShiftDialog] = useState<StaffShift | null>(null)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const days = weekDays(monday)
   const people = schedule.staff.filter((p) => p.active !== false)
   const byPerson = useMemo(() => weekByPerson(schedule, monday), [schedule, monday])
@@ -103,6 +105,12 @@ export function StaffScheduleBoard({
         }
       : {}
   const business = getBusinessById(businessId)
+  // PDF de una semana: al descargarlo se guarda su copia en el historial (docs/324).
+  const downloadWeek = (week: string, source: StaffSchedule = schedule) => {
+    downloadStaffSchedulePDF(source, { businessId, businessName: business?.name, businessLogo: business?.logo, monday: week, showCosts })
+    if (canEdit && source === schedule) save(snapshotWeek(schedule, week))
+  }
+  const history = useMemo(() => scheduleHistory(schedule, mondayOf(today)), [schedule, today])
 
   return (
     <div className="space-y-4" data-testid="staff-schedule">
@@ -125,6 +133,10 @@ export function StaffScheduleBoard({
           )}
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setHistoryOpen(true)} data-testid="schedule-history">
+            <History className="h-4 w-4" />
+            {t("schedule_history")}
+          </Button>
           {canEdit && (
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => commit(copyWeek(schedule, addDays(monday, -7), monday))} data-testid="schedule-copy-week">
               <Copy className="h-4 w-4" />
@@ -136,7 +148,7 @@ export function StaffScheduleBoard({
               variant="outline"
               size="sm"
               className="gap-1.5"
-              onClick={() => downloadStaffSchedulePDF(schedule, { businessId, businessName: business?.name, businessLogo: business?.logo, monday, showCosts })}
+              onClick={() => downloadWeek(monday)}
               data-testid="schedule-pdf"
             >
               <Download className="h-4 w-4" />
@@ -308,6 +320,61 @@ export function StaffScheduleBoard({
           ]}
         />
       </div>
+
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5 text-primary" />
+              {t("schedule_history")}
+            </DialogTitle>
+            <DialogDescription>{t("schedule_history_desc")}</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] space-y-2 overflow-y-auto">
+            {history.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">{t("schedule_history_empty")}</p>
+            ) : (
+              history.map((w) => (
+                <div key={w.monday} className="rounded-lg border border-border p-3" data-testid="schedule-history-week">
+                  <p className="text-sm font-medium">
+                    {t("labor_week").replace("{from}", formatWeekdayDate(noon(w.monday), locale, { short: true })).replace("{to}", formatWeekdayDate(noon(addDays(w.monday, 6)), locale, { short: true }))}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("schedule_history_line").replace("{people}", String(w.people)).replace("{hours}", String(w.hours))}
+                    {showCosts ? ` · ${formatCurrency(w.cost)}` : ""}
+                  </p>
+                  {w.snapshot && <p className="text-xs text-primary">{t("schedule_history_saved").replace("{date}", formatDate(w.snapshot.savedAt))}</p>}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setMonday(w.monday)
+                        setHistoryOpen(false)
+                      }}
+                    >
+                      {t("schedule_history_open")}
+                    </Button>
+                    {canPdf && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1.5"
+                        onClick={() =>
+                          downloadWeek(w.monday, w.snapshot ? { staff: w.snapshot.staff.map((p) => ({ ...p })), shifts: w.snapshot.shifts } : schedule)
+                        }
+                      >
+                        <Download className="h-4 w-4" />
+                        PDF
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <PersonDialog
         person={personDialog}

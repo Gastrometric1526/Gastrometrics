@@ -171,6 +171,8 @@ export interface Ingredient {
   bottleWeights?: { fullG: number; emptyG: number }
   // Alérgenos que contiene (claves de lib/allergens.ts, docs/137). Las recetas los heredan.
   allergens?: string[]
+  // Corrección a mano del tipo de plato (docs/324, lib/diet.ts): vegetal, producto animal o carne.
+  dietOverride?: "plant" | "animal_product" | "meat"
   // Última prueba de rendimiento por cortes (docs/322, lib/yield-test.ts); de ella sale la merma.
   yieldTest?: {
     at: string

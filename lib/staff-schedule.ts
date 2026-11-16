@@ -10,6 +10,64 @@ import { shiftCost, shiftHours, type StaffMember, type StaffShift } from "@/lib/
 export interface StaffSchedule {
   staff: StaffMember[]
   shifts: StaffShift[]
+  /**
+   * Historial (docs/324): copia fija de cada semana cuyo PDF se descargó, tal como quedó ese
+   * día, aunque después se cambie. La más reciente de cada semana; hasta 60.
+   */
+  history?: ScheduleSnapshot[]
+}
+
+export interface ScheduleSnapshot {
+  monday: string
+  savedAt: string
+  /** Nombre y puesto de cada persona en ese momento. */
+  staff: Pick<StaffMember, "id" | "name" | "role" | "hourlyRate">[]
+  shifts: StaffShift[]
+}
+
+/** Guarda (o reemplaza) la copia de una semana. */
+export function snapshotWeek(schedule: StaffSchedule, monday: string, savedAt = new Date().toISOString()): StaffSchedule {
+  const days = weekDays(monday)
+  const shifts = schedule.shifts.filter((s) => s.date >= days[0] && s.date <= days[6])
+  const ids = new Set(shifts.map((s) => s.staffId))
+  const snap: ScheduleSnapshot = {
+    monday,
+    savedAt,
+    staff: schedule.staff.filter((p) => ids.has(p.id)).map(({ id, name, role, hourlyRate }) => ({ id, name, role, hourlyRate })),
+    shifts,
+  }
+  const history = [snap, ...(schedule.history ?? []).filter((h) => h.monday !== monday)].sort((a, b) => b.monday.localeCompare(a.monday)).slice(0, 60)
+  return { ...schedule, history }
+}
+
+export interface WeekSummary {
+  monday: string
+  people: number
+  hours: number
+  cost: number
+  /** Copia guardada al descargar el PDF, si la hay. */
+  snapshot: ScheduleSnapshot | null
+}
+
+/** Semanas anteriores con turnos o con copia guardada, la más reciente primero. */
+export function scheduleHistory(schedule: StaffSchedule, currentMonday: string): WeekSummary[] {
+  const mondays = new Set<string>()
+  for (const s of schedule.shifts) if (s.date < currentMonday) mondays.add(mondayOf(s.date))
+  for (const h of schedule.history ?? []) mondays.add(h.monday)
+  return [...mondays]
+    .sort((a, b) => b.localeCompare(a))
+    .map((monday) => {
+      const snapshot = (schedule.history ?? []).find((h) => h.monday === monday) ?? null
+      const source: StaffSchedule = snapshot ? { staff: snapshot.staff.map((p) => ({ ...p })), shifts: snapshot.shifts } : schedule
+      const rows = weekByPerson(source, monday).filter((r) => r.hours > 0)
+      return {
+        monday,
+        people: rows.length,
+        hours: Math.round(rows.reduce((t, r) => t + r.hours, 0) * 100) / 100,
+        cost: Math.round(rows.reduce((t, r) => t + r.cost, 0) * 100) / 100,
+        snapshot,
+      }
+    })
 }
 
 export const EMPTY_SCHEDULE: StaffSchedule = { staff: [], shifts: [] }

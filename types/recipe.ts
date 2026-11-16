@@ -212,6 +212,11 @@ export interface Recipe {
   // en una ventana; "always" = subirlo solo (el precio solo sube); "never" = dejarlo y
   // actualizar solo el costo. Se elige en la Ficha Técnica o con «Recordar mi elección».
   subRecipePriceUpdate?: "ask" | "always" | "never"
+  /**
+   * Lo que la persona confirma del plato (docs/324): vegano, vegetariano, sin gluten, sin
+   * alérgenos y trazas. Solo vale si los ingredientes no dicen lo contrario (lib/diet.ts).
+   */
+  dietClaims?: import("@/lib/diet").DietClaims
 
   pricingConfig?: PricingConfig
   publicServices?: number

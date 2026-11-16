@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { addPersonToDay, copyWeek, mondayOf, moveShift, removeShift, updateShiftTimes, weekByPerson, type StaffSchedule } from "./staff-schedule"
+import { addPersonToDay, copyWeek, mondayOf, moveShift, removeShift, scheduleHistory, snapshotWeek, updateShiftTimes, weekByPerson, type StaffSchedule } from "./staff-schedule"
 
 const base: StaffSchedule = {
   staff: [
@@ -41,5 +41,18 @@ describe("horario del personal (docs/323)", () => {
     const w = weekByPerson(s, "2026-11-16")
     expect(w.map((p) => [p.person.name, p.hours, p.cost])).toEqual([["Ana", 8, 400], ["Luis", 8, 320]])
     expect(w[1].days[4]).toHaveLength(1) // viernes
+  })
+})
+
+describe("historial de horarios (docs/324)", () => {
+  it("la copia guardada no cambia aunque después se edite la semana", () => {
+    let s = addPersonToDay(base, "ana", "2026-11-16", { id: "a1" })
+    s = snapshotWeek(s, "2026-11-16", "2026-11-16T10:00:00Z")
+    s = moveShift(s, "a1", "2026-11-25") // se movió a la semana siguiente
+    const h = scheduleHistory(s, "2026-11-30")
+    const w16 = h.find((x) => x.monday === "2026-11-16")!
+    expect(w16.snapshot?.shifts[0].date).toBe("2026-11-16")
+    expect([w16.people, w16.hours, w16.cost]).toEqual([1, 8, 400])
+    expect(h.map((x) => x.monday)).toEqual(["2026-11-23", "2026-11-16"])
   })
 })
