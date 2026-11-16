@@ -159,13 +159,29 @@ export function logActivity(params: {
     .then(({ error }) => {
       if (error) console.error("[activity-log] Error guardando evento:", error)
     })
-  if (isPushActivity(params.module, params.action)) {
+  if (isPushActivity(params.module, params.action) && (params.action !== "entered" || firstEntryToday(params.user.id, params.module, params.businessId))) {
     const count = params.metadata?.count
     // Qué fue (nombre de la receta, del ingrediente…) y, en el OCR, qué se leyó (docs/295).
     const label = params.entityLabel?.replace(/"/g, "") || null
     const kind = typeof params.metadata?.kind === "string" ? params.metadata.kind : null
     notifyAdminActivity({ module: params.module, action: params.action, businessId: params.businessId, count, label, kind })
   }
+}
+
+/**
+ * «Entró a …» avisa a /admin una vez al día por persona, módulo y negocio (docs/319). El tope del
+ * servidor es en memoria y se pierde entre instancias, así que el navegador lo recuerda también.
+ */
+function firstEntryToday(userId: string, module: string, businessId: string | null): boolean {
+  const key = `gm_push_entered_${userId}_${module}_${businessId ?? "main"}`
+  const today = new Date().toISOString().slice(0, 10)
+  try {
+    if (localStorage.getItem(key) === today) return false
+    localStorage.setItem(key, today)
+  } catch {
+    // Sin almacenamiento, decide el tope del servidor.
+  }
+  return true
 }
 
 /** Aviso a /admin en segundo plano (docs/248). Nunca rompe la acción de la persona. */

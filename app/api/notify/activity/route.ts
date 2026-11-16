@@ -1,5 +1,5 @@
 /**
- * Aviso a los aparatos de /admin cuando alguien crea o cambia algo (entrar ya no avisa, docs/319), en un negocio o
+ * Aviso a los aparatos de /admin cuando alguien crea o cambia algo (y al entrar a un módulo, una vez al día: docs/319), en un negocio o
  * en su dashboard personal (docs/248; casi todas las acciones desde docs/295). Lo llama
  * logActivity en segundo plano. Solo manda push, no correo. El nombre del negocio y de la
  * persona salen del servidor: del navegador solo se aceptan acciones de la lista, un negocio
