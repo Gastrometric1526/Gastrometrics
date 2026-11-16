@@ -546,11 +546,13 @@ export function buildSimplifiedPnL(params: {
   expenses: BusinessExpenses | undefined
   periodStart: string | null
   periodEnd: string | null
+  /** Costo de personal de los turnos anotados (docs/322); si no se pasa, el mensual prorrateado. */
+  laborCostOverride?: number
 }): SimplifiedPnL {
-  const { revenue, cogs, expenses, periodStart, periodEnd } = params
+  const { revenue, cogs, expenses, periodStart, periodEnd, laborCostOverride } = params
   const prorate = (v: number) => prorateMonthlyExpense(v, periodStart, periodEnd)
 
-  const laborCost = prorate(expenses?.laborCosts || 0)
+  const laborCost = laborCostOverride ?? prorate(expenses?.laborCosts || 0)
   const rent = prorate(expenses?.rent || 0)
   const utilities = prorate(expenses?.utilities || 0)
   const operationalCosts = prorate(expenses?.operationalCosts || 0)

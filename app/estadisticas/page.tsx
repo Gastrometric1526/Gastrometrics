@@ -17,7 +17,9 @@ import { EstadisticasProveedoresTab } from "@/components/estadisticas-proveedore
 import { EstadisticasMermaTab } from "@/components/estadisticas-merma-tab"
 import type { PurchaseOrder } from "@/types/purchase-order"
 import { Truck, Scale } from "lucide-react"
-import { GmReports } from "@/components/icons/gm-icons" // ícono propio del módulo (docs/307)
+import { GmReports, GmPlan, GmShifts } from "@/components/icons/gm-icons" // ícono propio del módulo (docs/307)
+import { EstadisticasPlanearTab } from "@/components/estadisticas-planear-tab"
+import { EstadisticasPersonalTab } from "@/components/estadisticas-personal-tab"
 import { useFeatureAccess } from "@/lib/plan-access"
 import { FeatureLockedPage, FeatureLockedInline } from "@/components/feature-locked"
 import { AdminRestrictedPage, AdminRestrictedInline } from "@/components/admin-restricted"
@@ -474,7 +476,7 @@ function EstadisticasContent() {
                 </Card>
               ) : (
                 <Tabs
-                  defaultValue={["panorama", "finanzas", "proveedores", "merma"].includes(searchParams.get("tab") || "") ? searchParams.get("tab")! : "panorama"}
+                  defaultValue={["panorama", "finanzas", "planear", "personal", "proveedores", "merma"].includes(searchParams.get("tab") || "") ? searchParams.get("tab")! : "panorama"}
                   className="w-full"
                 >
                   <TabsList className="bg-card border border-border max-w-full overflow-x-auto justify-start no-scrollbar">
@@ -486,6 +488,16 @@ function EstadisticasContent() {
                       <Wallet className="h-4 w-4" />
                       {t("estadisticas_tab_finanzas")}
                     </TabsTrigger>
+                    <TabsTrigger id="stats-tab-planear" value="planear" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                      <GmPlan className="h-4 w-4" />
+                      {t("estadisticas_tab_planear")}
+                    </TabsTrigger>
+                    {businessId !== "main" && (
+                      <TabsTrigger id="stats-tab-personal" value="personal" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                        <GmShifts className="h-4 w-4" />
+                        {t("estadisticas_tab_personal")}
+                      </TabsTrigger>
+                    )}
                     <TabsTrigger id="stats-tab-proveedores" value="proveedores" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       <Truck className="h-4 w-4" />
                       {t("estadisticas_tab_proveedores")}
@@ -854,6 +866,21 @@ function EstadisticasContent() {
                   <TabsContent value="merma" className="mt-4">
                     <EstadisticasMermaTab businessId={businessId} ingredients={ingredients} orders={purchaseOrders} changes={priceHistory} />
                   </TabsContent>
+
+                  {/* Planear y Personal (docs/322): con Finanzas (Sous Chef+). Personal, solo en un negocio. */}
+                  {(["planear", "personal"] as const).map((tab) =>
+                    tab === "personal" && businessId === "main" ? null : (
+                      <TabsContent key={tab} value={tab} className="mt-4">
+                        {canAccessFinance ? (
+                          tab === "planear" ? <EstadisticasPlanearTab businessId={businessId} /> : <EstadisticasPersonalTab businessId={businessId} />
+                        ) : getAccessBlockReason("stats_finance") === "admin" ? (
+                          <AdminRestrictedInline sectionName={t("estadisticas_finance_section_name")} />
+                        ) : (
+                          <FeatureLockedInline feature="stats_finance" title={t("plan_locked_title")} description={t("plan_locked_desc")} />
+                        )}
+                      </TabsContent>
+                    ),
+                  )}
 
                   <TabsContent value="finanzas" className="mt-4">
                     {canAccessFinance ? (

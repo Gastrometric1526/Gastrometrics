@@ -168,6 +168,28 @@ export const GmReports = make(
   </>,
 )
 
+/** Planear (docs/322): calendario con una línea que sube (pronóstico y presupuesto). */
+export const GmPlan = make(
+  "GmPlan",
+  <>
+    <rect x="3.5" y="5" width="17" height="15" rx="2" />
+    <path d="M3.5 9.5h17" />
+    <path d="M8 3v4M16 3v4" />
+    <path d="M7 17l3-3 2.5 2 4.5-4.5" />
+  </>,
+)
+
+/** Personal y turnos (docs/322): una persona con su reloj de turno. */
+export const GmShifts = make(
+  "GmShifts",
+  <>
+    <circle cx="9" cy="7.5" r="3" />
+    <path d="M3.5 19.5c.6-3.4 2.8-5.5 5.5-5.5" />
+    <circle cx="16.5" cy="16" r="4" />
+    <path d="M16.5 14v2l1.5 1" />
+  </>,
+)
+
 /** Negocios: local con toldo. */
 export const GmBusinesses = make(
   "GmBusinesses",

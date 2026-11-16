@@ -11,6 +11,8 @@
  * Si una fila falla, la corrección rompió un número que ya estaba bien (o al revés): la
  * matriz se actualiza solo si el dueño cambia la regla, nunca para que la prueba pase.
  */
+import { forecastSales, forecastRecipeMultipliers, budgetLine, budgetFoodCost } from "./forecast"
+import { shiftHours, laborInRange, laborPercent, laborCostForFinance } from "./labor"
 import { computeYieldTest } from "./yield-test"
 import { describe, expect, it } from "vitest"
 import { usableContentAfterMerma } from "./merma-categories"
@@ -502,5 +504,48 @@ describe("I. Prueba de rendimiento por cortes (docs/322)", () => {
   it("I-03 · Sin parte útil no hay costo ni merma; partes de más se avisan", () => {
     expect(computeYieldTest({ grossWeight: 5, pricePaid: 1000, parts: [{ name: "x", weight: 5, kind: "waste" }] }).mermaPercent).toBeNull()
     expect(computeYieldTest({ grossWeight: 5, pricePaid: 1000, parts: [{ name: "x", weight: 6, kind: "usable" }] }).partsExceedGross).toBe(true)
+  })
+})
+
+describe("J. Pronóstico, presupuesto y personal (docs/322)", () => {
+  const line = (date: string, qty: number, revenue: number, recipeId = "r1") => ({ id: date + recipeId, rawDishName: "Plato", recipeId, quantity: qty, unitPrice: null, revenue, theoreticalCost: 0, date })
+  const imp = { id: "i", lines: [
+    // lunes 2, 9, 16 de noviembre de 2026; martes 10 sin ventas
+    line("2026-11-02", 10, 1000), line("2026-11-09", 20, 2000), line("2026-11-16", 30, 3000),
+  ] } as unknown as SalesImport
+  it("J-01 · Lunes 23: promedio de los 3 lunes con ventas = (1 000 + 2 000 + 3 000) ÷ 3 = 2 000; 20 platos", () => {
+    const [mon] = forecastSales([imp], "2026-11-23", { horizon: 1 })
+    expect(mon.basis.map((b) => b.day)).toEqual(["2026-11-16", "2026-11-09", "2026-11-02"])
+    expect(mon.revenue).toBe(2000)
+    expect(mon.items[0].quantity).toBe(20)
+  })
+  it("J-02 · Un día sin ventas registradas no pronostica nada (no promedia ceros)", () => {
+    const [tue] = forecastSales([imp], "2026-11-24", { horizon: 1 })
+    expect(tue.basis).toEqual([])
+    expect(tue.revenue).toBe(0)
+  })
+  it("J-03 · Platos → recetas: 20 platos de una receta que rinde 4 = × 5", () => {
+    const days = forecastSales([imp], "2026-11-23", { horizon: 1 })
+    expect(forecastRecipeMultipliers(days, [{ id: "r1", yieldAmount: 4 } as never], [])).toEqual({ r1: 5 })
+  })
+  it("J-04 · Presupuesto: 30 000 de venta; al día 10 de 30 van 12 000 → proyección 36 000 (+6 000)", () => {
+    const l = budgetLine(30000, 12000, 10, 30)
+    expect(l.projected).toBe(36000)
+    expect(l.projectedDiff).toBe(6000)
+    expect(l.usedPercent).toBe(40)
+    expect(budgetFoodCost({ sales: 30000, foodCostPercent: 30, labor: 0, otherExpenses: 0 })).toBe(9000)
+  })
+  it("J-05 · Personal: 22:00 a 06:00 = 8 h; 8 h × 50 + 6 h × 40 = 640; 640 ÷ 3 200 = 20 %", () => {
+    expect(shiftHours("22:00", "06:00")).toBe(8)
+    const shifts = [
+      { id: "1", staffId: "a", date: "2026-11-10", start: "22:00", end: "06:00", hours: 8, rate: 50 },
+      { id: "2", staffId: "b", date: "2026-11-10", start: "08:00", end: "14:00", hours: 6, rate: 40 },
+      { id: "3", staffId: "b", date: "2026-12-01", start: "08:00", end: "14:00", hours: 6, rate: 40 },
+    ]
+    const s = laborInRange(shifts, "2026-11-01", "2026-11-30")
+    expect(s.cost).toBe(640)
+    expect(laborPercent(s.cost, 3200)).toBe(20)
+    expect(laborCostForFinance(shifts, "2026-11-01", "2026-11-30", 999)).toEqual({ cost: 640, fromShifts: true })
+    expect(laborCostForFinance(shifts, "2026-10-01", "2026-10-31", 999)).toEqual({ cost: 999, fromShifts: false })
   })
 })

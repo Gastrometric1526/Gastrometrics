@@ -68,6 +68,11 @@ export interface Business {
   // Método de valoración del inventario (docs/313): "last_purchase" (por defecto, lo de
   // siempre), "weighted_average" o "replacement". Ver lib/inventory-valuation.ts.
   inventoryValuationMethod?: string
+  /** Presupuesto del mes (docs/322, lib/forecast.ts). */
+  budget?: import("@/lib/forecast").MonthlyBudget
+  /** Personal y turnos (docs/322, lib/labor.ts); solo en los negocios. */
+  staff?: import("@/lib/labor").StaffMember[]
+  shifts?: import("@/lib/labor").StaffShift[]
   // Marca de los PDF (docs/229, docs/251): ver PdfBranding en lib/pdf/pdf-branding.ts.
   pdfBranding?: {
     name?: string

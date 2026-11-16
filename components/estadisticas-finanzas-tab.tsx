@@ -1,6 +1,7 @@
 "use client"
 
 import { breakEvenFromPeriod } from "@/lib/break-even"
+import { laborCostForFinance } from "@/lib/labor"
 import { summarizeTickets } from "@/lib/manual-sales"
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
@@ -304,7 +305,9 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
   const realCostPercent = netRevenue > 0 ? (cogsResult.cogs / netRevenue) * 100 : 0
   const variance = computeVariance(realCostPercent, theoreticalCostPercent)
 
-  const laborCostForPeriod = prorateMonthlyExpense(business?.expenses?.laborCosts || 0, period.start, period.end)
+  // docs/322: con turnos anotados en el período, el personal sale de los turnos.
+  const laborFinance = laborCostForFinance(business?.shifts, period.start, period.end, prorateMonthlyExpense(business?.expenses?.laborCosts || 0, period.start, period.end))
+  const laborCostForPeriod = laborFinance.cost
   const primeCostResult = computePrimeCost(cogsResult.cogs, laborCostForPeriod, netRevenue)
 
   const inventoryTurnover = computeInventoryTurnover(
@@ -321,8 +324,9 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
         expenses: business?.expenses,
         periodStart: period.start,
         periodEnd: period.end,
+        ...(laborFinance.fromShifts ? { laborCostOverride: laborFinance.cost } : {}),
       }),
-    [netRevenue, cogsResult.cogs, business, period],
+    [netRevenue, cogsResult.cogs, business, period, laborFinance.fromShifts, laborFinance.cost],
   )
 
   const supplierVariance = useMemo(() => computeSupplierPriceVariance(ingredients), [ingredients])
@@ -1027,6 +1031,7 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
         periodEnd={period.end}
         laborCostMonthly={business?.expenses?.laborCosts || 0}
         laborCostForPeriod={laborCostForPeriod}
+        laborFromShifts={laborFinance.fromShifts}
         primeCostResult={primeCostResult}
         totalContributionMargin={totalContributionMargin}
         inventoryTurnover={inventoryTurnover}

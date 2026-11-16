@@ -11,6 +11,7 @@ import { isBarClassification } from "./beverage"
 import { servingsScale } from "./yield-units"
 import { menuItemShares } from "./menu-shares"
 import { notifyAdminActivity } from "@/lib/services/activity-log"
+import { forecastRecipeMultipliers, forecastSales } from "./forecast"
 
 export type { Menu, MenuItem, MenuSection, MenuStep }
 
@@ -471,4 +472,29 @@ export function generateRecipeIngredientList(
     compaxByRecipeId: { [recipeId]: compax },
     inventorySnapshot,
   })
+}
+
+/**
+ * Orden de compra para lo que se espera vender en los próximos `horizon` días (docs/322):
+ * platos del pronóstico (lib/forecast.ts) → recetas (platos ÷ rendimiento, menús repartidos con
+ * `menuItemShares`) → ingredientes con la misma regla de siempre (buildPurchaseOrderData), menos
+ * lo que ya hay en inventario.
+ */
+export function generateForecastIngredientList(
+  businessId: string,
+  salesImports: import("@/types/sales-import").SalesImport[],
+  today: string,
+  horizon = 7,
+): PurchaseOrderComputationResult & { forecastRevenue: number } {
+  const days = forecastSales(salesImports, today, { horizon })
+  const compaxByRecipeId = forecastRecipeMultipliers(days, getRecipes(businessId), getMenus(businessId))
+  return {
+    ...buildPurchaseOrderData({
+      businessId,
+      selectedRecipeIds: Object.keys(compaxByRecipeId),
+      compaxByRecipeId,
+      inventorySnapshot: currentStockByIngredientId(businessId),
+    }),
+    forecastRevenue: Math.round(days.reduce((s, d) => s + d.revenue, 0) * 100) / 100,
+  }
 }

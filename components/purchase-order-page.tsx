@@ -37,7 +37,8 @@ import { getIngredients, updateIngredient, ensureIngredientsLoaded } from "@/lib
 import { getInventory, ensureInventoryLoaded, receivePurchaseOrderIntoInventory } from "@/lib/storage/inventory"
 import { getRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { getMenuById, ensureMenusLoaded } from "@/lib/menus"
-import { generateMenuIngredientList, generateRecipeIngredientList } from "@/lib/menus"
+import { generateMenuIngredientList, generateRecipeIngredientList, generateForecastIngredientList } from "@/lib/menus"
+import { getSalesImports, ensureSalesImportsLoaded } from "@/lib/storage/sales-imports"
 import { sortPurchaseOrderItemsBySupplier, sortPurchaseOrderItemsByCategory } from "@/lib/purchase-orders"
 import { splitOrderBySupplier } from "@/lib/purchase-order-split"
 import { computePresentationQuantity } from "@/lib/utils/presentation-quantity"
@@ -220,6 +221,56 @@ export function PurchaseOrderPage() {
     // menú): ?fromMenu={menuId} arma una orden sugerida a partir de lo que ese menú
     // necesita (ver lib/menus.ts generateMenuIngredientList) menos lo que ya hay en
     // inventario, y abre el diálogo ya lleno para revisar antes de guardar.
+    // docs/322: ?forecast=7 desde Reportes → Planear arma la orden con lo que se espera vender
+    // en los próximos días (pronóstico) menos lo que ya hay en inventario.
+    const forecastParam = searchParams.get("forecast")
+    if (forecastParam && businessId) {
+      if (!hasFeatureAccess("purchase_orders_auto")) {
+        toast({ title: t("ordenes_toast_plan_locked_title"), description: t("ordenes_toast_plan_locked_auto_menu_desc"), variant: "destructive" })
+        return
+      }
+      const horizon = Math.min(14, Math.max(1, Number(forecastParam) || 7))
+      ensureSalesImportsLoaded(businessId).then(() => {
+        const result = generateForecastIngredientList(businessId, getSalesImports(businessId), toIsoDate(new Date()), horizon)
+        if (result.items.length === 0) {
+          toast({ title: t("ordenes_toast_nothing_to_buy_title"), description: t("forecast_order_nothing") })
+          return
+        }
+        const items: PurchaseOrderFormItem[] = sortPurchaseOrderItemsByCategory(
+          result.items.map((item, index) => ({
+            id: `forecast-${item.ingredientId}-${index}`,
+            ingredientId: item.ingredientId,
+            ingredientName: item.ingredientName,
+            quantity: Math.round(item.quantity * 100) / 100,
+            unit: item.unit,
+            unitPrice: Math.round(item.unitPrice * 1e6) / 1e6,
+            totalPrice: Math.round(item.totalPrice * 100) / 100,
+            supplier: item.supplier || "",
+            category: item.category,
+            presentation: item.presentation,
+            presentationQuantity: item.presentationQuantity,
+          })),
+        )
+        const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0)
+        setEditingOrder(null)
+        setIsSuggestedFromMenu(true)
+        setSuggestedFormData({
+          orderNumber: `OC ${t("forecast_order_name")} · ${orderDateLabel()}`,
+          supplier: "",
+          orderDate: toIsoDate(new Date()),
+          expectedDeliveryDate: "",
+          status: "pending",
+          items,
+          subtotal,
+          tax: 0,
+          total: subtotal,
+          notes: t("forecast_order_notes").replace("{days}", String(horizon)).replace("{amount}", formatCurrency(result.forecastRevenue)),
+        })
+        setIsCreateDialogOpen(true)
+      })
+      return
+    }
+
     const fromMenuId = searchParams.get("fromMenu")
     if (fromMenuId && businessId) {
       if (!hasFeatureAccess("purchase_orders_auto")) {

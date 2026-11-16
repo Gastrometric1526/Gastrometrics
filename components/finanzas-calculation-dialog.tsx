@@ -30,6 +30,8 @@ interface FinanzasCalculationDialogProps {
   periodEnd: string | null
   laborCostMonthly: number
   laborCostForPeriod: number
+  /** El personal sale de los turnos anotados (docs/322), no del monto mensual. */
+  laborFromShifts?: boolean
   primeCostResult: { primeCost: number; primeCostPercent: number }
   totalContributionMargin: number
   inventoryTurnover: number
@@ -54,6 +56,7 @@ export function FinanzasCalculationDialog({
   periodEnd,
   laborCostMonthly,
   laborCostForPeriod,
+  laborFromShifts,
   primeCostResult,
   totalContributionMargin,
   inventoryTurnover,
@@ -169,7 +172,7 @@ export function FinanzasCalculationDialog({
                 {t("fcd_primecost_body").replace("{days}", String(periodDays))}
               </p>
               <div className="p-3 bg-muted/50 rounded border font-mono text-xs sm:text-sm">
-                ({formatCurrency(laborCostMonthly)} ÷ 30) × {periodDays} = {formatCurrency(laborCostForPeriod)}
+                {laborFromShifts ? t("fcd_labor_from_shifts").replace("{amount}", formatCurrency(laborCostForPeriod)) : <>({formatCurrency(laborCostMonthly)} ÷ 30) × {periodDays} = {formatCurrency(laborCostForPeriod)}</>}
               </div>
               <div className="mt-2 p-3 bg-muted/50 rounded border font-mono text-xs sm:text-sm">
                 {formatCurrency(cogsResult.cogs)} + {formatCurrency(laborCostForPeriod)} ={" "}
