@@ -1125,6 +1125,7 @@ export function PurchaseOrderPage() {
                   purchaseOrderShareText({
                     order: detailOrder,
                     language,
+                    ingredients: getIngredients(businessId || "main"),
                     money: formatCurrency,
                     dateLabel: (iso) => formatDate(iso),
                     labels: {

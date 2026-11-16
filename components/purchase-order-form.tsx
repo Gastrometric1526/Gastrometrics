@@ -20,6 +20,7 @@ import { Trash2, Plus, Package } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
 import { distinguishLabel, repeatedNames } from "@/lib/ingredient-match"
+import { packageOf, presentationText } from "@/lib/presentation-label"
 import { getCategoryLabel, getPresentationLabel, getUnitLabel, getUnitLabelFor, matchUnitLabel } from "@/lib/ingredient-labels"
 
 export interface PurchaseOrderFormItem {
@@ -295,7 +296,8 @@ export function PurchaseOrderForm({
       items: prev.items.map((item) => {
         if (item.id !== itemId) return item
         const ingredient = availableIngredients.find((ing) => ing.id === item.ingredientId)
-        const netContent = ingredient?.pricing?.netContent
+        // Contenido FÍSICO del envase (docs/187, docs/323): con merma, pricing.netContent es lo aprovechable.
+        const netContent = ingredient?.originalNetContent || ingredient?.pricing?.netContent
         const presentationQuantity =
           netContent && netContent > 0 ? Math.ceil(item.quantity / netContent) : (item.presentationQuantity ?? null)
         return { ...item, presentation, presentationQuantity }
@@ -514,8 +516,7 @@ export function PurchaseOrderForm({
                         <p className="font-medium truncate">{item.ingredientName}</p>
                         {item.presentation && item.presentationQuantity ? (
                           <p className="text-sm text-muted-foreground">
-                            {item.presentationQuantity} {getPresentationLabel(item.presentation, language)}
-                            {item.presentationQuantity !== 1 ? "s" : ""} ({item.quantity}{" "}
+                            {presentationText(item.presentationQuantity, item.presentation, packageOf(item, availableIngredients), language)} ({item.quantity}{" "}
                             {getUnitLabel(item.unit, language)}) ×{""}
                             {formatCurrency(item.unitPrice)}
                           </p>

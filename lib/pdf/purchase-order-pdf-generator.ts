@@ -11,6 +11,8 @@ import { PDF_CONTENT_TOP, drawPdfHeader } from "./pdf-header"
 import { drawFiscalBlock, fiscalLines } from "./pdf-fiscal"
 import { formatDate, formatDateTime, fileDate } from "@/lib/date-format"
 import { recordPdfExport } from "@/lib/pdf/track-export"
+import { packageOf, presentationText } from "@/lib/presentation-label"
+import { getIngredients } from "@/lib/storage/ingredients"
 
 // ============== HELPERS ==============
 // Mismo patron que lib/pdf/recipe-pdf-generator.ts y lib/pdf/menu-pdf-generator.ts:
@@ -243,12 +245,12 @@ export function generatePurchaseOrderPDF(order: PurchaseOrder, options: Purchase
   // Presentación y unidad en el idioma del PDF (docs/141) — antes salían las claves en
   // español. El plural con "s" solo aplica a los idiomas que lo usan.
   const pdfLanguage = getCurrentPdfLanguage()
-  const pluralS = ["es", "en", "fr", "pt"].includes(pdfLanguage)
+  // docs/323: la presentación con su contenido neto («3 latas de 500 ml»).
+  const pdfIngredients = getIngredients(options.businessId || "main")
   const tableRows = order.items.map((item) => {
-    const presentationLabel = item.presentation ? getPresentationLabel(item.presentation, pdfLanguage) : ""
     const qtyLabel =
       item.presentation && item.presentationQuantity
-        ? `${item.presentationQuantity} ${presentationLabel}${pluralS && item.presentationQuantity !== 1 && !presentationLabel.endsWith("s") ? "s" : ""}`
+        ? presentationText(item.presentationQuantity, item.presentation, packageOf(item, pdfIngredients), pdfLanguage)
         : `${item.totalQuantity} ${getUnitLabelFor(item.unit, pdfLanguage, item.totalQuantity)}`
 
     return [
@@ -282,8 +284,8 @@ export function generatePurchaseOrderPDF(order: PurchaseOrder, options: Purchase
     alternateRowStyles: { fillColor: [250, 250, 250] },
     columnStyles: {
       0: { cellWidth: "auto" },
-      1: { cellWidth: 36 },
-      2: { cellWidth: 32, halign: "right" },
+      1: { cellWidth: 32 },
+      2: { cellWidth: 40, halign: "right" },
       3: { cellWidth: 26, halign: "right" },
       4: { cellWidth: 26, halign: "right" },
     },

@@ -9,6 +9,7 @@ import type { PurchaseOrder } from "@/types/purchase-order"
 import { unitAbbreviations } from "@/types/ingredient"
 import { getPresentationLabel, getUnitLabel, getUnitLabelFor, getYieldUnitLabel, getYieldUnitLabelFor } from "@/lib/ingredient-labels"
 import type { MepEntry } from "@/lib/mep"
+import { packageOf, presentationText } from "@/lib/presentation-label"
 import { flattenDish, formatMepAmount, groupDishesByStep } from "@/lib/mep"
 
 /** Cantidad con su unidad corta, concordando con la cantidad («1 porción», «3 unidades»). */
@@ -90,6 +91,8 @@ export function purchaseOrderShareText(input: {
   labels: PurchaseOrderShareLabels
   money: (n: number) => string
   dateLabel?: (iso: string) => string
+  /** Para leer el contenido del envase de cada línea («latas de 500 ml», docs/323). */
+  ingredients?: Parameters<typeof packageOf>[1]
 }): string {
   const { order, labels, language } = input
   const items = (order.items ?? []).filter((i) => (i.quantityToBuy ?? i.totalQuantity) > 0)
@@ -104,7 +107,7 @@ export function purchaseOrderShareText(input: {
     const base = `${formatMepAmount(qty)} ${shortUnit(item.unit, language)}`.trim()
     const pres =
       item.presentation && item.presentationQuantity && item.presentationQuantity > 0
-        ? ` (${formatMepAmount(item.presentationQuantity)} ${getPresentationLabel(item.presentation, language)})`
+        ? ` (${presentationText(item.presentationQuantity, item.presentation, packageOf(item, input.ingredients), language)})`
         : ""
     const who = !supplier && item.supplier ? ` · ${item.supplier}` : ""
     out.push(`• ${item.name} — ${base}${pres}${who}`)

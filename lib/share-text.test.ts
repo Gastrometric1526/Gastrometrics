@@ -60,7 +60,7 @@ describe("textos para compartir (docs/202)", () => {
     expect(text).toContain("*Orden de compra #12 — Almuerzo*")
     expect(text).toContain("Entrega: 27/10/2026\nProveedor: Distribuidora")
     expect(text).toContain("• Pollo — 4 kg")
-    expect(text).toContain("• Crema — 3 L (1 Caja)")
+    expect(text).toContain("• Crema — 3 L (1 caja)") // docs/323: en minúscula dentro de la frase
     expect(text).toContain("Total estimado: L 1790.00")
   })
 
