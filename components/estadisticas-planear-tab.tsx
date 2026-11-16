@@ -81,7 +81,7 @@ export function EstadisticasPlanearTab({ businessId }: { businessId: string }) {
   const expectedProfit = budget && lines ? Math.round((lines.sales.projected - lines.food.projected - lines.labor.projected - budget.otherExpenses) * 100) / 100 : 0
 
   return (
-    <div className="space-y-6" data-testid="planear-tab">
+    <div className="space-y-6" data-testid="planear-tab" data-tour="stats-plan">
       <div>
         <h2 className="text-lg font-bold">{t("plan_title")}</h2>
         <p className="text-sm text-muted-foreground">{t("plan_subtitle")}</p>

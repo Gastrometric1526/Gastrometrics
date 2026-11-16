@@ -567,7 +567,7 @@ export function PurchaseOrderPage() {
     const updated: PurchaseOrder = { ...receiveOrder, status: "received", receivedAt: receiveOrder.receivedAt || receipt.at, receipt }
     persistOrder(updated)
     setReceiveOrder(null)
-    if (user) logActivity({ user, businessId: businessId !== "main" ? businessId : null, module: "ordenes_compra", action: "updated", entityLabel: updated.name })
+    if (user) logActivity({ user, businessId: businessId !== "main" ? businessId : null, module: "ordenes_compra", action: "received", entityLabel: updated.name })
     const lines = receiptLines(updated).filter((l) => l.receivedQuantity > 0)
     const { matchedCount, unmatchedNames } = await receivePurchaseOrderIntoInventory(
       lines.map((l) => ({ ingredientId: l.ingredientId, name: l.name, quantity: l.receivedQuantity, unitCost: l.invoicedUnitCost })),
@@ -589,7 +589,7 @@ export function PurchaseOrderPage() {
     const updated: PurchaseOrder = { ...returnOrder, returns: [...(returnOrder.returns ?? []), ret] }
     persistOrder(updated)
     setReturnOrder(null)
-    if (user) logActivity({ user, businessId: businessId !== "main" ? businessId : null, module: "ordenes_compra", action: "updated", entityLabel: updated.name })
+    if (user) logActivity({ user, businessId: businessId !== "main" ? businessId : null, module: "ordenes_compra", action: "returned", entityLabel: updated.name })
     const byKey = new Map(receiptLines(updated).map((l) => [l.key, l]))
     const { matchedCount, unmatchedNames } = await returnToSupplierFromInventory(
       ret.lines.map((l) => ({ ingredientId: byKey.get(l.key)?.ingredientId, name: byKey.get(l.key)?.name || "", quantity: l.quantity })),

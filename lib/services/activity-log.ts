@@ -71,6 +71,9 @@ export type ActivityAction =
   // Invitación a volver a un módulo (docs/269), medida en el embudo de /admin (docs/275).
   | "nudge_shown"
   | "nudge_opened"
+  // Órdenes de compra (docs/322): recibir revisando y devolver al proveedor.
+  | "received"
+  | "returned"
 
 export interface ActivityLogEntry {
   id: number
@@ -336,6 +339,10 @@ export function formatActivityEntry(entry: ActivityLogEntry, t: (key: any) => st
       return t("activity_tpl_created").replace("{user}", entry.userName).replace("{entity}", entity).replace("{module}", module)
     case "updated":
       return t("activity_tpl_updated").replace("{user}", entry.userName).replace("{entity}", entity).replace("{module}", module)
+    case "received":
+      return t("activity_tpl_received").replace("{user}", entry.userName).replace("{entity}", entity).replace("{module}", module)
+    case "returned":
+      return t("activity_tpl_returned").replace("{user}", entry.userName).replace("{entity}", entity).replace("{module}", module)
     case "deleted":
       return t("activity_tpl_deleted").replace("{user}", entry.userName).replace("{entity}", entity).replace("{module}", module)
     case "imported":

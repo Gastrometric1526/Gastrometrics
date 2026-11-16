@@ -62,6 +62,8 @@ const TITLES: Record<string, string> = {
   "menus:deleted": "Menú borrado",
   "ordenes_compra:created": "Orden de compra creada",
   "ordenes_compra:updated": "Orden de compra editada",
+  "ordenes_compra:received": "Recibió una orden de compra",
+  "ordenes_compra:returned": "Devolvió productos al proveedor",
   "ordenes_compra:imported": "Órdenes de compra importadas",
   "ordenes_compra:deleted": "Orden de compra borrada",
   "facturas:deleted": "Factura borrada",

@@ -69,7 +69,7 @@ export function EstadisticasPersonalTab({ businessId }: { businessId: string }) 
   if (!business) return null
 
   return (
-    <div className="space-y-6" data-testid="personal-tab">
+    <div className="space-y-6" data-testid="personal-tab" data-tour="stats-personal">
       <div>
         <h2 className="text-lg font-bold">{t("labor_title")}</h2>
         <p className="text-sm text-muted-foreground">{t("labor_subtitle")}</p>

@@ -98,6 +98,7 @@ export const featurePages: FeaturePageDef[] = [
       "feat_ingredientes_highlight2",
       "feat_ingredientes_highlight3",
       "feat_ingredientes_highlight4",
+      "feat_ingredientes_highlight5",
     ],
     screenshots: [
       { screen: "ingredientes", route: "/ingredientes", altKey: "feat_ingredientes_shot1_alt", captionKey: "feat_ingredientes_shot1_caption" },
@@ -150,6 +151,8 @@ export const featurePages: FeaturePageDef[] = [
       { titleKey: "feat_ordenes_step3_title", descKey: "feat_ordenes_step3_desc" },
       // Enviar por WhatsApp o correo (docs/202).
       { titleKey: "feat_ordenes_step4_title", descKey: "feat_ordenes_step4_desc" },
+      // Recibir revisando y devolver al proveedor (docs/322).
+      { titleKey: "feat_ordenes_step5_title", descKey: "feat_ordenes_step5_desc" },
     ],
     highlightKeys: [
       "feat_ordenes_highlight1",
@@ -157,6 +160,7 @@ export const featurePages: FeaturePageDef[] = [
       "feat_ordenes_highlight3",
       "feat_ordenes_highlight4",
       "feat_ordenes_highlight5",
+      "feat_ordenes_highlight6",
     ],
     screenshots: [
       { screen: "ordenes", route: "/ordenes-compra", altKey: "feat_ordenes_shot1_alt", captionKey: "feat_ordenes_shot1_caption" },
@@ -173,6 +177,8 @@ export const featurePages: FeaturePageDef[] = [
       { titleKey: "feat_estadisticas_step3_title", descKey: "feat_estadisticas_step3_desc" },
       // Proveedores y Merma (docs/202).
       { titleKey: "feat_estadisticas_step4_title", descKey: "feat_estadisticas_step4_desc" },
+      // Planear y Personal (docs/322).
+      { titleKey: "feat_estadisticas_step5_title", descKey: "feat_estadisticas_step5_desc" },
     ],
     highlightKeys: [
       "feat_estadisticas_highlight1",
@@ -180,6 +186,7 @@ export const featurePages: FeaturePageDef[] = [
       "feat_estadisticas_highlight3",
       "feat_estadisticas_highlight4",
       "feat_estadisticas_highlight5",
+      "feat_estadisticas_highlight6",
     ],
     screenshots: [
       { screen: "reportes", route: "/estadisticas", altKey: "feat_estadisticas_shot1_alt", captionKey: "feat_estadisticas_shot1_caption" },

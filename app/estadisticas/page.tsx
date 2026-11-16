@@ -441,7 +441,7 @@ function EstadisticasContent() {
         <div className="flex-1 overflow-hidden">
           <div className="h-full overflow-y-auto">
             <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
-              <EstadisticasTour canAccessFinance={!!canAccessFinance} />
+              <EstadisticasTour canAccessFinance={!!canAccessFinance} isBusiness={businessId !== "main"} />
               {/* Header */}
               <div className="flex items-center gap-2 md:gap-4">
                 <Link href={businessId !== "main" ? `/business/${businessId}` : "/dashboard"}>

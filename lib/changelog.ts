@@ -32,6 +32,45 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Planear y Personal en Reportes (docs/322).
+    version: "2026-11-16d",
+    tutorialHref: tourHref("estadisticas"),
+    content: {
+      es: { title: "Planea tu semana y tu mes", items: ["Reportes → Planear: lo que esperas vender cada día de la próxima semana, según tus semanas anteriores, y un botón para pedir solo lo que te va a faltar.", "Presupuesto del mes: pones cuánto quieres vender y cuánto puedes gastar, y ves cuánto llevas y cómo terminarías el mes a este ritmo.", "En tus negocios, Reportes → Personal: anota a tu gente con su pago por hora y los turnos de cada día. Ves el costo de personal y qué parte de la venta se lleva, y Finanzas lo usa en el Prime Cost.", "Cada número tiene su «¿Cómo se calcula?» con tus cifras."] },
+      en: { title: "Plan your week and your month", items: ["Reports → Plan: what you expect to sell each day next week, based on previous weeks, and a button to order only what you'll be missing.", "Monthly budget: enter how much you want to sell and spend, and see where you are and how you'd end the month at this pace.", "In your businesses, Reports → Staff: add your people with their hourly pay and each day's shifts. See staff cost and its share of sales; Finance uses it in Prime Cost.", "Every number has its “How is this calculated?” with your figures."] },
+      da: { title: "Planlæg ugen og måneden", items: ["Rapporter → Planlæg: forventet salg hver dag i næste uge ud fra tidligere uger, og en knap til at bestille kun det, der mangler.", "Månedsbudget: angiv, hvor meget du vil sælge og bruge, og se, hvor du er, og hvordan måneden ender i dette tempo.", "I dine virksomheder, Rapporter → Personale: tilføj dine folk med timeløn og dagens vagter. Se personaleomkostningen og dens andel af salget; Økonomi bruger den i Prime Cost.", "Hvert tal har sit »Hvordan beregnes det?« med dine tal."] },
+      fr: { title: "Planifiez votre semaine et votre mois", items: ["Rapports → Planifier : les ventes prévues pour chaque jour de la semaine prochaine, d'après les semaines précédentes, et un bouton pour commander seulement ce qui va manquer.", "Budget du mois : indiquez combien vous voulez vendre et dépenser, et voyez où vous en êtes et comment vous finiriez le mois à ce rythme.", "Dans vos établissements, Rapports → Personnel : ajoutez votre équipe avec son salaire horaire et les horaires de chaque jour. Voyez le coût du personnel et sa part des ventes ; Finances l'utilise dans le Prime Cost.", "Chaque chiffre a son « Comment est-ce calculé ? » avec vos données."] },
+      pt: { title: "Planeje sua semana e seu mês", items: ["Relatórios → Planejar: o que você espera vender a cada dia da próxima semana, com base nas semanas anteriores, e um botão para pedir só o que vai faltar.", "Orçamento do mês: coloque quanto quer vender e gastar, e veja quanto você tem e como terminaria o mês nesse ritmo.", "Nos seus negócios, Relatórios → Equipe de trabalho: anote sua equipe com o pagamento por hora e os turnos de cada dia. Veja o custo da equipe e sua parte da venda; Finanças usa isso no Prime Cost.", "Cada número tem seu «Como é calculado?» com seus dados."] },
+      zh: { title: "规划你的一周和一个月", items: ["报表 → 计划：根据前几周的数据显示下周每天的预计销售，并可一键只采购缺少的部分。", "月度预算：填写销售和支出目标，查看目前进度以及按当前速度的月底结果。", "在你的商家中，报表 → 员工：添加员工及时薪并记录每天的班次。查看人工成本及其占销售额的比例；“财务”的主成本会使用这些数据。", "每个数字都有“这是怎么算的？”，用你的实际数据说明。"] },
+    },
+  },
+  {
+    // Recibir revisando y devolver al proveedor (docs/322).
+    version: "2026-11-16c",
+    tutorialHref: tourHref("ordenes-compra"),
+    content: {
+      es: { title: "Recibe revisando y devuelve al proveedor", items: ["Órdenes de compra: «Recibir y revisar» te deja escribir cuánto llegó y a qué precio te lo cobraron. Ves la diferencia en dinero contra lo pedido, y al inventario entra lo que de verdad llegó.", "«Devolver al proveedor»: eliges cuánto devuelves y por qué; sale del inventario, ves cuánto te deben y se resta de tus compras del mes en Finanzas.", "Finanzas cuenta como compra lo que llegó a precio de factura, menos las devoluciones."] },
+      en: { title: "Receive with a check and return to suppliers", items: ["Purchase orders: “Receive and check” lets you enter how much arrived and the price you were charged. See the difference in money against the order; inventory gets what really arrived.", "“Return to supplier”: choose how much you return and why; it leaves inventory, you see what you're owed and it's subtracted from the month's purchases in Finance.", "Finance counts as a purchase what arrived at the invoice price, minus returns."] },
+      da: { title: "Modtag med tjek og returnér til leverandøren", items: ["Indkøbsordrer: »Modtag og tjek« lader dig skrive, hvor meget der kom, og hvad du blev opkrævet. Se forskellen i penge mod ordren; lageret får det, der faktisk kom.", "»Returnér til leverandør«: vælg hvor meget og hvorfor; det trækkes fra lageret, du ser, hvad du har til gode, og det trækkes fra månedens indkøb i Økonomi.", "Økonomi tæller som indkøb det modtagne til fakturapris minus returneringer."] },
+      fr: { title: "Recevoir en vérifiant et retourner au fournisseur", items: ["Bons de commande : « Recevoir et vérifier » permet d'indiquer ce qui est arrivé et le prix facturé. Vous voyez l'écart en argent avec la commande ; le stock reçoit ce qui est vraiment arrivé.", "« Retour fournisseur » : choisissez la quantité et le motif ; cela sort du stock, vous voyez ce qu'on vous doit et c'est déduit des achats du mois dans Finances.", "Finances compte comme achat ce qui est arrivé au prix facturé, moins les retours."] },
+      pt: { title: "Receba conferindo e devolva ao fornecedor", items: ["Pedidos de compra: «Receber e conferir» deixa você escrever quanto chegou e o preço cobrado. Veja a diferença em dinheiro em relação ao pedido; entra no estoque o que realmente chegou.", "«Devolver ao fornecedor»: escolha quanto devolve e por quê; sai do estoque, você vê quanto te devem e é descontado das compras do mês em Finanças.", "Finanças conta como compra o que chegou pelo preço da nota, menos as devoluções."] },
+      zh: { title: "核对收货与退货给供应商", items: ["采购单：“收货并核对”可填写实到数量和收取的价格，查看与订单的金额差异；库存按实际到货入账。", "“退货给供应商”：选择退货数量和原因；退货会从库存扣除，显示供应商应退金额，并从“财务”的本月采购中减去。", "“财务”中的采购额 = 按发票价格计算的实到金额减去退货。"] },
+    },
+  },
+  {
+    // Prueba de rendimiento por cortes (docs/322).
+    version: "2026-11-16b",
+    tutorialHref: tourHref("ingredientes"),
+    content: {
+      es: { title: "Prueba de rendimiento por cortes", items: ["Ingredientes → Gestionar mermas: en la merma por ingrediente, las tijeras abren la prueba de rendimiento. Pesas la pieza que compraste y cada parte (lo que usas, lo que aprovechas aparte y lo que se bota).", "Te dice cuánto rinde, cuánto te cuesta de verdad cada kilo útil y la merma exacta para tus recetas, con su «¿Cómo se calcula?». Desde Home Cook."] },
+      en: { title: "Yield test by cuts", items: ["Ingredients → Manage waste: in per-ingredient waste, the scissors open the yield test. Weigh the piece you bought and each part (what you use, what you use elsewhere and what's thrown away).", "It tells you the yield, what each usable kilo really costs and the exact waste for your recipes, with its “How is this calculated?”. From Home Cook."] },
+      da: { title: "Udbyttetest efter udskæring", items: ["Ingredienser → Administrér svind: i svind pr. ingrediens åbner saksen udbyttetesten. Vej det købte stykke og hver del (det, du bruger, det, der bruges andetsteds, og det, der smides ud).", "Du får udbyttet, den reelle pris pr. brugbar kilo og det præcise svind til dine opskrifter med »Hvordan beregnes det?«. Fra Home Cook."] },
+      fr: { title: "Test de rendement par découpe", items: ["Ingrédients → Gérer les pertes : dans la perte par ingrédient, les ciseaux ouvrent le test de rendement. Pesez la pièce achetée et chaque partie (ce que vous utilisez, ce qui est valorisé à part et ce qui est jeté).", "Vous obtenez le rendement, le coût réel de chaque kilo utile et la perte exacte pour vos recettes, avec son « Comment est-ce calculé ? ». Dès Home Cook."] },
+      pt: { title: "Teste de rendimento por cortes", items: ["Ingredientes → Gerenciar perdas: na perda por ingrediente, a tesoura abre o teste de rendimento. Pese a peça que você comprou e cada parte (o que usa, o que aproveita à parte e o que vai fora).", "Ele mostra o rendimento, quanto custa de verdade cada quilo útil e a perda exata para suas receitas, com seu «Como é calculado?». A partir do Home Cook."] },
+      zh: { title: "按部位的出成率测试", items: ["食材 → 管理损耗：在按食材设置的损耗中，点剪刀图标打开出成率测试。称出所买整块及每个部分（可用部分、另作他用部分和丢弃部分）的重量。", "它会给出出成率、每公斤可用部分的真实成本，以及配方应使用的准确损耗，并附“这是怎么算的？”。Home Cook 套餐起提供。"] },
+    },
+  },
+  {
     // Rendimiento por defecto en unidades (docs/320).
     version: "2026-11-16",
     tutorialHref: tourHref("ficha-tecnica"),

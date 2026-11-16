@@ -283,8 +283,11 @@ export function MepTour() {
 // la pestaña que este paso resaltaba ya no existe en esta página.
 export function EstadisticasTour({
   canAccessFinance,
+  isBusiness = false,
 }: {
   canAccessFinance: boolean
+  /** Personal solo existe dentro de un negocio (docs/322). */
+  isBusiness?: boolean
 }) {
   const { t } = useLanguage()
   // Igual que en Configuración (ver docs/35): las pestañas son Radix Tabs, así que el
@@ -349,6 +352,25 @@ export function EstadisticasTour({
             description: t("tour_stats_finanzas_sales_desc"),
             selector: '[data-tour="ventas-tables-card"]',
           } as TourStep,
+          // docs/322: Planear (pronóstico y presupuesto) y Personal (solo en un negocio).
+          {
+            id: "plan",
+            title: t("tour_stats_plan_title"),
+            description: t("tour_stats_plan_desc"),
+            selector: '[data-tour="stats-plan"]',
+            beforeShow: clickTab("stats-tab-planear"),
+          } as TourStep,
+          ...(isBusiness
+            ? [
+                {
+                  id: "personal",
+                  title: t("tour_stats_personal_title"),
+                  description: t("tour_stats_personal_desc"),
+                  selector: '[data-tour="stats-personal"]',
+                  beforeShow: clickTab("stats-tab-personal"),
+                } as TourStep,
+              ]
+            : []),
         ]
       : []),
   ]
@@ -415,6 +437,8 @@ export function OrdenesCompraTour() {
     { id: "search", title: t("tour_ordenes_search_title"), description: t("tour_ordenes_search_desc"), selector: '[data-tour="ordenes-search"]' },
     // docs/219: editar, PDF, enviar, duplicar y eliminar viven en el panel de cada orden.
     { id: "row", title: t("tour_ordenes_row_title"), description: t("tour_ordenes_row_desc"), selector: "[data-order-row]" },
+    // docs/322: recibir revisando lo que llegó y devolver al proveedor.
+    { id: "receive", title: t("tour_ordenes_receive_title"), description: t("tour_ordenes_receive_desc"), selector: "[data-order-row]" },
   ]
 
   return <PageTour steps={steps} storageKey="tour_completed_ordenes-compra" />
