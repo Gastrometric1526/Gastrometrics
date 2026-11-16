@@ -71,15 +71,14 @@ describe("/api/notify/activity", () => {
 
   it("no avisa las acciones del dueño", async () => {
     process.env.FEEDBACK_NOTIFY_TO = "ana@correo.com"
-    await call({ module: "app", action: "opened" })
+    await call({ module: "recetas", action: "created" })
     expect(push).not.toHaveBeenCalled()
   })
 
-  it("el ingreso avisa una vez por hora y las acciones tienen tope", async () => {
-    await call({ module: "app", action: "opened" })
-    await call({ module: "app", action: "opened" })
-    expect(push).toHaveBeenCalledTimes(1)
-    push.mockClear()
+  it("entrar a la app o a un módulo no avisa, y las acciones tienen tope", async () => {
+    expect((await call({ module: "app", action: "opened" })).status).toBe(400)
+    expect((await call({ module: "mep", action: "entered" })).status).toBe(400)
+    expect(push).not.toHaveBeenCalled()
     for (let i = 0; i < 8; i++) await call({ module: "recetas", action: "created" })
     expect(push).toHaveBeenCalledTimes(5)
   })

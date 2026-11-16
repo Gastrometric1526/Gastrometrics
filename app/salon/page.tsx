@@ -77,6 +77,7 @@ import { dequeueOrder, enqueueOrder, overlayQueued, readQueue } from "@/lib/pos-
 import { savePosSaleToDay } from "@/lib/storage/sales-imports"
 import { toIsoDate, formatDate } from "@/lib/date-format"
 import { formatCurrency } from "@/lib/currency"
+import { notifyAdminActivity } from "@/lib/services/activity-log"
 import {
   addOrderItem,
   buildPosSale,
@@ -540,6 +541,9 @@ function SalonPageInner({ businessId }: { businessId: string }) {
         newDayId,
       )
       const charged = sale.lines.reduce((s, l) => s + l.revenue, 0) + pay.tip
+      // Aviso a /admin de lo que el módulo hace de verdad: cobrar (docs/319). Solo push, sin
+      // fila en «Actividad reciente»: un salón cobra muchas cuentas al día.
+      if (!already) notifyAdminActivity({ module: "salon", action: "charged", businessId: businessId && businessId !== "main" ? businessId : null, label: formatCurrency(charged) })
       if (sale.remaining.length) await persistOrder({ ...order, items: sale.remaining, voids: [], status: "open", updatedAt: new Date().toISOString() })
       else {
         await removeOrder(order.id)

@@ -117,7 +117,8 @@ export function CashUpDialog({ open, onOpenChange, businessId, salesImport, onSa
         module: "estadisticas",
         action: cashUp ? "updated" : "deleted",
         entityLabel: `${t("cashup_title")} ${dayLabel}`,
-        metadata: cashUp ? { cashUp: result.status, difference: result.totalDifference } : { cashUp: "removed" },
+        // kind: el aviso a /admin dice «Hizo el cuadre de caja», no «Ventas corregidas» (docs/319).
+        metadata: cashUp ? { kind: "cash_up", cashUp: result.status, difference: result.totalDifference } : { kind: "cash_up", cashUp: "removed" },
       })
     }
     toast({ title: cashUp ? t("cashup_toast_saved").replace("{status}", statusText) : t("cashup_toast_removed") })

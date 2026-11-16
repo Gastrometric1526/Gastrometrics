@@ -5,9 +5,12 @@ describe("avisos de actividad", () => {
   it("solo avisa las acciones de la lista", () => {
     expect(isPushActivity("recetas", "created")).toBe(true)
     expect(isPushActivity("ingredientes", "imported")).toBe(true)
-    // Desde docs/295 casi todo avisa: crear, editar, borrar, importar, exportar, OCR, entrar.
-    for (const [m, a] of [["ingredientes", "created"], ["recetas", "updated"], ["recetas", "deleted"], ["recetas", "migrated"], ["ocr", "read"], ["pdf", "exported"], ["ingredientes", "exported"], ["respaldo", "downloaded"], ["cuenta", "wiped"], ["recetas", "entered"], ["menus", "deleted"]])
+    // Desde docs/295 casi todo avisa: crear, editar, borrar, importar, exportar, OCR.
+    for (const [m, a] of [["ingredientes", "created"], ["recetas", "updated"], ["recetas", "deleted"], ["recetas", "migrated"], ["ocr", "read"], ["pdf", "exported"], ["ingredientes", "exported"], ["respaldo", "downloaded"], ["cuenta", "wiped"], ["menus", "deleted"], ["salon", "charged"], ["inventario", "created"], ["ordenes_compra", "created"]])
       expect(isPushActivity(m, a)).toBe(true)
+    // Desde docs/319 entrar a la app o a un módulo no avisa: solo lo que la persona crea o cambia.
+    for (const [m, a] of [["recetas", "entered"], ["mep", "entered"], ["salon", "entered"], ["dashboard", "entered"], ["app", "opened"]])
+      expect(isPushActivity(m, a)).toBe(false)
     // Lo que no es de la persona, o ya avisa por su cuenta, no.
     expect(isPushActivity("recetas", "nudge_shown")).toBe(false)
     expect(isPushActivity("negocios", "created")).toBe(false)
@@ -27,8 +30,11 @@ describe("avisos de actividad", () => {
     expect(text).toEqual({ title: "Ingredientes importados", body: "Ana · Dashboard personal · 120 elementos" })
   })
 
-  it("el ingreso a la app no lleva lugar", () => {
-    expect(activityPushText({ module: "app", action: "opened", who: "Ana" })).toEqual({ title: "Entró a la app", body: "Ana" })
+  it("el cuadre de caja y el cobro en el salón dicen lo que pasó", () => {
+    expect(activityPushText({ module: "estadisticas", action: "updated", who: "Ana", kind: "cash_up" }).title).toBe("Hizo el cuadre de caja")
+    expect(activityPushText({ module: "estadisticas", action: "deleted", who: "Ana", kind: "cash_up" }).title).toBe("Quitó un cuadre de caja")
+    expect(activityPushText({ module: "estadisticas", action: "updated", who: "Ana" }).title).toBe("Ventas corregidas")
+    expect(activityPushText({ module: "salon", action: "charged", who: "Ana", label: "$24.50", businessName: "La Terraza" })).toEqual({ title: "Cobró una cuenta en el salón", body: "Ana · $24.50 · La Terraza" })
   })
 
   it("reconoce al dueño sin importar mayúsculas", () => {
@@ -37,15 +43,13 @@ describe("avisos de actividad", () => {
     expect(isOwnerEmail("ana@correo.com", undefined)).toBe(false)
   })
 
-  it("dice qué fue: nombre, tipo de OCR y de PDF, módulo al que entró", () => {
+  it("dice qué fue: nombre, tipo de OCR y de PDF", () => {
     expect(activityPushText({ module: "recetas", action: "created", who: "Ana", label: "Lomo saltado", businessName: "La Terraza" })).toEqual({ title: "Receta creada", body: "Ana · Lomo saltado · La Terraza" })
     expect(activityPushText({ module: "ocr", action: "read", who: "Ana", kind: "receipt" })).toEqual({ title: "Leyó una factura con OCR", body: "Ana" })
     expect(activityPushText({ module: "pdf", action: "exported", who: "Ana", kind: "menu", label: "Carta de verano" }).title).toBe("Exportó un PDF: Menú")
-    expect(activityPushText({ module: "ficha_tecnica", action: "entered", who: "Ana" }).title).toBe("Entró a Ficha técnica")
   })
 
   it("lo que se repite tiene un tope más bajo que lo importante", () => {
-    expect(pushLimit("recetas", "entered")).toEqual({ max: 1, minutes: 60 })
     expect(pushLimit("recetas", "updated").max).toBeLessThan(pushLimit("recetas", "imported").max)
     expect(pushLimit("cuenta", "wiped").max).toBeGreaterThanOrEqual(5)
   })

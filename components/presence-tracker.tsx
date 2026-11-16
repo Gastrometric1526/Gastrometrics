@@ -4,22 +4,10 @@ import { useEffect } from "react"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
-import { notifyAdminActivity } from "@/lib/services/activity-log"
 
 const HEARTBEAT_INTERVAL_MS = 60_000
-// Cada cuánto cuenta como un ingreso nuevo para el aviso a /admin (docs/248).
-const APP_OPEN_GAP_MS = 6 * 60 * 60 * 1000
-
-function notifyAppOpen(userId: string) {
-  const key = `gm_app_open_${userId}`
-  try {
-    if (Date.now() - Number(localStorage.getItem(key) || 0) < APP_OPEN_GAP_MS) return
-    localStorage.setItem(key, String(Date.now()))
-  } catch {
-    return
-  }
-  notifyAdminActivity({ module: "app", action: "opened" })
-}
+// El aviso a /admin de «Entró a la app» (docs/248) se quitó en docs/319: ahora solo avisa
+// cuando alguien crea algo, no cuando entra.
 
 /**
  * Presencia real (ver supabase/migrations/0014_user_presence.sql y docs/70) — un
@@ -50,7 +38,6 @@ export function PresenceTracker() {
     }
 
     ping()
-    notifyAppOpen(user.id)
     const interval = setInterval(ping, HEARTBEAT_INTERVAL_MS)
     return () => clearInterval(interval)
   }, [isLoggedIn, user, pathname])

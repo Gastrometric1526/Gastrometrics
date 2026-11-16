@@ -12,25 +12,10 @@
  * (`nudge_*`), que son de la app y no de la persona.
  */
 
-/** Nombre de cada módulo, para «Entró a …». */
-const MODULE_NAMES: Record<string, string> = {
-  dashboard: "Dashboard",
-  ficha_tecnica: "Ficha técnica",
-  recetas: "Mis recetas",
-  ingredientes: "Ingredientes",
-  inventario: "Inventario",
-  equipo: "Equipo",
-  menus: "Menús",
-  mep: "MEP",
-  ordenes_compra: "Menú y compras",
-  estadisticas: "Estadísticas",
-  ventas: "Ventas",
-  salon: "Salón",
-  negocios: "Negocios",
-}
-
+// Desde docs/319 entrar a la app o a un módulo ya no avisa (pedido del dueño): «tiene que ser
+// cuando alguien crea lo que el módulo está diseñado a hacer». Entrar se sigue guardando en
+// activity_log para /admin (Radiografía, embudo), pero no manda push.
 const TITLES: Record<string, string> = {
-  "app:opened": "Entró a la app",
 
   // Recetas
   "recetas:created": "Receta creada",
@@ -67,6 +52,7 @@ const TITLES: Record<string, string> = {
   "estadisticas:imported": "Ventas importadas",
   "estadisticas:updated": "Ventas corregidas",
   "estadisticas:deleted": "Ventas borradas",
+  "salon:charged": "Cobró una cuenta en el salón",
 
   // Negocios y equipo (crear negocio e invitar ya avisan por su cuenta)
   "negocios:updated": "Negocio editado",
@@ -104,7 +90,6 @@ const PDF_KINDS: Record<string, string> = {
 
 function titleOf(module: string, action: string): string | undefined {
   // Object.hasOwn: «constructor» o «toString» no son módulos aunque existan en todo objeto.
-  if (action === "entered") return Object.hasOwn(MODULE_NAMES, module) ? `Entró a ${MODULE_NAMES[module]}` : undefined
   const key = `${module}:${action}`
   return Object.hasOwn(TITLES, key) ? TITLES[key] : undefined
 }
@@ -115,10 +100,9 @@ export function isPushActivity(module: string, action: string): boolean {
 
 /**
  * Cuántos avisos de cada tipo por persona (y por módulo) como máximo. Lo importante sale
- * siempre; lo que se repite mucho en una sesión (entrar a módulos, editar) se junta.
+ * siempre; lo que se repite mucho en una sesión (editar) se junta.
  */
 export function pushLimit(module: string, action: string): { max: number; minutes: number } {
-  if (module === "app" || action === "entered") return { max: 1, minutes: 60 }
   if (module === "cuenta" || module === "respaldo" || module === "manual" || action === "imported" || action === "migrated") return { max: 10, minutes: 10 }
   if (action === "updated") return { max: 3, minutes: 30 }
   return { max: 5, minutes: 10 }
@@ -139,8 +123,10 @@ export function activityPushText(input: {
   let title = titleOf(input.module, input.action) ?? "Actividad"
   if (input.module === "ocr" && input.kind && OCR_KINDS[input.kind]) title = `Leyó una ${OCR_KINDS[input.kind]} con OCR`
   if (input.module === "pdf" && input.kind && PDF_KINDS[input.kind]) title = `Exportó un PDF: ${PDF_KINDS[input.kind]}`
+  // El cuadre de caja se guarda como una edición de las ventas del día (docs/319).
+  if (input.module === "estadisticas" && input.kind === "cash_up") title = input.action === "deleted" ? "Quitó un cuadre de caja" : "Hizo el cuadre de caja"
   // Sin negocio: la app, la cuenta, el OCR y las descargas no son de un negocio.
-  const accountWide = ["app", "cuenta", "respaldo", "manual", "ocr"].includes(input.module)
+  const accountWide = ["cuenta", "respaldo", "manual", "ocr"].includes(input.module)
   const place = accountWide ? null : input.businessName || "Dashboard personal"
   const amount = input.count && input.count > 1 ? `${input.count} elementos` : null
   const label = input.label?.trim() ? input.label.trim().slice(0, 80) : null
