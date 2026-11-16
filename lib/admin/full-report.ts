@@ -29,6 +29,8 @@ export const REPORT_SECTIONS: ReportSection[] = [
   { id: "activation", titleKey: "admin_report_sec_activation", url: "/api/admin/activation" },
   { id: "analytics", titleKey: "admin_report_sec_analytics", url: "/api/admin/analytics" },
   { id: "business-health", titleKey: "admin_report_sec_business_health", url: "/api/admin/business-health" },
+  // Tipo de plato y alérgenos de toda la app (docs/325).
+  { id: "dish-types", titleKey: "admin_report_sec_dish_types", url: "/api/admin/dish-types" },
   { id: "ocr", titleKey: "admin_report_sec_ocr", url: "/api/admin/ocr-usage" },
   { id: "usage-events", titleKey: "admin_report_sec_usage_events", url: "/api/admin/usage-events" },
   { id: "email-clicks", titleKey: "admin_report_sec_email_clicks", url: "/api/admin/email-clicks" },

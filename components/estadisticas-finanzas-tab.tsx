@@ -77,6 +77,7 @@ import { valueInventory } from "@/lib/inventory-valuation"
 import { useValuationMethod } from "@/lib/inventory-valuation-setting"
 import { buildPackageContentLookup } from "@/lib/inventory-value"
 import { useRouter } from "next/navigation"
+import { DishTypeSalesCard } from "@/components/dish-type-sales-card"
 
 export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) {
   // Turnos del horario del personal (docs/323): con turnos en el período, el personal sale de ahí.
@@ -782,6 +783,9 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
               </div>
             </CardContent>
           </Card>
+
+          {/* Ventas por tipo de plato (docs/325): mismos platos que el Menu Engineering. */}
+          <DishTypeSalesCard dishes={dishPerformance} recipes={recipes} ingredients={ingredients} />
 
           {/* Tabla detallada por plato */}
           <Card className="border-border bg-card">

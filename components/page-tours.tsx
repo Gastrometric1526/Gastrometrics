@@ -358,6 +358,13 @@ export function EstadisticasTour({
             description: t("tour_stats_finanzas_sales_desc"),
             selector: '[data-tour="ventas-tables-card"]',
           } as TourStep,
+          // docs/325: ventas por tipo de plato (res, cerdo, vegetariano…).
+          {
+            id: "finanzas-dish-types",
+            title: t("tour_fin_dish_types_title"),
+            description: t("tour_fin_dish_types_desc"),
+            selector: '[data-tour="finanzas-dish-types"]',
+          } as TourStep,
           // docs/322: Planear (pronóstico y presupuesto) y Personal (solo en un negocio).
           {
             id: "plan",

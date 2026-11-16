@@ -240,12 +240,12 @@ export function SupportInbox({ onWaitingChange }: { onWaitingChange?: (n: number
       {/* Hilo */}
       <div className={cn("flex min-h-0 flex-col", !selected && "hidden md:flex")}>
         {!current ? (
-          <p className="m-auto p-6 text-sm text-muted-foreground">{t("admin_support_pick")}</p>
+          <p className="m-auto p-4 text-sm sm:p-6 text-muted-foreground">{t("admin_support_pick")}</p>
         ) : (
           <>
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2.5">
               <div className="flex min-w-0 items-center gap-2">
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 md:hidden" onClick={() => setSelected(null)} aria-label={t("admin_support_back")}>
+                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 md:hidden" onClick={() => setSelected(null)} aria-label={t("admin_support_back")}>
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <div className="min-w-0">
@@ -258,11 +258,11 @@ export function SupportInbox({ onWaitingChange }: { onWaitingChange?: (n: number
               </div>
               <div className="flex gap-1">
                 {current.status !== "closed" ? (
-                  <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setStatus("closed")}>
+                  <Button variant="outline" size="sm" className="h-9 text-xs" onClick={() => setStatus("closed")}>
                     {t("admin_support_close")}
                   </Button>
                 ) : (
-                  <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setStatus("waiting")}>
+                  <Button variant="outline" size="sm" className="h-9 text-xs" onClick={() => setStatus("waiting")}>
                     {t("admin_support_reopen")}
                   </Button>
                 )}
@@ -306,11 +306,11 @@ export function SupportInbox({ onWaitingChange }: { onWaitingChange?: (n: number
               <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={t("admin_support_reply_placeholder")} aria-label={t("admin_support_reply_placeholder")} rows={3} className="resize-none text-sm" />
               <div className="flex items-center justify-between">
                 <input ref={fileInput} type="file" accept={ATTACHMENT_ACCEPT} multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
-                <Button type="button" variant="ghost" size="sm" className="h-8 gap-1 px-2 text-xs" onClick={() => fileInput.current?.click()}>
+                <Button type="button" variant="ghost" size="sm" className="h-9 gap-1 px-2 text-xs" onClick={() => fileInput.current?.click()}>
                   <Paperclip className="h-4 w-4" />
                   {t("support_attach")}
                 </Button>
-                <Button type="button" size="sm" className="h-8 gap-1" onClick={reply} disabled={sending || (!draft.trim() && !files.length)}>
+                <Button type="button" size="sm" className="h-9 gap-1" onClick={reply} disabled={sending || (!draft.trim() && !files.length)}>
                   {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   {t("admin_support_reply")}
                 </Button>

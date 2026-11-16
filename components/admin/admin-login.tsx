@@ -284,7 +284,7 @@ export function AdminLogin({ info, onUnlocked }: { info: AdminSessionInfo | null
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <Label htmlFor="admin-password">{t("admin_login_password_label")}</Label>
-                      <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-foreground">
+                      <Link href="/forgot-password" className="inline-flex min-h-[36px] items-center text-xs text-muted-foreground hover:text-foreground">
                         {t("admin_login_forgot")}
                       </Link>
                     </div>

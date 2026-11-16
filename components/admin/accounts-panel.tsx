@@ -860,20 +860,20 @@ export function AccountsPanel() {
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="text-xs text-muted-foreground mr-1">{t("admin_accounts_expires_quick_label")}</span>
-                    <Button type="button" size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setExpiresInDays(7)}>
+                    <Button type="button" size="sm" variant="outline" className="h-9 px-3 text-xs" onClick={() => setExpiresInDays(7)}>
                       {t("admin_accounts_expires_7d")}
                     </Button>
-                    <Button type="button" size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setExpiresInDays(30)}>
+                    <Button type="button" size="sm" variant="outline" className="h-9 px-3 text-xs" onClick={() => setExpiresInDays(30)}>
                       {t("admin_accounts_expires_30d")}
                     </Button>
-                    <Button type="button" size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setExpiresInDays(90)}>
+                    <Button type="button" size="sm" variant="outline" className="h-9 px-3 text-xs" onClick={() => setExpiresInDays(90)}>
                       {t("admin_accounts_expires_90d")}
                     </Button>
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
-                      className="h-7 px-2 text-xs"
+                      className="h-9 px-3 text-xs"
                       onClick={() => setExpiresAtInput("")}
                       disabled={!expiresAtInput}
                     >

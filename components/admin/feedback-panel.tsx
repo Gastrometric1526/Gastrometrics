@@ -259,12 +259,12 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
                     </div>
                     <div className="flex items-center gap-1">
                       {view === "bandeja" ? (
-                        <Button variant="outline" size="sm" className="h-8 text-xs" disabled={archiving} onClick={() => setArchivedFor([item.id], true)}>
+                        <Button variant="outline" size="sm" className="h-9 text-xs" disabled={archiving} onClick={() => setArchivedFor([item.id], true)}>
                           <Archive className="h-3.5 w-3.5 mr-1" />
                           {item.type === "experiencia" ? t("admin_move_to_reviews") : t("admin_archive")}
                         </Button>
                       ) : (
-                        <Button variant="outline" size="sm" className="h-8 text-xs" disabled={archiving} onClick={() => setArchivedFor([item.id], false)}>
+                        <Button variant="outline" size="sm" className="h-9 text-xs" disabled={archiving} onClick={() => setArchivedFor([item.id], false)}>
                           <ArchiveRestore className="h-3.5 w-3.5 mr-1" />
                           {t("admin_unarchive")}
                         </Button>
@@ -294,7 +294,7 @@ export function FeedbackPanel({ onCountsChange }: { onCountsChange?: (counts: { 
                       {item.page ? ` · ${item.page}` : ""}
                     </span>
                     <Select value={item.status} onValueChange={(v) => handleStatusChange(item.id, v as FeedbackStatus)}>
-                      <SelectTrigger className="w-32 h-8 text-xs">
+                      <SelectTrigger className="w-32 h-9 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

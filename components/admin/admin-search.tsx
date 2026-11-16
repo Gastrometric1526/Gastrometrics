@@ -91,7 +91,7 @@ export function AdminSearch({
         aria-label={t("admin_search_placeholder")}
         className="h-10 pl-9 pr-14"
       />
-      <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-muted px-1.5 text-[10px] text-muted-foreground sm:block">Ctrl K</kbd>
+      <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-muted px-1.5 text-xs text-muted-foreground sm:block">Ctrl K</kbd>
       {open && q.trim().length > 1 && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
           {results.length === 0 ? (
@@ -112,7 +112,7 @@ export function AdminSearch({
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">
                           <span className="truncate text-sm font-medium text-foreground">{r.title}</span>
-                          <span className="shrink-0 rounded bg-muted px-1.5 text-[11px] text-muted-foreground">
+                          <span className="shrink-0 rounded bg-muted px-1.5 text-xs text-muted-foreground">
                             {r.kind === "task" ? t("admin_search_kind_task") : t("admin_search_kind_section")}
                           </span>
                         </span>

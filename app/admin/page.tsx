@@ -435,7 +435,7 @@ function TaskBanner({ task, onClose }: { task: AdminTask; onClose: () => void })
             ))}
           </ol>
         </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onClose} aria-label={t("common_close")}>
+        <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={onClose} aria-label={t("common_close")}>
           <X className="h-4 w-4" />
         </Button>
       </div>

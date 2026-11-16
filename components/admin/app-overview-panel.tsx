@@ -13,6 +13,7 @@ import { AdminCard, BarList, ErrorState, KpiCard, KpiGrid, LoadingBlock, useAdmi
 import { getPlanBySlug } from "@/lib/plans"
 import { formatDateTime } from "@/lib/date-format"
 import type { AppOverview } from "@/lib/admin/app-overview"
+import { DishOverviewPanel } from "@/components/admin/dish-overview-panel"
 
 export function AppOverviewPanel() {
   const { t } = useLanguage()
@@ -90,6 +91,8 @@ export function AppOverviewPanel() {
           <BarList rows={data.businessTypes.map((b) => ({ key: b.key, label: b.key, value: b.count }))} />
         </AdminCard>
       </div>
+      {/* Tipo de plato y alérgenos (docs/325). */}
+      <DishOverviewPanel />
       <p className="text-xs text-muted-foreground">{t("admin_app_read_at").replace("{date}", formatDateTime(data.readAt))}</p>
     </div>
   )

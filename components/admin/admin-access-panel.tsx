@@ -117,10 +117,10 @@ export function AdminAccessPanel() {
                   <div className="min-w-0 flex-1 space-y-1">
                     <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-foreground">
                       <span className="truncate">{m.email}</span>
-                      {isMe && <span className="rounded-full bg-muted px-2 text-[11px] text-muted-foreground">{t("admin_access_you")}</span>}
+                      {isMe && <span className="rounded-full bg-muted px-2 text-xs text-muted-foreground">{t("admin_access_you")}</span>}
                       {/* Cuenta del negocio: nunca se quita (docs/290). */}
                       {isPermanentAdmin(m.email) && (
-                        <span title={t("admin_access_permanent_desc")} className="rounded-full bg-primary/10 px-2 text-[11px] text-primary">
+                        <span title={t("admin_access_permanent_desc")} className="rounded-full bg-primary/10 px-2 text-xs text-primary">
                           {t("admin_access_permanent")}
                         </span>
                       )}

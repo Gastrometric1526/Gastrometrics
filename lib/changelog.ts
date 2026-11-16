@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Ventas por tipo de plato en Reportes (docs/325).
+    version: "2026-11-16g",
+    tutorialHref: tourHref("estadisticas"),
+    content: {
+      es: { title: "Ventas por tipo de plato", items: ["Reportes → Finanzas: la tarjeta «Ventas por tipo de plato» muestra cuánto vendes de platos con res, cerdo, pollo, pescado o mariscos, y de vegetarianos, veganos y sin gluten, con qué parte de tu venta es cada uno.", "Usa los mismos platos que el Menu Engineering y el tipo sale de los ingredientes de cada receta. El «?» muestra el cálculo con tus cifras."] },
+      en: { title: "Sales by dish type", items: ["Reports → Finance: the “Sales by dish type” card shows how much you sell of dishes with beef, pork, chicken, fish or seafood, and of vegetarian, vegan and gluten-free dishes, with each one’s share of your sales.", "It uses the same dishes as Menu Engineering, and the type comes from each recipe’s ingredients. The “?” shows the calculation with your figures."] },
+      da: { title: "Salg efter rettype", items: ["Rapporter → Økonomi: kortet »Salg efter rettype« viser, hvor meget du sælger af retter med okse, svin, kylling, fisk eller skaldyr, og af vegetariske, veganske og glutenfri retter, med hver types andel af salget.", "Det bruger de samme retter som Menu Engineering, og typen kommer fra hver opskrifts ingredienser. »?« viser beregningen med dine tal."] },
+      fr: { title: "Ventes par type de plat", items: ["Rapports → Finances : la carte « Ventes par type de plat » montre ce que vous vendez en plats avec bœuf, porc, poulet, poisson ou fruits de mer, et en plats végétariens, végétaliens et sans gluten, avec la part de chacun dans vos ventes.", "Elle utilise les mêmes plats que le Menu Engineering et le type vient des ingrédients de chaque recette. Le « ? » montre le calcul avec vos chiffres."] },
+      pt: { title: "Vendas por tipo de prato", items: ["Relatórios → Finanças: o cartão “Vendas por tipo de prato” mostra quanto você vende de pratos com carne bovina, porco, frango, peixe ou frutos do mar, e de vegetarianos, veganos e sem glúten, com a parte de cada um na sua venda.", "Usa os mesmos pratos do Menu Engineering e o tipo vem dos ingredientes de cada receita. O “?” mostra o cálculo com seus números."] },
+      zh: { title: "按菜品类型的销售", items: ["报表 → 财务：“按菜品类型的销售”卡片显示含牛肉、猪肉、鸡肉、鱼或海鲜的菜品，以及素食、纯素和无麸质菜品的销售额及其占比。", "使用与菜单工程相同的菜品，类型来自每个配方的食材。“?”会用你的数据说明计算方式。"] },
+    },
+  },
+  {
     // Alérgenos sugeridos, tipo de plato, íconos propios e historial de horarios (docs/324).
     version: "2026-11-16f",
     tutorialHref: tourHref("ficha-tecnica"),

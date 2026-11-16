@@ -13,6 +13,8 @@ import { computeCOGS, computePrimeCost, buildSimplifiedPnL, computeInventoryTurn
 import { recipePdfFigures } from "./pdf/recipe-pdf-generator"
 import { getMenuUnitPriceAndCost } from "./menus"
 import { effectiveStockStatus } from "./inventory-status"
+import { salesByDishType } from "./dish-type-sales"
+import { dishLabels } from "./diet"
 import type { Recipe } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 import type { InventoryItem, InventorySnapshot } from "@/types/inventory"
@@ -152,5 +154,24 @@ describe("6. Menú", () => {
     delete (b as Partial<Recipe>).costPerServing
     const menu = { items: [{ recipeId: "a", enabled: true }, { recipeId: "b", enabled: true }, { recipeId: "a", enabled: false }] } as unknown as Menu
     expect(getMenuUnitPriceAndCost(menu, [a, b])).toEqual({ price: 150, cost: 40 })
+  })
+})
+
+// docs/325: ventas por tipo de plato. A mano: res 100 neto (115 − ISV 15) y ensalada 60 →
+// base 160; res = 100 ÷ 160 = 62.5 %, vegetariano = 60 ÷ 160 = 37.5 %.
+describe("golden: ventas por tipo de plato (docs/325)", () => {
+  it("parte de la venta neta de cada tipo", () => {
+    const ings = [{ id: "l", name: "Lomo", category: "RES" }, { id: "t", name: "Tomate", category: "FRUTA" }] as unknown as Ingredient[]
+    const recs = [
+      { id: "bistec", ingredients: [{ ingredientId: "l", quantity: 1 }] },
+      { id: "ensalada", ingredients: [{ ingredientId: "t", quantity: 1 }] },
+    ] as unknown as Recipe[]
+    const labels = new Map(recs.map((r) => [r.id, dishLabels(r, ings, recs)]))
+    const d = (recipeId: string, revenue: number, tax: number) =>
+      ({ recipeId, name: recipeId, quantitySold: 1, revenue, tax, theoreticalCost: 0, contributionMargin: 0, contributionMarginPercent: 0, unitPrice: 0, unitCost: 0, linked: true }) as never
+    const out = salesByDishType([d("bistec", 115, 15), d("ensalada", 60, 0)], labels)
+    expect(out.recipeNet).toBe(160)
+    expect(out.rows.find((r) => r.key === "beef")?.share).toBe(62.5)
+    expect(out.rows.find((r) => r.key === "vegetarian")?.share).toBe(37.5)
   })
 })

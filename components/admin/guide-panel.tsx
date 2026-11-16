@@ -89,7 +89,7 @@ export function GuidePanel({ onGo, onTask, onStartTour }: { onGo: (tab: AdminTab
             const Icon = SPACE_ICONS[space.id]
             return (
               <Card key={space.id}>
-                <CardContent className="space-y-3 p-6">
+                <CardContent className="space-y-3 p-4 sm:p-6">
                   <p className="flex items-center gap-2 text-base font-semibold text-foreground">
                     <Icon className="h-5 w-5 text-primary" />
                     {t(space.label)}
