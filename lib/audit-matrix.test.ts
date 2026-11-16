@@ -11,6 +11,7 @@
  * Si una fila falla, la corrección rompió un número que ya estaba bien (o al revés): la
  * matriz se actualiza solo si el dueño cambia la regla, nunca para que la prueba pase.
  */
+import { computeYieldTest } from "./yield-test"
 import { describe, expect, it } from "vitest"
 import { usableContentAfterMerma } from "./merma-categories"
 import { foodCostBasePrice, coverCommission, taxIncludedIn } from "./food-cost-pricing"
@@ -440,5 +441,66 @@ describe("G. Menús con elecciones y punto de equilibrio", () => {
     expect(r?.units).toBeCloseTo(1200, 9)
     expect(r?.netRevenue).toBeCloseTo(15000, 9)
     expect(r?.covers).toBeCloseTo(600, 9)
+  })
+})
+
+describe("H. Recepción revisada y devoluciones (docs/322)", () => {
+  // Orden de 805 (700 + 15 %): llegaron 8 de 10 kg de tomate a 30 y 5 kg de pollo a 85 (pedido a 80).
+  const po = {
+    id: "OC-H",
+    name: "H",
+    number: 1,
+    date: "2026-10-05",
+    recipes: [],
+    items: [
+      { id: "a", name: "Tomate", totalQuantity: 10, unit: "kilogramos", costPerUnit: 30, purchaseCost: 300, quantityToBuy: 10, supplier: "" },
+      { id: "b", name: "Pollo", totalQuantity: 5, unit: "kilogramos", costPerUnit: 80, purchaseCost: 400, quantityToBuy: 5, supplier: "" },
+    ],
+    subtotal: 700,
+    tax: 105,
+    total: 805,
+    status: "received" as const,
+    receivedAt: "2026-10-05T12:00:00Z",
+    receipt: { at: "2026-10-05T12:00:00Z", lines: [{ key: "a", quantity: 8, unitCost: 30 }, { key: "b", quantity: 5, unitCost: 85 }] },
+    returns: [{ id: "D", at: "2026-10-20T12:00:00Z", reason: "damaged" as const, lines: [{ key: "b", quantity: 1, unitCost: 85 }] }],
+  }
+  const flatSnap = (d: string) => ({ id: d, date: d, items: [], totalValue: 0 }) as never
+  it("H-01 · Lo recibido: (8 × 30 + 5 × 85) × 1.15 = 764.75 (no 805)", () => {
+    const r = computeCOGS({ snapshots: [flatSnap("2026-10-01"), flatSnap("2026-10-31")], purchaseOrders: [{ ...po, returns: [] }], periodStart: "2026-10-01", periodEnd: "2026-10-31", currentInventoryValue: 0 })
+    expect(r.purchasesValue).toBeCloseTo(764.75, 9)
+  })
+  it("H-02 · Devolución de 1 kg de pollo: 85 × 1.15 = 97.75; compras 764.75 − 97.75 = 667", () => {
+    const r = computeCOGS({ snapshots: [flatSnap("2026-10-01"), flatSnap("2026-10-31")], purchaseOrders: [po], periodStart: "2026-10-01", periodEnd: "2026-10-31", currentInventoryValue: 0 })
+    expect(r.grossPurchasesValue).toBeCloseTo(764.75, 9)
+    expect(r.returnsValue).toBeCloseTo(97.75, 9)
+    expect(r.purchasesValue).toBeCloseTo(667, 9)
+  })
+  it("H-03 · La devolución cuenta en el mes en que se hizo, no en el de la compra", () => {
+    const r = computeCOGS({ snapshots: [flatSnap("2026-11-01"), flatSnap("2026-11-30")], purchaseOrders: [{ ...po, returns: [{ ...po.returns[0], at: "2026-11-03T12:00:00Z" }] }], periodStart: "2026-11-01", periodEnd: "2026-11-30", currentInventoryValue: 0 })
+    expect(r.returnsValue).toBeCloseTo(97.75, 9)
+    expect(r.purchasesValue).toBe(0) // no hay compras en noviembre; nunca negativo
+  })
+})
+
+describe("I. Prueba de rendimiento por cortes (docs/322)", () => {
+  it("I-01 · Lomo de 5 kg a 1 000: 3.5 kg útil, 1 kg desecho, 0.5 sin pesar → 70 %; 285.71 por kg útil; merma 30 %", () => {
+    const r = computeYieldTest({ grossWeight: 5, pricePaid: 1000, parts: [{ name: "Lomo limpio", weight: 3.5, kind: "usable" }, { name: "Grasa", weight: 1, kind: "waste" }] })
+    expect(r.yieldPercent).toBe(70)
+    expect(r.unweighed).toBe(0.5)
+    expect(r.wasteWeight).toBe(1.5)
+    expect(r.costPerUsableUnit).toBeCloseTo(285.7143, 4) // 1 000 ÷ 3.5
+    expect(r.mermaPercent).toBe(30)
+  })
+  it("I-02 · Con 1 kg de hueso que vale 50: (1 000 − 50) ÷ 3.5 = 271.43; merma = 1 − 1 000 ÷ (271.43 × 5) = 26.32 %", () => {
+    const r = computeYieldTest({ grossWeight: 5, pricePaid: 1000, parts: [{ name: "Lomo", weight: 3.5, kind: "usable" }, { name: "Hueso", weight: 1, kind: "byproduct", valuePerUnit: 50 }, { name: "Grasa", weight: 0.5, kind: "waste" }] })
+    expect(r.byproductValue).toBe(50)
+    expect(r.costPerUsableUnit).toBeCloseTo(271.4286, 4)
+    expect(r.mermaPercent).toBeCloseTo(26.32, 2)
+    // La merma da el mismo costo en las recetas: 1 000 ÷ (5 × (1 − 0.2632)) ≈ 271.43
+    expect(1000 / (5 * (1 - r.mermaPercent! / 100))).toBeCloseTo(271.43, 1)
+  })
+  it("I-03 · Sin parte útil no hay costo ni merma; partes de más se avisan", () => {
+    expect(computeYieldTest({ grossWeight: 5, pricePaid: 1000, parts: [{ name: "x", weight: 5, kind: "waste" }] }).mermaPercent).toBeNull()
+    expect(computeYieldTest({ grossWeight: 5, pricePaid: 1000, parts: [{ name: "x", weight: 6, kind: "usable" }] }).partsExceedGross).toBe(true)
   })
 })

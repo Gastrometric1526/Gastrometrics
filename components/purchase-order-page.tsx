@@ -47,7 +47,13 @@ import { downloadPurchaseOrderPDF, generatePurchaseOrderPDF, generatePurchaseOrd
 import { ShareDocumentMenu } from "@/components/share-document-menu"
 import { DetailPanel, openOnActivate } from "@/components/detail-panel"
 import { ActionHint } from "@/components/action-hint"
-import { Edit, Copy, Trash2 } from "lucide-react"
+import { Edit, Copy, Trash2, PackageCheck, Undo2 } from "lucide-react"
+import { PurchaseReceiveDialog } from "@/components/purchase-receive-dialog"
+import { PurchaseReturnDialog } from "@/components/purchase-return-dialog"
+import { PurchaseReceiptSummary } from "@/components/purchase-receipt-summary"
+import { receiptLines, receiptSummary, returnValue } from "@/lib/purchase-receipt"
+import { returnToSupplierFromInventory } from "@/lib/storage/inventory"
+import type { PurchaseReceipt, PurchaseReturn } from "@/types/purchase-order"
 import { purchaseOrderShareText } from "@/lib/share-text"
 import { Download } from "lucide-react"
 import { hasFeatureAccess, useFeatureAccess } from "@/lib/plan-access"
@@ -493,6 +499,57 @@ export function PurchaseOrderPage() {
   const [orderPendingDelete, setOrderPendingDelete] = useState<string | null>(null)
   // Panel de acciones de una orden (docs/219): tocar la fila lo abre.
   const [detailOrder, setDetailOrder] = useState<PurchaseOrder | null>(null)
+  // Recibir revisando y devolver al proveedor (docs/322).
+  const [receiveOrder, setReceiveOrder] = useState<PurchaseOrder | null>(null)
+  const [returnOrder, setReturnOrder] = useState<PurchaseOrder | null>(null)
+
+  const persistOrder = (updated: PurchaseOrder) => {
+    if (!businessId) return
+    const next = orders.map((o) => (o.id === updated.id ? updated : o))
+    savePurchaseOrders(businessId, next)
+    setOrders(next)
+    setDetailOrder((d) => (d && d.id === updated.id ? updated : d))
+  }
+
+  const handleReceiveConfirm = async (receipt: PurchaseReceipt) => {
+    if (!businessId || !receiveOrder) return
+    const updated: PurchaseOrder = { ...receiveOrder, status: "received", receivedAt: receiveOrder.receivedAt || receipt.at, receipt }
+    persistOrder(updated)
+    setReceiveOrder(null)
+    if (user) logActivity({ user, businessId: businessId !== "main" ? businessId : null, module: "ordenes_compra", action: "updated", entityLabel: updated.name })
+    const lines = receiptLines(updated).filter((l) => l.receivedQuantity > 0)
+    const { matchedCount, unmatchedNames } = await receivePurchaseOrderIntoInventory(
+      lines.map((l) => ({ ingredientId: l.ingredientId, name: l.name, quantity: l.receivedQuantity, unitCost: l.invoicedUnitCost })),
+      businessId,
+    )
+    const diff = receiptSummary(updated).differenceTotal
+    toast({
+      title: t("receive_toast_title"),
+      description: diff === 0 ? t("receive_toast_same") : t("receive_toast_diff").replace("{amount}", formatCurrency(diff)),
+    })
+    if (unmatchedNames.length > 0) {
+      toast({ title: t("ordenes_toast_stock_unmatched_title"), description: t("ordenes_toast_stock_unmatched_desc").replace("{names}", unmatchedNames.join(", ")) })
+    }
+    if (matchedCount > 0) setInventoryItems(getInventory(businessId))
+  }
+
+  const handleReturnConfirm = async (ret: PurchaseReturn) => {
+    if (!businessId || !returnOrder) return
+    const updated: PurchaseOrder = { ...returnOrder, returns: [...(returnOrder.returns ?? []), ret] }
+    persistOrder(updated)
+    setReturnOrder(null)
+    if (user) logActivity({ user, businessId: businessId !== "main" ? businessId : null, module: "ordenes_compra", action: "updated", entityLabel: updated.name })
+    const byKey = new Map(receiptLines(updated).map((l) => [l.key, l]))
+    const { matchedCount, unmatchedNames } = await returnToSupplierFromInventory(
+      ret.lines.map((l) => ({ ingredientId: byKey.get(l.key)?.ingredientId, name: byKey.get(l.key)?.name || "", quantity: l.quantity })),
+      businessId,
+    )
+    toast({ title: t("return_toast_title"), description: t("return_toast_desc").replace("{amount}", formatCurrency(returnValue(updated, ret).total)) })
+    if (unmatchedNames.length > 0) {
+      toast({ title: t("ordenes_toast_stock_unmatched_title"), description: t("ordenes_toast_stock_unmatched_desc").replace("{names}", unmatchedNames.join(", ")) })
+    }
+    if (matchedCount > 0) setInventoryItems(getInventory(businessId))
+  }
 
   const handleDeleteOrder = (orderId: string) => {
     setOrderPendingDelete(orderId)
@@ -663,6 +720,9 @@ export function PurchaseOrderPage() {
       // Una orden recibida antes de este campo lo sigue sin tener (cuenta por su fecha).
       ...(isNowReceived && !wasAlreadyReceived ? { receivedAt: new Date().toISOString() } : {}),
       ...(isNowReceived && wasAlreadyReceived && editingOrder?.receivedAt ? { receivedAt: editingOrder.receivedAt } : {}),
+      // docs/322: editar no borra lo revisado al recibir ni las devoluciones.
+      ...(isNowReceived && editingOrder?.receipt ? { receipt: editingOrder.receipt } : {}),
+      ...(editingOrder?.returns?.length ? { returns: editingOrder.returns } : {}),
     }
 
     const updatedOrders = editingOrder
@@ -983,7 +1043,13 @@ export function PurchaseOrderPage() {
               ...(detailOrder.supplier ? [{ label: t("panel_supplier"), value: detailOrder.supplier }] : []),
             ]}
             actions={[
-              { key: "edit", label: t("ordenes_edit_button"), icon: Edit, primary: true, onClick: () => handleEditOrder(detailOrder) },
+              ...((detailOrder.status || "pending") !== "received" && detailOrder.status !== "cancelled"
+                ? [{ key: "receive", label: t("receive_action"), icon: PackageCheck, primary: true, onClick: () => setReceiveOrder(detailOrder) }]
+                : []),
+              { key: "edit", label: t("ordenes_edit_button"), icon: Edit, primary: detailOrder.status === "received" || detailOrder.status === "cancelled", onClick: () => handleEditOrder(detailOrder) },
+              ...(detailOrder.status === "received"
+                ? [{ key: "return", label: t("return_action"), icon: Undo2, onClick: () => setReturnOrder(detailOrder) }]
+                : []),
               ...(canExportOrderPdf !== false
                 ? [{ key: "pdf", label: t("ordenes_pdf_button"), icon: Download, onClick: () => handleDownloadOrderPDF(detailOrder) }]
                 : []),
@@ -1023,8 +1089,12 @@ export function PurchaseOrderPage() {
               />
             }
             danger={{ key: "delete", label: t("ordenes_delete_button"), icon: Trash2, onClick: () => handleDeleteOrder(detailOrder.id) }}
-          />
+          >
+            <PurchaseReceiptSummary order={detailOrder} />
+          </DetailPanel>
         )}
+        <PurchaseReceiveDialog order={receiveOrder} open={!!receiveOrder} onOpenChange={(o) => !o && setReceiveOrder(null)} onConfirm={handleReceiveConfirm} />
+        <PurchaseReturnDialog order={returnOrder} open={!!returnOrder} onOpenChange={(o) => !o && setReturnOrder(null)} onConfirm={handleReturnConfirm} />
         <ActionHint
           id="orders-receive"
           when={!detailOrder && orders.some((o) => (o.status || "pending") !== "received" && o.status !== "cancelled")}

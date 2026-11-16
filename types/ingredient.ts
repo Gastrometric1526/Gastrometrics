@@ -171,4 +171,11 @@ export interface Ingredient {
   bottleWeights?: { fullG: number; emptyG: number }
   // Alérgenos que contiene (claves de lib/allergens.ts, docs/137). Las recetas los heredan.
   allergens?: string[]
+  // Última prueba de rendimiento por cortes (docs/322, lib/yield-test.ts); de ella sale la merma.
+  yieldTest?: {
+    at: string
+    grossWeight: number
+    pricePaid: number
+    parts: { name: string; weight: number; kind: "usable" | "byproduct" | "waste"; valuePerUnit?: number }[]
+  }
 }

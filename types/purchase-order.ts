@@ -45,6 +45,31 @@ export interface PurchaseOrder {
    * al costo real (COGS) de Finanzas. Las órdenes recibidas antes de este campo usan `date`.
    */
   receivedAt?: string
+  /**
+   * Recepción con revisión (docs/322): lo que llegó de verdad y a qué precio lo cobró el
+   * proveedor, por línea (`key` = `lineKey`, lib/purchase-receipt.ts). Sin este campo, una orden
+   * recibida cuenta tal como se pidió (órdenes de antes o marcadas «Recibida» en el formulario).
+   */
+  receipt?: PurchaseReceipt
+  /** Devoluciones al proveedor (docs/322), la más reciente al final. */
+  returns?: PurchaseReturn[]
+}
+
+export interface PurchaseReceipt {
+  at: string
+  invoiceNumber?: string
+  lines: { key: string; quantity: number; unitCost: number }[]
+}
+
+export type PurchaseReturnReason = "damaged" | "expired" | "wrong_item" | "excess" | "quality" | "other"
+
+export interface PurchaseReturn {
+  id: string
+  at: string
+  reason: PurchaseReturnReason
+  note?: string
+  /** Precio unitario = el de la factura de esa línea (lo que se pagó). */
+  lines: { key: string; quantity: number; unitCost: number }[]
 }
 
 // New types for PDF processing

@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { AlertTriangle, RefreshCw, Info, Lock } from "lucide-react"
+import { AlertTriangle, RefreshCw, Info, Lock, Scissors } from "lucide-react"
+import { YieldTestDialog } from "@/components/yield-test-dialog"
 import { useFeatureAccess } from "@/lib/plan-access"
 import { getCategoryMermaPercentage, calculateCategoryMerma, getMermaLevel } from "@/lib/merma-categories"
 import { MermaInfoDialog } from "./merma-info-dialog"
@@ -59,6 +60,7 @@ export function MermaManagementDialog({
   const [mermaSystemActive, setMermaSystemActive] = useState(false)
   const [isApplying, setIsApplying] = useState(false)
   const [showInfoDialog, setShowInfoDialog] = useState(false)
+  const [yieldTestFor, setYieldTestFor] = useState<Ingredient | null>(null)
   // Recetas que cambian de costo con la merma nueva: se muestran antes de guardar (docs/228).
   const [recalcPreview, setRecalcPreview] = useState<RecalculationResult | null>(null)
   const [originalValues, setOriginalValues] = useState<{ [key: string]: { netContent: number; pricePerUnit: number } }>(
@@ -403,6 +405,16 @@ export function MermaManagementDialog({
     )
   }
 
+  // Prueba de rendimiento (docs/322): la merma que sale de la prueba se pone como merma
+  // personalizada en %, y la prueba queda guardada en el ingrediente para revisarla después.
+  const applyYieldTest = (mermaPercent: number, test: NonNullable<Ingredient["yieldTest"]>) => {
+    if (!yieldTestFor) return
+    const id = yieldTestFor.id
+    setIngredients((prev) => prev.map((ing) => (ing.id === id && ing.merma ? { ...ing, yieldTest: test, merma: { ...ing.merma, customType: "percentage" as const, customValue: 0 } } : ing)))
+    updateMermaValue(id, mermaPercent)
+    setYieldTestFor(null)
+  }
+
   return (
     <>
       <Dialog open={open} onOpenChange={handleClose}>
@@ -563,6 +575,20 @@ export function MermaManagementDialog({
                                   min="0"
                                   step={ingredient.merma?.customType === "percentage" ? "0.1" : "1"}
                                 />
+                                {/* Prueba de rendimiento por cortes (docs/322): calcula la merma pesando cada parte. */}
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 shrink-0"
+                                  onClick={() => setYieldTestFor(ingredient)}
+                                  disabled={!mermaSystemActive || !canCustom}
+                                  aria-label={t("yield_test_open")}
+                                  title={t("yield_test_open")}
+                                  data-testid="yield-test-open"
+                                >
+                                  <Scissors className="h-4 w-4" />
+                                </Button>
                               </div>
                             ) : (
                               <Badge variant="secondary">{t("ingredientes_merma_auto_badge")}</Badge>
@@ -617,6 +643,7 @@ export function MermaManagementDialog({
         </DialogContent>
       </Dialog>
 
+      <YieldTestDialog ingredient={yieldTestFor} open={!!yieldTestFor} onOpenChange={(o) => !o && setYieldTestFor(null)} onApply={applyYieldTest} />
       <MermaInfoDialog open={showInfoDialog} onOpenChange={setShowInfoDialog} />
 
       <AlertDialog open={recalcPreview !== null} onOpenChange={(o) => !o && setRecalcPreview(null)}>

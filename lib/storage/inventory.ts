@@ -366,6 +366,37 @@ export async function receivePurchaseOrderIntoInventory(
 }
 
 /**
+ * Devolución al proveedor (docs/322): resta del stock lo devuelto y lo deja anotado como una
+ * entrada negativa (`kind: "return"`), para que el stock teórico y la diferencia del próximo
+ * conteo no la tomen como faltante. No mueve el costo promedio ni el último precio de compra.
+ */
+export async function returnToSupplierFromInventory(
+  items: { ingredientId?: string; name: string; quantity: number }[],
+  businessId?: string | null,
+): Promise<{ matchedCount: number; unmatchedNames: string[] }> {
+  const inventory = getInventory(businessId)
+  const norm = (s: string) => s.trim().toLowerCase()
+  let matchedCount = 0
+  const unmatchedNames: string[] = []
+  const at = new Date().toISOString()
+  for (const line of items) {
+    if (!line.name || !(line.quantity > 0)) continue
+    const match =
+      (line.ingredientId ? inventory.find((inv) => inv.id === line.ingredientId) : undefined) ??
+      inventory.find((inv) => norm(inv.name) === norm(line.name))
+    if (!match) {
+      unmatchedNames.push(line.name)
+      continue
+    }
+    const newStock = Math.max(0, (match.currentStock ?? 0) - line.quantity)
+    const receipts = [...(match.stockReceipts ?? []), { quantity: -line.quantity, at, kind: "return" as const }]
+    await updateInventoryItem(match.id, { currentStock: newStock, status: stockStatus(newStock, match.minStock), stockReceipts: receipts }, businessId)
+    matchedCount++
+  }
+  return { matchedCount, unmatchedNames }
+}
+
+/**
  * Anota una compra en el ingrediente (docs/313): costo promedio ponderado móvil (la misma
  * función que «Nueva compra», lib/utils/weighted-average-cost.ts) y último precio de compra
  * por unidad. No toca el precio vigente (pricePerUnit) ni recalcula recetas.

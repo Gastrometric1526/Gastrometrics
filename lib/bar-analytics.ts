@@ -7,6 +7,7 @@
 // receta quedan en cocina: no hay forma de saber qué parte del combo era bebida.
 
 import { DEFAULT_VALUATION_METHOD, snapshotItemValueBy, type ValuationMethod } from "./inventory-valuation"
+import { orderPurchaseValue, receiptLines, returnValue } from "@/lib/purchase-receipt"
 import { receivedPurchaseOrdersIn, type DishPerformance } from "@/lib/sales-analytics"
 import type { Recipe } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
@@ -112,12 +113,25 @@ export function computeCOGSByArea(params: {
   const categoryByName = new Map(ingredients.map((ingredient) => [ingredient.name.trim().toLowerCase(), ingredient.category]))
   let barPurchases = 0
   let totalPurchases = 0
+  // docs/322: lo recibido de verdad y menos las devoluciones del período.
+  const isBarItem = (name: string) => isBeverageCategory(categoryByName.get(name.trim().toLowerCase()))
   for (const order of receivedPurchaseOrdersIn(purchaseOrders, inRange)) {
-    totalPurchases += order.total || 0
-    for (const item of order.items ?? []) {
-      if (isBeverageCategory(categoryByName.get(item.name.trim().toLowerCase()))) barPurchases += item.purchaseCost || 0
+    totalPurchases += orderPurchaseValue(order)
+    // Sin recepción revisada, el costo de cada línea tal como se pidió (lo de siempre).
+    const lines = receiptLines(order)
+    ;(order.items ?? []).forEach((item, i) => {
+      if (isBarItem(item.name)) barPurchases += order.receipt ? lines[i].receivedValue : item.purchaseCost || 0
+    })
+  }
+  for (const order of purchaseOrders) {
+    const names = new Map(receiptLines(order).map((l) => [l.key, l.name]))
+    for (const ret of order.returns ?? []) {
+      if (!inRange(ret.at)) continue
+      totalPurchases -= returnValue(order, ret).total
+      for (const l of ret.lines) if (isBarItem(names.get(l.key) || "")) barPurchases -= l.quantity * l.unitCost
     }
   }
+  barPurchases = Math.max(0, barPurchases)
   const kitchenPurchases = Math.max(0, totalPurchases - barPurchases)
 
   return {

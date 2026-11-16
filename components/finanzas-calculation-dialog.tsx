@@ -115,6 +115,14 @@ export function FinanzasCalculationDialog({
                 {formatCurrency(cogsResult.initialInventoryValue)} + {formatCurrency(cogsResult.purchasesValue)} −{" "}
                 {formatCurrency(cogsResult.finalInventoryValue)} = {formatCurrency(cogsResult.cogs)}
               </div>
+              {(cogsResult.returnsValue || 0) > 0 && (
+                <p className="text-xs text-muted-foreground mt-1 font-mono">
+                  {t("fcd_cogs_returns")
+                    .replace("{gross}", formatCurrency(cogsResult.grossPurchasesValue || 0))
+                    .replace("{returns}", formatCurrency(cogsResult.returnsValue || 0))
+                    .replace("{net}", formatCurrency(cogsResult.purchasesValue))}
+                </p>
+              )}
               {!cogsResult.hasFullData && (
                 <p className="text-xs text-warning mt-1">{t("fcd_cogs_no_data")}</p>
               )}

@@ -141,8 +141,10 @@ export async function duplicatePurchaseOrder(businessId: string, orderId: string
   const order = getPurchaseOrder(businessId, orderId)
   if (!order) return null
 
+  // docs/322: la copia es una orden nueva, sin lo recibido ni lo devuelto de la original.
+  const { receipt: _receipt, returns: _returns, receivedAt: _receivedAt, ...rest } = order
   const newOrder: PurchaseOrder = {
-    ...order,
+    ...rest,
     id: `OC-${Date.now()}`,
     date: toIsoDate(new Date()),
     number: Date.now(),

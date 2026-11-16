@@ -19,7 +19,8 @@ export interface InventoryItem {
   // Mercadería sumada al stock desde el último conteo al marcar una orden de compra como
   // «Recibida» (receivePurchaseOrderIntoInventory). El stock teórico la suma; un conteo
   // nuevo la limpia.
-  stockReceipts?: { quantity: number; at: string }[]
+  /** Entradas por compra; una devolución al proveedor entra en negativo con kind «return» (docs/322). */
+  stockReceipts?: { quantity: number; at: string; kind?: "return" }[]
   // Pérdidas registradas a mano desde el último conteo (docs/283): derrames, botellas
   // rotas, cortesías servidas sin pasar por el POS, vencidos… Ya están restadas de
   // currentStock; el stock teórico las resta y la diferencia del conteo deja de contarlas

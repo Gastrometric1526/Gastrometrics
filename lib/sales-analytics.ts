@@ -6,6 +6,7 @@
 // Menu Engineering.
 
 import { DEFAULT_VALUATION_METHOD, snapshotValueBy, type ValuationMethod } from "./inventory-valuation"
+import { orderPurchaseValue, returnsInPeriod } from "@/lib/purchase-receipt"
 import type { SalesImport, SalesImportLine } from "@/types/sales-import"
 import type { Recipe } from "@/types/recipe"
 import type { InventorySnapshot } from "@/types/inventory"
@@ -433,7 +434,12 @@ export function receivedPurchaseOrdersIn(
 export interface COGSResult {
   initialInventoryValue: number
   finalInventoryValue: number
+  /** Compras netas del período: lo recibido menos lo devuelto (docs/322). */
   purchasesValue: number
+  /** Lo recibido del período, a precio de factura (docs/322). */
+  grossPurchasesValue?: number
+  /** Devoluciones al proveedor del período (docs/322). */
+  returnsValue?: number
   cogs: number
   hasFullData: boolean // false si falta un snapshot inicial o final real del periodo (aproximado)
 }
@@ -467,7 +473,11 @@ export function computeCOGS(params: {
   const initialInventoryValue = initialSnapshot ? snapshotValueBy(initialSnapshot, valuationMethod) : currentInventoryValue
   const finalInventoryValue = finalSnapshot ? snapshotValueBy(finalSnapshot, valuationMethod) : currentInventoryValue
 
-  const purchasesValue = receivedPurchaseOrdersIn(purchaseOrders, inRange).reduce((sum, po) => sum + (po.total || 0), 0)
+  // docs/322: cada orden cuenta lo que llegó de verdad (recepción revisada) y se restan las
+  // devoluciones por su fecha. Sin revisión, el total de la orden, como antes.
+  const grossPurchasesValue = receivedPurchaseOrdersIn(purchaseOrders, inRange).reduce((sum, po) => sum + orderPurchaseValue(po), 0)
+  const returnsValue = returnsInPeriod(purchaseOrders, inRange).total
+  const purchasesValue = Math.max(0, grossPurchasesValue - returnsValue)
 
   const cogs = Math.max(0, initialInventoryValue + purchasesValue - finalInventoryValue)
 
@@ -475,6 +485,8 @@ export function computeCOGS(params: {
     initialInventoryValue,
     finalInventoryValue,
     purchasesValue,
+    grossPurchasesValue,
+    returnsValue,
     cogs,
     hasFullData: inPeriod.length >= 2,
   }
