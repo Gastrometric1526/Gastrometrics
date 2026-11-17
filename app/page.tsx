@@ -12,13 +12,13 @@ import { canonicalSiteUrl } from "@/lib/site-url"
 // del lado del cliente (no hay señal de idioma en el servidor), así que estos
 // metadatos solo pueden estar en español — es lo mismo que ve cualquier buscador.
 export const metadata: Metadata = {
-  title: "Gastrometrics — Costeo, fichas técnicas e inventario para restaurantes",
+  title: "Gastrometrics — Gestión para restaurantes: costeo, inventario, compras, ventas y finanzas",
   description:
-    "Sabe cuánto ganas en cada plato: importa tus recetas (texto, archivo o foto), calcula el costo real con merma y el precio sugerido. Gratis para siempre, sin tarjeta.",
+    "Recetas, ingredientes, compras, inventario, ventas y finanzas conectados en un solo lugar. Importa lo que ya tienes (Excel, PDF, foto o texto) y empieza gratis, sin tarjeta.",
   openGraph: {
-    title: "Gastrometrics — Costeo, fichas técnicas e inventario para restaurantes",
+    title: "Gastrometrics — Gestión para restaurantes: costeo, inventario, compras, ventas y finanzas",
     description:
-      "Sabe cuánto ganas en cada plato: importa tus recetas (texto, archivo o foto), calcula el costo real con merma y el precio sugerido. Gratis para siempre, sin tarjeta.",
+      "Recetas, ingredientes, compras, inventario, ventas y finanzas conectados en un solo lugar. Importa lo que ya tienes (Excel, PDF, foto o texto) y empieza gratis, sin tarjeta.",
   },
 }
 

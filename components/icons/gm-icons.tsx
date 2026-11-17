@@ -229,3 +229,24 @@ export const MODULE_ICONS = {
   "/negocios": GmBusinesses,
   "/mi-plan#invita": GmInvite,
 } as const
+
+/** Importar (docs/330): bandeja con una flecha que baja a ella (traer lo que ya tienes). */
+export const GmImport = make(
+  "GmImport",
+  <>
+    <path d="M12 3v10" />
+    <path d="M8 9.5l4 4 4-4" />
+    <path d="M3.5 14.5v3.5a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-3.5" />
+    <path d="M3.5 14.5h4l1.5 2h6l1.5-2h4" />
+  </>,
+)
+
+/** Finanzas (docs/330): billete. */
+export const GmFinance = make(
+  "GmFinance",
+  <>
+    <rect x="3" y="6" width="18" height="12" rx="2" />
+    <circle cx="12" cy="12" r="2.5" />
+    <path d="M6 9.5h.01M18 14.5h.01" />
+  </>,
+)

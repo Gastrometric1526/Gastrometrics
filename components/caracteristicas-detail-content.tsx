@@ -12,9 +12,10 @@ import { featurePages, type FeaturePageDef, type FeatureScreenshotDef } from "@/
 import { resourceArticles } from "@/lib/resource-articles"
 import { useLanguage } from "@/contexts/language-context"
 import { ChefHat, Calculator, Package, UtensilsCrossed, ShoppingCart, BarChart3, ArrowRight, CheckCircle2, BookOpen, ListChecks } from "lucide-react"
+import { GmFinance, GmImport, GmPos, GmShifts } from "@/components/icons/gm-icons"
 import { CtaBand, MarketingPage, PAGE_WIDTH, PageHero, RealPdf, RealScreen, Reveal, SectionHeading } from "@/components/marketing-ui"
 
-const icons: Record<string, typeof ChefHat> = {
+const icons: Record<string, React.ComponentType<{ className?: string }>> = {
   "fichas-tecnicas": ChefHat,
   costeo: Calculator,
   "ingredientes-inventario": Package,
@@ -22,6 +23,11 @@ const icons: Record<string, typeof ChefHat> = {
   mep: ListChecks,
   "ordenes-compra": ShoppingCart,
   estadisticas: BarChart3,
+  // docs/330
+  "ventas-pos": GmPos,
+  finanzas: GmFinance,
+  personal: GmShifts,
+  importacion: GmImport,
 }
 
 function Shot({ shot }: { shot: FeatureScreenshotDef }) {

@@ -1,5 +1,6 @@
 "use client"
 
+import { LandingEcosystem } from "@/components/landing-ecosystem"
 import Link from "next/link"
 import { MarketingHeader } from "@/components/marketing-header"
 import { MarketingFooter } from "@/components/marketing-footer"
@@ -15,7 +16,7 @@ import { LandingReferralSection } from "@/components/landing-referral-section"
 import { LandingAppTour, LandingPriceStory } from "@/components/landing-showcase"
 import { LandingHeroDemo } from "@/components/landing-hero-demo"
 import { LandingTrustStrip, LandingProblem, LandingHowItWorks, LandingImport, LandingBento, LandingCompare, LandingRiskAndFounder, LandingClosing } from "@/components/landing-sections"
-import { ArrowRight, CheckCircle2, Upload } from "lucide-react"
+import { ArrowRight, Check, CheckCircle2, Upload } from "lucide-react"
 import { PublicReviews } from "@/components/public-reviews"
 
 // Landing rediseñada (docs/196, pedido del dueño: «rediseña todo, que tenga coherencia, que
@@ -55,6 +56,15 @@ export function HomeContent() {
                 <span className="text-primary">{t("landing_hero_title_line2")}</span>
               </h1>
               <p className="text-lg text-text-3 max-w-2xl mx-auto text-pretty">{t("landing_hero_desc")}</p>
+              {/* La plataforma completa en tres beneficios (docs/330). */}
+              <ul className="flex flex-col items-center gap-2 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-6">
+                {(["landing_hero_benefit1", "landing_hero_benefit2", "landing_hero_benefit3"] as const).map((key) => (
+                  <li key={key} className="flex items-center gap-2 text-sm text-foreground">
+                    <Check className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
+                    {t(key)}
+                  </li>
+                ))}
+              </ul>
               {/* No se empieza de cero (pedido del dueño, docs/256): importar se ve desde la portada. */}
               <Link
                 href="#importar"
@@ -87,6 +97,9 @@ export function HomeContent() {
         <LandingTrustStrip />
 
         <LandingProblem />
+
+        {/* Cómo se conectan los módulos y que cada uno funciona solo (docs/330). */}
+        <LandingEcosystem />
 
         {/* Importar va antes de «Cómo funciona»: lo primero es saber que no se empieza de cero (docs/256). */}
         <LandingImport />

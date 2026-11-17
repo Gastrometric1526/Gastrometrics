@@ -13,6 +13,7 @@ import { CURRENCY_OPTIONS } from "@/lib/currency"
 import { useLanguage } from "@/contexts/language-context"
 import type { TranslationKey } from "@/lib/i18n/translations"
 import { ChefHat, Package, BarChart3, UtensilsCrossed, ShoppingCart, Building2, Globe, Calculator, ArrowRight, CheckCircle2, ListChecks } from "lucide-react"
+import { GmFinance, GmImport, GmPos, GmShifts } from "@/components/icons/gm-icons"
 import { CtaBand, MarketingPage, PAGE_WIDTH, PageHero, RealPdf, RealScreen, Reveal, SectionHeading } from "@/components/marketing-ui"
 
 const detailPageSlugs = new Set(featurePages.map((f) => f.slug))
@@ -37,6 +38,13 @@ const moduleDefs: ModuleDef[] = [
   { slug: "ordenes-compra", icon: ShoppingCart, titleKey: "about_m_ordenes_title", descKey: "about_m_ordenes_desc", pointKeys: ["about_m_ordenes_point1", "about_m_ordenes_point2", "about_m_ordenes_point3"], screen: "ordenes", route: "/ordenes-compra" },
   { slug: "estadisticas", icon: BarChart3, titleKey: "about_m_estadisticas_title", descKey: "about_m_estadisticas_desc", pointKeys: ["about_m_estadisticas_point1", "about_m_estadisticas_point2", "about_m_estadisticas_point3"], screen: "reportes", route: "/estadisticas" },
 ]
+
+const MORE_MODULES = [
+  { slug: "ventas-pos", icon: GmPos },
+  { slug: "finanzas", icon: GmFinance },
+  { slug: "personal", icon: GmShifts },
+  { slug: "importacion", icon: GmImport },
+] as const
 
 const LANGS = ["Español", "English", "Dansk", "Français", "Português", "中文"]
 // Los símbolos reales de las monedas que soporta la app (lib/currency.ts).
@@ -111,6 +119,30 @@ export function AboutContent() {
         {moduleDefs.map((m, i) => (
           <ModuleRow key={m.slug} m={m} index={i} />
         ))}
+        {/* Ventas, Finanzas, Personal e Importación (docs/330), con su página. */}
+        <div className="space-y-6">
+          <SectionHeading title={t("about_more_title")} subtitle={t("about_more_subtitle")} />
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {MORE_MODULES.map(({ slug, icon: Icon }, i) => {
+              const f = featurePages.find((x) => x.slug === slug)
+              if (!f) return null
+              return (
+                <Reveal as="li" key={slug} delay={i * 80}>
+                  <Link href={`/caracteristicas/${slug}`} className="group flex h-full flex-col gap-3 rounded-2xl border border-hairline bg-card p-5 hover:border-primary/50">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span className="font-semibold text-foreground">{t(f.titleKey)}</span>
+                    <span className="text-sm text-text-3 text-pretty">{t(f.taglineKey)}</span>
+                    <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary">
+                      {t("about_view_detail")} <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </Link>
+                </Reveal>
+              )
+            })}
+          </ul>
+        </div>
       </section>
 
       {/* Lo que va en todos los planes y módulos. */}

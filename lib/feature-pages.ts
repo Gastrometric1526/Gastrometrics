@@ -192,6 +192,70 @@ export const featurePages: FeaturePageDef[] = [
       { screen: "reportes", route: "/estadisticas", altKey: "feat_estadisticas_shot1_alt", captionKey: "feat_estadisticas_shot1_caption" },
     ],
   },
+  {
+    // ventas-pos (docs/330): parte de la plataforma que no tenía su página.
+    slug: "ventas-pos",
+    titleKey: "feat_ventas_title",
+    taglineKey: "feat_ventas_tagline",
+    introKey: "feat_ventas_intro",
+    steps: [
+      { titleKey: "feat_ventas_step1_title", descKey: "feat_ventas_step1_desc" },
+      { titleKey: "feat_ventas_step2_title", descKey: "feat_ventas_step2_desc" },
+      { titleKey: "feat_ventas_step3_title", descKey: "feat_ventas_step3_desc" },
+      { titleKey: "feat_ventas_step4_title", descKey: "feat_ventas_step4_desc" },
+    ],
+    highlightKeys: ["feat_ventas_highlight1", "feat_ventas_highlight2", "feat_ventas_highlight3", "feat_ventas_highlight4", "feat_ventas_highlight5"],
+    // Sin captura propia todavía: la página muestra el resumen junto a los pasos.
+    screenshots: [],
+  },
+  {
+    // finanzas (docs/330): parte de la plataforma que no tenía su página.
+    slug: "finanzas",
+    titleKey: "feat_finanzas_title",
+    taglineKey: "feat_finanzas_tagline",
+    introKey: "feat_finanzas_intro",
+    steps: [
+      { titleKey: "feat_finanzas_step1_title", descKey: "feat_finanzas_step1_desc" },
+      { titleKey: "feat_finanzas_step2_title", descKey: "feat_finanzas_step2_desc" },
+      { titleKey: "feat_finanzas_step3_title", descKey: "feat_finanzas_step3_desc" },
+      { titleKey: "feat_finanzas_step4_title", descKey: "feat_finanzas_step4_desc" },
+    ],
+    highlightKeys: ["feat_finanzas_highlight1", "feat_finanzas_highlight2", "feat_finanzas_highlight3", "feat_finanzas_highlight4"],
+    // Sin captura propia todavía: la página muestra el resumen junto a los pasos.
+    screenshots: [],
+  },
+  {
+    // personal (docs/330): parte de la plataforma que no tenía su página.
+    slug: "personal",
+    titleKey: "feat_personal_title",
+    taglineKey: "feat_personal_tagline",
+    introKey: "feat_personal_intro",
+    steps: [
+      { titleKey: "feat_personal_step1_title", descKey: "feat_personal_step1_desc" },
+      { titleKey: "feat_personal_step2_title", descKey: "feat_personal_step2_desc" },
+      { titleKey: "feat_personal_step3_title", descKey: "feat_personal_step3_desc" },
+      { titleKey: "feat_personal_step4_title", descKey: "feat_personal_step4_desc" },
+    ],
+    highlightKeys: ["feat_personal_highlight1", "feat_personal_highlight2", "feat_personal_highlight3", "feat_personal_highlight4"],
+    // Sin captura propia todavía: la página muestra el resumen junto a los pasos.
+    screenshots: [],
+  },
+  {
+    // importacion (docs/330): parte de la plataforma que no tenía su página.
+    slug: "importacion",
+    titleKey: "feat_importacion_title",
+    taglineKey: "feat_importacion_tagline",
+    introKey: "feat_importacion_intro",
+    steps: [
+      { titleKey: "feat_importacion_step1_title", descKey: "feat_importacion_step1_desc" },
+      { titleKey: "feat_importacion_step2_title", descKey: "feat_importacion_step2_desc" },
+      { titleKey: "feat_importacion_step3_title", descKey: "feat_importacion_step3_desc" },
+      { titleKey: "feat_importacion_step4_title", descKey: "feat_importacion_step4_desc" },
+    ],
+    highlightKeys: ["feat_importacion_highlight1", "feat_importacion_highlight2", "feat_importacion_highlight3", "feat_importacion_highlight4"],
+    // Sin captura propia todavía: la página muestra el resumen junto a los pasos.
+    screenshots: [],
+  },
 ]
 
 export function getFeaturePage(slug: string): FeaturePageDef | null {
