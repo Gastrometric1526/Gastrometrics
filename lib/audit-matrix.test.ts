@@ -347,6 +347,16 @@ describe("E. Costo real, Prime Cost y P&L", () => {
   it("E-08 · El COGS nunca es negativo: 1 000 + 0 − 3 000 → 0", () => {
     expect(computeCOGS({ snapshots: [snap("2026-10-01", 1000), snap("2026-10-31", 3000)], purchaseOrders: [], periodStart: "2026-10-01", periodEnd: "2026-10-31", currentInventoryValue: 0 }).cogs).toBe(0)
   })
+  it("E-09 · Por día local (docs/328): conteo final a las 8 p. m. del último día y compra recibida a las 8 p. m. del día anterior al inicio → COGS 10 000 + 5 000 − 8 000 = 7 000", () => {
+    const r = computeCOGS({
+      snapshots: [snap("2026-10-01T07:00:00", 10000), snap("2026-10-31T20:00:00", 8000)],
+      purchaseOrders: [po("r", 5000, "received", "2026-10-10", "2026-10-12T09:00:00"), po("sep", 900, "received", "2026-09-30", "2026-09-30T20:00:00")],
+      periodStart: new Date("2026-10-01").toISOString(), periodEnd: new Date("2026-10-31").toISOString(), currentInventoryValue: 0,
+    })
+    expect(r.hasFullData).toBe(true)
+    expect(r.purchasesValue).toBe(5000)
+    expect(r.cogs).toBe(7000)
+  })
   it("E-05 · P&L de un mes completo: 25 000 − 7 000 − 6 000 − 3 000 − 1 000 = 8 000 (32 %)", () => {
     const pnl = buildSimplifiedPnL({ revenue: 25000, cogs: 7000, expenses: { laborCosts: 6000, rent: 3000, utilities: 1000 } as never, periodStart: "2026-10-01", periodEnd: "2026-10-30" })
     expect(pnl.netProfit).toBeCloseTo(8000, 9)

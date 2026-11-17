@@ -15,6 +15,7 @@ import type { InventorySnapshot } from "@/types/inventory"
 import type { PurchaseOrder } from "@/types/purchase-order"
 import { BAR_CLASSIFICATIONS, getBarKind, isBarClassification, isBeverageCategory, type BarKind } from "@/lib/beverage"
 import { snapshotItemValue } from "@/lib/inventory-value"
+import { inPeriodDays } from "@/lib/date-format"
 
 export type SalesArea = "kitchen" | "bar"
 
@@ -88,11 +89,8 @@ export function computeCOGSByArea(params: {
   valuationMethod?: ValuationMethod
 }): AreaCOGS {
   const { snapshots, purchaseOrders, periodStart, periodEnd, ingredients, valuationMethod = DEFAULT_VALUATION_METHOD } = params
-  const inRange = (dateStr: string) => {
-    if (!periodStart || !periodEnd) return true
-    const d = new Date(dateStr).getTime()
-    return d >= new Date(periodStart).getTime() && d <= new Date(periodEnd).getTime() + 86400000 - 1
-  }
+  // Por día local, igual que computeCOGS (docs/328).
+  const inRange = (dateStr: string) => inPeriodDays(dateStr, periodStart, periodEnd)
   const sorted = [...snapshots].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   const inPeriod = periodStart && periodEnd ? sorted.filter((s) => inRange(s.date)) : sorted
   if (inPeriod.length < 2) return { kitchen: 0, bar: 0, hasFullData: false }

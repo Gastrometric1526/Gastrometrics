@@ -143,3 +143,23 @@ export function localDayOf(raw: string): string {
   const d = new Date(raw)
   return Number.isNaN(d.getTime()) ? raw.slice(0, 10) : toIsoDate(d)
 }
+
+/**
+ * Día de un límite de período (docs/328). «AAAA-MM-DD», o la medianoche UTC que sale de
+ * `new Date("AAAA-MM-DD").toISOString()`, es ese día tal cual; cualquier otro momento, su día local.
+ */
+export function periodBoundDay(raw: string): string {
+  if (/^\d{4}-\d{2}-\d{2}(T00:00:00(\.000)?Z)?$/.test(raw)) return raw.slice(0, 10)
+  return localDayOf(raw)
+}
+
+/**
+ * ¿Un momento guardado (conteo, recepción, devolución) cae en el período? Se compara el DÍA
+ * LOCAL (docs/328). Antes se comparaba en UTC: en Centroamérica (UTC−6) lo hecho después de
+ * las 6 p. m. del último día quedaba en el mes siguiente.
+ */
+export function inPeriodDays(raw: string, periodStart: string | null, periodEnd: string | null): boolean {
+  if (!periodStart || !periodEnd) return true
+  const day = localDayOf(raw)
+  return day >= periodBoundDay(periodStart) && day <= periodBoundDay(periodEnd)
+}

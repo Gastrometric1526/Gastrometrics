@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest"
 import {
+  inPeriodDays,
+  periodBoundDay,
   formatDate,
   formatDateTime,
   formatDayMonth,
@@ -45,5 +47,22 @@ describe("fechas siempre día/mes/año (docs/170)", () => {
     expect(parseDayMonthYear("31/02/2026")).toBeNull()
     expect(parseDayMonthYear("10-2026")).toBeNull()
     expect(toIsoDate(d)).toBe("2026-10-03")
+  })
+})
+
+describe("días de un período (docs/328)", () => {
+  it("el límite «AAAA-MM-DD» o su medianoche UTC es ese día; lo demás, su día local", () => {
+    expect(periodBoundDay("2026-11-30")).toBe("2026-11-30")
+    expect(periodBoundDay(new Date("2026-11-30").toISOString())).toBe("2026-11-30")
+    expect(periodBoundDay("2026-11-30T20:00:00")).toBe("2026-11-30")
+  })
+  it("lo hecho a las 8 p. m. del último día es del período; lo de la noche anterior al inicio, no", () => {
+    const s = new Date("2026-11-01").toISOString()
+    const e = new Date("2026-11-30").toISOString()
+    expect(inPeriodDays("2026-11-30T20:00:00", s, e)).toBe(true)
+    expect(inPeriodDays("2026-10-31T20:00:00", s, e)).toBe(false)
+    expect(inPeriodDays("2026-11-15", s, e)).toBe(true)
+    expect(inPeriodDays("2026-12-01T00:30:00", s, e)).toBe(false)
+    expect(inPeriodDays("2026-12-01T00:30:00", null, null)).toBe(true)
   })
 })

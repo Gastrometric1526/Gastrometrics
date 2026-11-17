@@ -16,7 +16,7 @@ import type { Ingredient } from "@/types/ingredient"
 import type { Menu } from "@/lib/types/menus"
 import { taxIncludedIn } from "@/lib/food-cost-pricing"
 import { LEGACY_PRICING_METHOD } from "@/types/business"
-import { localDayOf } from "@/lib/date-format"
+import { inPeriodDays, localDayOf } from "@/lib/date-format"
 
 // ============== DESEMPEÑO POR PLATO ==============
 
@@ -455,11 +455,8 @@ export function computeCOGS(params: {
 }): COGSResult {
   const { snapshots, purchaseOrders, periodStart, periodEnd, currentInventoryValue, valuationMethod = DEFAULT_VALUATION_METHOD } = params
 
-  const inRange = (dateStr: string) => {
-    if (!periodStart || !periodEnd) return true
-    const d = new Date(dateStr).getTime()
-    return d >= new Date(periodStart).getTime() && d <= new Date(periodEnd).getTime() + 86400000 - 1
-  }
+  // Por día local (docs/328): un conteo a las 8 p. m. del último día es de ese mes.
+  const inRange = (dateStr: string) => inPeriodDays(dateStr, periodStart, periodEnd)
 
   const sorted = [...snapshots].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   const inPeriod = periodStart && periodEnd ? sorted.filter((s) => inRange(s.date)) : sorted
