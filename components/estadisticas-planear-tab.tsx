@@ -17,6 +17,7 @@ import { NumericInput } from "@/components/ui/numeric-input"
 import { Progress } from "@/components/ui/progress"
 import { CalcHelp } from "@/components/calc-help"
 import { CostOnly } from "@/components/cost-gate"
+import { FeatureLockedInline } from "@/components/feature-locked"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useToast } from "@/hooks/use-toast"
@@ -40,6 +41,8 @@ export function EstadisticasPlanearTab({ businessId }: { businessId: string }) {
   const { toast } = useToast()
   const { active: isMember } = useActiveMembership()
   const canAutoOrder = useFeatureAccess("purchase_orders_auto")
+  // Presupuesto del mes: con Finanzas, desde Sous Chef (docs/332).
+  const canBudget = useFeatureAccess("stats_finance")
   const [budget, saveBudget] = useBudget(businessId, user?.user_metadata as Record<string, unknown> | undefined)
   const [editing, setEditing] = useState(false)
   // Turnos del horario del personal (docs/323), los mismos de Reportes → Personal y del POS.
@@ -159,7 +162,11 @@ export function EstadisticasPlanearTab({ businessId }: { businessId: string }) {
         </CardContent>
       </Card>
 
-      {/* Presupuesto del mes */}
+      {/* Presupuesto del mes (desde Sous Chef, docs/332) */}
+      {canBudget === false && (
+        <FeatureLockedInline feature="stats_finance" title={t("budget_locked_title")} description={t("budget_locked_desc")} />
+      )}
+      {canBudget && (
       <CostOnly>
         <Card className="border-border bg-card">
           <CardHeader className="pb-2">
@@ -218,6 +225,7 @@ export function EstadisticasPlanearTab({ businessId }: { businessId: string }) {
           </CardContent>
         </Card>
       </CostOnly>
+      )}
 
       <BudgetDialog
         open={editing}

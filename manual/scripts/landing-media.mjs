@@ -41,6 +41,11 @@ const SCREENS = [
   { id: "menus", route: "/menus" },
   { id: "ordenes", route: "/ordenes-compra" },
   { id: "mep", route: "/mep?menu=demo-menu-lunch" },
+  // Páginas de características de docs/330 (docs/331).
+  { id: "pos", route: "/salon?business=main" },
+  { id: "horario", route: "/salon?business=main", tab: "#salon-tab-horario" },
+  { id: "finanzas", route: "/estadisticas", tab: "#stats-tab-finanzas", anchor: '[data-tour="finanzas-key-cards"]' },
+  { id: "importar", route: "/ingredientes?import=1", keepDialog: true },
 ]
 
 const TOURS = ["onboarding_completed", ...["ficha-tecnica", "ingredientes", "inventario", "mis-recetas", "menus", "estadisticas", "ordenes-compra", "settings-dialog", "equipo", "mi-plan", "procesar-ordenes", "business-detail", "negocios", "dashboard"].map((k) => `tour_completed_${k}`)]
@@ -119,12 +124,27 @@ await page.evaluateOnNewDocument((tours) => {
     const cur = sessionStorage.getItem("__landing_cur")
     if (cur) localStorage.setItem("currency_code", cur)
     for (const k of tours) localStorage.setItem(k, "true")
+    // Color de la marca en todas las capturas (docs/331): la cuenta de prueba puede tener otro
+    // color guardado. Y sin el tutorial guiado encima.
+    localStorage.setItem("main_color_theme", "naranja-brasa")
+    localStorage.setItem("gm_journey_paused", "1")
+    localStorage.setItem("gm_hints_off", "1") // sin pistas por acción encima (docs/219)
+    localStorage.setItem("gm_journey_v1", JSON.stringify({ started: true, existing: true, skipped: true, done: [], replay: [] }))
     for (const k of Object.keys(localStorage)) if (k.startsWith("changelog_seen_")) localStorage.setItem(k, "9999-12-31")
   } catch {}
+  // Este script corre antes de que exista <html>: se vigila el documento entero.
+  const pin = () => {
+    const html = document.documentElement
+    if (html && html.getAttribute("data-theme") !== "naranja-brasa") html.setAttribute("data-theme", "naranja-brasa")
+  }
+  pin()
+  new MutationObserver(pin).observe(document, { attributes: true, attributeFilter: ["data-theme"], subtree: true, childList: true })
   document.addEventListener("DOMContentLoaded", () => {
     const st = document.createElement("style")
     // Botón flotante de feedback / instalar, botón de ayuda (docs/204) y avisos que tapan la pantalla.
-    st.textContent = 'div.fixed[class*="bottom-4"][class*="right-4"]{display:none!important}[data-sonner-toaster],[role=status],[data-feedback-card],[data-tour=support-chat]{display:none!important}'
+    st.textContent = 'div.fixed[class*="bottom-4"][class*="right-4"]{display:none!important}[data-sonner-toaster],[role=status],[data-feedback-card],[data-tour=support-chat],[data-journey-card],[data-guided-journey]{display:none!important}'
+    // Respaldo: las variables del naranja de la marca, por si algún contenedor pone otro color.
+    st.textContent += 'html,html *{--primary:14 87% 54%!important;--primary-foreground:60 9.1% 97.8%!important;--primary-text:14 87% 45%!important}'
     document.head.appendChild(st)
   })
 }, TOURS)
@@ -156,15 +176,29 @@ const closeDialogs = async () => {
   }
 }
 
-const load = async (route) => {
+const load = async (route, opts = {}) => {
   await page.goto(`${BASE}${route}`, { waitUntil: "networkidle2", timeout: 120000 })
   await page.waitForFunction(() => (document.querySelector("main")?.innerText || document.body.innerText).trim().length > 300, { timeout: 45000 }).catch(() => {})
-  await page.evaluate(() => {
-    for (const k of Object.keys(localStorage)) if (k.startsWith("changelog_seen_")) localStorage.setItem(k, "9999-12-31")
-  })
+  // Una pantalla puede cambiar su dirección al abrir (p. ej. ?import=1): se espera y se sigue (docs/331).
+  await page
+    .evaluate(() => {
+      for (const k of Object.keys(localStorage)) if (k.startsWith("changelog_seen_")) localStorage.setItem(k, "9999-12-31")
+    })
+    .catch(() => {})
   await sleep(1800)
-  await closeDialogs()
-  await scrub()
+  if (!opts.keepDialog) await closeDialogs()
+  // Pestaña de la pantalla (Radix abre con pointerdown, no con click).
+  if (opts.tab) {
+    await page.evaluate((sel) => {
+      const el = document.querySelector(sel)
+      if (!el) return
+      el.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0, pointerType: "mouse" }))
+      el.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }))
+      el.click()
+    }, opts.tab)
+    await sleep(1500)
+  }
+  await scrub().catch(() => {})
 }
 
 const checkSize = (file) => {
@@ -271,7 +305,7 @@ for (const lang of LANGS) {
     if (ONLY && !ONLY.includes(file)) continue
     const out = path.join(dir, file)
     await withRetry(out, async () => {
-      await load(s.route)
+      await load(s.route, s)
       if (s.anchor) {
         await page.evaluate((sel) => {
           const el = document.querySelector(sel)

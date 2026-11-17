@@ -565,7 +565,7 @@ export default {
         ["p", "O histórico de preço de cada ingrediente e de qual fornecedor você comprou, com uma tabela que compara seus fornecedores (último preço, o mais baixo, quantas compras). Mostra <strong>onde você poderia economizar</strong> (outro fornecedor vendeu mais barato, com a economia estimada por mês), o que mais subiu em 30 dias e um resumo de cada fornecedor. Os preços vêm dos seus pedidos de compra (sem os cancelados), das compras do Inventário, das mudanças de preço e do preço atual de cada ingrediente."],
         ["h3", "Perdas"],
         ["p", "Informações a partir da perda que você configurou em Ingredientes (capítulo 3), seja a global da categoria ou a personalizada: quanto se aproveita do que você compra, quanto encarece cada unidade, quanto você perde em cada compra e um custo estimado por mês com o que você comprou nos últimos 90 dias. Também sugere ingredientes sem perda ativada cuja categoria costuma perder bastante."],
-        ["info", "Plano", "Panorama: a partir do <strong>Chef de Partie</strong>. Finanças, Planejar e Equipe de trabalho: a partir do <strong>Sous Chef</strong>."],
+        ["info", "Plano", "Panorama, Planejar (previsão e lista de compras) e Equipe de trabalho: a partir do <strong>Chef de Partie</strong>. Finanças e orçamento do mês: a partir do <strong>Sous Chef</strong>."],
       ],
     },
     {
@@ -623,7 +623,7 @@ export default {
         ["table", ["Plano", "Preço", "Negócios", "Usuários (com você)", "Adiciona"], [
           ["Foodie", "Grátis", "1", "1", "Receitas, ingredientes, importação de onde seus dados já estão (texto, Excel, PDF, fotos e cupons) e ficha de cozinha em PDF, fichas de bebidas e perdas por categoria (incluídos em todos os planos)."],
           ["Home Cook", "$15 / mês", "1", "1", "Perdas personalizadas, pedidos de compra manuais, ficha administrativa, faturas e atualização de preços a partir de cupons ou listas."],
-          ["Chef de Partie", "$35 / mês", "1", "1", "Estoque (com contagem a partir de uma foto, PDF ou Excel), cardápios, pedidos sugeridos, Relatórios · Panorama e registro manual de vendas."],
+          ["Chef de Partie", "$35 / mês", "1", "1", "Estoque (com contagem a partir de uma foto, PDF ou Excel), cardápios, pedidos sugeridos, Relatórios · Panorama, registro manual de vendas, previsão de vendas e escala da equipe."],
           ["Sous Chef", "$70 / mês", "2", "2", "Relatórios · Finanças, DRE, Menu Engineering, importação do PDV e Equipe (você + 1 pessoa)."],
           ["Chef Ejecutivo", "$120 / mês", "5", "5", "Equipe de até 4 pessoas além de você."],
         ]],

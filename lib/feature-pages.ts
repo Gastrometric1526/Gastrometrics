@@ -205,8 +205,8 @@ export const featurePages: FeaturePageDef[] = [
       { titleKey: "feat_ventas_step4_title", descKey: "feat_ventas_step4_desc" },
     ],
     highlightKeys: ["feat_ventas_highlight1", "feat_ventas_highlight2", "feat_ventas_highlight3", "feat_ventas_highlight4", "feat_ventas_highlight5"],
-    // Sin captura propia todavía: la página muestra el resumen junto a los pasos.
-    screenshots: [],
+    // Captura real del restaurante de ejemplo (docs/331).
+    screenshots: [{ screen: "pos", route: "/salon", altKey: "feat_ventas_shot1_alt", captionKey: "feat_ventas_shot1_caption" }],
   },
   {
     // finanzas (docs/330): parte de la plataforma que no tenía su página.
@@ -221,8 +221,8 @@ export const featurePages: FeaturePageDef[] = [
       { titleKey: "feat_finanzas_step4_title", descKey: "feat_finanzas_step4_desc" },
     ],
     highlightKeys: ["feat_finanzas_highlight1", "feat_finanzas_highlight2", "feat_finanzas_highlight3", "feat_finanzas_highlight4"],
-    // Sin captura propia todavía: la página muestra el resumen junto a los pasos.
-    screenshots: [],
+    // Captura real del restaurante de ejemplo (docs/331).
+    screenshots: [{ screen: "finanzas", route: "/estadisticas", altKey: "feat_finanzas_shot1_alt", captionKey: "feat_finanzas_shot1_caption" }],
   },
   {
     // personal (docs/330): parte de la plataforma que no tenía su página.
@@ -237,8 +237,8 @@ export const featurePages: FeaturePageDef[] = [
       { titleKey: "feat_personal_step4_title", descKey: "feat_personal_step4_desc" },
     ],
     highlightKeys: ["feat_personal_highlight1", "feat_personal_highlight2", "feat_personal_highlight3", "feat_personal_highlight4"],
-    // Sin captura propia todavía: la página muestra el resumen junto a los pasos.
-    screenshots: [],
+    // Captura real del restaurante de ejemplo (docs/331).
+    screenshots: [{ screen: "horario", route: "/salon", altKey: "feat_personal_shot1_alt", captionKey: "feat_personal_shot1_caption" }],
   },
   {
     // importacion (docs/330): parte de la plataforma que no tenía su página.
@@ -253,8 +253,8 @@ export const featurePages: FeaturePageDef[] = [
       { titleKey: "feat_importacion_step4_title", descKey: "feat_importacion_step4_desc" },
     ],
     highlightKeys: ["feat_importacion_highlight1", "feat_importacion_highlight2", "feat_importacion_highlight3", "feat_importacion_highlight4"],
-    // Sin captura propia todavía: la página muestra el resumen junto a los pasos.
-    screenshots: [],
+    // Captura real del restaurante de ejemplo (docs/331).
+    screenshots: [{ screen: "importar", route: "/ingredientes", altKey: "feat_importacion_shot1_alt", captionKey: "feat_importacion_shot1_caption" }],
   },
 ]
 

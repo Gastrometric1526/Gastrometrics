@@ -565,7 +565,7 @@ export default {
         ["p", "Each ingredient’s price history and which supplier you bought it from, with a table comparing your suppliers (last price, lowest, number of purchases). It shows <strong>where you could save</strong> (another supplier sold it to you cheaper, with the estimated monthly saving), what went up the most in 30 days and a summary of each supplier. Prices come from your purchase orders (excluding cancelled), Inventory purchases, price changes and each ingredient’s current price."],
         ["h3", "Waste"],
         ["p", "Information based on the waste you set in Ingredients (chapter 3), either its category’s global value or a custom one: how much of what you buy is usable, how much more each unit costs, how much you lose on each purchase and an estimated monthly cost based on what you bought in the last 90 days. It also suggests ingredients without waste turned on whose category usually loses quite a bit."],
-        ["info", "Plan", "Overview: from <strong>Chef de Partie</strong>. Finance, Plan and Staff: from <strong>Sous Chef</strong>."],
+        ["info", "Plan", "Overview, Plan (forecast and shopping list) and Staff: from <strong>Chef de Partie</strong>. Finance and the monthly budget: from <strong>Sous Chef</strong>."],
       ],
     },
     {
@@ -623,7 +623,7 @@ export default {
         ["table", ["Plan", "Price", "Businesses", "Users (incl. you)", "Adds"], [
           ["Foodie", "Free", "1", "1", "Recipes, ingredients, import from wherever your data already is (text, Excel, PDF, photos and receipts) and kitchen recipe sheet PDF, drink recipe sheets and waste by category (included in every plan)."],
           ["Home Cook", "$15 / month", "1", "1", "Custom waste, manual purchase orders, administrative sheet, invoices and price updates from receipts or lists."],
-          ["Chef de Partie", "$35 / month", "1", "1", "Inventory (with counts from a photo, PDF or Excel), menus, suggested orders, Reports · Overview and manual sales entry."],
+          ["Chef de Partie", "$35 / month", "1", "1", "Inventory (with counts from a photo, PDF or Excel), menus, suggested orders, Reports · Overview, manual sales entry, sales forecast and staff schedule."],
           ["Sous Chef", "$70 / month", "2", "2", "Reports · Finance, P&L, Menu Engineering, POS import and Team (you + 1 person)."],
           ["Chef Ejecutivo", "$120 / month", "5", "5", "Team of up to 4 people besides you."],
         ]],

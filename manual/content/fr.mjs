@@ -565,7 +565,7 @@ export default {
         ["p", "L’historique des prix de chaque ingrédient et le fournisseur auprès duquel vous l’avez acheté, avec un tableau comparant vos fournisseurs (dernier prix, le plus bas, nombre d’achats). Il montre <strong>où vous pourriez économiser</strong> (un autre fournisseur vous l’a vendu moins cher, avec l’économie estimée par mois), ce qui a le plus augmenté sur 30 jours et un résumé de chaque fournisseur. Les prix viennent de vos commandes d’achat (hors annulées), des achats d’inventaire, des changements de prix et du prix actuel de chaque ingrédient."],
         ["h3", "Pertes"],
         ["p", "Des informations à partir des pertes configurées dans Ingrédients (chapitre 3), globales (par catégorie) ou personnalisées : la part utilisable de ce que vous achetez, combien chaque unité coûte en plus, combien vous perdez à chaque achat et un coût mensuel estimé selon vos achats des 90 derniers jours. Il suggère aussi les ingrédients sans pertes activées dont la catégorie perd souvent beaucoup."],
-        ["info", "Forfait", "Vue d'ensemble : à partir de <strong>Chef de Partie</strong>. Finances, Planifier et Personnel : à partir de <strong>Sous Chef</strong>."],
+        ["info", "Forfait", "Vue d'ensemble, Planifier (prévision et liste de courses) et Personnel : à partir de <strong>Chef de Partie</strong>. Finances et budget du mois : à partir de <strong>Sous Chef</strong>."],
       ],
     },
     {
@@ -623,7 +623,7 @@ export default {
         ["table", ["Forfait", "Prix", "Établissements", "Utilisateurs (vous inclus)", "Ajoute"], [
           ["Foodie", "Gratuit", "1", "1", "Recettes, ingrédients, import depuis là où se trouvent déjà vos données (texte, Excel, PDF, photos et tickets) et fiche de cuisine en PDF, fiches de boissons et pertes par catégorie (inclus dans tous les forfaits)."],
           ["Home Cook", "15 $ / mois", "1", "1", "Pertes personnalisées, commandes d'achat manuelles, fiche administrative, factures et mise à jour des prix depuis des tickets ou des listes."],
-          ["Chef de Partie", "35 $ / mois", "1", "1", "Inventaire (avec comptage depuis une photo, un PDF ou Excel), menus, commandes suggérées, Rapports · Vue d'ensemble et saisie manuelle des ventes."],
+          ["Chef de Partie", "35 $ / mois", "1", "1", "Inventaire (avec comptage depuis une photo, un PDF ou Excel), menus, commandes suggérées, Rapports · Vue d'ensemble, saisie manuelle des ventes, prévision des ventes et planning du personnel."],
           ["Sous Chef", "70 $ / mois", "2", "2", "Rapports · Finances, P&L, Menu Engineering, import de la caisse et Équipe (vous + 1 personne)."],
           ["Chef Ejecutivo", "120 $ / mois", "5", "5", "Équipe jusqu'à 4 personnes en plus de vous."],
         ]],

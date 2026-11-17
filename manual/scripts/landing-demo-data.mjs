@@ -354,5 +354,109 @@ export function buildDemo(lang, ownerId) {
   ]
   const orderRows = orders.map((o) => ({ id: o.id, business_id: null, owner_id: ownerId, data: o, created_at: o.createdAt }))
 
-  return { currency: cur, tables: { ingredients: ingredientRows, recipes: recipeRows, inventory_items: inventoryRows, sales_imports: salesRows, menus: menuRows, purchase_orders: orderRows } }
+  // POS y horario del personal (docs/331): salón con mesas y pedidos abiertos, y la semana
+  // del equipo, para las páginas de Ventas y POS y de Personal.
+  const AREA = { es: "Salón", en: "Dining room", da: "Restaurant", fr: "Salle", pt: "Salão", zh: "大厅" }
+  const tables = []
+  for (let i = 0; i < 8; i++) {
+    const col = i % 4
+    const row = Math.floor(i / 4)
+    tables.push({ id: `demo-table-${i + 1}`, areaId: "demo-area", label: String(i + 1), shape: i % 3 === 1 ? "round" : "square", seats: i % 4 === 3 ? 6 : 4, x: 90 + col * 270, y: 110 + row * 260, w: 130, h: 120 })
+  }
+  const floor = { areas: [{ id: "demo-area", name: L(AREA) }], tables, updatedAt: iso(daysAgo(0)) }
+  const r = (k) => recipes.find((x) => x.id === `demo-recipe-${k}`) || recipes[0]
+  const posItem = (id, k, seat, quantity, status, minutes) => {
+    const rc = r(k)
+    const at = new Date(now.getTime() - minutes * 60000).toISOString()
+    return { id, sourceType: "recipe", refId: rc.id, name: rc.name, seat, quantity, unitPrice: rc.price, unitCost: rc.costPerServing, extras: [], note: null, status, sentAt: status === "new" ? null : at, readyAt: status === "ready" || status === "served" ? at : null }
+  }
+  const posOrder = (n, tableNo, guests, items, minutes, status = "open") => ({
+    id: `demo-order-${n}`,
+    tableId: `demo-table-${tableNo}`,
+    tableLabel: String(tableNo),
+    areaName: L(AREA),
+    channel: "dine_in",
+    guests,
+    waiter: ["Ana", "Luis", "Sofía"][n % 3],
+    openedAt: new Date(now.getTime() - minutes * 60000).toISOString(),
+    status,
+    items,
+    updatedAt: iso(daysAgo(0)),
+    rev: 1,
+  })
+  const posOrders = [
+    posOrder(1, 1, 2, [posItem("o1a", "burger", 1, 1, "served", 35), posItem("o1b", "caesar", 2, 1, "served", 35), posItem("o1c", "lemonade", null, 2, "served", 40)], 48, "bill"),
+    posOrder(2, 3, 4, [posItem("o2a", "grilled-chicken", 1, 2, "sent", 12), posItem("o2b", "alfredo", 3, 1, "sent", 12), posItem("o2c", "tomato-soup", 4, 1, "ready", 6)], 25),
+    posOrder(3, 4, 6, [posItem("o3a", "burger", null, 3, "sent", 8), posItem("o3b", "lemonade", null, 6, "served", 15)], 20),
+    posOrder(4, 6, 2, [posItem("o4a", "caesar", 1, 1, "new", 0)], 4),
+  ]
+  const ROLES = {
+    cook: { es: "Cocinero", en: "Cook", da: "Kok", fr: "Cuisinier", pt: "Cozinheiro", zh: "厨师" },
+    server: { es: "Mesera", en: "Server", da: "Tjener", fr: "Serveuse", pt: "Garçonete", zh: "服务员" },
+    bar: { es: "Barista", en: "Barista", da: "Barista", fr: "Barista", pt: "Barista", zh: "咖啡师" },
+    dish: { es: "Ayudante", en: "Kitchen helper", da: "Køkkenhjælper", fr: "Commis", pt: "Ajudante", zh: "厨房帮手" },
+  }
+  // Pago por hora en lempiras; en dólares, ÷ 25, igual que los precios del ejemplo.
+  const pay = (hnl) => (cur === "HNL" ? hnl : round(hnl / 25, 2))
+  const staff = [
+    { id: "st-ana", name: "Ana", role: L(ROLES.server), hourlyRate: pay(75), active: true, defaultStart: "11:00", defaultEnd: "19:00" },
+    { id: "st-luis", name: "Luis", role: L(ROLES.cook), hourlyRate: pay(90), active: true, defaultStart: "10:00", defaultEnd: "18:00" },
+    { id: "st-sofia", name: "Sofía", role: L(ROLES.server), hourlyRate: pay(75), active: true, defaultStart: "16:00", defaultEnd: "23:00" },
+    { id: "st-carlos", name: "Carlos", role: L(ROLES.dish), hourlyRate: pay(60), active: true, defaultStart: "12:00", defaultEnd: "20:00" },
+    { id: "st-maria", name: "María", role: L(ROLES.bar), hourlyRate: pay(70), active: true, defaultStart: "07:00", defaultEnd: "15:00" },
+  ]
+  const local = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7))
+  const hoursOf = (a, b) => {
+    const [ah, am] = a.split(":").map(Number)
+    const [bh, bm] = b.split(":").map(Number)
+    let h = bh + bm / 60 - (ah + am / 60)
+    if (h <= 0) h += 24
+    return h
+  }
+  const shifts = []
+  const pattern = { "st-ana": [0, 1, 2, 4, 5], "st-luis": [0, 1, 3, 4, 5, 6], "st-sofia": [2, 3, 4, 5, 6], "st-carlos": [1, 2, 3, 5, 6], "st-maria": [0, 1, 2, 3, 4] }
+  // Esta semana y las cuatro anteriores: así Finanzas tiene el costo de personal del mes.
+  for (let w = -4; w <= 0; w++)
+  for (const p of staff)
+    for (const d of pattern[p.id]) {
+      const date = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + w * 7 + d)
+      shifts.push({ id: `sh-${p.id}-${w}-${d}`, staffId: p.id, date: local(date), start: p.defaultStart, end: p.defaultEnd, hours: hoursOf(p.defaultStart, p.defaultEnd), rate: p.hourlyRate })
+    }
+  const posRows = [
+    { id: "main::floor", kind: "floor", business_id: null, owner_id: ownerId, data: floor, updated_at: iso(daysAgo(0)) },
+    { id: "main::staff", kind: "config", business_id: null, owner_id: ownerId, data: { staff, shifts }, updated_at: iso(daysAgo(0)) },
+    ...posOrders.map(({ id, ...o }) => ({ id, kind: "order", business_id: null, owner_id: ownerId, data: o, updated_at: iso(daysAgo(0)) })),
+  ]
+
+  // Conteos del período y compras del mes (docs/331): sin ellos Finanzas no puede mostrar el
+  // costo real, el Prime Cost ni la utilidad. Food cost real ≈ 31 % (un poco más que el teórico).
+  const snapItems = (factor) =>
+    inventoryRows.map((row) => {
+      const d = row.data
+      const quantity = round(d.currentStock * factor, 2)
+      return { id: d.id, name: d.name, category: d.category, quantity, unit: d.unit, price: d.price, netContent: d.netContent, totalPrice: round((quantity * d.price) / (d.netContent || 1), 2) }
+    })
+  const valueOf = (items) => items.reduce((sum, i) => sum + i.totalPrice, 0)
+  const openingItems = snapItems(1.15)
+  const closingItems = snapItems(1)
+  const purchases = Math.max(0, round(totalRevenue * 0.31 - (valueOf(openingItems) - valueOf(closingItems)), 2))
+  const snapshotRow = (id, date, items) => ({ id, business_id: null, owner_id: ownerId, date, data: { type: "final", modifiedItems: items.length, totalValue: round(valueOf(items), 2), items } })
+  const snapshotRows = [
+    snapshotRow("demo-snap-open", new Date(daysAgo(29).setHours(8, 0, 0, 0)).toISOString(), openingItems),
+    snapshotRow("demo-snap-close", new Date(now.getTime() - 3600000).toISOString(), closingItems),
+  ]
+  const monthSubtotal = orderItems.reduce((sum, i) => sum + i.purchaseCost, 0)
+  const k = monthSubtotal > 0 ? purchases / monthSubtotal : 0
+  const monthItems = orderItems.map((i) => ({ ...i, id: `m-${i.id}`, totalQuantity: round(i.totalQuantity * k, 2), quantityToBuy: round(i.totalQuantity * k, 2), purchaseCost: round(i.purchaseCost * k, 2) }))
+  const monthTotal = round(monthItems.reduce((sum, i) => sum + i.purchaseCost, 0), 2)
+  orderRows.push({
+    id: "demo-po-month",
+    business_id: null,
+    owner_id: ownerId,
+    created_at: iso(daysAgo(15)),
+    data: { id: "demo-po-month", name: SUPPLIER[lang] || SUPPLIER.en, number: 9, date: daysAgo(15).toISOString().slice(0, 10), recipes: [], items: monthItems, subtotal: monthTotal, tax: 0, total: monthTotal, status: "received", receivedAt: iso(daysAgo(14)), supplier: SUPPLIER[lang] || SUPPLIER.en, createdAt: iso(daysAgo(15)) },
+  })
+
+  return { currency: cur, tables: { ingredients: ingredientRows, recipes: recipeRows, inventory_items: inventoryRows, sales_imports: salesRows, menus: menuRows, purchase_orders: orderRows, pos_data: posRows, inventory_snapshots: snapshotRows } }
 }

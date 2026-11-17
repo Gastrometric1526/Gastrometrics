@@ -441,7 +441,7 @@ function EstadisticasContent() {
         <div className="flex-1 overflow-hidden">
           <div className="h-full overflow-y-auto">
             <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
-              <EstadisticasTour canAccessFinance={!!canAccessFinance} isBusiness={businessId !== "main"} />
+              <EstadisticasTour canAccessFinance={!!canAccessFinance} canAccessPlan={!!canAccessPanorama} isBusiness={businessId !== "main"} />
               {/* Header */}
               <div className="flex items-center gap-2 md:gap-4">
                 <Link href={businessId !== "main" ? `/business/${businessId}` : "/dashboard"}>
@@ -867,16 +867,17 @@ function EstadisticasContent() {
                     <EstadisticasMermaTab businessId={businessId} ingredients={ingredients} orders={purchaseOrders} changes={priceHistory} />
                   </TabsContent>
 
-                  {/* Planear y Personal (docs/322): con Finanzas (Sous Chef+). Personal, solo en un negocio. */}
+                  {/* Planear y Personal (docs/322): desde Chef de Partie (docs/332, antes Sous Chef). El
+                      presupuesto, dentro de Planear, sigue con Finanzas. Personal, solo en un negocio. */}
                   {(["planear", "personal"] as const).map((tab) =>
                     tab === "personal" && businessId === "main" ? null : (
                       <TabsContent key={tab} value={tab} className="mt-4">
-                        {canAccessFinance ? (
+                        {canAccessPanorama ? (
                           tab === "planear" ? <EstadisticasPlanearTab businessId={businessId} /> : <EstadisticasPersonalTab businessId={businessId} />
-                        ) : getAccessBlockReason("stats_finance") === "admin" ? (
+                        ) : getAccessBlockReason("stats_panorama") === "admin" ? (
                           <AdminRestrictedInline sectionName={t("estadisticas_finance_section_name")} />
                         ) : (
-                          <FeatureLockedInline feature="stats_finance" title={t("plan_locked_title")} description={t("plan_locked_desc")} />
+                          <FeatureLockedInline feature="stats_panorama" title={t("plan_locked_title")} description={t("plan_locked_desc")} />
                         )}
                       </TabsContent>
                     ),

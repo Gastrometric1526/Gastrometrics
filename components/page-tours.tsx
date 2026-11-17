@@ -289,9 +289,12 @@ export function MepTour() {
 // la pestaña que este paso resaltaba ya no existe en esta página.
 export function EstadisticasTour({
   canAccessFinance,
+  canAccessPlan = canAccessFinance,
   isBusiness = false,
 }: {
   canAccessFinance: boolean
+  /** Planear y Personal: desde Chef de Partie (docs/332). */
+  canAccessPlan?: boolean
   /** Personal solo existe dentro de un negocio (docs/322). */
   isBusiness?: boolean
 }) {
@@ -365,25 +368,30 @@ export function EstadisticasTour({
             description: t("tour_fin_dish_types_desc"),
             selector: '[data-tour="finanzas-dish-types"]',
           } as TourStep,
+        ]
+      : []),
+    // Planear y Personal desde Chef de Partie (docs/332).
+    ...(canAccessPlan
+      ? [
           // docs/322: Planear (pronóstico y presupuesto) y Personal (solo en un negocio).
-          {
-            id: "plan",
-            title: t("tour_stats_plan_title"),
-            description: t("tour_stats_plan_desc"),
-            selector: '[data-tour="stats-plan"]',
-            beforeShow: clickTab("stats-tab-planear"),
-          } as TourStep,
-          ...(isBusiness
-            ? [
-                {
-                  id: "personal",
-                  title: t("tour_stats_personal_title"),
-                  description: t("tour_stats_personal_desc"),
-                  selector: '[data-tour="stats-personal"]',
-                  beforeShow: clickTab("stats-tab-personal"),
-                } as TourStep,
-              ]
-            : []),
+            {
+              id: "plan",
+              title: t("tour_stats_plan_title"),
+              description: t("tour_stats_plan_desc"),
+              selector: '[data-tour="stats-plan"]',
+              beforeShow: clickTab("stats-tab-planear"),
+            } as TourStep,
+            ...(isBusiness
+              ? [
+                  {
+                    id: "personal",
+                    title: t("tour_stats_personal_title"),
+                    description: t("tour_stats_personal_desc"),
+                    selector: '[data-tour="stats-personal"]',
+                    beforeShow: clickTab("stats-tab-personal"),
+                  } as TourStep,
+                ]
+              : []),
         ]
       : []),
   ]

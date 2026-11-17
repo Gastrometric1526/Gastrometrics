@@ -566,7 +566,7 @@ export default {
         ["p", "El historial de precio de cada ingrediente y a qué proveedor se lo compraste, con una tabla que compara a tus proveedores (último precio, el más bajo, cuántas compras). Te muestra <strong>dónde podrías ahorrar</strong> (otro proveedor te lo vendió más barato, con el ahorro estimado al mes), lo que más subió en 30 días y un resumen de cada proveedor. Los precios salen de tus órdenes de compra (sin las canceladas), las compras de Inventario, los cambios de precio y el precio actual de cada ingrediente."],
         ["h3", "Merma"],
         ["p", "Información a partir de la merma que configuraste en Ingredientes (capítulo 3), sea la global de su categoría o la personalizada: cuánto se aprovecha de lo que compras, cuánto encarece cada unidad, cuánto pierdes en cada compra y un costo estimado al mes con lo que compraste en los últimos 90 días. También sugiere ingredientes sin merma activa cuya categoría suele perder bastante."],
-        ["info", "Plan", "Panorama: desde <strong>Chef de Partie</strong>. Finanzas, Planear y Personal: desde <strong>Sous Chef</strong>."],
+        ["info", "Plan", "Panorama, Planear (pronóstico y lista de lo que falta) y Personal: desde <strong>Chef de Partie</strong>. Finanzas y el presupuesto del mes: desde <strong>Sous Chef</strong>."],
       ],
     },
     {
@@ -624,7 +624,7 @@ export default {
         ["table", ["Plan", "Precio", "Negocios", "Usuarios (contigo)", "Agrega"], [
           ["Foodie", "Gratis", "1", "1", "Recetas, ingredientes, importación desde donde ya tienes tus datos (texto, Excel, PDF, fotos y tickets) y ficha de cocina en PDF, fichas de bebidas y merma por categoría (incluidos en todos los planes)."],
           ["Home Cook", "$15 / mes", "1", "1", "Merma personalizada, órdenes de compra manuales, ficha administrativa, facturas y actualizar precios desde tickets o listas."],
-          ["Chef de Partie", "$35 / mes", "1", "1", "Inventario (con conteo desde una foto, PDF o Excel), menús, órdenes sugeridas, Reportes · Panorama y registro manual de ventas."],
+          ["Chef de Partie", "$35 / mes", "1", "1", "Inventario (con conteo desde una foto, PDF o Excel), menús, órdenes sugeridas, Reportes · Panorama, registro manual de ventas, pronóstico de ventas y horario del personal."],
           ["Sous Chef", "$70 / mes", "2", "2", "Reportes · Finanzas, P&L, Menu Engineering, importación del POS y Equipo (tú + 1 persona)."],
           ["Chef Ejecutivo", "$120 / mes", "5", "5", "Equipo de hasta 4 personas además de ti."],
         ]],

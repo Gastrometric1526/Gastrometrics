@@ -565,7 +565,7 @@ export default {
         ["p", "Prishistorikken for hver ingrediens og hvilken leverandør du købte den hos, med en tabel, der sammenligner dine leverandører (seneste pris, laveste, antal køb). Den viser, <strong>hvor du kan spare</strong> (en anden leverandør har solgt den billigere, med den anslåede besparelse om måneden), hvad der steg mest de seneste 30 dage og et overblik over hver leverandør. Priserne kommer fra dine indkøbsordrer (uden annullerede), lagerkøb, prisændringer og hver ingrediens’ nuværende pris."],
         ["h3", "Svind"],
         ["p", "Information ud fra det svind, du har sat under Ingredienser (kapitel 3), enten kategoriens globale værdi eller en tilpasset: hvor meget af det, du køber, der kan bruges, hvor meget dyrere hver enhed bliver, hvor meget du mister ved hvert køb og en anslået pris om måneden ud fra dine køb de seneste 90 dage. Den foreslår også ingredienser uden svind, hvis kategori normalt mister en del."],
-        ["info", "Plan", "Overblik: fra <strong>Chef de Partie</strong>. Økonomi, Planlæg og Personale: fra <strong>Sous Chef</strong>."],
+        ["info", "Plan", "Overblik, Planlæg (prognose og indkøbsliste) og Personale: fra <strong>Chef de Partie</strong>. Økonomi og månedsbudget: fra <strong>Sous Chef</strong>."],
       ],
     },
     {
@@ -623,7 +623,7 @@ export default {
         ["table", ["Plan", "Pris", "Virksomheder", "Brugere (inkl. dig)", "Tilføjer"], [
           ["Foodie", "Gratis", "1", "1", "Opskrifter, ingredienser, import fra hvor dine data allerede ligger (tekst, Excel, PDF, fotos og kvitteringer) og køkkenark som PDF, opskriftsark til drikke og svind pr. kategori (med i alle planer)."],
           ["Home Cook", "$15 / md.", "1", "1", "Tilpasset svind, manuelle indkøbsordrer, administrativt ark, fakturaer og prisopdatering fra kvitteringer eller lister."],
-          ["Chef de Partie", "$35 / md.", "1", "1", "Lager (med optælling fra et foto, en PDF eller Excel), menuer, foreslåede ordrer, Rapporter · Overblik og manuel salgsregistrering."],
+          ["Chef de Partie", "$35 / md.", "1", "1", "Lager (med optælling fra et foto, en PDF eller Excel), menuer, foreslåede ordrer, Rapporter · Overblik, manuel salgsregistrering, salgsprognose og personalevagtplan."],
           ["Sous Chef", "$70 / md.", "2", "2", "Rapporter · Økonomi, P&L, Menu Engineering, POS-import og Team (dig + 1 person)."],
           ["Chef Ejecutivo", "$120 / md.", "5", "5", "Team på op til 4 personer ud over dig."],
         ]],

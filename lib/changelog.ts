@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Planear y Personal desde Chef de Partie (docs/332).
+    version: "2026-11-17",
+    tutorialHref: tourHref("estadisticas"),
+    content: {
+      es: { title: "Pronóstico y horario, ahora desde Chef de Partie", items: ["Reportes → Planear: el pronóstico de ventas de cada día y la lista de lo que te va a faltar ya están en el plan Chef de Partie. El presupuesto del mes sigue en Sous Chef.", "Reportes → Personal: arma el horario de tu equipo en tus negocios desde Chef de Partie, sin necesitar el POS.", "En la tarjeta de cada plan ahora dice qué incluye: los alérgenos y el tipo de plato están en todos, también en Foodie."] },
+      en: { title: "Forecast and schedule, now from Chef de Partie", items: ["Reports → Plan: each day's sales forecast and the list of what you'll be missing are now on the Chef de Partie plan. The monthly budget stays on Sous Chef.", "Reports → Staff: build your team's schedule in your businesses from Chef de Partie, no POS needed.", "Each plan card now says what it includes: allergens and dish type are on every plan, including Foodie."] },
+      da: { title: "Prognose og vagtplan, nu fra Chef de Partie", items: ["Rapporter → Planlæg: dagens salgsprognose og listen over det, du mangler, er nu med i Chef de Partie. Månedsbudgettet er stadig i Sous Chef.", "Rapporter → Personale: læg holdets vagtplan i dine virksomheder fra Chef de Partie, uden POS.", "Hver plans kort viser nu, hvad den indeholder: allergener og rettype findes i alle planer, også Foodie."] },
+      fr: { title: "Prévision et planning, désormais dès Chef de Partie", items: ["Rapports → Planifier : la prévision des ventes de chaque jour et la liste de ce qui va manquer sont désormais dans le forfait Chef de Partie. Le budget du mois reste dans Sous Chef.", "Rapports → Personnel : préparez le planning de votre équipe dans vos établissements dès Chef de Partie, sans POS.", "Chaque carte de forfait indique maintenant ce qu'elle inclut : les allergènes et le type de plat sont dans tous les forfaits, y compris Foodie."] },
+      pt: { title: "Previsão e escala, agora a partir do Chef de Partie", items: ["Relatórios → Planejar: a previsão de vendas de cada dia e a lista do que vai faltar agora estão no plano Chef de Partie. O orçamento do mês continua no Sous Chef.", "Relatórios → Equipe de trabalho: monte a escala da sua equipe nos seus negócios a partir do Chef de Partie, sem precisar do POS.", "O cartão de cada plano agora diz o que inclui: alergênicos e tipo de prato estão em todos, inclusive no Foodie."] },
+      zh: { title: "销售预测和排班，现在 Chef de Partie 起即可使用", items: ["报表 → 计划：每日销售预测和缺货清单现已包含在 Chef de Partie 套餐中。月度预算仍属于 Sous Chef。", "报表 → 员工：Chef de Partie 起即可在你的商家中安排团队排班，无需 POS。", "每个套餐卡片现在都会写明包含的内容：过敏原和菜品类型在所有套餐中都有，包括 Foodie。"] },
+    },
+  },
+  {
     // Rendimiento vacío = peso de los ingredientes, también en unidades o porciones (docs/326).
     version: "2026-11-16h",
     tutorialHref: tourHref("ficha-tecnica"),
