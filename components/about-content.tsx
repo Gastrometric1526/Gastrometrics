@@ -94,7 +94,13 @@ export function AboutContent() {
       <section className="bg-canvas-alt border-y border-hairline">
         <div className={`${PAGE_WIDTH} py-16 md:py-24 grid gap-12 lg:grid-cols-[1.2fr_1fr] lg:items-center`}>
           <Reveal className="space-y-6">
-            <SectionHeading kicker={t("about_story_kicker")} title={t("about_story_title")} subtitle={t("about_hero_body2")} />
+            <SectionHeading kicker={t("about_story_kicker")} title={t("about_story_title")} />
+            {/* La historia del fundador, en sus palabras (docs/333). */}
+            <div className="space-y-4 text-text-3 leading-relaxed text-pretty">
+              {(["about_founder_p1", "about_founder_p2", "about_founder_p3", "about_founder_p4"] as const).map((key) => (
+                <p key={key}>{t(key)}</p>
+              ))}
+            </div>
             <figure className="rounded-2xl border border-hairline bg-card p-6 md:p-7 space-y-4">
               <ChefHat className="h-6 w-6 text-primary" />
               <blockquote className="text-lg text-foreground leading-relaxed tracking-[-0.01em]">“{t("landing_founder_quote")}”</blockquote>
