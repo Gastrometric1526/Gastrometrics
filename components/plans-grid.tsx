@@ -137,10 +137,18 @@ export function PlansGrid({ freeRedirectTo = "/dashboard" }: PlansGridProps) {
                   <span className="text-foreground">{feature}</span>
                 </li>
               ))}
+              {/* Lo que NO incluye, dicho en texto (docs/329): antes solo lo marcaba una X gris, y quien
+                  lee la página como texto (lector de pantalla, buscadores) lo leía como incluido. */}
+              {plan.locked.length > 0 && (
+                <li className="pt-2 text-xs font-medium text-muted-foreground">{t("plans_not_included")}</li>
+              )}
               {plan.locked.map((feature, index) => (
-                <li key={index} className="flex items-start gap-2 opacity-50">
-                  <X className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                  <span className="text-muted-foreground">{feature}</span>
+                <li key={index} className="flex items-start gap-2 opacity-60">
+                  <X className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" aria-hidden="true" />
+                  <span className="text-muted-foreground">
+                    <span className="sr-only">{t("plans_not_included_sr")} </span>
+                    {feature}
+                  </span>
                 </li>
               ))}
             </ul>

@@ -99,7 +99,8 @@ export function LandingProblem() {
                   className="block text-5xl font-semibold tracking-[-0.04em] text-primary tabular-nums"
                 />
               ) : (
-                <span className="block text-5xl font-semibold text-primary">0</span>
+                // Antes de aparecer, la tarjeta está oculta; el texto ya lleva la cifra real (docs/329).
+                <span className="block text-5xl font-semibold text-primary">{`${s.prefix}${s.value}${s.suffix}`}</span>
               )}
               <p className="text-foreground leading-snug">{t(s.desc)}</p>
               <p className="text-xs text-text-4">{t(s.source)}</p>

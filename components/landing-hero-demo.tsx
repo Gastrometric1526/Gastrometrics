@@ -75,7 +75,9 @@ export function LandingHeroDemo() {
   const money = (lempiras: number) => (usd ? `$${conv(lempiras).toFixed(2)}` : `L ${lempiras.toFixed(2)}`)
 
   const [dish, setDish] = useState(0)
-  const [shown, setShown] = useState(0)
+  // Empieza completa (docs/329): el HTML de la página y quien no ve la animación leen la ficha
+  // con su costo y su precio; antes salía «Costo total L 0.00» junto a «Precio L 235.00».
+  const [shown, setShown] = useState(99)
   const [reduced, setReduced] = useState(false)
   const [visible, setVisible] = useState(true)
   const ref = useRef<HTMLDivElement>(null)
@@ -83,7 +85,8 @@ export function LandingHeroDemo() {
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
     setReduced(mq.matches)
-    if (mq.matches) setShown(99)
+    // Con animación, se arma desde cero ya en el navegador.
+    if (!mq.matches) setShown(0)
     // Se pausa solo cuando salió por completo de la pantalla, y sigue donde iba.
     const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { threshold: 0 })
     if (ref.current) io.observe(ref.current)

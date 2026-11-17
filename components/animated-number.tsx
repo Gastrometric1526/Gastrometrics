@@ -60,11 +60,16 @@ export function AnimatedNumber({
     return () => observer.disconnect()
   }, [value, duration])
 
+  // El valor final va siempre en el texto (docs/329): quien lee la página sin animación
+  // (lector de pantalla, buscadores, sin JavaScript) veía «0».
   return (
     <span ref={spanRef} className={className}>
-      {prefix}
-      {display.toFixed(decimals)}
-      {suffix}
+      <span className="sr-only">{`${prefix}${value.toFixed(decimals)}${suffix}`}</span>
+      <span aria-hidden="true">
+        {prefix}
+        {display.toFixed(decimals)}
+        {suffix}
+      </span>
     </span>
   )
 }
