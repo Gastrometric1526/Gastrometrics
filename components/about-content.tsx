@@ -97,7 +97,7 @@ export function AboutContent() {
             <SectionHeading kicker={t("about_story_kicker")} title={t("about_story_title")} />
             {/* La historia del fundador, en sus palabras (docs/333). */}
             <div className="space-y-4 text-text-3 leading-relaxed text-pretty">
-              {(["about_founder_p1", "about_founder_p2", "about_founder_p3", "about_founder_p4"] as const).map((key) => (
+              {(["about_founder_p1", "about_founder_p2", "about_founder_p3", "about_founder_p3b", "about_founder_p4"] as const).map((key) => (
                 <p key={key}>{t(key)}</p>
               ))}
             </div>
