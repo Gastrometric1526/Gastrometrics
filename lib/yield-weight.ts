@@ -38,6 +38,10 @@ const GRAMS_PER_YIELD_UNIT: Record<string, number> = { g: 1, kg: 1000, ml: 1, L:
  * suma cruda de las cantidades: 500 g + 1 kg = 501 y el costo unitario salía mal. Ahora se
  * convierte a gramos y se expresa en la unidad de rendimiento de la receta (kg → ÷ 1 000). Si
  * ninguna línea tiene peso conocido (solo piezas), se suman las piezas, como antes.
+ *
+ * En unidades o porciones también se usa el peso de los ingredientes (pedido del dueño,
+ * docs/326): 1 g = 1 unidad o porción, así 1 500 g de ingredientes rinden 1 500. Revierte la
+ * regla de docs/320, que tomaba la receta completa como 1.
  */
 export function fallbackYield(
   lines: { quantity?: number; unit?: string; ingredientId?: string | null }[] | undefined,
@@ -46,9 +50,6 @@ export function fallbackYield(
 ): number {
   const used = (lines ?? []).filter((l) => l.ingredientId && (l.quantity ?? 0) > 0)
   const grams = estimateYieldWeightGrams(used, multiplier)
-  // Porciones o unidades con el Rendimiento vacío (docs/320): la receta completa es 1. Antes
-  // se devolvían los gramos como si fueran porciones (1 500 g → «1 500 un»).
-  if (grams > 0 && (yieldUnit === "porciones" || yieldUnit === "un")) return multiplier
   if (grams > 0) return grams / (GRAMS_PER_YIELD_UNIT[yieldUnit || "g"] ?? 1)
   return used.reduce((sum, l) => sum + (l.quantity as number), 0) * multiplier
 }

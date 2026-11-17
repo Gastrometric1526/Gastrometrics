@@ -179,7 +179,7 @@ export default {
         ["list", [
           "<strong>Nome</strong> e <strong>Classificação</strong> (22 opções, de Linha quente a Confeitaria ou P&D). A classificação «Sub-receita» transforma a receita em ingrediente (capítulo 5). As 5 classificações «Bar · …» calculam o preço com pour cost (capítulo 6).",
           "<strong>Etapa</strong>: em que momento do serviço ela entra (entrada, prato principal, sobremesa…).",
-          "<strong>Rendimento</strong>: quanto a receita produz (8 porções, 1200 g…) com a unidade. Uma receita nova começa em unidades, então o custo sai por unidade; para molhos, massas e bases, escolha kg ou L. Em unidades ou porções, se você deixar o número vazio, a receita inteira conta como 1.",
+          "<strong>Rendimento</strong>: quanto a receita produz (8 porções, 1200 g…) com a unidade. Uma receita nova começa em unidades, então o custo sai por unidade; para molhos, massas e bases, escolha kg ou L. Se você deixar o número vazio, o app usa o peso dos ingredientes: em unidades ou porções, 1500 g de ingredientes rendem 1500.",
           "<strong>Ingredientes</strong>: busque na sua base e informe a quantidade. Cada linha mostra quanto custa.",
           "<strong>Modo de preparo e observações</strong>, e uma <strong>foto</strong> do prato.",
         ]],
@@ -190,7 +190,7 @@ export default {
         ["p", "Quer começar do zero? Use <strong>Limpar ficha</strong> (ao lado de «Salvar receita» ou no aviso). Ele pede confirmação e apaga tudo: nome, ingredientes, modo de preparo, foto, preços e o rascunho salvo. Ao salvar a receita, o rascunho é apagado sozinho."],
         ["h3", "O custo de produção"],
         ["formula", "Custo de cada ingrediente e da receita", ["Custo da linha = Quantidade × Preço por unidade", "Custo de produção = Soma de todas as linhas"]],
-        ["formula", "Custo unitário", ["Custo unitário = Custo de produção ÷ Rendimento"], "Se você não informar um rendimento em g, ml, kg ou L, o app estima pelo peso total dos ingredientes. Em unidades ou porções, a receita inteira conta como 1."],
+        ["formula", "Custo unitário", ["Custo unitário = Custo de produção ÷ Rendimento"], "Se você não informar um rendimento em g, ml, kg ou L, o app estima pelo peso total dos ingredientes. Também em unidades ou porções: 1 g conta como 1 unidade ou porção."],
         ["h3", "Duas formas de calcular o preço"],
         ["p", "Cada receita usa um de dois métodos. As receitas novas começam com <strong>Food Cost %</strong>; seu negócio pode mudar esse padrão e você pode trocar receita por receita sem perder nada: os dois partem do mesmo custo real. As receitas salvas antes com 6 itens continuam iguais."],
         ["cards", [

@@ -179,7 +179,7 @@ export default {
         ["list", [
           "<strong>Nom</strong> et <strong>Classification</strong> (22 options, de la Ligne chaude à la Pâtisserie ou R&D). La classification « Sous-recette » transforme la recette en ingrédient (chapitre 5). Les 5 classifications « Bar · … » calculent le prix avec le pour cost (chapitre 6).",
           "<strong>Étape</strong> : à quel moment du service elle intervient (entrée, plat, dessert…).",
-          "<strong>Rendement</strong> : ce que produit la recette (8 portions, 1200 g…) avec son unité. Une nouvelle recette commence en unités, donc le coût sort par unité ; pour les sauces, pâtes et bases, choisissez kg ou L. En unités ou en portions, si vous laissez le nombre vide, la recette entière compte pour 1.",
+          "<strong>Rendement</strong> : ce que produit la recette (8 portions, 1200 g…) avec son unité. Une nouvelle recette commence en unités, donc le coût sort par unité ; pour les sauces, pâtes et bases, choisissez kg ou L. Si vous laissez le nombre vide, l'application utilise le poids des ingrédients : en unités ou en portions, 1500 g d'ingrédients rendent 1500.",
           "<strong>Ingrédients</strong> : recherchez-les dans votre base et indiquez la quantité. Chaque ligne affiche son coût.",
           "<strong>Procédure et observations</strong>, ainsi qu'une <strong>photo</strong> du plat.",
         ]],
@@ -190,7 +190,7 @@ export default {
         ["p", "Vous voulez repartir de zéro ? Utilisez <strong>Vider la fiche</strong> (à côté de « Enregistrer la recette » ou dans l'avis). Une confirmation est demandée, puis tout est effacé : nom, ingrédients, procédure, photo, prix et brouillon enregistré. Enregistrer la recette supprime automatiquement le brouillon."],
         ["h3", "Le coût de production"],
         ["formula", "Coût de chaque ingrédient et de la recette", ["Coût de la ligne = Quantité × Prix par unité", "Coût de production = Somme de toutes les lignes"]],
-        ["formula", "Coût unitaire", ["Coût unitaire = Coût de production ÷ Rendement"], "Si vous n'indiquez pas de rendement en g, ml, kg ou L, l'application l'estime à partir du poids total des ingrédients. En unités ou en portions, la recette entière compte pour 1."],
+        ["formula", "Coût unitaire", ["Coût unitaire = Coût de production ÷ Rendement"], "Si vous n'indiquez pas de rendement en g, ml, kg ou L, l'application l'estime à partir du poids total des ingrédients. De même en unités ou en portions : 1 g compte pour 1 unité ou portion."],
         ["h3", "Deux façons de calculer le prix"],
         ["p", "Chaque recette utilise l'une de deux méthodes. Les nouvelles recettes commencent avec <strong>Food Cost %</strong> ; votre établissement peut changer cette méthode par défaut et vous pouvez la changer recette par recette sans rien perdre : les deux partent du même coût réel. Les recettes enregistrées avant avec 6 postes restent telles quelles."],
         ["cards", [

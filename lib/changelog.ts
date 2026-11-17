@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Rendimiento vacío = peso de los ingredientes, también en unidades o porciones (docs/326).
+    version: "2026-11-16h",
+    tutorialHref: tourHref("ficha-tecnica"),
+    content: {
+      es: { title: "Rendimiento vacío: el peso de los ingredientes", items: ["Ficha Técnica: si dejas vacío el número del rendimiento, la app usa el peso de los ingredientes como rendimiento, también en unidades o porciones (1500 g de ingredientes rinden 1500). Así el costo por unidad sale igual que antes.", "Si tu receta rinde otra cantidad, escribe el número en Rendimiento."] },
+      en: { title: "Empty yield: the ingredients' weight", items: ["Recipe Sheet: if you leave the yield number empty, the app uses the ingredients' weight as the yield, also in units or portions (1500 g of ingredients yield 1500). The cost per unit comes out as before.", "If your recipe yields a different amount, type the number in Yield."] },
+      da: { title: "Tomt udbytte: ingrediensernes vægt", items: ["Opskriftsark: lader du udbyttets tal stå tomt, bruger appen ingrediensernes vægt som udbytte, også i stykker eller portioner (1500 g ingredienser giver 1500). Prisen pr. stk. bliver som før.", "Giver din opskrift en anden mængde, så skriv tallet i Udbytte."] },
+      fr: { title: "Rendement vide : le poids des ingrédients", items: ["Fiche technique : si vous laissez vide le nombre du rendement, l'application utilise le poids des ingrédients comme rendement, aussi en unités ou en portions (1500 g d'ingrédients rendent 1500). Le coût par unité sort comme avant.", "Si votre recette rend une autre quantité, saisissez le nombre dans Rendement."] },
+      pt: { title: "Rendimento vazio: o peso dos ingredientes", items: ["Ficha Técnica: se você deixar vazio o número do rendimento, o app usa o peso dos ingredientes como rendimento, também em unidades ou porções (1500 g de ingredientes rendem 1500). O custo por unidade sai como antes.", "Se sua receita rende outra quantidade, escreva o número em Rendimento."] },
+      zh: { title: "产量留空：按食材重量", items: ["技术配方表：如果不填产量数字，应用会把食材重量当作产量，按“个”或“份”计时也一样（1500 g 食材即产出 1500）。每个的成本与以前相同。", "如果你的配方产量不同，请在“产量”中填写数字。"] },
+    },
+  },
+  {
     // Ventas por tipo de plato en Reportes (docs/325).
     version: "2026-11-16g",
     tutorialHref: tourHref("estadisticas"),
@@ -114,12 +127,12 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "2026-11-16",
     tutorialHref: tourHref("ficha-tecnica"),
     content: {
-      es: { title: "Las recetas nuevas rinden en unidades", items: ["Ficha Técnica: una receta nueva empieza con el rendimiento en unidades, así el costo y el precio salen por unidad. Para salsas, masas y bases elige kg o L.", "Si dejas vacío el número del rendimiento en unidades o porciones, la receta completa cuenta como 1. Antes podía tomar el peso de los ingredientes como si fueran porciones."] },
-      en: { title: "New recipes yield units", items: ["Recipe Sheet: a new recipe starts with its yield in units, so cost and price come out per unit. For sauces, doughs and bases choose kg or L.", "If you leave the yield number empty in units or portions, the whole recipe counts as 1. Before, it could take the ingredients' weight as if it were portions."] },
-      da: { title: "Nye opskrifter giver stykker", items: ["Opskriftsark: en ny opskrift starter med udbyttet i stykker, så omkostning og pris beregnes pr. stk. Til saucer, deje og baser vælger du kg eller L.", "Lader du udbyttets tal stå tomt i stykker eller portioner, tæller hele opskriften som 1. Før kunne den tage ingrediensernes vægt, som om det var portioner."] },
-      fr: { title: "Les nouvelles recettes rendent des unités", items: ["Fiche technique : une nouvelle recette commence avec un rendement en unités, donc le coût et le prix sortent par unité. Pour les sauces, pâtes et bases, choisissez kg ou L.", "Si vous laissez vide le nombre du rendement en unités ou en portions, la recette entière compte pour 1. Avant, le poids des ingrédients pouvait être pris comme des portions."] },
-      pt: { title: "Receitas novas rendem unidades", items: ["Ficha Técnica: uma receita nova começa com o rendimento em unidades, então o custo e o preço saem por unidade. Para molhos, massas e bases, escolha kg ou L.", "Se você deixar vazio o número do rendimento em unidades ou porções, a receita inteira conta como 1. Antes, o peso dos ingredientes podia ser tomado como porções."] },
-      zh: { title: "新配方默认按“个”计产量", items: ["技术配方表：新配方的产量默认以“个”为单位，因此成本和价格按每个计算。酱汁、面团和底料请选择 kg 或 L。", "产量单位为“个”或“份”时，如果不填数字，整份配方算作 1。以前可能会把食材的重量当作份数。"] },
+      es: { title: "Las recetas nuevas rinden en unidades", items: ["Ficha Técnica: una receta nueva empieza con el rendimiento en unidades, así el costo y el precio salen por unidad. Para salsas, masas y bases elige kg o L.", "Si dejas vacío el número del rendimiento, la app usa el peso de los ingredientes como rendimiento, también en unidades o porciones."] },
+      en: { title: "New recipes yield units", items: ["Recipe Sheet: a new recipe starts with its yield in units, so cost and price come out per unit. For sauces, doughs and bases choose kg or L.", "If you leave the yield number empty, the app uses the ingredients' weight as the yield, also in units or portions."] },
+      da: { title: "Nye opskrifter giver stykker", items: ["Opskriftsark: en ny opskrift starter med udbyttet i stykker, så omkostning og pris beregnes pr. stk. Til saucer, deje og baser vælger du kg eller L.", "Lader du udbyttets tal stå tomt, bruger appen ingrediensernes vægt som udbytte, også i stykker eller portioner."] },
+      fr: { title: "Les nouvelles recettes rendent des unités", items: ["Fiche technique : une nouvelle recette commence avec un rendement en unités, donc le coût et le prix sortent par unité. Pour les sauces, pâtes et bases, choisissez kg ou L.", "Si vous laissez vide le nombre du rendement, l'application utilise le poids des ingrédients comme rendement, aussi en unités ou en portions."] },
+      pt: { title: "Receitas novas rendem unidades", items: ["Ficha Técnica: uma receita nova começa com o rendimento em unidades, então o custo e o preço saem por unidade. Para molhos, massas e bases, escolha kg ou L.", "Se você deixar vazio o número do rendimento, o app usa o peso dos ingredientes como rendimento, também em unidades ou porções."] },
+      zh: { title: "新配方默认按“个”计产量", items: ["技术配方表：新配方的产量默认以“个”为单位，因此成本和价格按每个计算。酱汁、面团和底料请选择 kg 或 L。", "如果不填产量数字，应用会把食材重量当作产量，按“个”或“份”计时也一样。"] },
     },
   },
   {

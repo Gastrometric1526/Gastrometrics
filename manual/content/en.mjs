@@ -179,7 +179,7 @@ export default {
         ["list", [
           "<strong>Name</strong> and <strong>Classification</strong> (22 options, from Hot line to Pastry or R&D). The “Sub-recipe” classification turns the recipe into an ingredient (chapter 5). The 5 “Bar · …” classifications calculate the price with pour cost (chapter 6).",
           "<strong>Course</strong>: where it goes in service (starter, main, dessert…).",
-          "<strong>Yield</strong>: how much the recipe makes (8 portions, 1200 g…) with its unit. A new recipe starts in units, so the cost comes out per unit; for sauces, doughs and bases choose kg or L. In units or portions, if you leave the number empty, the whole recipe counts as 1.",
+          "<strong>Yield</strong>: how much the recipe makes (8 portions, 1200 g…) with its unit. A new recipe starts in units, so the cost comes out per unit; for sauces, doughs and bases choose kg or L. If you leave the number empty, the app uses the ingredients' weight: in units or portions, 1500 g of ingredients yield 1500.",
           "<strong>Ingredients</strong>: search your database and enter the quantity. Each line shows what it costs.",
           "<strong>Procedure and notes</strong>, plus a <strong>photo</strong> of the dish.",
         ]],
@@ -190,7 +190,7 @@ export default {
         ["p", "Want to start from scratch? Use <strong>Clear sheet</strong> (next to “Save Recipe” or in the notice). It asks for confirmation and erases everything: name, ingredients, procedure, photo, prices and the saved draft. Saving the recipe deletes the draft automatically."],
         ["h3", "Production cost"],
         ["formula", "Cost of each ingredient and of the recipe", ["Line cost = Quantity × Price per unit", "Production cost = Sum of all lines"]],
-        ["formula", "Unit cost", ["Unit cost = Production cost ÷ Yield"], "If you don't enter a yield in g, ml, kg or L, the app estimates it from the total weight of the ingredients. In units or portions, the whole recipe counts as 1."],
+        ["formula", "Unit cost", ["Unit cost = Production cost ÷ Yield"], "If you don't enter a yield in g, ml, kg or L, the app estimates it from the total weight of the ingredients. The same in units or portions: 1 g counts as 1 unit or portion."],
         ["h3", "Two ways to calculate the price"],
         ["p", "Each recipe uses one of two methods. New recipes start with <strong>Food Cost %</strong>; your business can change that default and you can switch recipe by recipe without losing anything: both start from the same real cost. Recipes you saved earlier with 6 cost items stay as they were."],
         ["cards", [

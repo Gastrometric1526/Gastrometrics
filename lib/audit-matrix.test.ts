@@ -157,15 +157,16 @@ describe("B. Ficha Técnica y precio", () => {
     expect(fallbackYield([{ ingredientId: "h", quantity: 6, unit: "unidad" }], "un")).toBe(6)
     expect(fallbackYield(lines, "g", 2)).toBe(3000) // con PAX × 2
   })
-  it("B-17 · Rendimiento vacío en unidades o porciones: la receta completa es 1 (no 1 500 «un»); con PAX × 60 = 60", () => {
+  // Regla cambiada por el dueño (docs/326): antes, docs/320, la receta completa era 1.
+  it("B-17 · Rendimiento vacío en unidades o porciones: el peso de los ingredientes (500 g + 1 kg = 1 500); con PAX × 2 = 3 000", () => {
     const lines = [
       { ingredientId: "a", quantity: 500, unit: "gramos" },
       { ingredientId: "b", quantity: 1, unit: "kilogramos" },
     ]
-    expect(fallbackYield(lines, "un")).toBe(1)
-    expect(fallbackYield(lines, "porciones")).toBe(1)
-    expect(fallbackYield(lines, "un", 60)).toBe(60)
-    expect(scaleBaseYield({ yieldAmount: 0, yieldUnit: "un", ingredients: lines })).toBe(1)
+    expect(fallbackYield(lines, "un")).toBe(1500)
+    expect(fallbackYield(lines, "porciones")).toBe(1500)
+    expect(fallbackYield(lines, "un", 2)).toBe(3000)
+    expect(scaleBaseYield({ yieldAmount: 0, yieldUnit: "un", ingredients: lines })).toBe(1500)
   })
   it("B-11 · PAX: 10 personas sobre rendimiento 4 = × 2.5; redondeo hacia arriba sin error de coma (0.1 × 3 = 0.3)", () => {
     expect(paxMultiplierFor(10, 4)).toBe(2.5)
