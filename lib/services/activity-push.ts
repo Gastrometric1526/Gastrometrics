@@ -12,27 +12,11 @@
  * (`nudge_*`), que son de la app y no de la persona.
  */
 
-// Entrar y crear, las dos cosas (docs/319, pedido del dueño): «tiene que ser un poco de ambos,
-// porque entonces cómo sabré si realmente usa cada módulo y no solo entró a ver». Entrar a un
-// módulo avisa UNA vez al día por persona y módulo («Entró a MEP»); lo que el módulo hace de
-// verdad (crear, cobrar, importar…) avisa siempre, con su tope. Entrar a la app no avisa aparte:
-// el «Entró a Dashboard» del día ya lo dice.
-const MODULE_NAMES: Record<string, string> = {
-  dashboard: "Dashboard",
-  ficha_tecnica: "Ficha técnica",
-  recetas: "Mis recetas",
-  ingredientes: "Ingredientes",
-  inventario: "Inventario",
-  equipo: "Equipo",
-  menus: "Menús",
-  mep: "MEP",
-  ordenes_compra: "Menú y compras",
-  estadisticas: "Estadísticas",
-  ventas: "Ventas",
-  salon: "Salón",
-  negocios: "Negocios",
-}
-
+// Solo acciones, nunca entrar (pedido del dueño, docs/327): «las notificaciones que envía admin
+// no deben ser de cuando entro a un módulo sino de acciones como crear menú, exportar PDF o
+// importar». Reemplaza docs/319, que avisaba «Entró a …» una vez al día. Entrar a un módulo sigue
+// en el registro de actividad (cuenta para el uso de módulos y las invitaciones a volver), pero
+// no llega al celular.
 const TITLES: Record<string, string> = {
 
   // Recetas
@@ -106,11 +90,13 @@ const PDF_KINDS: Record<string, string> = {
   invoice: "Factura",
   purchase_order: "Orden de compra",
   sales_history: "Historial de ventas",
+  schedule: "Horario del personal",
 }
 
 function titleOf(module: string, action: string): string | undefined {
-  // Object.hasOwn: «constructor» o «toString» no son módulos aunque existan en todo objeto.
-  if (action === "entered") return Object.hasOwn(MODULE_NAMES, module) ? `Entró a ${MODULE_NAMES[module]}` : undefined
+  // Entrar a un módulo nunca avisa (docs/327). Object.hasOwn: «constructor» o «toString» no son
+  // acciones aunque existan en todo objeto.
+  if (action === "entered") return undefined
   const key = `${module}:${action}`
   return Object.hasOwn(TITLES, key) ? TITLES[key] : undefined
 }
@@ -121,11 +107,9 @@ export function isPushActivity(module: string, action: string): boolean {
 
 /**
  * Cuántos avisos de cada tipo por persona (y por módulo) como máximo. Lo importante sale
- * siempre; lo que se repite mucho (entrar a un módulo, editar) se junta.
+ * siempre; lo que se repite mucho (editar) se junta.
  */
 export function pushLimit(module: string, action: string): { max: number; minutes: number } {
-  // Entrar: una vez al día por módulo (el navegador también lo filtra, ver logActivity).
-  if (action === "entered") return { max: 1, minutes: 24 * 60 }
   if (module === "cuenta" || module === "respaldo" || module === "manual" || action === "imported" || action === "migrated") return { max: 10, minutes: 10 }
   if (action === "updated") return { max: 3, minutes: 30 }
   return { max: 5, minutes: 10 }

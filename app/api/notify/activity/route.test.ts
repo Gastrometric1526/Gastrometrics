@@ -75,12 +75,11 @@ describe("/api/notify/activity", () => {
     expect(push).not.toHaveBeenCalled()
   })
 
-  it("entrar a un módulo avisa una vez, la app no avisa aparte, y las acciones tienen tope", async () => {
+  // docs/327 (pedido del dueño): entrar a la app o a un módulo nunca avisa; solo las acciones, con tope.
+  it("entrar a un módulo no avisa, la app tampoco, y las acciones tienen tope", async () => {
     expect((await call({ module: "app", action: "opened" })).status).toBe(400)
-    await call({ module: "mep", action: "entered" })
-    await call({ module: "mep", action: "entered" })
-    expect(push).toHaveBeenCalledTimes(1)
-    push.mockClear()
+    expect((await call({ module: "mep", action: "entered" })).status).toBe(400)
+    expect(push).not.toHaveBeenCalled()
     for (let i = 0; i < 8; i++) await call({ module: "recetas", action: "created" })
     expect(push).toHaveBeenCalledTimes(5)
   })
