@@ -69,9 +69,9 @@ describe("subreceta o no en el aviso (docs/336)", () => {
     expect(activityPushText({ module: "recetas", action: "deleted", who: "Ana", kind: "subrecipe" }).title).toBe("Subreceta borrada")
     expect(activityPushText({ module: "recetas", action: "migrated", who: "Ana", kind: "subrecipe" }).title).toBe("Subreceta migrada a otro negocio")
   })
-  it("y cuando no lo es", () => {
-    expect(activityPushText({ module: "recetas", action: "created", who: "Ana", kind: "dish" }).title).toBe("Receta creada (no es subreceta)")
-    expect(activityPushText({ module: "recetas", action: "updated", who: "Ana", kind: "dish" }).title).toBe("Receta editada (no es subreceta)")
-    expect(activityPushText({ module: "ingredientes", action: "created", who: "Ana" }).title).toBe("Ingrediente creado (no es subreceta)")
+  it("cuando no lo es, el título de siempre (docs/338)", () => {
+    expect(activityPushText({ module: "recetas", action: "created", who: "Ana", kind: "dish" }).title).toBe("Receta creada")
+    expect(activityPushText({ module: "recetas", action: "updated", who: "Ana", kind: "dish" }).title).toBe("Receta editada")
+    expect(activityPushText({ module: "ingredientes", action: "created", who: "Ana" }).title).toBe("Ingrediente creado")
   })
 })

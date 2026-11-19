@@ -9,7 +9,7 @@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/contexts/language-context"
-import { GOOGLE_REVIEW_URL, TRUSTPILOT_URL } from "@/lib/site-links"
+import { GOOGLE_REVIEW_URL, TRUSTPILOT_REVIEW_URL } from "@/lib/site-links"
 
 export function ReviewInviteDialog({ onFinish }: { onFinish: (status: "answered" | "dismissed") => void }) {
   const { t } = useLanguage()
@@ -32,7 +32,7 @@ export function ReviewInviteDialog({ onFinish }: { onFinish: (status: "answered"
             </Button>
           )}
           <Button asChild onClick={() => onFinish("answered")}>
-            <a href={TRUSTPILOT_URL} target="_blank" rel="noopener noreferrer">
+            <a href={TRUSTPILOT_REVIEW_URL} target="_blank" rel="noopener noreferrer">
               {t("quick_rating_trustpilot")}
             </a>
           </Button>

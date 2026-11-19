@@ -25,7 +25,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
-import { TRUSTPILOT_URL, GOOGLE_REVIEW_URL } from "@/lib/site-links"
+import { TRUSTPILOT_REVIEW_URL, GOOGLE_REVIEW_URL } from "@/lib/site-links"
 import { ratingBand } from "@/lib/feedback/ask-rules"
 import { buildReviewMessage } from "@/lib/reviews"
 import type { TranslationKey } from "@/lib/i18n/translations"
@@ -175,7 +175,7 @@ export function QuickRatingDialog({
                 </Button>
               )}
               <Button asChild onClick={close}>
-                <a href={TRUSTPILOT_URL} target="_blank" rel="noopener noreferrer">
+                <a href={TRUSTPILOT_REVIEW_URL} target="_blank" rel="noopener noreferrer">
                   {t("quick_rating_trustpilot")}
                 </a>
               </Button>

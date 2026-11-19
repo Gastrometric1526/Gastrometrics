@@ -20,7 +20,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { renderEmailTemplate } from "./email-templates"
 import { getEmailLabels, normalizeEmailLang } from "@/lib/i18n/email-labels"
 import { buildUnsubscribeUrl } from "@/lib/email-unsubscribe"
-import { TRUSTPILOT_URL } from "@/lib/site-links"
+import { TRUSTPILOT_REVIEW_URL } from "@/lib/site-links"
 import { ACTIVATION_VARIANTS, type ActivationVariant } from "@/lib/i18n/activation-email-variants"
 import { withEmailTracking } from "@/lib/email-tracking"
 
@@ -218,7 +218,7 @@ export async function sendFourHourExperienceSurvey(accountId: string): Promise<v
     footerAddress: labels.footer_address,
     footer2: labels.e10_footer2,
     commentUrl: withEmailTracking(`${siteUrl}/contacto?type=experiencia`, "four_hour_experience"),
-    trustpilotUrl: process.env.TRUSTPILOT_URL || TRUSTPILOT_URL,
+    trustpilotUrl: process.env.TRUSTPILOT_URL || TRUSTPILOT_REVIEW_URL,
   })
 
   const resend = new Resend(process.env.RESEND_API_KEY)

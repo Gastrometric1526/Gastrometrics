@@ -27,8 +27,7 @@ const TITLES: Record<string, string> = {
   "recetas:migrated": "Receta migrada a otro negocio",
 
   // Ingredientes
-  // Lo que se crea en Ingredientes nunca es subreceta (esas nacen en la Ficha, docs/336).
-  "ingredientes:created": "Ingrediente creado (no es subreceta)",
+  "ingredientes:created": "Ingrediente creado",
   "ingredientes:updated": "Ingrediente editado",
   "ingredientes:deleted": "Ingrediente borrado",
   "ingredientes:imported": "Ingredientes importados",
@@ -131,9 +130,9 @@ export function activityPushText(input: {
   let title = titleOf(input.module, input.action) ?? "Actividad"
   if (input.module === "ocr" && input.kind && OCR_KINDS[input.kind]) title = `Leyó una ${OCR_KINDS[input.kind]} con OCR`
   if (input.module === "pdf" && input.kind && PDF_KINDS[input.kind]) title = `Exportó un PDF: ${PDF_KINDS[input.kind]}`
-  // Subreceta o no (pedido del dueño, docs/336): la Ficha manda kind «subrecipe» o «dish».
+  // Solo se dice cuando SÍ es subreceta (pedido del dueño, docs/336 y docs/338): la Ficha manda
+  // kind «subrecipe» o «dish»; un plato queda con el título de siempre.
   if (input.module === "recetas" && input.kind === "subrecipe") title = title.replace(/^Recetas?/, (m) => (m === "Recetas" ? "Subrecetas" : "Subreceta"))
-  if (input.module === "recetas" && input.kind === "dish" && (input.action === "created" || input.action === "updated")) title = `${title} (no es subreceta)`
   // El cuadre de caja se guarda como una edición de las ventas del día (docs/319).
   if (input.module === "estadisticas" && input.kind === "cash_up") title = input.action === "deleted" ? "Quitó un cuadre de caja" : "Hizo el cuadre de caja"
   // Sin negocio: la app, la cuenta, el OCR y las descargas no son de un negocio.

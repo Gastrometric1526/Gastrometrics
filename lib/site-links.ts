@@ -15,6 +15,12 @@
 export const TRUSTPILOT_URL = process.env.NEXT_PUBLIC_TRUSTPILOT_URL || "https://www.trustpilot.com/review/gastrometrics.org"
 
 /**
+ * Escribir una reseña directo (docs/338): /evaluate/ abre el formulario con las estrellas en vez
+ * del perfil, un paso menos. Se usa en los botones «Dejar reseña»; «Ver opiniones» sigue en el perfil.
+ */
+export const TRUSTPILOT_REVIEW_URL = TRUSTPILOT_URL.replace("/review/", "/evaluate/")
+
+/**
  * Reseñas de Google (docs/173): enlace «Pedir una reseña» del Perfil de Empresa de Google
  * (verificado el 21/10/2026, docs/177). Aparece junto a Trustpilot en el bloque de opiniones
  * y al final de la calificación de la app. NEXT_PUBLIC_GOOGLE_REVIEW_URL (Vercel) lo reemplaza
