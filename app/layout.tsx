@@ -19,6 +19,7 @@ import { ThemeInitializer } from "@/components/theme-initializer"
 import { AnalyticsTracker } from "@/components/analytics-tracker"
 import { PresenceTracker } from "@/components/presence-tracker"
 import { FounderGrantTrigger } from "@/components/founder-grant-trigger"
+import { SubrecipeAnnouncement } from "@/components/subrecipe-announcement"
 import { ReferralTrigger } from "@/components/referral-trigger"
 import { PlanExpiryDialog } from "@/components/plan-expiry-dialog"
 import { PaymentNoticeDialog } from "@/components/payment-notice-dialog"
@@ -143,6 +144,8 @@ export default function RootLayout({
                     <GuidedJourney />
                   </Suspense>
                   <SubRecipePricePrompt />
+                  {/* Aviso único de subrecetas para cuentas existentes (docs/339) */}
+                  <SubrecipeAnnouncement />
                   <Suspense fallback={null}>
                     <ModuleActivityTracker />
                   </Suspense>

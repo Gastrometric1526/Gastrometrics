@@ -260,3 +260,15 @@ export const GmCheckTwo = make(
     <path d="M12 16l1 1 9.5-9.5" />
   </>,
 )
+
+/** Subreceta (docs/339): el cazo de lo que preparas tú (salsa, fondo) y luego usas en otros platos. */
+export const GmSaucepan = make(
+  "GmSaucepan",
+  <>
+    <path d="M3.5 10.5h13" />
+    <path d="M4.5 10.5v5.5a3 3 0 0 0 3 3h5a3 3 0 0 0 3-3v-5.5" />
+    <path d="M16.5 12.5h4.5" />
+    <path d="M8 3.5c-.8 1 .8 2-.1 3.5" />
+    <path d="M12 3.5c-.8 1 .8 2-.1 3.5" />
+  </>,
+)
