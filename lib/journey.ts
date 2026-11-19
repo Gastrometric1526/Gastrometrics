@@ -33,6 +33,11 @@ export type JourneyState = {
    * reinicia todo (`restartJourney`).
    */
   replay?: string[]
+  /**
+   * Reiniciado desde el menú (pedido del dueño, docs/335): el recorrido completo, sin dar por
+   * vista una etapa porque los datos ya lo muestren hecho (p. ej. ya tiene ingredientes).
+   */
+  full?: boolean
 }
 
 export const EMPTY_JOURNEY: JourneyState = { started: false, existing: false, skipped: false, done: [] }
@@ -163,7 +168,7 @@ export function journeyPosition(state: JourneyState, facts: JourneyFacts): Journ
     const applies = chapterApplies(chapter, facts)
     if (applies === null) return { status: "waiting", autoDone }
     if (applies === false) continue
-    if ((chapter.kind === "goal" && goalReached(chapter, facts)) || chapter.alreadyDone?.(facts)) {
+    if ((chapter.kind === "goal" && goalReached(chapter, facts)) || (!state.full && chapter.alreadyDone?.(facts))) {
       autoDone.push(chapter.id)
       continue
     }
@@ -206,9 +211,14 @@ export function startJourney(existing: boolean): JourneyState {
   return { started: true, existing, skipped: false, done: [] }
 }
 
-/** «Reiniciar tutorial»: desde el principio, con la opción de saltar si ya la tenía. */
+/**
+ * «Reiniciar tutorial»: desde el principio, con la opción de saltar si ya la tenía. Es el
+ * recorrido completo (`full`): no se salta «Agrega tu primer ingrediente» ni la Ficha porque ya
+ * tenga ingredientes o recetas (pedido del dueño, docs/335). Las metas de cantidad (3
+ * ingredientes, 3 recetas, 1 menú) sí se dan por cumplidas: no enseñan nada nuevo.
+ */
 export function restartJourney(state: JourneyState): JourneyState {
-  return { started: true, existing: state.existing, skipped: false, done: [] }
+  return { started: true, existing: state.existing, skipped: false, done: [], full: true }
 }
 
 export function skipJourney(state: JourneyState): JourneyState {
@@ -233,6 +243,7 @@ export function parseJourney(raw: string | null): JourneyState | null {
       skipped: v.skipped === true,
       done: Array.isArray(v.done) ? v.done.filter((d: unknown) => typeof d === "string") : [],
       ...(Array.isArray(v.replay) ? { replay: v.replay.filter((d: unknown) => typeof d === "string") } : {}),
+      ...(v.full === true ? { full: true } : {}),
     }
   } catch {
     return null

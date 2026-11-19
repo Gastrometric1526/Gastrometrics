@@ -24,7 +24,7 @@ describe("caminos del tutorial guiado (docs/255)", () => {
     expect(ing.choices?.[0].primary).toBe(true)
     const ficha = CHAPTER_STEPS["ficha-basic"][0]
     expect(ficha.choices?.[0].href).toBe("/mis-recetas?import=1")
-    expect(ficha.choices?.[1].goTo).toBe("name")
+    expect(ficha.choices?.[1].goTo).toBe("subrecipe")
   })
 
   it("los textos de los caminos existen en los 6 idiomas", () => {
@@ -36,5 +36,17 @@ describe("caminos del tutorial guiado (docs/255)", () => {
       const table = translations[lang] as Record<string, string>
       for (const key of keys) expect(table[key], `${lang}.${key}`).toBeTruthy()
     }
+  })
+})
+
+describe("subrecetas en el tutorial (docs/335)", () => {
+  it("la bienvenida y la Ficha explican las subrecetas, por los dos caminos", () => {
+    expect(CHAPTER_STEPS.welcome.some((s) => s.id === "subrecipes")).toBe(true)
+    const ficha = CHAPTER_STEPS["ficha-basic"]
+    expect(ficha[1].id).toBe("subrecipe")
+    expect(ficha[0].jumps?.[0].goTo).toBe("subrecipe-imported")
+    const imported = ficha.find((s) => s.id === "subrecipe-imported")
+    expect(imported?.then).toBe("table")
+    expect(ficha.find((s) => s.id === "summary")?.then).toBe("end")
   })
 })

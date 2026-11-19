@@ -69,6 +69,8 @@ export const CHAPTER_STEPS: Record<string, CoachStep[]> = {
   welcome: [
     { id: "hello", selector: null, title: "journey_welcome_title", description: "journey_welcome_desc", advance: "next" },
     { id: "menu", selector: '[data-tour="sidebar"]', title: "journey_welcome_menu_title", description: "journey_welcome_menu_desc", advance: "next", optional: true },
+    // Desde el principio, que sepa que existen las subrecetas y qué hacen (pedido del dueño, docs/335).
+    { id: "subrecipes", selector: null, title: "journey_welcome_sub_title", description: "journey_welcome_sub_desc", tip: "journey_welcome_sub_tip", advance: "next" },
   ],
   "ingredients-add": [
     // Primero, cómo cargarlos: importar la lista completa (lo recomendado) o uno por uno.
@@ -175,10 +177,20 @@ export const CHAPTER_STEPS: Record<string, CoachStep[]> = {
       advance: "next",
       choices: [
         { label: "journey_ficha_choose_import", primary: true, href: "/mis-recetas?import=1" },
-        { label: "journey_ficha_choose_manual", goTo: "name" },
+        { label: "journey_ficha_choose_manual", goTo: "subrecipe" },
       ],
       // Volvió de importar: la ficha ya trae nombre e ingredientes, solo falta revisarla.
-      jumps: [{ when: (live) => live.ficha.hasName && live.ficha.linesWithIngredient > 0, goTo: "table" }],
+      jumps: [{ when: (live) => live.ficha.hasName && live.ficha.linesWithIngredient > 0, goTo: "subrecipe-imported" }],
+    },
+    // Subrecetas al entrar a la Ficha (docs/335): cómo se hacen (la clasificación) y dónde se ven.
+    {
+      id: "subrecipe",
+      selector: '[data-tour="ficha-name-classification"]',
+      title: "journey_ficha_sub_title",
+      description: "journey_ficha_sub_desc",
+      tip: "journey_ficha_sub_tip",
+      advance: "next",
+      back: "choose",
     },
     {
       id: "name",
@@ -224,7 +236,17 @@ export const CHAPTER_STEPS: Record<string, CoachStep[]> = {
     },
     { id: "table", selector: '[data-tour="ficha-ingredients-table"]', title: "journey_ficha_table_title", description: "journey_ficha_table_desc", advance: "next" },
     { id: "pricing", selector: '[data-tour="ficha-pricing"]', title: "journey_ficha_pricing_title", description: "journey_ficha_pricing_desc", advance: "next" },
-    { id: "summary", selector: '[data-tour="ficha-summary"]', title: "journey_ficha_summary_title", description: "journey_ficha_summary_desc", advance: "next" },
+    { id: "summary", selector: '[data-tour="ficha-summary"]', title: "journey_ficha_summary_title", description: "journey_ficha_summary_desc", advance: "next", then: "end" },
+    // Mismo aviso de subrecetas para la ficha que llegó importada; después sigue la revisión.
+    {
+      id: "subrecipe-imported",
+      selector: '[data-tour="ficha-name-classification"]',
+      title: "journey_ficha_sub_title",
+      description: "journey_ficha_sub_desc",
+      tip: "journey_ficha_sub_tip",
+      advance: "next",
+      then: "table",
+    },
   ],
   "ficha-advanced": [
     { id: "pax", selector: '[data-tour="ficha-pax"]', title: "journey_ficha_pax_title", description: "journey_ficha_pax_desc", tip: "journey_ficha_pax_tip", advance: "next" },

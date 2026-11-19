@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Tutorial completo al reiniciarlo y subrecetas en el recorrido (docs/335).
+    version: "2026-11-19",
+    tutorialHref: tourHref("ficha-tecnica"),
+    content: {
+      es: { title: "Tutorial completo y subrecetas", items: ["Reiniciar tutorial desde el Dashboard ahora te muestra el recorrido completo, aunque ya tengas ingredientes o recetas.", "El tutorial te cuenta desde el principio qué son las subrecetas, y en Ficha Técnica cómo se hacen y dónde aparecen: en Ingredientes con su costo, en el buscador de cualquier ficha y en Mis Recetas."] },
+      en: { title: "Full tutorial and sub-recipes", items: ["Restart tutorial from the Dashboard now shows you the full tour, even if you already have ingredients or recipes.", "The tutorial tells you from the start what sub-recipes are, and in the Recipe Sheet how to make them and where they show up: in Ingredients with their cost, in the ingredient search of any recipe sheet and in My Recipes."] },
+      da: { title: "Hele tutorialen og underopskrifter", items: ["Genstart tutorial fra Dashboard viser dig nu hele rundvisningen, selv om du allerede har ingredienser eller opskrifter.", "Tutorialen fortæller dig fra starten, hvad underopskrifter er, og i opskriftsarket, hvordan du laver dem, og hvor de vises: under Ingredienser med deres pris, i ingredienssøgningen i alle opskriftsark og under Mine opskrifter."] },
+      fr: { title: "Tutoriel complet et sous-recettes", items: ["Redémarrer le tutoriel depuis le tableau de bord vous montre désormais le parcours complet, même si vous avez déjà des ingrédients ou des recettes.", "Le tutoriel vous explique dès le début ce que sont les sous-recettes et, dans la fiche technique, comment les faire et où elles apparaissent : dans Ingrédients avec leur coût, dans la recherche d'ingrédients de toute fiche technique et dans Mes recettes."] },
+      pt: { title: "Tutorial completo e sub-receitas", items: ["Reiniciar tutorial no Dashboard agora mostra o percurso completo, mesmo que você já tenha ingredientes ou receitas.", "O tutorial explica desde o início o que são sub-receitas e, na Ficha técnica, como fazê-las e onde aparecem: em Ingredientes com seu custo, na busca de ingredientes de qualquer ficha e em Minhas receitas."] },
+      zh: { title: "完整教程和子配方", items: ["现在在仪表盘中重新开始教程，会显示完整的引导，即使你已经有食材或配方。", "教程一开始就会介绍什么是子配方；在技术配方表中会说明如何制作以及它们出现在哪里：带着成本出现在食材中、任何技术配方表的食材搜索里以及我的配方中。"] },
+    },
+  },
+  {
     // Planear y Personal desde Chef de Partie (docs/332).
     version: "2026-11-17",
     tutorialHref: tourHref("estadisticas"),

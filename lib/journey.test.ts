@@ -91,7 +91,7 @@ describe("tutorial guiado progresivo (docs/221)", () => {
     expect(journeyPosition(skipped, facts()).status).toBe("off")
     expect(journeyControlsTours(skipped)).toBe(false)
     const again = restartJourney(skipped)
-    expect(again).toEqual({ started: true, existing: true, skipped: false, done: [] })
+    expect(again).toEqual({ started: true, existing: true, skipped: false, done: [], full: true })
     expect(journeyControlsTours(again)).toBe(true)
     expect(journeyControlsTours(null)).toBe(true)
     expect(journeyPosition(EMPTY_JOURNEY, facts()).status).toBe("off")
@@ -194,5 +194,28 @@ describe("invitado del equipo (docs/263)", () => {
     const seen = visited(facts({ ingredients: 5, recipes: 5, menus: 1, mermaActive: true }))
     expect(seen).toContain("equipo")
     expect(seen).toContain("mi-plan")
+  })
+})
+
+describe("reiniciar el tutorial = recorrido completo (docs/335)", () => {
+  const withData = facts({ ingredients: 12, recipes: 4, menus: 1, mermaActive: true })
+  it("al empezar por primera vez, lo ya hecho se salta", () => {
+    const first = markDone(startJourney(true), ["welcome"])
+    const pos = journeyPosition(first, withData)
+    expect(pos.status === "active" && pos.chapter.id).not.toBe("ingredients-add")
+  })
+  it("al reiniciar, no se salta «Agrega tu primer ingrediente» aunque ya tenga ingredientes", () => {
+    const again = markDone(restartJourney(startJourney(true)), ["welcome"])
+    const pos = journeyPosition(again, withData)
+    expect(pos.status === "active" && pos.chapter.id).toBe("ingredients-add")
+    // Las metas de cantidad sí se dan por cumplidas.
+    const next = journeyPosition(markDone(again, ["ingredients-add"]), withData)
+    expect(next.status === "active" && next.chapter.id).toBe("merma")
+    expect(next.autoDone).toContain("ingredients-three")
+    const ficha = journeyPosition(markDone(again, ["ingredients-add", "merma"]), withData)
+    expect(ficha.status === "active" && ficha.chapter.id).toBe("ficha-basic")
+  })
+  it("el reinicio completo se conserva al guardar y leer", () => {
+    expect(parseJourney(JSON.stringify(restartJourney(EMPTY_JOURNEY)))?.full).toBe(true)
   })
 })
