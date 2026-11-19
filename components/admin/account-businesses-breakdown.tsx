@@ -81,7 +81,13 @@ export function AccountBusinessesBreakdown({
           <KpiCard label={t("admin_biz_ingredients")} value={totals.ingredients} icon={Package} />
           <KpiCard label={t("admin_biz_team_members")} value={totals.teamMembers} icon={Users} />
           <KpiCard label={t("admin_biz_pdfs")} value={totals.pdfExports} icon={FileDown} help={t("admin_biz_pdfs_help")} sub={pdfSummary(totals.pdfByKind) || undefined} />
-          <KpiCard label={t("admin_biz_migrated")} value={totals.recipesMigrated} icon={Repeat} help={t("admin_biz_migrated_help")} />
+          <KpiCard
+            label={t("admin_biz_migrated")}
+            value={totals.recipesMigrated}
+            icon={Repeat}
+            help={t("admin_biz_migrated_help")}
+            sub={t("admin_biz_migrated_sub").replace("{sub}", String(totals.subRecipesMigrated)).replace("{ing}", String(totals.ingredientsMigrated))}
+          />
           <KpiCard label={t("admin_biz_imports")} value={totals.imports} icon={Upload} />
         </KpiGrid>
       </div>
@@ -147,6 +153,8 @@ function SpaceCard({
     ...(space.id ? ([["admin_biz_team_members", space.teamMembers]] as [TranslationKey, number][]) : []),
     ["admin_biz_pdfs", space.pdfExports],
     ["admin_biz_migrated", space.recipesMigrated],
+    ["admin_biz_migrated_sub_recipes", space.subRecipesMigrated],
+    ["admin_biz_migrated_ingredients", space.ingredientsMigrated],
     ["admin_biz_imports", space.imports],
   ]
   return (

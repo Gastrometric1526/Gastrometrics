@@ -87,6 +87,8 @@ interface AccountRow {
   referralActive: number
   recipeCount: number
   ingredientCount: number
+  /** Subrecetas (docs/340); incluidas también en recipeCount. */
+  subRecipeCount?: number
   posImportCount: number
   lastPosImportAt: string | null
   manualSalesCount: number
@@ -1223,6 +1225,9 @@ export function AccountsPanel() {
                         <div>
                           <p className="text-base font-semibold tabular-nums text-foreground">{a.recipeCount}</p>
                           <p className="text-muted-foreground">{t("admin_accounts_table_recipes")}</p>
+                          {(a.subRecipeCount ?? 0) > 0 && (
+                            <p className="text-muted-foreground">{t("admin_biz_sub_recipes").replace("{count}", String(a.subRecipeCount))}</p>
+                          )}
                         </div>
                         <div>
                           <p className="text-base font-semibold tabular-nums text-foreground">{a.ingredientCount}</p>

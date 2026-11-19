@@ -24,7 +24,7 @@ const s = (v: unknown) => (typeof v === "string" ? v : null)
 
 // Texto plano (no literal) para que supabase-js no intente tipar las rutas del JSON (TS2589).
 const RECIPE_SELECT: string =
-  "business_id, is_sub_recipe, classification, total:data->totalCost, price:data->unitPrice, yield:data->yieldAmount, method:data->>pricingMethod, isv:data->isv, commission:data->salesCommissionPercent"
+  "business_id, is_sub_recipe, classification, total:data->totalCost, price:data->unitPrice, yield:data->yieldAmount, method:data->>pricingMethod, isv:data->isv, commission:data->salesCommissionPercent, migrated:data->metadata->>migratedFrom"
 const INVENTORY_SELECT: string = "business_id, status:data->>status"
 // Solo los totales de cada venta, nunca sus líneas (docs/315).
 const SALES_SELECT: string = "business_id, created_at, revenue:data->totalRevenue, cost:data->totalTheoreticalCost, at:data->>importedAt, periodEnd:data->>periodEnd"
@@ -45,7 +45,7 @@ export async function getBusinessBreakdown(userId: string, businesses: Breakdown
   const [profile, recipes, ingredients, inventory, menus, snapshots, orders, invoices, sales, activity] = await Promise.all([
     admin.from("profiles").select("currency").eq("id", userId).maybeSingle(),
     owned<Row>("recipes", RECIPE_SELECT),
-    owned<Row>("ingredients", "business_id, category"),
+    owned<Row>("ingredients", "business_id, category, migrated:data->metadata->>migratedFrom"),
     owned<Row>("inventory_items", INVENTORY_SELECT),
     owned<Row>("menus", "business_id"),
     owned<Row>("inventory_snapshots", "business_id"),
@@ -95,8 +95,9 @@ export async function getBusinessBreakdown(userId: string, businesses: Breakdown
       pricingMethod: s(r.method),
       isv: n(r.isv),
       salesCommissionPercent: n(r.commission),
+      migratedFrom: s(r.migrated),
     })),
-    ingredients: ingredients.map((r) => ({ businessId: bid(r), category: s(r.category) })),
+    ingredients: ingredients.map((r) => ({ businessId: bid(r), category: s(r.category), migratedFrom: s(r.migrated) })),
     inventory: inventory.map((r) => ({ businessId: bid(r), status: s(r.status) })),
     counted: { menus: only(menus), inventoryCounts: only(snapshots), purchaseOrders: only(orders), invoices: only(invoices), salesImports: only(sales) },
     sales: sales.map((r) => ({ businessId: bid(r), revenue: n(r.revenue), theoreticalCost: n(r.cost), at: s(r.periodEnd) || s(r.at) || s(r.created_at) })),

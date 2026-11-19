@@ -106,3 +106,27 @@ describe("negocios de una cuenta en /admin (docs/232)", () => {
     expect(out.totals).toMatchObject({ salesRevenue: 1700, salesRevenue30d: 1200, teamMembers: 2 })
   })
 })
+
+describe("lo migrado a cada negocio, por los datos (docs/340)", () => {
+  it("cuenta platos, subrecetas e ingredientes copiados, también los de una migración de varias", () => {
+    const input = empty()
+    input.businesses = [{ id: "b1", name: "Café", createdAt: "2026-10-01", isActive: true }]
+    input.recipes = [
+      recipe({ businessId: "b1", migratedFrom: "main" }),
+      recipe({ businessId: "b1", migratedFrom: "main" }),
+      recipe({ businessId: "b1", isSubRecipe: true, classification: SUBRECIPE_CLASSIFICATION, migratedFrom: "main" }),
+      recipe({ businessId: "b1" }),
+    ]
+    input.ingredients = [
+      { businessId: "b1", category: "OTROS", migratedFrom: "main" },
+      { businessId: "b1", category: SUBRECIPE_CLASSIFICATION, migratedFrom: "main" },
+      { businessId: "b1", category: "OTROS" },
+    ]
+    // Una sola fila de registro para la migración de varias recetas a la vez.
+    input.activity = [{ businessId: "b1", module: "recetas", action: "migrated", entityLabel: "→ Café", at: "2026-11-19T10:00:00Z" }]
+    const cafe = buildBusinessBreakdown(input).spaces[1]
+    expect(cafe.recipesMigrated).toBe(2)
+    expect(cafe.subRecipesMigrated).toBe(1)
+    expect(cafe.ingredientsMigrated).toBe(1)
+  })
+})

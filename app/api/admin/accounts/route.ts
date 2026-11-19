@@ -22,6 +22,7 @@
  * en lib/plans.ts), no alfabético.
  */
 
+import { SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
 import { NextResponse } from "next/server"
 import { hasAdminSession } from "@/lib/admin-auth"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
@@ -35,7 +36,7 @@ import { isOnline, onlineFirst } from "@/lib/admin/online-first"
 
 const PAGE_SIZE = 25
 
-type OwnedRow = { id: string; owner_id: string; business_id: string | null }
+type OwnedRow = { id: string; owner_id: string; business_id: string | null; is_sub_recipe?: boolean | null; classification?: string | null }
 
 /** Filas de una tabla para un grupo de cuentas/negocios, sin el tope de 1000 filas (docs/194). */
 async function byIds<T>(
@@ -159,7 +160,7 @@ export async function GET(request: Request) {
     const [businessRows, teamRows, ownedRecipeRows, ownedIngredientRows, salesImportRows] = await Promise.all([
       byIds<{ id: string; owner_id: string }>(ids, (chunk, from, to) => admin.from("businesses").select("id, owner_id").in("owner_id", chunk).order("id").range(from, to)),
       byIds<{ owner_id: string }>(ids, (chunk, from, to) => admin.from("team_members").select("owner_id").in("owner_id", chunk).order("id").range(from, to)),
-      byIds<OwnedRow>(ids, (chunk, from, to) => admin.from("recipes").select("id, owner_id, business_id").in("owner_id", chunk).order("id").range(from, to)),
+      byIds<OwnedRow>(ids, (chunk, from, to) => admin.from("recipes").select("id, owner_id, business_id, is_sub_recipe, classification").in("owner_id", chunk).order("id").range(from, to)),
       byIds<OwnedRow>(ids, (chunk, from, to) => admin.from("ingredients").select("id, owner_id, business_id").in("owner_id", chunk).order("id").range(from, to)),
       byIds<{ owner_id: string; data: Record<string, unknown> }>(ids, (chunk, from, to) =>
         admin.from("sales_imports").select("owner_id, data").in("owner_id", chunk).order("id").range(from, to),
@@ -196,7 +197,7 @@ export async function GET(request: Request) {
     // directo, que ahí sí es siempre correcto (no hay ambigüedad de negocio).
     const [bizRecipeRows, bizIngredientRows] = await Promise.all([
       byIds<OwnedRow>(businessIdsInPage, (chunk, from, to) =>
-        admin.from("recipes").select("id, owner_id, business_id").in("business_id", chunk).order("id").range(from, to),
+        admin.from("recipes").select("id, owner_id, business_id, is_sub_recipe, classification").in("business_id", chunk).order("id").range(from, to),
       ),
       byIds<OwnedRow>(businessIdsInPage, (chunk, from, to) =>
         admin.from("ingredients").select("id, owner_id, business_id").in("business_id", chunk).order("id").range(from, to),
@@ -204,13 +205,14 @@ export async function GET(request: Request) {
     ])
 
     function countByOwningAccount(
-      ownRows: { id: string; owner_id: string; business_id: string | null }[],
-      bizRows: { id: string; owner_id: string; business_id: string | null }[],
+      ownRows: OwnedRow[],
+      bizRows: OwnedRow[],
+      only: (row: OwnedRow) => boolean = () => true,
     ): Map<string, number> {
       const seenIds = new Set<string>()
       const countByAccount = new Map<string, number>()
-      const attribute = (row: { id: string; owner_id: string; business_id: string | null }) => {
-        if (seenIds.has(row.id)) return
+      const attribute = (row: OwnedRow) => {
+        if (seenIds.has(row.id) || !only(row)) return
         seenIds.add(row.id)
         const owningAccount = row.business_id ? ownerByBusinessId.get(row.business_id) : row.owner_id
         if (!owningAccount) return
@@ -222,6 +224,12 @@ export async function GET(request: Request) {
     }
 
     const recipeCountByUser = countByOwningAccount(ownedRecipeRows.data ?? [], bizRecipeRows.data ?? [])
+    // Subrecetas por cuenta (docs/340), con la misma atribución al dueño del negocio.
+    const subRecipeCountByUser = countByOwningAccount(
+      ownedRecipeRows.data ?? [],
+      bizRecipeRows.data ?? [],
+      (r) => r.is_sub_recipe === true || r.classification === SUBRECIPE_CLASSIFICATION,
+    )
     const ingredientCountByUser = countByOwningAccount(ownedIngredientRows.data ?? [], bizIngredientRows.data ?? [])
     // Separa POS ("pos_import"/ausente, ver types/sales-import.ts) de registro manual
     // ("manual", docs/90) — antes se mezclaban bajo un solo conteo, y no había forma de
@@ -272,6 +280,7 @@ export async function GET(request: Request) {
       referralActive: referralCounts.get(u.id)?.active || 0,
       recipeCount: recipeCountByUser.get(u.id) || 0,
       ingredientCount: ingredientCountByUser.get(u.id) || 0,
+      subRecipeCount: subRecipeCountByUser.get(u.id) || 0,
       posImportCount: importSummaryByUser.get(u.id)?.posCount || 0,
       lastPosImportAt: importSummaryByUser.get(u.id)?.lastPosImportAt || null,
       manualSalesCount: importSummaryByUser.get(u.id)?.manualCount || 0,

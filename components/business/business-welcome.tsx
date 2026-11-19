@@ -22,6 +22,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
 import { useLanguage } from "@/contexts/language-context"
+import { useAuth } from "@/contexts/auth-context"
+import { logActivity } from "@/lib/services/activity-log"
 import { useRecipes, isSubRecipe, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { useIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 import { looseIngredientsToCopy, planBulkMigration, runBulkMigration, type BulkMigrationResult } from "@/lib/subrecipe/bulk-migration"
@@ -121,6 +123,7 @@ export function BringFromMainDialog({
   onEnter?: () => void
 }) {
   const { t } = useLanguage()
+  const { user } = useAuth()
   const mainRecipes = useRecipes(null)
   const mainIngredients = useIngredients(null)
   const targetRecipes = useRecipes(business?.id ?? null)
@@ -169,6 +172,17 @@ export function BringFromMainDialog({
       onProgress: (done, total, current) => setProgress({ done, total, current }),
     })
     setResult(res)
+    // docs/340: queda en el registro y avisa a /admin, como migrar una sola receta.
+    if (user && res.migrated > 0) {
+      logActivity({
+        user,
+        businessId: business.id,
+        module: "recetas",
+        action: "migrated",
+        entityLabel: `→ ${business.name}`,
+        metadata: { count: res.migrated, ingredients: res.ingredientsCopied, bulk: true },
+      })
+    }
   }
 
   return (

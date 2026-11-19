@@ -49,6 +49,8 @@ export interface BreakdownRecipe {
   pricingMethod: string | null
   isv: number | null
   salesCommissionPercent: number | null
+  /** Copia traída de otro espacio con «Migrar» (metadata.migratedFrom, docs/340). */
+  migratedFrom?: string | null
 }
 
 export interface BreakdownActivity {
@@ -62,7 +64,7 @@ export interface BreakdownActivity {
 export interface BreakdownInput {
   businesses: BreakdownBusiness[]
   recipes: BreakdownRecipe[]
-  ingredients: { businessId: string | null; category: string | null }[]
+  ingredients: { businessId: string | null; category: string | null; migratedFrom?: string | null }[]
   inventory: { businessId: string | null; status: string | null }[]
   /** Filas de las tablas que solo se cuentan. */
   counted: Record<"menus" | "inventoryCounts" | "purchaseOrders" | "invoices" | "salesImports", { businessId: string | null }[]>
@@ -96,7 +98,12 @@ export interface SpaceStats {
   lowStock: number
   pdfExports: number
   pdfByKind: Record<string, number>
+  /** Platos traídos de otro espacio que hoy están en este (docs/340: por los datos, no por el registro). */
   recipesMigrated: number
+  /** Subrecetas traídas de otro espacio (docs/340). */
+  subRecipesMigrated: number
+  /** Ingredientes copiados desde otro espacio (docs/340). */
+  ingredientsMigrated: number
   imports: number
   lastActivityAt: string | null
   /** Ventas registradas (docs/315): total, últimos 30 días y food cost teórico. */
@@ -163,7 +170,14 @@ function stats(
     lowStock: inventory.filter((i) => i.status === "critical" || i.status === "low").length,
     pdfExports: pdf.length,
     pdfByKind,
-    recipesMigrated: activity.filter((a) => a.module === "recetas" && a.action === "migrated").length,
+    // Por los datos (metadata.migratedFrom): cuenta también lo traído de varias recetas a la vez y
+    // las subrecetas que se copiaron con su plato. El registro queda de respaldo para lo anterior.
+    recipesMigrated: Math.max(
+      sellable.filter((r) => r.migratedFrom).length,
+      activity.filter((a) => a.module === "recetas" && a.action === "migrated").length - recipes.filter((r) => r.migratedFrom && !sellable.includes(r)).length,
+    ),
+    subRecipesMigrated: recipes.filter((r) => r.migratedFrom && !sellable.includes(r)).length,
+    ingredientsMigrated: ingredients.filter((i) => i.migratedFrom && i.category !== SUBRECIPE_CLASSIFICATION).length,
     imports: activity.filter((a) => a.action === "imported").length,
     lastActivityAt: real.reduce<string | null>((last, a) => (!last || a.at > last ? a.at : last), null),
     salesRevenue: Math.round(salesRevenue * 100) / 100,
