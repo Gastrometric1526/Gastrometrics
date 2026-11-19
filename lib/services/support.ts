@@ -15,7 +15,7 @@
  */
 
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
-import { queuePosition, type SupportAttachment, type SupportCategory } from "@/lib/support/core"
+import { messageReceipts, queuePosition, SUPPORT_DELIVERED_EVENT, SUPPORT_SEEN_EVENT, type SupportAttachment, type SupportCategory } from "@/lib/support/core"
 import { sendOwnerNotification } from "./notify-owner"
 import { sendUserPush } from "./user-push"
 import { getEmailLabels, normalizeEmailLang } from "@/lib/i18n/email-labels"
@@ -83,12 +83,50 @@ async function messagesOf(conversationId: string): Promise<SupportMessage[]> {
   return (data as SupportMessage[]) ?? []
 }
 
+/**
+ * Marcas de las palomitas (docs/334), sin migración: product_events con business_id = id de la
+ * conversación. Si falla, el chat sigue igual (solo faltan las palomitas).
+ */
+async function supportMarks(conversationIds: string[]): Promise<{ event_name: string; business_id: string; created_at: string }[]> {
+  if (conversationIds.length === 0) return []
+  const { data, error } = await db()
+    .from("product_events")
+    .select("event_name, business_id, created_at")
+    .in("event_name", [SUPPORT_DELIVERED_EVENT, SUPPORT_SEEN_EVENT])
+    .in("business_id", conversationIds)
+    .order("created_at", { ascending: true })
+    .limit(2000)
+  if (error) {
+    console.error("[support] No se pudieron leer las palomitas:", error)
+    return []
+  }
+  return data ?? []
+}
+
+async function addMark(event: string, conversationId: string) {
+  const { error } = await db().from("product_events").insert({ event_name: event, business_id: conversationId })
+  if (error) console.error("[support] No se pudo guardar la palomita:", error)
+}
+
+/**
+ * «Recibida» (docs/334): la app de la persona cargó el chat con respuestas sin leer. Una marca
+ * por respuesta nueva: solo si no hay una desde el último mensaje.
+ */
+async function markDelivered(conversation: SupportConversation) {
+  if (!(conversation.user_unread > 0)) return
+  const marks = await supportMarks([conversation.id])
+  const since = new Date(conversation.last_message_at).getTime()
+  if (marks.some((m) => m.event_name === SUPPORT_DELIVERED_EVENT && new Date(m.created_at).getTime() >= since)) return
+  await addMark(SUPPORT_DELIVERED_EVENT, conversation.id)
+}
+
 /** La conversación más reciente de la persona (abierta o la última cerrada), con sus mensajes y su lugar en la fila. */
 export async function getMyConversation(accountId: string) {
   const { data, error } = await db().from("support_conversations").select("*").eq("account_id", accountId).order("last_message_at", { ascending: false }).limit(1)
   if (error) throw error
   const conversation = ((data as SupportConversation[]) ?? [])[0] ?? null
   if (!conversation) return { conversation: null, messages: [], position: null }
+  await markDelivered(conversation).catch(() => {})
   const [messages, waiting] = await Promise.all([messagesOf(conversation.id), conversation.status === "waiting" ? waitingList() : Promise.resolve([])])
   return { conversation, messages, position: conversation.status === "waiting" ? queuePosition(waiting, conversation.id) : null }
 }
@@ -150,11 +188,19 @@ export async function postUserMessage(input: {
   return getMyConversation(input.accountId)
 }
 
+/** Había respuestas sin leer en esa conversación de la persona: marca «vista» (docs/334). */
+async function markSeenIfUnread(accountId: string, conversationId: string) {
+  const { data } = await db().from("support_conversations").select("user_unread").eq("id", conversationId).eq("account_id", accountId).maybeSingle()
+  if ((data as { user_unread?: number } | null)?.user_unread) await addMark(SUPPORT_SEEN_EVENT, conversationId)
+}
+
 export async function markUserRead(accountId: string, conversationId: string) {
+  await markSeenIfUnread(accountId, conversationId).catch(() => {})
   await db().from("support_conversations").update({ user_unread: 0 }).eq("id", conversationId).eq("account_id", accountId)
 }
 
 export async function closeByUser(accountId: string, conversationId: string) {
+  await markSeenIfUnread(accountId, conversationId).catch(() => {})
   await db().from("support_conversations").update({ status: "closed", user_unread: 0, updated_at: new Date().toISOString() }).eq("id", conversationId).eq("account_id", accountId)
 }
 
@@ -174,7 +220,16 @@ export async function adminListConversations() {
     }),
   )
   const waiting = conversations.filter((c) => c.status === "waiting")
-  return conversations.map((c) => ({ ...c, email: emails.get(c.account_id) ?? null, position: c.status === "waiting" ? queuePosition(waiting, c.id) : null }))
+  // Palomitas de la última respuesta (docs/334): solo cuando el último mensaje es del dueño.
+  const answered = conversations.filter((c) => c.status === "answered")
+  const delivered = await supportMarks(answered.filter((c) => c.user_unread > 0).map((c) => c.id))
+  const receiptOf = (c: SupportConversation) => {
+    if (c.status !== "answered") return null
+    if (!(c.user_unread > 0)) return "seen" as const
+    const since = new Date(c.last_message_at).getTime()
+    return delivered.some((m) => m.business_id === c.id && m.event_name === SUPPORT_DELIVERED_EVENT && new Date(m.created_at).getTime() >= since) ? ("delivered" as const) : ("sent" as const)
+  }
+  return conversations.map((c) => ({ ...c, email: emails.get(c.account_id) ?? null, position: c.status === "waiting" ? queuePosition(waiting, c.id) : null, receipt: receiptOf(c) }))
 }
 
 /** Todas las conversaciones de una cuenta con sus mensajes, para su ficha en /admin (docs/214). Solo lectura. */
@@ -195,9 +250,14 @@ export async function adminConversationsOf(accountId: string) {
 }
 
 export async function adminThread(conversationId: string) {
-  const [{ data: conv }, messages] = await Promise.all([db().from("support_conversations").select("*").eq("id", conversationId).maybeSingle(), messagesOf(conversationId)])
+  const [{ data: conv }, messages, marks] = await Promise.all([
+    db().from("support_conversations").select("*").eq("id", conversationId).maybeSingle(),
+    messagesOf(conversationId),
+    supportMarks([conversationId]),
+  ])
   if (conv) await db().from("support_conversations").update({ admin_unread: 0 }).eq("id", conversationId)
-  return { conversation: conv as SupportConversation | null, messages }
+  const c = conv as SupportConversation | null
+  return { conversation: c, messages, receipts: c ? messageReceipts(messages, c.user_unread, marks) : {} }
 }
 
 export async function adminReply(conversationId: string, body: string, attachments: SupportAttachment[]) {

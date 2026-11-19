@@ -250,3 +250,13 @@ export const GmFinance = make(
     <path d="M6 9.5h.01M18 14.5h.01" />
   </>,
 )
+
+/** Palomitas del chat de soporte en /admin (docs/334): una = enviada, dos = recibida o vista. */
+export const GmCheckOne = make("GmCheckOne", <path d="M5 12.5l4.5 4.5L19 7.5" />)
+export const GmCheckTwo = make(
+  "GmCheckTwo",
+  <>
+    <path d="M2.5 12.5l4.5 4.5L16.5 7.5" />
+    <path d="M12 16l1 1 9.5-9.5" />
+  </>,
+)

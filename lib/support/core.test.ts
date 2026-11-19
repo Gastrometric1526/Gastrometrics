@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { isAcceptedAttachment, queuePosition, sanitizeAttachments, searchHelp, type HelpEntry } from "./core"
+import { isAcceptedAttachment, messageReceipts, queuePosition, sanitizeAttachments, searchHelp, SUPPORT_DELIVERED_EVENT, SUPPORT_SEEN_EVENT, type HelpEntry } from "./core"
 
 describe("chat de soporte (docs/204)", () => {
   it("fila por orden de llegada: cuenta solo las que esperan desde antes", () => {
@@ -37,5 +37,36 @@ describe("chat de soporte (docs/204)", () => {
     // Un nombre permitido no basta: el contenido tampoco puede ser HTML.
     expect(sanitizeAttachments([{ name: "foto.png", type: "image/png", data: "data:text/html;base64,PHNjcmlwdD4=" }])).toHaveLength(0)
     expect(sanitizeAttachments([{ name: "libro.xlsm", type: "", data: "data:application/octet-stream;base64,AAAA" }])).toHaveLength(1)
+  })
+})
+
+describe("messageReceipts (docs/334)", () => {
+  const msgs = [
+    { id: "u1", sender: "user", created_at: "2026-11-19T10:00:00Z" },
+    { id: "a1", sender: "admin", created_at: "2026-11-19T10:05:00Z" },
+    { id: "u2", sender: "user", created_at: "2026-11-19T10:10:00Z" },
+    { id: "a2", sender: "admin", created_at: "2026-11-19T11:00:00Z" },
+    { id: "a3", sender: "admin", created_at: "2026-11-19T11:01:00Z" },
+  ]
+  it("sin marcas: vistas según user_unread, el resto enviadas", () => {
+    const r = messageReceipts(msgs, 2, [])
+    expect(r.a1.state).toBe("seen")
+    expect(r.a2.state).toBe("sent")
+    expect(r.a3.state).toBe("sent")
+    expect(r.u1).toBeUndefined()
+  })
+  it("recibida cuando la app la cargó después de mandarla", () => {
+    const r = messageReceipts(msgs, 2, [{ event_name: SUPPORT_DELIVERED_EVENT, created_at: "2026-11-19T11:00:30Z" }])
+    expect(r.a2).toEqual({ state: "delivered", deliveredAt: "2026-11-19T11:00:30Z" })
+    expect(r.a3.state).toBe("sent")
+  })
+  it("vista con su hora; vista cuenta como recibida", () => {
+    const marks = [{ event_name: SUPPORT_SEEN_EVENT, created_at: "2026-11-19T12:00:00Z" }]
+    const r = messageReceipts(msgs, 0, marks)
+    expect(r.a3).toEqual({ state: "seen", deliveredAt: "2026-11-19T12:00:00Z", seenAt: "2026-11-19T12:00:00Z" })
+    expect(r.a1.state).toBe("seen")
+  })
+  it("user_unread mayor que las respuestas no rompe", () => {
+    expect(messageReceipts(msgs, 9, []).a1.state).toBe("sent")
   })
 })

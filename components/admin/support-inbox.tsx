@@ -21,6 +21,22 @@ import { cn } from "@/lib/utils"
 import { ATTACHMENT_ACCEPT, MAX_ATTACHMENTS, MAX_TOTAL_ATTACHMENT_BYTES, isAcceptedAttachment, type SupportAttachment } from "@/lib/support/core"
 import type { TranslationKey } from "@/lib/i18n/translations"
 import { AccountLink } from "@/components/admin/account-link"
+import { GmCheckOne, GmCheckTwo } from "@/components/icons/gm-icons"
+import type { MessageReceipt, ReceiptState } from "@/lib/support/core"
+
+/**
+ * Palomitas como las de WhatsApp (pedido del dueño, docs/334): una gris = enviada; dos grises =
+ * recibida (la app de la persona la cargó); dos de color = vista (abrió el chat).
+ */
+function ReceiptMark({ state, title }: { state: ReceiptState; title: string }) {
+  const Icon = state === "sent" ? GmCheckOne : GmCheckTwo
+  return (
+    <span title={title} className="inline-flex shrink-0">
+      <Icon className={cn("h-4 w-4", state === "seen" ? "text-info" : "text-muted-foreground")} strokeWidth={2} aria-hidden />
+      <span className="sr-only">{title}</span>
+    </span>
+  )
+}
 
 interface Row {
   id: string
@@ -34,6 +50,7 @@ interface Row {
   last_message_at: string
   last_message_preview: string
   position: number | null
+  receipt?: ReceiptState | null
 }
 interface Message {
   id: string
@@ -61,6 +78,7 @@ export function SupportInbox({ onWaitingChange }: { onWaitingChange?: (n: number
   const [available, setAvailable] = useState(true)
   const [selected, setSelected] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
+  const [receipts, setReceipts] = useState<Record<string, MessageReceipt>>({})
   const [loadingThread, setLoadingThread] = useState(false)
   const [filter, setFilter] = useState<Filter>("all")
   const [search, setSearch] = useState("")
@@ -86,7 +104,11 @@ export function SupportInbox({ onWaitingChange }: { onWaitingChange?: (n: number
     if (!quiet) setLoadingThread(true)
     try {
       const res = await fetch(`/api/admin/support/${id}`, { cache: "no-store" })
-      if (res.ok) setMessages((await res.json()).messages ?? [])
+      if (res.ok) {
+        const data = await res.json()
+        setMessages(data.messages ?? [])
+        setReceipts(data.receipts ?? {})
+      }
     } finally {
       if (!quiet) setLoadingThread(false)
     }
@@ -188,6 +210,15 @@ export function SupportInbox({ onWaitingChange }: { onWaitingChange?: (n: number
   if (!available) return <p className="text-sm text-muted-foreground">{t("admin_support_unavailable")}</p>
   if (!rows) return <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
 
+  const receiptLabel = (state: ReceiptState, r?: MessageReceipt) => {
+    if (state === "seen") return r?.seenAt ? t("admin_support_receipt_seen_at").replace("{date}", formatDateTime(r.seenAt)) : t("admin_support_receipt_seen")
+    if (state === "delivered") return r?.deliveredAt ? t("admin_support_receipt_delivered_at").replace("{date}", formatDateTime(r.deliveredAt)) : t("admin_support_receipt_delivered")
+    return t("admin_support_receipt_sent")
+  }
+
+  // La hora de «Recibido»/«Visto» se escribe solo bajo la última respuesta; las demás, solo palomitas.
+  const lastAdminId = [...messages].reverse().find((m) => m.sender === "admin")?.id
+
   const statusLabel = (r: Row) =>
     r.status === "waiting" ? t("admin_support_waiting_pos").replace("{n}", String((r.position ?? 0) + 1)) : r.status === "answered" ? t("admin_support_status_answered") : t("admin_support_status_closed")
 
@@ -225,7 +256,10 @@ export function SupportInbox({ onWaitingChange }: { onWaitingChange?: (n: number
                 <span className="shrink-0 text-xs text-muted-foreground">{formatDateTime(r.last_message_at)}</span>
               </div>
               <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-xs text-muted-foreground">{r.last_message_preview || "—"}</span>
+                <span className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+                  {r.receipt && <ReceiptMark state={r.receipt} title={receiptLabel(r.receipt)} />}
+                  <span className="truncate">{r.last_message_preview || "—"}</span>
+                </span>
                 {r.admin_unread > 0 && <span className="shrink-0 rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground">{r.admin_unread}</span>}
               </div>
               <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
@@ -283,7 +317,13 @@ export function SupportInbox({ onWaitingChange }: { onWaitingChange?: (n: number
                         </p>
                       )}
                       <Attachments items={m.attachments} />
-                      <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(m.created_at)}</p>
+                      <p className={cn("mt-1 flex items-center gap-1 text-xs text-muted-foreground", m.sender === "admin" && "justify-end")}>
+                        {formatDateTime(m.created_at)}
+                        {m.sender === "admin" && receipts[m.id] && <ReceiptMark state={receipts[m.id].state} title={receiptLabel(receipts[m.id].state, receipts[m.id])} />}
+                      </p>
+                      {m.id === lastAdminId && receipts[m.id] && receipts[m.id].state !== "sent" && (
+                        <p className="text-right text-xs text-muted-foreground">{receiptLabel(receipts[m.id].state, receipts[m.id])}</p>
+                      )}
                     </div>
                   </div>
                 ))

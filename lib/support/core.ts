@@ -140,3 +140,54 @@ export function sanitizeAttachments(raw: unknown): SupportAttachment[] {
   }
   return out
 }
+
+// ─── Palomitas de /admin (docs/334) ───
+
+/** Marcas sin migración en product_events (business_id = id de la conversación). */
+export const SUPPORT_DELIVERED_EVENT = "support_delivered"
+export const SUPPORT_SEEN_EVENT = "support_seen"
+
+export type ReceiptState = "sent" | "delivered" | "seen"
+export interface MessageReceipt {
+  state: ReceiptState
+  /** Primera vez que la app de la persona la recibió / la vio después de mandarla (si se sabe). */
+  deliveredAt?: string
+  seenAt?: string
+}
+
+/**
+ * Palomitas de cada respuesta del dueño, como las de WhatsApp (pedido del dueño, docs/334):
+ * - una gris = enviada (guardada; el correo y el aviso al aparato ya salieron);
+ * - dos grises = recibida: la app de la persona cargó el chat con esa respuesta;
+ * - dos de color = vista: abrió el chat.
+ * «Vista» sale de `user_unread` (las últimas N respuestas del dueño siguen sin leer; abrir o
+ * cerrar el chat lo deja en 0), así que también vale para respuestas de antes de las marcas.
+ * Las horas salen de las marcas de product_events; una respuesta vista cuenta como recibida.
+ */
+export function messageReceipts(
+  messages: { id: string; sender: string; created_at: string }[],
+  userUnread: number,
+  marks: { event_name: string; created_at: string }[],
+): Record<string, MessageReceipt> {
+  const admin = messages.filter((m) => m.sender === "admin").sort((a, b) => a.created_at.localeCompare(b.created_at))
+  const unseenFrom = admin.length - Math.max(0, Math.min(userUnread || 0, admin.length))
+  const times = (name: string) =>
+    marks
+      .filter((m) => m.event_name === name)
+      .map((m) => m.created_at)
+      .sort()
+  const delivered = times(SUPPORT_DELIVERED_EVENT)
+  const seen = times(SUPPORT_SEEN_EVENT)
+  const firstAfter = (list: string[], at: string) => list.find((x) => new Date(x).getTime() >= new Date(at).getTime())
+  const out: Record<string, MessageReceipt> = {}
+  admin.forEach((m, i) => {
+    const seenAt = i < unseenFrom ? firstAfter(seen, m.created_at) : undefined
+    const deliveredAt = firstAfter(delivered, m.created_at) ?? seenAt
+    out[m.id] = {
+      state: i < unseenFrom ? "seen" : deliveredAt ? "delivered" : "sent",
+      ...(deliveredAt ? { deliveredAt } : {}),
+      ...(seenAt ? { seenAt } : {}),
+    }
+  })
+  return out
+}
