@@ -6,7 +6,7 @@ import { SUBRECIPE_CLASSIFICATION, type Recipe } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 import { applyPriceRule, type PricingContext } from "./recipe-pricing"
 import { getBusinessById, getEffectivePricingDefaults } from "./storage/businesses"
-import { calculateTotalMonthlyExpenses } from "@/types/business"
+import { calculateTotalMonthlyExpenses, fixedCostPerPlateOf } from "@/types/business"
 import { getCurrentCurrencyCode } from "./currency"
 
 /** Cambio de precio de venta de una receta por la regla de docs/162. */
@@ -79,16 +79,13 @@ function isSubRecipeRecipe(recipe: Recipe): boolean {
   return recipe.classification === SUBRECIPE_CLASSIFICATION || recipe.isSubRecipe === true
 }
 
-function pricingContextFor(businessId: string): PricingContext {
+export function pricingContextFor(businessId: string): PricingContext {
   // Contexto del precio sugerido, igual que en la Ficha Técnica (moneda, costo fijo por
   // plato del negocio y objetivo de food cost por defecto).
   const business = getBusinessById(businessId)
   return {
     currencyCode: getCurrentCurrencyCode(),
-    fixedCostPerPlate:
-      business?.expenses && business.estimatedMonthlyPlates && business.estimatedMonthlyPlates > 0
-        ? calculateTotalMonthlyExpenses(business.expenses) / business.estimatedMonthlyPlates
-        : 0,
+    fixedCostPerPlate: fixedCostPerPlateOf(business),
     defaultTargetFoodCostPercent: getEffectivePricingDefaults(businessId).targetFoodCostPercent,
   }
 }

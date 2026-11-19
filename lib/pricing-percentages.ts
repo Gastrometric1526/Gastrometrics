@@ -8,7 +8,8 @@
  * negocio; las recetas guardadas no cambian (cada una conserva los suyos).
  */
 
-import { getEffectivePricingDefaults, setEffectivePricingDefaults } from "@/lib/storage/businesses"
+import { getBusinessById, getEffectivePricingDefaults, setEffectivePricingDefaults } from "@/lib/storage/businesses"
+import { fixedCostPerPlateOf } from "@/types/business"
 
 export const PRICING_PERCENTAGE_KEYS = [
   "publicServices",
@@ -63,9 +64,24 @@ export function samePricingPercentages(a: PricingPercentages, b: PricingPercenta
   return PRICING_PERCENTAGE_KEYS.every((key) => Math.abs(a[key] - b[key]) < 0.005)
 }
 
-/** Predeterminados del negocio: los guardados, o los de fábrica si nunca se guardaron. */
+/** Rubros que son gastos del negocio (sin ISV ni ganancia). */
+export const EXPENSE_RUBROS = ["publicServices", "marketing", "operationalCosts", "laborCosts"] as const
+
+/**
+ * Predeterminados de un negocio (puro). Con gastos reales cargados (costo fijo por plato > 0),
+ * los gastos ya entran en el precio como costo fijo: los cuatro rubros de gasto empiezan en 0
+ * para no cobrarlos dos veces (decisión del dueño, docs/341). Lo guardado a mano manda.
+ */
+export function businessDefaultPercentages(saved: Partial<Record<PricingPercentageKey, unknown>> | null | undefined, fixedCostPerPlate: number): PricingPercentages {
+  if (saved) return normalizePricingPercentages(saved)
+  const out = { ...DEFAULT_PRICING_PERCENTAGES }
+  if (fixedCostPerPlate > 0) for (const key of EXPENSE_RUBROS) out[key] = 0
+  return out
+}
+
+/** Predeterminados del negocio: los guardados; si no, los de fábrica (con gastos reales, sin los rubros de gasto). */
 export function getDefaultPricingPercentages(businessId: string): PricingPercentages {
-  return normalizePricingPercentages(getEffectivePricingDefaults(businessId).pricingPercentages)
+  return businessDefaultPercentages(getEffectivePricingDefaults(businessId).pricingPercentages, fixedCostPerPlateOf(getBusinessById(businessId)))
 }
 
 export function hasSavedPricingPercentages(businessId: string): boolean {

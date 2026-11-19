@@ -207,6 +207,7 @@ export default {
         ]],
         ["p", "If your business has fixed costs and an estimate of dishes per month, their proportional share is added to the price automatically as one more item:"],
         ["formula", "Fixed cost per dish", ["Fixed cost per dish = Monthly fixed costs ÷ Estimated dishes per month"]],
+        ["p", "In a business with real expenses, new recipes start with utilities, marketing, operations and staff at 0, because those expenses already go in as a fixed cost (the Recipe Sheet explains it). When you migrate recipes to that business and their price changes, we ask you recipe by recipe, or for all of them, whether to keep the price they had or use the business's suggested one."],
         ["h3", "Changing the percentages"],
         ["p", "Tap the gear icon in “Sale Price Calculation” to open <strong>Percentage settings</strong>. Each item says what it covers and how much it adds per serving, and below you see the resulting suggested price and food cost % right away; if the cost goes above 40 % of the price or the profit is 0, it warns you. With <strong>Save as default</strong>, your business's new recipes start with those percentages (your tax, for example); saved ones keep their own. <strong>Use the defaults</strong> brings the recipe back to those values. In a Food Cost % recipe, only the tax in this window counts."],
         ["h3", "Delivery or card commission"],

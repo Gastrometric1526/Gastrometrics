@@ -36,7 +36,7 @@ import { stopSyncingCopy, syncMigratedCopies } from "@/lib/subrecipe/migration"
 import { hasActiveMembership } from "@/lib/plan-access"
 import { getBusinessById, getEffectivePricingDefaults, setEffectivePricingDefaults } from "@/lib/storage/businesses"
 import {
-  calculateTotalMonthlyExpenses,
+  calculateTotalMonthlyExpenses, fixedCostPerPlateOf,
   DEFAULT_PRICING_METHOD,
   LEGACY_PRICING_METHOD,
   DEFAULT_TARGET_FOOD_COST_PERCENT,
@@ -724,10 +724,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     // el usuario tenga que escribirlo receta por receta. Si el negocio no tiene gastos
     // configurados, el rubro no aparece (fixedCostPerPlate queda en 0).
     const business = businessId ? getBusinessById(businessId) : null
-    const fixedCostPerPlate =
-      business?.expenses && business.estimatedMonthlyPlates && business.estimatedMonthlyPlates > 0
-        ? calculateTotalMonthlyExpenses(business.expenses) / business.estimatedMonthlyPlates
-        : 0
+    const fixedCostPerPlate = fixedCostPerPlateOf(business)
     const fixedCostAmount = fixedCostPerPlate * effectiveYield
     const fixedCostPercentage = productionCost > 0 ? (fixedCostAmount / productionCost) * 100 : 0
 
@@ -2446,6 +2443,22 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
               {/* Gastos contados dos veces (docs/305): con los gastos reales del negocio ya
                   repartidos por plato, los rubros de servicios, marketing, operación y personal
                   pueden estar cobrando lo mismo otra vez. Se avisa y se ofrece dejarlos en 0. */}
+              {/* Gastos reales del negocio (docs/341): explica por qué los rubros de gasto están en 0. */}
+              {calculations.fixedCostAmount > 0 && publicServices + marketing + operationalCosts + laborCosts === 0 && (() => {
+                const biz = businessId ? getBusinessById(businessId) : null
+                if (!biz?.expenses) return null
+                return (
+                  <div className="flex items-start gap-2 rounded-md border border-info/40 bg-info-soft p-3 text-sm text-foreground" data-testid="ficha-fixed-cost-info">
+                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-info" />
+                    <p>
+                      {t("ficha_tecnica_fixed_cost_info")
+                        .replace("{expenses}", formatCurrency(calculateTotalMonthlyExpenses(biz.expenses)))
+                        .replace("{plates}", String(biz.estimatedMonthlyPlates ?? 0))
+                        .replace("{perPlate}", formatCurrency(fixedCostPerPlateOf(biz)))}
+                    </p>
+                  </div>
+                )
+              })()}
               {calculations.fixedCostAmount > 0 && publicServices + marketing + operationalCosts + laborCosts > 0 && (
                 <div className="flex flex-col gap-2 rounded-md border border-warning/40 bg-warning-soft p-3 text-sm text-warning" data-testid="ficha-double-expenses">
                   <div className="flex items-start gap-2">

@@ -45,6 +45,8 @@ export type BulkMigrationResult = {
   skipped: number
   failed: string[]
   ingredientsCopied: number
+  /** Recetas que llegaron (para preguntar su precio en el negocio, docs/341). */
+  recipeIds: string[]
 }
 
 export async function runBulkMigration(input: {
@@ -65,6 +67,7 @@ export async function runBulkMigration(input: {
   const total = plan.toMigrate.length + (input.includeLooseIngredients ? 1 : 0)
   const failed: string[] = []
   let migrated = 0
+  const recipeIds: string[] = []
   let skipped = plan.alreadyThere.length
   let step = 0
 
@@ -79,6 +82,7 @@ export async function runBulkMigration(input: {
     const result = await migrateCompleteRecipe(recipe, sourceBusinessId, targetBusinessId, undefined, { includeIngredients: true })
     if (result.success && result.migratedRecipe) {
       migrated++
+      recipeIds.push(result.migratedRecipe.id)
     } else {
       failed.push(recipe.name)
     }
@@ -107,5 +111,5 @@ export async function runBulkMigration(input: {
     step++
   }
   input.onProgress?.(total, total, "")
-  return { migrated, skipped, failed, ingredientsCopied }
+  return { migrated, skipped, failed, ingredientsCopied, recipeIds }
 }

@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Gastos reales del negocio y precio de lo migrado (docs/341).
+    version: "2026-11-19c",
+    tutorialHref: tourHref("negocios"),
+    content: {
+      es: { title: "Tus gastos reales, sin cobrarlos dos veces", items: ["En un negocio con gastos del mes y platos estimados, cada plato ya carga su parte como costo fijo. Las recetas nuevas de ese negocio empiezan con servicios, marketing, operación y personal en 0, y la Ficha te explica por qué.", "Al migrar recetas a un negocio, si su precio cambia ahí, te preguntamos receta por receta, o para todas, si mantienes el precio que tenían o usas el sugerido del negocio."] },
+      en: { title: "Your real expenses, without charging them twice", items: ["In a business with monthly expenses and estimated dishes, each dish already carries its share as a fixed cost. New recipes in that business start with utilities, marketing, operations and staff at 0, and the Recipe Sheet explains why.", "When you migrate recipes to a business and their price changes there, we ask you recipe by recipe, or for all of them, whether to keep the price they had or use the business's suggested one."] },
+      da: { title: "Dine faktiske udgifter, uden at opkræve dem to gange", items: ["I en virksomhed med månedlige udgifter og forventede retter bærer hver ret allerede sin andel som fast omkostning. Nye opskrifter i virksomheden starter med forsyning, marketing, drift og personale på 0, og opskriftsarket forklarer hvorfor.", "Når du migrerer opskrifter til en virksomhed, og prisen ændres der, spørger vi for hver opskrift, eller for dem alle, om du beholder den pris, de havde, eller bruger virksomhedens forslag."] },
+      fr: { title: "Vos dépenses réelles, sans les compter deux fois", items: ["Dans un établissement avec dépenses du mois et plats estimés, chaque plat porte déjà sa part comme coût fixe. Les nouvelles recettes de cet établissement commencent avec services, marketing, exploitation et personnel à 0, et la fiche technique explique pourquoi.", "Quand vous migrez des recettes vers un établissement et que leur prix y change, nous vous demandons, recette par recette ou pour toutes, si vous gardez leur prix ou utilisez celui suggéré par l'établissement."] },
+      pt: { title: "Suas despesas reais, sem cobrá-las duas vezes", items: ["Num negócio com despesas do mês e pratos estimados, cada prato já carrega sua parte como custo fixo. As receitas novas desse negócio começam com serviços, marketing, operação e pessoal em 0, e a Ficha explica por quê.", "Ao migrar receitas para um negócio, se o preço mudar lá, perguntamos receita por receita, ou para todas, se mantém o preço que tinham ou usa o sugerido do negócio."] },
+      zh: { title: "实际开支，不再重复计算", items: ["在填写了每月开支和预计菜品数的商家中，每道菜已按比例承担固定成本。该商家的新配方中，公用事业、营销、运营和人员从 0 开始，技术配方表会说明原因。", "把配方迁移到商家时，若价格在那里发生变化，我们会逐个（或一次性全部）询问你：保留原价，还是使用商家的建议价。"] },
+    },
+  },
+  {
     // Repaso rápido del tutorial e invitación a invitar a las 3 horas (docs/337).
     version: "2026-11-19b",
     tutorialHref: tourHref("mi-plan"),

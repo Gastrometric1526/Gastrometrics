@@ -208,6 +208,7 @@ export default {
         ]],
         ["p", "Si tu negocio tiene gastos fijos y una estimación de platos al mes, su parte proporcional se suma sola al precio como un rubro más:"],
         ["formula", "Costo fijo por plato", ["Costo fijo por plato = Gastos fijos del mes ÷ Platos estimados al mes"]],
+        ["p", "En un negocio con gastos reales, las recetas nuevas empiezan con servicios, marketing, operación y personal en 0, porque esos gastos ya van como costo fijo (la Ficha te lo explica). Cuando migras recetas a ese negocio y su precio cambia, te preguntamos receta por receta, o para todas, si mantienes el precio que tenían o usas el sugerido del negocio."],
         ["h3", "Cambiar los porcentajes"],
         ["p", "Toca el ícono de engranaje en «Cálculo de precio de venta» para abrir <strong>Configuración de porcentajes</strong>. Cada rubro dice qué cubre y cuánto suma por porción, y abajo ves al momento el precio sugerido y el costo % que resultan; si el costo pasa del 40 % del precio o la ganancia está en 0, te avisa. Con <strong>Guardar como predeterminado</strong>, las recetas nuevas de tu negocio empiezan con esos porcentajes (por ejemplo, tu ISV); las guardadas conservan los suyos. <strong>Usar los predeterminados</strong> devuelve la receta a esos valores. En una receta con Food Cost %, de esta ventana solo cuenta el ISV."],
         ["h3", "Comisión de delivery o tarjeta"],

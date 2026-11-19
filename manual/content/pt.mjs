@@ -207,6 +207,7 @@ export default {
         ]],
         ["p", "Se o seu negócio tem despesas fixas e uma estimativa de pratos por mês, a parte proporcional delas é somada ao preço automaticamente como mais um item:"],
         ["formula", "Custo fixo por prato", ["Custo fixo por prato = Despesas fixas do mês ÷ Pratos estimados por mês"]],
+        ["p", "Num negócio com despesas reais, as receitas novas começam com serviços, marketing, operação e pessoal em 0, porque essas despesas já entram como custo fixo (a Ficha explica). Quando você migra receitas para esse negócio e o preço muda, perguntamos receita por receita, ou para todas, se mantém o preço que tinham ou usa o sugerido do negócio."],
         ["h3", "Alterar os percentuais"],
         ["p", "Toque no ícone de engrenagem em “Cálculo do preço de venda” para abrir <strong>Configuração de percentuais</strong>. Cada item diz o que cobre e quanto soma por porção, e embaixo você vê na hora o preço sugerido e o custo % resultantes; se o custo passar de 40 % do preço ou o lucro estiver em 0, aparece um aviso. Com <strong>Salvar como padrão</strong>, as novas receitas do seu negócio começam com esses percentuais (seu imposto, por exemplo); as salvas mantêm os seus. <strong>Usar os padrões</strong> volta a receita a esses valores. Numa receita com Food Cost %, desta janela só conta o imposto."],
         ["h3", "Comissão de delivery ou cartão"],

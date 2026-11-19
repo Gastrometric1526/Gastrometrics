@@ -93,6 +93,16 @@ export const calculateTotalMonthlyExpenses = (expenses: BusinessExpenses): numbe
   )
 }
 
+/**
+ * Costo fijo del negocio por plato: gastos del mes ÷ platos estimados al mes. 0 si el negocio
+ * no tiene datos financieros. Una sola función para la Ficha, la cascada y las migraciones
+ * (docs/341).
+ */
+export const fixedCostPerPlateOf = (business?: Pick<Business, "expenses" | "estimatedMonthlyPlates"> | null): number =>
+  business?.expenses && business.estimatedMonthlyPlates && business.estimatedMonthlyPlates > 0
+    ? calculateTotalMonthlyExpenses(business.expenses) / business.estimatedMonthlyPlates
+    : 0
+
 export const calculateExpensePercentages = (expenses: BusinessExpenses): BusinessExpenses => {
   const total = calculateTotalMonthlyExpenses(expenses)
   return {

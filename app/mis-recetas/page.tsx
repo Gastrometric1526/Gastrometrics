@@ -1,5 +1,6 @@
 "use client"
 
+import { MIGRATION_PRICE_EVENT } from "@/lib/migration-price"
 import { useState, useEffect, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -497,6 +498,10 @@ export default function MisRecetasPage() {
       }
 
       showSuccess(t("misrecetas_toast_migration_success_title"), message)
+      // Precio en el negocio de destino (docs/341): si cambia, se pregunta cuál usar.
+      if (migratedRecipe && selectedTargetBusiness !== "main") {
+        window.dispatchEvent(new CustomEvent(MIGRATION_PRICE_EVENT, { detail: { businessId: selectedTargetBusiness, recipeIds: [migratedRecipe.id] } }))
+      }
       console.log("✅ Migración completada exitosamente")
     } catch (error) {
       console.error("❌ Error migrating recipe:", error)

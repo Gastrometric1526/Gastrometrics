@@ -40,6 +40,8 @@ import { paxMultiplierFor, roundUpToStep, scaleLineQuantity } from "./pax-scalin
 import { yieldUnitKind, scaleTargetError, safeScaleMultiplier, scaleBaseYield, servingsScale } from "./yield-units"
 import { roundSalePrice } from "./price-rounding"
 import { fallbackYield } from "./yield-weight"
+import { businessDefaultPercentages } from "./pricing-percentages"
+import { migrationPricePatch } from "./migration-price"
 import { stockStatus, effectiveStockStatus } from "./inventory-status"
 import type { Recipe } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
@@ -167,6 +169,15 @@ describe("B. Ficha Técnica y precio", () => {
     expect(fallbackYield(lines, "porciones")).toBe(1500)
     expect(fallbackYield(lines, "un", 2)).toBe(3000)
     expect(scaleBaseYield({ yieldAmount: 0, yieldUnit: "un", ingredients: lines })).toBe(1500)
+  })
+  // ── docs/341: gastos reales del negocio y precio de lo migrado (decisión del dueño) ──
+  it("B-18 · Negocio con gastos L 20 000 ÷ 1000 platos = L 20 por plato: rubros de gasto en 0; costo 50 → 50 + 30 % + 20 = 85 (en el Dashboard, 105)", () => {
+    const defaults = businessDefaultPercentages(null, 20)
+    expect([defaults.publicServices, defaults.marketing, defaults.operationalCosts, defaults.laborCosts, defaults.contributionMargin]).toEqual([0, 0, 0, 0, 30])
+    const recipe = { id: "r", name: "Pollo", pricingMethod: "gastrometrics", yieldAmount: 1, totalCost: 50, costPerServing: 50, unitPrice: 105, publicServices: 10, marketing: 10, operationalCosts: 30, laborCosts: 25, isv: 0, contributionMargin: 30, ingredients: [] } as unknown as Recipe
+    expect(suggestedUnitPrice(recipe, 50, { currencyCode: "HNL" })).toBe(105)
+    expect(migrationPricePatch(recipe, "business", defaults, { currencyCode: "HNL", fixedCostPerPlate: 20 }).unitPrice).toBe(85)
+    expect(migrationPricePatch(recipe, "mine", defaults, { currencyCode: "HNL", fixedCostPerPlate: 20 }).customUnitPrice).toBe(105)
   })
   it("B-11 · PAX: 10 personas sobre rendimiento 4 = × 2.5; redondeo hacia arriba sin error de coma (0.1 × 3 = 0.3)", () => {
     expect(paxMultiplierFor(10, 4)).toBe(2.5)

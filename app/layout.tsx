@@ -20,6 +20,7 @@ import { AnalyticsTracker } from "@/components/analytics-tracker"
 import { PresenceTracker } from "@/components/presence-tracker"
 import { FounderGrantTrigger } from "@/components/founder-grant-trigger"
 import { SubrecipeAnnouncement } from "@/components/subrecipe-announcement"
+import { MigrationPriceDialog } from "@/components/migration-price-dialog"
 import { ReferralTrigger } from "@/components/referral-trigger"
 import { PlanExpiryDialog } from "@/components/plan-expiry-dialog"
 import { PaymentNoticeDialog } from "@/components/payment-notice-dialog"
@@ -146,6 +147,8 @@ export default function RootLayout({
                   <SubRecipePricePrompt />
                   {/* Aviso único de subrecetas para cuentas existentes (docs/339) */}
                   <SubrecipeAnnouncement />
+                  {/* Precio de las recetas que llegan a un negocio (docs/341) */}
+                  <MigrationPriceDialog />
                   <Suspense fallback={null}>
                     <ModuleActivityTracker />
                   </Suspense>

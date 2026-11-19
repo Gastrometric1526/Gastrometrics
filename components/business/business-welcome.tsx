@@ -24,6 +24,7 @@ import { Progress } from "@/components/ui/progress"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { logActivity } from "@/lib/services/activity-log"
+import { MIGRATION_PRICE_EVENT } from "@/lib/migration-price"
 import { useRecipes, isSubRecipe, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { useIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 import { looseIngredientsToCopy, planBulkMigration, runBulkMigration, type BulkMigrationResult } from "@/lib/subrecipe/bulk-migration"
@@ -182,6 +183,10 @@ export function BringFromMainDialog({
         entityLabel: `→ ${business.name}`,
         metadata: { count: res.migrated, ingredients: res.ingredientsCopied, bulk: true },
       })
+    }
+    // Precio en este negocio (docs/341): si cambia, se pregunta cuál usar.
+    if (res.recipeIds.length > 0) {
+      window.dispatchEvent(new CustomEvent(MIGRATION_PRICE_EVENT, { detail: { businessId: business.id, recipeIds: res.recipeIds } }))
     }
   }
 
