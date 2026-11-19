@@ -27,7 +27,8 @@ const TITLES: Record<string, string> = {
   "recetas:migrated": "Receta migrada a otro negocio",
 
   // Ingredientes
-  "ingredientes:created": "Ingrediente creado",
+  // Lo que se crea en Ingredientes nunca es subreceta (esas nacen en la Ficha, docs/336).
+  "ingredientes:created": "Ingrediente creado (no es subreceta)",
   "ingredientes:updated": "Ingrediente editado",
   "ingredientes:deleted": "Ingrediente borrado",
   "ingredientes:imported": "Ingredientes importados",
@@ -130,6 +131,9 @@ export function activityPushText(input: {
   let title = titleOf(input.module, input.action) ?? "Actividad"
   if (input.module === "ocr" && input.kind && OCR_KINDS[input.kind]) title = `Leyó una ${OCR_KINDS[input.kind]} con OCR`
   if (input.module === "pdf" && input.kind && PDF_KINDS[input.kind]) title = `Exportó un PDF: ${PDF_KINDS[input.kind]}`
+  // Subreceta o no (pedido del dueño, docs/336): la Ficha manda kind «subrecipe» o «dish».
+  if (input.module === "recetas" && input.kind === "subrecipe") title = title.replace(/^Recetas?/, (m) => (m === "Recetas" ? "Subrecetas" : "Subreceta"))
+  if (input.module === "recetas" && input.kind === "dish" && (input.action === "created" || input.action === "updated")) title = `${title} (no es subreceta)`
   // El cuadre de caja se guarda como una edición de las ventas del día (docs/319).
   if (input.module === "estadisticas" && input.kind === "cash_up") title = input.action === "deleted" ? "Quitó un cuadre de caja" : "Hizo el cuadre de caja"
   // Sin negocio: la app, la cuenta, el OCR y las descargas no son de un negocio.
@@ -137,7 +141,9 @@ export function activityPushText(input: {
   const place = accountWide ? null : input.businessName || "Dashboard personal"
   const amount = input.count && input.count > 1 ? `${input.count} elementos` : null
   const label = input.label?.trim() ? input.label.trim().slice(0, 80) : null
-  return { title, body: [input.who, label, place, amount].filter(Boolean).join(" · ") }
+  // Una subreceta nueva queda también como ingrediente: se dice dónde aparece.
+  const where = input.module === "recetas" && input.kind === "subrecipe" && input.action === "created" ? "aparece en Ingredientes" : null
+  return { title, body: [input.who, label, place, amount, where].filter(Boolean).join(" · ") }
 }
 
 /** Las cuentas del dueño del proyecto no avisan: serían sus propias pruebas. */

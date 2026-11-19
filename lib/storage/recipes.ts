@@ -451,7 +451,7 @@ export async function moveRecipeToTrash(recipeId: string, businessId?: string | 
     )
     window.dispatchEvent(new CustomEvent("recipesTrashUpdated", { detail: { businessId: businessId || "main" } }))
     // Aviso al celular del dueño (docs/295).
-    notifyAdminActivity({ module: "recetas", action: "deleted", businessId: businessId && businessId !== "main" ? businessId : null, label: recipeToDelete.name })
+    notifyAdminActivity({ module: "recetas", action: "deleted", businessId: businessId && businessId !== "main" ? businessId : null, label: recipeToDelete.name, kind: isSubRecipe(recipeToDelete) ? "subrecipe" : "dish" })
 
     return true
   } catch (error) {

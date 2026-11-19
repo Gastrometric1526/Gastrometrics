@@ -1287,6 +1287,8 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
           module: "recetas",
           action: mode === "edit" ? "updated" : "created",
           entityLabel: savedRecipe.name,
+          // El aviso de /admin dice si es subreceta o no (docs/336).
+          metadata: { kind: savedRecipe.classification === SUBRECIPE_CLASSIFICATION || savedRecipe.isSubRecipe ? "subrecipe" : "dish" },
         })
       }
 

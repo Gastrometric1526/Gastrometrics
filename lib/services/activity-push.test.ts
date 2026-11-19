@@ -58,3 +58,20 @@ describe("avisos de actividad", () => {
     expect(pushLimit("cuenta", "wiped").max).toBeGreaterThanOrEqual(5)
   })
 })
+
+describe("subreceta o no en el aviso (docs/336)", () => {
+  it("dice cuando es subreceta, y dónde aparece al crearla", () => {
+    expect(activityPushText({ module: "recetas", action: "created", who: "Ana", label: "Salsa base", kind: "subrecipe" })).toEqual({
+      title: "Subreceta creada",
+      body: "Ana · Salsa base · Dashboard personal · aparece en Ingredientes",
+    })
+    expect(activityPushText({ module: "recetas", action: "updated", who: "Ana", kind: "subrecipe" }).title).toBe("Subreceta editada")
+    expect(activityPushText({ module: "recetas", action: "deleted", who: "Ana", kind: "subrecipe" }).title).toBe("Subreceta borrada")
+    expect(activityPushText({ module: "recetas", action: "migrated", who: "Ana", kind: "subrecipe" }).title).toBe("Subreceta migrada a otro negocio")
+  })
+  it("y cuando no lo es", () => {
+    expect(activityPushText({ module: "recetas", action: "created", who: "Ana", kind: "dish" }).title).toBe("Receta creada (no es subreceta)")
+    expect(activityPushText({ module: "recetas", action: "updated", who: "Ana", kind: "dish" }).title).toBe("Receta editada (no es subreceta)")
+    expect(activityPushText({ module: "ingredientes", action: "created", who: "Ana" }).title).toBe("Ingrediente creado (no es subreceta)")
+  })
+})

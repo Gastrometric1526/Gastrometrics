@@ -451,6 +451,7 @@ export default function MisRecetasPage() {
             module: "recetas",
             action: "migrated",
             entityLabel: `"${recipeToMigrate.name}"`,
+            metadata: { kind: recipeToMigrate.classification === SUBRECIPE_CLASSIFICATION || recipeToMigrate.isSubRecipe ? "subrecipe" : "dish" },
           })
         }
         showSuccess(
@@ -491,6 +492,7 @@ export default function MisRecetasPage() {
           module: "recetas",
           action: "migrated",
           entityLabel: `"${recipeToMigrate.name}" → ${targetLabel}`,
+          metadata: { kind: recipeToMigrate.classification === SUBRECIPE_CLASSIFICATION || recipeToMigrate.isSubRecipe ? "subrecipe" : "dish" },
         })
       }
 
