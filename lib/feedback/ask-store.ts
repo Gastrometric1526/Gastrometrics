@@ -26,7 +26,15 @@ export function loadAskState(userId: string): AskState {
     const raw = window.localStorage.getItem(key(userId))
     if (!raw) return emptyAskState()
     const parsed = JSON.parse(raw) as AskState
-    return { moments: parsed.moments || {}, questions: parsed.questions || {}, rating: parsed.rating, lastAskAt: parsed.lastAskAt }
+    // reviewInvite se perdía al leer (docs/337): la invitación a la reseña podía repetirse.
+    return {
+      moments: parsed.moments || {},
+      questions: parsed.questions || {},
+      rating: parsed.rating,
+      lastAskAt: parsed.lastAskAt,
+      reviewInvite: parsed.reviewInvite,
+      referralInvite: parsed.referralInvite,
+    }
   } catch {
     return emptyAskState()
   }

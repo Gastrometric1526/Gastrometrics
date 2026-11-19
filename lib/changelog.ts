@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Repaso rápido del tutorial e invitación a invitar a las 3 horas (docs/337).
+    version: "2026-11-19b",
+    tutorialHref: tourHref("mi-plan"),
+    content: {
+      es: { title: "Repasa el tutorial más rápido", items: ["Al reiniciar el tutorial (completo o de un módulo), cada paso tiene «Siguiente»: lo recorres por encima sin tener que agregar ni guardar nada.", "Después de unas horas de uso te recordamos «Regala un mes, gana un mes»: tu colega prueba Chef Ejecutivo 30 días y tú ganas un mes cuando empieza."] },
+      en: { title: "Go through the tutorial faster", items: ["When you restart the tutorial (all of it or one module), every step has “Next”: you skim through it without having to add or save anything.", "After a few hours of use we remind you of “Give a month, get a month”: your colleague tries Chef Ejecutivo for 30 days and you earn a month when they start."] },
+      da: { title: "Gennemgå tutorialen hurtigere", items: ["Når du genstarter tutorialen (hele eller et modul), har hvert trin »Næste«: du skimmer den uden at skulle tilføje eller gemme noget.", "Efter nogle timers brug minder vi dig om »Giv en måned, få en måned«: din kollega prøver Chef Ejecutivo i 30 dage, og du får en måned, når kollegaen går i gang."] },
+      fr: { title: "Parcourez le tutoriel plus vite", items: ["Quand vous redémarrez le tutoriel (en entier ou un module), chaque étape a « Suivant » : vous le parcourez sans rien ajouter ni enregistrer.", "Après quelques heures d'utilisation, nous vous rappelons « Offrez un mois, gagnez un mois » : votre collègue essaie Chef Ejecutivo 30 jours et vous gagnez un mois quand il commence."] },
+      pt: { title: "Reveja o tutorial mais rápido", items: ["Ao reiniciar o tutorial (completo ou de um módulo), cada passo tem «Próximo»: você o percorre por cima sem precisar adicionar nem salvar nada.", "Depois de algumas horas de uso, lembramos você de «Dê um mês, ganhe um mês»: seu colega testa o Chef Ejecutivo por 30 dias e você ganha um mês quando ele começar."] },
+      zh: { title: "更快地浏览教程", items: ["重新开始教程（完整或某个模块）时，每一步都有“下一步”：无需添加或保存任何内容即可快速浏览。", "使用几个小时后，我们会提醒你“送一个月，得一个月”：同行可试用 Chef Ejecutivo 30 天，对方开始使用后你也能获得一个月。"] },
+    },
+  },
+  {
     // Tutorial completo al reiniciarlo y subrecetas en el recorrido (docs/335).
     version: "2026-11-19",
     tutorialHref: tourHref("ficha-tecnica"),

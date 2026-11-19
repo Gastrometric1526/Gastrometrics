@@ -50,3 +50,13 @@ describe("subrecetas en el tutorial (docs/335)", () => {
     expect(ficha.find((s) => s.id === "summary")?.then).toBe("end")
   })
 })
+
+describe("modo repaso (docs/337)", () => {
+  it("salta los pasos de «toca Siguiente/Agregar» y sigue sin elegir camino", () => {
+    const ing = CHAPTER_STEPS["ingredients-add"]
+    expect(ing.filter((s) => s.reviewSkip).map((s) => s.id)).toEqual(["next-1", "next-2", "next-3", "submit"])
+    expect(ing[0].reviewNext).toBe("open")
+    expect(CHAPTER_STEPS["ficha-basic"][0].reviewNext).toBe("subrecipe")
+    for (const steps of Object.values(CHAPTER_STEPS)) for (const s of steps) if (s.reviewNext) expect(steps.some((x) => x.id === s.reviewNext)).toBe(true)
+  })
+})

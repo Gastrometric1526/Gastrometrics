@@ -39,6 +39,13 @@ export type CoachStep = {
   jumps?: { when: (live: JourneyLive) => boolean; goTo: string }[]
   then?: string
   back?: string
+  /**
+   * Modo repaso (reiniciar el tutorial, docs/337): el paso no aporta si solo se mira
+   * («Toca Siguiente», «Toca Agregar»), así que no se muestra.
+   */
+  reviewSkip?: boolean
+  /** Modo repaso: adónde sigue «Siguiente» en un paso con caminos (sin elegir uno). */
+  reviewNext?: string
 }
 
 export type JourneyChoice = {
@@ -85,6 +92,7 @@ export const CHAPTER_STEPS: Record<string, CoachStep[]> = {
         { label: "journey_ing_choose_import", primary: true, click: '[data-tour="ing-import"]', goTo: "import" },
         { label: "journey_ing_choose_manual", goTo: "open" },
       ],
+      reviewNext: "open",
       jumps: [
         { when: () => !!el('[data-journey="ing-import-dialog"]'), goTo: "import" },
         { when: () => !!el('[data-journey="ing-dialog"]'), goTo: "name" },
@@ -112,7 +120,7 @@ export const CHAPTER_STEPS: Record<string, CoachStep[]> = {
       ready: () => filled('[data-journey="ing-dialog"] #name'),
     },
     { id: "classify", selector: '[data-journey="ing-classify"]', title: "journey_ing_classify_title", description: "journey_ing_classify_desc", advance: "next", ready: wizardReady },
-    { id: "next-1", selector: '[data-journey="ing-next"]', title: "journey_ing_next_title", description: "journey_ing_next_desc", advance: "click" },
+    { id: "next-1", selector: '[data-journey="ing-next"]', title: "journey_ing_next_title", description: "journey_ing_next_desc", advance: "click", reviewSkip: true },
     {
       id: "pricing",
       selector: '[data-journey="ing-pricing"]',
@@ -122,14 +130,15 @@ export const CHAPTER_STEPS: Record<string, CoachStep[]> = {
       advance: "next",
       ready: wizardReady,
     },
-    { id: "next-2", selector: '[data-journey="ing-next"]', title: "journey_ing_next_title", description: "journey_ing_next_desc", advance: "click" },
+    { id: "next-2", selector: '[data-journey="ing-next"]', title: "journey_ing_next_title", description: "journey_ing_next_desc", advance: "click", reviewSkip: true },
     { id: "supplier", selector: '[data-journey="ing-supplier"]', title: "journey_ing_supplier_title", description: "journey_ing_supplier_desc", advance: "next" },
-    { id: "next-3", selector: '[data-journey="ing-next"]', title: "journey_ing_next_title", description: "journey_ing_next_desc", advance: "click" },
+    { id: "next-3", selector: '[data-journey="ing-next"]', title: "journey_ing_next_title", description: "journey_ing_next_desc", advance: "click", reviewSkip: true },
     { id: "extra", selector: '[data-journey="ing-extra"]', title: "journey_ing_extra_title", description: "journey_ing_extra_desc", advance: "next" },
     // Avanza cuando el ingrediente quedó guardado (hay uno más), no con solo tocar el botón.
     {
       id: "submit",
       selector: '[data-journey="ing-submit"]',
+      reviewSkip: true,
       title: "journey_ing_submit_title",
       description: "journey_ing_submit_desc",
       advance: "auto",
@@ -179,6 +188,7 @@ export const CHAPTER_STEPS: Record<string, CoachStep[]> = {
         { label: "journey_ficha_choose_import", primary: true, href: "/mis-recetas?import=1" },
         { label: "journey_ficha_choose_manual", goTo: "subrecipe" },
       ],
+      reviewNext: "subrecipe",
       // Volvió de importar: la ficha ya trae nombre e ingredientes, solo falta revisarla.
       jumps: [{ when: (live) => live.ficha.hasName && live.ficha.linesWithIngredient > 0, goTo: "subrecipe-imported" }],
     },

@@ -341,7 +341,16 @@ export function GuidedJourney() {
   const chapter = position.status === "active" ? position.chapter : null
   const chapterId = chapter?.id ?? null
   const onRoute = chapter ? onChapterRoute(chapter, pathname) : false
-  const steps = chapterId ? CHAPTER_STEPS[chapterId] ?? [] : []
+  // Modo repaso (pedido del dueño, docs/337): al reiniciar el tutorial (completo o de un módulo)
+  // se echa por encima: cada paso tiene «Siguiente» aunque no se haga la acción, lo que vive en
+  // una ventana cerrada se explica al centro y se saltan los pasos de «toca Siguiente/Agregar».
+  const review = position.status === "active" && (!!position.fromReplay || !!state?.full)
+  const reviewRef = useRef(review)
+  reviewRef.current = review
+  const steps = useMemo(() => {
+    const all = chapterId ? CHAPTER_STEPS[chapterId] ?? [] : []
+    return review ? all.filter((s) => !s.reviewSkip) : all
+  }, [chapterId, review])
   useEffect(() => {
     if (!onRoute) return
     try {
@@ -376,7 +385,10 @@ export function GuidedJourney() {
 
   // Avanza desde un paso concreto: un clic y una condición cumplida a la vez no saltan dos pasos.
   const currentRef = useRef<{ chapterId: string; stepId: string; index: number; length: number; then?: string } | null>(null)
-  currentRef.current = chapterId && step ? { chapterId, stepId: step.id, index: Math.min(stepIndex, steps.length - 1), length: steps.length, then: step.then } : null
+  currentRef.current =
+    chapterId && step
+      ? { chapterId, stepId: step.id, index: Math.min(stepIndex, steps.length - 1), length: steps.length, then: review && step.reviewNext ? step.reviewNext : step.then }
+      : null
   const stepIndexOf = useCallback((id: string) => steps.findIndex((s) => s.id === id), [steps])
   const advanceFrom = useCallback(
     (stepId: string) => {
@@ -457,6 +469,11 @@ export function GuidedJourney() {
       }
       if (step.selector && !r) {
         missesRef.current += 1
+        // Repaso: lo que vive en una ventana cerrada se explica al centro, sin volver atrás.
+        if (reviewRef.current && !step.optional) {
+          setReady(true)
+          return
+        }
         if (missesRef.current >= 6) {
           missesRef.current = 0
           if (step.optional) {
@@ -826,6 +843,8 @@ export function GuidedJourney() {
   const isLastStep = stepIndex >= steps.length - 1
   const isLastChapter = chapter.id === "finish"
   const waitingForAction = step.advance !== "next"
+  // En el repaso siempre se puede seguir con «Siguiente», también en un paso con caminos.
+  const showNext = review || (!waitingForAction && !step.choices)
 
   return (
     <>
@@ -894,10 +913,10 @@ export function GuidedJourney() {
               {waitingForAction && (
                 <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-primary">
                   <MousePointerClick className="h-3.5 w-3.5" />
-                  {t(step.advance === "click" ? "journey_do_it" : "journey_auto")}
+                  {t(review ? "journey_review_hint" : step.advance === "click" ? "journey_do_it" : "journey_auto")}
                 </p>
               )}
-              {!waitingForAction && !ready && <p className="mt-3 text-xs font-medium text-primary">{t("journey_fill_it")}</p>}
+              {!waitingForAction && !ready && !review && <p className="mt-3 text-xs font-medium text-primary">{t("journey_fill_it")}</p>}
             </div>
             <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2.5">
               <div className="flex items-center gap-2">
@@ -913,8 +932,8 @@ export function GuidedJourney() {
                 <span className="text-xs text-muted-foreground">
                   {stepIndex + 1}/{steps.length}
                 </span>
-                {!waitingForAction && !step.choices && (
-                  <Button size="sm" onClick={goNext} disabled={!ready} className="gap-1.5">
+                {showNext && (
+                  <Button size="sm" onClick={goNext} disabled={!ready && !review} className="gap-1.5">
                     {isLastStep ? t(isLastChapter ? "journey_finish_button" : "journey_continue") : t("tour_next")}
                     <ArrowRight className="h-4 w-4" />
                   </Button>

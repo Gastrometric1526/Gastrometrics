@@ -103,6 +103,8 @@ export interface AskState {
   questions: Partial<Record<QuestionKey, AskRecord>>
   /** Invitación final a la reseña pública (docs/265). */
   reviewInvite?: AskRecord
+  /** «Regala un mes, gana un mes» a las 3 horas de uso (docs/337). */
+  referralInvite?: AskRecord
 }
 
 export interface AskContext {
@@ -113,6 +115,8 @@ export interface AskContext {
   /** El plan asignado vence en 3 días o menos. */
   planExpiringSoon: boolean
   onboardingDone: boolean
+  /** Tiempo de uso real (user_presence.total_active_seconds); null si no se pudo leer. */
+  activeSeconds?: number | null
 }
 
 export function emptyAskState(): AskState {
@@ -206,12 +210,33 @@ export function reviewInviteDue(state: AskState, ctx: AskContext): boolean {
   return nextQuestion(state, ctx) === null
 }
 
+/**
+ * Invitación a invitar a un colega (pedido del dueño, docs/337): «después de unas 3–4 horas
+ * de uso, un aviso que diga ¿estás disfrutando de GastroMetrics? ¿por qué no invitas a un
+ * colega?, para que sepa desde temprano de Regala un mes, gana un mes».
+ * - a las 3 horas de uso REAL (la encuesta por correo sale a las 4, docs/144: no coinciden);
+ * - entra en la misma pausa de 5 días que las preguntas (una cosa a la vez);
+ * - «Ahora no» la vuelve a ofrecer a los 30 días, como mucho 3 veces; «Invitar» la termina.
+ */
+export const REFERRAL_INVITE_ACTIVE_SECONDS = 3 * 60 * 60
+export const REFERRAL_INVITE_RETRY_MS = 30 * DAY_MS
+export const REFERRAL_INVITE_MAX_SHOWS = 3
+
+export function referralInviteDue(state: AskState, ctx: AskContext): boolean {
+  if (inCooldown(state, ctx.now)) return false
+  if ((ctx.activeSeconds ?? 0) < REFERRAL_INVITE_ACTIVE_SECONDS) return false
+  const rec = state.referralInvite
+  if (rec && (rec.status === "answered" || rec.shows >= REFERRAL_INVITE_MAX_SHOWS || ctx.now - rec.at < REFERRAL_INVITE_RETRY_MS)) return false
+  return true
+}
+
 /** Registra que se mostró y cómo terminó. */
-export function recordAsk(state: AskState, target: "rating" | "review" | QuestionKey, status: "answered" | "dismissed", now: number): AskState {
-  const prev = target === "rating" ? state.rating : target === "review" ? state.reviewInvite : state.questions[target]
+export function recordAsk(state: AskState, target: "rating" | "review" | "referral" | QuestionKey, status: "answered" | "dismissed", now: number): AskState {
+  const prev = target === "rating" ? state.rating : target === "review" ? state.reviewInvite : target === "referral" ? state.referralInvite : state.questions[target]
   const rec: AskRecord = { status, at: now, shows: (prev?.shows ?? 0) + 1 }
   if (target === "rating") return { ...state, lastAskAt: now, rating: rec }
   if (target === "review") return { ...state, lastAskAt: now, reviewInvite: rec }
+  if (target === "referral") return { ...state, lastAskAt: now, referralInvite: rec }
   return { ...state, lastAskAt: now, questions: { ...state.questions, [target]: rec } }
 }
 

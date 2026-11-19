@@ -589,7 +589,15 @@ export function EquipoTour({ hasMembers }: { hasMembers: boolean }) {
 
 export function MiPlanTour({ hasManageButton }: { hasManageButton: boolean }) {
   const { t } = useLanguage()
-  const steps: TourStep[] = [
+  // Desde la invitación de las 3 horas (docs/337): solo los pasos de «Regala un mes, gana un mes».
+  const [onlyInvite] = useState(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("desde") === "invita")
+  useEffect(() => {
+    if (!onlyInvite) return
+    const url = new URL(window.location.href)
+    url.searchParams.delete("desde")
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`)
+  }, [onlyInvite])
+  const allSteps: TourStep[] = [
     {
       id: "header",
       title: t("tour_miplan_header_title"),
@@ -630,6 +638,7 @@ export function MiPlanTour({ hasManageButton }: { hasManageButton: boolean }) {
     },
   ]
 
+  const steps = onlyInvite ? allSteps.filter((s) => s.id.startsWith("invita")) : allSteps
   return <PageTour steps={steps} storageKey="tour_completed_mi-plan" />
 }
 

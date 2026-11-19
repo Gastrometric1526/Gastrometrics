@@ -16,7 +16,9 @@ import { useAuth } from "@/contexts/auth-context"
 import { QuickRatingDialog } from "@/components/quick-rating-dialog"
 import { QuestionCard } from "@/components/feedback/question-card"
 import { ReviewInviteDialog } from "@/components/feedback/review-invite-dialog"
-import { nextQuestion, ratingDue, recordAsk, recordMoment, reviewInviteDue, type QuestionDef, type ValueMoment } from "@/lib/feedback/ask-rules"
+import { ReferralInviteDialog } from "@/components/feedback/referral-invite-dialog"
+import { nextQuestion, ratingDue, recordAsk, recordMoment, referralInviteDue, reviewInviteDue, type QuestionDef, type ValueMoment } from "@/lib/feedback/ask-rules"
+import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { VALUE_MOMENT_EVENT, loadAskState, migrateLegacyRating, saveAskState, touchActiveDay } from "@/lib/feedback/ask-store"
 import { countOwnRecipesAllBusinesses } from "@/lib/storage/recipes"
 import { usePlanStatus, planExpiryOf } from "@/lib/plan-status"
@@ -37,6 +39,7 @@ export function FeedbackOrchestrator() {
   const [rating, setRating] = useState<{ moment: string | null } | null>(null)
   const [question, setQuestion] = useState<QuestionDef | null>(null)
   const [reviewInvite, setReviewInvite] = useState(false)
+  const [referralInvite, setReferralInvite] = useState(false)
   const expiry = planExpiryOf(planStatus)
   const planExpiringSoon = expiry?.urgency === "urgent" || expiry?.urgency === "today"
   const latest = useRef({ planExpiringSoon, createdAt: userProfile?.createdAt })
@@ -64,7 +67,7 @@ export function FeedbackOrchestrator() {
 
   // ¿Toca preguntar algo? Unos segundos después de entrar a una pantalla.
   useEffect(() => {
-    if (!user || previewActive || isQuiet(pathname) || rating || question || reviewInvite) return
+    if (!user || previewActive || isQuiet(pathname) || rating || question || reviewInvite || referralInvite) return
     const activeDays = touchActiveDay(user.id)
     let cancelled = false
     let tries = 0
@@ -76,7 +79,13 @@ export function FeedbackOrchestrator() {
         return
       }
       const state = migrateLegacyRating(user.id, loadAskState(user.id))
-      const recipeCount = await countOwnRecipesAllBusinesses(user.id).catch(() => null)
+      const [recipeCount, activeSeconds] = await Promise.all([
+        countOwnRecipesAllBusinesses(user.id).catch(() => null),
+        // Tiempo de uso real (docs/337): la fila propia de user_presence (RLS: solo la suya).
+        Promise.resolve(getSupabaseBrowserClient().from("user_presence").select("total_active_seconds").eq("user_id", user.id).maybeSingle())
+          .then(({ data }) => Number((data as { total_active_seconds?: number } | null)?.total_active_seconds ?? 0))
+          .catch(() => null),
+      ])
       if (cancelled) return
       const ctx = {
         now: Date.now(),
@@ -84,6 +93,7 @@ export function FeedbackOrchestrator() {
         activeDays,
         recipeCount,
         planExpiringSoon: latest.current.planExpiringSoon,
+        activeSeconds,
         onboardingDone: (() => {
           try {
             return window.localStorage.getItem("onboarding_completed") === "true"
@@ -96,6 +106,11 @@ export function FeedbackOrchestrator() {
         const m = state.moments
         const moment = m.cascade_recalc ? "cascade_recalc" : m.first_pdf ? "first_pdf" : m.first_priced_recipe ? "first_priced_recipe" : null
         setRating({ moment })
+        return
+      }
+      // «Regala un mes, gana un mes» a las 3 horas de uso (docs/337), en el Dashboard.
+      if (pathname === "/dashboard" && referralInviteDue(state, ctx)) {
+        setReferralInvite(true)
         return
       }
       const q = nextQuestion(state, ctx)
@@ -114,10 +129,11 @@ export function FeedbackOrchestrator() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, pathname, previewActive])
 
-  const finish = (target: "rating" | "review" | QuestionDef["key"], status: "answered" | "dismissed") => {
+  const finish = (target: "rating" | "review" | "referral" | QuestionDef["key"], status: "answered" | "dismissed") => {
     if (user) saveAskState(user.id, recordAsk(loadAskState(user.id), target, status, Date.now()))
     if (target === "rating") setRating(null)
     else if (target === "review") setReviewInvite(false)
+    else if (target === "referral") setReferralInvite(false)
     else setQuestion(null)
   }
 
@@ -127,6 +143,7 @@ export function FeedbackOrchestrator() {
       {rating && <QuickRatingDialog open moment={rating.moment} onFinish={(s) => finish("rating", s)} />}
       {question && <QuestionCard question={question} onFinish={(s) => finish(question.key, s)} />}
       {reviewInvite && <ReviewInviteDialog onFinish={(s) => finish("review", s)} />}
+      {referralInvite && <ReferralInviteDialog onFinish={(s) => finish("referral", s)} />}
     </>
   )
 }

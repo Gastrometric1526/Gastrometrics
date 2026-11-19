@@ -196,7 +196,8 @@ export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finish
   useEffect(() => {
     // Enlace directo al tutorial (docs/167): `?tour=<slug>` lo abre aunque ya se hubiera
     // visto (botón «Ver el tutorial» de Novedades y del correo de novedades).
-    if (requestedTourMatches(window.location.search, storageKey)) {
+    const requested = requestedTourMatches(window.location.search, storageKey)
+    if (requested) {
       localStorage.removeItem(storageKey)
       const url = new URL(window.location.href)
       url.searchParams.delete("tour")
@@ -206,7 +207,8 @@ export function PageTour({ steps: rawSteps, storageKey, startDelay = 350, finish
     if (seen) return
     // Tutorial guiado (docs/221): mientras está activo, ni los tutoriales de página ni las
     // pistas se abren solos; el recorrido abre cada tutorial en su momento.
-    if (!ignoreJourney && journeyControlsTours(readJourney()) && !hasActiveMembership()) return
+    // Pedido con `?tour=` (Novedades, la invitación a invitar de docs/337): se abre igual.
+    if (!requested && !ignoreJourney && journeyControlsTours(readJourney()) && !hasActiveMembership()) return
     if (isHint && hintsOff()) return
     // Una pista nunca se abre encima de otro tutorial: espera a que se cierre (docs/219).
     const open = (attempts: number) => {

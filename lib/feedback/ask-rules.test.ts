@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest"
 import translations from "../i18n/translations"
-import { QUESTIONS, emptyAskState, nextQuestion, ratingDue, recordAsk, recordMoment, ratingBand, ASK_COOLDOWN_MS, type AskContext } from "./ask-rules"
+import { QUESTIONS, emptyAskState, nextQuestion, ratingDue, recordAsk, recordMoment, ratingBand, referralInviteDue, ASK_COOLDOWN_MS, REFERRAL_INVITE_ACTIVE_SECONDS, REFERRAL_INVITE_RETRY_MS, type AskContext } from "./ask-rules"
 import { parseReviewMessage, buildReviewMessage, reviewerDisplayName, scoreToStars } from "../reviews"
 import { summarizeSurveyAnswers } from "./survey-summary"
 
@@ -155,5 +155,27 @@ describe("opinión a lo largo de los meses (docs/265)", () => {
     const { reviewInviteDue } = await import("./ask-rules")
     const s = recordAsk(emptyAskState(), "pain", "answered", now - 30 * DAY)
     expect(reviewInviteDue(s, ctx({ activeDays: 30 }))).toBe(false)
+  })
+})
+
+describe("invitación a invitar a un colega (docs/337)", () => {
+  const hours3 = REFERRAL_INVITE_ACTIVE_SECONDS
+  it("sale a las 3 horas de uso real, no antes", () => {
+    expect(referralInviteDue(emptyAskState(), ctx({ activeSeconds: hours3 - 60 }))).toBe(false)
+    expect(referralInviteDue(emptyAskState(), ctx({ activeSeconds: hours3 }))).toBe(true)
+    expect(referralInviteDue(emptyAskState(), ctx({ activeSeconds: null }))).toBe(false)
+  })
+  it("respeta la pausa de 5 días con las preguntas", () => {
+    const asked = recordAsk(emptyAskState(), "found_us", "answered", now - 60_000)
+    expect(referralInviteDue(asked, ctx({ activeSeconds: hours3 }))).toBe(false)
+  })
+  it("«Ahora no» vuelve a los 30 días, como mucho 3 veces; «Invitar» la termina", () => {
+    let s = recordAsk(emptyAskState(), "referral", "dismissed", now)
+    expect(referralInviteDue(s, ctx({ now: now + REFERRAL_INVITE_RETRY_MS - 1, activeSeconds: hours3 }))).toBe(false)
+    expect(referralInviteDue(s, ctx({ now: now + REFERRAL_INVITE_RETRY_MS, activeSeconds: hours3 }))).toBe(true)
+    s = recordAsk(recordAsk(s, "referral", "dismissed", now), "referral", "dismissed", now)
+    expect(referralInviteDue(s, ctx({ now: now + 10 * REFERRAL_INVITE_RETRY_MS, activeSeconds: hours3 }))).toBe(false)
+    const went = recordAsk(emptyAskState(), "referral", "answered", now)
+    expect(referralInviteDue(went, ctx({ now: now + 10 * REFERRAL_INVITE_RETRY_MS, activeSeconds: hours3 }))).toBe(false)
   })
 })
