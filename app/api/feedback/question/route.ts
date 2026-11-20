@@ -3,7 +3,7 @@
  * quien la da, en activity_log (módulo «encuesta», acción «answered», sin migración nueva).
  * - «testimonial» también se guarda en el buzón como opinión («[testimonio]»), para que el
  *   dueño pueda publicarla en el sitio si la persona dio permiso.
- * - «improve» (plan por vencer) también llega al buzón como sugerencia.
+ * - «improve» (plan por vencer) y «open_feedback» (docs/342) también llegan al buzón como sugerencia.
  * Ambas avisan al dueño por correo, como cualquier mensaje del buzón.
  */
 
@@ -56,12 +56,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No se pudo guardar." }, { status: 500 })
   }
 
-  if ((question === "testimonial" || question === "improve") && detail) {
+  const toInbox = question === "testimonial" || question === "improve" || question === "open_feedback"
+  if (toInbox && detail) {
     const type = question === "testimonial" ? "experiencia" : "sugerencia"
     const message =
       question === "testimonial"
         ? buildReviewMessage({ testimonial: true, publishable: consent, comment: detail })
-        : `[encuesta: plan por vencer] ${detail}`
+        : question === "open_feedback"
+          ? `[encuesta: qué arreglarías o mejorarías] ${detail}`
+          : `[encuesta: plan por vencer] ${detail}`
     const id = `feedback-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     const { error: fbError } = await admin.from("feedback").insert({
       id,
@@ -90,7 +93,7 @@ export async function POST(request: Request) {
   }
 
   // Aviso a /admin (docs/240). El testimonio y «qué mejorar» ya avisan como mensaje del buzón.
-  if (!(question === "testimonial" || question === "improve") || !detail) {
+  if (!toInbox || !detail) {
     await sendAdminPush({ ...surveyPushText({ question, answer, detail, userName }), url: adminAccountUrl({ userId: user.id }, { tab: "buzon", sub: "encuestas" }) })
   }
 

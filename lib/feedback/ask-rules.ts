@@ -47,6 +47,8 @@ export type QuestionKey =
   | "menu_purpose"
   | "previous_tool"
   | "found_us"
+  // docs/342
+  | "open_feedback"
 
 export type QuestionKind = "choice" | "scale" | "text"
 
@@ -57,10 +59,15 @@ export interface QuestionDef {
   options?: string[]
   /** Si la respuesta de texto puede mostrarse como testimonio (pide permiso). */
   askConsent?: boolean
+  /** Texto de ayuda propio en el campo (`q_<clave>_placeholder`) en vez del genérico. */
+  placeholder?: boolean
 }
 
 /** En orden de prioridad: si dos aplican, sale la primera. */
 export const QUESTIONS: QuestionDef[] = [
+  // docs/342 (pedido del dueño): opinión directa, con campo para escribir, para todas las cuentas.
+  // La primera de la lista: sale en la próxima oportunidad (con la pausa de 5 días de siempre).
+  { key: "open_feedback", kind: "text", placeholder: true },
   { key: "improve", kind: "text" },
   { key: "blocker", kind: "choice", options: ["start", "loading", "prices", "time", "other"] },
   { key: "ocr_accuracy", kind: "scale" },
@@ -150,6 +157,9 @@ function questionApplies(key: QuestionKey, state: AskState, ctx: AskContext): bo
   const age = accountAgeDays(ctx)
   const recipes = ctx.recipeCount
   switch (key) {
+    case "open_feedback":
+      // Cuentas que ya usaron la app (no el primer día de una cuenta nueva).
+      return ctx.activeDays >= 2 || (age !== null && age >= 2)
     case "improve":
       return ctx.planExpiringSoon
     case "blocker":

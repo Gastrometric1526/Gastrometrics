@@ -109,7 +109,7 @@ export function QuestionCard({ question, onFinish }: { question: QuestionDef; on
 
           {question.kind === "text" && (
             <div className="space-y-2">
-              <Textarea value={detail} onChange={(e) => setDetail(e.target.value)} rows={2} placeholder={t("feedback_text_placeholder")} />
+              <Textarea value={detail} onChange={(e) => setDetail(e.target.value)} rows={2} placeholder={t(question.placeholder ? k("placeholder") : "feedback_text_placeholder")} />
               {question.askConsent && (
                 <label className="flex items-start gap-2 text-xs text-muted-foreground">
                   <Checkbox checked={consent} disabled={detail.trim() === ""} onCheckedChange={(v) => setConsent(v === true)} className="mt-0.5" />
