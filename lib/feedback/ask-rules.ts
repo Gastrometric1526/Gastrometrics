@@ -65,9 +65,6 @@ export interface QuestionDef {
 
 /** En orden de prioridad: si dos aplican, sale la primera. */
 export const QUESTIONS: QuestionDef[] = [
-  // docs/342 (pedido del dueño): opinión directa, con campo para escribir, para todas las cuentas.
-  // La primera de la lista: sale en la próxima oportunidad (con la pausa de 5 días de siempre).
-  { key: "open_feedback", kind: "text", placeholder: true },
   { key: "improve", kind: "text" },
   { key: "blocker", kind: "choice", options: ["start", "loading", "prices", "time", "other"] },
   { key: "ocr_accuracy", kind: "scale" },
@@ -83,6 +80,10 @@ export const QUESTIONS: QuestionDef[] = [
   { key: "pos_system", kind: "choice", options: ["loyverse", "square", "toast", "manual", "other"] },
   { key: "menu_purpose", kind: "choice", options: ["carta", "daily", "event", "catering", "other"] },
   { key: "team", kind: "choice", options: ["solo", "small", "team"] },
+  // docs/342–343 (pedido del dueño): opinión directa con campo para escribir. Después de las
+  // preguntas de los momentos de valor (esas van justo después de usar algo por primera vez) y
+  // solo cuando la persona ya usó la app de verdad (`openFeedbackReady`).
+  { key: "open_feedback", kind: "text", placeholder: true },
   { key: "testimonial", kind: "text", askConsent: true },
   // docs/230: generales, las de menor prioridad.
   { key: "previous_tool", kind: "choice", options: ["excel", "paper", "memory", "software", "none"] },
@@ -158,8 +159,7 @@ function questionApplies(key: QuestionKey, state: AskState, ctx: AskContext): bo
   const recipes = ctx.recipeCount
   switch (key) {
     case "open_feedback":
-      // Cuentas que ya usaron la app (no el primer día de una cuenta nueva).
-      return ctx.activeDays >= 2 || (age !== null && age >= 2)
+      return openFeedbackReady(ctx)
     case "improve":
       return ctx.planExpiringSoon
     case "blocker":
@@ -195,6 +195,24 @@ function questionApplies(key: QuestionKey, state: AskState, ctx: AskContext): bo
     case "testimonial":
       return ctx.activeDays >= 14 || (age !== null && age >= 14 && ctx.activeDays >= 5)
   }
+}
+
+/**
+ * ¿Ya usó la app lo suficiente para opinar? (pedido del dueño, docs/343: «hay que darle chance a
+ * las personas a que utilicen la app antes de que pueda opinar… por lo menos unos 5 días»).
+ * - Tiene al menos una receta propia (usó lo principal de la app), y
+ * - 5 días distintos de uso en este aparato, o, para quien cambia de aparato, 2 horas de uso
+ *   real (user_presence, en todos sus aparatos) con una cuenta de 7 días o más.
+ */
+export const OPEN_FEEDBACK_MIN_DAYS = 5
+export const OPEN_FEEDBACK_MIN_SECONDS = 2 * 60 * 60
+export const OPEN_FEEDBACK_MIN_AGE_DAYS = 7
+
+export function openFeedbackReady(ctx: AskContext): boolean {
+  if ((ctx.recipeCount ?? 0) < 1) return false
+  if (ctx.activeDays >= OPEN_FEEDBACK_MIN_DAYS) return true
+  const age = accountAgeDays(ctx)
+  return (ctx.activeSeconds ?? 0) >= OPEN_FEEDBACK_MIN_SECONDS && age !== null && age >= OPEN_FEEDBACK_MIN_AGE_DAYS
 }
 
 /** La pregunta corta que toca ahora (o null). */

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest"
 import translations from "../i18n/translations"
-import { QUESTIONS, emptyAskState, nextQuestion, ratingDue, recordAsk, recordMoment, ratingBand, referralInviteDue, ASK_COOLDOWN_MS, REFERRAL_INVITE_ACTIVE_SECONDS, REFERRAL_INVITE_RETRY_MS, type AskContext } from "./ask-rules"
+import { QUESTIONS, emptyAskState, nextQuestion, openFeedbackReady, ratingDue, recordAsk, recordMoment, ratingBand, referralInviteDue, ASK_COOLDOWN_MS, REFERRAL_INVITE_ACTIVE_SECONDS, REFERRAL_INVITE_RETRY_MS, type AskContext } from "./ask-rules"
 import { parseReviewMessage, buildReviewMessage, reviewerDisplayName, scoreToStars } from "../reviews"
 import { summarizeSurveyAnswers } from "./survey-summary"
 
@@ -183,21 +183,27 @@ describe("invitación a invitar a un colega (docs/337)", () => {
   })
 })
 
-describe("pregunta abierta para todas las cuentas (docs/342)", () => {
-  it("es la primera que sale a una cuenta que ya usó la app, con campo de texto y ayuda propia", () => {
-    const q = nextQuestion(emptyAskState(), ctx({ activeDays: 3 }))
+describe("pregunta abierta, cuando ya usó la app (docs/342–343)", () => {
+  it("necesita al menos una receta y 5 días de uso", () => {
+    expect(openFeedbackReady(ctx({ activeDays: 5, recipeCount: 1 }))).toBe(true)
+    expect(openFeedbackReady(ctx({ activeDays: 4, recipeCount: 1 }))).toBe(false)
+    expect(openFeedbackReady(ctx({ activeDays: 9, recipeCount: 0 }))).toBe(false)
+  })
+  it("en un aparato nuevo: 2 horas de uso real y una cuenta de 7 días o más", () => {
+    expect(openFeedbackReady(ctx({ activeDays: 1, recipeCount: 2, activeSeconds: 2 * 3600, accountCreatedAt: new Date(now - 8 * DAY).toISOString() }))).toBe(true)
+    expect(openFeedbackReady(ctx({ activeDays: 1, recipeCount: 2, activeSeconds: 2 * 3600, accountCreatedAt: new Date(now - 3 * DAY).toISOString() }))).toBe(false)
+    expect(openFeedbackReady(ctx({ activeDays: 1, recipeCount: 2, activeSeconds: 3600, accountCreatedAt: new Date(now - 30 * DAY).toISOString() }))).toBe(false)
+  })
+  it("no va primero: las de los momentos de valor salen antes; sola, sí sale con su ayuda propia", () => {
+    const moment = recordMoment(emptyAskState(), "first_pdf", now)
+    expect(nextQuestion(moment, ctx({ activeDays: 5 }))?.key).toBe("pdf_use")
+    const q = nextQuestion(emptyAskState(), ctx({ activeDays: 5 }))
     expect(q?.key).toBe("open_feedback")
-    expect(q?.kind).toBe("text")
     expect(translations.es.q_open_feedback_placeholder).toBeTruthy()
+    expect(QUESTIONS[0].key).not.toBe("open_feedback")
   })
-  it("también a una cuenta antigua en un aparato nuevo; no el primer día de una cuenta nueva", () => {
-    expect(nextQuestion(emptyAskState(), ctx({ activeDays: 1, accountCreatedAt: new Date(now - 30 * DAY).toISOString() }))?.key).toBe("open_feedback")
-    expect(nextQuestion(emptyAskState(), ctx({ activeDays: 1, accountCreatedAt: new Date(now - DAY / 2).toISOString() }))?.key).not.toBe("open_feedback")
-  })
-  it("respeta la pausa de 5 días y no se repite si ya respondió", () => {
-    const answered = recordAsk(emptyAskState(), "open_feedback", "answered", now - 6 * DAY)
-    expect(nextQuestion(answered, ctx({ activeDays: 3 }))?.key).not.toBe("open_feedback")
-    const recent = recordAsk(emptyAskState(), "found_us", "answered", now - DAY)
-    expect(nextQuestion(recent, ctx({ activeDays: 3 }))).toBeNull()
+  it("respondida no se repite", () => {
+    const answered = recordAsk(emptyAskState(), "open_feedback", "answered", now - 30 * DAY)
+    expect(nextQuestion(answered, ctx({ activeDays: 5 }))?.key).not.toBe("open_feedback")
   })
 })
