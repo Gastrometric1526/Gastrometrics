@@ -785,6 +785,7 @@ export default {
           "<strong>Vent på din tur.</strong> Vi svarer i den rækkefølge, beskederne kommer ind: chatten viser, hvor mange der er foran dig, eller at du er den næste.",
           "<strong>Få svaret</strong> i chatten og på e-mail, på dit sprog. Knappen i e-mailen åbner chatten, så du kan fortsætte din sag, selv om du har forladt appen. Skriver du igen, fortsætter du i samme samtale; når det er løst, så tryk på «Det er løst».",
         ]],
+        ["p","<strong>Lukning og tidligere samtaler.</strong> Hvis vi har svaret, og du ikke skriver inden for 24 timer, lukkes sagen af sig selv, og du får en e-mail med hele samtalen. Du får den også, hvis du markerer den som løst, eller vi lukker den. Hvis du har brug for mere, så skriv igen, så åbnes en ny sag. I chatten viser <strong>Tidligere samtaler</strong> de tidligere, og på enhver af dem kan du trykke på <strong>Send den til mig på e-mail</strong>."],
         ["p", "<strong>Send en sag.</strong> Den anden fane i hjælpepanelet fungerer som «Forslag og rapporter»: vælg typen (fejlrapport, forslag, klage eller din oplevelse), skriv beskeden og vedhæft eventuelt et skærmbillede. Når du sender den, ser du dit sagsnummer, og vi svarer på e-mail."],
         ["p", "Du kan også skrive til os fra <strong>Forslag og rapporter</strong> nederst i Indstillinger. Vi læser hver besked."],
       ],

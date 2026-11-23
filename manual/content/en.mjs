@@ -785,6 +785,7 @@ export default {
           "<strong>Wait for your turn.</strong> We reply in order of arrival: the chat tells you how many people are ahead of you, or that you’re next.",
           "<strong>Get the reply</strong> in the chat and by email, in your language. The email's button opens the chat so you can continue your case, even if you left the app. If you write again, you stay in the same conversation; once it’s solved, tap “It’s solved”.",
         ]],
+        ["p","<strong>Closing and past conversations.</strong> If we replied and you don't write back within 24 hours, the case closes on its own and you get an email with the full conversation. You also get it if you mark it as solved or we close it. If you need anything else, just write again and a new case opens. In the chat, <strong>Past conversations</strong> shows the earlier ones, and on any of them you can tap <strong>Email it to me</strong>."],
         ["p", "<strong>Send a ticket.</strong> The second tab of the help panel works like “Suggestions and reports”: pick the type (bug report, suggestion, complaint or your experience), write your message and, if you want, attach a screenshot. When you send it you see your ticket number, and we reply by email."],
         ["p", "You can also write to us from <strong>Suggestions and reports</strong>, at the bottom of Settings. We read every message."],
       ],

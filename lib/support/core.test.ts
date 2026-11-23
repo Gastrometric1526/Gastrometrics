@@ -79,3 +79,30 @@ describe("messageReceipts (docs/334)", () => {
     expect(messageReceipts(msgs, 9, []).a1.state).toBe("sent")
   })
 })
+
+describe("cierre por inactividad y conversación por correo (docs/349)", () => {
+  const now = new Date("2026-11-23T12:00:00Z").getTime()
+  it("cierra solo las respondidas por el equipo sin respuesta de la persona en 24 horas", async () => {
+    const { shouldAutoClose } = await import("./core")
+    expect(shouldAutoClose({ status: "answered", last_message_at: "2026-11-22T11:59:00Z" }, now)).toBe(true)
+    expect(shouldAutoClose({ status: "answered", last_message_at: "2026-11-22T13:00:00Z" }, now)).toBe(false)
+    expect(shouldAutoClose({ status: "waiting", last_message_at: "2026-11-01T00:00:00Z" }, now)).toBe(false)
+    expect(shouldAutoClose({ status: "closed", last_message_at: "2026-11-01T00:00:00Z" }, now)).toBe(false)
+  })
+  it("arma la conversación con quién habló, la traducción del equipo y los adjuntos, escapada", async () => {
+    const { transcriptHtml } = await import("./core")
+    const html = transcriptHtml(
+      [
+        { sender: "user", body: "Hola <b>", created_at: "2026-11-22T10:00:00Z" },
+        { sender: "admin", body: "Hello", translation: { text: "Hola, ¿en qué te ayudo?" }, attachments: [{ name: "guia.pdf" }], created_at: "2026-11-22T10:05:00Z" },
+      ],
+      { you: "Tú", team: "Soporte", bot: "Asistente", attachments: "adjuntos" },
+      (iso) => iso.slice(11, 16),
+    )
+    expect(html).toContain("<strong>Tú</strong>")
+    expect(html).toContain("Hola &lt;b&gt;")
+    expect(html).toContain("Hola, ¿en qué te ayudo?")
+    expect(html).toContain("1 adjuntos: guia.pdf")
+    expect(html).not.toContain("<b>")
+  })
+})

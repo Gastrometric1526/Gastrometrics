@@ -12,10 +12,19 @@
  *   llega SIEMPRE un correo en su idioma (plantilla 02, textos del chat) con la respuesta y un
  *   botón que abre el chat (/dashboard?soporte=chat) para seguir el caso (docs/229).
  * - La persona o el dueño la cierran → «closed». Si la persona vuelve a escribir, empieza una nueva.
+ * - docs/349: si el dueño respondió y la persona no escribe en 24 horas, se cierra sola con un
+ *   mensaje del asistente. Al cerrarse (sola, por la persona o por el dueño) le llega a la persona
+ *   un correo con la conversación completa. En el chat ve sus conversaciones anteriores y puede
+ *   pedir cualquiera por correo.
  */
 
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
-import { messageReceipts, queuePosition, SUPPORT_DELIVERED_EVENT, SUPPORT_SEEN_EVENT, type SupportAttachment, type SupportCategory } from "@/lib/support/core"
+import { messageReceipts, queuePosition, SUPPORT_AUTO_CLOSE_MS, SUPPORT_DELIVERED_EVENT, SUPPORT_SEEN_EVENT, transcriptHtml, type SupportAttachment, type SupportCategory } from "@/lib/support/core"
+import { Resend } from "resend"
+import { sendWithRetry } from "./send-email"
+import { renderEmailTemplate, escapeHtml, escapeHtmlWithLineBreaks } from "./email-templates"
+import { withEmailTracking } from "@/lib/email-tracking"
+import { formatDate, formatDateTime } from "@/lib/date-format"
 import { sendOwnerNotification } from "./notify-owner"
 import { sendUserPush } from "./user-push"
 import { getEmailLabels, normalizeEmailLang } from "@/lib/i18n/email-labels"
@@ -122,13 +131,44 @@ async function markDelivered(conversation: SupportConversation) {
 
 /** La conversación más reciente de la persona (abierta o la última cerrada), con sus mensajes y su lugar en la fila. */
 export async function getMyConversation(accountId: string) {
+  await autoCloseStale(accountId).catch((e) => console.error("[support] Cierre automático:", e))
   const { data, error } = await db().from("support_conversations").select("*").eq("account_id", accountId).order("last_message_at", { ascending: false }).limit(1)
   if (error) throw error
   const conversation = ((data as SupportConversation[]) ?? [])[0] ?? null
-  if (!conversation) return { conversation: null, messages: [], position: null }
+  if (!conversation) return { conversation: null, messages: [], position: null, history: [] }
   await markDelivered(conversation).catch(() => {})
-  const [messages, waiting] = await Promise.all([messagesOf(conversation.id), conversation.status === "waiting" ? waitingList() : Promise.resolve([])])
-  return { conversation, messages, position: conversation.status === "waiting" ? queuePosition(waiting, conversation.id) : null }
+  const [messages, waiting, history] = await Promise.all([
+    messagesOf(conversation.id),
+    conversation.status === "waiting" ? waitingList() : Promise.resolve([]),
+    myHistory(accountId, conversation.id),
+  ])
+  return { conversation, messages, position: conversation.status === "waiting" ? queuePosition(waiting, conversation.id) : null, history }
+}
+
+/** Conversaciones anteriores de la persona (docs/349), sin la actual. */
+async function myHistory(accountId: string, exceptId: string) {
+  const { data } = await db()
+    .from("support_conversations")
+    .select("id, category, status, created_at, last_message_at, last_message_preview")
+    .eq("account_id", accountId)
+    .neq("id", exceptId)
+    .order("last_message_at", { ascending: false })
+    .limit(20)
+  return ((data as Pick<SupportConversation, "id" | "category" | "status" | "created_at" | "last_message_at" | "last_message_preview">[] | null) ?? []).map((c) => ({
+    id: c.id,
+    category: c.category,
+    status: c.status,
+    createdAt: c.created_at,
+    lastMessageAt: c.last_message_at,
+    preview: c.last_message_preview,
+  }))
+}
+
+/** Una conversación anterior de la persona, para leerla (solo si es suya). */
+export async function getMyThread(accountId: string, conversationId: string) {
+  const { data } = await db().from("support_conversations").select("*").eq("id", conversationId).eq("account_id", accountId).maybeSingle()
+  if (!data) return null
+  return { conversation: data as SupportConversation, messages: await messagesOf(conversationId) }
 }
 
 export async function postUserMessage(input: {
@@ -201,12 +241,28 @@ export async function markUserRead(accountId: string, conversationId: string) {
 
 export async function closeByUser(accountId: string, conversationId: string) {
   await markSeenIfUnread(accountId, conversationId).catch(() => {})
-  await db().from("support_conversations").update({ status: "closed", user_unread: 0, updated_at: new Date().toISOString() }).eq("id", conversationId).eq("account_id", accountId)
+  const { data } = await db()
+    .from("support_conversations")
+    .update({ status: "closed", user_unread: 0, updated_at: new Date().toISOString() })
+    .eq("id", conversationId)
+    .eq("account_id", accountId)
+    .neq("status", "closed")
+    .select("id")
+  // docs/349: la conversación completa por correo, solo si de verdad se cerró ahora.
+  if ((data as unknown[] | null)?.length) await sendTranscriptEmail(conversationId, "closed").catch((e) => console.error("[support] Correo de la conversación:", e))
+}
+
+/** La persona pide por correo una conversación suya (docs/349). */
+export async function emailMyConversation(accountId: string, conversationId: string): Promise<boolean> {
+  const { data } = await db().from("support_conversations").select("id").eq("id", conversationId).eq("account_id", accountId).maybeSingle()
+  if (!data) return false
+  return sendTranscriptEmail(conversationId, "copy")
 }
 
 // ─── /admin ───
 
 export async function adminListConversations() {
+  await autoCloseStale().catch((e) => console.error("[support] Cierre automático:", e))
   const { data, error } = await db().from("support_conversations").select("*").order("last_message_at", { ascending: false }).limit(300)
   if (error) throw error
   const conversations = (data as SupportConversation[]) ?? []
@@ -306,5 +362,90 @@ export async function adminReply(conversationId: string, body: string, attachmen
 
 export async function adminSetStatus(conversationId: string, status: "waiting" | "answered" | "closed") {
   const now = new Date().toISOString()
+  const { data: before } = await db().from("support_conversations").select("status").eq("id", conversationId).maybeSingle()
   await db().from("support_conversations").update({ status, waiting_since: status === "waiting" ? now : null, updated_at: now }).eq("id", conversationId)
+  // docs/349: al cerrarla el dueño, la persona recibe la conversación completa por correo.
+  if (status === "closed" && (before as { status?: string } | null)?.status !== "closed") {
+    await sendTranscriptEmail(conversationId, "closed").catch((e) => console.error("[support] Correo de la conversación:", e))
+  }
+}
+
+// ─── Cierre por inactividad y conversación por correo (docs/349) ───
+
+/**
+ * Cierra las conversaciones que esperan a la persona hace 24 horas o más («answered»), con un
+ * mensaje del asistente en su idioma, y le manda la conversación por correo. Se llama al abrir el
+ * chat (sus conversaciones), al abrir la bandeja de /admin (todas) y en el cron diario. La
+ * actualización es condicional (sigue «answered» y vieja), así dos llamadas a la vez no mandan
+ * dos correos.
+ */
+export async function autoCloseStale(accountId?: string, now = Date.now()): Promise<number> {
+  const cutoff = new Date(now - SUPPORT_AUTO_CLOSE_MS).toISOString()
+  let query = db().from("support_conversations").select("id, language").eq("status", "answered").lte("last_message_at", cutoff).limit(50)
+  if (accountId) query = query.eq("account_id", accountId)
+  const { data, error } = await query
+  if (error) throw error
+  let closed = 0
+  for (const c of (data as { id: string; language: string }[] | null) ?? []) {
+    const at = new Date(now).toISOString()
+    const { data: updated } = await db()
+      .from("support_conversations")
+      .update({ status: "closed", updated_at: at })
+      .eq("id", c.id)
+      .eq("status", "answered")
+      .lte("last_message_at", cutoff)
+      .select("id")
+    if (!(updated as unknown[] | null)?.length) continue
+    closed++
+    const message = getEmailLabels(normalizeEmailLang(c.language)).support_autoclose_message
+    await insertMessage({ conversation_id: c.id, sender: "bot", body: message, attachments: [] }, null).catch((e) => console.error("[support] Mensaje de cierre:", e))
+    await sendTranscriptEmail(c.id, "auto").catch((e) => console.error("[support] Correo de la conversación:", e))
+  }
+  return closed
+}
+
+/** Correo a la persona con la conversación completa (plantilla 02, en su idioma). */
+export async function sendTranscriptEmail(conversationId: string, reason: "auto" | "closed" | "copy"): Promise<boolean> {
+  if (!process.env.RESEND_API_KEY) return false
+  const { data: conv } = await db().from("support_conversations").select("*").eq("id", conversationId).maybeSingle()
+  const c = conv as SupportConversation | null
+  if (!c) return false
+  const { data: u } = await getSupabaseAdminClient().auth.admin.getUserById(c.account_id)
+  const to = u?.user?.email
+  if (!to) return false
+  const messages = await messagesOf(conversationId)
+  const language = normalizeEmailLang(c.language)
+  const labels = getEmailLabels(language)
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+  const firstUser = messages.find((m) => m.sender === "user")
+  const html = renderEmailTemplate("02-respuesta-feedback.html", {
+    htmlLang: language,
+    title: labels.e02t_title,
+    preheader: labels.e02t_preheader,
+    receivedPrefix: labels.e02_received_prefix,
+    intro: reason === "auto" ? labels.e02t_intro_auto : reason === "closed" ? labels.e02t_intro_closed : labels.e02t_intro_copy,
+    originalLabel: labels.e02t_original_label,
+    cta: labels.e02t_cta,
+    footnote: labels.e02t_footnote,
+    footerAddress: labels.footer_address,
+    footer2: labels.e02c_footer2,
+    typeLabel: escapeHtml(labels.e02t_title),
+    ticketId: escapeHtml(conversationId.slice(0, 8).toUpperCase()),
+    receivedAt: escapeHtml(formatDate(c.created_at, { timeZone: "America/Tegucigalpa" })),
+    replyTitle: escapeHtml(labels.e02t_reply_title),
+    // Ya escapado por transcriptHtml.
+    reply: transcriptHtml(messages, { you: labels.e02t_you, team: labels.e02t_team, bot: labels.e02t_bot, attachments: labels.e02t_attachments }, (iso) =>
+      formatDateTime(iso, { timeZone: "America/Tegucigalpa" }),
+    ),
+    originalMessage: escapeHtmlWithLineBreaks((firstUser?.body || c.subject || "").slice(0, 600)),
+    appUrl: withEmailTracking(`${siteUrl}/dashboard?soporte=chat`, "support_transcript"),
+  })
+  const { error } = await sendWithRetry(new Resend(process.env.RESEND_API_KEY), {
+    from: process.env.FEEDBACK_NOTIFY_FROM || "GastroMetrics <onboarding@resend.dev>",
+    to: [to],
+    subject: reason === "auto" ? labels.e02t_subject_auto : reason === "closed" ? labels.e02t_subject_closed : labels.e02t_subject_copy,
+    html,
+  })
+  if (error) throw error
+  return true
 }

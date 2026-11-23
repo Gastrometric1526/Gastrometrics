@@ -193,3 +193,37 @@ export function messageReceipts(
   })
   return out
 }
+
+// ─── Cierre por inactividad e historial (docs/349) ───
+
+/**
+ * Pedido del dueño: «si un chat de asistencia no se sigue por 24 horas, se puede cerrar el
+ * caso». Solo se cierra cuando le toca a la PERSONA (el dueño ya respondió, «answered») y pasan
+ * 24 horas sin que escriba; una conversación que espera al dueño («waiting») nunca se cierra sola.
+ */
+export const SUPPORT_AUTO_CLOSE_MS = 24 * 60 * 60 * 1000
+
+export function shouldAutoClose(conversation: { status: string; last_message_at: string }, now: number): boolean {
+  if (conversation.status !== "answered") return false
+  const t = new Date(conversation.last_message_at).getTime()
+  return Number.isFinite(t) && now - t >= SUPPORT_AUTO_CLOSE_MS
+}
+
+/** La conversación como HTML para el correo: quién, cuándo y qué dijo (todo escapado). */
+export function transcriptHtml(
+  messages: { sender: string; body: string; attachments?: { name: string }[] | null; created_at: string; translation?: { text?: string } | null }[],
+  labels: { you: string; team: string; bot: string; attachments: string },
+  formatWhen: (iso: string) => string,
+): string {
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+  return messages
+    .map((m) => {
+      const who = m.sender === "user" ? labels.you : m.sender === "admin" ? labels.team : labels.bot
+      // Lo del equipo, en el idioma de la persona si se tradujo (docs/252).
+      const text = (m.sender === "admin" && m.translation?.text) || m.body || ""
+      const files = (m.attachments ?? []).map((a) => a.name).filter(Boolean)
+      const filesLine = files.length ? `<br /><span style="color:#8A7D74">📎 ${files.length} ${esc(labels.attachments)}: ${esc(files.join(", "))}</span>` : ""
+      return `<p style="margin:0 0 14px"><strong>${esc(who)}</strong> <span style="color:#8A7D74;font-size:12px">· ${esc(formatWhen(m.created_at))}</span><br />${esc(text).replace(/\n/g, "<br />")}${filesLine}</p>`
+    })
+    .join("")
+}

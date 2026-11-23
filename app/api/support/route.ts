@@ -2,7 +2,8 @@
  * Chat de soporte de la persona con sesión (docs/204).
  * GET   → su conversación más reciente, mensajes y cuántas personas tiene adelante.
  * POST  → manda un mensaje {category, body, attachments, page, language}.
- * PATCH → {action: "read" | "close", conversationId}.
+ * PATCH → {action: "read" | "close" | "email", conversationId}. «email» manda la conversación por correo (docs/349).
+ * GET ?id=… → una conversación anterior de la persona, para leerla (docs/349).
  * Si la tabla no existe (migración 0034 sin correr) responde {available: false} y el widget
  * manda el mensaje al buzón de /contacto.
  */
@@ -10,7 +11,7 @@ import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { isSupportCategory, sanitizeAttachments } from "@/lib/support/core"
-import { closeByUser, getMyConversation, markUserRead, postUserMessage, supportAvailable } from "@/lib/services/support"
+import { closeByUser, emailMyConversation, getMyConversation, getMyThread, markUserRead, postUserMessage, supportAvailable } from "@/lib/services/support"
 
 const MAX_BODY = 4000
 const LANGS = ["es", "en", "da", "fr", "pt", "zh"]
@@ -22,11 +23,16 @@ async function currentUser() {
   return user
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const user = await currentUser()
   if (!user) return NextResponse.json({ error: "No autorizado." }, { status: 401 })
   if (!(await supportAvailable())) return NextResponse.json({ available: false })
   try {
+    const id = new URL(request.url).searchParams.get("id")
+    if (id) {
+      const thread = await getMyThread(user.id, id)
+      return thread ? NextResponse.json(thread) : NextResponse.json({ error: "No existe." }, { status: 404 })
+    }
     return NextResponse.json({ available: true, ...(await getMyConversation(user.id)) })
   } catch (e) {
     console.error("[support] GET", e)
@@ -65,6 +71,12 @@ export async function PATCH(request: Request) {
   const conversationId = typeof raw?.conversationId === "string" ? raw.conversationId : ""
   if (!conversationId) return NextResponse.json({ error: "Falta la conversación." }, { status: 400 })
   try {
+    if (raw?.action === "email") {
+      const limit = checkRateLimit(`support-email:${user.id}`, { maxAttempts: 5, windowMs: 60 * 60 * 1000, lockoutMs: 60 * 60 * 1000 })
+      if (!limit.allowed) return NextResponse.json({ error: "too_many" }, { status: 429 })
+      const sent = await emailMyConversation(user.id, conversationId)
+      return NextResponse.json({ ok: sent, email: sent ? (user.email ?? null) : null })
+    }
     if (raw?.action === "close") await closeByUser(user.id, conversationId)
     else await markUserRead(user.id, conversationId)
     return NextResponse.json({ ok: true })

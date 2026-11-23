@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Chat de soporte: cierre a las 24 horas, conversación por correo e historial (docs/349).
+    version: "2026-11-23d",
+    tutorialHref: tourHref("ficha-tecnica"),
+    content: {
+      es: { title: "Chat de soporte: tu conversación siempre a mano", items: ["Si te respondimos y no escribes en 24 horas, cerramos el caso y te mandamos la conversación completa por correo. Si necesitas algo más, escribe y abrimos uno nuevo.", "En el chat ves tus conversaciones anteriores y puedes pedir cualquiera por correo con «Enviármela por correo»."] },
+      en: { title: "Support chat: your conversation always at hand", items: ["If we replied and you don't write back within 24 hours, we close the case and email you the full conversation. If you need anything else, write and we'll open a new one.", "In the chat you see your past conversations and can get any of them by email with “Email it to me”."] },
+      da: { title: "Supportchat: din samtale altid ved hånden", items: ["Hvis vi har svaret, og du ikke skriver inden for 24 timer, lukker vi sagen og sender dig hele samtalen på e-mail. Hvis du har brug for mere, så skriv, så åbner vi en ny.", "I chatten ser du dine tidligere samtaler og kan få enhver af dem på e-mail med »Send den til mig på e-mail«."] },
+      fr: { title: "Chat d'assistance : votre conversation toujours à portée de main", items: ["Si nous avons répondu et que vous n'écrivez pas sous 24 heures, nous clôturons la demande et vous envoyons la conversation complète par e-mail. Besoin d'autre chose ? Écrivez et nous en ouvrirons une nouvelle.", "Dans le chat, vous voyez vos conversations précédentes et pouvez recevoir n'importe laquelle par e-mail avec « Me l'envoyer par e-mail »."] },
+      pt: { title: "Chat de suporte: sua conversa sempre à mão", items: ["Se respondemos e você não escrever em 24 horas, encerramos o atendimento e enviamos a conversa completa por e-mail. Se precisar de algo mais, escreva e abrimos um novo.", "No chat você vê suas conversas anteriores e pode receber qualquer uma por e-mail com «Enviar para meu e-mail»."] },
+      zh: { title: "支持聊天：对话记录随时可查", items: ["如果我们已回复而你 24 小时内没有回复，我们会关闭请求，并通过邮件发送完整对话记录。如需其他帮助，留言即可开启新的请求。", "在聊天中可以查看以往对话，并通过“发送到我的邮箱”获取任意一段对话。"] },
+    },
+  },
+  {
     // Importar receta: lista plegable con los ingredientes sugeridos de tu base (docs/348).
     version: "2026-11-23c",
     tutorialHref: tourHref("mis-recetas"),

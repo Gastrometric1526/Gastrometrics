@@ -26,6 +26,9 @@ import {
   ChevronDown,
   Clock,
   FileText,
+  History,
+  Mail,
+  ArrowLeft,
   ImagePlus,
   Lightbulb,
   Loader2,
@@ -75,11 +78,21 @@ interface Message {
   translation?: { text: string; from: string; to: string } | null
   created_at: string
 }
+interface HistoryItem {
+  id: string
+  category: string
+  status: "waiting" | "answered" | "closed"
+  createdAt: string
+  lastMessageAt: string
+  preview: string
+}
 interface ChatState {
   available: boolean
   conversation: Conversation | null
   messages: Message[]
   position: number | null
+  /** Conversaciones anteriores (docs/349). */
+  history?: HistoryItem[]
 }
 
 type Tab = "chat" | "ticket"
@@ -140,6 +153,9 @@ export function SupportChat() {
   // Tras escribir al soporte es cuando un aviso tiene sentido (docs/241): se ofrece una vez.
   const [askPush, setAskPush] = useState(false)
   const [startNew, setStartNew] = useState(false)
+  // Conversaciones anteriores (docs/349): la lista o una abierta para leerla.
+  const [historyView, setHistoryView] = useState<null | "list" | { conversation: Conversation & { created_at?: string }; messages: Message[] }>(null)
+  const [emailing, setEmailing] = useState<string | null>(null)
   const [helpIndex, setHelpIndex] = useState<HelpEntry[] | null>(null)
   const [expanded, setExpanded] = useState<number | null>(null)
   // Ticket
@@ -316,9 +332,37 @@ export function SupportChat() {
   const closeConversation = async () => {
     if (!conversation) return
     await fetch("/api/support", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "close", conversationId: conversation.id }) }).catch(() => {})
+    // docs/349: al cerrarla le llega la conversación completa por correo.
+    toast({ title: t("support_closed_emailed") })
     setStartNew(true)
     setCategory(null)
     load()
+  }
+
+  /** La conversación completa a su correo (docs/349). */
+  const emailConversation = async (conversationId: string) => {
+    setEmailing(conversationId)
+    try {
+      const res = await fetch("/api/support", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "email", conversationId }) })
+      const data = await res.json().catch(() => null)
+      if (res.status === 429) throw new Error(t("support_too_many"))
+      if (!res.ok || !data?.ok) throw new Error(t("support_email_error"))
+      toast({ title: t("support_email_sent").replace("{email}", data.email || user?.email || "") })
+    } catch (e) {
+      toast({ title: e instanceof Error ? e.message : t("support_email_error"), variant: "destructive" })
+    } finally {
+      setEmailing(null)
+    }
+  }
+
+  const openHistoryThread = async (id: string) => {
+    try {
+      const res = await fetch(`/api/support?id=${encodeURIComponent(id)}`, { cache: "no-store" })
+      if (!res.ok) throw new Error()
+      setHistoryView(await res.json())
+    } catch {
+      toast({ title: t("support_send_error"), variant: "destructive" })
+    }
   }
 
   // ─── Ticket (igual que /contacto) ───
@@ -466,7 +510,68 @@ export function SupportChat() {
               )}
 
               <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4 text-sm">
-                {state && !state.available ? (
+                {!historyView && (state?.history?.length ?? 0) > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setHistoryView("list")}
+                    className="flex min-h-9 w-full items-center justify-center gap-1.5 rounded-md text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                  >
+                    <History className="h-3.5 w-3.5" />
+                    {t("support_history_link").replace("{count}", String(state?.history?.length ?? 0))}
+                  </button>
+                )}
+                {historyView === "list" ? (
+                  <div className="space-y-2">
+                    <button type="button" onClick={() => setHistoryView(null)} className="flex min-h-9 items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+                      <ArrowLeft className="h-3.5 w-3.5" />
+                      {t("support_history_back")}
+                    </button>
+                    <p className="text-sm font-medium text-foreground">{t("support_history_title")}</p>
+                    {(state?.history ?? []).map((h) => (
+                      <button
+                        key={h.id}
+                        type="button"
+                        onClick={() => openHistoryThread(h.id)}
+                        className="w-full rounded-lg border border-border bg-card px-3 py-2 text-left hover:bg-muted/50"
+                      >
+                        <span className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                          <span>{formatDate(h.createdAt)} · {t(`support_cat_${h.category}` as TranslationKey)}</span>
+                          <span>{h.status === "closed" ? t("support_status_closed") : h.status === "answered" ? t("support_status_answered") : t("support_history_open")}</span>
+                        </span>
+                        <span className="mt-0.5 block truncate text-sm text-foreground">{h.preview || "—"}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : historyView ? (
+                  <div className="space-y-3">
+                    <button type="button" onClick={() => setHistoryView("list")} className="flex min-h-9 items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+                      <ArrowLeft className="h-3.5 w-3.5" />
+                      {t("support_history_title")}
+                    </button>
+                    {historyView.messages.map((m) =>
+                      m.sender === "user" ? (
+                        <div key={m.id} className="flex justify-end">
+                          <div className="max-w-[85%] rounded-2xl rounded-br-md bg-foreground px-3 py-2 text-background">
+                            {m.body && <p className="whitespace-pre-wrap break-words">{m.body}</p>}
+                            <Attachments items={m.attachments} />
+                            <p className="mt-1 text-right text-[10px] opacity-60">{formatDateTime(m.created_at)}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <BotBubble key={m.id}>
+                          <p className="mb-0.5 text-[11px] font-medium text-muted-foreground">{m.sender === "admin" ? t("support_from_team") : t("support_bot_name")}</p>
+                          {m.body && <TranslatedBody body={m.body} translation={m.translation} />}
+                          <Attachments items={m.attachments} />
+                          <p className="mt-1 text-[10px] text-muted-foreground">{formatDateTime(m.created_at)}</p>
+                        </BotBubble>
+                      ),
+                    )}
+                    <Button variant="outline" size="sm" className="w-full gap-1.5" disabled={emailing === historyView.conversation.id} onClick={() => emailConversation(historyView.conversation.id)}>
+                      {emailing === historyView.conversation.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                      {t("support_email_me")}
+                    </Button>
+                  </div>
+                ) : state && !state.available ? (
                   <BotBubble>
                     {t("support_unavailable")}{" "}
                     <button type="button" className="underline" onClick={() => setTab("ticket")}>
@@ -506,9 +611,15 @@ export function SupportChat() {
                       )
                     })}
                     {conversation?.status === "closed" && (
-                      <Button variant="outline" size="sm" className="w-full" onClick={() => setStartNew(true)}>
-                        {t("support_new_conversation")}
-                      </Button>
+                      <div className="space-y-2">
+                        <Button variant="outline" size="sm" className="w-full gap-1.5" disabled={emailing === conversation.id} onClick={() => emailConversation(conversation.id)}>
+                          {emailing === conversation.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                          {t("support_email_me")}
+                        </Button>
+                        <Button variant="outline" size="sm" className="w-full" onClick={() => setStartNew(true)}>
+                          {t("support_new_conversation")}
+                        </Button>
+                      </div>
                     )}
                   </>
                 ) : (
@@ -581,7 +692,7 @@ export function SupportChat() {
                 <div ref={bottom} />
               </div>
 
-              {state?.available && canWrite && (
+              {state?.available && canWrite && !historyView && (
                 <div className="border-t border-border p-3">
                   {files.length > 0 && (
                     <div className="mb-2 flex flex-wrap gap-1.5">

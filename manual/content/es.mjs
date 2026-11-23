@@ -786,6 +786,7 @@ export default {
           "<strong>Espera tu turno.</strong> Atendemos por orden de llegada: el chat te dice cuántas personas hay antes que tú, o que eres la siguiente.",
           "<strong>Recibe la respuesta</strong> en el chat y por correo, en tu idioma. El botón del correo abre el chat para seguir tu caso, aunque hayas salido de la app. Si vuelves a escribir, sigues en la misma conversación; cuando quede resuelta, toca «Ya se resolvió».",
         ]],
+        ["p","<strong>Cierre y conversaciones anteriores.</strong> Si te respondimos y no escribes en 24 horas, el caso se cierra solo y te llega un correo con la conversación completa. Si tú lo marcas como resuelto, o lo cerramos nosotros, también te llega. Si necesitas algo más, escribe de nuevo y se abre un caso nuevo. En el chat, <strong>Conversaciones anteriores</strong> muestra las de antes, y en cualquiera puedes tocar <strong>Enviármela por correo</strong>."],
         ["p", "<strong>Enviar un ticket.</strong> La segunda pestaña del panel de ayuda es igual que «Sugerencias y reportes»: eliges el tipo (reporte de error, sugerencia, queja o tu experiencia), escribes el mensaje y, si quieres, adjuntas una captura. Al enviarlo ves tu número de ticket y te respondemos por correo."],
         ["p", "También puedes escribirnos desde <strong>Sugerencias y reportes</strong>, en la parte inferior de Configuración. Leemos cada mensaje."],
       ],

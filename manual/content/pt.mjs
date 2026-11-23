@@ -785,6 +785,7 @@ export default {
           "<strong>Espere sua vez.</strong> Atendemos por ordem de chegada: o chat mostra quantas pessoas há antes de você, ou que você é a próxima.",
           "<strong>Receba a resposta</strong> no chat e por e-mail, no seu idioma. O botão do e-mail abre o chat para continuar seu caso, mesmo que você tenha saído do app. Se escrever de novo, continua na mesma conversa; quando resolver, toque em «Já resolveu».",
         ]],
+        ["p","<strong>Encerramento e conversas anteriores.</strong> Se respondemos e você não escrever em 24 horas, o atendimento se encerra sozinho e chega um e-mail com a conversa completa. Também chega se você marcar como resolvido ou se nós encerrarmos. Se precisar de algo mais, escreva de novo e abre um novo atendimento. No chat, <strong>Conversas anteriores</strong> mostra as de antes, e em qualquer uma você pode tocar em <strong>Enviar para meu e-mail</strong>."],
         ["p", "<strong>Enviar um chamado.</strong> A segunda aba do painel de ajuda funciona como «Sugestões e relatórios»: escolha o tipo (relatório de erro, sugestão, reclamação ou sua experiência), escreva a mensagem e, se quiser, anexe uma captura. Ao enviar, você vê o número do chamado e respondemos por e-mail."],
         ["p", "Você também pode escrever para nós em <strong>Sugestões e relatórios</strong>, no final das Configurações. Lemos cada mensagem."],
       ],

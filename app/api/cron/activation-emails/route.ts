@@ -74,6 +74,7 @@ import { runEngagementEmails } from "@/lib/services/notify-engagement"
 import { runFounderSeatReviews, runPendingFounderGrants } from "@/lib/services/founder-grant"
 import { runScheduledRenewalChecks } from "@/lib/services/scheduled-renewal"
 import { runReferralChecks } from "@/lib/services/referrals"
+import { autoCloseStale } from "@/lib/services/support"
 
 // Muchos correos en serie con pausa entre envíos (lib/services/send-email.ts): se pide
 // el máximo de Vercel Hobby para que la ejecución no se corte a la mitad.
@@ -212,6 +213,9 @@ export async function GET(request: Request) {
   const expiredDowngrades = await step("planes vencidos a Foodie", () => runExpiredPlanDowngrades())
   // Referidos (docs/179): regalos pendientes, activaciones (premio), recordatorios y vencimientos.
   const referrals = await step("referidos", () => runReferralChecks())
+  // Chat de soporte (docs/349): casos respondidos sin respuesta de la persona en 24 h → cerrados
+  // con la conversación por correo. Respaldo diario; también se cierran al abrir el chat o /admin.
+  const supportAutoClose = await step("chat de soporte sin respuesta", () => autoCloseStale())
 
   // Encuesta de experiencia (docs/145): antes solo a las 4 h de uso real, y el 75 % de las
   // cuentas no llega a 2 h — nadie la recibía. Ahora también con 3 recetas propias o 3
@@ -255,7 +259,7 @@ export async function GET(request: Request) {
   const engagement = await step("correos de valor", () => runEngagementEmails())
   const reengagement = await step("recordatorios", () => runReengagementReminders())
 
-  const steps = { signupDigest, activation, founderSeats, founderGrants, planExpiry, scheduledRenewals, expiredDowngrades, referrals, experienceSurvey, deletionPurge, recoveryPurge, rateLimitPrune, engagement, reengagement }
+  const steps = { signupDigest, activation, founderSeats, founderGrants, planExpiry, scheduledRenewals, expiredDowngrades, referrals, supportAutoClose, experienceSurvey, deletionPurge, recoveryPurge, rateLimitPrune, engagement, reengagement }
   const failed = Object.entries(steps)
     .filter(([, v]) => v && typeof v === "object" && "error" in v)
     .map(([k]) => k)
