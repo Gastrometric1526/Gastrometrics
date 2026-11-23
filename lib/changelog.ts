@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Regala un mes, gana un mes: qué hace cada lado para ganar (docs/346).
+    version: "2026-11-23b",
+    tutorialHref: tourHref("mi-plan"),
+    content: {
+      es: { title: "Regala un mes, gana un mes: más claro para los dos", items: ["Si te invitaron, tu Dashboard te dice cuántos días te quedan de Chef Ejecutivo y que, al guardar tu primera receta con costo, tu colega gana su mes.", "Si invitas, tu mensaje ya le explica a tu colega qué hacer, y en Invita ves qué tiene que pasar para que ganes cada mes."] },
+      en: { title: "Give a month, get a month: clearer for both of you", items: ["If you were invited, your Dashboard shows how many days of Chef Ejecutivo you have left and that saving your first recipe with cost earns your colleague their month.", "If you invite, your message now tells your colleague what to do, and in Invite you see what has to happen for you to earn each month."] },
+      da: { title: "Giv en måned, få en måned: tydeligere for jer begge", items: ["Hvis du blev inviteret, viser dit Dashboard, hvor mange dage med Chef Ejecutivo du har tilbage, og at din kollega får sin måned, når du gemmer din første opskrift med kostpris.", "Hvis du inviterer, forklarer din besked nu din kollega, hvad vedkommende skal gøre, og under Invitér ser du, hvad der skal ske, for at du får hver måned."] },
+      fr: { title: "Offrez un mois, gagnez un mois : plus clair pour tous les deux", items: ["Si vous avez été invité, votre tableau de bord indique combien de jours de Chef Ejecutivo il vous reste et qu'en enregistrant votre première recette avec coût, votre collègue gagne son mois.", "Si vous invitez, votre message explique désormais à votre collègue quoi faire, et dans Inviter vous voyez ce qui doit se passer pour gagner chaque mois."] },
+      pt: { title: "Dê um mês, ganhe um mês: mais claro para os dois", items: ["Se você foi convidado, seu Dashboard mostra quantos dias de Chef Ejecutivo faltam e que, ao salvar sua primeira receita com custo, seu colega ganha o mês dele.", "Se você convida, sua mensagem agora explica ao colega o que fazer, e em Convide você vê o que precisa acontecer para ganhar cada mês."] },
+      zh: { title: "送一个月，得一个月：双方都更清楚", items: ["如果你是受邀者，仪表板会显示 Chef Ejecutivo 的剩余天数，并告诉你保存第一份带成本的配方后，你的同行就能获得一个月。", "如果你邀请别人，分享的消息现在会告诉对方该做什么；在“邀请”中也能看到你赢得每个月需要满足的条件。"] },
+    },
+  },
+  {
     // Selección múltiple y cualquier formato de archivo (docs/345).
     version: "2026-11-23",
     tutorialHref: tourHref("mis-recetas"),

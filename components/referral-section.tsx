@@ -142,6 +142,8 @@ export function ReferralSection({ data, failed }: { data: ReferralOverview | nul
 
       <div data-tour="invita-list" className="space-y-3">
         <h3 className="text-base font-semibold text-foreground">{t("invita_list_title")}</h3>
+        {/* docs/346: qué tiene que pasar para ganar cada mes, a la vista junto a la lista. */}
+        <p className="text-sm text-muted-foreground">{t("invita_list_hint")}</p>
         {data && data.invites.length === 0 && (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <Gift className="h-4 w-4" />

@@ -15,6 +15,7 @@ const RULES: TranslationKey[] = [
   "referral_rule_1",
   "referral_rule_2",
   "referral_rule_3",
+  "referral_rule_9",
   "referral_rule_4",
   "referral_rule_5",
   "referral_rule_6",

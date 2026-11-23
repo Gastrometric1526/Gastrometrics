@@ -443,6 +443,22 @@ export async function referralOverview(accountId: string, now = Date.now()) {
     giftPlanSlug: REFERRAL.giftPlanSlug,
     giftDays: REFERRAL.giftDays,
     referredBy: (info?.meta.referral as InviteeReferral | undefined)?.status ?? null,
+    invitedBy: await invitedByView(info?.meta.referral as InviteeReferral | undefined, now),
+  }
+}
+
+/**
+ * Para el INVITADO (docs/346): quién lo invitó, en qué va y cuántos días le quedan, para que
+ * sepa qué hacer (guardar su primera receta con costo) para que su colega gane su mes.
+ */
+async function invitedByView(referral: InviteeReferral | undefined, now: number) {
+  if (!referral?.by) return null
+  const { data } = await getSupabaseAdminClient().from("profiles").select("full_name").eq("id", referral.by).maybeSingle()
+  const day = Math.min(windowDay(referral.at, now), REFERRAL.activationWindowDays)
+  return {
+    name: firstName(data?.full_name) || null,
+    status: referral.status,
+    daysLeft: Math.max(REFERRAL.activationWindowDays - day, 0),
   }
 }
 
