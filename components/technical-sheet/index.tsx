@@ -1,5 +1,6 @@
 "use client"
 
+import { Checkbox } from "@/components/ui/checkbox"
 import type React from "react"
 import { estimateYieldWeightGrams, fallbackYield, formatYieldWeight } from "@/lib/yield-weight"
 
@@ -26,7 +27,7 @@ import {
   type PricingPercentages,
 } from "@/lib/pricing-percentages"
 import { cn } from "@/lib/utils"
-import { getRecipeById, getRecipes, saveRecipe, ensureRecipesLoaded } from "@/lib/storage/recipes"
+import { getRecipeById, getRecipes, saveRecipe, ensureRecipesLoaded, isSubRecipe as isSubRecipeRecipe } from "@/lib/storage/recipes"
 import { DishLabelsSection } from "@/components/technical-sheet/dish-labels-section"
 import { ActivityTracker } from "@/lib/activity-tracker"
 import { trackEvent } from "@/lib/analytics/track-event"
@@ -552,7 +553,12 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
     (value: string) => {
       const previousKind = getBarKind(recipe.classification)
       const nextKind = getBarKind(value)
-      setRecipe((prev) => ({ ...prev, classification: value }))
+      setRecipe((prev) => ({
+        ...prev,
+        classification: value,
+        // docs/350: elegir la sección de una subreceta de antes no le quita lo de subreceta.
+        isSubRecipe: prev.isSubRecipe || prev.classification === SUBRECIPE_CLASSIFICATION ? true : prev.isSubRecipe,
+      }))
       if (nextKind && nextKind !== previousKind) {
         // Un trago se rinde en porciones: si la ficha sigue con la unidad por defecto («un», docs/320)
         // o con «g» (fichas de antes), pasa a porciones.
@@ -592,7 +598,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       if (next === recipeKind) return
       if (next === "drink") {
         setRecipe((prev) => ({ ...prev, beverage: { ...(prev.beverage ?? {}), mode: prev.beverage?.mode ?? "prepared" } }))
-        if (!isBarClassification(recipe.classification) && recipe.classification !== SUBRECIPE_CLASSIFICATION) {
+        if (!isBarClassification(recipe.classification)) {
           handleClassificationChange(BAR_CLASSIFICATIONS.cocktails)
         }
         return
@@ -627,7 +633,11 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
           : { ...(prev.beverage ?? {}), mode: next, sourceIngredientId: null, servingMl: null }
         return { ...prev, beverage, ingredients, ...(served ? { yieldAmount: 1, yieldUnit: "porciones", servings: 1 } : {}) }
       })
-      if (next !== "prepared" && recipe.classification === SUBRECIPE_CLASSIFICATION) handleClassificationChange(BAR_CLASSIFICATIONS.cocktails)
+      // Un trago servido no es subreceta (docs/350).
+      if (next !== "prepared" && isSubRecipeRecipe(recipe)) {
+        setRecipe((prev) => ({ ...prev, isSubRecipe: false }))
+        if (recipe.classification === SUBRECIPE_CLASSIFICATION) handleClassificationChange(BAR_CLASSIFICATIONS.cocktails)
+      }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [recipe.classification, handleClassificationChange],
@@ -1227,7 +1237,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
         targetFoodCostPercent,
         salesCommissionPercent: salesCommissionPercent > 0 ? salesCommissionPercent : undefined,
         subRecipePriceUpdate:
-          recipe.classification === SUBRECIPE_CLASSIFICATION && subRecipePriceUpdate !== "ask" ? subRecipePriceUpdate : undefined,
+          isSubRecipeRecipe(recipe) && subRecipePriceUpdate !== "ask" ? subRecipePriceUpdate : undefined,
         metadata: {
           ...recipe.metadata,
           updatedAt: new Date().toISOString(),
@@ -1254,7 +1264,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
 
       if (mode !== "edit") trackEvent("first_recipe_created", businessId)
 
-      if (savedRecipe.classification === SUBRECIPE_CLASSIFICATION) {
+      if (isSubRecipeRecipe(savedRecipe)) {
         await syncSubRecipeToIngredient(savedRecipe, businessId)
         // Cascada completa (docs/164): los platos y subrecetas que usan esta subreceta
         // se recalculan ya, con la misma regla de precio que al cambiar un ingrediente.
@@ -1285,7 +1295,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
           action: mode === "edit" ? "updated" : "created",
           entityLabel: savedRecipe.name,
           // El aviso de /admin dice si es subreceta o no (docs/336).
-          metadata: { kind: savedRecipe.classification === SUBRECIPE_CLASSIFICATION || savedRecipe.isSubRecipe ? "subrecipe" : "dish" },
+          metadata: { kind: isSubRecipeRecipe(savedRecipe) ? "subrecipe" : "dish" },
         })
       }
 
@@ -1372,7 +1382,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       return
     }
 
-    const isSubRecipe = recipe.classification === SUBRECIPE_CLASSIFICATION
+    const isSubRecipe = isSubRecipeRecipe(recipe)
     const effectiveYield = recipe.yieldAmount > 0 ? recipe.yieldAmount : calculations.yieldByWeight
 
     if (!isSubRecipe && effectiveYield <= 0) {
@@ -1600,7 +1610,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                       {classifications
                         .filter((c) =>
                           c === recipe.classification ||
-                          (recipeKind === "drink" ? isBarClassification(c) || c === SUBRECIPE_CLASSIFICATION : !isBarClassification(c)),
+                          (c !== SUBRECIPE_CLASSIFICATION && (recipeKind === "drink" ? isBarClassification(c) : !isBarClassification(c))),
                         )
                         .map((classification) => (
                           <SelectItem key={classification} value={classification}>
@@ -1612,6 +1622,38 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                 </div>
               </div>
 
+              {/* docs/350 (pedido del dueño): la clasificación es la sección de la cocina (para el MEP de
+                  cada sección); que sea subreceta se marca aparte, así una salsa es subreceta Y de Saucier. */}
+              {recipeKind !== "drink" || recipe.beverage?.mode === "prepared" ? (
+                <div className="space-y-2" data-tour="ficha-subrecipe-toggle">
+                  <label htmlFor="is-subrecipe" className={`flex items-start gap-3 rounded-lg border p-3 ${isEditMode ? "cursor-pointer" : ""}`}>
+                    <Checkbox
+                      id="is-subrecipe"
+                      checked={isSubRecipeRecipe(recipe)}
+                      disabled={!isEditMode}
+                      onCheckedChange={(v) =>
+                        setRecipe((prev) => ({
+                          ...prev,
+                          isSubRecipe: v === true,
+                          // Desmarcarla en una de antes deja la sección por elegir.
+                          classification: v !== true && prev.classification === SUBRECIPE_CLASSIFICATION ? "" : prev.classification,
+                        }))
+                      }
+                      className="mt-0.5"
+                    />
+                    <span>
+                      <span className="block text-sm font-medium">{t("ficha_tecnica_is_subrecipe_label")}</span>
+                      <span className="block text-xs text-muted-foreground">{t("ficha_tecnica_is_subrecipe_desc")}</span>
+                    </span>
+                  </label>
+                  {recipe.classification === SUBRECIPE_CLASSIFICATION && (
+                    <p className="rounded-md border border-warning/30 bg-warning-soft p-2 text-xs text-warning" role="note">
+                      {t("ficha_tecnica_pick_section_warning")}
+                    </p>
+                  )}
+                </div>
+              ) : null}
+
               {/* docs/299: mientras no haya ninguna subreceta, explica cómo se crea una. */}
               <SubrecipeTip
                 place="ficha"
@@ -1620,7 +1662,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
                   recipeKind !== "drink" &&
                   // Con la lista ya cargada, para no mostrarla un instante a quien ya tiene subrecetas.
                   availableIngredients.length > 0 &&
-                  recipe.classification !== SUBRECIPE_CLASSIFICATION &&
+                  !isSubRecipeRecipe(recipe) &&
                   !availableIngredients.some((ing) => ing.category === SUBRECIPE_CLASSIFICATION)
                 }
               />
@@ -2260,7 +2302,7 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
 
           {/* Subrecetas (docs/164): qué pasa con su precio de venta escrito a mano cuando
               sube su costo. Es también donde se desmarca «Recordar mi elección». */}
-          {recipe.classification === SUBRECIPE_CLASSIFICATION && (
+          {isSubRecipeRecipe(recipe) && (
             <div className="space-y-1 border-b py-3" data-tour="ficha-subrecipe-price-mode">
               <div className="flex flex-wrap items-center gap-2">
                 <Label htmlFor="subRecipePriceUpdate" className="text-sm whitespace-nowrap">

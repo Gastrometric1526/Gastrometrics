@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // La clasificación es la sección de la cocina; «Es subreceta», una casilla aparte (docs/350).
+    version: "2026-11-23e",
+    tutorialHref: tourHref("ficha-tecnica"),
+    content: {
+      es: { title: "Cada receta en su sección de la cocina", items: ["En la Ficha Técnica, «Clasificación» es la sección de la cocina que prepara la receta (Línea fría, Salsas y fondos, Pastelería…). El MEP la usa para armar la lista de cada sección.", "Que una receta sea subreceta ahora es una casilla aparte, «Es subreceta»: tu salsa puede ser subreceta y a la vez de Salsas y fondos.", "Tus subrecetas de antes siguen funcionando igual; ábrelas y elige su sección para que salgan en la lista MEP correcta."] },
+      en: { title: "Each recipe in its kitchen section", items: ["In the Recipe Sheet, “Classification” is the kitchen section that prepares the recipe (Cold line, Sauces and stocks, Pastry…). MEP uses it to build each section's list.", "Whether a recipe is a sub-recipe is now a separate box, “It's a sub-recipe”: your sauce can be a sub-recipe and also belong to Sauces and stocks.", "Your existing sub-recipes keep working the same; open them and pick their section so they appear in the right MEP list."] },
+      da: { title: "Hver opskrift i sin køkkensektion", items: ["I opskriftsarket er »Klassificering« den køkkensektion, der laver opskriften (Kold linje, Saucer og fonde, Konditori…). MEP bruger den til listen for hver sektion.", "Om en opskrift er en underopskrift, er nu et separat felt, »Er en underopskrift«: din sauce kan være en underopskrift og samtidig høre til Saucer og fonde.", "Dine eksisterende underopskrifter virker som før; åbn dem, og vælg deres sektion, så de kommer på den rigtige MEP-liste."] },
+      fr: { title: "Chaque recette dans sa section de cuisine", items: ["Dans la fiche technique, « Classification » est la section de cuisine qui prépare la recette (Garde-manger, Sauces et fonds, Pâtisserie…). Le MEP s'en sert pour la liste de chaque section.", "Qu'une recette soit une sous-recette est désormais une case à part, « C'est une sous-recette » : votre sauce peut être une sous-recette et appartenir à Sauces et fonds.", "Vos sous-recettes existantes fonctionnent comme avant ; ouvrez-les et choisissez leur section pour qu'elles apparaissent dans la bonne liste MEP."] },
+      pt: { title: "Cada receita na sua seção da cozinha", items: ["Na Ficha Técnica, «Classificação» é a seção da cozinha que prepara a receita (Linha fria, Molhos e fundos, Confeitaria…). O MEP usa isso para montar a lista de cada seção.", "Ser sub-receita agora é uma caixa à parte, «É sub-receita»: seu molho pode ser sub-receita e também de Molhos e fundos.", "Suas sub-receitas de antes continuam funcionando igual; abra e escolha a seção delas para que apareçam na lista MEP certa."] },
+      zh: { title: "每份配方归入自己的厨房分区", items: ["在技术配方表中，“分类”表示负责制作该配方的厨房分区（冷菜线、酱汁与高汤、甜点……），MEP 会据此生成每个分区的清单。", "是否为子配方现在是单独的复选框“这是子配方”：你的酱汁既可以是子配方，也可以归入酱汁与高汤。", "以前的子配方照常使用；打开并选择分区，即可出现在正确的 MEP 清单中。"] },
+    },
+  },
+  {
     // Chat de soporte: cierre a las 24 horas, conversación por correo e historial (docs/349).
     version: "2026-11-23d",
     tutorialHref: tourHref("ficha-tecnica"),

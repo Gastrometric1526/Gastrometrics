@@ -123,3 +123,17 @@ describe("PDF de la MEP con sub-recetas por plato (docs/207)", () => {
     }
   })
 })
+
+describe("la clasificación es la sección de la cocina (docs/350)", () => {
+  it("una subreceta con su sección sale en la lista de esa sección; una de antes («Sub Receta»), sin sección", () => {
+    const salsaSeccion = { ...salsa, isSubRecipe: true }
+    const fondoAntes = { ...fondo, classification: "Sub Receta / produccion (Mise en place)" }
+    const mep = buildMep(menu, [fondoAntes, salsaSeccion, pasta, ensalada], ingredients)
+    const areas = groupByArea([...mep.preps, ...mep.dishes])
+    const saucier = areas.find((g) => g.area === "Salsas y fondos (Saucier)")
+    expect(saucier?.entries.map((e) => e.recipeId)).toContain("salsa")
+    const none = areas.find((g) => g.area === "")
+    expect(none?.entries.map((e) => e.recipeId)).toContain("fondo")
+    expect(areas[areas.length - 1].area).toBe("")
+  })
+})

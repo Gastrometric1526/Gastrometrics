@@ -1,5 +1,6 @@
 "use client"
 
+import { isSubRecipe } from "@/lib/storage/recipes"
 import { MIGRATION_PRICE_EVENT } from "@/lib/migration-price"
 import { useState, useEffect, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -366,7 +367,8 @@ export default function MisRecetasPage() {
 
     // Aplicar filtro de clasificación
     if (selectedClassification !== "Todas") {
-      filtered = filtered.filter((recipe) => recipe.classification === selectedClassification)
+      // docs/350: «Subreceta» filtra todas las subrecetas, tengan o no su sección de cocina.
+      filtered = filtered.filter((recipe) => (selectedClassification === SUBRECIPE_CLASSIFICATION ? isSubRecipe(recipe) : recipe.classification === selectedClassification))
     }
 
     // Aplicar ordenamiento
@@ -406,7 +408,7 @@ export default function MisRecetasPage() {
   // Calcular estadísticas
   const stats = useMemo(() => {
     const totalRecipes = recipes.length
-    const subRecipes = recipes.filter((r) => r.classification === SUBRECIPE_CLASSIFICATION).length
+    const subRecipes = recipes.filter((r) => isSubRecipe(r)).length
     const avgCost = recipes.length > 0 ? recipes.reduce((sum, r) => sum + (r.totalCost || 0), 0) / recipes.length : 0
     const totalValue = recipes.reduce((sum, r) => sum + (r.totalCost || 0), 0)
 
@@ -1233,7 +1235,7 @@ export default function MisRecetasPage() {
               {t("misrecetas_delete_confirm_prefix")} <strong>"{recipeToDelete?.name}"</strong>
               {t("misrecetas_delete_confirm_suffix")}
             </p>
-            {recipeToDelete?.classification === SUBRECIPE_CLASSIFICATION && (
+            {recipeToDelete && isSubRecipe(recipeToDelete) && (
               <Alert className="mt-4 border-warning/30 bg-warning-soft">
                 <AlertTriangle className="h-4 w-4 text-warning" />
                 <AlertDescription className="text-warning">
@@ -1288,7 +1290,7 @@ export default function MisRecetasPage() {
                     <li>{t("misrecetas_migration_bullet_ingredients")}</li>
                     <li>{t("misrecetas_migration_bullet_subrecipes")}</li>
                     <li>{t("misrecetas_migration_bullet_indicator")}</li>
-                    {recipeToMigrate?.classification === SUBRECIPE_CLASSIFICATION && (
+                    {recipeToMigrate && isSubRecipe(recipeToMigrate) && (
                       <li>{t("misrecetas_migration_bullet_subrecipe_ingredient")}</li>
                     )}
                   </ul>

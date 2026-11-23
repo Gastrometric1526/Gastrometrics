@@ -578,6 +578,8 @@ function MepContent() {
                           </div>
                         )}
                         {area !== "all" && <p className="text-xs text-muted-foreground">{t("mep_area_print_hint")}</p>}
+                        {/* docs/350: lo que no tiene sección de cocina (p. ej. subrecetas de antes) se elige en la Ficha. */}
+                        {areas.some((g) => !g.area) && <p className="text-xs text-warning">{t("mep_no_area_hint")}</p>}
                       </div>
                     )}
 
