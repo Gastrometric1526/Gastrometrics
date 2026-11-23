@@ -38,6 +38,15 @@ describe("chat de soporte (docs/204)", () => {
     expect(sanitizeAttachments([{ name: "foto.png", type: "image/png", data: "data:text/html;base64,PHNjcmlwdD4=" }])).toHaveLength(0)
     expect(sanitizeAttachments([{ name: "libro.xlsm", type: "", data: "data:application/octet-stream;base64,AAAA" }])).toHaveLength(1)
   })
+
+  it("también Word, OpenDocument y RTF, pero nunca HTML ni SVG (docs/345)", () => {
+    expect(isAcceptedAttachment({ name: "receta.docx", type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", size: 1000 })).toBe(true)
+    expect(isAcceptedAttachment({ name: "lista.ods", type: "", size: 1000 })).toBe(true)
+    expect(isAcceptedAttachment({ name: "nota.rtf", type: "application/rtf", size: 1000 })).toBe(true)
+    expect(isAcceptedAttachment({ name: "pagina.html", type: "text/html", size: 1000 })).toBe(false)
+    expect(isAcceptedAttachment({ name: "logo.svg", type: "image/svg+xml", size: 1000 })).toBe(false)
+    expect(sanitizeAttachments([{ name: "receta.docx", type: "", data: "data:application/octet-stream;base64,AAAA" }])).toHaveLength(1)
+  })
 })
 
 describe("messageReceipts (docs/334)", () => {

@@ -104,9 +104,11 @@ export const MAX_ATTACHMENT_BYTES = 3 * 1024 * 1024
 export const MAX_ATTACHMENTS = 3
 /** Entre todos los adjuntos de un mensaje: en base64 ocupan ~4/3, y Vercel corta los pedidos de más de 4.5 MB. */
 export const MAX_TOTAL_ATTACHMENT_BYTES = 3 * 1024 * 1024
-const ACCEPTED_MIME = /^(image\/(png|jpe?g|webp|gif|heic|heif)|application\/pdf|text\/(csv|plain)|application\/vnd\.ms-excel(\.sheet\.macroEnabled\.12)?|application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet)$/
-const ACCEPTED_EXT = /\.(png|jpe?g|webp|gif|heic|heif|pdf|csv|txt|xlsx|xlsm|xls)$/i
-export const ATTACHMENT_ACCEPT = "image/*,.pdf,.csv,.txt,.xlsx,.xlsm,.xls"
+// docs/345: también Word, OpenDocument y RTF (documentos que no se ejecutan en el navegador;
+// nunca HTML ni SVG).
+const ACCEPTED_MIME = /^(image\/(png|jpe?g|webp|gif|heic|heif)|application\/pdf|text\/(csv|plain|markdown|rtf)|application\/rtf|application\/msword|application\/vnd\.ms-excel(\.sheet\.macroEnabled\.12)?|application\/vnd\.openxmlformats-officedocument\.(spreadsheetml\.sheet|wordprocessingml\.document)|application\/vnd\.oasis\.opendocument\.(text|spreadsheet))$/
+const ACCEPTED_EXT = /\.(png|jpe?g|webp|gif|heic|heif|pdf|csv|txt|md|xlsx|xlsm|xls|ods|numbers|docx|doc|odt|rtf)$/i
+export const ATTACHMENT_ACCEPT = "image/*,.pdf,.csv,.txt,.md,.xlsx,.xlsm,.xls,.ods,.numbers,.docx,.doc,.odt,.rtf"
 
 export interface SupportAttachment {
   name: string

@@ -245,7 +245,7 @@ export async function getActivityLog(params: {
  */
 export function importFormat(file?: { name?: string; type?: string } | null): "excel" | "csv" | "pdf" | "foto" | "texto" {
   const name = (file?.name || "").toLowerCase()
-  if (/\.(xlsx|xlsm|xls)$/.test(name)) return "excel"
+  if (/\.(xlsx|xlsm|xlsb|xls|ods|fods|numbers)$/.test(name)) return "excel"
   if (name.endsWith(".csv")) return "csv"
   if (name.endsWith(".pdf") || file?.type === "application/pdf") return "pdf"
   if ((file?.type || "").startsWith("image/") || /\.(png|jpe?g|webp|heic|heif|gif)$/.test(name)) return "foto"

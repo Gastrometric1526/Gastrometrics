@@ -113,3 +113,49 @@ export async function runBulkMigration(input: {
   input.onProgress?.(total, total, "")
   return { migrated, skipped, failed, ingredientsCopied, recipeIds }
 }
+
+/**
+ * Selección múltiple en Ingredientes (docs/345): qué ingredientes elegidos se copian a otro
+ * negocio. Los de una subreceta no se copian sueltos (llegan al migrar su subreceta desde
+ * Mis Recetas) y los que el destino ya tiene igual se saltan.
+ */
+export function planIngredientCopy(source: Ingredient[], selectedIds: string[], target: Ingredient[]) {
+  const selected = source.filter((ing) => selectedIds.includes(ing.id))
+  const fromSubrecipe = selected.filter((ing) => Boolean(ing.recipeId))
+  const loose = selected.filter((ing) => !ing.recipeId)
+  const toCopy: Ingredient[] = []
+  const alreadyThere: Ingredient[] = []
+  for (const ing of loose) {
+    if (findSimilarIngredient(ing, [...target, ...toCopy]) || target.some((t) => sameName(t.name, ing.name))) alreadyThere.push(ing)
+    else toCopy.push(ing)
+  }
+  return { toCopy, alreadyThere, fromSubrecipe }
+}
+
+export type IngredientCopyResult = { copied: number; skipped: number; fromSubrecipe: number }
+
+export async function copyIngredientsToBusiness(input: {
+  sourceBusinessId: string
+  targetBusinessId: string
+  ingredientIds: string[]
+}): Promise<IngredientCopyResult> {
+  const { sourceBusinessId, targetBusinessId } = input
+  await Promise.all([ensureIngredientsLoaded(sourceBusinessId), ensureIngredientsLoaded(targetBusinessId)])
+  const target = getIngredients(targetBusinessId) || []
+  const plan = planIngredientCopy(getIngredients(sourceBusinessId) || [], input.ingredientIds, target)
+  const copies = plan.toCopy.map(
+    (ing): Ingredient => ({
+      ...ing,
+      id: `migrated_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      businessId: targetBusinessId,
+      metadata: { ...ing.metadata, migratedFrom: sourceBusinessId, migratedAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    }),
+  )
+  if (copies.length) {
+    await saveIngredients([...target, ...copies], targetBusinessId)
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("ingredientsUpdated", { detail: { businessId: targetBusinessId, action: "migrated", count: copies.length } }))
+    }
+  }
+  return { copied: copies.length, skipped: plan.alreadyThere.length, fromSubrecipe: plan.fromSubrecipe.length }
+}

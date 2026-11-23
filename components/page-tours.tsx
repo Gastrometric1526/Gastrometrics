@@ -140,6 +140,8 @@ export function IngredientesTour({
     { id: "table", title: t("tour_ing_table_title"), description: t("tour_ing_table_desc"), selector: '[data-tour="ing-table"]' },
     // docs/219: tocar un ingrediente abre su panel (editar, merma, eliminar).
     { id: "row", title: t("tour_ing_row_title"), description: t("tour_ing_row_desc"), selector: "[data-ingredient-row]" },
+    // docs/345: elegir varios para migrarlos a otro negocio o borrarlos de una vez.
+    { id: "select", title: t("tour_ing_select_title"), description: t("tour_ing_select_desc"), selector: '[data-tour="ing-select"]' },
     // Merma (docs/272, docs/279): por categoría en todos los planes; antes el recorrido de la
     // página no la mencionaba y solo la enseñaba el tutorial guiado.
     { id: "merma", title: t("tour_ing_merma_title"), description: t("tour_ing_merma_desc"), selector: '[data-tour="ingredientes-merma-button"]' },
@@ -212,6 +214,8 @@ export function MisRecetasTour({ onOpenImport, hasRecipes = false }: { onOpenImp
     { id: "import", title: t("tour_recetas_import_title"), description: t("tour_recetas_import_desc"), selector: '[data-tour="recetas-import"]' },
     { id: "new", title: t("tour_recetas_new_title"), description: t("tour_recetas_new_desc"), selector: '[data-tour="recetas-new"]' },
     { id: "trash", title: t("tour_recetas_trash_title"), description: t("tour_recetas_trash_desc"), selector: '[data-tour="recetas-trash"]' },
+    // docs/345: elegir varias para migrarlas o mandarlas a la papelera de una vez.
+    { id: "select", title: t("tour_recetas_select_title"), description: t("tour_recetas_select_desc"), selector: '[data-tour="recetas-select"]' },
     { id: "stats", title: t("tour_recetas_stats_title"), description: t("tour_recetas_stats_desc"), selector: '[data-tour="recetas-stats"]' },
     // Íconos y filtro por alérgenos y tipo de plato (docs/324).
     { id: "diet-filter", title: t("tour_recetas_diet_title"), description: t("tour_recetas_diet_desc"), selector: '[data-tour="recetas-diet-filter"]' },

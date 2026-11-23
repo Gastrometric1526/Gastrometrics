@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Selección múltiple y cualquier formato de archivo (docs/345).
+    version: "2026-11-23",
+    tutorialHref: tourHref("mis-recetas"),
+    content: {
+      es: { title: "Elige varias a la vez y sube cualquier archivo", items: ["En Mis Recetas e Ingredientes, toca «Seleccionar», elige las que quieras (o todas) y migrarlas a otro negocio o borrarlas de una vez. Las recetas van a la Papelera, como siempre.", "Al importar recetas, ingredientes, conteos de inventario o ventas, sube el archivo como lo tengas: Word, Excel, OpenDocument, Numbers, PDF, foto o texto."] },
+      en: { title: "Pick several at once and upload any file", items: ["In My Recipes and Ingredients, tap “Select”, pick the ones you want (or all of them) and migrate them to another business or delete them in one go. Recipes go to the Trash, as always.", "When importing recipes, ingredients, inventory counts or sales, upload the file as you have it: Word, Excel, OpenDocument, Numbers, PDF, photo or text."] },
+      da: { title: "Vælg flere på én gang, og upload enhver fil", items: ["I Mine opskrifter og Ingredienser trykker du på »Vælg«, vælger dem, du vil (eller alle), og flytter dem til en anden virksomhed eller sletter dem på én gang. Opskrifter havner i papirkurven som altid.", "Når du importerer opskrifter, ingredienser, lageroptællinger eller salg, uploader du filen, som du har den: Word, Excel, OpenDocument, Numbers, PDF, foto eller tekst."] },
+      fr: { title: "Sélectionnez-en plusieurs et importez n'importe quel fichier", items: ["Dans Mes recettes et Ingrédients, touchez « Sélectionner », choisissez ceux que vous voulez (ou tous) et migrez-les vers un autre établissement ou supprimez-les d'un coup. Les recettes vont à la corbeille, comme toujours.", "Pour importer recettes, ingrédients, inventaires ou ventes, envoyez le fichier tel quel : Word, Excel, OpenDocument, Numbers, PDF, photo ou texte."] },
+      pt: { title: "Escolha vários de uma vez e envie qualquer arquivo", items: ["Em Minhas Receitas e Ingredientes, toque em «Selecionar», escolha os que quiser (ou todos) e migre-os para outro negócio ou exclua-os de uma vez. As receitas vão para a Lixeira, como sempre.", "Ao importar receitas, ingredientes, contagens de inventário ou vendas, envie o arquivo como você o tem: Word, Excel, OpenDocument, Numbers, PDF, foto ou texto."] },
+      zh: { title: "一次选择多项，上传任意文件", items: ["在“我的配方”和“食材”中点按“选择”，选中需要的项目（或全部），即可一次性迁移到其他商家或删除。配方仍会进入回收站。", "导入配方、食材、库存盘点或销售数据时，文件原样上传即可：Word、Excel、OpenDocument、Numbers、PDF、照片或文本。"] },
+    },
+  },
+  {
     // Gastos reales del negocio y precio de lo migrado (docs/341).
     version: "2026-11-19c",
     tutorialHref: tourHref("negocios"),

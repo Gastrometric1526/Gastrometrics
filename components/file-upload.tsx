@@ -7,7 +7,8 @@ import { useLanguage } from "@/contexts/language-context"
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void
-  accept: string
+  /** Sin accept: cualquier archivo (docs/345). */
+  accept?: string
 }
 
 export function FileUpload({ onFileSelect, accept }: FileUploadProps) {

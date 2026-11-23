@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Edit, Trash2, Lock, Info, Wine } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
 import type { Ingredient, Presentation, Unit } from "@/types/ingredient"
 import { units, presentations, unitAbbreviations } from "@/types/ingredient"
 import { convertIngredientUnit, crossesMassVolume, unitFactor } from "@/lib/unit-change"
@@ -59,6 +60,8 @@ type Props = {
   mermaSystemEnabled?: boolean
   /** Clic o toque en la fila: abre el panel de acciones del ingrediente (docs/219). */
   onOpenDetails?: (ingredient: Ingredient) => void
+  /** Selección múltiple (docs/345): con esto, la fila se elige en vez de abrir el panel. */
+  selection?: { ids: Set<string>; toggle: (id: string) => void; setAll: (ids: string[]) => void; clear: () => void }
 }
 
 export function IngredientsTable({
@@ -71,6 +74,7 @@ export function IngredientsTable({
   onUnitChange,
   mermaSystemEnabled,
   onOpenDetails,
+  selection,
 }: Props) {
   const { t, language } = useLanguage()
   // Precios de compra y por unidad solo para quien puede ver costos (docs/304).
@@ -228,6 +232,16 @@ export function IngredientsTable({
         <table className="w-full min-w-[1200px]">
           <thead className="bg-muted/30 border-b border-border">
             <tr>
+              {selection && (
+                <th className="w-12 px-2 py-4 text-center">
+                  <Checkbox
+                    className="h-5 w-5"
+                    aria-label={t("bulk_select_all")}
+                    checked={items.length > 0 && items.every((i) => selection.ids.has(i.id))}
+                    onCheckedChange={(v) => (v === true ? selection.setAll(items.map((i) => i.id)) : selection.clear())}
+                  />
+                </th>
+              )}
               <th className="px-4 py-4 text-left text-sm font-semibold text-foreground w-[14%]">
                 {t("ingredientes_col_category")}
               </th>
@@ -278,9 +292,26 @@ export function IngredientsTable({
                 <tr
                   key={ingredient.id}
                   data-ingredient-row={ingredient.id}
-                  {...(onOpenDetails ? openOnActivate(() => onOpenDetails(ingredient)) : {})}
-                  className={`hover:bg-muted/20 transition-colors ${onOpenDetails ? "cursor-pointer" : ""} ${index % 2 === 0 ? "bg-background" : "bg-muted/10"}`}
+                  {...(selection
+                    ? openOnActivate(() => selection.toggle(ingredient.id))
+                    : onOpenDetails
+                      ? openOnActivate(() => onOpenDetails(ingredient))
+                      : {})}
+                  aria-selected={selection ? selection.ids.has(ingredient.id) : undefined}
+                  className={`hover:bg-muted/20 transition-colors ${onOpenDetails || selection ? "cursor-pointer" : ""} ${
+                    selection?.ids.has(ingredient.id) ? "bg-primary/10" : index % 2 === 0 ? "bg-background" : "bg-muted/10"
+                  }`}
                 >
+                  {selection && (
+                    <td className="w-12 px-2 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        className="h-5 w-5"
+                        aria-label={t("bulk_select_item").replace("{name}", ingredient.name)}
+                        checked={selection.ids.has(ingredient.id)}
+                        onCheckedChange={() => selection.toggle(ingredient.id)}
+                      />
+                    </td>
+                  )}
                   {/* Categoría */}
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-2">

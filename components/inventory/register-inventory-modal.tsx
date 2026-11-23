@@ -1,5 +1,6 @@
 "use client"
 
+import { documentKind } from "@/lib/file-text"
 import type React from "react"
 
 import { useState, useEffect, useRef, useMemo } from "react"
@@ -641,14 +642,14 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
       const OCR_LANG: Record<string, string> = { es: "spa", en: "eng", pt: "por", fr: "fra", da: "dan", zh: "chi_sim" }
       const lang = OCR_LANG[language] || "spa"
       const latin = lang === "chi_sim" ? "eng" : lang
-      const name = file.name.toLowerCase()
+      const kind = documentKind(file)
       let text = ""
-      if (/\.(xlsx|xlsm|xls)$/.test(name)) {
+      if (kind === "spreadsheet" && !/\.(csv|tsv)$/i.test(file.name)) {
         const { parseWorkbookSheets } = await import("@/lib/excel-utils")
         const { pickIngredientSheet } = await import("@/lib/ingredient-import")
         const sheets = await parseWorkbookSheets(file)
         text = sheetRowsToLines(sheets[pickIngredientSheet(sheets)]?.rows ?? [])
-      } else if (file.type === "application/pdf" || name.endsWith(".pdf")) {
+      } else if (kind === "pdf") {
         const { openRecipePdf, ocrPdfPage } = await import("@/lib/recipe-import/pdf")
         const info = await openRecipePdf(file, (p) => setCountProgress(p * 0.3))
         text = info.pages.map((pg) => pg.text ?? "").join("\n").trim()
@@ -656,13 +657,15 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
           logOcrRead("inventory")
           text = (await ocrPdfPage(file, 1, lang, latin, (p) => setCountProgress(0.3 + p * 0.7), { layout: "receipt" })).text
         }
-      } else if (file.type.startsWith("image/")) {
+      } else if (kind === "image") {
         logOcrRead("inventory")
         const { recognizeWithLanguageCheck } = await import("@/lib/recipe-import/ocr")
         // Fila por fila, como un ticket: nombre y cantidad quedan en la misma línea
         text = (await recognizeWithLanguageCheck(file, lang, latin, (p) => setCountProgress(p), { layout: "receipt" })).text
       } else {
-        text = await file.text()
+        // Word, RTF, HTML, texto… (docs/345)
+        const { documentText } = await import("@/lib/file-text")
+        text = await documentText(file)
       }
       const result = matchCountLines(text, ingredients, language)
       setIngredientsWithQuantity((prev) =>
@@ -1138,7 +1141,6 @@ export function RegisterInventoryModal({ open, onOpenChange, ingredients, busine
                 <input
                   ref={countFileRef}
                   type="file"
-                  accept="image/*,application/pdf,.pdf,.xlsx,.xlsm,.xls,.csv,.txt"
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0]

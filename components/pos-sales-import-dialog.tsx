@@ -1,5 +1,6 @@
 "use client"
 
+import { documentKind } from "@/lib/file-text"
 import { useMemo, useState } from "react"
 import { v4 as uuidv4 } from "uuid"
 import { Button } from "@/components/ui/button"
@@ -228,7 +229,8 @@ export function POSSalesImportDialog({
   }
 
   const processFile = async (file: File) => {
-    const validExt = /\.(xlsx|xls|csv|txt)$/i.test(file.name)
+    // Cualquier hoja de cálculo (Excel, OpenDocument, Numbers, CSV, texto…), docs/345.
+    const validExt = documentKind(file) === "spreadsheet" || /\.(txt|html?)$/i.test(file.name)
     if (!validExt) {
       toast({
         title: t("posi_toast_invalid_file_title"),
@@ -559,7 +561,6 @@ export function POSSalesImportDialog({
             <p className="text-sm text-muted-foreground">{t("posi_drop_subtext")}</p>
             <input
               type="file"
-              accept=".xlsx,.xls,.csv,.txt"
               className="hidden"
               id="pos-sales-file-input"
               onChange={handleFileInput}

@@ -1,5 +1,6 @@
 "use client"
 
+import { documentKind, documentText } from "@/lib/file-text"
 import { logActivity, importFormat } from "@/lib/services/activity-log"
 import { useAuth } from "@/contexts/auth-context"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -311,17 +312,21 @@ export function RecipeImportDialog({
 
   const onFile = async (file: File) => {
     lastImport.current = { format: importFormat(file), name: file.name }
-    const name = file.name.toLowerCase()
-    if (OCR_AVAILABLE && file.type.startsWith("image/")) {
+    const kind = documentKind(file)
+    if (kind === "image") {
+      if (!OCR_AVAILABLE) {
+        toast({ title: t("file_unreadable_title"), description: t("file_unreadable_desc"), variant: "destructive" })
+        return
+      }
       await readPhoto(file, ocrLang, true)
       return
     }
-    if (file.type === "application/pdf" || name.endsWith(".pdf")) {
+    if (kind === "pdf") {
       await readPdf(file, ocrLang)
       return
     }
     let content: string
-    if (/\.(xlsx|xlsm|xls)$/.test(name)) {
+    if (kind === "spreadsheet" && !/\.(csv|tsv)$/i.test(file.name)) {
       // Excel (docs/149, docs/152): se elige la hoja con la tabla de la ficha técnica; si
       // el libro trae varias recetas (una por hoja), se puede cambiar de hoja.
       try {
@@ -347,7 +352,13 @@ export function RecipeImportDialog({
         return
       }
     } else {
-      content = await file.text()
+      // Word, OpenDocument, RTF, HTML, texto… (docs/345)
+      try {
+        content = await documentText(file)
+      } catch {
+        toast({ title: t("file_unreadable_title"), description: t("file_unreadable_desc"), variant: "destructive" })
+        return
+      }
     }
     setOcr(null)
     setText(content)
@@ -489,10 +500,7 @@ export function RecipeImportDialog({
               <input
                 ref={fileRef}
                 type="file"
-                accept={
-                  ".txt,.csv,.md,.xlsx,.xlsm,.xls,.pdf,text/plain,text/csv,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel.sheet.macroEnabled.12,application/vnd.ms-excel" +
-                  (OCR_AVAILABLE ? ",image/*" : "")
-                }
+                // Cualquier formato (docs/345): lo que no se pueda leer avisa al elegirlo.
                 className="hidden"
                 onChange={onInputChange}
               />

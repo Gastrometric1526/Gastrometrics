@@ -11,7 +11,7 @@ vi.mock("./migration", () => ({
   findSimilarIngredient: (ing: { name: string }, target: { name: string }[]) => target.find((t) => t.name.toLowerCase() === ing.name.toLowerCase()),
 }))
 
-import { looseIngredientsToCopy, planBulkMigration } from "./bulk-migration"
+import { looseIngredientsToCopy, planBulkMigration, planIngredientCopy } from "./bulk-migration"
 import type { Recipe } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 
@@ -35,5 +35,20 @@ describe("traer del espacio principal a un negocio (docs/284)", () => {
     const source = [ing("a", "Harina"), ing("b", "Azúcar"), ing("c", "Salsa de tomate", "rec-salsa")]
     const out = looseIngredientsToCopy(source, [ing("z", "harina")])
     expect(out.map((x) => x.id)).toEqual(["b"])
+  })
+})
+
+describe("copiar ingredientes elegidos a otro negocio (docs/345)", () => {
+  it("copia solo los elegidos, salta los que el destino ya tiene y aparta los de subreceta", () => {
+    const source = [ing("a", "Harina"), ing("b", "Azúcar"), ing("c", "Salsa base", "rec1"), ing("d", "Sal")]
+    const plan = planIngredientCopy(source, ["a", "b", "c"], [ing("z", "harina")])
+    expect(plan.toCopy.map((x) => x.id)).toEqual(["b"])
+    expect(plan.alreadyThere.map((x) => x.id)).toEqual(["a"])
+    expect(plan.fromSubrecipe.map((x) => x.id)).toEqual(["c"])
+  })
+  it("no copia dos veces el mismo nombre dentro de la selección", () => {
+    const plan = planIngredientCopy([ing("a", "Sal"), ing("b", "sal")], ["a", "b"], [])
+    expect(plan.toCopy.map((x) => x.id)).toEqual(["a"])
+    expect(plan.alreadyThere.map((x) => x.id)).toEqual(["b"])
   })
 })

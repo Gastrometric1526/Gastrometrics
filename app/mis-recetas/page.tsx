@@ -38,6 +38,8 @@ import {
   Users,
   TrendingUp,
   Trash2,
+  ListChecks,
+  Check,
   ChevronDown,
   ChevronUp,
   ArrowRightLeft,
@@ -63,6 +65,8 @@ import { DietIcon } from "@/components/icons/diet-icon"
 import { useAuth } from "@/contexts/auth-context"
 import { useFeatureAccess, useActiveMembership } from "@/lib/plan-access"
 import { logActivity } from "@/lib/services/activity-log"
+import { BulkDeleteDialog, BulkMigrateDialog, BulkSelectBar, useBulkSelection } from "@/components/bulk-actions"
+import { runBulkMigration } from "@/lib/subrecipe/bulk-migration"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { useNotification } from "@/hooks/use-notification"
 import { formatCurrency } from "@/lib/utils/consolidated-utils"
@@ -248,6 +252,17 @@ export default function MisRecetasPage() {
   // Hay algún destino válido si hay otros negocios visibles, o si el destino sería
   // "Dashboard Principal" y quien mira es de verdad el dueño (ver nota sobre isTeamPreview).
   const canMigrateAnywhere = availableBusinesses.length > 0 || (businessId !== "main" && !isTeamPreview)
+  // Selección múltiple (docs/345): migrar o mandar a la papelera varias recetas de una vez.
+  const bulk = useBulkSelection()
+  const [showBulkMigrate, setShowBulkMigrate] = useState(false)
+  const [showBulkDelete, setShowBulkDelete] = useState(false)
+  const migrationTargets = useMemo(
+    () => [
+      ...(businessId !== "main" && !isTeamPreview ? [{ id: "main", name: t("misrecetas_main_dashboard") }] : []),
+      ...availableBusinesses.map((b) => ({ id: b.id, name: b.name })),
+    ],
+    [businessId, isTeamPreview, availableBusinesses, t],
+  )
 
   // Estado móvil
   const [isMobile, setIsMobile] = useState(false)
@@ -761,6 +776,20 @@ export default function MisRecetasPage() {
                   <span className="hidden sm:inline">{t("misrecetas_trash")}</span>
                 </Button>
 
+                {recipes.length > 0 && (
+                  <Button
+                    data-tour="recetas-select"
+                    variant={bulk.active ? "default" : "outline"}
+                    size="sm"
+                    onClick={bulk.active ? bulk.stop : bulk.start}
+                    aria-pressed={bulk.active}
+                    className="gap-1 md:gap-2 text-xs md:text-sm px-3 md:px-4 py-2"
+                  >
+                    <ListChecks className="h-3 w-3 md:h-4 md:w-4" />
+                    <span>{t("bulk_select")}</span>
+                  </Button>
+                )}
+
                 {/* Botón de filtros móvil */}
                 {isMobile && (
                   <Button
@@ -1060,14 +1089,16 @@ export default function MisRecetasPage() {
               </CardContent>
             </Card>
           ) : (
+            <>
+            {bulk.active && <p className="mb-3 text-sm text-muted-foreground">{t("bulk_hint")}</p>}
             <div
               className={`grid gap-4 md:gap-6 ${
                 viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"
-              }`}
+              } ${bulk.active ? "pb-28" : ""}`}
             >
               {filteredAndSortedRecipes.map((recipe) => (
+                <div key={recipe.id} className="relative">
                 <RecipeCard
-                  key={recipe.id}
                   recipe={recipe}
                   businessId={businessId}
                   viewMode={isMobile ? "list" : viewMode}
@@ -1079,11 +1110,114 @@ export default function MisRecetasPage() {
                   onOpenDetails={setDetailsRecipe}
                   dishTags={labelsById.has(recipe.id) ? buildDishTags(labelsById.get(recipe.id)!, t) : undefined}
                 />
+                {bulk.active && (
+                  <button
+                    type="button"
+                    onClick={() => bulk.toggle(recipe.id)}
+                    aria-pressed={bulk.ids.has(recipe.id)}
+                    aria-label={t("bulk_select_item").replace("{name}", recipe.name)}
+                    className={`absolute inset-0 z-10 flex items-start justify-start rounded-xl p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                      bulk.ids.has(recipe.id) ? "bg-primary/10 ring-2 ring-primary" : "bg-background/30 hover:bg-primary/5"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-6 w-6 items-center justify-center rounded-md border-2 ${
+                        bulk.ids.has(recipe.id) ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/50 bg-card"
+                      }`}
+                    >
+                      {bulk.ids.has(recipe.id) && <Check className="h-4 w-4" />}
+                    </span>
+                  </button>
+                )}
+                </div>
               ))}
             </div>
+            </>
           )}
         </div>
       </div>
+
+      {/* Selección múltiple (docs/345) */}
+      {bulk.active && (
+        <BulkSelectBar
+          count={bulk.ids.size}
+          total={filteredAndSortedRecipes.length}
+          onSelectAll={() => bulk.setAll(filteredAndSortedRecipes.map((r) => r.id))}
+          onClear={bulk.clear}
+          onDone={bulk.stop}
+          onMigrate={canMigrateAnywhere && migrationTargets.length > 0 ? () => setShowBulkMigrate(true) : undefined}
+          onDelete={() => setShowBulkDelete(true)}
+          deleteLabel={t("bulk_recipes_trash")}
+        />
+      )}
+      <BulkMigrateDialog
+        open={showBulkMigrate}
+        onOpenChange={setShowBulkMigrate}
+        count={bulk.ids.size}
+        description={t("bulk_recipes_migrate_desc")}
+        targets={migrationTargets}
+        run={async (targetId, onProgress) => {
+          const res = await runBulkMigration({
+            sourceBusinessId: businessId,
+            targetBusinessId: targetId,
+            recipeIds: [...bulk.ids],
+            includeLooseIngredients: false,
+            onProgress: (done, total) => onProgress(done, total),
+          })
+          if (user && res.migrated > 0) {
+            logActivity({
+              user,
+              businessId: targetId !== "main" ? targetId : null,
+              module: "recetas",
+              action: "migrated",
+              entityLabel: `→ ${migrationTargets.find((b) => b.id === targetId)?.name ?? targetId}`,
+              metadata: { count: res.migrated, bulk: true },
+            })
+          }
+          if (targetId !== "main" && res.recipeIds.length > 0) {
+            window.dispatchEvent(new CustomEvent(MIGRATION_PRICE_EVENT, { detail: { businessId: targetId, recipeIds: res.recipeIds } }))
+          }
+          bulk.stop()
+          return { done: res.migrated, skipped: res.skipped, failed: res.failed }
+        }}
+      />
+      <BulkDeleteDialog
+        open={showBulkDelete}
+        onOpenChange={setShowBulkDelete}
+        title={t("bulk_recipes_delete_title").replace("{count}", String(bulk.ids.size))}
+        description={t("bulk_recipes_delete_desc")}
+        confirmLabel={t("bulk_recipes_trash")}
+        onConfirm={async () => {
+          const chosen = recipes.filter((r) => bulk.ids.has(r.id))
+          let moved = 0
+          for (const recipe of chosen) {
+            if (!(await deleteRecipeFromStorage(recipe.id, businessId))) continue
+            moved++
+            if (recipe.classification === SUBRECIPE_CLASSIFICATION || recipe.isSubRecipe) {
+              await deleteSubRecipeIngredient(recipe.id, businessId)
+            }
+          }
+          setRecipes(getRecipes(businessId))
+          window.dispatchEvent(new CustomEvent("recipesUpdated", { detail: { businessId, action: "delete" } }))
+          if (user && moved > 0) {
+            logActivity({
+              user,
+              businessId: businessId !== "main" ? businessId : null,
+              module: "recetas",
+              action: "deleted",
+              entityLabel: t("bulk_recipes_deleted").replace("{count}", String(moved)),
+              metadata: { count: moved, bulk: true },
+            })
+          }
+          showSuccess(t("misrecetas_toast_delete_success_title"), t("bulk_recipes_deleted").replace("{count}", String(moved)))
+          setShowBulkDelete(false)
+          bulk.stop()
+        }}
+      >
+        {recipes.some((r) => bulk.ids.has(r.id) && (r.classification === SUBRECIPE_CLASSIFICATION || r.isSubRecipe)) && (
+          <p className="rounded-lg border border-warning/30 bg-warning-soft p-3 text-sm text-warning">{t("bulk_recipes_delete_subrecipes")}</p>
+        )}
+      </BulkDeleteDialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

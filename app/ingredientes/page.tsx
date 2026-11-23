@@ -55,6 +55,7 @@ import {
   Lock,
   Camera,
   Receipt,
+  ListChecks,
 } from "lucide-react"
 import { Sidebar } from "@/components/sidebar"
 import { useAuth } from "@/contexts/auth-context"
@@ -100,6 +101,10 @@ import { DetailPanel } from "@/components/detail-panel"
 import { ActionHint } from "@/components/action-hint"
 import { SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
 import { SubrecipeTip } from "@/components/subrecipe-tip"
+import { documentKind, documentText } from "@/lib/file-text"
+import { BulkDeleteDialog, BulkMigrateDialog, BulkSelectBar, useBulkSelection } from "@/components/bulk-actions"
+import { copyIngredientsToBusiness } from "@/lib/subrecipe/bulk-migration"
+import { useAllBusinesses } from "@/lib/storage/businesses"
 
 // Helper function for generating unique IDs
 const generateUniqueId = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 9)
@@ -521,6 +526,32 @@ export default function IngredientesPage() {
 
   // Process import file
   const processImportFile = async (file: File) => {
+    // Cualquier formato (docs/345): una foto o un PDF se leen como ticket o factura; Word,
+    // RTF, HTML o texto, como una lista pegada; el resto, como hoja de cálculo.
+    const kind = documentKind(file)
+    if (kind === "image" || kind === "pdf") {
+      setImportFile(null)
+      await handleReceiptFile(file)
+      return
+    }
+    if (kind === "word" || (kind === "text" && !/\.txt$/i.test(file.name))) {
+      importOrigin.current = { source: "archivo", format: importFormat(file) }
+      try {
+        const rows = mapIngredientRows(splitPastedList(await documentText(file)), { currency: getCurrentCurrencyCode() })
+        if (!rows.length) {
+          setImportFile(null)
+          showError(t("ingredientes_toast_process_error_title"), t("ingredientes_paste_empty"))
+          return
+        }
+        setImportSheets([])
+        setImportRows(rows)
+        showInfo(t("ingredientes_toast_file_processed_title"), t("ingredientes_toast_file_processed_desc").replace("{count}", String(rows.length)))
+      } catch {
+        setImportFile(null)
+        showError(t("file_unreadable_title"), t("file_unreadable_desc"))
+      }
+      return
+    }
     importOrigin.current = { source: "archivo", format: null }
     try {
       const sheets = await parseWorkbookSheets(file)
@@ -1166,6 +1197,43 @@ export default function IngredientesPage() {
     setShowDeleteDialog(true)
   }
 
+  // Selección múltiple (docs/345): migrar a otro negocio o borrar varios ingredientes de una vez.
+  const bulk = useBulkSelection()
+  const [showBulkMigrate, setShowBulkMigrate] = useState(false)
+  const [showBulkDelete, setShowBulkDelete] = useState(false)
+  const allBusinessesForBulk = useAllBusinesses()
+  const bulkTargets = useMemo(() => {
+    const current = businessId || "main"
+    return [
+      ...(current !== "main" ? [{ id: "main", name: t("misrecetas_main_dashboard") }] : []),
+      ...allBusinessesForBulk.filter((b) => b.id !== current).map((b) => ({ id: b.id, name: b.name })),
+    ]
+  }, [allBusinessesForBulk, businessId, t])
+  const bulkAffectedRecipes = useMemo(
+    () => (showBulkDelete ? recipes.filter((r) => r.ingredients?.some((item) => !!item.ingredientId && bulk.ids.has(item.ingredientId))) : []),
+    [showBulkDelete, recipes, bulk.ids],
+  )
+  const confirmBulkDelete = async () => {
+    const count = ingredients.filter((ing) => bulk.ids.has(ing.id)).length
+    const updated = ingredients.filter((ing) => !bulk.ids.has(ing.id))
+    setIngredients(updated)
+    await saveIngredients(updated, businessId)
+    window.dispatchEvent(new CustomEvent("ingredientsUpdated", { detail: { businessId: businessId || "main", action: "delete" } }))
+    if (user && count > 0) {
+      logActivity({
+        user,
+        businessId: businessId && businessId !== "main" ? businessId : null,
+        module: "ingredientes",
+        action: "deleted",
+        entityLabel: t("bulk_ingredients_deleted").replace("{count}", String(count)),
+        metadata: { count, bulk: true },
+      })
+    }
+    showSuccess(t("ingredientes_toast_deleted_title"), t("bulk_ingredients_deleted").replace("{count}", String(count)))
+    setShowBulkDelete(false)
+    bulk.stop()
+  }
+
   // Confirm delete - PERMITIR ELIMINAR INGREDIENTES DE SUB-RECETAS
   const confirmDelete = () => {
     if (!ingredientToDelete) return
@@ -1511,6 +1579,18 @@ export default function IngredientesPage() {
                   {t("ingredientes_manage_merma_button")}
                   {canAccessMerma === false && <Lock className="h-3.5 w-3.5 opacity-60" />}
                 </Button>
+                {ingredients.length > 0 && (
+                  <Button
+                    data-tour="ing-select"
+                    variant={bulk.active ? "default" : "outline"}
+                    onClick={bulk.active ? bulk.stop : bulk.start}
+                    aria-pressed={bulk.active}
+                    className="gap-2"
+                  >
+                    <ListChecks className="h-4 w-4" />
+                    {t("bulk_select")}
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -1784,7 +1864,9 @@ export default function IngredientesPage() {
                   onUnitChange={() => setActiveSystem(null)}
                   mermaSystemEnabled={ingredients.some((ing) => ing.merma?.enabled)}
                   onOpenDetails={setDetailIngredient}
+                  selection={bulk.active ? bulk : undefined}
                 />
+                {bulk.active && <div className="h-24" aria-hidden />}
 
                 {/* Tabla Resumen al Final (preservada) */}
                 <div className="border-t border-border bg-muted/20 p-4">
@@ -2297,7 +2379,6 @@ export default function IngredientesPage() {
                       setImportFile(file)
                       processImportFile(file)
                     }}
-                    accept=".xlsx,.xlsm,.xls,.csv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel.sheet.macroEnabled.12,application/vnd.ms-excel,text/csv,text/plain"
                   />
                   <div className="mt-6 pt-6 border-t border-border text-left space-y-2">
                     <p className="text-sm font-medium text-foreground flex items-center gap-2">
@@ -2671,6 +2752,67 @@ export default function IngredientesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Selección múltiple (docs/345) */}
+      {bulk.active && (
+        <BulkSelectBar
+          count={bulk.ids.size}
+          total={filteredAndSortedIngredients.length}
+          onSelectAll={() => bulk.setAll(filteredAndSortedIngredients.map((i) => i.id))}
+          onClear={bulk.clear}
+          onDone={bulk.stop}
+          onMigrate={bulkTargets.length > 0 ? () => setShowBulkMigrate(true) : undefined}
+          onDelete={() => setShowBulkDelete(true)}
+        />
+      )}
+      <BulkMigrateDialog
+        open={showBulkMigrate}
+        onOpenChange={setShowBulkMigrate}
+        count={bulk.ids.size}
+        description={t("bulk_ingredients_migrate_desc")}
+        targets={bulkTargets}
+        run={async (targetId, onProgress) => {
+          const total = bulk.ids.size
+          onProgress(0, total)
+          const res = await copyIngredientsToBusiness({
+            sourceBusinessId: businessId || "main",
+            targetBusinessId: targetId,
+            ingredientIds: [...bulk.ids],
+          })
+          onProgress(total, total)
+          if (user && res.copied > 0) {
+            logActivity({
+              user,
+              businessId: targetId !== "main" ? targetId : null,
+              module: "ingredientes",
+              action: "migrated",
+              entityLabel: `→ ${bulkTargets.find((b) => b.id === targetId)?.name ?? targetId}`,
+              metadata: { count: res.copied, bulk: true },
+            })
+          }
+          bulk.stop()
+          return {
+            done: res.copied,
+            skipped: res.skipped,
+            failed: [],
+            note: res.fromSubrecipe > 0 ? t("bulk_ingredients_subrecipe_note").replace("{count}", String(res.fromSubrecipe)) : undefined,
+          }
+        }}
+      />
+      <BulkDeleteDialog
+        open={showBulkDelete}
+        onOpenChange={setShowBulkDelete}
+        title={t("bulk_ingredients_delete_title").replace("{count}", String(bulk.ids.size))}
+        description={t("bulk_ingredients_delete_desc")}
+        confirmLabel={t("common_delete")}
+        onConfirm={confirmBulkDelete}
+      >
+        {bulkAffectedRecipes.length > 0 && (
+          <p className="rounded-lg border border-warning/30 bg-warning-soft p-3 text-sm text-warning">
+            {t("bulk_ingredients_affected").replace("{names}", bulkAffectedRecipes.map((r) => r.name).join(", "))}
+          </p>
+        )}
+      </BulkDeleteDialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
