@@ -1080,6 +1080,8 @@ export default function IngredientesPage() {
             module: "ingredientes",
             action: "updated",
             entityLabel: ingredientData.name,
+            // docs/347: /admin muestra si es un ingrediente de subreceta.
+            ...(ingredientData.recipeId || ingredientData.category === "Sub Receta / produccion (Mise en place)" ? { metadata: { kind: "subrecipe" } } : {}),
           })
         }
 
@@ -1128,6 +1130,7 @@ export default function IngredientesPage() {
             module: "ingredientes",
             action: "created",
             entityLabel: newIngredient.name,
+            ...(newIngredient.recipeId || newIngredient.category === "Sub Receta / produccion (Mise en place)" ? { metadata: { kind: "subrecipe" } } : {}),
           })
         }
 

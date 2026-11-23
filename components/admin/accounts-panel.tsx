@@ -271,8 +271,9 @@ export function AccountsPanel() {
   // al día sin re-pedir plan/negocios/equipo/recetas/ingredientes en cada ciclo, y sin
   // tocar el estado de búsqueda/paginación/detalle expandido.
   useEffect(() => {
-    if (accounts.length === 0) return
-    const ids = accounts.map((a) => a.userId)
+    if (accounts.length === 0 && !selected) return
+    // docs/347: también la cuenta abierta, aunque no esté en la página de la lista.
+    const ids = [...new Set([...accounts.map((a) => a.userId), ...(selected ? [selected.userId] : [])])]
 
     const poll = () => {
       fetch("/api/admin/presence", {
@@ -290,7 +291,7 @@ export function AccountsPanel() {
     poll()
     const interval = setInterval(poll, 25_000)
     return () => clearInterval(interval)
-  }, [accounts])
+  }, [accounts, selected?.userId])
 
   // Exportar a Excel (docs/195): todas las cuentas con la búsqueda, el plan y el orden aplicados.
   const [exporting, setExporting] = useState(false)
@@ -678,7 +679,27 @@ export function AccountsPanel() {
             <ArrowLeft className="h-4 w-4" />
             {t("admin_accounts_back_to_list")}
           </Button>
-          <CardTitle>{selected.email}</CardTitle>
+          {/* docs/347: luz verde si la persona está en línea ahora (mismo criterio que la lista). */}
+          <CardTitle className="flex flex-wrap items-center gap-x-3 gap-y-1 break-all">
+            <span>{selected.email}</span>
+            {(() => {
+              const presence = presenceByUserId[selected.userId]
+              return presence?.online ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2.5 py-1 text-xs font-medium text-success" data-testid="account-online">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-success" />
+                  </span>
+                  {t("admin_accounts_online")}
+                </span>
+              ) : presence?.lastSeenAt ? (
+                <span className="inline-flex items-center gap-1.5 text-xs font-normal text-muted-foreground">
+                  <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
+                  {t("admin_accounts_last_seen").replace("{date}", formatDateTime(presence.lastSeenAt))}
+                </span>
+              ) : null
+            })()}
+          </CardTitle>
           {detail && (
             <CardDescription>
               {t("admin_accounts_created")} {formatDate(detail.createdAt)}

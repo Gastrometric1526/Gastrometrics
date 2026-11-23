@@ -56,3 +56,22 @@ describe("computeUsageInsights", () => {
     expect(insights.weekly[11]).toEqual({ weekStart: "2026-10-19", count: 7 })
   })
 })
+
+describe("acciones por módulo: migró y subrecetas aparte (docs/347)", () => {
+  it("cuenta migrado en su columna y cuántas de las creadas fueron subrecetas", () => {
+    const rows = [
+      row("2026-10-20T16:00:00Z", "ficha_tecnica", "created", { metadata: { kind: "subrecipe" } }),
+      row("2026-10-20T16:05:00Z", "ficha_tecnica", "created", { metadata: { kind: "dish" } }),
+      row("2026-10-20T16:10:00Z", "recetas", "migrated", { metadata: { count: 4, bulk: true } }),
+      row("2026-10-20T16:20:00Z", "recetas", "exported"),
+    ]
+    const insights = computeUsageInsights(rows, new Date("2026-10-22T20:00:00Z").getTime())
+    const ficha = insights.moduleActions.find((m) => m.module === "ficha_tecnica")!
+    expect(ficha.created).toBe(2)
+    expect(ficha.subrecipesCreated).toBe(1)
+    const recetas = insights.moduleActions.find((m) => m.module === "recetas")!
+    expect(recetas.migrated).toBe(1)
+    expect(recetas.other).toBe(1)
+    expect(recetas.total).toBe(2)
+  })
+})

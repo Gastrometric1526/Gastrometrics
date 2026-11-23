@@ -864,48 +864,49 @@ export function AccountInsightsPanel({ userId, businesses }: { userId: string; b
                   }))}
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 lg:col-span-2">
               <p className="text-xs font-medium text-muted-foreground">
                 {t("admin_insights_actions")}
               </p>
               {usage.moduleActions.length ? (
+                // docs/347: columnas claras (Creó, Editó, Migró, Borró, Otras), los ceros
+                // apagados y, en Recetas/Ficha, cuántas de las creadas fueron subrecetas.
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-xs text-muted-foreground">
-                        <th className="text-left font-normal" />
-                        <th className="text-right font-normal">
-                          {t("admin_insights_created")}
-                        </th>
-                        <th className="text-right font-normal">
-                          {t("admin_insights_updated")}
-                        </th>
-                        <th className="text-right font-normal">
-                          {t("admin_insights_deleted")}
-                        </th>
-                        <th className="text-right font-normal">
-                          {t("admin_insights_other")}
-                        </th>
+                      <tr>
+                        <th className="text-left">{t("admin_insights_col_module")}</th>
+                        <th className="text-right">{t("admin_insights_created")}</th>
+                        <th className="text-right">{t("admin_insights_updated")}</th>
+                        <th className="text-right">{t("admin_insights_migrated")}</th>
+                        <th className="text-right">{t("admin_insights_deleted")}</th>
+                        <th className="text-right">{t("admin_insights_other")}</th>
+                        <th className="text-right">{t("admin_insights_col_total")}</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {usage.moduleActions.map((m) => (
-                        <tr key={m.module} className="border-t border-border">
-                          <td className="py-1 text-foreground">
-                            {moduleLabel(m.module)}
-                          </td>
-                          <td className="text-right tabular-nums">
-                            {m.created}
-                          </td>
-                          <td className="text-right tabular-nums">
-                            {m.updated}
-                          </td>
-                          <td className="text-right tabular-nums">
-                            {m.deleted}
-                          </td>
-                          <td className="text-right tabular-nums">{m.other}</td>
-                        </tr>
-                      ))}
+                      {usage.moduleActions.map((m) => {
+                        const n = (v: number | undefined) =>
+                          v ? <span className="font-medium text-foreground">{v}</span> : <span className="text-muted-foreground/50">—</span>;
+                        return (
+                          <tr key={m.module}>
+                            <td className="text-foreground">
+                              <span className="font-medium">{moduleLabel(m.module)}</span>
+                              {m.subrecipesCreated ? (
+                                <span className="mt-0.5 block text-xs text-success">
+                                  {t("admin_insights_subrecipes_created").replace("{count}", String(m.subrecipesCreated))}
+                                </span>
+                              ) : null}
+                            </td>
+                            <td className="text-right tabular-nums">{n(m.created)}</td>
+                            <td className="text-right tabular-nums">{n(m.updated)}</td>
+                            <td className="text-right tabular-nums">{n(m.migrated)}</td>
+                            <td className="text-right tabular-nums">{n(m.deleted)}</td>
+                            <td className="text-right tabular-nums">{n(m.other)}</td>
+                            <td className="text-right tabular-nums font-semibold text-foreground">{m.total}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -949,24 +950,51 @@ export function AccountInsightsPanel({ userId, businesses }: { userId: string; b
           </div>
         )}
       </Section>
+      {/* docs/347: tabla a todo el ancho (Cuándo · Módulo · Qué hizo · Detalle), con la marca
+          «Subreceta» solo cuando lo es (docs/338) y cuántos en las acciones en lote. */}
+      <Section icon={History} title={`${t("admin_insights_section_recent")} (${recentActivity.length})`}>
+        {recentActivity.length ? (
+          <div className="max-h-96 overflow-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr>
+                  <th className="text-left">{t("admin_insights_col_when")}</th>
+                  <th className="text-left">{t("admin_insights_col_module")}</th>
+                  <th className="text-left">{t("admin_insights_col_action")}</th>
+                  <th className="text-left">{t("admin_insights_col_detail")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentActivity.map((a, i) => (
+                  <tr key={i}>
+                    <td className="whitespace-nowrap text-muted-foreground">{dateTime(a.at)}</td>
+                    <td className="text-foreground">{moduleLabel(a.module)}</td>
+                    <td>
+                      <span className="inline-flex flex-wrap items-center gap-1.5">
+                        <span className="font-medium text-foreground">{actionLabel(a.action)}</span>
+                        {a.subrecipe ? (
+                          <span className="rounded-full bg-success-soft px-2 py-0.5 text-xs font-medium text-success">
+                            {t("admin_insights_subrecipe_badge")}
+                          </span>
+                        ) : null}
+                        {a.count && a.count > 1 ? (
+                          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                            {t("admin_insights_count_badge").replace("{count}", String(a.count))}
+                          </span>
+                        ) : null}
+                      </span>
+                    </td>
+                    <td className="break-words text-muted-foreground">{a.label || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
+        )}
+      </Section>
       <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
-        <Section icon={History} title={t("admin_insights_section_recent")}>
-          {recentActivity.length ? (
-            <ul className="max-h-64 space-y-1 overflow-y-auto text-sm">
-              {recentActivity.map((a, i) => (
-                <li key={i} className="flex justify-between gap-2">
-                  <span className="truncate text-foreground">
-                    {moduleLabel(a.module)} · {actionLabel(a.action)}
-                    {a.label ? <span className="text-muted-foreground"> · {a.label}</span> : null}
-                  </span>
-                  <span className="shrink-0 text-xs text-muted-foreground">{dateTime(a.at)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t("admin_insights_none")}</p>
-          )}
-        </Section>
         <Section icon={Upload} title={`${t("admin_insights_section_imports")} (${imports.length})`}>
           {imports.length ? (
             <ul className="max-h-60 space-y-1.5 overflow-y-auto text-sm">

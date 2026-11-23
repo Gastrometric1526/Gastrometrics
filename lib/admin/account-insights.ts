@@ -47,8 +47,12 @@ export interface UsageInsights {
     created: number;
     updated: number;
     deleted: number;
+    /** Migrado a otro negocio (docs/347; antes contaba en «otras»). */
+    migrated: number;
     other: number;
     total: number;
+    /** De las creadas, cuántas fueron subrecetas (metadata.kind = "subrecipe", docs/336). */
+    subrecipesCreated: number;
   }[];
   /** Semanas (lunes) de las últimas 12, con su número de acciones. */
   weekly: { weekStart: string; count: number }[];
@@ -148,8 +152,10 @@ export function computeUsageInsights(
       created: number;
       updated: number;
       deleted: number;
+      migrated: number;
       other: number;
       total: number;
+      subrecipesCreated: number;
     }
   >();
   const ocr = { recipe: 0, receipt: 0, inventory: 0, total: 0 };
@@ -171,12 +177,17 @@ export function computeUsageInsights(
         created: 0,
         updated: 0,
         deleted: 0,
+        migrated: 0,
         other: 0,
         total: 0,
+        subrecipesCreated: 0,
       };
-      if (row.action === "created") entry.created++;
-      else if (row.action === "updated") entry.updated++;
+      if (row.action === "created") {
+        entry.created++;
+        if (row.metadata?.kind === "subrecipe") entry.subrecipesCreated++;
+      } else if (row.action === "updated") entry.updated++;
       else if (row.action === "deleted") entry.deleted++;
+      else if (row.action === "migrated") entry.migrated++;
       else entry.other++;
       entry.total++;
       actions.set(row.module, entry);

@@ -237,7 +237,16 @@ export async function getAccountInsights(userId: string) {
     .filter((a) => a.module !== "plan" && a.module !== "encuesta")
     .slice(-25)
     .reverse()
-    .map((a) => ({ module: a.module, action: a.action, label: a.entity_label ?? null, at: a.created_at }))
+    .map((a) => ({
+      module: a.module,
+      action: a.action,
+      label: a.entity_label ?? null,
+      at: a.created_at,
+      // docs/347: si fue una subreceta (o un ingrediente de subreceta) y cuántos, en lote.
+      subrecipe: a.metadata?.kind === "subrecipe",
+      count: typeof a.metadata?.count === "number" ? (a.metadata.count as number) : null,
+      businessId: a.business_id ?? null,
+    }))
 
   // Pagos en Stripe: total pagado, facturas, tarjeta y pagos fallidos (docs/172).
   let billing: {
