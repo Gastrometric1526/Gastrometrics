@@ -80,9 +80,9 @@ export const QUESTIONS: QuestionDef[] = [
   { key: "pos_system", kind: "choice", options: ["loyverse", "square", "toast", "manual", "other"] },
   { key: "menu_purpose", kind: "choice", options: ["carta", "daily", "event", "catering", "other"] },
   { key: "team", kind: "choice", options: ["solo", "small", "team"] },
-  // docs/342–343 (pedido del dueño): opinión directa con campo para escribir. Después de las
-  // preguntas de los momentos de valor (esas van justo después de usar algo por primera vez) y
-  // solo cuando la persona ya usó la app de verdad (`openFeedbackReady`).
+  // docs/342–344 (pedido del dueño): opinión directa con campo para escribir, solo cuando la
+  // persona ya usó la app de verdad (`openFeedbackReady`). Su turno depende del contexto
+  // (`nextQuestion`): solo se le adelantan las urgentes y las de algo que acaba de pasar.
   { key: "open_feedback", kind: "text", placeholder: true },
   { key: "testimonial", kind: "text", askConsent: true },
   // docs/230: generales, las de menor prioridad.
@@ -215,14 +215,48 @@ export function openFeedbackReady(ctx: AskContext): boolean {
   return (ctx.activeSeconds ?? 0) >= OPEN_FEEDBACK_MIN_SECONDS && age !== null && age >= OPEN_FEEDBACK_MIN_AGE_DAYS
 }
 
+/** Momento de valor del que habla cada pregunta (las que se hacen «en caliente»). */
+const QUESTION_MOMENT: Partial<Record<QuestionKey, ValueMoment>> = {
+  ocr_accuracy: "first_ocr",
+  price_source: "first_ingredient",
+  menu_size: "first_business",
+  price_reaction: "first_priced_recipe",
+  pdf_use: "first_pdf",
+  price_changes: "cascade_recalc",
+  inventory_freq: "first_inventory_count",
+  order_channel: "first_purchase_order",
+  pos_system: "first_sales_import",
+  menu_purpose: "first_menu",
+}
+
+/** Una pregunta de momento de valor sigue «en caliente» estos días después del momento. */
+export const FRESH_MOMENT_MS = 3 * DAY_MS
+
+/**
+ * ¿Esta pregunta va antes que la abierta? (docs/344, el dueño: «en medio de todas las preguntas,
+ * tú decide dónde tenga sentido en contexto»).
+ * - «improve»: el plan vence en días; es ahora o nunca.
+ * - «blocker» y «pain»: son de los primeros días; después ya no aplican.
+ * - Las de un momento de valor reciente (3 días): se entienden justo después de usar algo.
+ * Todo lo demás (momentos viejos, perfil, testimonio, generales) va después de la abierta:
+ * a quien ya usa la app, primero se le pregunta qué mejoraría.
+ */
+function goesBeforeOpenFeedback(key: QuestionKey, state: AskState, now: number): boolean {
+  if (key === "improve" || key === "blocker" || key === "pain") return true
+  const moment = QUESTION_MOMENT[key]
+  const at = moment ? state.moments[moment] : undefined
+  return typeof at === "number" && now - at <= FRESH_MOMENT_MS
+}
+
 /** La pregunta corta que toca ahora (o null). */
 export function nextQuestion(state: AskState, ctx: AskContext): QuestionDef | null {
   if (inCooldown(state, ctx.now)) return null
-  for (const q of QUESTIONS) {
-    if (!canShowAgain(state.questions[q.key], QUESTION_RETRY_MS, ctx.now)) continue
-    if (questionApplies(q.key, state, ctx)) return q
-  }
-  return null
+  const ready = QUESTIONS.filter(
+    (q) => canShowAgain(state.questions[q.key], QUESTION_RETRY_MS, ctx.now) && questionApplies(q.key, state, ctx),
+  )
+  const open = ready.find((q) => q.key === "open_feedback")
+  if (open) return ready.find((q) => goesBeforeOpenFeedback(q.key, state, ctx.now)) ?? open
+  return ready[0] ?? null
 }
 
 /**

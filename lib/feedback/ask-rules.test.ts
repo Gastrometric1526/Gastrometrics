@@ -202,6 +202,19 @@ describe("pregunta abierta, cuando ya usó la app (docs/342–343)", () => {
     expect(translations.es.q_open_feedback_placeholder).toBeTruthy()
     expect(QUESTIONS[0].key).not.toBe("open_feedback")
   })
+  it("en contexto (docs/344): un momento de hace más de 3 días ya no se le adelanta", () => {
+    const old = recordMoment(emptyAskState(), "first_pdf", now - 10 * DAY)
+    expect(nextQuestion(old, ctx({ activeDays: 5 }))?.key).toBe("open_feedback")
+    const fresh = recordMoment(emptyAskState(), "first_pdf", now - 2 * DAY)
+    expect(nextQuestion(fresh, ctx({ activeDays: 5 }))?.key).toBe("pdf_use")
+  })
+  it("en contexto (docs/344): va antes del perfil y del testimonio, después de las urgentes", () => {
+    const veteran = ctx({ activeDays: 20, recipeCount: 8, accountCreatedAt: new Date(now - 60 * DAY).toISOString() })
+    expect(nextQuestion(emptyAskState(), veteran)?.key).toBe("open_feedback")
+    expect(nextQuestion(emptyAskState(), { ...veteran, planExpiringSoon: true })?.key).toBe("improve")
+    const afterOpen = recordAsk(emptyAskState(), "open_feedback", "answered", now - 30 * DAY)
+    expect(nextQuestion(afterOpen, veteran)?.key).toBe("team")
+  })
   it("respondida no se repite", () => {
     const answered = recordAsk(emptyAskState(), "open_feedback", "answered", now - 30 * DAY)
     expect(nextQuestion(answered, ctx({ activeDays: 5 }))?.key).not.toBe("open_feedback")
