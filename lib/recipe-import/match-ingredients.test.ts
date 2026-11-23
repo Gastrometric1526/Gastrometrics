@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { convertToUnit, findBestMatch, normalizeName, defaultUnitFor } from "./match-ingredients"
+import { convertToUnit, findBestMatch, rankMatches, normalizeName, defaultUnitFor } from "./match-ingredients"
 import { parseIngredientLine } from "./parse-recipe"
 import type { Ingredient } from "@/types/ingredient"
 
@@ -40,5 +40,23 @@ describe("coincidencia y conversión (docs/145)", () => {
     expect(defaultUnitFor("mass")).toBe("kilogramos")
     expect(defaultUnitFor("volume")).toBe("litros")
     expect(defaultUnitFor(null)).toBe("unidad")
+  })
+})
+
+describe("sugeridos para la lista plegable (docs/348)", () => {
+  const base = [
+    { id: "1", name: "Tomate" },
+    { id: "2", name: "Tomate cherry" },
+    { id: "3", name: "Pasta de tomate" },
+    { id: "4", name: "Cebolla" },
+  ] as unknown as Parameters<typeof rankMatches>[1]
+  it("ordena de más a menos parecido y deja fuera lo que no se parece", () => {
+    const ids = rankMatches("tomates", base).map((m) => m.ingredient.id)
+    expect(ids[0]).toBe("1")
+    expect(ids).toContain("2")
+    expect(ids).not.toContain("4")
+  })
+  it("el primero es el que findBestMatch elige", () => {
+    expect(findBestMatch("tomate", base)?.id).toBe(rankMatches("tomate", base)[0].ingredient.id)
   })
 })

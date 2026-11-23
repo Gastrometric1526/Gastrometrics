@@ -1,5 +1,6 @@
 "use client"
 
+import { ImportIngredientPicker } from "@/components/import-ingredient-picker"
 import { documentKind, documentText } from "@/lib/file-text"
 import { logActivity, importFormat } from "@/lib/services/activity-log"
 import { useAuth } from "@/contexts/auth-context"
@@ -52,6 +53,10 @@ interface Row {
   newUnit: Unit
   category: Category
   price: string // precio por newUnit (opcional)
+  /** El ingrediente que la app eligió sola al leer (docs/348), o null si propuso crear. */
+  autoId: string | null
+  /** La persona eligió en la lista: corregir el nombre ya no cambia su elección. */
+  manual: boolean
 }
 
 interface OcrState {
@@ -98,6 +103,8 @@ export function RecipeImportDialog({
   const [servings, setServings] = useState("1")
   const [steps, setSteps] = useState("")
   const [rows, setRows] = useState<Row[]>([])
+  // Idioma con que se emparejan los nombres (el de la receta, si se nota): también para los sugeridos.
+  const [matchLang, setMatchLang] = useState<string>(language)
   const [busy, setBusy] = useState<null | "ocr" | "save">(null)
   const [ocrProgress, setOcrProgress] = useState(0)
   const [ocrLang, setOcrLang] = useState(OCR_LANG[language] || "spa")
@@ -162,6 +169,7 @@ export function RecipeImportDialog({
     // palabra principal va primero en español y al final en inglés); si no se nota, el de la app.
     const detected = detectRecipeLanguage(source)
     const matchLang = (detected && SUPPORTED_LANGUAGES.find((l) => OCR_LANG[l.code] === detected)?.code) || language
+    setMatchLang(matchLang)
     setParsed(result)
     setName(result.name)
     setServings(String(result.servings ?? 1))
@@ -181,6 +189,8 @@ export function RecipeImportDialog({
           newUnit,
           category: guessCategory(p.name),
           price: priceFromSheet(p, newUnit),
+          autoId: match ? match.id : null,
+          manual: false,
         }
       }),
     )
@@ -380,9 +390,22 @@ export function RecipeImportDialog({
 
   const changeChoice = (index: number, choice: string) => {
     const row = rows[index]
-    if (choice === SKIP) return updateRow(index, { choice, needsReview: false })
+    if (choice === SKIP) return updateRow(index, { choice, needsReview: false, manual: true })
     const unit = choice === CREATE ? row.newUnit : byId.get(choice)?.unit
-    updateRow(index, { choice, ...(unit ? convert(row, unit) : {}) })
+    updateRow(index, { choice, manual: true, ...(unit ? convert(row, unit) : {}) })
+  }
+
+  /**
+   * Corregir el nombre leído («tomte» → «tomate», docs/348): mientras la persona no haya
+   * elegido en la lista, la app vuelve a buscar el ingrediente de su base con el nombre nuevo.
+   */
+  const changeName = (index: number, value: string) => {
+    const row = rows[index]
+    if (row.manual || row.choice === SKIP) return updateRow(index, { name: value })
+    const match = findBestMatch(value, ingredients, matchLang)
+    const choice = match ? match.id : CREATE
+    const unit = match ? match.unit : row.newUnit
+    updateRow(index, { name: value, choice, autoId: match ? match.id : null, category: guessCategory(value), ...(choice !== row.choice ? convert(row, unit) : {}) })
   }
 
   const changeNewUnit = (index: number, unit: Unit) => updateRow(index, { newUnit: unit, ...convert(rows[index], unit) })
@@ -714,21 +737,19 @@ export function RecipeImportDialog({
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_130px] gap-2 items-center">
-                    <Input value={row.name} onChange={(e) => updateRow(i, { name: e.target.value })} aria-label={t("recipe_import_name")} />
-                    <Select value={row.choice} onValueChange={(v) => changeChoice(i, v)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={CREATE}>{t("recipe_import_create_new")}</SelectItem>
-                        <SelectItem value={SKIP}>{t("recipe_import_skip")}</SelectItem>
-                        {ingredients.map((ing) => (
-                          <SelectItem key={ing.id} value={ing.id}>
-                            {ing.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Input value={row.name} onChange={(e) => changeName(i, e.target.value)} aria-label={t("recipe_import_name")} />
+                    {/* docs/348: lista plegable con buscador; arriba los sugeridos de tu base. */}
+                    <ImportIngredientPicker
+                      value={row.choice}
+                      readName={row.name}
+                      autoId={row.autoId}
+                      ingredients={ingredients}
+                      language={matchLang}
+                      createValue={CREATE}
+                      skipValue={SKIP}
+                      onChange={(v) => changeChoice(i, v)}
+                      ariaLabel={t("recipe_import_pick_aria").replace("{name}", row.name)}
+                    />
                     <div className="flex items-center gap-1.5">
                       <Input
                         value={row.quantity}

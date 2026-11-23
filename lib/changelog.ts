@@ -32,6 +32,19 @@ export interface ChangelogEntry {
 // Más reciente primero.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    // Importar receta: lista plegable con los ingredientes sugeridos de tu base (docs/348).
+    version: "2026-11-23c",
+    tutorialHref: tourHref("mis-recetas"),
+    content: {
+      es: { title: "Importar receta: elige tus ingredientes más rápido", items: ["En cada ingrediente leído de la foto o el documento ves cuál de tu base eligió la app. Ábrelo para ver los sugeridos arriba, buscar entre todos tus ingredientes, crearlo nuevo o no usarlo.", "Si la app leyó mal un nombre (por ejemplo «tomte»), corrígelo y vuelve a buscar el ingrediente de tu base solo."] },
+      en: { title: "Import recipe: pick your ingredients faster", items: ["For each ingredient read from the photo or document you see which one from your list the app picked. Open it to see suggestions at the top, search all your ingredients, create it new or leave it out.", "If the app misread a name (for example “tomte”), fix it and it searches your list again on its own."] },
+      da: { title: "Importér opskrift: vælg dine ingredienser hurtigere", items: ["For hver ingrediens, der er læst fra fotoet eller dokumentet, ser du, hvilken fra din liste appen valgte. Åbn den for at se forslag øverst, søge blandt alle dine ingredienser, oprette den eller udelade den.", "Hvis appen læste et navn forkert (fx »tomte«), så ret det, og den søger selv i din liste igen."] },
+      fr: { title: "Importer une recette : choisissez vos ingrédients plus vite", items: ["Pour chaque ingrédient lu sur la photo ou le document, vous voyez lequel de votre base l'application a choisi. Ouvrez-le pour voir les suggestions en haut, chercher parmi tous vos ingrédients, le créer ou l'ignorer.", "Si l'application a mal lu un nom (par exemple « tomte »), corrigez-le : elle recherche à nouveau dans votre base."] },
+      pt: { title: "Importar receita: escolha seus ingredientes mais rápido", items: ["Em cada ingrediente lido da foto ou do documento você vê qual da sua base o app escolheu. Abra para ver os sugeridos no topo, buscar entre todos os seus ingredientes, criar novo ou não usar.", "Se o app leu um nome errado (por exemplo «tomte»), corrija e ele busca de novo na sua base sozinho."] },
+      zh: { title: "导入配方：更快选择食材", items: ["对于从照片或文档中识别出的每种食材，你都能看到应用从你的食材库中选中的项目。打开即可在顶部查看推荐、搜索全部食材、新建或不使用。", "如果应用识别错了名称（例如“tomte”），修正后它会自动重新在你的食材库中查找。"] },
+    },
+  },
+  {
     // Regala un mes, gana un mes: qué hace cada lado para ganar (docs/346).
     version: "2026-11-23b",
     tutorialHref: tourHref("mi-plan"),

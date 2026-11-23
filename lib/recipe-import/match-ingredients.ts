@@ -56,32 +56,53 @@ export function normalizeName(value: string): string {
  * proponer "crear nuevo" que costear con el ingrediente equivocado.
  */
 export function findBestMatch(name: string, ingredients: Ingredient[], language: string = "es"): Ingredient | null {
-  const target = normalizeName(name)
-  if (!target) return null
+  const top = rankMatches(name, ingredients, language, 1)[0]
+  return top && top.score >= 0.6 ? top.ingredient : null
+}
+
+/**
+ * Los ingredientes de la base más parecidos al nombre importado, de más a menos (docs/348):
+ * la lista plegable de Importar receta los muestra arriba como «Sugeridos» para elegir rápido.
+ * Mismo puntaje que `findBestMatch` (que toma el primero si llega a 0.6); aquí también entran
+ * los parecidos más flojos (desde `minScore`) y los que contienen la palabra.
+ */
+export function rankMatches(
+  name: string,
+  ingredients: Ingredient[],
+  language: string = "es",
+  limit = 5,
+  minScore = 0.3,
+): { ingredient: Ingredient; score: number }[] {
+  // «tomates» queda «tomat» y «tomate» queda igual: sin la «e» final se emparejan (docs/348).
+  const stem = (v: string) => v.split(" ").map((w) => (w.length > 4 && w.endsWith("e") ? w.slice(0, -1) : w)).join(" ")
+  const target = stem(normalizeName(name))
+  if (!target) return []
   const headLast = language === "en" || language === "da"
-  const isChinese = /[\u4e00-\u9fff]/.test(target)
+  const isChinese = /[一-鿿]/.test(target)
   const targetWords = target.split(" ")
   const targetSet = new Set(targetWords)
   const startsWith = (a: string, b: string) => a === b || a.startsWith(`${b} `)
   const endsWith = (a: string, b: string) => a === b || a.endsWith(` ${b}`)
-  let best: { ing: Ingredient; score: number } | null = null
+  const out: { ingredient: Ingredient; score: number }[] = []
   for (const ing of ingredients) {
-    const candidate = normalizeName(ing.name)
+    const candidate = stem(normalizeName(ing.name))
     if (!candidate) continue
     let score = 0
     if (candidate === target) score = 1
     else if (isChinese) {
       // Chino: sin espacios y el núcleo va al final ("红洋葱" es un 洋葱).
       const [short, long] = candidate.length <= target.length ? [candidate, target] : [target, candidate]
-      score = short.length >= 2 && long.endsWith(short) ? 0.85 : 0
+      score = short.length >= 2 && long.endsWith(short) ? 0.85 : long.includes(short) && short.length >= 2 ? 0.4 : 0
     } else if (headLast ? endsWith(candidate, target) || endsWith(target, candidate) : startsWith(candidate, target) || startsWith(target, candidate)) score = 0.85
     else {
       const words = candidate.split(" ")
       const sameHead = headLast ? words[words.length - 1] === targetWords[targetWords.length - 1] : words[0] === targetWords[0]
       const overlap = words.filter((w) => targetSet.has(w)).length / Math.max(words.length, targetSet.size)
       score = sameHead ? overlap : Math.min(overlap, 0.5)
+      // Comparte el comienzo de una palabra ("tomat" / "tomate cherry"): parecido flojo.
+      if (score === 0 && targetWords.some((w) => w.length >= 4 && words.some((c) => c.startsWith(w.slice(0, 4))))) score = 0.3
     }
-    if (score >= 0.6 && (!best || score > best.score)) best = { ing, score }
+    if (score >= minScore) out.push({ ingredient: ing, score })
   }
-  return best?.ing ?? null
+  return out.sort((a, b) => b.score - a.score || a.ingredient.name.localeCompare(b.ingredient.name)).slice(0, limit)
 }
