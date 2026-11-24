@@ -2116,14 +2116,6 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
       </Card>
       )}
 
-      {/* Alérgenos y tipo de plato (docs/137, docs/324): heredados de los ingredientes y confirmados aquí. */}
-      <DishLabelsSection
-        recipe={recipe}
-        ingredients={availableIngredients}
-        recipes={getRecipes(businessId)}
-        onChange={(dietClaims) => setRecipe((prev) => ({ ...prev, dietClaims }))}
-      />
-
       <Card className="w-full mx-auto">
         <CardHeader className="px-3 sm:px-6">
           <CardTitle>{t("ficha_tecnica_procedure_title")}</CardTitle>
@@ -2162,6 +2154,15 @@ export function TechnicalSheet({ mode, recipeId, businessId = "main", onScaledPr
           )}
         </CardContent>
       </Card>
+
+      {/* Alérgenos y tipo de plato (docs/137, docs/324): heredados de los ingredientes y confirmados aquí.
+          Orden pedido por el dueño (docs/351): después del procedimiento y comentarios, antes de la calculadora del precio de venta. */}
+      <DishLabelsSection
+        recipe={recipe}
+        ingredients={availableIngredients}
+        recipes={getRecipes(businessId)}
+        onChange={(dietClaims) => setRecipe((prev) => ({ ...prev, dietClaims }))}
+      />
 
       {/* Sin permiso de costos (docs/304): ni el costeo ni el resumen; solo el precio de venta. */}
       {!seeCosts && calculations.finalPrice > 0 && (

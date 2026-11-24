@@ -70,6 +70,8 @@ export function FichaTecnicaTour({ hasIngredients }: { hasIngredients: boolean }
       description: t("tour_ficha_ingredients_table_desc"),
       selector: '[data-tour="ficha-ingredients-table"]',
     },
+    // Alérgenos y tipo de plato (docs/324); después del procedimiento y antes del precio (docs/351).
+    { id: "dish-labels", title: t("tour_ficha_dish_labels_title"), description: t("tour_ficha_dish_labels_desc"), selector: '[data-tour="ficha-dish-labels"]' },
     {
       id: "pricing",
       title: t("tour_ficha_pricing_title"),
@@ -82,8 +84,6 @@ export function FichaTecnicaTour({ hasIngredients }: { hasIngredients: boolean }
       description: t("tour_ficha_summary_desc"),
       selector: '[data-tour="ficha-summary"]',
     },
-    // Alérgenos y tipo de plato (docs/324).
-    { id: "dish-labels", title: t("tour_ficha_dish_labels_title"), description: t("tour_ficha_dish_labels_desc"), selector: '[data-tour="ficha-dish-labels"]' },
     {
       id: "save",
       title: t("tour_ficha_save_title"),
