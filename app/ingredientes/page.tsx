@@ -3,7 +3,7 @@
 import { useCanSeeCosts } from "@/components/cost-gate"
 import type React from "react"
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
-import { hasFeatureAccess, useFeatureAccess } from "@/lib/plan-access"
+import { hasFeatureAccess, useFeatureAccess, useTeamPreview } from "@/lib/plan-access"
 import { AdminRestrictedPage } from "@/components/admin-restricted"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -1202,9 +1202,13 @@ export default function IngredientesPage() {
 
   // Selección múltiple (docs/345): migrar a otro negocio o borrar varios ingredientes de una vez.
   const bulk = useBulkSelection()
+  const keepSelected = bulk.keepOnly
+  useEffect(() => keepSelected(filteredAndSortedIngredients.map((i) => i.id)), [filteredAndSortedIngredients, keepSelected])
   const [showBulkMigrate, setShowBulkMigrate] = useState(false)
   const [showBulkDelete, setShowBulkDelete] = useState(false)
   const allBusinessesForBulk = useAllBusinesses()
+  // Copiar ingredientes lleva su precio: solo quien ve costos, y no en la Vista previa de equipo (docs/353).
+  const { active: bulkTeamPreview } = useTeamPreview()
   const bulkTargets = useMemo(() => {
     const current = businessId || "main"
     return [
@@ -2764,7 +2768,7 @@ export default function IngredientesPage() {
           onSelectAll={() => bulk.setAll(filteredAndSortedIngredients.map((i) => i.id))}
           onClear={bulk.clear}
           onDone={bulk.stop}
-          onMigrate={bulkTargets.length > 0 ? () => setShowBulkMigrate(true) : undefined}
+          onMigrate={seeCosts && !bulkTeamPreview && bulkTargets.length > 0 ? () => setShowBulkMigrate(true) : undefined}
           onDelete={() => setShowBulkDelete(true)}
         />
       )}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { buildMep, flattenDish, formatMepAmount, groupByArea, groupDishesByStep } from "./mep"
+import { buildMep, flattenDish, formatMepAmount, groupByArea, groupDishesByStep, prepsWithKitchenArea } from "./mep"
 import type { Recipe, RecipeIngredient } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 import type { Menu } from "@/lib/types/menus"
@@ -121,5 +121,27 @@ describe("PDF de la MEP con sub-recetas por plato (docs/207)", () => {
       const fs = await import("fs")
       fs.writeFileSync(process.env.MEP_SAMPLE_OUT, Buffer.from(step.output("arraybuffer")))
     }
+  })
+})
+
+describe("«Subreceta» no cuenta como sección en el MEP (docs/353)", () => {
+  it("cada subreceta va a la sección de los platos que la usan, también las de segundo nivel", () => {
+    const SUB = "Sub Receta / produccion (Mise en place)"
+    const fondoSub = { ...fondo, classification: SUB }
+    const salsaSub = { ...salsa, classification: SUB }
+    const mep = buildMep(menu, [fondoSub, salsaSub, pasta, ensalada], ingredients)
+    const preps = prepsWithKitchenArea(mep.preps, mep.dishes)
+    // La salsa la usan la pasta (Línea caliente) y la ensalada (Línea fría): va a la primera, con su total.
+    const salsaPrep = preps.find((p) => p.recipeId === "salsa")!
+    expect(salsaPrep.classification).toBe("Línea caliente (Cuisine chaude)")
+    expect(salsaPrep.amount).toBe(mep.preps.find((p) => p.recipeId === "salsa")!.amount)
+    // El fondo solo lo usa la salsa: hereda la sección de los platos de arriba.
+    expect(preps.find((p) => p.recipeId === "fondo")!.classification).toBe("Línea caliente (Cuisine chaude)")
+    const areas = groupByArea([...preps, ...mep.dishes]).map((g) => g.area)
+    expect(areas).not.toContain(SUB)
+  })
+  it("una subreceta con sección propia la conserva", () => {
+    const mep = buildMep(menu, [fondo, salsa, pasta, ensalada], ingredients)
+    expect(prepsWithKitchenArea(mep.preps, mep.dishes).find((p) => p.recipeId === "salsa")!.classification).toBe("Salsas y fondos (Saucier)")
   })
 })

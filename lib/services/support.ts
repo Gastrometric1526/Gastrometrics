@@ -19,7 +19,7 @@
  */
 
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
-import { messageReceipts, queuePosition, SUPPORT_AUTO_CLOSE_MS, SUPPORT_DELIVERED_EVENT, SUPPORT_SEEN_EVENT, transcriptHtml, type SupportAttachment, type SupportCategory } from "@/lib/support/core"
+import { autoCloseNotifies, messageReceipts, queuePosition, SUPPORT_AUTO_CLOSE_MS, SUPPORT_DELIVERED_EVENT, SUPPORT_SEEN_EVENT, transcriptHtml, type SupportAttachment, type SupportCategory } from "@/lib/support/core"
 import { Resend } from "resend"
 import { sendWithRetry } from "./send-email"
 import { renderEmailTemplate, escapeHtml, escapeHtmlWithLineBreaks } from "./email-templates"
@@ -381,12 +381,12 @@ export async function adminSetStatus(conversationId: string, status: "waiting" |
  */
 export async function autoCloseStale(accountId?: string, now = Date.now()): Promise<number> {
   const cutoff = new Date(now - SUPPORT_AUTO_CLOSE_MS).toISOString()
-  let query = db().from("support_conversations").select("id, language").eq("status", "answered").lte("last_message_at", cutoff).limit(50)
+  let query = db().from("support_conversations").select("id, language, last_message_at").eq("status", "answered").lte("last_message_at", cutoff).limit(50)
   if (accountId) query = query.eq("account_id", accountId)
   const { data, error } = await query
   if (error) throw error
   let closed = 0
-  for (const c of (data as { id: string; language: string }[] | null) ?? []) {
+  for (const c of (data as { id: string; language: string; last_message_at: string }[] | null) ?? []) {
     const at = new Date(now).toISOString()
     const { data: updated } = await db()
       .from("support_conversations")
@@ -397,6 +397,7 @@ export async function autoCloseStale(accountId?: string, now = Date.now()): Prom
       .select("id")
     if (!(updated as unknown[] | null)?.length) continue
     closed++
+    if (!autoCloseNotifies(c.last_message_at, now)) continue // caso viejo: sin mensaje ni correo (docs/353)
     const message = getEmailLabels(normalizeEmailLang(c.language)).support_autoclose_message
     await insertMessage({ conversation_id: c.id, sender: "bot", body: message, attachments: [] }, null).catch((e) => console.error("[support] Mensaje de cierre:", e))
     await sendTranscriptEmail(c.id, "auto").catch((e) => console.error("[support] Correo de la conversación:", e))

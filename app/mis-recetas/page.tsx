@@ -402,6 +402,8 @@ export default function MisRecetasPage() {
 
     return filtered
   }, [recipes, searchQuery, selectedClassification, selectedKind, sortBy, dietFilter, labelsById])
+  const keepSelected = bulk.keepOnly
+  useEffect(() => keepSelected(filteredAndSortedRecipes.map((r) => r.id)), [filteredAndSortedRecipes, keepSelected])
 
   // Calcular estadísticas
   const stats = useMemo(() => {

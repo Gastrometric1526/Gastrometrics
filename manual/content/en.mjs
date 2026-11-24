@@ -419,7 +419,7 @@ export default {
         ["formula", "How much to make", ["Multiplier = Menu portions ÷ Recipe yield", "Quantity = Quantity in the recipe × Multiplier"], "Each quantity is rounded up with the same rule as the Recipe Sheet’s PAX modifier, so you never come up short."],
         ["formula", "Menu with choices", ["“Guest picks one” course: each dish weighs 1 ÷ N (N = dishes in the course)", "Menu price and cost = Σ (dish price or cost × its weight)"], "Example: soup (cost 1) or salad (3) + chicken (4) = 1 × ½ + 3 × ½ + 4 = 6, not 8. The theoretical inventory of a menu sold also uses ½ of each option. Without a choice (“all”, as before) each dish counts in full."],
         ["h3", "By menu course or by kitchen area"],
-        ["p", "With “Group by” you choose to see the MEP by <strong>menu course</strong> (starter, main course…) or by <strong>kitchen area</strong>, which are the Recipe Sheet classifications (hot line, cold line, sauces and stocks, pastry, bar…). Tap an area to see only its items."],
+        ["p", "With “Group by” you choose to see the MEP by <strong>menu course</strong> (starter, main course…) or by <strong>kitchen area</strong>, which are the Recipe Sheet classifications (hot line, cold line, sauces and stocks, pastry, bar…). Tap an area to see only its items. “Sub-recipe” doesn't count as an area: each sub-recipe appears in the area of the dish that uses it."],
         ["tip", "One sheet per station", "The <strong>Send</strong> button downloads, prints or sends by WhatsApp or email exactly what you’re viewing. The PDF starts with the list and checkboxes, then one recipe per page. Grouped by area, each area starts on a new sheet: print it and hand each station its own."],
       ],
     },

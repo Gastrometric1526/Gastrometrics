@@ -104,5 +104,5 @@ export function rankMatches(
     }
     if (score >= minScore) out.push({ ingredient: ing, score })
   }
-  return out.sort((a, b) => b.score - a.score || a.ingredient.name.localeCompare(b.ingredient.name)).slice(0, limit)
+  return out.sort((a, b) => b.score - a.score).slice(0, limit)
 }

@@ -40,14 +40,15 @@ export function ReferralInviteeCard() {
       .then((r) => (r.ok ? r.json() : null))
       .then(async (data) => {
         const invitedBy = (data?.invitedBy ?? null) as InvitedBy | null
-        if (!alive || !invitedBy || invitedBy.status === "expired") return
+        // «active» = empezó, pero quien invitó ya llegó a su tope del año: no ganó mes, no se dice (docs/353).
+        if (!alive || !invitedBy || invitedBy.status === "expired" || invitedBy.status === "active") return
         let snoozed = false
         let thanked = false
         try {
           snoozed = Date.now() - Number(localStorage.getItem(key("snooze")) || 0) < DAY_MS
           thanked = localStorage.getItem(key("thanked")) === "1"
         } catch {}
-        const done = invitedBy.status === "active" || invitedBy.status === "rewarded"
+        const done = invitedBy.status === "rewarded"
         if (done ? thanked : snoozed || invitedBy.daysLeft <= 0) return
         await ensureRecipesLoaded(null)
         if (!alive) return
@@ -64,7 +65,7 @@ export function ReferralInviteeCard() {
 
   if (hidden || !info) return null
   const name = info.name || t("referral_invitee_colleague")
-  const done = info.status === "active" || info.status === "rewarded"
+  const done = info.status === "rewarded"
   const close = () => {
     try {
       if (done) localStorage.setItem(key("thanked"), "1")

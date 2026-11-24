@@ -8,7 +8,7 @@
  * - `BulkDeleteDialog`: confirmar antes de borrar (sin window.confirm).
  */
 
-import { useEffect, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useState, type ReactNode } from "react"
 import { ArrowRightLeft, CheckCircle2, Loader2, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -31,12 +31,22 @@ export function useBulkSelection() {
     })
   const setAll = (all: string[]) => setIds(new Set(all))
   const clear = () => setIds(new Set())
+  /** Deja elegidos solo los que se ven: nunca se borra ni migra algo que un filtro escondió (docs/353). */
+  const keepOnly = useCallback(
+    (visible: string[]) =>
+      setIds((prev) => {
+        const allowed = new Set(visible)
+        const next = [...prev].filter((id) => allowed.has(id))
+        return next.length === prev.size ? prev : new Set(next)
+      }),
+    [],
+  )
   const start = () => setActive(true)
   const stop = () => {
     setActive(false)
     setIds(new Set())
   }
-  return { active, ids, toggle, setAll, clear, start, stop }
+  return { active, ids, toggle, setAll, clear, keepOnly, start, stop }
 }
 
 /** Casilla grande (fácil de tocar en el celular) para una tarjeta o fila. */
@@ -79,7 +89,7 @@ export function BulkSelectBar({
     <div
       role="toolbar"
       aria-label={t("bulk_toolbar_label")}
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85 shadow-lg"
+      className="fixed inset-x-0 bottom-0 z-[45] border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85 shadow-lg"
       style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
     >
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-4 pt-3">
@@ -127,12 +137,15 @@ export function BulkMigrateDialog({
 }) {
   const { t } = useLanguage()
   const [target, setTarget] = useState("")
+  // Congelado al abrir: al terminar la selección se vacía y el título decía «Migrar 0».
+  const [shownCount, setShownCount] = useState(count)
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [outcome, setOutcome] = useState<BulkMigrateOutcome | null>(null)
   const running = progress !== null && outcome === null
 
   useEffect(() => {
     if (open) {
+      setShownCount(count)
       setTarget(targets.length === 1 ? targets[0].id : "")
       setProgress(null)
       setOutcome(null)
@@ -156,7 +169,7 @@ export function BulkMigrateDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ArrowRightLeft className="h-5 w-5 text-primary" />
-            {t("bulk_migrate_title").replace("{count}", String(count))}
+            {t("bulk_migrate_title").replace("{count}", String(shownCount))}
           </DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>

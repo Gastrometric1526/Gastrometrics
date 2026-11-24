@@ -203,6 +203,17 @@ export function messageReceipts(
  */
 export const SUPPORT_AUTO_CLOSE_MS = 24 * 60 * 60 * 1000
 
+/**
+ * docs/353: el correo del cierre automático solo sale si el caso es reciente. Los casos viejos
+ * que ya estaban sin cerrar se cierran en silencio (sin mensaje ni correo).
+ */
+export const SUPPORT_AUTO_CLOSE_EMAIL_MAX_AGE_MS = 4 * 24 * 60 * 60 * 1000
+
+export function autoCloseNotifies(lastMessageAt: string, now: number): boolean {
+  const t = new Date(lastMessageAt).getTime()
+  return Number.isFinite(t) && now - t <= SUPPORT_AUTO_CLOSE_EMAIL_MAX_AGE_MS
+}
+
 export function shouldAutoClose(conversation: { status: string; last_message_at: string }, now: number): boolean {
   if (conversation.status !== "answered") return false
   const t = new Date(conversation.last_message_at).getTime()

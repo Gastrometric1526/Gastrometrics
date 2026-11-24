@@ -49,7 +49,7 @@ import { useMenus, ensureMenusLoaded } from "@/lib/menus"
 import { useRecipes, ensureRecipesLoaded } from "@/lib/storage/recipes"
 import { useIngredients, ensureIngredientsLoaded } from "@/lib/storage/ingredients"
 import { getBusinessById } from "@/lib/storage/businesses"
-import { buildMep, flattenDish, formatMepAmount, groupByArea, groupDishesByStep, type MepEntry } from "@/lib/mep"
+import { buildMep, flattenDish, formatMepAmount, groupByArea, groupDishesByStep, prepsWithKitchenArea, type MepEntry } from "@/lib/mep"
 import { getClassificationLabel } from "@/lib/classification-labels"
 import type { Classification } from "@/types/recipe"
 import { amountWithUnit, mepShareText, shortUnit } from "@/lib/share-text"
@@ -303,7 +303,8 @@ function MepContent() {
   const menu = sortedMenus.find((m) => m.id === requestedMenu) || sortedMenus[0] || null
 
   const mep = useMemo(() => (menu ? buildMep(menu, recipes, ingredients) : null), [menu, recipes, ingredients])
-  const all = useMemo(() => (mep ? [...mep.preps, ...mep.dishes] : []), [mep])
+  // docs/353: las chips de sección no incluyen «Subreceta» (cada preparación va con sus platos).
+  const all = useMemo(() => (mep ? [...prepsWithKitchenArea(mep.preps, mep.dishes), ...mep.dishes] : []), [mep])
 
   // Agrupar por paso del menú o por área de la cocina (clasificación de la Ficha Técnica), y
   // filtrar un área para imprimir solo su hoja. La agrupación se recuerda en este aparato.
@@ -326,7 +327,9 @@ function MepContent() {
   }
   const areas = useMemo(() => groupByArea(all), [all])
   useEffect(() => setArea("all"), [menu?.id])
-  const visiblePreps = useMemo(() => (mep ? mep.preps.filter((e) => area === "all" || e.classification === area) : []), [mep, area])
+  // docs/353: «Subreceta» no cuenta como sección; cada preparación va a la sección de sus platos.
+  const areaPreps = useMemo(() => (mep ? prepsWithKitchenArea(mep.preps, mep.dishes) : []), [mep])
+  const visiblePreps = useMemo(() => areaPreps.filter((e) => area === "all" || e.classification === area), [areaPreps, area])
   const visibleDishes = useMemo(() => (mep ? mep.dishes.filter((e) => area === "all" || e.classification === area) : []), [mep, area])
   const areaEntries = useMemo(() => [...visiblePreps, ...visibleDishes], [visiblePreps, visibleDishes])
   const visibleAreas = useMemo(() => groupByArea(areaEntries), [areaEntries])

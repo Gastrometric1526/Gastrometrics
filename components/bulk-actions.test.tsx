@@ -95,3 +95,17 @@ describe("selección múltiple (docs/345)", () => {
     expect(onConfirm).toHaveBeenCalledTimes(1)
   })
 })
+
+describe("lo que un filtro esconde deja de estar elegido (docs/353)", () => {
+  it("keepOnly conserva solo lo visible", () => {
+    let api: ReturnType<typeof useBulkSelection>
+    function H() {
+      api = useBulkSelection()
+      return null
+    }
+    act(() => root.render(<H />))
+    act(() => api.setAll(["a", "b", "c"]))
+    act(() => api.keepOnly(["b"]))
+    expect([...api!.ids]).toEqual(["b"])
+  })
+})

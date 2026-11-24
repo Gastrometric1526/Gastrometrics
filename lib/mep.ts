@@ -18,7 +18,7 @@
  */
 
 import type { Recipe, RecipeIngredient } from "@/types/recipe"
-import { classifications } from "@/types/recipe"
+import { classifications, SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 import type { Menu } from "@/lib/types/menus"
 import { paxStep, roundUpToStep, scaleRecipeLine } from "@/lib/pax-scaling"
@@ -86,7 +86,8 @@ function entryFor(recipe: Recipe, kind: MepEntry["kind"], amount: number, extra:
     recipeId: recipe.id,
     name: recipe.name,
     kind,
-    classification: recipe.classification || "",
+    // docs/353: una subreceta puesta como plato del menú no crea la sección «Subreceta».
+    classification: kind === "dish" && recipe.classification === SUBRECIPE_CLASSIFICATION ? "" : recipe.classification || "",
     stepName: null,
     stepOrder: 0,
     amount,
@@ -237,6 +238,35 @@ export function groupByArea(entries: MepEntry[]): { area: string; entries: MepEn
   return Array.from(groups.entries())
     .map(([area, list]) => ({ area, entries: [...list].sort((a, b) => (a.kind === b.kind ? 0 : a.kind === "prep" ? -1 : 1)) }))
     .sort((a, b) => rank(a.area) - rank(b.area) || a.area.localeCompare(b.area))
+}
+
+/**
+ * Vista por sección (pedido del dueño, docs/353: «obviamente en MEP no contaría lo de
+ * subreceta»): «Subreceta» no es una sección de la cocina. Cada preparación con esa
+ * clasificación va a la sección de los platos que la usan (directa o dentro de otra
+ * subreceta). Si la usan platos de varias secciones, va a la primera (en el orden de las
+ * clasificaciones) con su total completo: se produce una sola vez; `usedBy` sigue diciendo
+ * qué platos la usan. Si ningún plato con sección la usa, queda «Sin sección».
+ */
+export function prepsWithKitchenArea(preps: MepEntry[], dishes: MepEntry[]): MepEntry[] {
+  const order = new Map<string, number>(classifications.map((c, i) => [c, i]))
+  const areasOf = new Map<string, Set<string>>()
+  const walk = (area: string, subs: MepEntry[] | undefined) => {
+    for (const sub of subs ?? []) {
+      if (area) {
+        const set = areasOf.get(sub.recipeId) ?? new Set<string>()
+        set.add(area)
+        areasOf.set(sub.recipeId, set)
+      }
+      walk(area, sub.subs)
+    }
+  }
+  for (const dish of dishes) walk(dish.classification, dish.subs)
+  return preps.map((prep) => {
+    if (prep.classification && prep.classification !== SUBRECIPE_CLASSIFICATION) return prep
+    const areas = [...(areasOf.get(prep.recipeId) ?? [])].sort((a, b) => (order.get(a) ?? 999) - (order.get(b) ?? 999))
+    return { ...prep, classification: areas[0] ?? "" }
+  })
 }
 
 /** Un plato y todas sus subrecetas en orden (plato, sub, sub-sub…), para contar y compartir. */

@@ -405,7 +405,7 @@ export function RecipeImportDialog({
     const match = findBestMatch(value, ingredients, matchLang)
     const choice = match ? match.id : CREATE
     const unit = match ? match.unit : row.newUnit
-    updateRow(index, { name: value, choice, autoId: match ? match.id : null, category: guessCategory(value), ...(choice !== row.choice ? convert(row, unit) : {}) })
+    updateRow(index, { name: value, choice, autoId: match ? match.id : null, ...(row.category === guessCategory(row.name) ? { category: guessCategory(value) } : {}), ...(choice !== row.choice && unit !== (byId.get(row.choice)?.unit ?? row.newUnit) ? convert(row, unit) : {}) })
   }
 
   const changeNewUnit = (index: number, unit: Unit) => updateRow(index, { newUnit: unit, ...convert(rows[index], unit) })

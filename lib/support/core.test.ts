@@ -106,3 +106,12 @@ describe("cierre por inactividad y conversación por correo (docs/349)", () => {
     expect(html).not.toContain("<b>")
   })
 })
+
+describe("el cierre automático no escribe a casos viejos (docs/353)", () => {
+  it("avisa solo si el último mensaje es de hace 4 días o menos", async () => {
+    const { autoCloseNotifies } = await import("./core")
+    const now = new Date("2026-11-24T12:00:00Z").getTime()
+    expect(autoCloseNotifies("2026-11-23T10:00:00Z", now)).toBe(true)
+    expect(autoCloseNotifies("2026-10-01T10:00:00Z", now)).toBe(false)
+  })
+})
