@@ -185,7 +185,7 @@ export function PosSettings({
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-medium">{r.name}</span>
                       <span className="block truncate text-xs text-muted-foreground">
-                        {r.classification === SUBRECIPE_CLASSIFICATION || r.isSubRecipe ? t("pos_extra_subrecipe") : getClassificationLabel(r.classification as never, language)}
+                        {r.classification === SUBRECIPE_CLASSIFICATION ? t("pos_extra_subrecipe") : getClassificationLabel(r.classification as never, language)}
                         {used ? ` · ${t("pos_extra_already")}` : ""}
                       </span>
                     </span>

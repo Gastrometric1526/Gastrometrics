@@ -195,8 +195,7 @@ export const CHAPTER_STEPS: Record<string, CoachStep[]> = {
     // Subrecetas al entrar a la Ficha (docs/335): cómo se hacen (la clasificación) y dónde se ven.
     {
       id: "subrecipe",
-      // docs/350: la casilla «Es subreceta» (la clasificación es la sección de la cocina).
-      selector: '[data-tour="ficha-subrecipe-toggle"]',
+      selector: '[data-tour="ficha-name-classification"]',
       title: "journey_ficha_sub_title",
       description: "journey_ficha_sub_desc",
       tip: "journey_ficha_sub_tip",
@@ -251,8 +250,7 @@ export const CHAPTER_STEPS: Record<string, CoachStep[]> = {
     // Mismo aviso de subrecetas para la ficha que llegó importada; después sigue la revisión.
     {
       id: "subrecipe-imported",
-      // docs/350: la casilla «Es subreceta» (la clasificación es la sección de la cocina).
-      selector: '[data-tour="ficha-subrecipe-toggle"]',
+      selector: '[data-tour="ficha-name-classification"]',
       title: "journey_ficha_sub_title",
       description: "journey_ficha_sub_desc",
       tip: "journey_ficha_sub_tip",

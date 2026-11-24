@@ -993,7 +993,7 @@ export function EstadisticasFinanzasTab({ businessId }: { businessId: string }) 
       )}
 
       <Dialog open={!!importToDelete} onOpenChange={(next) => !next && !deletingImport && setImportToDelete(null)}>
-        <DialogContent className="bg-card border-border max-w-md mx-4">
+        <DialogContent className="bg-card border-border max-w-md">
           <DialogHeader>
             <DialogTitle className="text-destructive flex items-center gap-2">
               <Trash2 className="h-5 w-5" />

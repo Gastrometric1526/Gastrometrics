@@ -1,6 +1,5 @@
 "use client"
 
-import { isSubRecipe } from "@/lib/storage/recipes"
 import { MIGRATION_PRICE_EVENT } from "@/lib/migration-price"
 import { useState, useEffect, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -367,8 +366,7 @@ export default function MisRecetasPage() {
 
     // Aplicar filtro de clasificación
     if (selectedClassification !== "Todas") {
-      // docs/350: «Subreceta» filtra todas las subrecetas, tengan o no su sección de cocina.
-      filtered = filtered.filter((recipe) => (selectedClassification === SUBRECIPE_CLASSIFICATION ? isSubRecipe(recipe) : recipe.classification === selectedClassification))
+      filtered = filtered.filter((recipe) => recipe.classification === selectedClassification)
     }
 
     // Aplicar ordenamiento
@@ -408,7 +406,7 @@ export default function MisRecetasPage() {
   // Calcular estadísticas
   const stats = useMemo(() => {
     const totalRecipes = recipes.length
-    const subRecipes = recipes.filter((r) => isSubRecipe(r)).length
+    const subRecipes = recipes.filter((r) => r.classification === SUBRECIPE_CLASSIFICATION).length
     const avgCost = recipes.length > 0 ? recipes.reduce((sum, r) => sum + (r.totalCost || 0), 0) / recipes.length : 0
     const totalValue = recipes.reduce((sum, r) => sum + (r.totalCost || 0), 0)
 
@@ -1223,7 +1221,7 @@ export default function MisRecetasPage() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="bg-card border-border max-w-md mx-4">
+        <DialogContent className="bg-card border-border max-w-md">
           <DialogHeader>
             <DialogTitle className="text-destructive flex items-center gap-2">
               <Trash2 className="h-5 w-5" />
@@ -1235,7 +1233,7 @@ export default function MisRecetasPage() {
               {t("misrecetas_delete_confirm_prefix")} <strong>"{recipeToDelete?.name}"</strong>
               {t("misrecetas_delete_confirm_suffix")}
             </p>
-            {recipeToDelete && isSubRecipe(recipeToDelete) && (
+            {recipeToDelete?.classification === SUBRECIPE_CLASSIFICATION && (
               <Alert className="mt-4 border-warning/30 bg-warning-soft">
                 <AlertTriangle className="h-4 w-4 text-warning" />
                 <AlertDescription className="text-warning">
@@ -1269,7 +1267,7 @@ export default function MisRecetasPage() {
 
       {/* Migration Dialog */}
       <Dialog open={showMigrationDialog} onOpenChange={setShowMigrationDialog}>
-        <DialogContent className="bg-card border-border max-w-md mx-4">
+        <DialogContent className="bg-card border-border max-w-md">
           <DialogHeader>
             <DialogTitle className="text-foreground flex items-center gap-2">
               <ArrowRightLeft className="h-5 w-5 text-primary" />
@@ -1290,7 +1288,7 @@ export default function MisRecetasPage() {
                     <li>{t("misrecetas_migration_bullet_ingredients")}</li>
                     <li>{t("misrecetas_migration_bullet_subrecipes")}</li>
                     <li>{t("misrecetas_migration_bullet_indicator")}</li>
-                    {recipeToMigrate && isSubRecipe(recipeToMigrate) && (
+                    {recipeToMigrate?.classification === SUBRECIPE_CLASSIFICATION && (
                       <li>{t("misrecetas_migration_bullet_subrecipe_ingredient")}</li>
                     )}
                   </ul>

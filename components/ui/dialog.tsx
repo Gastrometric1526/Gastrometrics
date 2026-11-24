@@ -53,8 +53,10 @@ const DialogContent = React.forwardRef<
         "grid gap-4",
         // Styling
         "border bg-background p-6 shadow-overlay rounded-lg",
-        // Overflow handling
-        "overflow-hidden",
+        // Overflow handling (docs/352): en el celular, si el contenido es más alto que la pantalla,
+        // se desplaza dentro de la ventana en vez de quedar cortado. Las que manejan su propio
+        // desplazamiento (flex con una zona que se desplaza) siguen pasando overflow-hidden.
+        "overflow-y-auto overflow-x-hidden",
         // Animations
         "duration-200",
         "data-[state=open]:animate-in data-[state=closed]:animate-out",

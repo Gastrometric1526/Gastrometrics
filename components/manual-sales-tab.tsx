@@ -394,7 +394,7 @@ export function ManualSalesTab({ businessId, onSalesChanged, showInsights = true
       />
 
       <Dialog open={!!entryToDelete} onOpenChange={(next) => !next && setEntryToDelete(null)}>
-        <DialogContent className="bg-card border-border max-w-md mx-4">
+        <DialogContent className="bg-card border-border max-w-md">
           <DialogHeader>
             <DialogTitle className="text-destructive flex items-center gap-2">
               <Trash2 className="h-5 w-5" />

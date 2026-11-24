@@ -18,7 +18,7 @@
  */
 
 import type { Recipe, RecipeIngredient } from "@/types/recipe"
-import { classifications, SUBRECIPE_CLASSIFICATION } from "@/types/recipe"
+import { classifications } from "@/types/recipe"
 import type { Ingredient } from "@/types/ingredient"
 import type { Menu } from "@/lib/types/menus"
 import { paxStep, roundUpToStep, scaleRecipeLine } from "@/lib/pax-scaling"
@@ -86,8 +86,7 @@ function entryFor(recipe: Recipe, kind: MepEntry["kind"], amount: number, extra:
     recipeId: recipe.id,
     name: recipe.name,
     kind,
-    // docs/350: «Sub Receta» no es una sección de la cocina: queda «Sin sección» hasta que se elija.
-    classification: recipe.classification && recipe.classification !== SUBRECIPE_CLASSIFICATION ? recipe.classification : "",
+    classification: recipe.classification || "",
     stepName: null,
     stepOrder: 0,
     amount,
