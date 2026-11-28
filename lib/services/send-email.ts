@@ -13,10 +13,57 @@
  * - Igual que el SDK, nunca lanza: devuelve `{ data, error }`.
  */
 
+import { AsyncLocalStorage } from "node:async_hooks"
 import type { Resend } from "resend"
 
 type SendPayload = Parameters<Resend["emails"]["send"]>[0]
 type SendResult = Awaited<ReturnType<Resend["emails"]["send"]>>
+
+/**
+ * Tope de correos por paso de una tarea programada (docs/355). Un error en un paso del
+ * cron (como el cierre del chat de docs/353, que pudo escribir por casos de hace meses)
+ * podía mandar correos a cientos de personas antes de que alguien lo notara. Dentro de
+ * `withEmailBudget`, los correos que pasan del tope no se mandan: se cuentan como
+ * retenidos y quien llama avisa al dueño. Fuera de un tope (registro, contraseña, chat,
+ * pagos…) nada cambia. AsyncLocalStorage: el tope es solo de ese paso, nunca de otras
+ * peticiones que corran al mismo tiempo en la misma instancia.
+ */
+export const EMAIL_BUDGET_ERROR = "email_budget_exceeded"
+
+interface EmailBudget {
+  label: string
+  max: number
+  sent: number
+  held: number
+}
+
+const budgetStore = new AsyncLocalStorage<EmailBudget>()
+
+export interface EmailBudgetReport {
+  label: string
+  max: number
+  sent: number
+  held: number
+}
+
+export async function withEmailBudget<T>(label: string, max: number, fn: () => Promise<T>): Promise<{ result: T; budget: EmailBudgetReport }> {
+  const budget: EmailBudget = { label, max: Math.max(0, Math.floor(max)), sent: 0, held: 0 }
+  const result = await budgetStore.run(budget, fn)
+  return { result, budget: { ...budget } }
+}
+
+/** Ocupa un lugar del tope del paso actual. false = ya se llegó al tope (no mandar). */
+function takeBudgetSlot(label: string): boolean {
+  const budget = budgetStore.getStore()
+  if (!budget) return true
+  if (budget.sent >= budget.max) {
+    budget.held++
+    if (budget.held === 1) console.error(`[send-email] Tope de ${budget.max} correos alcanzado en «${budget.label}»: no se manda ${label} ni los siguientes.`)
+    return false
+  }
+  budget.sent++
+  return true
+}
 
 const MIN_GAP_MS = 550
 const RETRY_DELAYS_MS = [1000, 2500]
@@ -45,6 +92,12 @@ async function waitTurn() {
 }
 
 export async function sendWithRetry(resend: Resend, payload: SendPayload, label = "correo"): Promise<SendResult> {
+  if (!takeBudgetSlot(label)) {
+    return {
+      data: null,
+      error: { name: EMAIL_BUDGET_ERROR, message: "Tope de correos de esta tarea alcanzado; no se mandó.", statusCode: null },
+    } as unknown as SendResult
+  }
   let last: SendResult = { data: null, error: null } as unknown as SendResult
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
     await waitTurn()

@@ -10,6 +10,10 @@ import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isTesterEmail } from "@/lib/tester-allowlist"
 
+// Siempre por pedido (docs/355): depende de la sesión. Sin esto, Next la intenta
+// generar al construir y falla si no hay llaves de Supabase (revisión automática).
+export const dynamic = "force-dynamic"
+
 export async function GET() {
   const supabase = getSupabaseServerClient()
   const {

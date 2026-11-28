@@ -1,0 +1,76 @@
+# Revisión automática (docs/355): en cada subida a main y en cada pull request corre la
+# revisión de tipos, las pruebas, el build y las pruebas en navegador del sitio público.
+# Gratis en repositorios públicos. No necesita ninguna llave: el build y las pruebas
+# públicas corren con llaves de relleno que no apuntan a ningún Supabase. Las pruebas con
+# sesión (e2e/app.spec.ts) corren solo si se configuran los secretos E2E_EMAIL,
+# E2E_PASSWORD, NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY en
+# GitHub → Settings → Secrets and variables → Actions.
+#
+# Vercel sigue publicando cada subida a main como siempre; esta revisión no la frena,
+# pero marca la subida en rojo en GitHub si algo falla, para arreglarlo enseguida.
+
+name: Revisión
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: revision-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  revision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Revisión de tipos
+        run: npx tsc --noEmit
+
+      # Sin llaves, como siempre: las pruebas unitarias simulan Supabase (vitest.setup.ts).
+      - name: Pruebas
+        run: npm test
+
+      # Desde aquí, con llaves (las reales si hay secretos; si no, las de relleno de
+      # e2e/helpers.ts): la app no arranca en el navegador sin ellas.
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+
+      - name: Navegador para las pruebas de punta a punta
+        run: npx playwright install --with-deps chromium
+
+      - name: Pruebas de punta a punta
+        run: npm run test:e2e
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+
+      - name: Informe de las pruebas de punta a punta
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: informe-playwright
+          path: playwright-report
+          retention-days: 7

@@ -19,6 +19,10 @@ import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { sendActivityPush } from "@/lib/services/activity-push-server"
 
+// Siempre por pedido (docs/355): depende de la sesión. Sin esto, Next la intenta
+// generar al construir y falla si no hay llaves de Supabase (revisión automática).
+export const dynamic = "force-dynamic"
+
 const SUPPORTED_MANUAL_LANGUAGES = ["es", "en", "da", "fr", "pt", "zh"] as const
 
 function manualPathFor(language: string) {

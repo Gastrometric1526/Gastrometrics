@@ -75,6 +75,9 @@ import { runFounderSeatReviews, runPendingFounderGrants } from "@/lib/services/f
 import { runScheduledRenewalChecks } from "@/lib/services/scheduled-renewal"
 import { runReferralChecks } from "@/lib/services/referrals"
 import { autoCloseStale } from "@/lib/services/support"
+import { withEmailBudget } from "@/lib/services/send-email"
+import { emailCapFor } from "@/lib/email-step-caps"
+import { hondurasTime, sendOwnerNotification } from "@/lib/services/notify-owner"
 
 // Muchos correos en serie con pausa entre envíos (lib/services/send-email.ts): se pide
 // el máximo de Vercel Hobby para que la ejecución no se corte a la mitad.
@@ -97,6 +100,31 @@ async function step<T>(name: string, fn: () => Promise<T>): Promise<T | { error:
     console.error(`[api/cron/activation-emails] Error en "${name}":`, error)
     return { error: `Error en ${name}.` }
   }
+}
+
+/** Un paso que manda correos a personas: con tope (docs/355, lib/email-step-caps.ts), y aviso al dueño si lo alcanza. */
+async function cappedStep<T>(name: string, fn: () => Promise<T>): Promise<T | { error: string }> {
+  return step(name, async () => {
+    const { result, budget } = await withEmailBudget(name, emailCapFor(name), fn)
+    if (budget.held > 0) {
+      // Fuera del tope (ya terminó withEmailBudget): este aviso siempre sale.
+      await sendOwnerNotification({
+        subject: `Tarea diaria: se detuvieron correos en «${name}»`,
+        rows: [
+          ["Paso", name],
+          ["Mandados", String(budget.sent)],
+          ["Retenidos (no se mandaron)", String(budget.held)],
+          ["Tope", String(budget.max)],
+          ["Hora", hondurasTime()],
+        ],
+        footnote: "Más correos de lo normal en un paso suele ser un error. Revisa ese paso antes de subir el tope (EMAIL_STEP_CAP).",
+        label: "tope de correos de la tarea diaria",
+        url: "/admin?tab=sistema&sub=salud",
+      }).catch((error) => console.error("[api/cron/activation-emails] No se pudo avisar del tope de correos:", error))
+      throw new Error(`Tope de correos alcanzado en ${name}: ${budget.held} retenidos.`)
+    }
+    return result
+  })
 }
 
 /** Un envío por cuenta: el error de una cuenta no corta el lote. */
@@ -142,7 +170,7 @@ export async function GET(request: Request) {
   // 1. Lo más importante para el dueño, primero y aislado.
   const signupDigest = await step("resumen de cuentas nuevas", () => sendDailySignupDigest())
 
-  const activation = await step("correos de activación", async () => {
+  const activation = await cappedStep("correos de activación", async () => {
     const admin = getSupabaseAdminClient()
 
     let allUsers: { id: string; createdAt: string }[] = []
@@ -205,22 +233,22 @@ export async function GET(request: Request) {
   // Respaldo del programa automático de 100 cocinas fundadoras (docs/158): cuentas que no abrieron la app después del minuto.
   // Fundadoras que terminaron sus 30 días: anota si conservan su lugar y avisa al dueño si lo liberaron (docs/296).
   const founderSeats = await step("lugares de fundadoras", () => runFounderSeatReviews())
-  const founderGrants = await step("cocinas fundadoras pendientes", () => runPendingFounderGrants())
-  const planExpiry = await step("aviso de vencimiento de plan", () => runPlanExpiryReminders())
+  const founderGrants = await cappedStep("cocinas fundadoras pendientes", () => runPendingFounderGrants())
+  const planExpiry = await cappedStep("aviso de vencimiento de plan", () => runPlanExpiryReminders())
   // Pagos programados al vencer (docs/165): se aplican si Stripe ya cobró, antes de bajar a Foodie.
-  const scheduledRenewals = await step("pagos programados", () => runScheduledRenewalChecks())
+  const scheduledRenewals = await cappedStep("pagos programados", () => runScheduledRenewalChecks())
   // Planes asignados que ya vencieron: pasan a Foodie con correo y aviso (docs/139).
-  const expiredDowngrades = await step("planes vencidos a Foodie", () => runExpiredPlanDowngrades())
+  const expiredDowngrades = await cappedStep("planes vencidos a Foodie", () => runExpiredPlanDowngrades())
   // Referidos (docs/179): regalos pendientes, activaciones (premio), recordatorios y vencimientos.
-  const referrals = await step("referidos", () => runReferralChecks())
+  const referrals = await cappedStep("referidos", () => runReferralChecks())
   // Chat de soporte (docs/349): casos respondidos sin respuesta de la persona en 24 h → cerrados
   // con la conversación por correo. Respaldo diario; también se cierran al abrir el chat o /admin.
-  const supportAutoClose = await step("chat de soporte sin respuesta", () => autoCloseStale())
+  const supportAutoClose = await cappedStep("chat de soporte sin respuesta", () => autoCloseStale())
 
   // Encuesta de experiencia (docs/145): antes solo a las 4 h de uso real, y el 75 % de las
   // cuentas no llega a 2 h — nadie la recibía. Ahora también con 3 recetas propias o 3
   // días distintos de uso, lo que pase primero. Sigue saliendo una sola vez por cuenta.
-  const experienceSurvey = await step("encuesta de experiencia", async () => {
+  const experienceSurvey = await cappedStep("encuesta de experiencia", async () => {
     const admin = getSupabaseAdminClient()
     // Paginado: recetas y actividad pasan de 1000 filas y PostgREST cortaría en silencio.
     const [presenceRows, recipeRows, dayRows] = await Promise.all([
@@ -256,8 +284,8 @@ export async function GET(request: Request) {
   const rateLimitPrune = await step("limpieza de límites de intentos", () => pruneDurableRateLimits())
   // Correos de valor antes que los recordatorios: comparten la pausa global y, si a una
   // cuenta le toca uno útil (stock bajo, resumen, margen…), ese gana.
-  const engagement = await step("correos de valor", () => runEngagementEmails())
-  const reengagement = await step("recordatorios", () => runReengagementReminders())
+  const engagement = await cappedStep("correos de valor", () => runEngagementEmails())
+  const reengagement = await cappedStep("recordatorios", () => runReengagementReminders())
 
   const steps = { signupDigest, activation, founderSeats, founderGrants, planExpiry, scheduledRenewals, expiredDowngrades, referrals, supportAutoClose, experienceSurvey, deletionPurge, recoveryPurge, rateLimitPrune, engagement, reengagement }
   const failed = Object.entries(steps)
